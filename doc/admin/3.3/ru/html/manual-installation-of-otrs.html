@@ -1,0 +1,516 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Установка из исходных кодов (Linux, Unix)</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><link rel="home" href="index.html" title="OTRS 3.2 - Руководство Администратора"><link rel="up" href="installation.html" title="Глава 2. Установка"><link rel="prev" href="installation.html" title="Глава 2. Установка"><link rel="next" href="web-installer.html" title="Самый простой способ - использование веб-инсталлятора (работает только с MySQL)"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Установка из исходных кодов (Linux, Unix)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">Пред.</a> </td><th width="60%" align="center">Глава 2. Установка</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">След.</a></td></tr></table><hr></div><div class="section" title="Установка из исходных кодов (Linux, Unix)"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>Установка из исходных кодов (Linux, Unix)</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="manual-installation-of-otrs.html#preparing-manual-installation">Подготовка к установке из исходных кодов</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#installation-of-perl-modules">Установка Perl-модулей</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#web-server-configuration">Настройка веб-сервера Apache</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#database-configuration">Настройка базы данных</a></span></dt><dd><dl><dt><span class="section"><a href="manual-installation-of-otrs.html#manual-installation-of-database">Установка базы данных OTRS вручную.</a></span></dt></dl></dd><dt><span class="section"><a href="manual-installation-of-otrs.html#cronjobs">Настрой планировщика задач (cron jobs) для OTRS</a></span></dt></dl></div><div class="section" title="Подготовка к установке из исходных кодов"><div class="titlepage"><div><div><h3 class="title"><a name="preparing-manual-installation"></a>Подготовка к установке из исходных кодов</h3></div></div></div><p>
+Если вы решили устанавливать OTRS из исходных кодов, перейдите по ссылке
+<a class="ulink" href="http://www.otrs.com/try/" target="_top">
+<em class="citetitle">http://www.otrs.com/try/</em> </a> и загрузите
+архив с исходными кодами в любом удобном для вас формате: .tar.gz, .tar.bz2,
+или .zip
+</p><p>
+Распакуйте архив (например с помощью команды <span class="command"><strong>tar</strong></span>) в
+каталог <code class="filename">/opt</code> а затем переименуйте каталог otrs-x.x.x на
+otrs (см. ниже Сценарий ниже).
+</p><p>
+</p><pre class="screen">
+linux:/opt# tar xf /tmp/otrs-x.x.x.tar.gz
+linux:/opt# mv otrs-x.x.x otrs
+linux:/opt# ls
+otrs
+linux:/opt#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Установка OTRS, первые шаги.</em></span>
+</p><p>
+OTRS should NOT be run with root rights. Next you should add a new user for
+OTRS. The home directory of this new user should be
+<code class="filename">/opt/otrs</code>. If your web server is not running with the
+same user rights as the new 'otrs' user, which is the case on most systems,
+you will need to add the new 'otrs' user to the group of the web server user
+(see Script below).
+</p><p>
+</p><pre class="screen">
+linux:/opt# useradd -r -d /opt/otrs/ -c 'OTRS user' otrs
+linux:/opt# usermod -G nogroup otrs
+linux:/opt#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Добавление нового пользователя 'otrs' и добавление его в
+группу.</em></span>
+</p><p>
+Next, you have to copy some sample configuration files. The system will
+later use the copied files. The files are located in
+<code class="filename">/opt/otrs/Kernel</code> and
+<code class="filename">/opt/otrs/Kernel/Config</code> and have the suffix .dist (see
+Script below).
+</p><p>
+</p><pre class="screen">
+linux:/opt# cd otrs/Kernel/
+linux:/opt/otrs/Kernel# cp Config.pm.dist Config.pm
+linux:/opt/otrs/Kernel# cd Config
+linux:/opt/otrs/Kernel/Config# cp GenericAgent.pm.dist GenericAgent.pm
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Копирование демонстрационных копий конфигурационных
+файлов</em></span>
+</p><p>
+На завершающем этапе установки OTRS необходимо установить соответствующие
+права доступа к файлам. Для этого используйте сценарий
+<span class="command"><strong>otrs.SetPermissions.pl</strong></span>, находящийся в директории
+<code class="filename">bin</code> домашнего каталога пользователя 'otrs'. Скрипт
+можно вызвать со следующими параметрами:
+</p><p>
+</p><div class="cmdsynopsis"><p><code class="command">otrs.SetPermissions.pl</code>  {
+<em class="replaceable"><code>Home directory of the OTRS user</code></em> } { --otrs-user= <em class="replaceable"><code>OTRS user</code></em> } { --web-user= <em class="replaceable"><code>Web server user</code></em> } [ --otrs-group= <em class="replaceable"><code>Group of the OTRS
+user</code></em> ] [ --web-group= <em class="replaceable"><code>Group
+of the web server user</code></em> ]</p></div><p>
+</p><p>
+Если ваш веб-сервер работает с теми же правами что и пользователь 'otrs', то
+команда установки надлежащих прав доступа будет выглядеть так:
+<span class="command"><strong>otrs.SetPermissions.pl /opt/otrs --otrs-user=otrs
+--web-user=otrs</strong></span>. На SUSE-системах веб-сервер работает с правами
+пользователя 'wwwrun'. На Debian-системах - 'www-data'. Для установки
+надлежащих прав доступа используйте команду <span class="command"><strong>otrs.SetPermissions.pl
+/opt/otrs --otrs-user=otrs --web-user=wwwrun --otrs-group=nogroup
+--web-group=www</strong></span>.
+</p></div><div class="section" title="Установка Perl-модулей"><div class="titlepage"><div><div><h3 class="title"><a name="installation-of-perl-modules"></a>Установка Perl-модулей</h3></div></div></div><p>
+OTRS requires some additional Perl modules, as described in Table 3-1. If
+you install OTRS from source, you will need to install these modules
+manually.  This can be done either with the package manager of your Linux
+distribution (<span class="application">yast</span>,
+<span class="application">apt-get</span>) or, as described in this section,
+through the Perl shell and CPAN. If you're using ActiveState Perl, for
+instance on Windows, you could use PPM, the built-in Perl Package Manager.
+We recommend using your package manager if possible.
+</p><p>
+You can verify which modules you need to install with
+<span class="command"><strong>otrs.CheckModules.pl</strong></span>.  This script is located in the
+<code class="filename">bin</code> directory, in the home directory of the 'otrs' user
+(see Script below).  Please note that some modules are optional.
+</p><pre class="screen">
+linux:~# cd /opt/otrs/bin/
+linux:/opt/otrs/bin# ./otrs.CheckModules.pl
+   o CGI..............................ok (v3.60)
+   o Crypt::PasswdMD5.................ok (v1.3)
+   o Crypt::SSLeay....................Not installed! (Optional - Required for Generic Interface SOAP SSL connections.)
+   o CSS::Minifier....................ok (v0.01)
+   o Date::Format.....................ok (v2.22)
+   o Date::Pcalc......................ok (v1.2)
+
+   ...
+
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Проверка необходимых модулей.</em></span>
+</p><p>
+You should strive to install the missing modules from your Linux
+distribution's package management system. By doing so, the packages will be
+automatically updated when new versions are available or when security
+issues are found. Please refer to your distribution's documentation on how
+to install additional packages. If the (correct version of) the module is
+not available from the package repositories, you can also install from CPAN,
+the Comprehensive Perl Archive Network.
+</p><p>
+Для установки любого из выше описанных модулей через CPAN, нужно выполнить
+команду <span class="command"><strong>perl -e shell -MCPAN</strong></span>. Оболочка Perl запустится в
+интерактивном режиме и модуль CPAN будет загружен. Если CPAN уже
+сконфигурирован, то с помощью команды <span class="command"><strong>install</strong></span> "имя
+модуля" (install module_name)  можно начинать установку необходимых
+модулей. CPAN автоматически отслеживает зависимости между Perl-модулями и
+тут же оповещает, какие еще модули нужно установить.
+</p><p>
+    Execute also the commands <span class="command"><strong>perl -cw bin/cgi-bin/index.pl</strong></span>
+<span class="command"><strong>perl -cw bin/cgi-bin/customer.pl</strong></span> and <span class="command"><strong>perl -cw
+bin/otrs.PostMaster.pl</strong></span> after changing into the directory
+<code class="filename">/opt/otrs</code>.  If the output of both commands is "syntax
+OK", your Perl is properly set up (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs
+linux:/opt/otrs# perl -cw bin/cgi-bin/index.pl
+cgi-bin/installer.pl syntax OK
+linux:/opt/otrs# perl -cw bin/cgi-bin/customer.pl
+cgi-bin/customer.pl syntax OK
+linux:/opt/otrs# perl -cw bin/otrs.PostMaster.pl
+bin/otrs.PostMaster.pl syntax OK
+linux:/opt/otrs#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Проверить синтаксис.</em></span>
+</p></div><div class="section" title="Настройка веб-сервера Apache"><div class="titlepage"><div><div><h3 class="title"><a name="web-server-configuration"></a>Настройка веб-сервера Apache</h3></div></div></div><p>First of all, you should install the Apache2 web server and mod_perl; you'd
+typically do this from your systems package manager.  Below you'll find the
+commands needed to set up Apache on the most popular Linux distributions.
+</p><p>
+  </p><pre class="screen">
+
+    # rhel / centos:
+    linux:# yum install httpd mod_perl
+
+    # suse:
+    linux:# zypper install apache2-mod_perl
+
+    # debian/ubuntu:
+    linux:# apt-get install apache2 libapache-mod-perl2
+
+  </pre><p>
+</p><p>
+To access the web interface of OTRS via a short URL, Alias and ScriptAlias
+entries are needed. Most <span class="application">Apache</span> installations
+have a <code class="filename">conf.d</code> directory included. On Linux systems you
+can usually find this directory under <code class="filename">/etc/apache</code> or
+<code class="filename">/etc/apache2</code>. Log in as root, change to the
+<code class="filename">conf.d</code> directory and copy the appropriate template in
+<code class="filename">/opt/otrs/scripts/apache2-httpd.include.conf</code> to a file
+called <code class="filename">otrs.conf</code> in the Apache configuration directory.
+</p><p>
+Перезагрузите веб-сервер, чтобы новые настройки вступили в силу. На
+большинстве систем запустить/перезагрузить веб-сервер можно с помощью
+команды <span class="command"><strong>/etc/init.d/apache2 restart</strong></span> (см. Сценарий ниже).
+</p><p>
+</p><pre class="screen">
+linux:/etc/apache2/conf.d# /etc/init.d/apache2 restart
+Forcing reload of web server: Apache2.
+linux:/etc/apache2/conf.d#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Перезапуск веб-сервера.</em></span>
+</p><p>
+Теперь веб-сервер полностью настроен для работы OTRS.
+</p></div><div class="section" title="Настройка базы данных"><div class="titlepage"><div><div><h3 class="title"><a name="database-configuration"></a>Настройка базы данных</h3></div></div></div><div class="section" title="Установка базы данных OTRS вручную."><div class="titlepage"><div><div><h4 class="title"><a name="manual-installation-of-database"></a>Установка базы данных OTRS вручную.</h4></div></div></div><p>
+The recommended way to configure the database is to run the <a class="link" href="web-installer.html" title="Самый простой способ - использование веб-инсталлятора (работает только с MySQL)">Web Installer</a>. If you can't use this for some
+reason, you can also configure the database manually, as described in this
+chapter.  If you can't use the web installer to setup the OTRS database, you
+have to set it up manually. Scripts with the SQL statements to create and
+configure the database are located in <code class="filename">scripts/database</code>,
+in the home directory of the 'otrs' user (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs/scripts/database/
+linux:/opt/otrs/scripts/database# ls
+otrs-initial_insert.db2.sql         otrs-schema.mysql.sql
+otrs-schema.oracle.sql
+otrs-initial_insert.mssql.sql       otrs-schema-post.db2.sql
+otrs-initial_insert.mysql.sql       otrs-schema.postgresql.sql
+otrs-initial_insert.oracle.sql
+otrs-initial_insert.postgresql.sql  otrs-schema-post.mssql.sql
+otrs-initial_insert.xml             otrs-schema-post.mysql.sql
+otrs-schema.db2.sql                 otrs-schema-post.oracle.sql
+ otrs-schema-post.postgresql.sql
+otrs-schema.mssql.sql               otrs-schema.xml
+linux:/opt/otrs/scripts/database#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Файлы, необходимые для создания и настройки базы
+данных.</em></span>
+</p><p>
+При установке базы данных, для различных СУБД существует свой, определенный
+порядок обработки .sql-файлов.
+</p><p>
+</p><div class="orderedlist" title="Создание базы данных OTRS вручную, шаг за шагом"><p class="title"><b>Создание базы данных OTRS вручную, шаг за шагом</b></p><ol class="orderedlist" type="1"><li class="listitem"><p>
+Создание базы данных: Используя интерфейс базы данных или свой любимый
+менеджер баз даных, создайте базу данных, которую планируете использовать
+для OTRS.
+</p></li><li class="listitem"><p>
+Создание таблиц: Используя файлы otrs-schema.DatabaseType.sql (например
+<code class="filename">otrs-schema.oracle.sql</code>,
+<code class="filename">otrs-schema.postgresql.sql</code>) можно создать таблицы в
+базе данных для OTRS.
+</p></li><li class="listitem"><p>
+Inserting the initial system data: OTRS needs some initial system data to
+work properly (e.g. the different ticket states, ticket and notification
+types). Depending on the type of database that you are using, you will need
+to use one of the following files:
+<code class="filename">otrs-initial_insert.mysql.sql</code>,
+<code class="filename">otrs-initial_insert.oracle.sql</code>,
+<code class="filename">otrs-initial_insert.postgresql.sql</code> or
+<code class="filename">otrs-initial_insert.mssql.sql </code>.
+</p></li><li class="listitem"><p>
+Создание связей между таблицами: Последний шаг - создание связей между
+различными таблицами базы данных OTRS Для этого используйте файл
+otrs-schema-post.DatabaseType.sql (например
+<code class="filename">otrs-schema-oracle.post.sql</code>,
+<code class="filename">otrs-schema-post.postgresql.sql</code>).
+</p></li></ol></div><p>
+</p><p>
+После завершения установки базы данных необходимо проверить и установить
+соответствующие права доступа для базы данных OTRS. Сделать это необходимо
+так, чтобы только один пользователь имел соответствующие права
+доступа. Настройка прав доступа отличается в зависимости от выбраного вами
+сервера базы данных и должна производится с помощью графического интерфейса
+базы данных или с помощью программы клиента.
+</p><p>
+If your database and the access rights are configured properly, you have to
+tell OTRS which database back-end you want to use and how the ticket system
+can connect to the database. Open the file
+<code class="filename">Kernel/Config.pm</code> located in the home directory of the
+'otrs' user, and change the parameters shown in the script below according
+to your needs.
+</p><p>
+</p><pre class="programlisting">
+
+    # DatabaseHost
+    # (The database host.)
+    $Self-&gt;{'DatabaseHost'} = 'localhost';
+
+    # Database
+    # (The database name.)
+    $Self-&gt;{Database} = 'otrs';
+
+    # DatabaseUser
+    # (The database user.)
+    $Self-&gt;{DatabaseUser} = 'otrs';
+
+    # DatabasePw
+    # (The password of database user.)
+    $Self-&gt;{DatabasePw} = 'some-pass';
+
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Настраиваемые параметры</em></span>
+</p></div></div><div class="section" title="Настрой планировщика задач (cron jobs) для OTRS"><div class="titlepage"><div><div><h3 class="title"><a name="cronjobs"></a>Настрой планировщика задач (cron jobs) для OTRS</h3></div></div></div><p>
+Для правильной работы системы OTRS необходим планировщик задач (cron
+jobs). Планировщик задач (cron jobs) должен запускаться с теми же правами,
+что и модули OTRS. Именно по этому cron jobs должен быть внесен в
+crontab-файл пользователя 'otrs'.
+</p><p>
+All scripts with the cron jobs are located in <code class="filename">var/cron</code>,
+in the home directory of the 'otrs' user (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs/var/cron
+linux:/opt/otrs/var/cron# ls
+aaa_base.dist                generic_agent.dist       rebuild_ticket_index.dist
+cache.dist                   pending_jobs.dist        session.dist
+fetchmail.dist               postmaster.dist          unlock.dist
+generic_agent-database.dist  postmaster_mailbox.dist
+linux:/opt/otrs/var/cron#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Файлы, необходимые для создания заданий планировщика
+задач (cron jobs).</em></span>
+</p><p>
+These scripts have a suffix of '.dist'. You should copy them to files with
+the suffix removed. If you use bash, you might want to use the command
+listed in Script below.
+</p><p>
+</p><pre class="screen">
+linux:/opt/otrs/var/cron# for foo in *.dist; do cp $foo `basename $foo .dist`; done
+linux:/opt/otrs/var/cron# ls
+aaa_base                generic_agent-database.dist  rebuild_ticket_index
+aaa_base.dist           generic_agent.dist           rebuild_ticket_index.dist
+cache                   pending_jobs                 session
+cache.dist              pending_jobs.dist            session.dist
+fetchmail               postmaster                   unlock
+fetchmail.dist          postmaster.dist              unlock.dist
+generic_agent           postmaster_mailbox
+generic_agent-database  postmaster_mailbox.dist
+linux:/opt/otrs/var/cron#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Copying and renaming all the files needed to create the
+cron jobs.</em></span>
+</p><p>
+В Таблице 3-2 приводятся различные задания cron jobs.
+</p><p>
+</p><div class="table"><a name="table-of-cronjobs-for-otrs"></a><p class="title"><b>Таблица 2.1. Описание некоторых сценариев планировщика задач cron job.</b></p><div class="table-contents"><table summary="Описание некоторых сценариев планировщика задач cron job." border="1"><colgroup><col><col></colgroup><thead><tr><th>
+          Сценарий
+        </th><th>
+          Назначение
+        </th></tr></thead><tbody><tr><td>
+          aaa_base
+        </td><td>
+          Определяет основные настройки для crontab пользователя 'otrs'.
+        </td></tr><tr><td>
+          cache
+        </td><td>
+          Удаляет из диска устаревшие ("просроченные") кэш-записи. Очищает
+кэш-погрузчик для CSS и JavaScript файлов.
+        </td></tr><tr><td>
+          fetchmail
+        </td><td>
+          Этот сценарий может быть использован в том случае, если новые емейлы будут
+поступать в систему обработки заявок через fetchmail.
+        </td></tr><tr><td>
+          generic_agent
+        </td><td>
+          Выполняет задания из GenericAgent, которые не сохраняются в базе данных, а в
+собственных конфиг-файлах.
+        </td></tr><tr><td>
+          generic_agent-database
+        </td><td>
+          Выполняет задания из GenericAgent, которые хранятся в базе данных.
+        </td></tr><tr><td>
+          pending_jobs
+        </td><td>
+          Проверяет систему на наличие заявок, ожидающих решения, закрывает их или
+отсылает напоминание, если это необходимо.
+        </td></tr><tr><td>
+          postmaster
+        </td><td>
+          Проверяет очередь сообщений системы обработки заявок, и доставляет те
+сообщения, которые находятся в этой очереди.
+        </td></tr><tr><td>
+          postmaster_mailbox
+        </td><td>
+          Получает почту с POP3-счетов, которые были указаны в админке, в разделе
+"Учетные записи PostMaster".
+        </td></tr><tr><td>
+          rebuild_ticket_index
+        </td><td>
+          Восстанавливает индекс заявки, что значительно повышает скорость просмотра
+заявок в разделе QueueView.
+        </td></tr><tr><td>
+          session
+        </td><td>
+          Удаляет старые и больше не используемые ID-сессий (session IDs).
+        </td></tr><tr><td>
+          unlock
+        </td><td>
+          Открывает заявки, которые были ранее заблокированы в системе.
+        </td></tr></tbody></table></div></div><p><br class="table-break">
+</p><p>
+To setup all cron jobs, the script <code class="filename">bin/Cron.sh</code> located
+in the home directory of the 'otrs' user can be used. When this script is
+executed, it needs a parameter to specify whether you want to install,
+remove, or reinstall the cron jobs. The following parameters can be used:
+</p><p>
+</p><div class="cmdsynopsis"><p><code class="command">Cron.sh</code>  {
+<em class="replaceable"><code>start</code></em> } {
+<em class="replaceable"><code>stop</code></em> } {
+<em class="replaceable"><code>restart</code></em> } [
+<em class="replaceable"><code>OTRS user</code></em> ]</p></div><p>
+</p><p>
+Because the cron jobs need to be installed in the crontab file of the 'otrs'
+user, you need to be logged in as 'otrs'. If you are logged in as root, you
+can switch to 'otrs' with the command <span class="command"><strong>su otrs</strong></span>. Execute
+the commands specified in Script below to install the cron jobs.
+</p><div class="warning" title="Внимание" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Внимание</h3><p>
+Обратите внимание, что при использовании файла <code class="filename">Cron.sh</code>
+другие задания, установленные в crontab-файле для пользователя 'otrs' будут
+перезаписаны или удалены. Внесите все необходимые изменения в файл
+<code class="filename">Cron.sh</code>, чтобы сохранить другие crontab-задания.
+</p></div><p>
+</p><pre class="screen">
+linux:/opt/otrs/var/cron# cd /opt/otrs/bin/
+linux:/opt/otrs/bin# su otrs
+linux:~/bin$ ./Cron.sh start
+/opt/otrs/bin
+Cron.sh - start/stop OTRS cronjobs
+Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+(using /opt/otrs) done
+linux:~/bin$ exit
+exit
+linux:/opt/otrs/bin#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Установка cron jobs.</em></span>
+</p><p>
+Команда <span class="command"><strong>crontab -l -u otrs</strong></span>, которую можно запускать с
+правами администратора, отображает содержание crontab-файла пользователя
+'otrs', так что можно легко проверить правильность расположения всех записей
+(см. Сценарий ниже).
+</p><p>
+</p><pre class="screen">
+linux:/opt/otrs/bin# crontab -l -u otrs
+# --
+# cron/aaa_base - base crontab package
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# Who gets the cron emails?
+MAILTO="root@localhost"
+
+# --
+# cron/cache - delete expired cache
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# delete expired cache weekly (Sunday mornings)
+20 0 * * 0  $HOME/bin/otrs.CacheDelete.pl --expired &gt;&gt; /dev/null
+30 0 * * 0  $HOME/bin/otrs.LoaderCache.pl -o delete &gt;&gt; /dev/null
+
+# --
+# cron/fetchmail - fetchmail cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# fetch every 5 minutes emails via fetchmail
+#*/5 * * * * /usr/bin/fetchmail -a &gt;&gt; /dev/null
+
+# --
+# cron/generic_agent - otrs.GenericAgent.pl cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# start generic agent every 20 minutes
+*/20 * * * * $HOME/bin/GenericAgent.pl &gt;&gt; /dev/null
+# example to execute GenericAgent.pl on 23:00 with
+# Kernel::Config::GenericAgentMove job file
+#0 23 * * * $HOME/bin/otrs.GenericAgent.pl -c "Kernel::Config::GenericAgentMove" &gt;&gt; /dev/null
+# --
+# cron/generic_agent - GenericAgent.pl cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# start generic agent every 10 minutes
+*/10 * * * * $HOME/bin/otrs.GenericAgent.pl -c db &gt;&gt; /dev/null
+# --
+# cron/pending_jobs - pending_jobs cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# check every 120 min the pending jobs
+45 */2 * * * $HOME/bin/otrs.PendingJobs.pl &gt;&gt; /dev/null
+# --
+# cron/postmaster - postmaster cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# check daily the spool directory of OTRS
+#10 0 * * * * test -e /etc/init.d/otrs &amp; /etc/init.d/otrs cleanup &gt;&gt; /dev/null; test -e /etc/rc.d/init.d/otrs &amp;&amp; /etc/rc.d/init.d/otrs cleanup &gt;&gt; /dev/null
+10 0 * * * $HOME/bin/otrs.CleanUp.pl &gt;&gt; /dev/null
+# --
+# cron/postmaster_mailbox - postmaster_mailbox cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# fetch emails every 10 minutes
+*/10 * * * * $HOME/bin/otrs.PostMasterMailbox.pl &gt;&gt; /dev/null
+# --
+# cron/rebuild_ticket_index - rebuild ticket index for OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# just every day
+01 01 * * * $HOME/bin/otrs.RebuildTicketIndex.pl &gt;&gt; /dev/null
+
+# --
+# cron/session - delete old session ids of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# delete every 120 minutes old/idle session ids
+55 */2 * * * $HOME/bin/otrs.DeleteSessionIDs.pl --expired &gt;&gt; /dev/null
+
+# --
+# cron/unlock - unlock old locked ticket of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# unlock every hour old locked tickets
+35 * * * * $HOME/bin/otrs.UnlockTickets.pl --timeout &gt;&gt; /dev/null
+
+linux:/opt/otrs/bin#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий: Файл Crontab.</em></span>
+</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="installation.html">Пред.</a> </td><td width="20%" align="center"><a accesskey="u" href="installation.html">Уровень выше</a></td><td width="40%" align="right"> <a accesskey="n" href="web-installer.html">След.</a></td></tr><tr><td width="40%" align="left" valign="top">Глава 2. Установка </td><td width="20%" align="center"><a accesskey="h" href="index.html">Начало</a></td><td width="40%" align="right" valign="top"> Самый простой способ - использование веб-инсталлятора (работает только с
+<span class="application">MySQL</span>)</td></tr></table></div></body></html>
