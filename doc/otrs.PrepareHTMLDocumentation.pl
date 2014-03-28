@@ -50,6 +50,12 @@ my @NavigationConfig = (
     },
 );
 
+my %Languages = (
+    en => 'English',
+    de => 'Deutsch',
+    ru => 'Русский',
+);
+
 sub Run {
 
     PrintUsage();
@@ -105,16 +111,17 @@ sub ProcessHTMLFile {
     my $Navigation = GenerateNavigation();
 
     my $FinalContent =<<EOF;
-<!doctype html>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+       "http://www.w3.org/TR/html4/loose.dtd">
 <html lang="de">
 <head>
-    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>$Title</title>
-    <meta name="description" content="$Description" />
-    <meta name="author" content="libertello GmbH" />
+    <meta name="description" content="$Description">
+    <meta name="author" content="OTRS Group">
     <meta http-equiv="X-UA-Compatible" content="edge">
-    <link rel="stylesheet" href="../../../../doku.reset.css"/>
-    <link rel="stylesheet" href="../../../../doku.design.css"/>
+    <link rel="stylesheet" href="../../../../doku.reset.css">
+    <link rel="stylesheet" href="../../../../doku.design.css">
 </head>
 <body>
 <div class="doconline">
@@ -146,8 +153,9 @@ $OriginalBodyContent
         </div>
     </div>
 </div>
-<script src="../../../../doku.js"></script>
+<script type="text/javascript" src="../../../../doku.js"></script>
 </body>
+</html>
 EOF
 
     return 1 if $FinalContent eq $HTMLContent;
@@ -194,7 +202,7 @@ sub GenerateNavigation {
             $Navigation .= '<li><a href="#">' . $Version->{Name} . '</a><ul>';
 
             for my $Language (@{ $Version->{Languages} || []}) {
-                $Navigation .= '<li><a href="#">' . $Language . '</a><ul>';
+                $Navigation .= '<li><a href="#">' . $Languages{$Language} . '</a><ul>';
                 $Navigation .= qq{<li><a href="../../../../$Category->{Path}/$Version->{Version}/$Language/html/index.html">HTML</a></li>};
                 $Navigation .= qq{<li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-$Category->{Path}/$Version->{Version}/$Language/pdf/otrs_$Category->{Path}_book.pdf">PDF</a></li>};
                 $Navigation .= '</ul></li>';
