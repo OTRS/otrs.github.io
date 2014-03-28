@@ -38,11 +38,12 @@ EOF
 
 my @NavigationConfig = (
     {
-        Name => "Admin Manual",
+        Name => 'Admin Manual',
+        Path => 'admin',
         Versions => [
             {
-                Version => "3.3",
-                Name    => "OTRS 3.3",
+                Version => '3.3',
+                Name    => 'OTRS 3.3',
                 Languages => ['en'],
             },
         ],
@@ -112,6 +113,7 @@ sub ProcessHTMLFile {
     <meta name="description" content="$Description" />
     <meta name="author" content="libertello GmbH" />
     <meta http-equiv="X-UA-Compatible" content="edge">
+    <link rel="stylesheet" href="../../../../doku.reset.css"/>
     <link rel="stylesheet" href="../../../../doku.design.css"/>
 </head>
 <body>
@@ -199,7 +201,7 @@ sub GenerateNavigation {
             $Navigation .= '<li><a href="#">' . $Version->{Name} . '</a><ul>';
 
             for my $Language (@{ $Version->{Languages} || []}) {
-                $Navigation .= '<li><a href="#">' . $Language . '</a>';
+                $Navigation .= '<li><a href="../../../../">' . $Language . '</a>';
 
                 $Navigation .= '<ul>';
                 $Navigation .= '<li><a href="#">HTML</a></li>';
