@@ -121,6 +121,7 @@ sub ProcessHTMLFile {
     <meta name="author" content="OTRS Group">
     <meta http-equiv="X-UA-Compatible" content="edge">
     <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+    <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="../../../../doku.reset.css">
     <link rel="stylesheet" href="../../../../doku.design.css">
 </head>
