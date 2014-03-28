@@ -146,7 +146,7 @@ $OriginalBodyContent
         </div>
     </div>
 </div>
-<!-- <script src="../../../../doku.js"></script> -->
+<script src="../../../../doku.js"></script>
 </body>
 EOF
 
@@ -184,13 +184,6 @@ sub WriteFile {
 }
 
 sub GenerateNavigation {
-    # my $Old = '<ul id="marginalia">
-    #   <li class="active"><a class="active" href="">Admin Manual (HTML)</a>
-    #     <ul>
-    #         <li class="active"><a href="/3.3/en/html/">OTRS 3.3 (en)</a></li>
-    #         <li><a href="/3.2/en/html/">OTRS 3.2 (en)</a></li>
-    #         <li><a href="/3.1/en/html/">OTRS 3.1 (en)</a></li><li><a href="/3.0/en/html/">OTRS 3.0 (en)</a></li><li><a href="/3.0/de/html/">OTRS 3.0 (de)</a></li><li><a href="/3.0/ru/html/">OTRS 3.0 (ru)</a></li></ul></li><li class="active"><a href="">Admin Manual (PDF)</a><ul><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-admin/3.3/en/pdf/otrs_admin_book.pdf">OTRS 3.3 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-admin/3.2/en/pdf/otrs_admin_book.pdf">OTRS 3.2 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-admin/3.1/en/pdf/otrs_admin_book.pdf">OTRS 3.1 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-admin/3.0/en/pdf/otrs_admin_book.pdf">OTRS 3.0 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-admin/3.0/de/pdf/otrs_admin_book.pdf">OTRS 3.0 (de)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-admin/3.0/ru/pdf/otrs_admin_book.pdf">OTRS 3.0 (ru)</a></li></ul></li><li class="active"><a href="">ITSM Manual (HTML)</a><ul><li><a href="/itsm/3.3/en/html/">OTRS::ITSM 3.3 (en)</a></li><li><a href="/itsm/3.3/de/html/">OTRS::ITSM 3.3 (de)</a></li><li><a href="/itsm/3.2/en/html/">OTRS::ITSM 3.2 (en)</a></li><li><a href="/itsm/3.2/de/html/">OTRS::ITSM 3.2 (de)</a></li><li><a href="/itsm/2.0/en/html/">OTRS::ITSM 2.0 (en)</a></li><li><a href="/itsm/2.0/de/html/">OTRS::ITSM 2.0 (de)</a></li></ul></li><li class="active"><a href="">ITSM Manual (PDF)</a><ul><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-itsm/3.3/en/pdf/otrs_itsm_book.pdf">OTRS::ITSM 3.3 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-itsm/3.3/en/pdf/otrs_itsm_book.pdf">OTRS::ITSM 3.3 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-itsm/3.2/en/pdf/otrs_itsm_book.pdf">OTRS::ITSM 3.2 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-itsm/3.2/de/pdf/otrs_itsm_book.pdf">OTRS::ITSM 3.2 (de)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-itsm/2.0/en/pdf/otrs_itsm_book.pdf">OTRS::ITSM 2.0 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-itsm/2.0/de/pdf/otrs_itsm_book.pdf">OTRS::ITSM 2.0 (de)</a></li></ul></li><li class="active"><a href="">Developer Manual (HTML)</a><ul><li><a href="/developer/3.3/en/html/">OTRS 3.3 (en)</a></li><li><a href="/developer/3.2/en/html/">OTRS 3.2 (en)</a></li><li><a href="/developer/3.1/en/html/">OTRS 3.1 (en)</a></li><li><a href="/developer/3.0/en/html/">OTRS 3.0 (en)</a></li></ul></li><li class="active"><a href="">Developer Manual (PDF)</a><ul><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-developer/3.3/en/pdf/otrs_developer_book.pdf">OTRS 3.3 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-developer/3.2/en/pdf/otrs_developer_book.pdf">OTRS 3.2 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-developer/3.1/en/pdf/otrs_developer_book.pdf">OTRS 3.1 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-developer/3.0/en/pdf/otrs_developer_book.pdf">OTRS 3.0 (en)</a></li></ul></li><li class="active"><a href="">Appliance Manual (HTML)</a><ul><li><a href="/appliance/3.3/en/html/">OTRS 3.3 (en)</a></li><li><a href="/appliance/3.3/de/html/">OTRS 3.3 (de)</a></li></ul></li><li class="active"><a href="">Appliance Manual (PDF)</a><ul><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-appliance/3.3/en/pdf/otrs_appliance_book.pdf">OTRS 3.3 (en)</a></li><li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-appliance/3.3/de/pdf/otrs_appliance_book.pdf">OTRS 3.3 (de)</a></li></ul></li><li class="active"><a href="">API Reference (HTML)</a><ul><li><a href="http://dev.otrs.org/">OTRS API (en)</a></li></ul></li>
-    #     </ul>';
 
     my $Navigation = '<ul id="marginalia">';
     for my $Category (@NavigationConfig) {
@@ -201,13 +194,10 @@ sub GenerateNavigation {
             $Navigation .= '<li><a href="#">' . $Version->{Name} . '</a><ul>';
 
             for my $Language (@{ $Version->{Languages} || []}) {
-                $Navigation .= '<li><a href="../../../../">' . $Language . '</a>';
-
-                $Navigation .= '<ul>';
-                $Navigation .= '<li><a href="#">HTML</a></li>';
-                $Navigation .= '<li><a href="#">PDF</a></li>';
-                $Navigation .= '</ul>';
-                $Navigation .= '</li>';
+                $Navigation .= '<li><a href="#">' . $Language . '</a><ul>';
+                $Navigation .= qq{<li><a href="../../../../$Category->{Path}/$Version->{Version}/$Language/html/index.html">HTML</a></li>};
+                $Navigation .= qq{<li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-$Category->{Path}/$Version->{Version}/$Language/pdf/otrs_$Category->{Path}_book.pdf">PDF</a></li>};
+                $Navigation .= '</ul></li>';
             }
 
             $Navigation .= '</ul></li>';
