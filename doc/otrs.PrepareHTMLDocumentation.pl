@@ -120,6 +120,7 @@ sub ProcessHTMLFile {
     <meta name="description" content="$Description">
     <meta name="author" content="OTRS Group">
     <meta http-equiv="X-UA-Compatible" content="edge">
+    <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
     <link rel="stylesheet" href="../../../../doku.reset.css">
     <link rel="stylesheet" href="../../../../doku.design.css">
 </head>
