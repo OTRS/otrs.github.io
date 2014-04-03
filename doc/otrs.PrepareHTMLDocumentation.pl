@@ -91,75 +91,103 @@ sub ProcessHTMLFile {
         die "Need File.";
     }
 
+    my $SubPath   = substr($Param{File}, length($RealBin));
+    my $Sublevels = scalar split(m{/}, $SubPath) - 2;
+    my $PathToJS  = join('/', map { '..' } (1 .. $Sublevels));
+
     my $HTMLContent = ReadFile(File => $Param{File});
 
-    # Get original title, description and raw body content
-    my ($Title) = $HTMLContent =~ m{<title>(.*)</title>}xms;
-    $Title ||= '';
+    my $FinalContent = $HTMLContent;
 
-    my ($Description) = $HTMLContent =~ m{<meta\s+name="description"\scontent="(.*?)"}xms;
-    $Description ||= '';
+    my $HTMLInject =<<"EOF";
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="$PathToJS/documentation.reset.css">
+<link rel="stylesheet" href="$PathToJS/documentation.design.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="$PathToJS/documentation.js"></script>
+<!-- otrs.github.io -->
+EOF
 
-    # Original body might be in a already replaced file, marked with comments
-    my ($OriginalBodyContent) =
-        $HTMLContent =~ m{<!--[ ]Start[ ]OriginalBodyContent[ ]-->\n(.*?)\n<!--[ ]End[ ]OriginalBodyContent[ ]-->}xms;
-    if (!$OriginalBodyContent) {
-        # Unprocessed file, use real body
-        ($OriginalBodyContent) = $HTMLContent =~ m{<body[^>]*>(.*?)</body>}xms;
+    if ($FinalContent !~ m{<!--[ ]otrs.github.io[ ]-->}smx) {
+        # original file, inject HTML in header
+        # remove pre-existing style tags first
+        $FinalContent =~ s{<link\s+rel="stylesheet"[^>]+>}{}smxg;
+        $FinalContent =~ s{<head>}{<head>\n$HTMLInject}smx;
+    }
+    else {
+        # Already updated file, update injected content
+        $FinalContent =~ s{<!--[ ]otrs.github.io[ ]-->.*<!--[ ]otrs.github.io[ ]-->\n}{$HTMLInject}smx;
     }
 
-    my $Navigation = GenerateNavigation();
+#     # Get original title, description and raw body content
+#     my ($Title) = $HTMLContent =~ m{<title>(.*)</title>}xms;
+#     $Title ||= '';
 
-    my $FinalContent =<<EOF;
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
-       "http://www.w3.org/TR/html4/loose.dtd">
-<html lang="de">
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>$Title</title>
-    <meta name="description" content="$Description">
-    <meta name="author" content="OTRS Group">
-    <meta http-equiv="X-UA-Compatible" content="edge">
-    <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
-    <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" href="../../../../doku.reset.css">
-    <link rel="stylesheet" href="../../../../doku.design.css">
-</head>
-<body>
-<div class="doconline">
-    <div id="wrapper">
-        <a id="logo" title="OTRS Documentation" href="http://doc.otrs.org/">Documentation</a>
-        <div id="content">
-            <div id="marginalia_wrapper">
-                $Navigation
-                <form action="http://www.google.com/cse" id="search">
-                    <div>
-                        <input type="hidden" value="016655303084217971695:zg-eih1lc60" name="cx">
-                        <input type="hidden" value="UTF-8" name="ie">
-                        <input type="text" name="q" value="" class="searchinput">
-                        <input type="submit" name="sa" value="Search" class="searchsubmit">
-                    </div>
-                </form>
-            </div>
-            <div id="doc">
-<!-- Start OriginalBodyContent -->
-$OriginalBodyContent
-<!-- End OriginalBodyContent -->
-            </div>
-            <div id="footer">
-                <p class="copyright">
-            Copyright &copy;  2001-2012 OTRS Team, All Rights Reserved.
-            - <a href="http://www.otrs.com/en/corporate-navigation/imprint/">Imprint</a>
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
-<script type="text/javascript" src="../../../../doku.js"></script>
-</body>
-</html>
-EOF
+#     my ($Description) = $HTMLContent =~ m{<meta\s+name="description"\scontent="(.*?)"}xms;
+#     $Description ||= '';
+
+#     # Original body might be in a already replaced file, marked with comments
+#     my ($OriginalBodyContent) =
+#         $HTMLContent =~ m{<!--[ ]Start[ ]OriginalBodyContent[ ]-->\n(.*?)\n<!--[ ]End[ ]OriginalBodyContent[ ]-->}xms;
+#     if (!$OriginalBodyContent) {
+#         # Unprocessed file, use real body
+#         ($OriginalBodyContent) = $HTMLContent =~ m{<body[^>]*>(.*?)</body>}xms;
+#     }
+
+#     my $Navigation = GenerateNavigation();
+
+#     my $FinalContent =<<EOF;
+# <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+#        "http://www.w3.org/TR/html4/loose.dtd">
+# <html lang="de">
+# <head>
+#     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+#     <title>$Title</title>
+#     <meta name="description" content="$Description">
+#     <meta name="author" content="OTRS Group">
+#     <meta http-equiv="X-UA-Compatible" content="edge">
+#     <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+#     <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+#     <link rel="stylesheet" href="../../../../doku.reset.css">
+#     <link rel="stylesheet" href="../../../../doku.design.css">
+# </head>
+# <body>
+# <div class="doconline">
+#     <div id="wrapper">
+#         <a id="logo" title="OTRS Documentation" href="http://doc.otrs.org/">Documentation</a>
+#         <div id="content">
+#             <div id="marginalia_wrapper">
+#                 $Navigation
+#                 <form action="http://www.google.com/cse" id="search">
+#                     <div>
+#                         <input type="hidden" value="016655303084217971695:zg-eih1lc60" name="cx">
+#                         <input type="hidden" value="UTF-8" name="ie">
+#                         <input type="text" name="q" value="" class="searchinput">
+#                         <input type="submit" name="sa" value="Search" class="searchsubmit">
+#                     </div>
+#                 </form>
+#             </div>
+#             <div id="doc">
+# <!-- Start OriginalBodyContent -->
+# $OriginalBodyContent
+# <!-- End OriginalBodyContent -->
+#             </div>
+#             <div id="footer">
+#                 <p class="copyright">
+#             Copyright &copy;  2001-2012 OTRS Team, All Rights Reserved.
+#             - <a href="http://www.otrs.com/en/corporate-navigation/imprint/">Imprint</a>
+#                 </p>
+#             </div>
+#         </div>
+#     </div>
+# </div>
+# <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+# <script type="text/javascript" src="../../../../doku.js"></script>
+# </body>
+# </html>
+# EOF
 
     return 1 if $FinalContent eq $HTMLContent;
 

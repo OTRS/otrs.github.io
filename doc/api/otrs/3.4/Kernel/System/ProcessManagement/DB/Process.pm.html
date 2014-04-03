@@ -1,0 +1,604 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../../../documentation.reset.css">
+<link rel="stylesheet" href="../../../../../../../documentation.design.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::ProcessManagement::DB::Process</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 3.4</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../../index.html">OTRS 3.4</a> &gt; Perl Modules &gt;
+  Kernel-System-ProcessManagement-DB-Process
+</div>
+<div>
+<a href="../../../../src/Kernel/System/ProcessManagement/DB/Process.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+<p>Kernel::System::ProcessManagement::DB::Process.pm</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+<p>Process Management DB Process backend</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create a Process object</p></dd>
+<dd><pre>    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Main;
+    use Kernel::System::Time;
+    use Kernel::System::DB;
+    use Kernel::System::ProcessManagement::DB::Process;
+
+</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
+    my $EncodeObject = Kernel::System::Encode-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $TimeObject = Kernel::System::Time-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $DBObject = Kernel::System::DB-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+        MainObject   =&gt; $MainObject,
+    );
+    my $ProcessObject = Kernel::System::ProcessManagement::DB::Process-&gt;new(
+        ConfigObject        =&gt; $ConfigObject,
+        EncodeObject        =&gt; $EncodeObject,
+        LogObject           =&gt; $LogObject,
+        MainObject          =&gt; $MainObject,
+        DBObject            =&gt; $DBObject,
+    );
+
+</pre></dd>	<dt>ProcessAdd()</dt>
+		<dd><p>add new Process</p></dd>
+		<dd><p>returns the id of the created process if success or undef otherwise</p></dd>
+<dd><pre>    my $ID = $ProcessObject-&gt;ProcessAdd(
+        EntityID       =&gt; 'P1'             # mandatory, exportable unique identifier
+        Name           =&gt; 'NameOfProcess', # mandatory
+        StateEntityID  =&gt; 'S1',
+        Layout         =&gt; $LayoutHashRef,  # mandatory, diagram objects positions to be stored in
+                                           #   YAML format
+        Config         =&gt; $ConfigHashRef,  # mandatory, process configuration to be stored in YAML
+                                           #   format
+        UserID         =&gt; 123,             # mandatory
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $ID = 567;
+
+</pre></dd>	<dt>ProcessDelete()</dt>
+		<dd><p>delete a Process</p></dd>
+		<dd><p>returns 1 if success or undef otherwise</p></dd>
+<dd><pre>    my $Success = $ProcessObject-&gt;ProcessDelete(
+        ID      =&gt; 123,
+        UserID  =&gt; 123,
+    );
+
+</pre></dd>	<dt>ProcessGet()</dt>
+		<dd><p>get Process attributes</p></dd>
+<dd><pre>    my $Process = $ProcessObject-&gt;ProcessGet(
+        ID              =&gt; 123,          # ID or EntityID is needed
+        EntityID        =&gt; 'P1',
+        ActivityNames   =&gt; 1,            # default 0, 1 || 0, if 0 returns an Activities array
+                                         #     with the activity entity IDs, if 1 returns an
+                                         #     Activities hash with the activity entity IDs as
+                                         #     keys and Activity Names as values
+        TransitionNames =&gt; 1,            # default 0, 1 || 0, if 0 returns an Transitions array
+                                         #     with the transition entity IDs, if 1 returns an
+                                         #     Transitions hash with the transition entity IDs as
+                                         #     keys and Transition Names as values
+        TransitionActionNames =&gt; 1,      # default 0, 1 || 0, if 0 returns an TransitionActions array
+                                         #     with the TransitionAction entity IDs, if 1 returns an
+                                         #     TransitionAction hash with the TransitionAction entity IDs as
+                                         #     keys and TransitionAction Names as values
+        UserID          =&gt; 123,          # mandatory
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $Process = {
+        ID            =&gt; 123,
+        EntityID      =&gt; 'P1',
+        Name          =&gt; 'some name',
+        StateEntityID =&gt; 'S1',
+        State         =&gt; 'Active',
+        Layout        =&gt; $LayoutHashRef,
+        Config        =&gt; $ConfigHashRef,
+        Activities    =&gt; ['A1','A2','A3'],
+        Activities    =&gt; ['T1','T2','T3'],
+        CreateTime    =&gt; '2012-07-04 15:08:00',
+        ChangeTime    =&gt; '2012-07-04 15:08:00',
+    };
+
+</pre></dd><dd><pre>    $Process = {
+        ID            =&gt; 123,
+        EntityID      =&gt; 'P1',
+        Name          =&gt; 'some name',
+        StateEntityID =&gt; 'S1',
+        State         =&gt; 'Active',
+        Layout        =&gt; $LayoutHashRef,
+        Config        =&gt; $ConfigHashRef,
+        Activities    =&gt; {
+            'A1' =&gt; 'Activity1',
+            'A2' =&gt; 'Activity2',
+            'A3' =&gt; 'Activity3',
+        };
+        Transitions   =&gt; {
+            'T1' =&gt; 'Transition1',
+            'T2' =&gt; 'Transition2',
+            'T3' =&gt; 'Transition3',
+        };
+        TransitionActions =&gt; {
+            'TA1' =&gt; 'TransitionAction1',
+            'TA2' =&gt; 'TransitionAction2',
+            'TA3' =&gt; 'TransitionAction3',
+        };
+        CreateTime =&gt; '2012-07-04 15:08:00',
+        ChangeTime =&gt; '2012-07-04 15:08:00',
+    };
+
+</pre></dd>	<dt>ProcessUpdate()</dt>
+		<dd><p>update Process attributes</p></dd>
+		<dd><p>returns 1 if success or undef otherwise</p></dd>
+<dd><pre>    my $Success = $ProcessObject-&gt;ProcessUpdate(
+        ID            =&gt; 123,             # mandatory
+        EntityID      =&gt; 'P1'             # mandatory, exportable unique identifier
+        Name          =&gt; 'NameOfProcess', # mandatory
+        StateentityID =&gt; 'S1',
+        Layout        =&gt; $LayoutHashRef,  # mandatory, diagram objects positions to be stored in
+                                          #   YAML format
+        Config        =&gt; $ConfigHashRef,  # mandatory, process configuration to be stored in YAML
+                                          #   format
+        UserID        =&gt; 123,             # mandatory
+    );
+
+</pre></dd>	<dt>ProcessList()</dt>
+		<dd><p>get a Process list</p></dd>
+<dd><pre>    my $List = $ProcessObject-&gt;ProcessList(
+        UseEntities     =&gt; 0,                   # default 0, 1 || 0. if 0 the return hash keys are
+                                                #    the process IDs otherwise keys are the
+                                                #    process entity IDs
+        StateEntityIDs  =&gt; ['S1','S2'],         # optional, to filter proceses that match listed
+                                                #    state entity IDs
+        UserID          =&gt; 1,
+    );
+
+</pre></dd><dd><pre>    Returns:
+
+</pre></dd><dd><pre>    $List = {
+        1 =&gt; 'NameOfProcess',
+    }
+
+</pre></dd><dd><pre>    or
+
+</pre></dd><dd><pre>    $List = {
+        'P1' =&gt; 'NameOfProcess',
+    }
+=cut
+
+</pre></dd>		<dd><p>sub ProcessList {
+    my ( $Self, %Param ) = @_;</p></dd>
+<dd><pre>    # check needed
+    if ( !$Param{UserID} ) {
+        $Self-&gt;{LogObject}-&gt;Log(
+            Priority =&gt; 'error',
+            Message  =&gt; &quot;Need UserID!&quot;
+        );
+        return;
+    }
+
+</pre></dd><dd><pre>    my $StateEntityIDsStrg;
+    if ( !IsArrayRefWithData( $Param{StateEntityIDs} ) ) {
+        $StateEntityIDsStrg = 'ALL';
+    }
+    else {
+        $StateEntityIDsStrg = join ',', @{ $Param{StateEntityIDs} };
+    }
+
+</pre></dd><dd><pre>    # check cache
+    my $UseEntities = 0;
+    if ( defined $Param{UseEntities} &amp;&amp; $Param{UseEntities} ) {
+        $UseEntities = 1;
+    }
+
+</pre></dd><dd><pre>    my $CacheKey = 'ProcessList::UseEntities::' . $UseEntities . '::StateEntityIDs::'
+        . $StateEntityIDsStrg;
+    my $Cache = $Self-&gt;{CacheObject}-&gt;Get(
+        Type =&gt; 'ProcessManagement_Process',
+        Key  =&gt; $CacheKey,
+    );
+    return $Cache if ref $Cache;
+
+</pre></dd><dd><pre>    my $SQL = '
+            SELECT id, entity_id, name
+            FROM pm_process ';
+    if ( $StateEntityIDsStrg ne 'ALL' ) {
+
+</pre></dd><dd><pre>        my $StateEntityIDsStrgDB =
+            join ',', map &quot;'&quot; . $Self-&gt;{DBObject}-&gt;Quote($_) . &quot;'&quot;, @{ $Param{StateEntityIDs} };
+
+</pre></dd><dd><pre>        $SQL .= &quot;WHERE state_entity_id IN ($StateEntityIDsStrgDB)&quot;;
+    }
+
+</pre></dd><dd><pre>    return if !$Self-&gt;{DBObject}-&gt;Prepare( SQL =&gt; $SQL );
+
+</pre></dd><dd><pre>    my %Data;
+    while ( my @Row = $Self-&gt;{DBObject}-&gt;FetchrowArray() ) {
+        if ( !$UseEntities ) {
+            $Data{ $Row[0] } = $Row[2];
+        }
+        else {
+            $Data{ $Row[1] } = $Row[2];
+        }
+    }
+
+</pre></dd><dd><pre>    # set cache
+    $Self-&gt;{CacheObject}-&gt;Set(
+        Type  =&gt; 'ProcessManagement_Process',
+        Key   =&gt; $CacheKey,
+        Value =&gt; \%Data,
+        TTL   =&gt; $Self-&gt;{CacheTTL},
+    );
+
+</pre></dd><dd><pre>    return \%Data;
+}
+
+</pre></dd>	<dt>ProcessListGet()</dt>
+		<dd><p>get a Process list with all process details</p></dd>
+<dd><pre>    my $List = $ProcessObject-&gt;ProcessListGet(
+        UserID      =&gt; 1,
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $List = [
+        {
+            ID            =&gt; 123,
+            EntityID      =&gt; 'P1',
+            Name          =&gt; 'some name',
+            StateEntityID =&gt; 'S1',
+            State         =&gt; 'Active',
+            Layout        =&gt; $LayoutHashRef,
+            Config        =&gt; $ConfigHashRef,
+            Activities    =&gt; ['A1','A2','A3'],
+            CreateTime    =&gt; '2012-07-04 15:08:00',
+            ChangeTime    =&gt; '2012-07-04 15:08:00',
+        },
+        {
+            ID            =&gt; 456,
+            EntityID      =&gt; 'P2',
+            Name          =&gt; 'some name',
+            StateEntityID =&gt; 'S1',
+            State         =&gt; 'Active',
+            Layout        =&gt; $LayoutHashRef,
+            Config        =&gt; $ConfigHashRef,
+            Activities    =&gt; ['A3','A4','A5'],
+            CreateTime    =&gt; '2012-07-04 15:10:00',
+            ChangeTime    =&gt; '2012-07-04 15:10:00',
+        },
+    ];
+
+</pre></dd>	<dt>ProcessDump()</dt>
+		<dd><p>gets a complete procesess information dump from the DB including: Process State, Activities,
+ActivityDialogs, Transitions and TransitionActions</p></dd>
+<dd><pre>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
+        ResultType  =&gt; 'SCALAR'                     # 'SCALAR' || 'HASH' || 'FILE'
+        Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatry for ResultType = 'FILE'
+        UserID      =&gt; 1,
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $ProcessDump = '
+        $Self-&gt;{'Process'} = {
+          'P1' =&gt; {
+            'Name' =&gt; 'Process 1',
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'Path' =&gt; {
+              'A1' =&gt; {
+                'T1' =&gt; {
+                  'Action' =&gt; [
+                    'TA1',
+                  ],
+              }
+            },
+            'StartActivity' =&gt; 'A1',
+            'StartActivityDialog' =&gt; 'AD1',
+            'State' =&gt; 'S1'
+          },
+          # ...
+        };
+
+</pre></dd><dd><pre>        $Self-&gt;{'Process::State'} = {
+          'S1' =&gt; 'Active',
+          'S2' =&gt; 'Inactive',
+          'S3' =&gt; 'FadeAway'
+        };
+
+</pre></dd><dd><pre>        $Self-&gt;{'Process::Activity'} = {
+          'A1' =&gt; {
+            'Name' =&gt; 'Activity 1'
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'ActivityDialog' =&gt; {
+              '1' =&gt; 'AD1',
+              }
+            },
+          },
+          # ...
+        };
+
+</pre></dd><dd><pre>        $Self-&gt;{'Process::ActivityDialog'} = {
+          'AD1' =&gt; {
+            'Name' =&gt; 'Activity Dialog 1',
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'DescriptionLong' =&gt; 'Longer description',
+            'DescriptionShort' =&gt; 'Short description',
+            'FieldOrder' =&gt; [
+              'StateID',
+              'DynamicField_Marke',
+            ],
+            'Fields' =&gt; {
+              'StateID' =&gt; {
+                'DefaultValue' =&gt; '1',
+                'DescriptionLong' =&gt; 'Longer description',
+                'DescriptionShort' =&gt; 'Short description',
+                'Display' =&gt; '0'
+              },
+              'DynamicField_Marke' =&gt; {
+                'DescriptionLong' =&gt; 'Longer description',
+                'DescriptionShort' =&gt; 'Short description',
+                'Display' =&gt; '2'
+              },
+            },
+            #...
+        };
+
+</pre></dd><dd><pre>        $Self-&gt;{'Process::Transition'} = {
+          'T1' =&gt; {
+            'Name' =&gt; 'Transition 1'
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'Condition' =&gt; {
+              'Type' =&gt; 'and',
+              'Cond1' =&gt; {
+                'Fields' =&gt; {
+                  'DynamicField_Marke' =&gt; {
+                    'Match' =&gt; 'Teststring',
+                    'Type' =&gt; 'String',
+                  },
+                },
+                'Type' =&gt; 'and',
+              },
+            },
+          },
+          # ...
+        };
+
+</pre></dd><dd><pre>        $Self-&gt;{'Process::Action'} = {
+          'TA1' =&gt; {
+            'Name' =&gt; 'Queue Move',
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'Module' =&gt; 'Kernel::System::Process::Transition::Action::QueueMove',
+            'Config' =&gt; {
+              'NewOwner' =&gt; 'root@localhost',
+              'TargetQueue' =&gt; 'Raw',
+            },
+          },
+          # ...
+        };
+     ';
+
+</pre></dd><dd><pre>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
+        ResultType  =&gt; 'HASH'                       # 'SCALAR' || 'HASH' || 'FILE'
+        Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatry for ResultType = 'FILE'
+        UserID      =&gt; 1,
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $ProcessDump = {
+        Process =&gt; {
+          'P1' =&gt; {
+            'Name' =&gt; 'Process 1',
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'Path' =&gt; {
+              'A1' =&gt; {
+                'T1' =&gt; {
+                  'Action' =&gt; [
+                    'TA1',
+                  ],
+              }
+            },
+            'StartActivity' =&gt; 'A1',
+            'StartActivityDialog' =&gt; 'AD1',
+            'State' =&gt; 'S1'
+          },
+          # ...
+        };
+
+</pre></dd><dd><pre>        State =&gt; {
+          'S1' =&gt; 'Active',
+          'S2' =&gt; 'Inactive',
+          'S3' =&gt; 'FadeAway'
+        };
+
+</pre></dd><dd><pre>        Activity =&gt; {
+          'A1' =&gt; {
+            'Name' =&gt; 'Activity 1'
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'ActivityDialog' =&gt; {
+              '1' =&gt; 'AD1',
+              }
+            },
+          },
+          # ...
+        };
+
+</pre></dd><dd><pre>        ActivityDialog =&gt; {
+          'AD1' =&gt; {
+            'Name' =&gt; 'Activity Dialog 1',
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'DescriptionLong' =&gt; 'Longer description',
+            'DescriptionShort' =&gt; 'Short description',
+            'FieldOrder' =&gt; [
+              'StateID',
+              'DynamicField_Marke',
+            ],
+            'Fields' =&gt; {
+              'StateID' =&gt; {
+                'DefaultValue' =&gt; '1',
+                'DescriptionLong' =&gt; 'Longer description',
+                'DescriptionShort' =&gt; 'Short description',
+                'Display' =&gt; '0'
+              },
+              'DynamicField_Marke' =&gt; {
+                'DescriptionLong' =&gt; 'Longer description',
+                'DescriptionShort' =&gt; 'Short description',
+                'Display' =&gt; '2'
+              },
+            },
+            #...
+        };
+
+</pre></dd><dd><pre>        Transition =&gt; {
+          'T1' =&gt; {
+            'Name' =&gt; 'Transition 1'
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'Condition' =&gt; {
+              'Type' =&gt; 'and',
+              'Cond1' =&gt; {
+                'Fields' =&gt; {
+                  'DynamicField_Marke' =&gt; {
+                    'Match' =&gt; 'Teststring',
+                    'Type' =&gt; 'String',
+                  },
+                },
+                'Type' =&gt; 'and',
+              },
+            },
+          },
+          # ...
+        };
+
+</pre></dd><dd><pre>        TransitionAction =&gt; {
+          'TA1' =&gt; {
+            'Name' =&gt; 'Queue Move',
+            'CreateTime' =&gt; '2012-07-21 08:11:33',
+            'ChangeTime' =&gt; '2012-07-21 08:11:33',
+            'Module' =&gt; 'Kernel::System::Process::Transition::Action::QueueMove',
+            'Config' =&gt; {
+              'NewOwner' =&gt; 'root@localhost',
+              'TargetQueue' =&gt; 'Raw',
+            },
+          },
+          # ...
+        };
+    }
+
+</pre></dd><dd><pre>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
+        ResultType  =&gt; 'Location'                     # 'SCALAR' || 'HASH' || 'FILE'
+        Location    =&gt; '/opt/otrs/var/myfile.txt'     # mandatry for ResultType = 'FILE'
+        UserID      =&gt; 1,
+    );
+
+</pre></dd>		<dd><p>Returns:
+    $ProcessDump = '/opt/otrs/var/myfile.txt';      # or undef if can't write the file</p></dd>
+	<dt>ProcessImport()</dt>
+		<dd><p>import a process YAML file/content</p></dd>
+<dd><pre>    my %ProcessImport = $ProcessObject-&gt;ProcessImport(
+        Content                   =&gt; $YAMLContent, # mandatory, YAML format
+        OverwriteExistingEntities =&gt; 0,            # 0 || 1
+        UserID                    =&gt; 1,            # mandatory
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    %ProcessImport = (
+        Message =&gt; 'The Mesage to show.', # error or success message
+        Comment =&gt; 'Any comment',         # optional
+        Success =&gt; 1,                     # 1 if success or undef otherwise
+    );
+
+</pre></dd></dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

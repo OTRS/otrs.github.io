@@ -1,0 +1,368 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.reset.css">
+<link rel="stylesheet" href="../../../../../documentation.design.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::Group</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 3.4</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 3.4</a> &gt; Perl Modules &gt;
+  Kernel-System-Group
+</div>
+<div>
+<a href="../../src/Kernel/System/Group.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::Group - group and roles lib</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>All group and roles functions. E. g. to add groups or to get a member list of a group.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $GroupObject = $Kernel::OM-&gt;Get('GroupObject');
+
+</pre></dd>	<dt>GroupLookup()</dt>
+		<dd><p>get id or name for group</p></dd>
+<dd><pre>    my $Group = $GroupObject-&gt;GroupLookup( GroupID =&gt; $GroupID );
+
+</pre></dd><dd><pre>    my $GroupID = $GroupObject-&gt;GroupLookup( Group =&gt; $Group );
+
+</pre></dd>	<dt>GroupAdd()</dt>
+		<dd><p>to add a group</p></dd>
+<dd><pre>    my $ID = $GroupObject-&gt;GroupAdd(
+        Name    =&gt; 'example-group',
+        Comment =&gt; 'comment describing the group',   # optional
+        ValidID =&gt; 1,
+        UserID  =&gt; 123,
+    );
+
+</pre></dd>	<dt>GroupGet()</dt>
+		<dd><p>returns a hash with group data</p></dd>
+<dd><pre>    my %GroupData = $GroupObject-&gt;GroupGet( ID =&gt; 2 );
+
+</pre></dd>		<dd><p>This returns something like:</p></dd>
+<dd><pre>    %GroupData = (
+        'Name'       =&gt; 'admin',
+        'ID'         =&gt; 2,
+        'ValidID'    =&gt; '1',
+        'CreateTime' =&gt; '2010-04-07 15:41:15',
+        'ChangeTime' =&gt; '2010-04-07 15:41:15',
+        'Comment'    =&gt; 'Group of all admins.',
+    );
+
+</pre></dd>	<dt>GroupUpdate()</dt>
+		<dd><p>update of a group</p></dd>
+<dd><pre>    my $Success = $GroupObject-&gt;GroupUpdate(
+        ID      =&gt; 123,
+        Name    =&gt; 'example-group',
+        Comment =&gt; 'comment describing the group',   # optional
+        ValidID =&gt; 1,
+        UserID  =&gt; 123,
+    );
+
+</pre></dd>	<dt>GroupList()</dt>
+		<dd><p>returns a hash of all groups</p></dd>
+<dd><pre>    my %Groups = $GroupObject-&gt;GroupList( Valid =&gt; 1 );
+
+</pre></dd>		<dd><p>the result looks like</p></dd>
+<dd><pre>    %Groups = (
+        '1' =&gt; 'users',
+        '2' =&gt; 'admin',
+        '3' =&gt; 'stats',
+        '4' =&gt; 'secret',
+    );
+
+</pre></dd>	<dt>GroupMemberAdd()</dt>
+		<dd><p>to add a member to a group</p></dd>
+<dd><pre>    Permission: ro,move_into,priority,create,rw
+
+</pre></dd><dd><pre>    my $Success = $GroupObject-&gt;GroupMemberAdd(
+        GID =&gt; 12,
+        UID =&gt; 6,
+        Permission =&gt; {
+            ro        =&gt; 1,
+            move_into =&gt; 1,
+            create    =&gt; 1,
+            owner     =&gt; 1,
+            priority  =&gt; 0,
+            rw        =&gt; 0,
+        },
+        UserID =&gt; 123,
+    );
+
+</pre></dd>	<dt>GroupMemberList()</dt>
+		<dd><p>returns a list of users/groups with ro/move_into/create/owner/priority/rw permissions
+based on GroupGroupMemberList() and GroupRoleMemberList().</p></dd>
+<dd><pre>    UserID:  user id
+    GroupID: group id
+
+</pre></dd><dd><pre>    Type: ro|move_into|priority|create|rw
+
+</pre></dd><dd><pre>    Result: HASH -&gt; returns a hash of key =&gt; group id, value =&gt; group name
+            Name -&gt; returns an array of user names
+            ID   -&gt; returns an array of user ids
+
+</pre></dd><dd><pre>    Example (get groups of user):
+
+</pre></dd><dd><pre>    my %Groups = $GroupObject-&gt;GroupMemberList(
+        UserID =&gt; $ID,
+        Type   =&gt; 'move_into',
+        Result =&gt; 'HASH',
+    );
+
+</pre></dd><dd><pre>    Example (get users of group):
+
+</pre></dd><dd><pre>    my %Users = $GroupObject-&gt;GroupMemberList(
+        GroupID =&gt; $ID,
+        Type    =&gt; 'move_into',
+        Result  =&gt; 'HASH',
+    );
+
+</pre></dd><dd><pre>    Attention: The user ids (keys) in the hash returned from this function
+        are correct, however the values do not correspond to the user ids.
+        This does not affect the correct operation of otrs, this is just a
+        note to inform you not to use the values in this hash.
+
+</pre></dd>	<dt>GroupMemberInvolvedList()</dt>
+		<dd><p>returns a list of users/groups with ro/move_into/create/owner/priority/rw permissions</p></dd>
+<dd><pre>    my %Users = $GroupObject-&gt;GroupMemberInvolvedList(
+        UserID =&gt; $ID,
+        Type   =&gt; 'move_into',
+    );
+
+</pre></dd>	<dt>GroupGroupMemberList()</dt>
+		<dd><p>returns a list of users/groups with ro/move_into/create/owner/priority/rw permissions</p></dd>
+<dd><pre>    UserID:   user id
+    GroupID:  group id
+    UserIDs:  user ids (array ref)
+    GroupIDs: group ids (array ref)
+
+</pre></dd><dd><pre>    Type: ro|move_into|priority|create|rw
+
+</pre></dd><dd><pre>    Result: HASH -&gt; returns a hash of key =&gt; group id, value =&gt; group name
+            Name -&gt; returns an array of user names
+            ID   -&gt; returns an array of user ids
+
+</pre></dd><dd><pre>    Example (get groups of user):
+
+</pre></dd><dd><pre>    $GroupObject-&gt;GroupGroupMemberList(
+        UserID =&gt; $ID,
+        Type   =&gt; 'move_into',
+        Result =&gt; 'HASH',
+    );
+
+</pre></dd><dd><pre>    Example (get users of group):
+
+</pre></dd><dd><pre>    $GroupObject-&gt;GroupGroupMemberList(
+        GroupID =&gt; $ID,
+        Type    =&gt; 'move_into',
+        Result  =&gt; 'HASH',
+    );
+
+</pre></dd>	<dt>GroupRoleMemberList()</dt>
+		<dd><p>returns a list of role/groups with ro/move_into/create/owner/priority/rw permissions</p></dd>
+<dd><pre>    RoleID:   role id
+    GroupID:  group id
+    RoleIDs:  role id (array ref)
+    GroupIDs: group id (array ref)
+
+</pre></dd><dd><pre>    Type: ro|move_into|priority|create|rw
+
+</pre></dd><dd><pre>    Result: HASH -&gt; returns a hash of key =&gt; group or role id, value =&gt; group name
+            Name -&gt; returns an array of group names
+            ID   -&gt; returns an array of role or group ids
+
+</pre></dd>		<dd><p>Example: Get the groups for which the Role $ID provides 'move_into' access.</p></dd>
+<dd><pre>    $GroupObject-&gt;GroupRoleMemberList(
+        RoleID =&gt; $ID,
+        Type   =&gt; 'move_into',
+        Result =&gt; 'HASH',
+    );
+
+</pre></dd>		<dd><p>Example: Get the role ids with 'move_into' access to the group $ID.</p></dd>
+		<dd><p>Passing HASH or Name as the wanted result is discouraged. The returned name is
+is a group name, not a role name.</p></dd>
+<dd><pre>    my $GroupObject-&gt;GroupRoleMemberList(
+        GroupID =&gt; $ID,
+        Type   =&gt; 'move_into',
+        Result =&gt; 'ID',
+    );
+
+</pre></dd>	<dt>GroupRoleMemberAdd()</dt>
+		<dd><p>to add a role to a group</p></dd>
+<dd><pre>    Permission: ro,move_into,priority,create,rw
+
+</pre></dd><dd><pre>    $GroupObject-&gt;GroupRoleMemberAdd(
+        GID =&gt; 12,
+        RID =&gt; 6,
+        Permission =&gt; {
+            ro        =&gt; 1,
+            move_into =&gt; 1,
+            create    =&gt; 1,
+            owner     =&gt; 1,
+            priority  =&gt; 0,
+            rw        =&gt; 0,
+        },
+        UserID =&gt; 123,
+    );
+
+</pre></dd>	<dt>GroupUserRoleMemberList()</dt>
+		<dd><p>returns a list of role/user members</p></dd>
+<dd><pre>    RoleID:  role id
+    UserID:  user id
+    RoleIDs: role ids (array ref)
+    UserIDs: user ids (array ref)
+
+</pre></dd><dd><pre>    Result: HASH -&gt; returns a hash of key =&gt; name pairs:
+                     either RoleID =&gt; RoleName or UserID =&gt; UserLogin
+            Name -&gt; returns an array of user names
+            ID   -&gt; returns an array of user ids
+
+</pre></dd><dd><pre>    Example (get roles of user):
+
+</pre></dd><dd><pre>    $GroupObject-&gt;GroupUserRoleMemberList(
+        UserID =&gt; $ID,
+        Result =&gt; 'HASH',
+    );
+
+</pre></dd><dd><pre>    Example (get users of role):
+
+</pre></dd><dd><pre>    $GroupObject-&gt;GroupUserRoleMemberList(
+        RoleID =&gt; $ID,
+        Result =&gt; 'HASH',
+    );
+
+</pre></dd>	<dt>GroupUserRoleMemberAdd()</dt>
+		<dd><p>to add a member to a role</p></dd>
+<dd><pre>    my $Success = $GroupObject-&gt;GroupUserRoleMemberAdd(
+        UID    =&gt; 12,
+        RID    =&gt; 6,
+        Active =&gt; 1,
+        UserID =&gt; 123,
+    );
+
+</pre></dd>	<dt>RoleLookup()</dt>
+		<dd><p>get id or name for role</p></dd>
+<dd><pre>    my $Role = $RoleObject-&gt;RoleLookup( RoleID =&gt; $RoleID );
+
+</pre></dd><dd><pre>    my $RoleID = $RoleObject-&gt;RoleLookup( Role =&gt; $Role );
+
+</pre></dd>	<dt>RoleGet()</dt>
+		<dd><p>returns a hash with role data</p></dd>
+<dd><pre>    my %RoleData = $GroupObject-&gt;RoleGet( ID =&gt; 2 );
+
+</pre></dd>		<dd><p>This returns something like:</p></dd>
+<dd><pre>    %RoleData = (
+        'Name'       =&gt; 'role_helpdesk_agent',
+        'ID'         =&gt; 2,
+        'ValidID'    =&gt; '1',
+        'CreateTime' =&gt; '2010-04-07 15:41:15',
+        'ChangeTime' =&gt; '2010-04-07 15:41:15',
+        'Comment'    =&gt; 'Role for helpdesk people.',
+    );
+
+</pre></dd>	<dt>RoleAdd()</dt>
+		<dd><p>to add a new role</p></dd>
+<dd><pre>    my $RoleID = $GroupObject-&gt;RoleAdd(
+        Name    =&gt; 'example-role',
+        Comment =&gt; 'comment describing the role',   # optional
+        ValidID =&gt; 1,
+        UserID  =&gt; 123,
+    );
+
+</pre></dd>	<dt>RoleUpdate()</dt>
+		<dd><p>update of a role</p></dd>
+<dd><pre>    my $Success = $GroupObject-&gt;RoleUpdate(
+        ID      =&gt; 123,
+        Name    =&gt; 'example-group',
+        Comment =&gt; 'comment describing the role',   # optional
+        ValidID =&gt; 1,
+        UserID  =&gt; 123,
+    );
+
+</pre></dd>	<dt>RoleList()</dt>
+		<dd><p>returns a hash of all roles</p></dd>
+<dd><pre>    my %Roles = $GroupObject-&gt;RoleList( Valid =&gt; 1 );
+
+</pre></dd>		<dd><p>the result looks like</p></dd>
+<dd><pre>    %Roles = (
+        '1' =&gt; 'role_helpdesk_agent',
+        '2' =&gt; 'role_systemsmanagement_agent',
+        '3' =&gt; 'role_otrs_admin',
+        '4' =&gt; 'role_faq_manager',
+    );
+
+</pre></dd>	<dt>_GetTypeString()</dt>
+</dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
