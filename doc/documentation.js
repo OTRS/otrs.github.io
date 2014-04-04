@@ -74,8 +74,20 @@ $(document).ready(function() {
             Path: 'otrs',
             Versions: [
                 {
+                    Version:  '3.1',
+                    Name:     'OTRS 3.1',
+                },
+                {
+                    Version:  '3.2',
+                    Name:     'OTRS 3.2',
+                },
+                {
+                    Version:  '3.3',
+                    Name:     'OTRS 3.3',
+                },
+                {
                     Version:  '3.4',
-                    Name:     'OTRS 3.4',
+                    Name:     'OTRS git',
                 },
             ],
         },
