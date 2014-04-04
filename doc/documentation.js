@@ -114,7 +114,7 @@ $(document).ready(function() {
                 $.each(Category.Versions, function(){
                     var Version = this;
 
-                    Navigation += '<li><a href="#">' + Version.Name + '</a><ul>';
+                    Navigation += '<li><a href="#">' + Version.Name + '</a><ul class="Hidden">';
                     if (Version.Languages.length === 1) {
                         var Language = Version.Languages[0];
                         Navigation += '<li><a href="' + BaseURL + 'manual/' + Category.Path + '/' + Version.Version + '/' + Language + '/html/index.html">HTML</a></li>';
@@ -124,7 +124,7 @@ $(document).ready(function() {
                     else {
                         $.each(Version.Languages, function(){
                             var Language = this;
-                            Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul>';
+                            Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul class="Hidden">';
                             Navigation += '<li><a href="' + BaseURL + 'manual/' + Category.Path + '/' + Version.Version + '/' + Language + '/html/index.html">HTML</a></li>';
                             Navigation += '<li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-' + Category.Path + '/' + Version.Version + '/' + Language + '/pdf/otrs_' + Category.Path + '_book.pdf">PDF</a></li>';
                             Navigation += '</ul></li>';
@@ -181,6 +181,13 @@ $(document).ready(function() {
     $OriginalContent = $('body').children().detach();
     $('body').empty().append($.parseHTML(BasicHTML));
     $('div.doconline > div#content > div#doc').append($OriginalContent);
+
+    $('#marginalia a').bind('click', function() {
+        if ($(this).attr('href') === '#') {
+            $(this).next('ul').toggleClass('Hidden');
+            return false;
+        }
+    });
 
     // Docbook documentation
     if ($('div.navheader').length) {
