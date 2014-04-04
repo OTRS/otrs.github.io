@@ -1,10 +1,62 @@
 "use strict";
 
 $(document).ready(function() {
+    var NavigationConfig, Languages, BasicHTML, $OriginalContent;
 
-    var BasicHTML = '\
+    NavigationConfig = [
+        {
+            Name: 'Admin Manual',
+            Path: 'admin',
+            Versions: [
+                {
+                    Version:  '3.3',
+                    Name:     'OTRS 3.3',
+                    Languages: ['en'],
+                },
+            ],
+        },
+    ];
+
+    Languages = {
+        en: 'English',
+        de: 'Deutsch',
+        ru: 'Русский',
+    };
+
+    function CreateNavigation () {
+
+        var Navigation = '<ul id="marginalia">';
+        $.each(NavigationConfig, function() {
+            var Category = this;
+            Navigation += '<li><a href="#">' + Category.Name + '</a><ul>';
+
+            $.each(Category.Versions, function(){
+                var Version = this;
+                Navigation += '<li><a href="#">' + Version.Name + '</a><ul>';
+
+                $.each(Version.Languages, function(){
+                    var Language = this;
+                    Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul>';
+                    Navigation += '<li><a href="../../../../' + Category.Path + '/' + Version.Version + '/' + Language + '/html/index.html">HTML</a></li>';
+                    Navigation += '<li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-' + Category.Path + '/' + Version.Version + '/' + Language + '/pdf/otrs_' + Category.Path + '_book.pdf">PDF</a></li>';
+                    Navigation += '</ul></li>';
+                });
+
+                Navigation += '</ul></li>';
+            });
+
+            Navigation += '</ul></li>';
+
+        });
+        Navigation += '</ul>';
+
+        return Navigation;
+    }
+
+    BasicHTML = '\
 <div class="doconline">\
     <div id="content">\
+        <div id="marginalia_wrapper">' + CreateNavigation() + '</div>\
         <div id="doc"></div>\
         <div id="footer">\
              <p class="copyright">\
@@ -15,9 +67,9 @@ $(document).ready(function() {
     </div>\
 </div>';
 
-    var $Content = $('body').children().detach();
+    $OriginalContent = $('body').children().detach();
     $('body').empty().append($.parseHTML(BasicHTML));
-    $('div.doconline > div#content > div#doc').append($Content);
+    $('div.doconline > div#content > div#doc').append($OriginalContent);
 
     // Docbook documentation
     if ($('div.navheader').length) {
