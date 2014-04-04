@@ -1,0 +1,172 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::Loader</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 3.1</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 3.1</a> &gt; Perl Modules &gt;
+  Kernel-System-Loader
+</div>
+<div>
+<a href="../../src/Kernel/System/Loader.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+	<li><a href="#VERSION">VERSION</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::Loader - CSS/JavaScript loader backend</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>All valid functions.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create an object</p></dd>
+<dd><pre>    use Kernel::System::Loader;
+    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Main;
+
+</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
+    my $EncodeObject = Kernel::System::Encode-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+    );
+
+</pre></dd><dd><pre>    my $LoaderObject = Kernel::System::Loader-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+        MainObject   =&gt; $MainObject,
+    );
+
+</pre></dd>	<dt>MinifyFiles()</dt>
+		<dd><p>takes a list of files and returns a filename in the target directory
+which holds the minified and concatenated content of the files.
+Uses caching internally.</p></dd>
+<dd><pre>    my $TargetFilename = $LoaderObject-&gt;MinifyFiles(
+        List  =&gt; [
+            $Filename,
+            $Filename2,
+        ],
+        Type                 =&gt; 'CSS',      # CSS | JavaScript
+        TargetDirectory      =&gt; $TargetDirectory,
+        TargetFilenamePrefix =&gt; 'CommonCSS',    # optional, prefix for the target filename
+    );
+
+</pre></dd>	<dt>GetMinifiedFile()</dt>
+		<dd><p>returns the minified contents of a given CSS or JavaScript file.
+Uses caching internally.</p></dd>
+<dd><pre>    my $MinifiedCSS = $LoaderObject-&gt;GetMinifiedFile(
+        Location =&gt; $Filename,
+        Type     =&gt; 'CSS',      # CSS | JavaScript
+    );
+
+</pre></dd>		<dd><p>Warning: this function may cause a die() if there are errors in the file,
+protect against that with eval().</p></dd>
+	<dt>MinifyCSS()</dt>
+		<dd><p>returns a minified version of the given CSS Code</p></dd>
+<dd><pre>    my $MinifiedCSS = $LoaderObject-&gt;MinifyCSS( Code =&gt; $CSS );
+
+</pre></dd>		<dd><p>Warning: this function may cause a die() if there are errors in the file,
+protect against that with eval().</p></dd>
+	<dt>MinifyJavaScript()</dt>
+		<dd><p>returns a minified version of the given JavaScript Code.</p></dd>
+<dd><pre>    my $MinifiedJS = $LoaderObject-&gt;MinifyJavaScript( Code =&gt; $JavaScript );
+
+</pre></dd>		<dd><p>Warning: this function may cause a die() if there are errors in the file,
+protect against that with eval().</p></dd>
+		<dd><p>This function internally uses the CPAN module JavaScript::Minifier.
+As of version 1.05 of that module, there is an issue with regular expressions:</p></dd>
+		<dd><p>This will cause a die:</p></dd>
+<dd><pre>    function test(s) { return /\d{1,2}/.test(s); }
+
+</pre></dd>		<dd><p>A workaround is to enclose the regular expression in parentheses:</p></dd>
+<dd><pre>    function test(s) { return (/\d{1,2}/).test(s); }
+
+</pre></dd>	<dt>CacheDelete()</dt>
+		<dd><p>deletes all the loader cache files.</p></dd>
+		<dd><p>Returns a list of deleted files.</p></dd>
+<dd><pre>    my @DeletedFiles = $LoaderObject-&gt;CacheDelete();
+
+</pre></dd></dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+<h1 id="VERSION">VERSION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>$Revision: 1.18.2.1 $ $Date: 2012-07-01 23:09:45 $</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
