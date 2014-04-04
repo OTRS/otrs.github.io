@@ -1,17 +1,30 @@
 "use strict";
+/*jshint multistr:true */
 
 $(document).ready(function() {
     var NavigationConfig, Languages, BasicHTML, $OriginalContent;
 
     NavigationConfig = [
         {
-            Name: 'Admin Manual',
+            Name: 'OTRS Admin Manual',
+            Type: 'manual',
             Path: 'admin',
             Versions: [
                 {
                     Version:  '3.3',
                     Name:     'OTRS 3.3',
                     Languages: ['en'],
+                },
+            ],
+        },
+        {
+            Name: 'OTRS API Reference',
+            Type: 'api',
+            Path: 'otrs',
+            Versions: [
+                {
+                    Version:  '3.4',
+                    Name:     'OTRS 3.4',
                 },
             ],
         },
@@ -25,25 +38,38 @@ $(document).ready(function() {
 
     function CreateNavigation () {
 
+        var BaseURL = window.location.href;
+        BaseURL = BaseURL.replace(/\/doc\/.*/, '/doc/');
+
         var Navigation = '<ul id="marginalia">';
         $.each(NavigationConfig, function() {
             var Category = this;
             Navigation += '<li><a href="#">' + Category.Name + '</a><ul>';
 
-            $.each(Category.Versions, function(){
-                var Version = this;
-                Navigation += '<li><a href="#">' + Version.Name + '</a><ul>';
+            // Manual
+            if (Category.Type === 'manual') {
+                $.each(Category.Versions, function(){
+                    var Version = this;
+                    Navigation += '<li><a href="#">' + Version.Name + '</a><ul>';
 
-                $.each(Version.Languages, function(){
-                    var Language = this;
-                    Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul>';
-                    Navigation += '<li><a href="../../../../' + Category.Path + '/' + Version.Version + '/' + Language + '/html/index.html">HTML</a></li>';
-                    Navigation += '<li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-' + Category.Path + '/' + Version.Version + '/' + Language + '/pdf/otrs_' + Category.Path + '_book.pdf">PDF</a></li>';
+                    $.each(Version.Languages, function(){
+                        var Language = this;
+                        Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul>';
+                        Navigation += '<li><a href="' + BaseURL + 'manual/' + Category.Path + '/' + Version.Version + '/' + Language + '/html/index.html">HTML</a></li>';
+                        Navigation += '<li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-' + Category.Path + '/' + Version.Version + '/' + Language + '/pdf/otrs_' + Category.Path + '_book.pdf">PDF</a></li>';
+                        Navigation += '</ul></li>';
+                    });
+
                     Navigation += '</ul></li>';
                 });
-
-                Navigation += '</ul></li>';
-            });
+            }
+            // API
+            else {
+                $.each(Category.Versions, function(){
+                    var Version = this;
+                    Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.Version + '/index.html">' + Version.Name + '</a></li>';
+                });
+            }
 
             Navigation += '</ul></li>';
 
