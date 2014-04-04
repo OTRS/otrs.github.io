@@ -18,6 +18,30 @@ $(document).ready(function() {
             ],
         },
         {
+            Name: 'OTRS::ITSM Manual',
+            Type: 'manual',
+            Path: 'itsm',
+            Versions: [
+                {
+                    Version:  '3.3',
+                    Name:     'OTRS::ITSM 3.3',
+                    Languages: ['en'],
+                },
+            ],
+        },
+        {
+            Name: 'OTRS Appliance Manual',
+            Type: 'manual',
+            Path: 'appliance',
+            Versions: [
+                {
+                    Version:  '3.3',
+                    Name:     'OTRS 3.3 Appliance',
+                    Languages: ['en'],
+                },
+            ],
+        },
+        {
             Name: 'OTRS Developer Manual',
             Type: 'manual',
             Path: 'developer',
