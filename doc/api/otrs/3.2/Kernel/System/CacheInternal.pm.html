@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::CacheInternal</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 3.2</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 3.2</a> &gt; Perl Modules &gt;
+  Kernel-System-CacheInternal
+</div>
+<div>
+<a href="../../src/Kernel/System/CacheInternal.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::CacheInternal - cache lib</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>All cache functions for internal cache management.</p>
+
+<p>Notice:
+This module is storing the cache information in memory and also permanently (e. g. on a file system).
+So you need to take care, that there is only one instance of the CacheInternalObject at a
+time, because otherwise the in-memory cache will fail.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create an object</p></dd>
+<dd><pre>    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Main;
+    use Kernel::System::CacheInternal;
+
+</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
+    my $EncodeObject = Kernel::System::Encode-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $CacheInternalObject = Kernel::System::CacheInternal-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        LogObject    =&gt; $LogObject,
+        MainObject   =&gt; $MainObject,
+        EncodeObject =&gt; $EncodeObject,
+        Type         =&gt; 'ObjectName', # only [a-zA-Z0-9_] chars usable
+        TTL          =&gt; 60 * 60 * 24,
+    );
+
+</pre></dd>	<dt>Set()</dt>
+		<dd><p>add a new item to cache</p></dd>
+<dd><pre>    $CacheInternalObject-&gt;Set(
+        Key   =&gt; 'SomeKey',
+        Value =&gt; 'Some Value',
+    );
+
+</pre></dd>	<dt>Get()</dt>
+		<dd><p>return a cached item</p></dd>
+<dd><pre>    my $Value = $CacheInternalObject-&gt;Get(
+        Key  =&gt; 'SomeKey',
+    );
+
+</pre></dd>	<dt>Delete()</dt>
+		<dd><p>delete an item from cache</p></dd>
+<dd><pre>    $CacheInternalObject-&gt;Delete(
+        Key  =&gt; 'SomeKey',
+    );
+
+</pre></dd>	<dt>CleanUp()</dt>
+		<dd><p>delete all cached items</p></dd>
+<dd><pre>    $CacheInternalObject-&gt;CleanUp();
+
+</pre></dd>		<dd><p>If another cache type needs to be cleaned up, you can
+use the parameter 'OtherType'.</p></dd>
+<dd><pre>    $CacheInternalObject-&gt;CleanUp(OtherType =&gt; 'SomeType');
+
+</pre></dd>		<dd><p>This is useful for cleaning up dependent cache entries after
+the modification of objects (for example, cleaning up the group
+cache after modifying agents).</p></dd>
+		<dd><p>NOTE: This 'OtherType'-cleanup only affects permanent caches.
+In-memory-caches in other CacheInternal objects cannot be cleaned
+up presently, therefore a refactoring of the entire caching architecture
+will be neccessary.</p></dd>
+</dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
