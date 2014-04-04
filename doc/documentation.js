@@ -11,9 +11,24 @@ $(document).ready(function() {
             Path: 'admin',
             Versions: [
                 {
+                    Version:  '3.0',
+                    Name:     'OTRS 3.0',
+                    Languages: ['en', 'de', 'ru',],
+                },
+                {
+                    Version:  '3.1',
+                    Name:     'OTRS 3.1',
+                    Languages: ['en',],
+                },
+                {
+                    Version:  '3.2',
+                    Name:     'OTRS 3.2',
+                    Languages: ['en',],
+                },
+                {
                     Version:  '3.3',
                     Name:     'OTRS 3.3',
-                    Languages: ['en'],
+                    Languages: ['en',],
                 },
             ],
         },
@@ -25,7 +40,7 @@ $(document).ready(function() {
                 {
                     Version:  '3.3',
                     Name:     'OTRS::ITSM 3.3',
-                    Languages: ['en'],
+                    Languages: ['en',],
                 },
             ],
         },
@@ -37,7 +52,7 @@ $(document).ready(function() {
                 {
                     Version:  '3.3',
                     Name:     'OTRS 3.3 Appliance',
-                    Languages: ['en'],
+                    Languages: ['en',],
                 },
             ],
         },
@@ -49,7 +64,7 @@ $(document).ready(function() {
                 {
                     Version:  '3.3',
                     Name:     'OTRS 3.3',
-                    Languages: ['en'],
+                    Languages: ['en',],
                 },
             ],
         },
@@ -86,16 +101,23 @@ $(document).ready(function() {
             if (Category.Type === 'manual') {
                 $.each(Category.Versions, function(){
                     var Version = this;
-                    Navigation += '<li><a href="#">' + Version.Name + '</a><ul>';
 
-                    $.each(Version.Languages, function(){
-                        var Language = this;
-                        Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul>';
+                    Navigation += '<li><a href="#">' + Version.Name + '</a><ul>';
+                    if (Version.Languages.length === 1) {
+                        var Language = Version.Languages[0];
                         Navigation += '<li><a href="' + BaseURL + 'manual/' + Category.Path + '/' + Version.Version + '/' + Language + '/html/index.html">HTML</a></li>';
                         Navigation += '<li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-' + Category.Path + '/' + Version.Version + '/' + Language + '/pdf/otrs_' + Category.Path + '_book.pdf">PDF</a></li>';
-                        Navigation += '</ul></li>';
-                    });
 
+                    }
+                    else {
+                        $.each(Version.Languages, function(){
+                            var Language = this;
+                            Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul>';
+                            Navigation += '<li><a href="' + BaseURL + 'manual/' + Category.Path + '/' + Version.Version + '/' + Language + '/html/index.html">HTML</a></li>';
+                            Navigation += '<li><a href="http://ftp.otrs.org/pub/otrs/doc/doc-' + Category.Path + '/' + Version.Version + '/' + Language + '/pdf/otrs_' + Category.Path + '_book.pdf">PDF</a></li>';
+                            Navigation += '</ul></li>';
+                        });
+                    }
                     Navigation += '</ul></li>';
                 });
             }
