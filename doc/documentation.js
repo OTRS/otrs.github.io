@@ -150,6 +150,21 @@ $(document).ready(function() {
     }
 
     BasicHTML = '\
+<div id="Header">\
+    <h1 class="CompanyName">Portal</h1>\
+    <div id="Logo"></div>\
+</div>\
+<div id="Navigation">\
+    <ul>\
+        <li class="" title="View Downloads">\
+            <a href="/otrs/customer.pl?Action=CustomerDownloads" accesskey="y" title="Downloads (y)" >Downloads</a>\
+        </li>\
+    </ul>\
+    <ul class="Individual">\
+        <li class=""><a href="/otrs/customer.pl?Action=CustomerPreferences" title="Persönliche Einstellungen vornehmen">Einstellungen</a></li>\
+        <li class="Last"><a id="LogoutButton" href="/otrs/customer.pl?Action=Logout">Marc Bonsels abmelden</a></li>\
+    </ul>\
+</div>\
 <div class="doconline">\
     <div id="content">\
         <div id="marginalia_wrapper">' + CreateNavigation() + '</div>\
