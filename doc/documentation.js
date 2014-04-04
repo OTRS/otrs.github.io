@@ -18,6 +18,18 @@ $(document).ready(function() {
             ],
         },
         {
+            Name: 'OTRS Developer Manual',
+            Type: 'manual',
+            Path: 'developer',
+            Versions: [
+                {
+                    Version:  '3.3',
+                    Name:     'OTRS 3.3',
+                    Languages: ['en'],
+                },
+            ],
+        },
+        {
             Name: 'OTRS API Reference',
             Type: 'api',
             Path: 'otrs',

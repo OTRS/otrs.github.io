@@ -92,7 +92,7 @@ sub ProcessHTMLFile {
     }
 
     my $SubPath   = substr($Param{File}, length($RealBin));
-    my $Sublevels = scalar split(m{/}, $SubPath) - 2;
+    my $Sublevels = scalar(split(m{/}, $SubPath) - 2);
     my $PathToJS  = join('/', map { '..' } (1 .. $Sublevels));
 
     my $HTMLContent = ReadFile(File => $Param{File});
