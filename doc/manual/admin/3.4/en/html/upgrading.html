@@ -1,0 +1,240 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Upgrading the OTRS Framework</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><link rel="home" href="index.html" title="OTRS 3.4 - Admin Manual"><link rel="up" href="installation.html" title="Chapter 2. Installation"><link rel="prev" href="web-installer.html" title="Using the web installer"><link rel="next" href="upgrade-windows-installer.html" title="Upgrading Windows Installer"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Upgrading the OTRS Framework</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="web-installer.html">Prev</a> </td><th width="60%" align="center">Chapter 2. Installation</th><td width="20%" align="right"> <a accesskey="n" href="upgrade-windows-installer.html">Next</a></td></tr></table><hr></div><div class="section" title="Upgrading the OTRS Framework"><div class="titlepage"><div><div><h2 class="title"><a name="upgrading"></a>Upgrading the OTRS Framework</h2></div></div></div><p>
+    These instructions are for people upgrading OTRS from version <span class="emphasis"><em>3.2</em></span> to <span class="emphasis"><em>3.3</em></span>, and apply both for RPM and source code (tarball) upgrades.
+</p><div class="note" title="Note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+        Please note that OTRS 3.3 requires at least perl version 5.10.0. Make sure before
+        you plan your upgrade that your server runs this version. You can check the version
+        with the command <span class="command"><strong>perl -v</strong></span> on the command line.The only known Linux
+        distribution that uses perl 5.8 and is still supported by its vendor is
+        Red Hat Enterprise Linux (RHEL) 5 and its community supported derivative CentOS 5.
+        If you're on any of these platforms and you plan to upgrade to OTRS 3.3 you should also
+        plan migrating your operating system to a version with a supported perl, such as
+        RHEL 6 or CentOS 6.
+    </p></div><p>
+    If you are running a lower version of OTRS you have to follow the upgrade path
+    to 3.1 first (1.1-&gt;1.2-&gt;1.3-&gt;2.0-&gt;2.1-&gt;2.2-&gt;2.3-&gt;2.4-&gt;3.0-&gt;3.1-&gt;3.2-&gt;3.3 ...)!
+    You need to perform a full upgrade to every version in between, including database
+    changes and the upgrading perl script.
+</p><p>
+    Please note that if you upgrade from OTRS 2.2 or earlier, you must take an extra step;
+    please read <a class="ulink" href="http://bugs.otrs.org/show_bug.cgi?id=6798" target="_top">http://bugs.otrs.org/show_bug.cgi?id=6798</a>.
+</p><p>
+    Within a single minor version you can skip patch level releases if you want to
+    upgrade. For instance you can upgrade directly from OTRS 3.3.1 to version
+    3.3.4. If you need to do such a "patch level upgrade", you should skip steps
+    9 and 13-17.
+</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+            Stop all relevant services.
+        </p><p>
+            e. g. (depends on used services):
+            </p><pre class="screen">
+shell&gt; /etc/init.d/cron stop
+shell&gt; /etc/init.d/postfix stop
+shell&gt; /etc/init.d/apache stop
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            Backup everything below $OTRS_HOME (default: OTRS_HOME=/opt/otrs):
+            </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li><li class="listitem"><p><code class="filename">var/*</code></p></li><li class="listitem"><p><code class="filename">as well as the database</code></p></li></ul></div><p>
+        </p></li><li class="listitem"><p>
+            Make sure that you have backed up everything ;-)
+        </p></li><li class="listitem"><p>
+            Setup new system (optional)
+        </p><p>
+            If possible, try this install on a separate machine for testing first.
+        </p></li><li class="listitem"><p>
+            Install the new release (tar or RPM).
+        </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+                With the tarball:
+            </p><p>
+                </p><pre class="screen">
+shell&gt; cd /opt
+shell&gt; mv otrs otrs-old
+shell&gt; tar -xzf otrs-x.x.x.tar.gz
+shell&gt; mv otrs-x.x.x otrs
+                </pre><p>
+            </p><p>
+                Restore old configuration files
+                </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li></ul></div><p>
+            </p><p>
+                Restore TicketCounter.log
+            </p><p>
+                In order to let OTRS continue with the correct ticket number, restore the <code class="filename">TicketCounter.log</code> to
+                <code class="filename">$OTRS_HOME/var/log/</code> (default: <code class="filename">OTRS_HOME=/opt/otrs</code>). This is especially important if you use incremental ticketnumbers.
+            </p><p>
+                Restore article data
+            </p><p>
+                If you configured OTRS to store article data in the filesystem you have to restore the <code class="filename">article</code> folder to <code class="filename">$OTRS_HOME/var/</code> (default: <code class="filename">OTRS_HOME=/opt/otrs</code>).
+            </p></li><li class="listitem"><p>
+                With the RPM:
+                </p><pre class="screen">
+shell&gt; rpm -Uvh otrs-x.x.x.-01.rpm
+                </pre><p>
+            </p><p>
+                In this case the RPM update automatically restores the old configuration files.
+            </p></li></ul></div></li><li class="listitem"><p>
+            Own themes
+        </p><p>
+            Note: The OTRS themes between 3.2 and 3.3 are NOT compatible, so don't use your old themes!
+        </p><p>
+            Themes are located under $OTRS_HOME/Kernel/Output/HTML/*/*.dtl (default: OTRS_HOME=/opt/otrs).
+        </p><p>
+            Please also note that dtl-Files must be in utf-8 from OTRS 3.3 on.
+        </p></li><li class="listitem"><p>
+            Set file permissions.
+        </p><p>
+            If the tarball is used, execute:
+            </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.SetPermissions.pl
+            </pre><p>
+            with the permissions needed for your system setup.
+        </p></li><li class="listitem"><p>
+                Check needed Perl modules
+            </p><p>
+               Verify that all needed perl modules are installed on your system and install
+               any modules that might be missing.
+               </p><pre class="screen">
+shell&gt; /opt/otrs/bin/otrs.CheckModules.pl
+               </pre><p>
+            </p></li><li class="listitem"><p>
+            Schema update:
+        </p><p>
+             Note: new tables created in the MySQL UPGRADING process will be created with the
+             default table storage engine set in your MySQL server.
+             In MySQL 5.5 the new default type is InnoDB.
+             If existing tables, e.g. "users", have the table storage engine, e.g. MyISAM,
+             then an error will be displayed when creating the foreign key constraints.
+         </p><p>
+            You have two options: (1) you can change the default storage engine of MySQL back to MyISAM
+            so that new tables will have the same engine as the existing tables,
+            or (2) change the existing tables to use InnoDB as storage engine.
+        </p><p>
+            Any problems with regards to the storage engine will be reported by the
+            otrs.CheckDB.pl script, so please run it to check for possible issues.
+        </p><p>
+            </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+
+# MySQL:
+shell&gt; bin/otrs.CheckDB.pl
+shell&gt; cat scripts/DBUpdate-to-3.3.mysql.sql | mysql -p -f -u root otrs
+
+# PostgreSQL 8.2+:
+shell&gt; cat scripts/DBUpdate-to-3.3.postgresql.sql | psql otrs
+
+# PostgreSQL, older versions:
+shell&gt; cat scripts/DBUpdate-to-3.3.postgresql_before_8_2.sql | psql otrs
+            </pre><p>
+        </p><p>
+            Note: If you use PostgreSQL 8.1 or earlier, you need to activate the new legacy driver
+            for these older versions. Do this by adding a new line to your <code class="filename">Kernel/Config.pm</code> like this:
+
+            </p><pre class="screen">
+$Self-&gt;{DatabasePostgresqlBefore82} = 1;
+            </pre><p>
+        </p><p>
+            Run the migration script (as user 'otrs', NOT as root):
+        </p><p>
+            </p><pre class="screen">
+shell&gt; scripts/DBUpdate-to-3.3.pl
+            </pre><p>
+
+            Do not continue the upgrading process if this script does not work properly for you.
+            Otherwise data loss may occur.
+        </p></li><li class="listitem"><p>
+Refresh the configuration and delete caches. Please run (as user 'otrs', NOT as 'root'):
+        </p><p>
+            </p><pre class="screen">
+shell&gt; bin/otrs.RebuildConfig.pl
+shell&gt; bin/otrs.DeleteCache.pl
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            Restart your services.
+        </p><p>
+            e. g. (depends on used services):
+            </p><pre class="screen">
+shell&gt; /etc/init.d/cron start
+shell&gt; /etc/init.d/postfix start
+shell&gt; /etc/init.d/apache start
+            </pre><p>
+
+            Now you can log into your system.
+        </p></li><li class="listitem"><p>Check installed packages</p><p>
+            In the package manager, check if all packages are still marked as
+            correctly installed or if any require reinstallation or even a package upgrade.
+        </p><p>
+            The following packages are automatically uninstalled after the upgrade process (if they where
+            installed before):
+        </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>OTRSPostMasterFilterExtensions</p></li><li class="listitem"><p>OTRSFreeTextFromCustomerUser</p></li><li class="listitem"><p>OTRSExternalTicketNumberRecognition</p></li><li class="listitem"><p>OTRSDashboardQueueOverview</p></li><li class="listitem"><p>OTRSImportantArticles</p></li><li class="listitem"><p>OTRSImportantArticlesITSM</p></li><li class="listitem"><p>OTRSDashboardTicketCalendar</p></li><li class="listitem"><p>OTRSMultiServiceSelect</p></li><li class="listitem"><p>OTRSMultiQueueSelect</p></li><li class="listitem"><p>OTRSDynamicFieldMultiLevelSelection</p></li><li class="listitem"><p>OTRSEventBasedTicketActions</p></li><li class="listitem"><p>OTRSTicketAclEditor</p></li><li class="listitem"><p>OTRSCustomerProcessSelection</p></li><li class="listitem"><p>OTRSACLExtensions</p></li><li class="listitem"><p>OTRSGenericStandardTemplates</p></li><li class="listitem"><p>OTRSExtendedDynamicDateFieldSearch</p></li><li class="listitem"><p>OTRSDashboardTicketOverviewFilters</p></li></ul></div></li><li class="listitem"><p>
+            Check config settings of OTRSFreeTextFromCustomerUser
+        </p><p>
+            Note: This only applies if you used the package OTRSFreeTextFromCustomerUser previously.
+        </p><p>
+            If you used this module previously, you need to reconfigure it.
+            The module is automatically uninstalled by the upgrading script as it is
+            now a part of the OTRS framework.
+        </p><p>
+            If you want to keep using it, please enable the setting
+            "Ticket::EventModulePost###930-DynamicFieldFromCustomerUser" to
+            activate this feature and configure the mapping in the setting
+            "DynamicFieldFromCustomerUser::Mapping".
+        </p></li><li class="listitem"><p>
+            Import your ACLs to the new ACL editor (optional)
+        </p><p>
+            In OTRS 3.3, there is a graphical editor for ACLs in the administration interface. You will need to
+            import your existing ACLs (e.g. in Config.pm or additional files) to the editor by using
+            bin/otrs.ImportACLsFromConfig.pl in order to make them available in the editor. Please make sure to
+            delete any ACLs from Config.pm (or other files) after successfully finishing the import procedure. Also
+            you will need to use the deploy button in the ACL administration frontend in order to re-deploy the imported
+            ACLs to your system.
+        </p></li><li class="listitem"><p>
+            Update your web server configuration
+        </p><p>
+            Note: this applies only if you use the Apache web server,
+            and do not use the configuration file directly from the OTRS installation directory
+            (e. g. with a symlink from the Apache configuration directory).
+        </p><p>
+            Please update the the Apache configuration file for OTRS as there have been several
+            changes (see <code class="filename">scripts/apache2-httpd.include.conf</code>).
+        </p></li><li class="listitem"><p>
+            Update and activate cronjobs
+        </p><p>
+            There are several OTRS default cronjobs in $OTRS_HOME/var/cron/*.dist.
+            They can be activated by copying them without the ".dist" filename extension.
+            Do this to make sure you get the latest versions of the cronjobs and new cronjobs
+            as well.
+
+            </p><pre class="screen">
+shell&gt; cd var/cron
+shell&gt; for foo in *.dist; do cp $foo `basename $foo .dist`; done
+            </pre><p>
+
+        </p><p>
+            Please check the copied files and re-apply any customizations that you might have made.
+        </p><p>
+            To schedule these cronjobs on your system, you can use the script Cron.sh.
+            Make sure to execute it as the OTRS system user!
+
+            </p><pre class="screen">
+shell&gt; /opt/otrs/bin/Cron.sh start
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            Activate OTRS Scheduler Service
+        </p><p>
+            This only applies if you did not previously configure the OTRS scheduler service.
+        </p><p>
+            OTRS comes with a scheduler service that is used to perform asynchronous tasks.
+        </p><p>
+            The OTRS RPMs will set up the Scheduler Service automatically.
+            If you install/update from source, you can install the service by copying the
+            <code class="filename">scripts/otrs-scheduler-linux</code> file to <code class="filename">/etc/init.d</code>
+            and giving it the appropriate permissions.
+            This will make sure the scheduler service starts when the system starts up.
+        </p></li><li class="listitem"><p>Well done!</p></li></ol></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="web-installer.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="installation.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="upgrade-windows-installer.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Using the web installer </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Upgrading Windows Installer</td></tr></table></div></body></html>
