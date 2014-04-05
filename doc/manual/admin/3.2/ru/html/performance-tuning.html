@@ -1,0 +1,132 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Глава 6. Настройка Производительности</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><link rel="home" href="index.html" title="OTRS 3.2 - Руководство Администратора"><link rel="up" href="index.html" title="OTRS 3.2 - Руководство Администратора"><link rel="prev" href="translation.html" title="Локализайия интерфейса OTRS"><link rel="next" href="performance-tuning-database.html" title="База данных"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Глава 6. Настройка Производительности</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="translation.html">Пред.</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="performance-tuning-database.html">След.</a></td></tr></table><hr></div><div class="chapter" title="Глава 6. Настройка Производительности"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning"></a>Глава 6. Настройка Производительности</h2></div></div></div><div class="toc"><p><b>Содержание</b></p><dl><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs">OTRS</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">TicketIndexModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">TicketStorageModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#idp8000144">Архивирование Заявок</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-database.html">База данных</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-mysql">MySQL</a></span></dt><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-postgresql">PostgreSQL</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-webserver.html">Веб-сервер</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">Предустановленное соединение с базой данных</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">Предварительно загруженные модули  - startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">Перезагрузка Perl-модулей во время обновления с диска</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">Выбор Правильной Стратегии</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></dd></dl></div><div class="abstract" title="Аннотация"><p class="title"><b>Аннотация</b></p><p>
+Presented below is a list of performance enhancing techniques for your OTRS
+installation, including configuration, coding, memory use, and more.
+</p></div><div class="section" title="OTRS"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-otrs"></a>OTRS</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">TicketIndexModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">TicketStorageModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#idp8000144">Архивирование Заявок</a></span></dt></dl></div><p>
+There are several options for improving OTRS performance.
+</p><div class="section" title="TicketIndexModule"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-index"></a>TicketIndexModule</h3></div></div></div><p>
+Есть два типа хранилища информации для хранения индексов заявок:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+Kernel::System::Ticket::IndexAccelerator::RuntimeDB (по умолчанию), "на
+лету" генерирует из таблицы заявок шаблон просмотра для каждой очереди. Пока
+в системе не больше 60, 000 открытых заявок, проблем с производительностью
+не будет.
+</p></li><li class="listitem"><p>
+Kernel::System::Ticket::IndexAccelerator::StaticDB - один из самых мощных
+модулей, его следует использовать, когда у вас еть больше 80.000 открытых
+заявок. Он использует дополнительную таблицу ticket_index, которая работает
+как обычный шаблон. Используйте
+<code class="filename">bin/otrs.RebuildTicketIndex.pl</code> для получения начального
+индекса после создания хранилища информации.
+</p></li></ul></div><p>
+</p><p>
+Вы можете изменить IndexAccelerator через SysConfig.
+</p></div><div class="section" title="TicketStorageModule"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-storage"></a>TicketStorageModule</h3></div></div></div><p>
+Существует два различных хранилица для хранения заявок/статей:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+Configure Kernel::System::Ticket::ArticleStorageDB (default) to store
+attachments, etc., in the database. Note: Don't use it with large set ups.
+</p><p>
+Pro: Если пользователь вашего веб-сервера не является пользователем 'otrs',
+используйте этот модуль, чтобы избежать проблем с правами доступа.
+</p><p>
+Противопоказания: Не совсем целесообразно хранить вложения в базе
+данных. Будьте осторожны, при храненении больших объектов. Настройте
+конфигурационный параметр MySQL "set-variable=max_allowed_packet=8M"  для
+хранения объектов размером 8 MB (по умолчанию это 2M).
+</p></li><li class="listitem"><p>
+Configure Kernel::System::Ticket::ArticleStorageFS для хранения вложений и
+т.д. в локальной файловой системе. Примечание: Рекомендовано при больших
+установках.
+</p><p>
+Pro: Это быстро!
+</p><p>
+Con: Your web server user should be the 'otrs' user. Also, if you have
+multiple front-end servers, you should make sure the filesystem is shared
+between the servers. Place it on an NFS share or preferably a SAN or similar
+solution.
+</p></li></ul></div><p>
+
+</p><p>
+    Note: you can switch from one back-end to the other on the fly. You can
+switch the backend in the SysConfig, and then run the command line utility
+<code class="filename">otrs.ArticleStorageSwitch.pl</code> to put the articles from
+the database onto the filesystem or the other way around. You can use the
+<span class="emphasis"><em>-s</em></span> and <span class="emphasis"><em>-d</em></span> options to specify the
+source and destination back-ends. Please note that the entire process can
+take considerable time to run, depending on the number of articles you have
+and the available CPU power and/or network capacity.
+</p><p>
+</p><pre class="programlisting">
+shell&gt; bin/otrs.ArticleStorageSwitch.pl -s ArticleStorageDB -d ArticleStorageFS
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий Переключение хранилища данных с базы данных на файловую
+систему.</em></span>
+</p></div><div class="section" title="Архивирование Заявок"><div class="titlepage"><div><div><h3 class="title"><a name="idp8000144"></a>Архивирование Заявок</h3></div></div></div><p>
+        Поскольку OTRS может использоваться в качестве системы аудита доказательств,
+то удаление закрытых заявко не очень хорошая идея. Именно по этому мы
+реализовали функцию архивирования заявок.
+    </p><p>
+        Tickets that match certain criteria can be marked as "archived" These
+tickets are not accessed if you do a regular ticket search or run a Generic
+Agent job. The system itself does not have to deal with a huge amount of
+tickets any longer as only the "latest" tickets are taken into consideration
+when using OTRS. This can result in a huge performance gain on large
+systems.
+    </p><p>
+        Для использования функции архивации выполните следующие действия:
+    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+                Включение архивирование системы в SysConfig
+            </p><p>
+                В Панели Администрирования перейдите в SysConfig и выберите группу
+<code class="literal">Заявка</code>. В <code class="literal">Core::Ticket</code> найдите опцию
+<code class="literal">Ticket::ArchiveSystem</code>, по умолчанию установленную в
+значение "нет". Измените значение этой настройки на "да" и сохраните
+изменения.
+            </p></li><li class="listitem"><p>
+                Определение работы GenericAgent
+            </p><p>
+                В Панели Администратора выберите GenericAgent и добавьте новое задание
+(работу). </p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p>
+                            Настройки Задания
+                        </p><p>
+                            Введите имя для работы архивирования, и выберите надлежащие опции для
+планирования этой работы.
+                        </p></li><li class="listitem"><p>
+                            Ticket Filter
+                        </p><p>
+                            Фильтр заявок производит поиск заявок, которые отвечают выбраным
+критериям. Хорошей идеей будет заархивировать закрытые заявки, которые были
+закрыты за несколько месяцев до этого.
+                        </p></li><li class="listitem"><p>
+                            Действия над заявками
+                        </p><p>
+                            В этой части установите поле "Архивировать выбранные заявки" в "архив
+заявок".
+                        </p></li><li class="listitem"><p>
+                            Сохранить работу
+                        </p><p>
+                            В конце страницы у вас будет возможность сохранить работу (задание).
+                        </p></li><li class="listitem"><p>
+                            Обработанные заявки
+                        </p><p>
+                            Система отобразит все заявки, которые будут заархивированы при выполнении
+задания Generic Agent-ом.
+                        </p></li></ol></div><p>
+            </p></li><li class="listitem"><p>
+                Поиск Заявок
+            </p><p>
+                При поиске заявок, система по умолчанию производит поиск среди не
+архивированных заявок. Установите критерий поиска "поиск в архивах", если
+нужно чтобы поиск происходил также и в архивированых заявках.
+            </p></li></ol></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="translation.html">Пред.</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="performance-tuning-database.html">След.</a></td></tr><tr><td width="40%" align="left" valign="top">Локализайия интерфейса OTRS </td><td width="20%" align="center"><a accesskey="h" href="index.html">Начало</a></td><td width="40%" align="right" valign="top"> База данных</td></tr></table></div></body></html>
