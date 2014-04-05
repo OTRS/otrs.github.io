@@ -1,0 +1,196 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Einkommende Nachrichten filtern</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><link rel="home" href="index.html" title="OTRS 3.0 - Administrator-Handbuch"><link rel="up" href="adminarea.html" title="Kapitel 5. Der Administrationsbereich von OTRS"><link rel="prev" href="adminarea-postmasterpop3-account.html" title="Einrichten von Mail-Konten"><link rel="next" href="adminarea-genericagent.html" title="Ausführen von automatisierten Jobs mit Hilfe des GenericAgents"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Einkommende Nachrichten filtern</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="adminarea-postmasterpop3-account.html">Zurück</a> </td><th width="60%" align="center">Kapitel 5. Der Administrationsbereich von OTRS</th><td width="20%" align="right"> <a accesskey="n" href="adminarea-genericagent.html">Weiter</a></td></tr></table><hr></div><div class="section" title="Einkommende Nachrichten filtern"><div class="titlepage"><div><div><h2 class="title"><a name="adminarea-postmasterfilter"></a>Einkommende Nachrichten filtern</h2></div></div></div><p>
+Damit Sie automatisch Mails vorsortieren können bzw. ungewünschte Mails gar
+nicht in die Queues des Ticket-Systems gelangen, können Filterregeln für
+eingehende Nachrichten festgelegt werden. Dabei spielt es keine Rolle, ob
+die Mails über Mail-Konten oder mit Hilfe
+des<code class="filename">PostMaster.pl</code> Skriptes ins System gelangen. Der Link
+"PostMaster Filter" innerhalb des Admin-Bereiches von OTRS ruft die
+Verwaltung für die Filterregeln auf.
+</p><p>
+</p><div class="screenshot"><div><img src="screenshots/admin-postmasterfilter.png"></div></div><p>
+</p><p>
+<span class="emphasis"><em>Abb 5.49. Verwaltung von Filterregeln für eingehende
+E-Mails.</em></span>
+</p><p>
+Eine Filterregel besteht aus einem oder mehreren Kriterien die erfüllt
+werden müssen, damit die Filterregel greift, und aus einer oder mehreren
+Aktionen die ausgeführt werden, nachdem die Filterkriterien erfüllt
+wurden. Sie können für die Kopfzeilen und den Body einer Nachricht
+Filterregeln festlegen, also z. B. nach bestimmten Headern suchen oder nach
+Zeichenketten bzw. regulären Ausdrücken innerhalb der Mail. Alle Aktionen
+für eine Filterregel werden über sog. X-OTRS-Header gesteuert, die in die
+Mail eingefügt werden. Das Ticket-System wertet die X-OTRS-Header aus und
+nimmt die entsprechenden Aktionen vor. Mit den X-OTRS-Headern kann z. B. die
+Priorität einer Nachricht geändert werden, die Mail in eine bestimmte Queue
+einsortiert oder die Mail komplett verworfen werden, usw. Die folgende
+Tabelle listet die verschiedenen X-OTRS-Header, deren zulässige Werte und
+die Bedeutung der einzelnen Header auf.
+</p><p>
+Hinweis: Sie können auch X-OTRS-FollowUp-* header für Follow-Up-E-Mails
+verwenden.
+</p><div class="table"><a name="table-of-x-otrs-headers"></a><p class="title"><b>Tabelle 5.4. Funktion der verschiedenen X-OTRS-Header</b></p><div class="table-contents"><table summary="Funktion der verschiedenen X-OTRS-Header" border="1"><colgroup><col><col><col></colgroup><thead><tr><th>
+          Name
+        </th><th>
+          Mögliche Werte
+        </th><th>
+          Beschreibung
+        </th></tr></thead><tbody><tr><td>
+          X-OTRS-Priority:
+        </td><td>
+          1 very low, 2 low, 3 normal, 4 high, 5 very high
+        </td><td>
+          Legt die Priorität eines Tickets fest.
+        </td></tr><tr><td>
+          X-OTRS-Queue:
+        </td><td>
+          Name einer Queue des Systems.
+        </td><td>
+          Legt die Queue fest, in die das Ticket einsortiert werden soll. Wird mit dem
+X-OTRS-Queue-Header eine Queue voreingestellt, so hat diese Einstellung
+Vorrang vor allen anderen Filterregeln, die sich auf Queues beziehen.
+        </td></tr><tr><td>
+          X-OTRS-Lock:
+        </td><td>
+            lock, unlock
+        </td><td>
+          Setzt den "gesperrt"-Status eines Tickets.
+        </td></tr><tr><td>
+          X-OTRS-Ignore:
+        </td><td>
+          Yes oder True
+        </td><td>
+          Wird dieser Header gesetzt, wird die Mail komplett ignoriert und gelangt
+somit nie als Ticket in das System.
+        </td></tr><tr><td>
+          X-OTRS-State:
+        </td><td>
+          new, open, closed successful, closed unsuccessful, ...
+        </td><td>
+          Setzt den nächsten Status eines Tickets.
+        </td></tr><tr><td>
+          X-OTRS-State-PendingTime:
+        </td><td>
+         Z. B. 2010-11-20 00:00:00
+        </td><td>
+          Setzt die Wartezeit eines Tickets (Sie sollten dann ebenfalls einen
+"Warten"-Status per X-OTRS-State setzen).
+        </td></tr><tr><td>
+          X-OTRS-Type:
+        </td><td>
+         default (systemabhängig)
+        </td><td>
+          Setzt den Typ eines Tickets (wenn Ticket::Type aktiviert ist).
+        </td></tr><tr><td>
+          X-OTRS-Service:
+        </td><td>
+         (systemabhängig)
+        </td><td>
+          Setzt den Service eines Tickets (wenn Ticket::Service aktiv ist).
+        </td></tr><tr><td>
+          X-OTRS-SLA:
+        </td><td>
+         (systemabhängig)
+        </td><td>
+          Setzt das Service-Level-Abkommen eines Tickets (wenn Ticket::Service aktiv
+ist).
+        </td></tr><tr><td>
+          X-OTRS-CustomerUser:
+        </td><td>
+          CustomerUser
+        </td><td>
+          Legt den Kunden-Benutzer fest, dem das Ticket zugeordnet werden soll.
+        </td></tr><tr><td>
+          X-OTRS-CustomerNo:
+        </td><td>
+          CustomerNo
+        </td><td>
+          Legt die Kunden-ID fest, die dem Ticket zugeordnet werden soll.
+        </td></tr><tr><td>
+          X-OTRS-ArticleKey(1|2|3):
+        </td><td>
+          Zusätzlicher Info-Key für den Artikel.
+        </td><td>
+          Speichert einen zusätzlichen Info-Key für den Artikel.
+        </td></tr><tr><td>
+          X-OTRS-ArticleValue(1|2|3):
+        </td><td>
+          Zusätzlicher Info-Value.
+        </td><td>
+          Speichert einen zusätzlichen Info-Value für den Artikel.
+        </td></tr><tr><td>
+          X-OTRS-SenderType:
+        </td><td>
+          agent, system, customer
+        </td><td>
+          Legt die Art des Ticket-Absenders fest.
+        </td></tr><tr><td>
+          X-OTRS-ArticleType:
+        </td><td>
+          email-external, email-internal, email-notification-ext,
+email-notification-int, phone, fax, sms, webrequest, note-internal,
+note-external, note-report
+        </td><td>
+          Legt den Typ des Artikles für das eingehende Ticket fest.
+        </td></tr><tr><td>
+          X-OTRS-TicketKey(1|2|...|8):
+        </td><td>
+          Zusätzlicher Info-Key
+        </td><td>
+          Speichert einen zusätzlichen Info-Key für das Ticket.
+        </td></tr><tr><td>
+          X-OTRS-TicketValue(1|2|...|8):
+        </td><td>
+          Zusätzlicher Info-Value
+        </td><td>
+          Speichert einen zusätzlichen Info-Value für das Ticket.
+        </td></tr><tr><td>
+          X-OTRS-Loop:
+        </td><td>
+          True
+        </td><td>
+          Ist dieser X-OTRS-Header gesetzt, wird keine automatische Antwort an den
+Absender des neuen Tickets geschickt, z. B. um Mailschleifen zu vermeiden.
+        </td></tr></tbody></table></div></div><br class="table-break"><p>
+Sie müssen für jede Regel einen Namen vergeben. Darunter legen Sie in der
+Sektion für "Treffer" die verschiedenen Kriterien fest, nach denen gefiltert
+werden soll. Wählen Sie aus den Listboxen für "Header 1", "Header 2"
+usw. aus, an welcher Stelle in der eingehenden Nachricht Sie suchen möchten
+und tragen Sie rechts neben dem entsprechenden Header den Wert ein, nach dem
+gesucht werden soll. In der Sektion "Setzen" legen Sie die Aktionen fest,
+die ausgeführt werden sollen, wenn die Filterkriterien zutreffen. Hier
+können Sie für "Header1", "Header 2" usw. den entsprechenden X-OTRS-Header
+auswählen und rechts daneben den entsprechenden Wert eintragen.
+</p><p>
+</p><div class="screenshot"><div><img src="screenshots/add-postmasterfilter.png"></div></div><p>
+</p><p>
+<span class="emphasis"><em>Abb. 5.50. Filter-Regeln für eingehende Nachrichten
+anlegen.</em></span>
+</p><div class="example"><a name="sort-mails-into-junk"></a><p class="title"><b>Beispiel 5.1. Aussortierung von Spammails in eine bestimmte Queue</b></p><div class="example-contents"><p>
+Eine nützliche Filterregel könnte sein, alle Mails, die von SpamAssassin als
+Spam markiert wurden, automatisch in die Queue "Junk" einsortieren zu
+lassen. Spamassassin fügt bei allen überprüften Mails die Kopfzeile
+"X-Spam-Flag" hinzu. Wird die Mail als Spam markiert, wird dieser Header auf
+"Yes" gesetzt. Das Filterkriterium lautet also "X-Spam-Flag: Yes". Um nun
+eine Filterregel mit diesem Kriterium zu erzeugen, tragen Sie hierzu als
+Name für die Filterregel z. B. "spam-mails" ein und wählen in der Sektion
+"Treffer" für "Header 1" den Header "X-Spam-Flag:" aus der Listbox
+aus. Rechts daneben fügen Sie als Wert "Yes" hinzu. Das Filterkriterium
+wurde somit festgelegt. Um nun die Einsortierung der von spamassassin als
+Spam klassifizierten Mails in die Queue "Junk" zu erzwingen, wählen Sie in
+der Sektion "Setzen" für "Header 1" den Eintrag "X-OTRS-Queue:" aus und
+tragen als Wert rechts daneben "Junk" ein. Abschließend wird mit Hilfe des
+"Hinzufügen"-Buttons die neue Regel gespeichert und aktiviert, beim nächsten
+Abruf der POP3-Konten bzw. für die nächste an das System gesendete Nachricht
+wird die Filterregel abgearbeitet.
+</p></div></div><br class="example-break"><p>
+Es gibt weitere Module, die zum <a class="link" href="email-receiving.html#email-receiving-filter" title="Filterung/Verteilung über PostMaster-Module (für komplexere Verteilungsszenarien)">Filtern eingehender E-Mails</a>genutzt
+werden und bei komplexeren Installationen nützlich sein können.
+</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="adminarea-postmasterpop3-account.html">Zurück</a> </td><td width="20%" align="center"><a accesskey="u" href="adminarea.html">Nach oben</a></td><td width="40%" align="right"> <a accesskey="n" href="adminarea-genericagent.html">Weiter</a></td></tr><tr><td width="40%" align="left" valign="top">Einrichten von Mail-Konten </td><td width="20%" align="center"><a accesskey="h" href="index.html">Zum Anfang</a></td><td width="40%" align="right" valign="top"> Ausführen von automatisierten Jobs mit Hilfe des GenericAgents</td></tr></table></div></body></html>

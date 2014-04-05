@@ -1,0 +1,151 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Настройка самостоятельной регистрации клиента</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><link rel="home" href="index.html" title="OTRS 3.0 - Руководство Администратора"><link rel="up" href="external-backends.html" title="Глава 11. Использование внешних хранилищ данных"><link rel="prev" href="auth-backends.html" title="Хранилища (бэк-енды) для аутентификации Агентов и Клиентов"><link rel="next" href="states.html" title="Глава 12. Состояния"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Настройка самостоятельной регистрации клиента</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="auth-backends.html">Пред.</a> </td><th width="60%" align="center">Глава 11. Использование внешних хранилищ данных</th><td width="20%" align="right"> <a accesskey="n" href="states.html">След.</a></td></tr></table><hr></div><div class="section" title="Настройка самостоятельной регистрации клиента"><div class="titlepage"><div><div><h2 class="title"><a name="customer-self-registration"></a>Настройка самостоятельной регистрации клиента</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="customer-self-registration.html#customer-self-registration-dtl">Настройка веб-интерфейса</a></span></dt><dt><span class="section"><a href="customer-self-registration.html#customer-self-registration-mapping">Отображения клиентов</a></span></dt><dt><span class="section"><a href="customer-self-registration.html#customer-self-registration-customer-table">Настройка таблицы customer_user в Базе Данных OTRS (DB)</a></span></dt></dl></div><p>
+Есть возможность настроить самостоятельную регистрацию новых клиентов,
+доступную через панель customer.pl. Можно добавить новые дополнительные или
+обязательные поля, такие как номер комнаты, адрес или состояние.
+</p><p>
+В следующем примере показано каким образом можно указать обязательные для
+заполнения поля в базе данных клиентов, в данном случае, для хранения номера
+клиента.
+</p><div class="section" title="Настройка веб-интерфейса"><div class="titlepage"><div><div><h3 class="title"><a name="customer-self-registration-dtl"></a>Настройка веб-интерфейса</h3></div></div></div><p>
+Для отображения нового поля для номера комнаты в веб-интерфейсе пользователя
+(customer.pl), нужно внести изменения в .dtl-файл, который отвечает за
+шаблон этого интерфейса. Отредактируйте файл
+<code class="filename">Kernel/Output/HTML/Standard/CustomerLogin.dtl</code> добавив
+новые поля после строки 80 (см. ниже Сценарий 11.9).
+</p><p>
+</p><pre class="programlisting">
+[...]
+&lt;div class="NewLine"&gt;
+    &lt;label for="Room"&gt;$Text{"Room{CustomerUser}"}&lt;/label&gt;
+    &lt;input title="$Text{"Room Number"}" name="Room" type="text" id="UserRoom" maxlength="50" /&gt;
+&lt;/div&gt;
+[...]
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий 11.9. Отображение новых полей в
+веб-интерфейсе.</em></span>
+</p></div><div class="section" title="Отображения клиентов"><div class="titlepage"><div><div><h3 class="title"><a name="customer-self-registration-mapping"></a>Отображения клиентов</h3></div></div></div><p>
+На следующем этапе, нужно внести изменения в маппинг (mapping), рассширив
+его новым элементом - номером комнаты. Чтобы убедится что изменения не
+потеряются после обновления, установите настройкы "CustomerUser" из файла
+<code class="filename">Kernel/Config/Defaults.pm</code> в файл
+<code class="filename">Kernel/Config.pm</code>. Теперь измените MAP-массив, добавив
+новое поле - номер комнаты, как это показано ниже в Сценарии 11.10.
+</p><p>
+</p><pre class="programlisting">
+# CustomerUser
+# (customer database backend and settings)
+$Self-&gt;{CustomerUser} = {
+    Name =&gt; 'Database Backend',
+    Module =&gt; 'Kernel::System::CustomerUser::DB',
+    Params =&gt; {
+        # if you want to use an external database, add the
+        # required settings
+#        DSN =&gt; 'DBI:odbc:yourdsn',
+#        DSN =&gt; 'DBI:mysql:database=customerdb;host=customerdbhost',
+#        User =&gt; '',
+#        Password =&gt; '',
+        Table =&gt; 'customer_user',
+    },
+    # customer unique id
+    CustomerKey =&gt; 'login',
+    # customer #
+    CustomerID =&gt; 'customer_id',
+    CustomerValid =&gt; 'valid_id',
+    CustomerUserListFields =&gt; ['first_name', 'last_name', 'email'],
+#    CustomerUserListFields =&gt; ['login', 'first_name', 'last_name', 'customer_id', 'email'],
+    CustomerUserSearchFields =&gt; ['login', 'last_name', 'customer_id'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['email'],
+    CustomerUserNameFields =&gt; ['title', 'first_name', 'last_name'],
+    CustomerUserEmailUniqCheck =&gt; 1,
+#    # show not own tickets in customer panel, CompanyTickets
+#    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+#    # generate auto logins
+#    AutoLoginCreation =&gt; 0,
+#    AutoLoginCreationPrefix =&gt; 'auto',
+#    # admin can change customer preferences
+#    AdminSetPreferences =&gt; 1,
+#    # cache time to live in sec. - cache database queries
+#    CacheTTL =&gt; 0,
+#    # just a read only source
+#    ReadOnly =&gt; 1,
+    Map =&gt; [
+
+        # note: Login, Email and CustomerID needed!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target
+        [ 'UserTitle',      'Title',      'title',       1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'first_name',  1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'last_name',   1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'login',       1, 1, 'var', '', 0 ],
+        [ 'UserPassword',   'Password',   'pw',          0, 0, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'email',       1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'CustomerID', 'customer_id', 0, 1, 'var', '', 0 ],
+        [ 'UserPhone',      'Phone',      'phone',       1, 0, 'var', '', 0 ],
+        [ 'UserFax',        'Fax',        'fax',         1, 0, 'var', '', 0 ],
+        [ 'UserMobile',     'Mobile',     'mobile',      1, 0, 'var', '', 0 ],
+        [ 'UserRoom',       'Room',       'room',        1, 0, 'var', '', 0 ],
+        [ 'UserStreet',     'Street',     'street',      1, 0, 'var', '', 0 ],
+        [ 'UserZip',        'Zip',        'zip',         1, 0, 'var', '', 0 ],
+        [ 'UserCity',       'City',       'city',        1, 0, 'var', '', 0 ],
+        [ 'UserCountry',    'Country',    'country',     1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Comment',    'comments',    1, 0, 'var', '', 0 ],
+        [ 'ValidID',        'Valid',      'valid_id',    0, 1, 'int', '', 0 ],
+    ],
+    # default selections
+    Selections =&gt; {
+        UserTitle =&gt; {
+            'Mr.' =&gt; 'Mr.',
+            'Mrs.' =&gt; 'Mrs.',
+        },
+    },
+};
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий 11.10. Внесение изменений в map-массив.</em></span>
+</p></div><div class="section" title="Настройка таблицы customer_user в Базе Данных OTRS (DB)"><div class="titlepage"><div><div><h3 class="title"><a name="customer-self-registration-customer-table"></a>Настройка таблицы customer_user в Базе Данных OTRS (DB)</h3></div></div></div><p>
+Последним шагом является добавление нового столбца с номером комнаты в
+таблицу customer_user базы данных OTRS (см. ниже Сценарий 11.11). В этой
+колонке будет хранится информация для номера комнаты.
+</p><p>
+</p><pre class="screen">
+linux:~# mysql -p
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 6 to server version: 5.0.18-Debian_7-log
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt; use otrs;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; ALTER TABLE customer_user ADD room VARCHAR (200);
+Query OK, 3 rows affected (0.01 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql&gt; quit
+Bye
+linux:~#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий 11.11. Добавление новой колонки в таблицу
+customer_user.</em></span>
+</p><p>
+Теперь новое поле для номера комнаты должно отображатся в customer.pl
+панели. Когда новые клиенты будут регистрировать аккаунт, им нужно будет
+вписать номер комнаты. Если для работы OTRS используется Apache и  модуль
+mod_perl, то чтобы новые изменения вступили в силу нужно перезапустить
+веб-сервер.
+</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="auth-backends.html">Пред.</a> </td><td width="20%" align="center"><a accesskey="u" href="external-backends.html">Уровень выше</a></td><td width="40%" align="right"> <a accesskey="n" href="states.html">След.</a></td></tr><tr><td width="40%" align="left" valign="top">Хранилища (бэк-енды) для аутентификации Агентов и Клиентов </td><td width="20%" align="center"><a accesskey="h" href="index.html">Начало</a></td><td width="40%" align="right" valign="top"> Глава 12. Состояния</td></tr></table></div></body></html>

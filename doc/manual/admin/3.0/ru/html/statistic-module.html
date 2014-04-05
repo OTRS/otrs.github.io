@@ -1,0 +1,468 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Глава 19. Stats-модуль</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><link rel="home" href="index.html" title="OTRS 3.0 - Руководство Администратора"><link rel="up" href="index.html" title="OTRS 3.0 - Руководство Администратора"><link rel="prev" href="acl.html" title="Глава 18. Списки Контроля Доступа (ACLs)"><link rel="next" href="stats-managing-the-module.html" title="Администрирование модуля статистики OTRS администратором."></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Глава 19. Stats-модуль</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="acl.html">Пред.</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="stats-managing-the-module.html">След.</a></td></tr></table><hr></div><div class="chapter" title="Глава 19. Stats-модуль"><div class="titlepage"><div><div><h2 class="title"><a name="statistic-module"></a>Глава 19. Stats-модуль</h2></div></div></div><div class="toc"><p><b>Содержание</b></p><dl><dt><span class="section"><a href="statistic-module.html#stats-usage">Обработка модуля агентом</a></span></dt><dd><dl><dt><span class="section"><a href="statistic-module.html#stats-overview">Обзор</a></span></dt><dt><span class="section"><a href="statistic-module.html#stats-viewing-generating">Создание и просмотр отчетов</a></span></dt><dt><span class="section"><a href="statistic-module.html#stats-modify-new">Редактировать / Создать новый</a></span></dt><dt><span class="section"><a href="statistic-module.html#stats-import">Импорт</a></span></dt></dl></dd><dt><span class="section"><a href="stats-managing-the-module.html">Администрирование модуля статистики OTRS администратором.</a></span></dt><dd><dl><dt><span class="section"><a href="stats-managing-the-module.html#stats-permissions">Настройки полномочий, Групп и Ролей</a></span></dt><dt><span class="section"><a href="stats-managing-the-module.html#stats-sysconfig">SysConfig</a></span></dt></dl></dd><dt><span class="section"><a href="stats-managing-the-stats-module-by-the-sysadmin.html">Администрирование модуля статистики системным администратором</a></span></dt><dd><dl><dt><span class="section"><a href="stats-managing-the-stats-module-by-the-sysadmin.html#stats-db-table">Таблица базы данных</a></span></dt><dt><span class="section"><a href="stats-managing-the-stats-module-by-the-sysadmin.html#stats-filelist">Список файлов</a></span></dt><dt><span class="section"><a href="stats-managing-the-stats-module-by-the-sysadmin.html#stats-caching">Кэширование</a></span></dt><dt><span class="section"><a href="stats-managing-the-stats-module-by-the-sysadmin.html#stats-mkstats">otrs.GenerateStats.pl</a></span></dt><dt><span class="section"><a href="stats-managing-the-stats-module-by-the-sysadmin.html#stats-cron">Автоматическое создание статистики с помощью планировщика заданий - Cronjob</a></span></dt><dt><span class="section"><a href="stats-managing-the-stats-module-by-the-sysadmin.html#stats-static">Статическая статистика</a></span></dt><dt><span class="section"><a href="stats-managing-the-stats-module-by-the-sysadmin.html#stats-using-old-stats">Использование устаревших данных статической статистики</a></span></dt><dt><span class="section"><a href="stats-managing-the-stats-module-by-the-sysadmin.html#stats-default-stats">Статистика по умолчанию</a></span></dt></dl></dd></dl></div><p>
+Модуль статистики OTRS дает возможность оперативно отслеживать статистику и
+создавать пользовательские отчеты, связанные с использованием OTRS. Система
+OTRS использует общеупотребляемый термин "stat"  для обозначения отчетов  с
+различными показателями.
+</p><p>
+Правильная настройка модуля статистики OTRS связана с множеством различных
+условий. К ним относятся различные модули системы OTRS, подлежащие оценке,
+настройки прав доступа пользователей, признаки, которые должны быть
+рассчитаны и уровень их сложности, легкость настройки модуля статистики,
+скорость и эффективность вычислений, поддержка множества вариантов вывода
+информации.
+</p><p>
+Статистические элементы, такие как например файлы, которые дополняют
+функциональные возможности модуля статистики для конкретых требований, могут
+быть интегрированы для подсчета сложной статистики.
+</p><div class="section" title="Обработка модуля агентом"><div class="titlepage"><div><div><h2 class="title"><a name="stats-usage"></a>Обработка модуля агентом</h2></div></div></div><div class="toc"><dl><dt><span class="section"><a href="statistic-module.html#stats-overview">Обзор</a></span></dt><dt><span class="section"><a href="statistic-module.html#stats-viewing-generating">Создание и просмотр отчетов</a></span></dt><dt><span class="section"><a href="statistic-module.html#stats-modify-new">Редактировать / Создать новый</a></span></dt><dt><span class="section"><a href="statistic-module.html#stats-import">Импорт</a></span></dt></dl></div><p>
+Когда вы вошли в систему как агент, в навигационной панели будет отображатся
+ссылка "Статистика". Этот раздел имеет множество различных подменю, как это
+показано на Рисунке 19.1.
+</p><p>
+</p><div class="screenshot"><div><img src="screenshots/stats-menu.png"></div></div><p>
+</p><p>
+<span class="emphasis"><em>Рисунок 19.1. Опции меню Статистика.</em></span>
+</p><p>
+Различные варианты представленные в меню статистики:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+            <span class="emphasis"><em>Overview</em></span>. Предоставляет список различных предварительно
+сконфигурированных отчетов.
+        </p></li><li class="listitem"><p>
+            <span class="emphasis"><em>Новая</em></span>. Требуются права rw.
+        </p></li><li class="listitem"><p>
+            <span class="emphasis"><em>Импорт</em></span>. Требуются rw-права.
+        </p></li></ul></div><p>
+</p><div class="section" title="Обзор"><div class="titlepage"><div><div><h3 class="title"><a name="stats-overview"></a>Обзор</h3></div></div></div><p>
+Выберите ссылку "Статистика" на панели навигации, а затем подменю
+"Обзор". На открывшейся странице будет представлен список всех
+предварительно настроеных отчетов, которые агент уже может использовать
+(см. ниже Рисунок 19.2).
+
+</p><p>
+</p><div class="screenshot"><div><img src="screenshots/stats-overview.png"></div></div><p>
+</p><p>
+<span class="emphasis"><em>Рисунок 19.2. Обзор стандартных отчетов.</em></span>
+</p><p>
+Для каждого из отчетов, перечисленных в Обзоре предоставлена следующая
+информация:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+            <span class="emphasis"><em>Stat#</em></span>. Уникальный номер отчета.
+        </p></li><li class="listitem"><p>
+            <span class="emphasis"><em>Заголовок</em></span>. Заголовок отчета.
+        </p></li><li class="listitem"><p>
+            <span class="emphasis"><em>Объект</em></span>. Объект, который используется для генерации
+статистики. В случае статической статистики не отображается ни один объект,
+поскольку в ее генерации динамические объекты не участвуют.
+        </p></li><li class="listitem"><p>
+            <span class="emphasis"><em>Описание</em></span>. Краткое описание отчета.
+        </p></li></ul></div><p>
+</p><p>
+Когда модуль статистики установлен, он поставлятся с несколькими
+предустановленными отчетами, выборочно встроенными в систему. Они приведены
+в виде списка на странице "Обзор". Если список слишком большой и не
+помещается на одну страницу, у агента есть возможность просматривать другие
+страницы. Список отчетов может быть отсортирован по своему вкусу, путем
+нажатия на желаемый заголовок столбца в списке. Чтобы создать конкретный
+отчет, нажмите на соответствующие stat-номер, связанный с отчетом. В
+результате откроется интерфейс просмотра отчета.
+</p></div><div class="section" title="Создание и просмотр отчетов"><div class="titlepage"><div><div><h3 class="title"><a name="stats-viewing-generating"></a>Создание и просмотр отчетов</h3></div></div></div><p>
+Пользовательский интерфейс предоставляет параметры настройки статистики
+(см. ниже Рисунок 19.3).
+</p><p>
+</p><div class="screenshot"><div><img src="screenshots/stats-view.png"></div></div><p>
+</p><p>
+<span class="emphasis"><em>Рисунок 19.3. Просмотр определенного отчета.</em></span>
+</p><p>
+Параметры конфигурации для конкретного отчета могут быть установлены путем
+выбора ряда возможных опций. Как автор отчета так и другие пользователи с
+соответсвтующими правами доступа могут создавать настройки.
+</p><p>
+На странице отображается следующее:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+        Возможные действия:
+        </p><p>
+        </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+                    <span class="emphasis"><em>Перейти к обзору</em></span>. Ссылка, ведущая обратно к Просмотру
+списка отчетов.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Редактировать</em></span>. Редактировать имеющуюся структуру отчета
+(требуются права для чтения и записи, rw).
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Удалить</em></span>. Удалить текущий отчет (требуются права для
+чтения и записи, rw).
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Экспортировать настройки</em></span>. Экспортировать настройки
+отчета с помощью загрузки файла (требуются права для чтения и записи, rw).
+                </p><p>
+                    Традиционно: функции Экспорт и Импорт позволяют создавать и тестировать
+отчеты та тестовых системах с их легкой дальнейшей интеграцией в
+производственную систему.
+                </p></li></ul></div><p>
+        </p></li><li class="listitem"><p>
+        Подробности отчета:
+        </p><p>
+        </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+                    <span class="emphasis"><em>Отчет#</em></span>. Номер отчета.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Заголовок</em></span>. Заголовок отчета.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Объект</em></span>. Объект, который используется для создания
+отчета.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Описание</em></span>. Описание цели отчета.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Формат</em></span>. Выходной формат отчета. В зависимости от
+конфигурации, можно  выбрать один из следующих форматов вывода:
+                </p><p>
+                </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+                        CSV.
+                        </p></li><li class="listitem"><p>
+                        Печать.
+                        </p></li><li class="listitem"><p>
+                        Графические линии.
+                        </p></li><li class="listitem"><p>
+                        Столбцовая диаграмма.
+                        </p></li><li class="listitem"><p>
+                        Диаграмма.
+                        </p></li><li class="listitem"><p>
+                        Точечная диаграмма.
+                        </p></li><li class="listitem"><p>
+                        Точечно-линейная диаграмма.
+                        </p></li><li class="listitem"><p>
+                        Диаграмма
+                        </p></li><li class="listitem"><p>
+                        Круговая "пирожок"-диаграмма.
+                        </p></li></ul></div><p>
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Размер в пикселях</em></span>. Размер графиков/диаграмм в
+пикселях. Эта опция доступна только в том случае, если в настройках отчета
+разрешены графики. Все часто используемые графические размеры настраиваются
+OTRS-администратором в SysConfig. Затем, во время настройки отчета, агент
+может выбрать необходимый формат из всех доступных.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Количество строк</em></span>. Указывает когда отчет заменяется
+колонкой, чьи ячейки содержат сумму соответствующих строк.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Количество колонок</em></span>. Указывает когда отчет заменяется
+строкой, чьи ячейки содержат сумму соответствующих колонок.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Кэш</em></span>. Указывает когда сгенерированный отчет кэшируется в
+файловой системе.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Действительный</em></span>. Может быть установлен в значение
+"недействительный"  если по какой то причине отчет временно не должен
+запускаться. Кнопка "Старт" в нижней части правой панели больше не
+отображается. Таким образом отчет не может быть создан.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Создан</em></span>.  Время создания отчета.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Создан (кем)</em></span>. Имя агента, который создал отчет.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Изменен</em></span>. Время последней модификации отчета.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>Изменен кем</em></span>. Имя агента, который последним внес
+изменения в отчет.
+                </p></li><li class="listitem"><p>
+                    <span class="emphasis"><em>X-axis</em></span>. Используя эту функцию, агент может переключать
+x и y axes (только в том случае, если эта опция активирована
+OTRS-администратором).
+                </p></li><li class="listitem"><p>
+                Общая информация сопровождается информацией о самом отчете. Есть два
+различных шаблона просмотра отчета (или статистики):
+                </p><p>
+                </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+                            <span class="emphasis"><em>Шаблон просмотра статической статистики</em></span>. Создатели
+(генераторы) статических отчетов могут быть интегрированыв модуль статистики
+(см. ниже Рисунок 19.4).
+                        </p><p>
+                        </p><div class="screenshot"><div><img src="screenshots/stats-view-static.png"></div></div><p>
+                        </p><p>
+                            <span class="emphasis"><em>Рисунок 19.4. Просмотр статического отчета.</em></span>
+                        </p></li><li class="listitem"><p>
+                            <span class="emphasis"><em>Шаблон для просмотра динамического отчета</em></span> (см. ниже
+Рисунок 19.3 ).  Есть два различных способа отображения:
+                        </p><p>
+                        </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+                                    <span class="emphasis"><em>Неизменяемые настройки</em></span>. Создатель отчета не имеет прав
+для изменения этих полей.
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>Изменяемые настройки</em></span>. Параметры конфигурации таких
+отчетов могут быть изменены агентом.
+                                </p></li></ul></div><p>
+                        </p></li></ul></div><p>
+                </p></li></ul></div><p>
+        </p></li></ul></div><p>
+</p><p>
+Нажатие кнопки "Пуск" (в нижней части экрана) является последним шагом при
+создании отчета. Есть две возможные причины, когда эта кнопка не будет
+отображаться:
+</p><p>
+</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+        Отчет был установлен недействительным и, таким образом отключен.
+        </p></li><li class="listitem"><p>
+        Отчет был настроен не аккуратно и, следовательно, не может выполнятся. В
+этом случае необходимую информацию можно найти в разделе уведомлений OTRS
+(внизу, под навигационной панелью).
+        </p></li></ol></div><p>
+</p><p>
+Если настройки на странице Просмотр неверны, эта страница отображается
+опять, после нажатия кнопки "Пуск" и информация о введеных неверных данных
+будет выведена в разделе уведомлений.
+</p></div><div class="section" title="Редактировать / Создать новый"><div class="titlepage"><div><div><h3 class="title"><a name="stats-modify-new"></a>Редактировать / Создать новый</h3></div></div></div><p>
+Агенты, которые имеют права на запись, могут редактировать настройки
+существующего отчета, запустив пользовательский веб-интерфейс модуля
+статистики. В качестве альтернативы они могут создать новый
+отчет. Соответствующие страницы могут быть запущены следующим образом:
+</p><p>
+</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+    Редактировать: Используя кнопку "Редактировать" в шаблоне просмотра
+статистики.
+    </p></li><li class="listitem"><p>
+    Новый: Используя ссылку "Новый" в меню Статистика навигационной панели, или
+кнопку "Добавить" на странице Просмотр.
+    </p></li></ol></div><p>
+</p><p>
+Статистика редактируется с помощью мастера в четыре этапа:
+</p><p>
+</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+    Общие технические условия.
+    </p></li><li class="listitem"><p>
+    Определение элементов для X-axis.
+    </p></li><li class="listitem"><p>
+    Спецификация значений ряда.
+    </p></li><li class="listitem"><p>
+    Выбор ограничений для отчета.
+    </p></li></ol></div><p>
+</p><p>
+Шаги с 2-4 необходимы только для создания отчетов с динамической
+статистикой. Для статической статистики требуется  только общая информация
+(пункт 1).
+</p><p>
+Информация о том, как обрабатывать страницу приводится на каждом из этих
+экранов, ниже панели "Действия" панели Подсказок.
+</p><p>
+Если введены неправильные данные, предыдущий пользовательский интерфейс
+отображатеся заново, на этот раз уже с информацией о неправильных входных
+данных. Эта информация отображается в  OTRS в разделе уведомлений. Следующий
+пользовательский веб-интерфейс для ввода отображатеся только в том случае,
+если все поля формы заполнены правильно.
+</p><p>
+</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+        <span class="emphasis"><em>Общие технические условия</em></span>. Это первая страница мастера
+Редактирования (см. ниже Рисунок 19.5).
+    </p><p>
+    </p><div class="screenshot"><div><img src="screenshots/stats-edit-general.png"></div></div><p>
+    </p><p>
+        <span class="emphasis"><em>Рисунок 19.5. Редактирование общих спецификаций отчета.</em></span>
+    </p><p>
+        На странице приведенной на Рисунке 19.5 есть большое количество общих
+спецификаций и настроек, которые можно редактировать:
+    </p><p>
+    </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+                <span class="emphasis"><em>Заголовок</em></span>. Должны в сжатой форме отражать назначение
+(цель).
+            </p></li><li class="listitem"><p>
+                <span class="emphasis"><em>Описание</em></span>. Более подробная информация об отчете, типах
+конфигурационных параметров и т.д.
+            </p></li><li class="listitem"><p>
+                <span class="emphasis"><em>Динамический объект</em></span>.  Если установленная система OTRS
+предоставляет различные динамические объекты, один из них может быть
+выбран. Объекты отвечают требованиям отдельных модулей.
+            </p></li><li class="listitem"><p>
+                <span class="emphasis"><em>Static file</em></span>. Обычно эта возможность не отображается до
+тех пор, пока отображаются статические файлы, назначеные отчету. Если
+"Статический файл" отображается, позже, очень важно поставить галочку в поле
+и выбрать режим генерации (динамический с динамический объектом или
+статический с файлом). Если выбран статический файл, пользовательский
+веб-интерфейс 2-4 не отображается как статический файл содержащий все
+необходимые настройки.
+            </p></li><li class="listitem"><p>
+                <span class="emphasis"><em>Настройки прав доступа</em></span>. Содействие ограничению групп
+(и, следовательно, агентов), которые позже могут просматривать и
+генерировать предварительные отчеты. Таким образом, различные отчеты могут
+быть выделена для различных отделов и рабочих групп, которые в них
+нуждаются. Можно выделить одину статистику для различных групп.
+            </p><p>
+                Пример 1: Выбрана "stats" группа. Отчет доступен для просмотра для всех
+пользователей имеющих по крайней мере права на группу "stats . Этот доступ
+доступен по умолчанию.
+            </p><p>
+                Пример 2: Была выбрана группа под названием "продажи". Все пользователи,
+имеющие права ro (read only) к этой группе могут выдеть статистику в режиме
+просмотра э генерировать ее. Однако отчет не будет доступен для просмотра
+другим пользователям.
+            </p></li><li class="listitem"><p>
+                <span class="emphasis"><em>Формат</em></span>. Формат отображения статистики. В зависимости от
+конфигурации, могут быть выбраны следующие один или несколько форматов:
+            </p><p>
+            </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+                        CSV.
+                    </p></li><li class="listitem"><p>
+                        Печать.
+                    </p></li><li class="listitem"><p>
+                        graph-lines.
+                    </p></li><li class="listitem"><p>
+                        graph-bars.
+                    </p></li><li class="listitem"><p>
+                        graph-hbars.
+                    </p></li><li class="listitem"><p>
+                        graph-points.
+                    </p></li><li class="listitem"><p>
+                        graph-lines-points.
+                    </p></li><li class="listitem"><p>
+                        graph-area.
+                    </p></li><li class="listitem"><p>
+                        graph-pie.
+                    </p></li></ul></div><p>
+            </p></li><li class="listitem"><p>
+                <span class="emphasis"><em>Размер графика</em></span>. Выберите размер диаграммы в
+пикселях. Этот выбор необходим только в том случае, если графический формат
+вывода был выбран в "Формат". Все графические размеры, которые можно
+использовать определяются в OTRS в SysConfig. При настройке отчета, агент
+может предварительно выбрать все соответствующие форматы.
+            </p></li><li class="listitem"><p>
+                <span class="emphasis"><em>Количество строк</em></span>. Указывает когда отчет заменяется
+колонкой, чьи ячейки содержат сумму соответствующих строк.
+            </p></li><li class="listitem"><p>
+                <span class="emphasis"><em>Сумма столбцов</em></span>.  Указывает когда отчет заменяется
+строкой, чье ячейки содержат сумму соответствующих строк.
+            </p></li><li class="listitem"><p>
+                <span class="emphasis"><em>Кэш</em></span>. Указывает на то, что созданный отчет должен
+кэшироваться в файловой системе. Это позволяет существенно экономить
+вычислительные мощности и время, но должно использоваться только в том
+случае если содержание отчета больше не будет изменятся.
+            </p><p>
+                Кэширование автоматически прекращается, если отчет не содержит временных
+обозначений, или когда временные обозначения указывают на будущее.
+            </p><p>
+                В случае редактирования закэшированного отчета удаляются все закэшированные
+данные.
+            </p></li><li class="listitem"><p>
+                            <span class="emphasis"><em>Действительный</em></span>. Устанавливается в значение
+"недействительный" если ранее сконфигурированный отчет по какой то причине
+не должен выполнятся. Кнопка "Статистика" также не отображатеся  в правом
+нижнем углу блока. Отчет больше не генерируется.
+            </p></li></ul></div><p>
+    </p></li><li class="listitem"><p>
+        <span class="emphasis"><em>Определение элементов для X-axis</em></span>. Это конфигурация для
+элементов, которые используются для описания X-axis или, если используются
+таблицы, имя столбца применяется для X-axis (см. ниже Рисунок 19.6).
+    </p><p>
+    </p><div class="screenshot"><div><img src="screenshots/stats-edit-xaxis.png"></div></div><p>
+    </p><p>
+        <span class="emphasis"><em>Рисунок 19.6. Определение элементов для X-axis.</em></span>
+    </p><p>
+    Во-первых, элемент выбирается с помощью опционального поля. Потом нужно
+выбрать два или более атрибутов элемента. Если выбраных атрибутов нету,
+используются все атрибуты, в том числе и те, которые были добавлены после
+конфигурации отчета.
+    </p><p>
+    Если  отключена настройка "Фиксированный", агент, генерирующий отчет, может
+изменить атрибуты соответствующего элемента в меню "Вид" пользовательского
+веб-интерфейса.
+    </p><p>
+    Элементы времени отличаются от периодов времени. Тип и число элементов
+зависит от использующихся динамических обьектов и сильно зависит от этого.
+    </p><p>
+    Если все входные данные введены правильно, нажатие кнопки "Следующий шаг"
+открывает форму "Серия значений". Кроме этого, есть возможность заново
+вернуться к редактированию предыдуших разделов.
+    </p></li><li class="listitem"><p>
+        <span class="emphasis"><em>Спецификация серии значений</em></span>.
+    </p><p>
+    На третьем шаге настройки отчета нужно определить серию значений (см. ниже
+Рисунок 19.7). Позже они будут представлены в форме графиков или различных
+серий в табличном виде.
+    </p><p>
+    </p><div class="screenshot"><div><img src="screenshots/stats-edit-valueseries.png"></div></div><p>
+    </p><p>
+        <span class="emphasis"><em>Рисунок 19.7. Определение значений серии.</em></span>
+    </p><p>
+    Если выбран определенный элемент, каждый выбранный атрибут будет
+соответствовать значеню серии (см. ниже Пример 19-1).
+    </p><p>
+    </p><div class="example"><a name="stats-value-series-1"></a><p class="title"><b>Пример 19.1. Определение значения серии - один из элементов</b></p><div class="example-contents"><p>
+    Элемент Очередь:
+    </p><p>
+    </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+            Серия значений 1 = Raw
+            </p></li><li class="listitem"><p>
+            Значение серии 2 = Junk
+            </p></li><li class="listitem"><p>
+            ....
+            </p></li></ul></div><p>
+    </p></div></div><p><br class="example-break">
+    </p><p>
+    Если для формирования значения ряда, выбрано два элемента, каждый выбраный
+атрибут первого элемента комбинируется с атрибутом второго элемента
+(см. ниже Рисунок 19-2).
+    </p><p>
+    </p><div class="example"><a name="stats-value-series-2"></a><p class="title"><b>Пример 19.2. Определение значения серии - один из элементов </b></p><div class="example-contents"><p>
+    Элемент 1 очередь, Элемент 2 статус:
+    </p><p>
+    </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+            Значение создания 1 = Raw - открыть
+            </p></li><li class="listitem"><p>
+            Серия значений 2 = Raw - успешно закрыта
+            </p></li><li class="listitem"><p>
+            Серия значений 3 = Junk - открыто
+            </p></li><li class="listitem"><p>
+            Серия значений 4 = Junk - успешно закрыто
+            </p></li></ul></div><p>
+    </p></div></div><p><br class="example-break">
+    </p><p>
+    Выбор из трех или более элементов не допускается.
+    </p><p>
+    Кроме этого эти условия распостраняются и на выбор атрибутов и флажок
+"Основные" как для "X-axis":
+    </p><p>
+    </p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>
+            Если для элемента не выбрано никаких атрибутов, то используются все
+атрибуты, включая и те, которые были добавлены после настройки отчета.
+            </p></li><li class="listitem"><p>
+            Если параметр "Фиксированный" отключен, агент, который создает отчет может
+изменять атрибуты соответствующих элементов.
+            </p></li></ul></div><p>
+    </p></li><li class="listitem"><p>
+        <span class="emphasis"><em>Установка ограничений отчета</em></span>. Это четвертый и последний
+этап конфигурации (см. ниже Рисунок 19.8). Ограничения служат для
+ограничения результатов выбранных критериев. В ряде случаев не должно быть
+никаких ограничений.
+    </p><p>
+    </p><div class="screenshot"><div><img src="screenshots/stats-edit-restrictions.png"></div></div><p>
+    </p><p>
+        <span class="emphasis"><em>Рисунок 19.8. Определение ограничений.</em></span>
+    </p><p>
+    После установки всех ограничей, конфигурация отчета завершается нажатием
+кнопки "Готово".
+    </p></li></ol></div><p>
+</p></div><div class="section" title="Импорт"><div class="titlepage"><div><div><h3 class="title"><a name="stats-import"></a>Импорт</h3></div></div></div><p>
+Для доступа к пользовательскому интерфейсу Импорта (см. ниже Рисунок 19.9)
+перейдите по ссылке "Статистика", а затем выберите "Импорт". Альтернативный
+способ - на странице "Обзор" нажать кнопку Импорт, это приведет к тому же
+результату, но для этого действия требуются права для чтения и записи "RW".
+</p><p>
+</p><div class="screenshot"><div><img src="screenshots/stats-import.png"></div></div><p>
+</p><p>
+    <span class="emphasis"><em>Рисунок 19.9. Пользовательский веб-интерфейс для
+Импорта.</em></span>
+</p><p>
+Очень удобная функция, значительно облегчает импорт статистики, особенно в
+сочетании с возможностями модуля экспорта. Статистику можно создать и
+протестировать на тестовых системах, а затем импортировать в реальную
+систему.
+</p><p>
+Импорт осуществляется путем простой загрузки файла. После этого, для импорта
+статистики, автоматически открывается пользовательский интерфейс "Вид".
+</p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="acl.html">Пред.</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="stats-managing-the-module.html">След.</a></td></tr><tr><td width="40%" align="left" valign="top">Глава 18. Списки Контроля Доступа (ACLs) </td><td width="20%" align="center"><a accesskey="h" href="index.html">Начало</a></td><td width="40%" align="right" valign="top"> Администрирование модуля статистики OTRS администратором.</td></tr></table></div></body></html>

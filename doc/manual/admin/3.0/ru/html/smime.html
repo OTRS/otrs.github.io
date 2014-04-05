@@ -1,0 +1,225 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Глава 17. S/MIME</title><meta name="generator" content="DocBook XSL Stylesheets V1.75.2"><link rel="home" href="index.html" title="OTRS 3.0 - Руководство Администратора"><link rel="up" href="index.html" title="OTRS 3.0 - Руководство Администратора"><link rel="prev" href="configure-pgp.html" title="Глава 16. PGP"><link rel="next" href="acl.html" title="Глава 18. Списки Контроля Доступа (ACLs)"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Глава 17. S/MIME</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="configure-pgp.html">Пред.</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="acl.html">След.</a></td></tr></table><hr></div><div class="chapter" title="Глава 17. S/MIME"><div class="titlepage"><div><div><h2 class="title"><a name="smime"></a>Глава 17. S/MIME</h2></div></div></div><p>
+На первый взгляд, S/MIME-шифрование кажется более сложным чем PGP. Прежде
+всего для OTRS нужно создать Центр Сертификации - Certification Authority
+(CA). Последующие процедуры очень похожи на те, которые вы выполняли для
+PGP: настроить OTRS, установить собственные сертификаты, импортировать
+другие открытые сертификаты (если необходимо), и т.д.
+</p><p>
+В большинстве случаев настройка S/MIME производится за пределами
+веб-интерфейса OTRS, и должана осуществлятся в оболочке операционной системы
+с правами пользователя 'otrs'. MIME конфигурация под Linux основана yа SSL
+(OpenSSL). Поэтому, сначала проверьте установлен ли в вашей системе пакет
+OpenSSL. OpenSSL-пакет содержит скрипт, который называется CA.pl, для
+создания сертификата, все наиболее важные шаги, нужно проделать именно с
+ним. Для упрощения процедуры узнайте, где в файловой системе находится
+сценарий CA.pl и введите путь к его местоположению в переменную путей
+оболочки (см. ниже Сценарий 17.1).
+</p><p>
+</p><pre class="screen">
+otrs@linux:~&gt; rpm -ql openssl | grep CA
+/usr/share/ssl/misc/CA.pl
+otrs@linux:~&gt; export PATH=$PATH:/usr/share/ssl/misc
+otrs@linux:~&gt; which CA.pl
+/usr/share/ssl/misc/CA.pl
+otrs@linux:~&gt; mkdir tmp; cd tmp
+otrs@linux:~/tmp&gt;
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Сценарий 17.1. Настройка S/MIME.</em></span>
+</p><p>
+Сценарий 17.1 показывает, что была создана нова временная директория ~/tmp,
+в которой хранятся сгенерированные сертификаты.
+</p><p>
+Для создания сертификата, проделайте следующие операции в командной строке
+(предположим, что OTRS-администратор  должен создать SSL-сертификат с целью
+тестирования и обучения. В случае, если у вас уже есть SSL-сертификат для
+шифрования, используйте его и пропустите следующие шаги):
+</p><p>
+</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+    Создание собственного Центра Сертификации (Certification Authority) для
+SSL. Вы должны подтвердить запрос на собственный SSL-сертификат (см. ниже
+Рисунок 17.2).
+    </p><p>
+    </p><pre class="screen">
+otrs@linux:~/tmp&gt; CA.pl -newca
+CA certificate filename (or enter to create)
+
+Making CA certificate ...
+Generating a 1024 bit RSA private key
+...++++++
+......++++++
+writing new private key to './demoCA/private/cakey.pem'
+Enter PEM pass phrase:
+Verifying - Enter PEM pass phrase:
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:DE
+State or Province Name (full name) [Some-State]:OTRS-state
+Locality Name (eg, city) []:OTRS-town
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:Your company
+Organizational Unit Name (eg, section) []:
+Common Name (eg, YOUR name) []:OTRS Admin
+Email Address []:otrs@your-domain.tld
+otrs@linux:~/tmp&gt; ls -la demoCA/
+total 8
+-rw-r--r--  1 otrs otrs 1330 2006-01-08 17:54 cacert.pem
+drwxr-xr-x  2 otrs otrs   48 2006-01-08 17:53 certs
+drwxr-xr-x  2 otrs otrs   48 2006-01-08 17:53 crl
+-rw-r--r--  1 otrs otrs    0 2006-01-08 17:53 index.txt
+drwxr-xr-x  2 otrs otrs   48 2006-01-08 17:53 newcerts
+drwxr-xr-x  2 otrs otrs   80 2006-01-08 17:54 private
+-rw-r--r--  1 otrs otrs   17 2006-01-08 17:54 serial
+otrs@linux:~/tmp&gt;
+    </pre><p>
+    </p><p>
+    <span class="emphasis"><em>Сценарий  17.2. Создание Центра Сертификации (Certification
+Authority) для SSL.</em></span>
+    </p></li><li class="listitem"><p>
+    Создание запроса сертификата (см. ниже Сценарий 17.3).
+    </p><p>
+    </p><pre class="screen">
+otrs@linux:~/tmp&gt; CA.pl -newreq
+Generating a 1024 bit RSA private key
+..........................................++++++
+....++++++
+writing new private key to 'newreq.pem'
+Enter PEM pass phrase:
+Verifying - Enter PEM pass phrase:
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:DE\keyreturn
+State or Province Name (full name) [Some-State]:OTRS-state
+Locality Name (eg, city) []:OTRS-town
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:Your company
+Organizational Unit Name (eg, section) []:
+Common Name (eg, YOUR name) []:OTRS admin
+Email Address []:otrs@your-domain.tld
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+Request (and private key) is in newreq.pem
+otrs@linux:~/tmp&gt; ls -la
+total 4
+drwxr-xr-x  6 otrs otrs  232 2006-01-08 17:54 demoCA
+-rw-r--r--  1 otrs otrs 1708 2006-01-08 18:04 newreq.pem
+otrs@linux:~/tmp&gt;
+    </pre><p>
+    </p><p>
+    <span class="emphasis"><em>Сценарий 17.3. Создание запроса сертификаата.</em></span>
+    </p></li><li class="listitem"><p>
+    Подпись запроса сертификата. Запрос сертификата может быть подписан, и таким
+образом сертифицирован вашим собственным центром сертификации (CA), что
+более правдоподобно, чем использование других, внешних CA (см. ниже Сценарий
+17.4).
+    </p><p>
+    </p><pre class="screen">
+otrs@linux:~/tmp&gt; CA.pl -signreq
+Using configuration from /etc/ssl/openssl.cnf
+Enter pass phrase for ./demoCA/private/cakey.pem:
+Check that the request matches the signature
+Signature ok
+Certificate Details:
+        Serial Number:
+            fd:85:f6:9f:14:07:16:c8
+        Validity
+            Not Before: Jan  8 17:04:37 2006 GMT
+            Not After : Jan  8 17:04:37 2007 GMT
+        Subject:
+            countryName               = DE
+            stateOrProvinceName       = OTRS-state
+            localityName              = OTRS-town
+            organizationName          = Your Company
+            commonName                = OTRS administrator
+            emailAddress              = otrs@your-domain.tld
+        X509v3 extensions:
+            X509v3 Basic Constraints:
+                CA:FALSE
+            Netscape Comment:
+                OpenSSL Generated Certificate
+            X509v3 Subject Key Identifier:
+                01:D9:1E:58:C0:6D:BF:27:ED:37:34:14:D6:04:AC:C4:64:98:7A:22
+            X509v3 Authority Key Identifier:
+                keyid:10:4D:8D:4C:93:FD:2C:AA:9A:B3:26:80:6B:F5:D5:31:E2:8E:DB:A8
+                DirName:/C=DE/ST=OTRS-state/L=OTRS-town/O=Your Company/
+                CN=OTRS admin/emailAddress=otrs@your-domain.tld
+                serial:FD:85:F6:9F:14:07:16:C7
+
+Certificate is to be certified until Jan  8 17:04:37 2007 GMT (365 days)
+Sign the certificate? [y/n]:y
+
+1 out of 1 certificate requests certified, commit? [y/n]y
+Write out database with 1 new entries
+Data Base Updated
+Signed certificate is in newcert.pem
+otrs@linux:~/tmp&gt;
+    </pre><p>
+    </p><p>
+    <span class="emphasis"><em>Сценарий 17.4. Подпись запроса сертификата.</em></span>
+    </p></li><li class="listitem"><p>
+    Создание своего собственного сертификата, и все данные собираются с ним,
+используя запрос сертификата (см. ниже Сценарий 17.5).
+    </p><p>
+    </p><pre class="screen">
+otrs@linux:~/tmp&gt; CA.pl -pkcs12 "OTRS Certificate"
+Enter pass phrase for newreq.pem:
+Enter Export Password:
+Verifying - Enter Export Password:
+otrs@linux:~/tmp&gt; ls -la
+total 12
+drwxr-xr-x  6 otrs otrs  328 2006-01-08 18:04 demoCA
+-rw-r--r--  1 otrs otrs 3090 2006-01-08 18:13 newcert.p12
+-rw-r--r--  1 otrs otrs 3791 2006-01-08 18:04 newcert.pem
+-rw-r--r--  1 otrs otrs 1708 2006-01-08 18:04 newreq.pem
+otrs@linux:~/tmp&gt;
+    </pre><p>
+    </p><p>
+    <span class="emphasis"><em>Сценарий 17.5. Создание нового сертификата.</em></span>
+    </p></li></ol></div><p>
+</p><p>
+Теперь эти операции выполнены, установка S/MIME в OTRS должена быть
+завершена.
+</p><p>
+Эта часть установки осуществляется в Панели Администрирования, выбрав ссылку
+<a class="link" href="adminarea-smime.html" title="SMIME">"SMIME"</a>. В случае, если в OTRS нету
+поддержки S/MIME, маска указывает администратору удобные ссылки чтобы
+активировать поддержку S/MIME.
+</p><p>
+Используя группу <a class="link" href="config.html#Framework:Crypt::SMIME" title="Crypt::SMIME">"Crypt::SMIME"</a> в SysConfig, также
+можно включить и настроить поддержку S/MIME.
+</p><p>
+Здесь можно активировать поддержку S/MIME, определить пути для команд
+OpenSSL, и директории для сертификатов. Файл ключей должен хранится в
+директории, указанной здесь. В противном случае OpenSSL не будет их
+использовать.
+</p><p>
+Следующим шагом, который следует выполнить - перейти по ссылке <a class="link" href="adminarea-smime.html" title="SMIME"> Настройка S/MIME в Панели
+Администрирования</a>. Здесь можно импортировать закрытые ключи
+OTRS-системы и открытые ключи других партнеров. Введите публичный ключ,
+который был создан и добавлен в OTRS в начале этого раздела.
+</p><p>
+Перейдя по ссылке <a class="link" href="customers-and-groups.html#adminarea-customers" title="Клиенты">Инструменты
+администрирования клиентов</a> можно импортировать все открытые S/MIME
+ключи партнеров по общению.
+</p></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="configure-pgp.html">Пред.</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="acl.html">След.</a></td></tr><tr><td width="40%" align="left" valign="top">Глава 16. PGP </td><td width="20%" align="center"><a accesskey="h" href="index.html">Начало</a></td><td width="40%" align="right" valign="top"> Глава 18. Списки Контроля Доступа (ACLs)</td></tr></table></div></body></html>
