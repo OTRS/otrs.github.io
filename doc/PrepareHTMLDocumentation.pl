@@ -74,7 +74,6 @@ sub FindHTMLFiles {
 
     my $Wanted = sub {
         return if (!-f $File::Find::name);
-        return if ($File::Find::name eq "$RealBin/index.html");
         return if (substr($File::Find::name, -5) ne '.html');
         push @HTMLFiles, $File::Find::name;
     };
@@ -92,8 +91,9 @@ sub ProcessHTMLFile {
     }
 
     my $SubPath   = substr($Param{File}, length($RealBin));
-    my $Sublevels = scalar(split(m{/}, $SubPath) - 2);
-    my $PathToJS  = join('/', map { '..' } (1 .. $Sublevels));
+    my @Sublevels = split m{/}, $SubPath;
+    my $PathToJS  = join('/', map { '..' } (1 .. (@Sublevels - 2)));
+    $PathToJS ||= '.';
 
     my $HTMLContent = ReadFile(File => $Param{File});
 
