@@ -217,6 +217,8 @@ $(document).ready(function() {
     // Docbook documentation
     if ($('div.navheader').length) {
 
+        $('body').addClass('manual');
+
         // Make table of contents collapsable
         $('.toc p b a').on('click', function() {
             $(this).parent().parent().next('dl').slideToggle('fast', function() {
@@ -240,5 +242,6 @@ $(document).ready(function() {
     // API documentation
     else if ($('div.box > h1').length) {
         // Fiddle with DOM
+        $('body').addClass('api');
     }
 });
