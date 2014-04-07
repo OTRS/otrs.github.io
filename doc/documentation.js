@@ -196,8 +196,7 @@ $(document).ready(function() {
         <div id="doc"></div>\
         <div id="footer">\
             <p class="copyright">\
-                &copy; 2001-2014 OTRS Group, All Rights Reserved.\
-                - <a href="https://www.otrs.com/company/imprint/">Imprint</a>\
+                &copy; 2001-2014 <a href="https://www.otrs.com/company/imprint/">OTRS Group</a>\
             </p>\
         </div>\
     </div>\
