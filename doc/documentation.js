@@ -38,6 +38,16 @@ $(document).ready(function() {
             Path: 'itsm',
             Versions: [
                 {
+                    Version:  '2.0',
+                    Name:     'OTRS::ITSM 2.0',
+                    Languages: ['en',],
+                },
+                {
+                    Version:  '3.2',
+                    Name:     'OTRS::ITSM 3.2',
+                    Languages: ['en',],
+                },
+                {
                     Version:  '3.3',
                     Name:     'OTRS::ITSM 3.3',
                     Languages: ['en',],
@@ -61,6 +71,21 @@ $(document).ready(function() {
             Type: 'manual',
             Path: 'developer',
             Versions: [
+                {
+                    Version:  '3.0',
+                    Name:     'OTRS 3.0',
+                    Languages: ['en',],
+                },
+                {
+                    Version:  '3.1',
+                    Name:     'OTRS 3.1',
+                    Languages: ['en',],
+                },
+                {
+                    Version:  '3.2',
+                    Name:     'OTRS 3.2',
+                    Languages: ['en',],
+                },
                 {
                     Version:  '3.3',
                     Name:     'OTRS 3.3',
