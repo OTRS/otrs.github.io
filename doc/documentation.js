@@ -195,11 +195,11 @@ $(document).ready(function() {
         <div id="marginalia_wrapper">' + CreateNavigation() + '</div>\
         <div id="doc"></div>\
         <div id="footer">\
-             <p class="copyright">\
-             Copyright &copy;  2001-2012 OTRS Team, All Rights Reserved.\
-             - <a href="http://www.otrs.com/en/corporate-navigation/imprint/">Imprint</a>\
-             </p>\
-         </div>\
+            <p class="copyright">\
+                &copy; 2001-2014 OTRS Group, All Rights Reserved.\
+                - <a href="https://www.otrs.com/company/imprint/">Imprint</a>\
+            </p>\
+        </div>\
     </div>\
 </div>';
 
