@@ -247,8 +247,13 @@ $(document).ready(function() {
 
     $('#marginalia a').each(function() {
         var LinkHref     = $(this).attr('href'),
-            LocationHref = window.location.href;
-        if (LinkHref.replace(/[\w\d-]+\.html[#\w\d-\.]*/g)  === LocationHref.replace(/[\w\d-]+\.html[#\w\d-\.]*/g) ) {
+            LocationHref = window.location.href,
+            IsActive = false;
+
+        LinkHref     = LinkHref.replace(/[\w\d-]+\.html[#\w\d-\.]*/g, '');
+        LocationHref = LocationHref.replace(/[\w\d-]+\.html[#\w\d-\.]*/g, '');
+
+        if (LocationHref.indexOf(LinkHref) > -1) {
             $(this).addClass('Active').parents('ul').removeClass('Hidden');
         }
     });
