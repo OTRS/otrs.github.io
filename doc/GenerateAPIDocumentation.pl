@@ -97,5 +97,19 @@ return if $Content !~ m{=head|=item|=back|=over};
             File::Find::find( { no_chdir => 1, wanted => $wanted }, $dir );
         }
     }
+
+# ---
+# OTRS
+# ---
+# Properly output Perl namespaces
+for my $Doc (@{ $self->docs() }) {
+    if ($Doc->suffix() eq 'pm') {
+        my $Name = $Doc->name();
+        $Name =~ s/-/::/xmsg;
+        $Doc->name($Name);
+    }
+}
+# ---
+
     $self->docs( [ sort { $a->name cmp $b->name } @{ $self->docs } ] );
 }
