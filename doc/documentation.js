@@ -229,7 +229,7 @@ $(document).ready(function() {
         $('body').addClass('manual');
 
         // Make table of contents collapsable
-        $('.toc').on('click', 'a', function() {
+        $('.toc p b').on('click', 'a', function() {
             $(this).parent().parent().next('dl').slideToggle('fast', function() {
                 $(this).parent().toggleClass('closed');
             });
