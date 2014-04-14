@@ -40,12 +40,12 @@ $(document).ready(function() {
                 {
                     Version:  '2.0',
                     Name:     'OTRS::ITSM 2.0',
-                    Languages: ['en',],
+                    Languages: ['en', 'de',],
                 },
                 {
                     Version:  '3.2',
                     Name:     'OTRS::ITSM 3.2',
-                    Languages: ['en',],
+                    Languages: ['en', 'de',],
                 },
                 {
                     Version:  '3.3',
@@ -222,7 +222,7 @@ $(document).ready(function() {
         return false;
     });
     $('#marginalia ul ul a').prepend('<i class="fa fa-chevron-right"></i>');
-    
+
     // Docbook documentation
     if ($('div.navheader').length) {
 
