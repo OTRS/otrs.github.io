@@ -11,13 +11,8 @@ $(document).ready(function() {
             Path: 'admin',
             Versions: [
                 {
-                    Version:  '3.0',
-                    Name:     'OTRS 3.0',
-                    Languages: ['en', 'de', 'ru',],
-                },
-                {
-                    Version:  '3.1',
-                    Name:     'OTRS 3.1',
+                    Version:  '3.3',
+                    Name:     'OTRS 3.3',
                     Languages: ['en',],
                 },
                 {
@@ -26,31 +21,36 @@ $(document).ready(function() {
                     Languages: ['en',],
                 },
                 {
-                    Version:  '3.3',
-                    Name:     'OTRS 3.3',
+                    Version:  '3.1',
+                    Name:     'OTRS 3.1',
                     Languages: ['en',],
+                },
+                {
+                    Version:  '3.0',
+                    Name:     'OTRS 3.0',
+                    Languages: ['en', 'de', 'ru',],
                 },
             ],
         },
         {
-            Name: 'OTRS::ITSM Manual',
+            Name: 'OTRS ITSM Manual',
             Type: 'manual',
             Path: 'itsm',
             Versions: [
                 {
-                    Version:  '2.0',
-                    Name:     'OTRS::ITSM 2.0',
-                    Languages: ['en', 'de',],
+                    Version:  '3.3',
+                    Name:     'OTRS ITSM 3.3',
+                    Languages: ['en',],
                 },
                 {
                     Version:  '3.2',
-                    Name:     'OTRS::ITSM 3.2',
+                    Name:     'OTRS ITSM 3.2',
                     Languages: ['en', 'de',],
                 },
                 {
-                    Version:  '3.3',
-                    Name:     'OTRS::ITSM 3.3',
-                    Languages: ['en',],
+                    Version:  '2.0',
+                    Name:     'OTRS ITSM 2.0',
+                    Languages: ['en', 'de',],
                 },
             ],
         },
@@ -72,13 +72,8 @@ $(document).ready(function() {
             Path: 'developer',
             Versions: [
                 {
-                    Version:  '3.0',
-                    Name:     'OTRS 3.0',
-                    Languages: ['en',],
-                },
-                {
-                    Version:  '3.1',
-                    Name:     'OTRS 3.1',
+                    Version:  '3.3',
+                    Name:     'OTRS 3.3',
                     Languages: ['en',],
                 },
                 {
@@ -87,8 +82,13 @@ $(document).ready(function() {
                     Languages: ['en',],
                 },
                 {
-                    Version:  '3.3',
-                    Name:     'OTRS 3.3',
+                    Version:  '3.1',
+                    Name:     'OTRS 3.1',
+                    Languages: ['en',],
+                },
+                {
+                    Version:  '3.0',
+                    Name:     'OTRS 3.0',
                     Languages: ['en',],
                 },
             ],
@@ -99,20 +99,20 @@ $(document).ready(function() {
             Path: 'otrs',
             Versions: [
                 {
-                    Version:  '3.1',
-                    Name:     'OTRS 3.1',
-                },
-                {
-                    Version:  '3.2',
-                    Name:     'OTRS 3.2',
+                    Version:  '3.4',
+                    Name:     'OTRS git',
                 },
                 {
                     Version:  '3.3',
                     Name:     'OTRS 3.3',
                 },
                 {
-                    Version:  '3.4',
-                    Name:     'OTRS git',
+                    Version:  '3.2',
+                    Name:     'OTRS 3.2',
+                },
+                {
+                    Version:  '3.1',
+                    Name:     'OTRS 3.1',
                 },
             ],
         },
