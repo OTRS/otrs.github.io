@@ -1175,9 +1175,35 @@ OwnerID, PriorityID, StateID, HistoryTypeID and TypeID)</p></dd>
         },
         ReturnType    =&gt; 'Ticket',
         ReturnSubType =&gt; 'State',
-    )
+    );
 
-</pre></dd>	<dt>TicketAclData()</dt>
+</pre></dd>		<dd><p>If ACL modules are configured are configured in the <code>Ticket::Acl::Module</code>
+config key, they are invoked during the call to <code>TicketAcl</code>. The configuration
+of a module looks like this:</p></dd>
+<dd>
+
+
+</dd><dd><pre>     $ConfigObject-&gt;{'Ticket::Acl::Module'}-&gt;{'TheName'} = {
+         Module =&gt; 'Kernel::System::Ticket::Acl::TheAclModule',
+         Checks =&gt; ['Owner', 'Queue', 'SLA', 'Ticket'],
+         ReturnType =&gt; 'Ticket',
+         ReturnSubType =&gt; ['State', 'Service'],
+     };
+
+</pre></dd>		<dd><p>Each time the <code>ReturnType</code> and one of the <code>ReturnSubType</code> entries is identical to the same
+arguments passed to <code>TicketAcl</code>, the module of the name in <code>Module</code> is loaded, the <code>new</code> method
+is called on it, and then the <code>Run</code> method is called.</p></dd>
+		<dd><p>The <code>Checks</code> array reference in the configuration controls what arguments are passed. to the
+<code>Run</code> method.
+Valid keys are <code>CustomerUser</code>, <code>DynamicField</code>, <code>Frontend</code>, <code>Owner</code>, <code>Priority</code>, <code>Process</code>,
+<code>Queue</code>, <code>Responsible</code>, <code>Service</code>, <code>SLA</code>, <code>State</code>, <code>Ticket</code> and <code>Type</code>. If any of those are
+present, the <code>Checks</code> argument passed to <code>Run</code> contains an entry with the same name, and as a
+value the associated data.</p></dd>
+		<dd><p>The <code>Run</code> method can add entries to the <code>Acl</code> param hash, which are then evaluated along with all
+other ACL. It should only add entries whose conditionals can be checked with the data specified in
+the <code>Checks</code> configuration entry.</p></dd>
+		<dd><p>The return value of the <code>Run</code> method is ignored.</p></dd>
+	<dt>TicketAclData()</dt>
 		<dd><p>return the current ACL data hash after TicketAcl()</p></dd>
 <dd><pre>    my %Acl = $TicketObject-&gt;TicketAclData();
 
