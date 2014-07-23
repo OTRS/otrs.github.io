@@ -1,0 +1,403 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Web Service Configuration</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 3.1 - Administrator-Handbuch"><link rel="up" href="genericinterface.html" title="Kapitel 20. Generic Interface"><link rel="prev" href="webservice_cli.html" title="Web Service Command Line Interface"><link rel="next" href="genericinterface-connectors.html" title="Connectors"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Web Service Configuration</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="webservice_cli.html">Zurück</a> </td><th width="60%" align="center">Kapitel 20. Generic Interface</th><td width="20%" align="right"> <a accesskey="n" href="genericinterface-connectors.html">Weiter</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="genericinterface-webservice-configuration"></a>Web Service Configuration</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="genericinterface-webservice-configuration.html#id-1.22.9.7">
+            Configuration Details
+        </a></span></dt><dd><dl><dt><span class="section"><a href="genericinterface-webservice-configuration.html#id-1.22.9.7.2">
+                General
+            </a></span></dt><dt><span class="section"><a href="genericinterface-webservice-configuration.html#id-1.22.9.7.3">
+                Debugger
+            </a></span></dt><dt><span class="section"><a href="genericinterface-webservice-configuration.html#id-1.22.9.7.4">Provider</a></span></dt><dd><dl><dt><span class="section"><a href="genericinterface-webservice-configuration.html#id-1.22.9.7.4.3">Operation</a></span></dt></dl></dd><dt><span class="section"><a href="genericinterface-webservice-configuration.html#id-1.22.9.7.5">Requester</a></span></dt><dd><dl><dt><span class="section"><a href="genericinterface-webservice-configuration.html#id-1.22.9.7.5.3">Invoker</a></span></dt></dl></dd></dl></dd></dl></div><p>
+        From its design the web services were conceived to be portable from one OTRS
+system to another, e.g. from a test or development environment to a
+production system. Therefore it was needed to have an easy way to extract
+the web service configuration from the database, and import it to
+another. To accomplish this task Generic Interface uses YAML files as the
+web services configuration basis.
+    </p><p>
+        Why YAML? YAML is a markup language designed to be human friendly to read
+and write (it is easier to understand than JSON), it does not have some of
+the limitations of XML like numeric tags, it is open, standardized, and is
+complete enough to store the whole web service configuration.
+    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Anmerkung</h3><p>
+            To learn more about YAML please visit <a class="ulink" href="http://www.yaml.org/" target="_top">http://www.yaml.org/</a>.
+        </p></div><p>
+        The following is a web service configuration file example in YAML format:
+    </p><p>
+        </p><pre class="programlisting">
+---
+Debugger:
+  DebugThreshold: debug
+Description: This an example of a web service configuration
+Provider:
+  Operation:
+    CloseIncident:
+      Description: This is a test operation
+      MappingInbound: {}
+      MappingOutbound: {}
+      RemoteSystemGuid: ''
+      Type: Test::Test
+    Test:
+      Description: This is a test operation
+      MappingInbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Keep
+          KeyMapExact:
+            Prio: Priority
+          ValueMap:
+            Priority:
+              ValueMapExact:
+                Critical: 5 Very High
+                Information: 1 Very Low
+                Warning: 3 Normal
+          ValueMapDefault:
+            MapTo: 3 Normal
+            MapType: MapTo
+        Type: Simple
+      MappingOutbound:
+        Config:
+          KeyMapDefault:
+            MapTo: ''
+            MapType: Ignore
+          KeyMapExact:
+            Priority: Prio
+          ValueMap:
+            Prio:
+              ValueMapExact:
+                1 Very Low: Information
+                3 Normal: Warning
+                5 Very High: Critical
+          ValueMapDefault:
+            MapTo: ''
+            MapType: Ignore
+        Type: Simple
+      Type: Test::Test
+  Transport:
+    Config:
+      MaxLength: 10000000
+      NameSpace: http://www.example.com/actions
+    Type: HTTP::SOAP
+RemoteSystem: remote.system.description.example.com
+Requester:
+  Invoker:
+    Test:
+      Description: This is a test invoker
+      Events:
+        - Asynchronous: 1
+          Event: TicketCreate
+        - Asynchronous: 0
+          Event: ArticleUpdate
+      MappingInbound:
+        Type: Simple
+      MappingOutbound:
+        Type: Simple
+      Type: Test::Test
+  Transport:
+    Config:
+      Authentication:
+        Password: '*******'
+        Type: BasicAuth
+        User: otrs
+      Encoding: utf-8
+      Endpoint: http://www.example.com:8080/endpoint
+      NameSpace: http://www.example.com/actions
+      SOAPAction: Yes
+      SOAPActionSeparator: '#'
+    Type: HTTP::SOAP
+            
+        </pre><p>
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.22.9.7"></a>
+            Configuration Details
+        </h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.22.9.7.2"></a>
+                General
+            </h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        Description: a short text that describes the web service.
+                    </p></li><li class="listitem"><p>
+                        RemoteSystem: a short description of the Remote System.
+                    </p></li><li class="listitem"><p>
+                        Debugger: a container for the debugger settings.
+                    </p></li><li class="listitem"><p>
+                        Provider: a container for the provider settings.
+                    </p></li><li class="listitem"><p>
+                        Requester: a container for the requester settings.
+                    </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.22.9.7.3"></a>
+                Debugger
+            </h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        DebugThreshold: the debugger level
+                    </p><div class="itemizedlist"><p class="title"><b>
+                            Possible Values
+                        </b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                debug: all logs are stored in the database.
+                            </p></li><li class="listitem"><p>
+                                info: info, notice and error level logs are stored in the database.
+                            </p></li><li class="listitem"><p>
+                                notice: notice and error level logs are stored in the database.
+                            </p></li><li class="listitem"><p>
+                                error: only error level logs are stored in the database.
+                            </p></li></ul></div></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.22.9.7.4"></a>Provider</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        Operation: a container for each operation settings.
+                    </p></li><li class="listitem"><p>
+                        Transport: a container for provider network transport settings.
+                    </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.22.9.7.4.3"></a>Operation</h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                            &lt;OperationName&gt;: Unique name for the operation, container for its own
+operation settings (cardinality 0..n, but not duplicate).
+                        </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3"></a>&lt;OperationName&gt;</h6></div></div></div><p>
+                        This section is based on operations from type "Test::Test" other operations
+might contain more or different settings.
+                    </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                Description: a short text that describes the operation.
+                            </p></li><li class="listitem"><p>
+                                MappingInbound: a container for the mapping settings for the incoming
+request data.
+                            </p></li><li class="listitem"><p>
+                                MappingOutbound: a container for the mapping settings for the outgoing
+response data.
+                            </p></li><li class="listitem"><p>
+                                Type: the operation backend, in Controller::Operation format.
+                            </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4"></a>MappingInbound</h6></div></div></div><p>
+                            This section is based on mappings from type "Simple". Other mappings might
+contain more or different settings.
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                    Config: a container for this mapping settings.
+                                </p></li><li class="listitem"><p>
+                                    Type: the mapping backend.
+                                </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4.4"></a>Config</h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                            KeyMapDefault: a container for all non mapped keys settings.
+                                        </p></li><li class="listitem"><p>
+                                            ValueMapDefault: a container for all non mapped values settings.
+                                        </p></li><li class="listitem"><p>
+                                            KeyMapExact: a container for all exact key mappings (cardinality 0 .. 1).
+                                        </p></li><li class="listitem"><p>
+                                            KeyMapRegEx: a container for all regular expression key mappings
+(cardinality 0 .. 1).
+                                        </p></li><li class="listitem"><p>
+                                            ValueMap: a container for all value mappings (cardinality 0 .. 1).
+                                        </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4.4.3"></a>
+                                        KeyMapDefault
+                                    </h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                MapTo: the new value to be used (only applicable if MapType is set to
+MapTo).
+                                            </p></li><li class="listitem"><p>
+                                                MapType: the rule for the mapping.
+                                            </p><div class="itemizedlist"><p class="title"><b>Possible Values</b></p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                                        Keep: leave unchanged.
+                                                    </p></li><li class="listitem"><p>
+                                                        Ignore: drop.
+                                                    </p></li><li class="listitem"><p>
+                                                        MapTo: change to the MapTo value.
+                                                    </p></li></ul></div></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4.4.4"></a>
+                                        ValueMapDefault
+                                    </h6></div></div></div><p>
+                                        Similar to KeyMapDefault.
+                                    </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4.4.5"></a>
+                                        KeyMapExact
+                                    </h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                &lt;oldkey&gt;: &lt;newkey&gt; (cardinality 0 .. n but not duplicate).
+                                            </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4.4.6"></a>
+                                        KeyMapRegEx
+                                    </h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                &lt;oldkey(RegEx)&gt;: &lt;newkey&gt; ( cardinality 0 .. n but no
+duplicates).
+                                            </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4.4.7"></a>
+                                        ValueMap
+                                    </h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                &lt;newkey&gt;: a container for value mappings for this new key (cardinality
+depends on the new keys from KeyMapExact and KeyMapRegEx).
+                                            </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4.4.7.3"></a>
+                                            &lt;newkey&gt;
+                                        </h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                    ValueMapExact: a container for all exact value mappings (cardinality 0
+.. 1).
+                                                </p></li><li class="listitem"><p>
+                                                    ValueMapRegEx: a container for all regular expression value mappings
+(cardinality 0 .. 1).
+                                                </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4.4.7.3.3"></a>
+                                                valueMapExact
+                                            </h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                        &lt;oldvalue&gt;: &lt;newvalue&gt; ( cardinality 0 .. n but not duplicate).
+                                                    </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.4.4.7.3.4"></a>
+                                                ValueMapRegEx
+                                            </h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                        &lt;oldvalue(RegEx)&gt;: &lt;newvalue&gt; ( cardinality 0 .. n but not
+duplicate).
+                                                    </p></li></ul></div></div></div></div></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.5"></a>MappingOutbound</h6></div></div></div><p>
+                            Same as MappingInbound.
+                        </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.6"></a>Transport</h6></div></div></div><p>
+                            This section is based on the provider network transport HTTP::SOAP, other
+transports might contain more or different settings.
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                    Config: a container for the specific network transport configuration
+settings.
+                                </p></li><li class="listitem"><p>
+                                    Type: the provider network transport backend.
+                                </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.4.3.3.6.4"></a>Config</h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                        MaxLength: the maximum length in bytes to be read in a SOAP message by OTRS.
+                                    </p></li><li class="listitem"><p>
+                                        NameSpace: an URI that gives a context to all operations that belongs to
+this web service.
+                                    </p></li></ul></div></div></div></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.22.9.7.5"></a>Requester</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        Invoker: a container for each invokers' settings.
+                    </p></li><li class="listitem"><p>
+                        Transport: a container for requester network transport settings.
+                    </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.22.9.7.5.3"></a>Invoker</h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                            &lt;InvokerName&gt;: Unique name for the invoker, container for its own
+invoker settings (cardinality 0..n, but not duplicate).
+                        </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.5.3.3"></a>&lt;InvokerName&gt;</h6></div></div></div><p>
+                        This section is based on invokers from type "Test::Test" other invokers
+might contain more or different settings.
+                    </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                Description: a short text that describes the invoker
+                            </p></li><li class="listitem"><p>
+                                Events: a container for a unnamed list of event trigger settings.
+                            </p></li><li class="listitem"><p>
+                                MappingInbound: a container for the mapping settings for the incoming
+response data.
+                            </p></li><li class="listitem"><p>
+                                MappingOutbound: a container for the mapping settings for the outgoing
+request data.
+                            </p></li><li class="listitem"><p>
+                                Type: the invoker backend, in Controller::Invoker format.
+                            </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.5.3.3.4"></a>Events</h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                    <em><span class="remark">List Element</span></em>: (cardinality 0 .. n)
+                                </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                            Asynchronous: to set if the invoker execution will be delegated to the
+Scheduler
+                                        </p><div class="itemizedlist"><p class="title"><b>Possible Values</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                    0: not handled by the Scheduler.
+                                                </p></li><li class="listitem"><p>
+                                                    1: handled by the Scheduler.
+                                                </p></li></ul></div></li><li class="listitem"><p>
+                                            Event: the name of the event trigger.
+                                        </p><div class="itemizedlist"><p class="title"><b>Possible Values (for ticket events)</b></p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                                    TicketCreate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketDelete
+                                                </p></li><li class="listitem"><p>
+                                                    TicketTitleUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketUnlockTimeoutUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketQueueUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketTypeUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketServiceUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketSLAUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketCustomerUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketFreeTextUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketFreeTimeUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketPendingTimeUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketLockUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketArchiveFlagUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketStateUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketOwnerUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketResponsibleUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    TicketPriorityUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    HistoryAdd
+                                                </p></li><li class="listitem"><p>
+                                                    HistoryDelete
+                                                </p></li><li class="listitem"><p>
+                                                    TicketAccountTime
+                                                </p></li><li class="listitem"><p>
+                                                    TicketMerge
+                                                </p></li><li class="listitem"><p>
+                                                    TicketSubscribe
+                                                </p></li><li class="listitem"><p>
+                                                    TicketUnsubscribe
+                                                </p></li><li class="listitem"><p>
+                                                    TicketFlagSet
+                                                </p></li><li class="listitem"><p>
+                                                    TicketFlagDelete
+                                                </p></li><li class="listitem"><p>
+                                                    TicketSlaveLinkAdd
+                                                </p></li><li class="listitem"><p>
+                                                    TicketSlaveLinkDelete
+                                                </p></li><li class="listitem"><p>
+                                                    TicketMasterLinkDelete
+                                                </p></li></ul></div><div class="itemizedlist"><p class="title"><b>Possible Values (for article events)</b></p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                                    Article Events
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleCreate
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleFreeTextUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleUpdate
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleSend
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleBounce
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleAgentNotification
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleCustomerNotification
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleAutoResponse
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleFlagSet
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleFlagDelete
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleAgentNotification
+                                                </p></li><li class="listitem"><p>
+                                                    ArticleCustomerNotification
+                                                </p></li></ul></div></li></ul></div></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.5.3.3.5"></a>MappingInbound</h6></div></div></div><p>
+                            Same as Operation MappingInbound
+                        </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.5.3.3.6"></a>MappingOutbound</h6></div></div></div><p>
+                            Same as Operation MappingInbound.
+                        </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.5.3.3.7"></a>Transport</h6></div></div></div><p>
+                            This section is based on the requester network transport HTTP::SOAP, other
+transports might contain more or different settings.
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                    Config: a container for the specific network transport configuration
+settings.
+                                </p></li><li class="listitem"><p>
+                                    Type: the requester network transport backend.
+                                </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.5.3.3.7.4"></a>Config</h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                        Authentication: a container for authentication settings.
+                                    </p></li><li class="listitem"><p>
+                                        Encoding: the SOAP Message request encoding
+                                    </p></li><li class="listitem"><p>
+                                        Endpoint: the URI of the Remote Server web service to accept OTRS requests
+                                    </p></li><li class="listitem"><p>
+                                        NameSpace: an URI that gives a context to all invokers that belongs to this
+web service.
+                                    </p></li><li class="listitem"><p>
+                                        SOAPAction: to send an empty or filled SOAPAction header in the SOAP Message
+(in "&lt;NameSpace&gt; &lt;Separator&gt; &lt;Action&gt;" format).
+                                    </p><div class="itemizedlist"><p class="title"><b>Possible Values</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                YES: to send a filled SOAPAction header.
+                                            </p></li><li class="listitem"><p>
+                                                No: to send an empty SOAPAction header.
+                                            </p></li></ul></div></li><li class="listitem"><p>
+                                        SOAPActionSeparator: to set the &lt;Separator&gt; of a filled SOAPAction
+header.
+                                    </p><div class="itemizedlist"><p class="title"><b>Possible Values</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                '/': used for .net web services.
+                                            </p></li><li class="listitem"><p>
+                                                '#': used for all the rest web services.
+                                            </p></li></ul></div></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.22.9.7.5.3.3.7.4.3"></a>Authentication</h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                            User: the privileged user name that has access to the remote web service.
+                                        </p></li><li class="listitem"><p>
+                                            Password: the password for privileged user in plain text.
+                                        </p></li><li class="listitem"><p>
+                                            Type: the type of authentication.
+                                        </p></li></ul></div></div></div></div></div></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="webservice_cli.html">Zurück</a> </td><td width="20%" align="center"><a accesskey="u" href="genericinterface.html">Nach oben</a></td><td width="40%" align="right"> <a accesskey="n" href="genericinterface-connectors.html">Weiter</a></td></tr><tr><td width="40%" align="left" valign="top">Web Service Command Line Interface </td><td width="20%" align="center"><a accesskey="h" href="index.html">Zum Anfang</a></td><td width="40%" align="right" valign="top"> Connectors</td></tr></table></div></body></html>

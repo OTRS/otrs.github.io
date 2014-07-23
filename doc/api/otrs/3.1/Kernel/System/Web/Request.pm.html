@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::Web::Request</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 3.1 API Reference</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../index.html">OTRS 3.1 API Reference</a> &gt; Perl Modules &gt;
+  Kernel::System::Web::Request
+</div>
+<div>
+<a href="../../../src/Kernel/System/Web/Request.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+	<li><a href="#VERSION">VERSION</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>Kernel::System::Web::Request - global CGI interface</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>All cgi param functions.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create param object</p></dd>
+<dd><pre>    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Main;
+    use Kernel::System::Web::Request;
+
+</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
+    my $EncodeObject = Kernel::System::Encode-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $ParamObject = Kernel::System::Web::Request-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        LogObject    =&gt; $LogObject,
+        EncodeObject =&gt; $EncodeObject,
+        MainObject   =&gt; $MainObject,
+        WebRequest   =&gt; CGI::Fast-&gt;new(), # optional, e. g. if fast cgi is used
+    );
+
+</pre></dd>		<dd><p>If Kernel::System::Web::Request is instantiated several times, they will share the
+same CGI data (this can be helpful in filters which do not have access to the
+ParamObject, for example.</p></dd>
+		<dd><p>If you need to reset the CGI data before creating a new instance, use</p></dd>
+<dd><pre>    CGI::initialize_globals();
+
+</pre></dd>		<dd><p>before calling Kernel::System::Web::Request-&gt;new();</p></dd>
+	<dt>Error()</dt>
+		<dd><p>to get the error back</p></dd>
+<dd><pre>    if ( $ParamObject-&gt;Error() ) {
+        print STDERR $ParamObject-&gt;Error() . &quot;\n&quot;;
+    }
+
+</pre></dd>	<dt>GetParam()</dt>
+		<dd><p>to get params</p></dd>
+<dd><pre>    my $Param = $ParamObject-&gt;GetParam(
+        Param =&gt; 'ID',
+    );
+
+</pre></dd>	<dt>GetParamNames()</dt>
+		<dd><p>to get names of all parameters passed to the script.</p></dd>
+<dd><pre>    my @ParamNames = $ParamObject-&gt;GetParamNames();
+
+</pre></dd>		<dd><p>Example:</p></dd>
+		<dd><p>Called URL: index.pl?Action=AdminSysConfig;Subaction=Save;Name=Config::Option::Valid</p></dd>
+<dd><pre>    my @ParamNames = $ParamObject-&gt;GetParamNames();
+    print join &quot; :: &quot;, @ParamNames;
+    #prints Action :: Subaction :: Name
+
+</pre></dd>	<dt>GetArray()</dt>
+		<dd><p>to get array params</p></dd>
+<dd><pre>    my @Param = $ParamObject-&gt;GetArray( Param =&gt; 'ID' );
+
+</pre></dd>	<dt>GetUploadAll()</dt>
+		<dd><p>to get file upload</p></dd>
+<dd><pre>    my %File = $ParamObject-&gt;GetUploadAll(
+        Param  =&gt; 'FileParam',
+        Source =&gt; 'string',
+    );
+
+</pre></dd><dd><pre>    to get file upload without uft-8 encoding
+
+</pre></dd><dd><pre>    my %File = $ParamObject-&gt;GetUploadAll(
+        Param  =&gt; 'FileParam',
+        Source =&gt; 'string',
+    );
+
+</pre></dd><dd><pre>    print &quot;Filename: $File{Filename}\n&quot;;
+    print &quot;ContentType: $File{ContentType}\n&quot;;
+    print &quot;Content: $File{Content}\n&quot;;
+
+</pre></dd><dd><pre>    If param Source is file, the the content contains the file location
+    in your local file system.
+
+</pre></dd>	<dt>SetCookie()</dt>
+		<dd><p>set a cookie</p></dd>
+<dd><pre>    $ParamObject-&gt;SetCookie(
+        Key     =&gt; ID,
+        Value   =&gt; 123456,
+        Expires =&gt; '+3660s',
+        Secure  =&gt; 1,           # optional, set secure attribute to disable cookie on HTTP (HTTPS only)
+    );
+
+</pre></dd>	<dt>GetCookie()</dt>
+		<dd><p>get a cookie</p></dd>
+<dd><pre>    my $String = $ParamObject-&gt;GetCookie(
+        Key =&gt; ID,
+    );
+
+</pre></dd></dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+<h1 id="VERSION">VERSION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>$Revision: 1.41.2.1 $ $Date: 2012-12-03 11:42:02 $</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

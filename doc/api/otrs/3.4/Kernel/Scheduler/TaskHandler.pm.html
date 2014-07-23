@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::Scheduler::TaskHandler</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 3.4 API Reference</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 3.4 API Reference</a> &gt; Perl Modules &gt;
+  Kernel::Scheduler::TaskHandler
+</div>
+<div>
+<a href="../../src/Kernel/Scheduler/TaskHandler.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::Scheduler::TaskHandler - Scheduler Task Handler interface</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>The TaskHandler actually executes the tasks that were queued in the Scheduler.
+For each different type of task, there is a separate backend that understands
+how to execute this particular task.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create an object.</p></dd>
+<dd><pre>    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Time;
+    use Kernel::System::Main;
+    use Kernel::System::DB;
+    use Kernel::Scheduler::TaskHandler;
+
+</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
+    my $EncodeObject = Kernel::System::Encode-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+    );
+    my $TimeObject = Kernel::System::Time-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $MainObject = Kernel::System::Main-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $DBObject = Kernel::System::DB-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+        MainObject   =&gt; $MainObject,
+    );
+    my $OperationObject = Kernel::Scheduler::TaskHandler-&gt;new(
+        ConfigObject       =&gt; $ConfigObject,
+        LogObject          =&gt; $LogObject,
+        DBObject           =&gt; $DBObject,
+        MainObject         =&gt; $MainObject,
+        TimeObject         =&gt; $TimeObject,
+        EncodeObject       =&gt; $EncodeObject,
+
+</pre></dd><dd><pre>        TaskHandlerType    =&gt; 'GenericInterface'    # Type of the TaskHandler backend to use
+    );
+
+</pre></dd>	<dt>Run()</dt>
+		<dd><p>performs the selected Task. This will be delegated to the TaskHandler
+backend for the specific TaskHandlerType selected in the constructor.</p></dd>
+<dd><pre>    my $Result = $TaskHandlerObject-&gt;Run(
+        Data     =&gt; {                          # task data, depends on TaskType
+            ...
+        },
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $Result = {
+        Success    =&gt; 1,                       # 0 or 1
+        ReSchedule =&gt; 0,                       # 0 or 1, determines if task needs to be re-scheduled
+        DueTime    =&gt; '2011-01-19 23:59:59',   # (for re-scheduling only) DueTime for new task
+        Data       =&gt; {                        # (for re-scheduling only) Data for new task
+            ...
+        },
+    };
+
+</pre></dd>		<dd><p>Note that task handler backends must implement this method with the same signature.</p></dd>
+</dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

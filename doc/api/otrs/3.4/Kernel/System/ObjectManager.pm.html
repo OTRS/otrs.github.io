@@ -1,0 +1,183 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::ObjectManager</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 3.4 API Reference</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 3.4 API Reference</a> &gt; Perl Modules &gt;
+  Kernel::System::ObjectManager
+</div>
+<div>
+<a href="../../src/Kernel/System/ObjectManager.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::ObjectManager - object and dependency manager</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<pre>    use Kernel::System::ObjectManager;
+
+    # it's important to store the object in this variable,
+    # since many modules expect it that way.
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+        # options for module constructors here
+        LogObject {
+            LogPrefix =&gt; 'OTRS-MyTestScript',
+        },
+    );
+
+    # now you can retrieve any configured object:
+
+    if ( !$Kernel::OM-&gt;Get('DBObject')-&gt;Prepare('SELECT 1') ) {
+        die &quot;Houston, we have a problem!&quot;;
+    }
+
+</pre><h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>Creates a new instance of Kernel::System::ObjectManager.</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+
+</pre></dd><dd><pre>    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(%Options)
+
+</pre></dd>		<dd><p>Options to this constructor should have object names as keys, and hash
+references as values. The hash reference will be flattened and passed
+to the constructor of the object with the same name as option key.</p></dd>
+		<dd><p>If the <code>Debug =&gt; 1</code> option is present, destruction of objects
+is checked, and a warning is emitted if objects persist after the
+attempt to destroy them.</p></dd>
+	<dt>Get()</dt>
+		<dd><p>Retrieves an object, and if it not yet exists, implicitly creating one for you.
+Note that objects must be configured before they can be retrieved. The standard objects are configured in <a href="../Config/Defaults.pm.html">Kernel::Config::Defaults</a>.</p></dd>
+		<dd><p>The name of an object is usually what the code base used so far, including
+the <code>Object</code> suffix. For example <code>-&gt;Get('TicketObject')</code> retrieves a
+<a href="Ticket.pm.html">Kernel::System::Ticket</a> object.</p></dd>
+<dd><pre>    my $ConfigObject = $Kernel::OM-&gt;Get('ConfigObject');
+
+</pre></dd>	<dt>ObjectConfigGet()</dt>
+		<dd><p>Returns the configuration for a given object</p></dd>
+<dd><pre>    my $Config = $Kernel::OM-&gt;ObjectConfigGet(
+        Object  =&gt; 'TicketObject',      # Mandatory
+    );
+
+</pre></dd>	<dt>ObjectRegister()</dt>
+		<dd><p>Registers an object with the object manager.</p></dd>
+<dd><pre>    $Kernel::OM-&gt;ObjectRegister(
+        Name            =&gt; 'MyNewObject',       # Mandatory
+        Dependencies    =&gt; ['ConfigObject'],    # Optional; falls back to default dependencies
+        Object          =&gt; $TheNewObject,       # Optional
+        Param           =&gt; {                    # Optional
+            YourArgsHere    =&gt; 1,
+        }
+    );
+
+</pre></dd>	<dt>ObjectHash()</dt>
+		<dd><p>Returns a hash of all the already instantiated objects.
+The keys are the object names, and the values are the objects themselves.</p></dd>
+		<dd><p>This method is useful for creating objects of classes that are
+not aware of the object manager yet.</p></dd>
+<dd><pre>    $SomeModule-&gt;new($Kernel::OM-&gt;ObjectHash());
+
+</pre></dd>		<dd><p>If the <code>Objects</code> parameter is present, it is interpreted as a list of
+object names that must be part of the returned hash.</p></dd>
+<dd><pre>    $SomeModule-&gt;new(
+        $Kernel::OM-&gt;ObjectHash(
+            Objects =&gt; ['TicketObject', 'DynamicFieldObject'],
+        ),
+    );
+
+</pre></dd>	<dt>ObjectParamAdd()</dt>
+		<dd><p>Adds arguments that will be passed to constructors of classes
+when they are created, in the same format as the <code>new()</code> method
+receives them.</p></dd>
+<dd><pre>    $Kernel::OM-&gt;ObjectParamAdd(
+        TicketObject =&gt; {
+            Key =&gt; 'Value',
+        },
+    );
+
+</pre></dd>	<dt>ObjectsDiscard()</dt>
+		<dd><p>Discards internally stored objects, so that the next access to objects
+creates them newly. If a list of object names is passed, only
+the supplied objects and their recursive dependencies are destroyed.
+If no list of object names is passed, all stored objects are detroyed.</p></dd>
+<dd><pre>    $Kernel::OM-&gt;ObjectsDiscard();
+
+</pre></dd><dd><pre>    $Kernel::OM-&gt;ObjectsDiscard(
+        Objects =&gt; ['TicketObject', 'QueueObject'],
+
+</pre></dd><dd><pre>    );
+
+</pre></dd>		<dd><p>Mostly used for tests that rely on fresh objects, or to avoid large
+memory consumption in long-running processes.</p></dd>
+		<dd><p>Note that if you pass a list of objects to be destroyed, they are destroyed
+in in the order they were passed; otherwise they are passed in reverse
+dependency order.</p></dd>
+	<dt>ObjectRegisterEventHandler()</dt>
+		<dd><p>Registers an object that can handle asynchronous events.</p></dd>
+<dd><pre>    $Kernel::OM-&gt;ObjectRegisterEventHandler(
+        EventHandler =&gt; $EventHandlerObject,
+    );
+
+</pre></dd>		<dd><p>The <code>EventHandler</code> object should inherit from <a href="EventHandler.pm.html">Kernel::System::EventHandler</a>.
+The object manager will call that object's <code>EventHandlerHasQueuedTransactions</code>
+method, and if that returns a true value, calls its <code>EventHandlerTransaction</code> method.</p></dd>
+</dl>
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

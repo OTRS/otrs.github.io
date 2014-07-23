@@ -1,0 +1,255 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Обновление OTRS-фреймворка</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 3.0 - Руководство Администратора"><link rel="up" href="installation.html" title="Глава 3. Установка"><link rel="prev" href="manual-installation-of-otrs.html" title="Установка из исходных кодов (Linux, Unix)"><link rel="next" href="upgrade-windows-installer.html" title="Обновление с помощью Windows Installer"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Обновление OTRS-фреймворка</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="manual-installation-of-otrs.html">Пред.</a> </td><th width="60%" align="center">Глава 3. Установка</th><td width="20%" align="right"> <a accesskey="n" href="upgrade-windows-installer.html">След.</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="upgrading"></a>Обновление OTRS-фреймворка</h2></div></div></div><p>
+Эти инструкции предназначены для тех, кто обновляет OTRS
+<span class="emphasis"><em>2.4</em></span> до версии <span class="emphasis"><em>3.0</em></span>, их можно
+применять при обновлении системы из RPM так и в случае использования
+исходных кодов (тарболов).
+</p><p>
+Если вы используете более старую версию OTRS, то сначала выполните
+обновление до версии 2.4
+(1.1-&gt;1.2-&gt;1.3-&gt;2.0-&gt;2.1-&gt;2.2-&gt;2.3-&gt;2.4-&gt;3.0 ...).
+</p><p>Если вы хотите сделать "patch level upgrade", который является обновлением
+OTRS, например, с версии 3.0.3 до 3.0.4, то можете пропустить шаги 8, 9, 10,
+and 13 - 16.
+</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+            Остановите все соответствующие службы.
+        </p><p>
+            в т.ч. (зависящие от использующихся услуг): </p><pre class="screen">
+shell&gt; /etc/init.d/cron stop
+shell&gt; /etc/init.d/postfix stop
+shell&gt; /etc/init.d/apache stop
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            Сделайте резервные копии всех данных из $OTRS_HOME (по умолчанию
+OTRS_HOME=/opt/otrs):
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li><li class="listitem"><p><code class="filename">var/*</code></p></li></ul></div><p>
+        </p></li><li class="listitem"><p>
+            Резервное копирование базы данных.
+        </p></li><li class="listitem"><p>
+            Если есть возможность, сначала попробуйте произвести установку на отдельном
+тестовом компьютере.
+        </p></li><li class="listitem"><p>
+            Установка нового релиза (из tar-архива или с помощью RPM-пакетов).
+        </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                С помощью тарбола (tarball):
+            </p><p>
+                </p><pre class="screen">
+shell&gt; cd /opt
+shell&gt; tar -xzf otrs-x.x.x.tar.gz
+shell&gt; ln -s otrs-x.x.x otrs
+                </pre><p>
+            </p><p>
+                Восстановите старые конфигурационные файлы.
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li></ul></div><p>
+            </p></li><li class="listitem"><p>
+                С помощью RPM-пакетов: </p><pre class="screen">
+shell&gt; rpm -Uvh otrs-x.x.x.-01.rpm
+                </pre><p>
+            </p><p>
+                В этом случае обновление из RPM автоматически восстанавливает старые
+конфигурационные файлы.
+            </p></li></ul></div></li><li class="listitem"><p>
+            Собственные темы
+        </p><p>
+            Примечание: Темы OTRS 2.4 и OTRS 3.0 являются НЕ совместимыми, так что не
+используйте старые темы. Темы расположены в каталоге
+$OTRS_HOME/Kernel/Output/HTML/*/*.dtl (default: OTRS_HOME=/opt/otrs).
+        </p></li><li class="listitem"><p>
+            Установка прав доступа к файлам.
+        </p><p>
+            В случае использования тарбола (tarball), выполните </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.SetPermissions.pl
+            </pre><p> с правами, необходимыми для установки системы.
+        </p></li><li class="listitem"><p>
+            Примените изменения к базе данных (часть 1/2):
+        </p><p>
+            </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+
+# MySQL:
+shell&gt; cat scripts/DBUpdate-to-3.0.mysql.sql | mysql -p -f -u root otrs
+# PostgreSQL:
+shell&gt; cat scripts/DBUpdate-to-3.0.postgresql.sql | psql otrs
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            Запустите сценарий перемещения (как пользователь 'otrs', а НЕ root):
+        </p><p>
+            Сценарий перемещения (миграции) нужно запускать для перемещения некоторых
+данных из старой базы данных в новую. Пожалуйста, запустите: </p><pre class="screen">
+shell&gt; scripts/DBUpdate-to-3.0.pl
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            Примените изменения к базе данных (часть 2/2):
+        </p><p>
+            </p><pre class="screen">
+# MySQL:
+shell&gt; cat scripts/DBUpdate-to-3.0-post.mysql.sql | mysql -p -f -u root otrs
+# PostgreSQL:
+shell&gt; cat scripts/DBUpdate-to-3.0-post.postgresql.sql | psql otrs
+            </pre><p>
+        </p></li><li class="listitem"><p>
+Обновите конфигурацию системы и удалите все данные из кэша. Пожалуйста,
+введите:
+        </p><p>
+            </p><pre class="screen">
+shell&gt; bin/otrs.RebuildConfig.pl
+shell&gt; bin/otrs.DeleteCache.pl
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            Перезапустите сервисы.
+        </p><p>
+            в т.ч. (зависящие от использующихся услуг): </p><pre class="screen">
+shell&gt; /etc/init.d/cron start
+shell&gt; /etc/init.d/postfix start
+shell&gt; /etc/init.d/apache start
+            </pre><p>
+        </p></li><li class="listitem"><p>Check installed packages</p><p>
+            In the package manager, check if all packages are still marked as correctly
+installed or if any require reinstallation or even a package upgrade.
+        </p></li><li class="listitem"><p>
+    Проверьте возможные проблемы с кодировкой:
+        </p><p>
+            В OTRS 3.0, кодировка по умолчанию была изменена с "iso-8859-1" на "utf-8".
+        </p><p>
+            Это каснется вас только в том случае, если вы не указали кодировку в файле
+Kernel/Config.pm (все установки, которые были произведены с помощью
+веб-инсталлятора имеют пользовательские настройки) или, если вы не изменили
+кодировку по умолчанию в AdminSysConfig.
+        </p><p>
+            Если у вас возникли проблемы с новой кодировкой, добавьте эту строку в файл
+Kernel/Config.pm: </p><pre class="screen">
+    $Self-&gt;{'DefaultCharset'} = 'iso-8859-1';
+            </pre><p>
+        </p><p>
+            В общем, "UTF-8" это только рекомендованный набор символов для работы OTRS,
+и переключение на "ISO-8859-1" будет работать также хорошо.
+        </p><p>
+            Примечание: Мы настоятельно рекомендуем обновить все установленные на
+сегодня системы OTRS, в которых нету поддержки UTF-8 до версии 3.0. Все
+другие кодировки считаются устаревшыми.
+        </p><p>
+            OTRS 3.1 будет испольвать исключительно UTF-8 в качестве внутренней
+кодировки.
+        </p></li><li class="listitem"><p>Check for Custom Frontend Module Registrations</p><p>
+            Начиная с OTRS 3.0, модули приложений могут иметь свои собственные CSS-стили
+и/или JavaScript-сценарии. Это является частью так называемого интерфейсного
+модуля регистрации новых модулей в SysConfig. Такой подход может вызвать
+проблемы при обновлении, так ка, по умолчанию, конфигурационные настройки
+интерфейсного модуля, которые были изменены локально не будут получать
+обновлений.
+        </p><p>
+            Чтобы убедиться что ничего не пострадало, пожалуйста, проверьте файл
+<code class="filename">Kernel/Config/Files/ZZZAuto.pm</code>. Особое внимание
+обратите на такие записи, как например: </p><pre class="screen">
+    $Self-&gt;{'Frontend::Module'}-&gt;{'AgentStats'} = { ... };
+            </pre><p>
+        </p><p>
+            Эти настройки должны быть сброшены в значения по умолчанию в Admin -&gt;
+SysConfig (в данном случае: 'Frontend::Module###AgentStats') с помощью
+небольшой кнопки "Сбросить", которая находится рядом с флажком
+"Активизировать".Таким образом, настройки будут сброшены в соответствии с
+новыми, специфическими настройками модуля и больше не будут появляться в
+<code class="filename">Kernel/Config/Files/ZZZAuto.pm</code>. Если необходимо, в
+будущем, вы сможете настроить эти параметры заново.
+        </p><p>
+            Такая же процедура должна быть выполнена для настройки
+"Frontend::ToolBarModule###1-Ticket::TicketSearchFulltext", поскольку он
+также использует CSS-стили, конкретного модуля. Вы можете смело пропустить
+этот шаг, если в вашей системе эти настройки не активированы.
+        </p></li><li class="listitem"><p>Check for customized PreferencesGroups entries</p><p>
+            With OTRS 3.0, there were a few corrections in PreferencesGroups
+configuration entries.  Notably, the keys 'Activ' and 'Colum' were changed
+to 'Active' and 'Column', respectively.  You only need to take action if you
+have customized such settings on your system, otherwise they will be updated
+automatically.
+        </p><p>
+            To check if you are affected, please look at the file
+<code class="filename">Kernel/Config/Files/ZZZAuto.pm</code> and look for entries
+like: </p><pre class="screen">
+    $Self-&gt;{'CustomerPreferencesGroups'}-&gt;{'RefreshTime'} =  {
+      'Activ' =&gt; '0',
+      'Colum' =&gt; 'Frontend',
+      'Data' =&gt; {
+        '' =&gt; 'off',
+        '10' =&gt; '10 minutes',
+        '15' =&gt; '15 minutes',
+        '2' =&gt; ' 2 minutes',
+        '5' =&gt; ' 5 minutes',
+        '7' =&gt; ' 7 minutes'
+      },
+      'Desc' =&gt; 'Select your QueueView refresh time.',
+      'Label' =&gt; 'QueueView refresh time',
+      'Module' =&gt; 'Kernel::Output::HTML::PreferencesGeneric',
+      'PrefKey' =&gt; 'UserRefreshTime',
+      'Prio' =&gt; '4000'
+    };
+            </pre><p> This needs to be changed as
+follows: </p><pre class="screen">
+    $Self-&gt;{'CustomerPreferencesGroups'}-&gt;{'RefreshTime'} =  {
+      'Active' =&gt; '0',
+      'Column' =&gt; 'Frontend',
+      'Data' =&gt; {
+        '' =&gt; 'off',
+        '10' =&gt; '10 minutes',
+        '15' =&gt; '15 minutes',
+        '2' =&gt; ' 2 minutes',
+        '5' =&gt; ' 5 minutes',
+        '7' =&gt; ' 7 minutes'
+      },
+      'Desc' =&gt; 'Select your QueueView refresh time.',
+      'Label' =&gt; 'QueueView refresh time',
+      'Module' =&gt; 'Kernel::Output::HTML::PreferencesGeneric',
+      'PrefKey' =&gt; 'UserRefreshTime',
+      'Prio' =&gt; '4000'
+    };
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            Переименование пользовательских полей в базе данных
+        </p><p>
+            Поле 'Приветствие', встроенное в клиентскую базу данных было переименовано в
+более подходящее 'Заголовок'. Если для клиентов используется встроенная база
+данных, и вы изменили конфигурацию, например, добавили новые поля в таблицу
+клиентов или включили поддержку для Компаний Клиентов, необходимо изменить
+правила преобразования (mapping) в <code class="filename">Kernel/Config.pm</code>:
+        </p><p>
+             Измените эту строку с: </p><pre class="screen">
+     [ 'UserSalutation', 'Salutation', 'salutation', 1, 0, 'var', '', 0 ],
+            </pre><p> на: </p><pre class="screen">
+     [ 'UserTitle',      'Title',      'title',      1, 0, 'var', '', 0 ],
+            </pre><p>
+        </p><p>
+            Пожалуйста, обратите винмание на то, что это также может повлиять на любые
+приветствия или шаблоны, в которых используется строка
+<code class="literal">&lt;OTRS_*_UserSalutation&gt;</code>. Если вы использовали эту
+строку И используете встроенную таблицу клиентов, пожалуйста, замените ее на
+<code class="literal">&lt;OTRS_CURRENT_UserTitle&gt;</code>.
+        </p></li><li class="listitem"><p>
+            Check Your Cronjobs
+        </p><p>
+            With OTRS 3.0, some commandline scripts were renamed, such as
+<code class="filename">otrs.PostMaster.pl</code>.  Please check that your cronjobs
+still use the correct filenames. With RPM upgrades, files such as
+<code class="filename">/etc/sysconfig/otrs</code> sometimes are not correctly
+overwritten, thus keeping the old cron settings, which may lead to errors.
+        </p></li><li class="listitem"><p>
+            Дополнительно:  Помечайте Заявки как Прочитанные
+        </p><p>
+            В OTRS 3.0 появилась новая возможность: Новые заявки и новые статьи, которые
+Агент еще не читал, выделены как 'непрочитанные'. Все заявки, которые были
+созданны перед обновлением OTRS до версии 3.0 будут помечены как
+'непрочитанные'. Если вам не нравиться такой подход, воспользуйтесь
+специальным скриптом, чтобы пометить все заявки и статьи как прочитанные для
+всех агентов, которые имеют права на чтение этих заявок. Обратите внимание,
+что для работы этого сценария может потребоваться некоторое время!
+</p><pre class="screen">
+shell&gt; bin/otrs.MarkTicketAsSeen.pl
+            </pre><p>
+        </p></li><li class="listitem"><p>Молодцы!</p></li></ol></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="manual-installation-of-otrs.html">Пред.</a> </td><td width="20%" align="center"><a accesskey="u" href="installation.html">Наверх</a></td><td width="40%" align="right"> <a accesskey="n" href="upgrade-windows-installer.html">След.</a></td></tr><tr><td width="40%" align="left" valign="top">Установка из исходных кодов (Linux, Unix) </td><td width="20%" align="center"><a accesskey="h" href="index.html">Начало</a></td><td width="40%" align="right" valign="top"> Обновление с помощью Windows Installer</td></tr></table></div></body></html>

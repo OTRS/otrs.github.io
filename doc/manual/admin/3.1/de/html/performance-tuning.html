@@ -1,0 +1,130 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Kapitel 24. Leistungsverbesserung</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 3.1 - Administrator-Handbuch"><link rel="up" href="index.html" title="OTRS 3.1 - Administrator-Handbuch"><link rel="prev" href="application.html" title="Kapitel 23. Zusätzliche Applikationen"><link rel="next" href="performance-tuning-database.html" title="Datenbank"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Kapitel 24. Leistungsverbesserung</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="application.html">Zurück</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Weiter</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="performance-tuning"></a>Kapitel 24. Leistungsverbesserung</h1></div></div></div><div class="toc"><p><b>Inhaltsverzeichnis</b></p><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs">OTRS</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">TicketIndexModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">TicketStorageModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.26.3.5">Tickets archivieren</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-database.html">Datenbank</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-mysql">MySQL</a></span></dt><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-postgresql">PostgreSQL</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-webserver.html">Webserver</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">Persistente Datenbankverbindungen</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">Vorgeladene Module - startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">Perl Module bei Änderung neu laden</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">Die richtige Strategie wählen</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></dd></dl></div><div class="abstract"><p class="title"><b>Zusammenfassung</b></p><p>
+Hier finden Sie eine Liste verschiedener Techniken der Leistungssteigerung
+Ihrer OTRS-Installation, einschließlich Konfiguration, Programmierung,
+Speichernutzung und mehr.
+</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-otrs"></a>OTRS</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">TicketIndexModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">TicketStorageModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.26.3.5">Tickets archivieren</a></span></dt></dl></div><p>
+Es gibt verschiedene Ansätze zur Leistungssteigerung von OTRS.
+</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-index"></a>TicketIndexModule</h3></div></div></div><p>
+Zur Verfügung stehen zwei Backend-Module für den Ticket Index:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
+Kernel::System::Ticket::IndexAccelerator::RuntimeDB (Standard), generiere
+jede Queue-Ansicht dynamisch aus der Ticket Tabelle. Sie werden keine
+Probleme mit der Leistung bekommen bis zu etwa 60.000 Tickets (oder 6000
+offenen) in Ihrem System.
+</p></li><li class="listitem"><p>
+Kernel::System::Ticket::IndexAccelerator::StaticDB, das leistungsfähigste
+Modul. Es sollte ab 80.000 Tickets oder mehr als 6000 offenen eingesetzt
+werden. Benutzt eine extra ticket_index Tabelle, arbeitet wie eine Ansicht
+(View). Führen Sie <code class="filename">bin/otrs.RebuildTicketIndex.pl</code> zum
+erstmaligen Aufbau des Index aus.
+</p></li></ul></div><p>
+</p><p>
+Sie können den IndexAccelerator per SysConfig einstellen.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-storage"></a>TicketStorageModule</h3></div></div></div><p>
+Es stehen zwei Module für das Speichern der Tickets und Artikel bereit:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
+Kernel::System::Ticket::ArticleStorageDB (Standard), speichert Anhänge
+u. A. in der Datenbank. Merke: Benutzen Sie diese Option nicht für größere
+Systeme.
+</p><p>
+Pro: Ist der Benutzer, unter dem der Webserver läuft, nicht der Benutzer
+'otrs', können Sie mit diesem Modul Dateiberechtigungsprobleme vermeiden.
+</p><p>
+Contra: Es ist nicht wirklich ratsa,, Anhänge in Ihrer Datenbank zu
+speichern. Achten Sie darauf, dass Ihre Datenbank das kann. Für MySQL setzen
+Sie in dessen Konfiguration bspw. "set-variable = max_allowed_packet=8M", um
+8 MB große Objekte zu speichern (Standard ist 2M).
+</p></li><li class="listitem"><p>
+Kernel::System::Ticket::ArticleStorageFS, speichert Anhänge u. A. im lokalen
+Filesystem ab. Merke: Benutzen Sie dies für große Installationen.
+</p><p>
+Pro: Schneller!
+</p><p>
+Contra: Der Benutzer, unter dem der Webserver läuft, sollte der Benutzer
+'otrs' sein (Dateisystemberechtigungen!). Wenn Sie mehrere
+OTRS-Frontendserver haben, müssen Sie sicherstellen, dass das Dateisystem
+gemeinsam genutzt wird. Sie können es z. B. auf ein NFS-Share oder
+vorzugsweise ein SAN oder eine vergleichbare Lösung legen.
+</p></li></ul></div><p>
+
+</p><p>
+	Merke: Sie können während des Betriebs von einem Backend auf das andere
+wechseln. Stellen Sie dazu das Backend in der SysConfig um, und führen Sie
+<code class="filename">otrs.ArticleStorageSwitch.pl</code> aus, um die Artikel aus
+der Datenbank ins Dateisystem zu überführen oder umgekehrt. Sie können die
+<span class="emphasis"><em>-s</em></span> und <span class="emphasis"><em>-d</em></span> Option verwenden, um das
+Quell- und Zielbackend anzugeben. Der Prozess kann eine ganze Weile dauern,
+je nach Menge der Artikel sowie System- und Netzwerkleistung.
+</p><p>
+</p><pre class="programlisting">
+shell&gt; bin/otrs.ArticleStorageSwitch.pl -s ArticleStorageDB -d ArticleStorageFS
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Skript: Wechsel des TicketStorage-Backends von Datenbank zu
+Dateisystem.</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.26.3.5"></a>Tickets archivieren</h3></div></div></div><p>
+        Da OTRS als revisionssicheres System betrieben werden kann, ist das Löschen
+von geschlossenen Tickets möglicherweise nicht empfehlenswert. Daher haben
+wir eine Funktion implementiert, mit der Sie Tickets archivieren können.
+    </p><p>
+        Kokret ist darunter zu verstehen, dass Tickets, die bestimmte Kriterien
+erfüllen, als "archiviert" markiert werden. Diese Tickets werden dann bei
+regulären Suchabfragen oder von GenericAgent-Jobs nicht mehr erfasst. Somit
+muss sich das System mit einer großen Ticketmenge nicht mehr befassen, weil
+dann nur noch die "aktuellsten" Tickets betrachtet werden. Das kann auf
+großen Systemen eine signifikante Performanceverbesserung bewirken.
+    </p><p>
+        Befolgen Sie folgende Schritte, um die Archivierungsfunktion zu nutzen:
+    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+                Archivsystem in der SysConfig aktivieren
+            </p><p>
+                Wählen Sie in der SysConfig die Gruppe <code class="literal">Ticket</code> aus.  In
+<code class="literal">Core::Ticket</code> finden Sie die Option
+<code class="literal">Ticket::ArchiveSystem</code>, die standardmäßig auf "Nein"
+steht. Ändern Sie diese auf "Ja" und speichern Sie die Änderung ab.
+            </p></li><li class="listitem"><p>
+                Anlegen eines GenericAgent-Jobs
+            </p><p>
+                Wählen Sie im Administrationsbereich den "GenericAgent" aus und legen Sie
+dort einen neuen Job an. </p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p>
+                            Job-Einstellungen
+                        </p><p>
+                            Geben Sie dem Job einen geeigneten Namen und angemessene Optionen.
+                        </p></li><li class="listitem"><p>
+                            Ticket-Filter
+                        </p><p>
+                            Der Ticketfilter ist eine Ticketsuche, die Tickets nach bestimmten Kriterien
+auswählt. Es könnte empfehlenswert sein, nur Tickets zu archivieren, die
+seit einigen Monaten im Status "geschlossen" sind.
+                        </p></li><li class="listitem"><p>
+                            Ticket-Aktion
+                        </p><p>
+                            Im Abschnitt "Ticket-Aktion" werden Sie eine Aktion "Ausgewählte Tickets
+archivieren" finden. Wählen Sie dort "Tickets archivieren" aus.
+                        </p></li><li class="listitem"><p>
+                            Job speichern
+                        </p><p>
+                            Am Ende der Seite finden Sie einen Knopf zum Speichern des Jobs.
+                        </p></li><li class="listitem"><p>
+                            Betroffene Tickets
+                        </p><p>
+                            Das System wird dann alle Tickets anzeigen, die beim Ausführen des
+GenericAgent-Jobs archiviert werden.
+                        </p></li></ol></div><p>
+            </p></li><li class="listitem"><p>
+                Ticketsuche
+            </p><p>
+                Wenn Sie nun nach Tickets suchen, werden standardmäßig nur Tickets gefunden,
+die nicht archiviert sind. Wenn Sie auch in archivierten Tickets suchen
+wollen, fügen Sie "Archivsuche" zu Ihren Suchkriterien hinzu.
+            </p></li></ol></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="application.html">Zurück</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Weiter</a></td></tr><tr><td width="40%" align="left" valign="top">Kapitel 23. Zusätzliche Applikationen </td><td width="20%" align="center"><a accesskey="h" href="index.html">Zum Anfang</a></td><td width="40%" align="right" valign="top"> Datenbank</td></tr></table></div></body></html>
