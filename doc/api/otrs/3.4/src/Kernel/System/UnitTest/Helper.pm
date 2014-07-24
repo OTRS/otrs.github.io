@@ -46,45 +46,23 @@ sub new {
     my ( $Type, %Param ) = @_;
 
     # allocate new hash for object
-    my $Self = {};
+    my $Self = {
+        $Kernel::OM->ObjectHash(
+            Objects => [ qw( ConfigObject ) ],
+        ),
+    };
+
     bless( $Self, $Type );
 
     $Self->{Debug} = $Param{Debug} || 0;
 
     # check needed objects
-    for my $Needed (qw(UnitTestObject DBObject LogObject TimeObject MainObject EncodeObject)) {
-        if ( $Param{$Needed} ) {
-            $Self->{$Needed} = $Param{$Needed};
-        }
-        else {
-            die "Got no $Needed!";
-        }
+    if ( $Param{UnitTestObject} ) {
+        $Self->{UnitTestObject} = $Param{UnitTestObject};
     }
-
-    # use local Config object because it will be modified
-    $Self->{ConfigObject} = Kernel::Config->new();
-
-    # disable email checks to create new user
-    $Self->{ConfigObject}->Set(
-        Key   => 'CheckEmailAddresses',
-        Value => 0,
-    );
-
-    $Self->{UserObject} = Kernel::System::User->new(
-        %{ $Self->{UnitTestObject} },
-        ConfigObject => $Self->{ConfigObject},
-    );
-
-    $Self->{GroupObject} = Kernel::System::Group->new(
-        %{ $Self->{UnitTestObject} },
-        ConfigObject => $Self->{ConfigObject},
-        UserObject   => $Self->{UserObject},
-    );
-
-    $Self->{CustomerUserObject} = Kernel::System::CustomerUser->new(
-        %{ $Self->{UnitTestObject} },
-        ConfigObject => $Self->{ConfigObject},
-    );
+    else {
+        die "Got no UnitTestObject!";
+    }
 
     #
     # Make backup of system configuration if needed
@@ -146,7 +124,10 @@ sub TestUserCreate {
     # create test user
     my $TestUserLogin = $Self->GetRandomID();
 
-    my $TestUserID = $Self->{UserObject}->UserAdd(
+    # disable email checks to create new user
+    local $Self->{ConfigObject}->{CheckEmailAddresses} = 0;
+
+    my $TestUserID = $Kernel::OM->Get('UserObject')->UserAdd(
         UserFirstname => $TestUserLogin,
         UserLastname  => $TestUserLogin,
         UserLogin     => $TestUserLogin,
@@ -166,10 +147,10 @@ sub TestUserCreate {
     # Add user to groups
     GROUP_NAME:
     for my $GroupName ( @{ $Param{Groups} || [] } ) {
-        my $GroupID = $Self->{GroupObject}->GroupLookup( Group => $GroupName );
+        my $GroupID = $Kernel::OM->Get('GroupObject')->GroupLookup( Group => $GroupName );
         die "Cannot find group $GroupName" if ( !$GroupID );
 
-        $Self->{GroupObject}->GroupMemberAdd(
+        $Kernel::OM->Get('GroupObject')->GroupMemberAdd(
             GID        => $GroupID,
             UID        => $TestUserID,
             Permission => {
@@ -188,8 +169,7 @@ sub TestUserCreate {
 
     # set user language
     my $UserLanguage = $Param{Language} || 'en';
-    $Self->{UserObject}
-        ->SetPreferences( UserID => $TestUserID, Key => 'UserLanguage', Value => $UserLanguage );
+    $Kernel::OM->Get('UserObject')->SetPreferences( UserID => $TestUserID, Key => 'UserLanguage', Value => $UserLanguage );
     $Self->{UnitTestObject}->True( 1, "Set user UserLanguage to $UserLanguage" );
 
     return $TestUserLogin;
@@ -210,10 +190,13 @@ the login name of the new customer user, the password is the same.
 sub TestCustomerUserCreate {
     my ( $Self, %Param ) = @_;
 
+    # disable email checks to create new user
+    local $Self->{ConfigObject}->{CheckEmailAddresses} = 0;
+
     # create test user
     my $TestUserLogin = $Self->GetRandomID();
 
-    my $TestUser = $Self->{CustomerUserObject}->CustomerUserAdd(
+    my $TestUser = $Kernel::OM->Get('CustomerUserObject')->CustomerUserAdd(
         Source         => 'CustomerUser',
         UserFirstname  => $TestUserLogin,
         UserLastname   => $TestUserLogin,
@@ -234,7 +217,7 @@ sub TestCustomerUserCreate {
 
     # set customer user language
     my $UserLanguage = $Param{Language} || 'en';
-    $Self->{CustomerUserObject}
+    $Kernel::OM->Get('CustomerUserObject')
         ->SetPreferences( UserID => $TestUser, Key => 'UserLanguage', Value => $UserLanguage );
     $Self->{UnitTestObject}->True( 1, "Set customer user UserLanguage to $UserLanguage" );
 
@@ -275,7 +258,7 @@ sub FixedTimeSet {
         if ( $INC{$FilePath} ) {
             no warnings 'redefine';
             delete $INC{$FilePath};
-            $Self->{MainObject}->Require($Object);
+            $Kernel::OM->Get('MainObject')->Require($Object);
         }
     }
 
@@ -365,7 +348,7 @@ sub DESTROY {
         for my $TestUser ( @{ $Self->{TestUsers} } ) {
 
             # make test user invalid
-            my $Success = $Self->{UserObject}->UserUpdate(
+            my $Success = $Kernel::OM->Get('UserObject')->UserUpdate(
                 UserID        => $TestUser,
                 UserFirstname => 'Firstname Test1',
                 UserLastname  => 'Lastname Test1',
@@ -383,7 +366,7 @@ sub DESTROY {
     if ( ref $Self->{TestCustomerUsers} eq 'ARRAY' && @{ $Self->{TestCustomerUsers} } ) {
         for my $TestCustomerUser ( @{ $Self->{TestCustomerUsers} } ) {
 
-            my $Success = $Self->{CustomerUserObject}->CustomerUserUpdate(
+            my $Success = $Kernel::OM->Get('CustomerUserObject')->CustomerUserUpdate(
                 Source         => 'CustomerUser',
                 ID             => $TestCustomerUser,
                 UserCustomerID => $TestCustomerUser,
