@@ -43,11 +43,11 @@ our $CurrentObject;
 
 our @DefaultObjectDependencies = (
     'ConfigObject',
-    'LogObject',
+    'DBObject',
     'EncodeObject',
+    'LogObject',
     'MainObject',
     'TimeObject',
-    'DBObject',
 );
 
 =head1 NAME
@@ -129,6 +129,7 @@ For example C<< ->Get('TicketObject') >> retrieves a L<Kernel::System::Ticket> o
 =cut
 
 sub Get {
+
     # No param unpacking for increased performance
     my $Package = $_[0]->{ObjectAliases}->{ $_[1] } // $_[1];
 
@@ -136,7 +137,7 @@ sub Get {
         return $_[0]->{Objects}->{$Package};
     }
 
-    if (!$Package) {
+    if ( !$Package ) {
         carp "Error: Missing parameter (object name)";
         confess "Error: Missing parameter (object name)";
     }
@@ -186,7 +187,7 @@ sub _ObjectBuild {
         else {
             $Dependencies = \@DefaultObjectDependencies;
         }
-        my $ObjectManagerAware = ${ $Package . '::ObjectManagerAware' } // 0;
+        $ObjectManagerAware = ${ $Package . '::ObjectManagerAware' } // 0;
         use strict 'refs';
     }
     $Self->{ObjectDependencies}->{$Package} = $Dependencies;
