@@ -79,7 +79,7 @@
 		<dd><p>create a ACL object. Do not use it directly, instead use:</p></dd>
 <dd><pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $ACLObject = $Kernel::OM-&gt;Get('ACLDBACLObject');
+    my $ACLObject = $Kernel::OM-&gt;Get('Kernel::System::ACL::DB::ACL');
 
 </pre></dd>	<dt>ACLAdd()</dt>
 		<dd><p>add new ACL</p></dd>
@@ -163,7 +163,7 @@
     my ( $Self, %Param ) = @_;</p></dd>
 <dd><pre>    # check needed
     if ( !$Param{UserID} ) {
-        $Self-&gt;{LogObject}-&gt;Log(
+        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
             Priority =&gt; 'error',
             Message  =&gt; &quot;Need UserID!&quot;
         );
@@ -178,13 +178,19 @@
         $ValidIDsStrg = join ',', @{ $Param{ValidIDs} };
     }
 
+</pre></dd><dd><pre>    # get cache object
+    my $CacheObject = $Kernel::OM-&gt;Get('Kernel::System::Cache');
+
 </pre></dd><dd><pre>    # check cache
     my $CacheKey = 'ACLList::ValidIDs::' . $ValidIDsStrg;
-    my $Cache    = $Self-&gt;{CacheObject}-&gt;Get(
+    my $Cache    = $CacheObject-&gt;Get(
         Type =&gt; 'ACLEditor_ACL',
         Key  =&gt; $CacheKey,
     );
     return $Cache if ref $Cache;
+
+</pre></dd><dd><pre>    # get database object
+    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
 
 </pre></dd><dd><pre>    my $SQL = '
             SELECT id, name
@@ -192,20 +198,20 @@
 
 </pre></dd><dd><pre>    if ( $ValidIDsStrg ne 'ALL' ) {
 
-</pre></dd><dd><pre>        my $ValidIDsStrgDB = join ',', map { $Self-&gt;{DBObject}-&gt;Quote( $_, 'Integer' ) }
+</pre></dd><dd><pre>        my $ValidIDsStrgDB = join ',', map { $DBObject-&gt;Quote( $_, 'Integer' ) }
             @{ $Param{ValidIDs} };
 
 </pre></dd><dd><pre>        $SQL .= &quot;WHERE valid_id IN ($ValidIDsStrgDB)&quot;;
     }
 
-</pre></dd><dd><pre>    return if !$Self-&gt;{DBObject}-&gt;Prepare( SQL =&gt; $SQL );
+</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare( SQL =&gt; $SQL );
     my %Data;
-    while ( my @Row = $Self-&gt;{DBObject}-&gt;FetchrowArray() ) {
+    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
         $Data{ $Row[0] } = $Row[1];
     }
 
 </pre></dd><dd><pre>    # set cache
-    $Self-&gt;{CacheObject}-&gt;Set(
+    $CacheObject-&gt;Set(
         Type  =&gt; 'ACLEditor_ACL',
         Key   =&gt; $CacheKey,
         Value =&gt; \%Data,
@@ -259,14 +265,17 @@
 
 </pre></dd>		<dd><p>sub ACLsNeedSync {
     my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    my $SQL = '
+<dd><pre>    # get database object
+    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
+
+</pre></dd><dd><pre>    my $SQL = '
         SELECT COUNT(*)
         FROM acl_sync';
 
-</pre></dd><dd><pre>    return if !$Self-&gt;{DBObject}-&gt;Prepare( SQL =&gt; $SQL );
+</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare( SQL =&gt; $SQL );
 
 </pre></dd><dd><pre>    my $NeedSync = 0;
-    while ( my @Row = $Self-&gt;{DBObject}-&gt;FetchrowArray() ) {
+    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
         $NeedSync = $Row[0];
     }
 

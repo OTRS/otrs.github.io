@@ -7,47 +7,45 @@
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
+package Kernel::System::ObjectManager;
 ## nofilter(TidyAll::Plugin::OTRS::Perl::PodSpelling)
 ## nofilter(TidyAll::Plugin::OTRS::Perl::Require)
 ## nofilter(TidyAll::Plugin::OTRS::Perl::SyntaxCheck)
 
-package Kernel::System::ObjectManager;
-
 use strict;
 use warnings;
 
+use Carp qw(carp confess);
 use Scalar::Util qw(weaken);
 
 # use the "standard" modules directly, so that persistent environments
 # like mod_perl and FastCGI preload them at startup
 
 use Kernel::Config;
-use Kernel::System::Log;
-use Kernel::System::Main;
-use Kernel::System::Encode;
-use Kernel::System::Time;
-use Kernel::System::Web::Request;
-use Kernel::System::DB;
-use Kernel::System::Cache;
+use Kernel::Output::HTML::Layout;
 use Kernel::System::Auth;
 use Kernel::System::AuthSession;
-use Kernel::System::User;
+use Kernel::System::Cache;
+use Kernel::System::DB;
+use Kernel::System::Encode;
 use Kernel::System::Group;
-use Kernel::Output::HTML::Layout;
-
-use Carp qw(carp confess);
+use Kernel::System::Log;
+use Kernel::System::Main;
+use Kernel::System::Time;
+use Kernel::System::Web::Request;
+use Kernel::System::User;
 
 # Contains the top-level object being retrieved;
 # used to generate better error messages.
 our $CurrentObject;
 
 our @DefaultObjectDependencies = (
-    'ConfigObject',
-    'DBObject',
-    'EncodeObject',
-    'LogObject',
-    'MainObject',
-    'TimeObject',
+    'Kernel::Config',
+    'Kernel::System::DB',
+    'Kernel::System::Encode',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+    'Kernel::System::Time',
 );
 
 =head1 NAME
@@ -106,7 +104,8 @@ sub new {
     $Self->{Objects} = {
         'Kernel::Config' => $ConfigObject,
     };
-    $Self->{ObjectAliases} = $ConfigObject->Get('ObjectAliases');
+    $Self->{ObjectAliases}        = $ConfigObject->Get('ObjectAliases');
+    $Self->{ReverseObjectAliases} = { reverse %{ $Self->{ObjectAliases} } };
 
     for my $Parameter ( sort keys %Param ) {
         $Self->{Param}->{ $Self->{ObjectAliases}->{$Parameter} // $Parameter } = $Param{$Parameter};
@@ -174,8 +173,8 @@ sub _ObjectBuild {
         }
     }
 
-# Kernel::Config does not declare its dependencies (they would have to be in Kernel::Config::Defaults),
-#   so assume [] in this case.
+    # Kernel::Config does not declare its dependencies (they would have to be in
+    #   Kernel::Config::Defaults), so assume [] in this case.
     my $Dependencies       = [];
     my $ObjectManagerAware = 0;
 
@@ -192,21 +191,20 @@ sub _ObjectBuild {
     }
     $Self->{ObjectDependencies}->{$Package} = $Dependencies;
 
-    my %Args = (
+    my %ConstructorArguments = (
         %{ $Self->{Param}->{$Package} // {} },
     );
 
+    # For objects which are not ObjectManagerAware, provide the dependencies in
+    #   short form (e.g. ConfigObject) to the constructor.
     if ( !$ObjectManagerAware && @{$Dependencies} ) {
         for my $Dependency ( @{$Dependencies} ) {
-            $Self->Get($Dependency);
+            $ConstructorArguments{ $Self->{ReverseObjectAliases}->{$Dependency} // $Dependency }
+                //= $Self->Get($Dependency);
         }
-        %Args = (
-            $Self->ObjectHash( Objects => $Dependencies, ),
-            %Args,
-        );
     }
 
-    my $NewObject = $Package->new(%Args);
+    my $NewObject = $Package->new(%ConstructorArguments);
 
     if ( !defined $NewObject ) {
         if ( $CurrentObject && $CurrentObject ne $Package ) {
