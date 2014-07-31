@@ -1,0 +1,87 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 6. Performance Tuning</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 3.3 - Admin Manual"><link rel="up" href="index.html" title="OTRS 3.3 - Admin Manual"><link rel="prev" href="translation.html" title="Localization of the OTRS frontend"><link rel="next" href="performance-tuning-database.html" title="Database"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 6. Performance Tuning</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="translation.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="performance-tuning"></a>Chapter 6. Performance Tuning</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs">OTRS</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">TicketIndexModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">TicketStorageModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.8.3.5">Archiving Tickets</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-database.html">Database</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-mysql">MySQL</a></span></dt><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-postgresql">PostgreSQL</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-webserver.html">Webserver</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">Pre-established database connections</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">Preloaded modules - startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">Reload Perl modules when updated on disk</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">Choosing the Right Strategy</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></dd></dl></div><div class="abstract"><p class="title"><b>Abstract</b></p><p>
+Presented below is a list of performance enhancing techniques for your OTRS installation, including configuration, coding, memory use, and more.
+</p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-otrs"></a>OTRS</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">TicketIndexModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">TicketStorageModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.8.3.5">Archiving Tickets</a></span></dt></dl></div><p>
+There are several options for improving OTRS performance.
+</p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-index"></a>TicketIndexModule</h3></div></div></div><p>
+There are two backend modules for the ticket index:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
+Using Kernel::System::Ticket::IndexAccelerator::RuntimeDB (default), generate each queue view on the fly from the ticket table. You will not have performance trouble until you have about 60,000 open tickets in your system.
+</p></li><li class="listitem"><p>
+Kernel::System::Ticket::IndexAccelerator::StaticDB, the most powerful module, should be used when you have above 80,000 open tickets. It uses an extra ticket_index table, which works like a view. Use <code class="filename">bin/otrs.RebuildTicketIndex.pl</code> for generating an initial index build after switching backends.
+</p></li></ul></div><p>
+</p><p>
+You can change the IndexAccelerator via SysConfig.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-storage"></a>TicketStorageModule</h3></div></div></div><p>
+There are two different backend modules for the ticket/article storage:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
+Configure Kernel::System::Ticket::ArticleStorageDB (default) to store attachments, etc., in the database. Note: Don't use it with large set ups.
+</p><p>
+Pro: If your webserver user isn't the 'otrs' user, use this module to avoid file permission problems.
+</p><p>
+Con: It is not advisable to store attachments in your database. Take care that your database is able to store large objects. E.g. Configure MySQL with "set-variable = max_allowed_packet=8M" to store 8 MB objects (the default is 2M).
+</p></li><li class="listitem"><p>
+Configure Kernel::System::Ticket::ArticleStorageFS to store attachments etc. on the local file system. Note: Recommended for large setups.
+</p><p>
+Pro: It is fast!
+</p><p>
+Con: Your web server user should be the 'otrs' user. Also, if you have multiple front-end servers, you should make sure the filesystem is shared between the servers. Place it on an NFS share or preferably a SAN or similar solution.
+</p></li></ul></div><p>
+
+</p><p>
+    Note: you can switch from one back-end to the other on the fly. You can switch the backend in the SysConfig, and then run the command line utility <code class="filename">otrs.ArticleStorageSwitch.pl</code> to put the articles from the database onto the filesystem or the other way around. You can use the <span class="emphasis"><em>-s</em></span> and <span class="emphasis"><em>-d</em></span> options to specify the source and destination back-ends. Please note that the entire process can take considerable time to run, depending on the number of articles you have and the available CPU power and/or network capacity.
+</p><p>
+</p><pre class="programlisting">
+shell&gt; bin/otrs.ArticleStorageSwitch.pl -s ArticleStorageDB -d ArticleStorageFS
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Switching storage back-ends from database to filesystem.</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.8.3.5"></a>Archiving Tickets</h3></div></div></div><p>
+        As OTRS can be used as an audit-proof system, deleting closed tickets may not be a good idea. Therefore we implemented a feature that allows you to archive tickets.
+    </p><p>
+        Tickets that match certain criteria can be marked as "archived" These tickets are not accessed if you do a regular ticket search or run a Generic Agent job. The system itself does not have to deal with a huge amount of tickets any longer as only the "latest" tickets are taken into consideration when using OTRS. This can result in a huge performance gain on large systems.
+    </p><p>
+        To use the archive feature simply follow these steps:
+    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+                Activate the archive system in SysConfig
+            </p><p>
+                In the Admin page, go to SysConfig and select the group <code class="literal">Ticket</code>. In <code class="literal">Core::Ticket</code> you find the option <code class="literal">Ticket::ArchiveSystem</code> which is set to "no" by default. Change this setting to "yes" and save this change.
+            </p></li><li class="listitem"><p>
+                Define a GenericAgent job
+            </p><p>
+                On the Admin page, select GenericAgent and add a new job there.
+                </p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p>
+                            Job Settings
+                        </p><p>
+                            Provide a name for the archiving job, and select proper options to schedule this job.
+                        </p></li><li class="listitem"><p>
+                            Ticket Filter
+                        </p><p>
+                            The ticket filter is searches for tickets that match the selected criteria. It might be a good idea to only archive those tickets in a closed state that have been closed a few months before.
+                        </p></li><li class="listitem"><p>
+                            Ticket Action
+                        </p><p>
+                            In this section, set the field labeled "Archive selected tickets" to "archive tickets".
+                        </p></li><li class="listitem"><p>
+                            Save the job
+                        </p><p>
+                            At the end of the page you will find an option to save the job.
+                        </p></li><li class="listitem"><p>
+                            Affected tickets
+                        </p><p>
+                            The system will display all tickets which will be archived when executing the Generic Agent job.
+                        </p></li></ol></div><p>
+            </p></li><li class="listitem"><p>
+                Ticket Search
+            </p><p>
+                When you search for tickets, the system default is to search tickets which are not archived. If you want to search through archived tickets also, simply add "archive search" while defining search criteria.
+            </p></li></ol></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="translation.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Localization of the OTRS frontend </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Database</td></tr></table></div></body></html>
