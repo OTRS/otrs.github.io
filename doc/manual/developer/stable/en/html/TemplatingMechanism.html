@@ -1,0 +1,401 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Templating Mechanism</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 3.3 - Developer Manual"><link rel="up" href="how-it-works.html" title="Chapter 2. OTRS Internals - How it Works"><link rel="prev" href="loader.html" title='The CSS and JavaScript "Loader"'><link rel="next" href="how-to-extend-otrs.html" title="Chapter 3. How to Extend OTRS"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Templating Mechanism</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="loader.html">Prev</a> </td><th width="60%" align="center">Chapter 2. OTRS Internals - How it Works</th><td width="20%" align="right"> <a accesskey="n" href="how-to-extend-otrs.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="TemplatingMechanism"></a>Templating Mechanism</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="TemplatingMechanism.html#TemplateCommands">Template Commands</a></span></dt><dd><dl><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.7.5.2">Data Manipulation Commands</a></span></dt><dd><dl><dt><span class="section"><a href="TemplatingMechanism.html#data">$Data{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#qdata">$QData{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#lqdata">$LQData{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#env">$Env{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#qenv">$QEnv{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#config">$Config{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#quote">$Quote{""}</a></span></dt></dl></dd><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.7.5.3">Localization Commands</a></span></dt><dd><dl><dt><span class="section"><a href="TemplatingMechanism.html#text">$Text{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#jstext">$JSText{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#timelong">$TimeLong{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#timeshort">$TimeShort{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#date">$Date{""}</a></span></dt></dl></dd><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.7.5.4">Template Processing Commands</a></span></dt><dd><dl><dt><span class="section"><a href="TemplatingMechanism.html#Comment">Comment</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#include">$Include{""}</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#block">dtl:block</a></span></dt></dl></dd><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.7.5.5">dtl:js_on_document_complete</a></span></dt></dl></dd><dt><span class="section"><a href="TemplatingMechanism.html#using-templates">Using a template file</a></span></dt></dl></div><p>
+        Internally, OTRS uses a templating mechanism to dynamically generate its
+        HTML pages (and other content), while keeping the program logic (Perl) and
+        the presentation (HTML) separate. Typically, a frontend module will use an
+        own template file, pass some data to it and return the rendered result to
+        the user.
+    </p><p>
+        The template files are located at:
+        <code class="filename">$OTRS_HOME/Kernel/Output/HTML/Standard/*.dtl</code>
+    </p><p>
+        Inside of these templates, a set of commands for data manipulation, localization
+        and simple logical structures can be used. This section describes these commands
+        and shows how to use them in templates.
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="TemplateCommands"></a>Template Commands</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.3.7.5.2"></a>Data Manipulation Commands</h4></div></div></div><p>
+                In templates, dynamic data must be inserted, quoted etc. This section
+                lists the relevant commands to do that.
+            </p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="data"></a>$Data{""}</h5></div></div></div><p>
+                    If data parameters are given to the templates by the application module,
+                    these data can be output to the template. <code class="literal">$Data</code> is
+                    the most simple, but also most dangerous one. It will insert the data
+                    parameter whose name is specified inside of the {""} into the template
+                    as it is, without any HTML quoting.
+                </p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>
+                        Because of the missing HTML quoting, this can result in security problems.
+                        Never output data that was input by a user without quoting in HTML context.
+                        The user could - for example - just insert a <code class="literal">&lt;script&gt;</code> tag,
+                        and it would be output on the HTML page generated by OTRS.
+                    </p><p>
+                        Whenever possible, use <a class="link" href="TemplatingMechanism.html#qdata" title='$QData{""}'><code class="literal">$QData{""}</code></a> (in HTML) or
+                        <a class="link" href="TemplatingMechanism.html#lqdata" title='$LQData{""}'><code class="literal">$LQData{""}</code></a> (in Links) instead.
+                    </p></div><p>
+                    Example: Whenever we generate HTML in the application, we need to output it to the
+                    template without HTML quoting, like <code class="literal">&lt;select&gt;</code> elements, which
+                    are generated by the function <code class="literal">Layout::BuildSelection</code> in OTRS.
+
+                    </p><pre class="programlisting">
+&lt;label for="Dropdown"&gt;Example Dropdown&lt;/label&gt;
+$Data{"DropdownString"}
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="qdata"></a>$QData{""}</h5></div></div></div><p>
+                    This command has the same function as <a class="link" href="TemplatingMechanism.html#data" title='$Data{""}'><code class="literal">$Data{""}</code></a>,
+                    but it performs HTML quoting on the data as it is inserted to the template.
+
+                    </p><pre class="programlisting">
+The name of the author is $QData{"Name"}.
+                    </pre><p>
+
+                    It's also possible specify a maximum length for the value.
+                    If, for example, you just want to show 8 characters of a variable (result will be "SomeName[...]"),
+                    use the following:
+
+                    </p><pre class="programlisting">
+The first 20 characters of the author's name: $QData{"Name","20"}.
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="lqdata"></a>$LQData{""}</h5></div></div></div><p>
+                    This command has the same function as <a class="link" href="TemplatingMechanism.html#data" title='$Data{""}'><code class="literal">$Data{""}</code></a>,
+                    but it performs <a class="ulink" href="http://en.wikipedia.org/wiki/Percent-encoding" target="_top">URL encoding</a>
+                    on the data as it is inserted to the template. This should be used
+                    to output single parameter names or values of URLs, to prevent security problems.
+                    It cannot be used for complete URLs because
+                    it will also mask <code class="literal">=</code>, for example.
+
+                    </p><pre class="programlisting">
+&lt;a href="$Env{"Baselink"};Location=$LQData{"File"}"&gt;$QData{"File","110"}&lt;/a&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="env"></a>$Env{""}</h5></div></div></div><p>
+                    Inserts the environment variable with the name specified in {""}. Some examples:
+
+                    </p><pre class="programlisting">
+The current user name is: $Env{"UserFirstname"}
+
+Some other common predefined variables are:
+
+$Env{"SessionID"} --&gt; the current session id
+$Env{"Time"} --&gt; the current time e. g.  Thu Dec 27 16:00:55 2001
+$Env{"CGIHandle"} --&gt; the current CGI handle e. g.  index.pl
+$Env{"UserCharset"} --&gt; the current site charset e. g.  iso-8859-1
+$Env{"Baselink"} --&gt; the baselink --&gt; index.pl?SessionID=...
+$Env{"UserFirstname"} --&gt; e. g. Dirk $Env{"UserFirstname"}
+$Env{"UserLogin"} --&gt; e. g. mgg@x11.org
+$Env{"UserIsGroup[users]"} = Yes --&gt; user groups (useful for own links)
+$Env{"UserIsGroup[admin]"} = Yes $Env{"Action"} --&gt; the current action
+                    </pre><p>
+                </p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>
+                        Because of the missing HTML quoting, this can result in security problems.
+                        Never output data that was input by a user without quoting in HTML context.
+                        The user could - for example - just insert a <code class="literal">&lt;script&gt;</code> tag,
+                        and it would be output on the HTML page generated by OTRS.
+                    </p><p>
+                        Whenever possible, use <a class="link" href="TemplatingMechanism.html#qenv" title='$QEnv{""}'><code class="literal">$QEnv{""}</code></a> instead.
+                    </p></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="qenv"></a>$QEnv{""}</h5></div></div></div><p>
+                    Works like <a class="link" href="TemplatingMechanism.html#data" title='$Data{""}'><code class="literal">$Env{""}</code></a>, but
+                    performs HTML encoding when the data is inserted to the template.
+
+                    </p><pre class="programlisting">
+The current user name is: $QEnv{"UserFirstname"}
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="config"></a>$Config{""}</h5></div></div></div><p>
+                    With this tag you can insert config variables into the template. Let's
+                    see an example Kernel/Config.pm:
+
+                    </p><pre class="programlisting">
+[Kernel/Config.pm]
+    # FQDN
+    # (Full qualified domain name of your system.)
+    $Self-&gt;{FQDN} = 'otrs.example.com';
+    # AdminEmail
+    # (Email of the system admin.)
+    $Self-&gt;{AdminEmail} = 'admin@example.com';
+[...]
+                    </pre><p>
+
+                    To output values from it in the template, use:
+
+                    </p><pre class="programlisting">
+The hostname is '$Config{"FQDN"}'
+The admin email address is '$Config{"AdminEmail"}'
+                    </pre><p>
+                </p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>
+                        Because of the missing HTML quoting, this can result in security problems.
+                    </p><p>
+                        Whenever possible, use <a class="link" href="TemplatingMechanism.html#quote" title='$Quote{""}'><code class="literal">$Quote{"$Config{""}"}</code></a>.
+                    </p></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="quote"></a>$Quote{""}</h5></div></div></div><p>
+                    This tag can be used to perform quoting on HTML strings, when no other quoting is possible.
+
+                    </p><pre class="programlisting">
+$Quote{"$Config{"ProductName"}"} ($Quote{"$Config{"Ticket::Hook"}"})
+                    </pre><p>
+
+                    It's also possible specify a maximum length for the value.
+                    If, for example, you just want to show 8 characters of a variable (result will be "Some lon[...]"),
+                    use the following:
+
+                    </p><pre class="programlisting">
+$Quote{"Some long long string", "8"})
+                    </pre><p>
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.3.7.5.3"></a>Localization Commands</h4></div></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="text"></a>$Text{""}</h5></div></div></div><p>
+                    Translates the enlosed string into the current user's selected language
+                    and performs HTML quoting on the resulting string. If no translation is found,
+                    the original string will be used.
+
+                    </p><pre class="programlisting">
+Translate this text: $Text{"Help"}
+                    </pre><p>
+
+                    When translating data coming from the application, use <code class="literal">$Data</code>
+                    inside of <code class="literal">$Text</code>, not <code class="literal">$QData</code>, to prevent
+                    double quoting:
+
+                    </p><pre class="programlisting">
+Translate data from the application: $Text{"$Data{"Type"}"}
+                    </pre><p>
+
+                    You can also specify parameters (%s) inside of the string which should be replaced
+                    with other data:
+
+                    </p><pre class="programlisting">
+Translate this text and insert the given data: $Text{"Change %s settings", "$Data{"Type"}"}
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="jstext"></a>$JSText{""}</h5></div></div></div><p>
+                    Works in the same way as <a class="link" href="TemplatingMechanism.html#text" title='$Text{""}'><code class="literal">$Text{""}</code></a>, but
+                    does not perform HTML encoding but JavaScript string escaping instead (all
+                    <code class="literal">'</code> characters will be encoded as <code class="literal">\'</code>. So with
+                    the help of this tag you can make sure that even dynamic strings will not break your
+                    JavaScript code.
+
+                    </p><pre class="programlisting">
+window.alert('$JSText{"Some message's content"}');
+
+// after the command was replaced in the template, this will
+// result in (for an English speaking agent):
+
+window.alert('Some message\'s content');
+                    </pre><p>
+
+                    Make sure to use <code class="literal">'</code> as string delimiter for strings where you want
+                    to use <code class="literal">$JSText</code> inside.
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="timelong"></a>$TimeLong{""}</h5></div></div></div><p>
+                    Inserts a localized date/time stamp (including a possible time zone
+                    difference of the current agent).
+                </p><p>
+                    In different cultural areas, different convention for date and time
+                    formatting are used. For example, what is the 01.02.2010 in Germany,
+                    would be 02/01/2010 in the USA. <code class="literal">$Time{""}</code> abstracts
+                    this away from the templates. Let's see an example:
+
+                    </p><pre class="programlisting">
+# from AgentTicketHistory.dtl
+$TimeLong{"$Data{"CreateTime"}"}
+
+# Result for US English locale:
+06/09/2010 15:45:41
+                    </pre><p>
+
+                    First, the data is inserted from the application module with <code class="literal">$Data</code>.
+                    Here always an ISO UTC timestamp (2010-06-09 15:45:41) must be passed as data to
+                    <code class="literal">$TimeLong{""}</code>. Then <code class="literal">$TimeLong{""}</code> will
+                    take that data and output it according to the date/time definition of the current
+                    locale.
+                </p><p>
+                    The data passed to <code class="literal">$TimeLong{""}</code> must be UTC. If a time zone offset
+                    is specified for the current agent, it will be applied to the UTC timestamp before
+                    the output is generated.
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="timeshort"></a>$TimeShort{""}</h5></div></div></div><p>
+                    Works like <a class="link" href="TemplatingMechanism.html#timelong" title='$TimeLong{""}'><code class="literal">$TimeLong{""}</code></a>,
+                    but does not output the seconds.
+
+                    </p><pre class="programlisting">
+$TimeShort{"$Data{"CreateTime"}"}
+
+# Result for US English locale:
+06/09/2010 15:45
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="date"></a>$Date{""}</h5></div></div></div><p>
+                    Works like <a class="link" href="TemplatingMechanism.html#timelong" title='$TimeLong{""}'><code class="literal">$TimeLong{""}</code></a>,
+                    but outputs only the date, not the time.
+
+                    </p><pre class="programlisting">
+$Date{"$Data{"CreateTime"}"}
+
+# Result for US English locale:
+06/09/2010
+                    </pre><p>
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.3.7.5.4"></a>Template Processing Commands</h4></div></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="Comment"></a>Comment</h5></div></div></div><p>
+                    The dtl comment starts with a # at the beginning of a line and will not be
+                    shown in the html output. This can be used both for commenting the DTL (=Template) code
+                    or for disabling parts of it.
+
+                    </p><pre class="programlisting">
+# this section is temporarily disabled
+# &lt;div class="AsBlock"&gt;
+#     &lt;a href="..."&gt;link&lt;/a&gt;
+# &lt;/div&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="include"></a>$Include{""}</h5></div></div></div><p>
+                    Includes another template file into the current one. The included file may also contain
+                    template commands.
+
+                    </p><pre class="programlisting">
+# include Copyright.dtl
+$Include{"Copyright"}
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="block"></a>dtl:block</h5></div></div></div><p>
+                    With this command, one can specify parts of a template file as a block. This block
+                    needs to be explicitly filled with a function call from the application, to be
+                    present in the generated output. The application can call the block 0 (it will not
+                    be present in the output), 1 or more times (each with possibly a different set of
+                    data parameters passed to the template).
+                </p><p>
+                    One common use case is the filling of a table with dynamic data:
+
+                    </p><pre class="programlisting">
+&lt;table class="DataTable"&gt;
+    &lt;thead&gt;
+        &lt;tr&gt;
+            &lt;th&gt;$Text{"Name"}&lt;/th&gt;
+            &lt;th&gt;$Text{"Type"}&lt;/th&gt;
+            &lt;th&gt;$Text{"Comment"}&lt;/th&gt;
+            &lt;th&gt;$Text{"Valid"}&lt;/th&gt;
+            &lt;th&gt;$Text{"Changed"}&lt;/th&gt;
+            &lt;th&gt;$Text{"Created"}&lt;/th&gt;
+        &lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody&gt;
+&lt;!-- dtl:block:NoDataFoundMsg --&gt;
+        &lt;tr&gt;
+            &lt;td colspan="6"&gt;
+                $Text{"No data found."}
+            &lt;/td&gt;
+        &lt;/tr&gt;
+&lt;!-- dtl:block:NoDataFoundMsg --&gt;
+&lt;!-- dtl:block:OverviewResultRow --&gt;
+        &lt;tr&gt;
+            &lt;td&gt;&lt;a class="AsBlock" href="$Env{"Baselink"}Action=$Env{"Action"};Subaction=Change;ID=$LQData{"ID"}"&gt;$QData{"Name"}&lt;/a&gt;&lt;/td&gt;
+            &lt;td&gt;$Text{"$Data{"TypeName"}"}&lt;/td&gt;
+            &lt;td title="$QData{"Comment"}"&gt;$QData{"Comment","20"}&lt;/td&gt;
+            &lt;td&gt;$Text{"$Data{"Valid"}"}&lt;/td&gt;
+            &lt;td&gt;$TimeShort{"$QData{"ChangeTime"}"}&lt;/td&gt;
+            &lt;td&gt;$TimeShort{"$QData{"CreateTime"}"}&lt;/td&gt;
+        &lt;/tr&gt;
+&lt;!-- dtl:block:OverviewResultRow --&gt;
+    &lt;/tbody&gt;
+&lt;/table&gt;
+                    </pre><p>
+
+                    The surrounding table with the header is always generated.
+                    If no data was found, the block <code class="literal">NoDataFoundMsg</code> is called
+                    once, resulting in a table with one data row with the message "No data found."
+                </p><p>
+                    If data was found, for each row there is one function call made for the
+                    block <code class="literal">OverViewResultRow</code> (each time passing in the data
+                    for this particular row), resulting in a table with
+                    as many data rows as results were found.
+                </p><p>
+                    Let's look at how the blocks are called from the application module:
+
+                    </p><pre class="programlisting">
+ my %List = $Self-&gt;{StateObject}-&gt;StateList(
+    UserID =&gt; 1,
+    Valid  =&gt; 0,
+);
+
+# if there are any states, they are shown
+if (%List) {
+
+    # get valid list
+    my %ValidList = $Self-&gt;{ValidObject}-&gt;ValidList();
+    for ( sort { $List{$a} cmp $List{$b} } keys %List ) {
+
+        my %Data = $Self-&gt;{StateObject}-&gt;StateGet( ID =&gt; $_, );
+        $Self-&gt;{LayoutObject}-&gt;Block(
+            Name =&gt; 'OverviewResultRow',
+            Data =&gt; {
+                Valid =&gt; $ValidList{ $Data{ValidID} },
+                %Data,
+            },
+        );
+    }
+}
+
+# otherwise a no data found msg is displayed
+else {
+    $Self-&gt;{LayoutObject}-&gt;Block(
+        Name =&gt; 'NoDataFoundMsg',
+        Data =&gt; {},
+    );
+}
+                    </pre><p>
+
+                    Note how the blocks have both their name and an optional set of data
+                    passed in as separate parameters to the block function call. Data inserting
+                    commands inside a block always need the data provided to the block function
+                    call of this block, not the <a class="link" href="TemplatingMechanism.html#using-templates" title="Using a template file">general template
+                    rendering call</a>.
+                </p><p>
+                    For details, please refer to the documentation of <code class="literal">Kernel::Output::HTML::Layout</code>
+                    on <a class="ulink" href="http://otrs.github.io/doc" target="_top">otrs.github.io/doc</a>.
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.3.7.5.5"></a>dtl:js_on_document_complete</h4></div></div></div><p>
+                Marks JavaScript code which should be executed after all CSS, JavaScript
+                and other external content has been loaded and the basic JavaScript initialization
+                was finished. Again, let's look at an example:
+
+                </p><pre class="programlisting">
+&lt;form title="$Text{"Move ticket to a different queue"}" action="$Env{"CGIHandle"}" method="get"&gt;
+    &lt;input type="hidden" name="Action" value="AgentTicketMove"/&gt;
+    &lt;input type="hidden" name="QueueID" value="$QData{"QueueID"}"/&gt;
+    &lt;input type="hidden" name="TicketID" value="$QData{"TicketID"}"/&gt;
+    &lt;label for="DestQueueID" class="InvisibleText"&gt;$Text{"Change queue"}:&lt;/label&gt;
+    $Data{"MoveQueuesStrg"}
+&lt;/form&gt;
+&lt;!-- dtl:js_on_document_complete --&gt;
+&lt;script type="text/javascript"&gt;
+    $('#DestQueueID').bind('change', function (Event) {
+        $(this).closest('form').submit();
+    });
+&lt;/script&gt;
+&lt;!-- dtl:js_on_document_complete --&gt;
+                </pre><p>
+
+                This snippet creates a small form and puts an onchange-Handler on the
+                &lt;select&gt; element which causes and automatical form submit.
+            </p><p>
+                Why is it neccessary to enclose the JavaScript code in
+                <code class="literal">dtl:js_on_document_complate</code>?
+                Starting with OTRS 3.0, JavaScript loading was
+                moved to the footer part of the page for performance reasons. This means that
+                within the &lt;body&gt; of the page, no JavaScript libraries are loaded yet.
+                With <code class="literal">dtl:js_on_document_complete</code> you can make sure that this
+                JavaScript is moved to a part of the final HTML document, where it will be
+                executed only after the entire external JavaScript and CSS content has been
+                successfully loaded and initialized.
+            </p><p>
+                Inside the <code class="literal">dtl:js_on_document_complete</code> block, you can use
+                &lt;script&gt; tags to enclose your JavaScript code, but you do not have to do so.
+                It may be beneficial because it will enable correct syntax highlighting in IDEs
+                which support it.
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="using-templates"></a>Using a template file</h3></div></div></div><p>
+            Ok, but how to actually process a template file and generate the result? This is really simple:
+
+            </p><pre class="programlisting">
+# render AdminState.dtl
+$Output .= $Self-&gt;{LayoutObject}-&gt;Output(
+    TemplateFile =&gt; 'AdminState',
+    Data         =&gt; \%Param,
+);
+            </pre><p>
+
+            In the frontend modules, the <code class="literal">Output()</code> function of
+            <code class="literal">Kernel::Output::HTML::Layout</code> is called (after all the needed blocks
+            have been called in this template) to generate the final output. An optional set of
+            data parameters is passed to the template, for all data inserting commands which are not
+            inside of a block.
+        </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="loader.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="how-it-works.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="how-to-extend-otrs.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">The CSS and JavaScript "Loader" </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 3. How to Extend OTRS</td></tr></table></div></body></html>
