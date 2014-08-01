@@ -12,8 +12,6 @@ package Kernel::System::CustomerCompany;
 use strict;
 use warnings;
 
-use Kernel::System::EventHandler;
-
 use base qw(Kernel::System::EventHandler);
 
 our @ObjectDependencies = (
@@ -70,18 +68,14 @@ sub new {
             $MainObject->Die("Can't load backend module $GenericModule! $@");
         }
         $Self->{"CustomerCompany$Count"} = $GenericModule->new(
-            Count => $Count,
+            Count              => $Count,
             CustomerCompanyMap => $ConfigObject->Get("CustomerCompany$Count"),
         );
     }
 
     # init of event handler
     $Self->EventHandlerInit(
-        Config     => 'CustomerCompany::EventModulePost',
-        BaseObject => 'CustomerCompanyObject',
-        Objects    => {
-            %{$Self},
-        },
+        Config => 'CustomerCompany::EventModulePost',
     );
 
     return $Self;
@@ -120,7 +114,8 @@ sub CustomerCompanyAdd {
     # check needed stuff
     for (qw(CustomerID UserID)) {
         if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log( Priority => 'error', Message => "Need $_!" );
+            $Kernel::OM->Get('Kernel::System::Log')
+                ->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
     }
@@ -175,7 +170,8 @@ sub CustomerCompanyGet {
 
     # check needed stuff
     if ( !$Param{CustomerID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log( Priority => 'error', Message => "Need CustomerID!" );
+        $Kernel::OM->Get('Kernel::System::Log')
+            ->Log( Priority => 'error', Message => "Need CustomerID!" );
         return;
     }
 
