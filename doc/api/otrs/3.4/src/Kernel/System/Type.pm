@@ -12,9 +12,8 @@ package Kernel::System::Type;
 use strict;
 use warnings;
 
-use Kernel::System::CacheInternal;
-
 our @ObjectDependencies = (
+    'Kernel::System::Cache',
     'Kernel::System::DB',
     'Kernel::System::Log',
     'Kernel::System::Valid',
@@ -52,10 +51,8 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    $Self->{CacheInternalObject} = Kernel::System::CacheInternal->new(
-        Type => 'Type',
-        TTL  => 60 * 60 * 24 * 20,
-    );
+    $Self->{CacheType} = 'Type';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
 
     return $Self;
 }
@@ -109,7 +106,9 @@ sub TypeAdd {
     return if !$ID;
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return $ID;
 }
@@ -177,7 +176,10 @@ sub TypeGet {
 
     # check cache
     my $CacheKey = 'TypeGet::ID::' . $Param{ID};
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     return %{$Cache} if $Cache;
 
     # get database object
@@ -213,7 +215,12 @@ sub TypeGet {
     }
 
     # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Type );
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%Type,
+    );
 
     return %Type;
 }
@@ -253,7 +260,9 @@ sub TypeUpdate {
     );
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return 1;
 }
@@ -283,7 +292,10 @@ sub TypeList {
 
     # check cache
     my $CacheKey = "TypeList::Valid::$Valid";
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     return %{$Cache} if $Cache;
 
     # create the valid list
@@ -312,7 +324,12 @@ sub TypeList {
     }
 
     # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%TypeList );
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%TypeList,
+    );
 
     return %TypeList;
 }

@@ -12,10 +12,9 @@ package Kernel::System::Group;
 use strict;
 use warnings;
 
-use Kernel::System::CacheInternal;
-
 our @ObjectDependencies = (
     'Kernel::Config',
+    'Kernel::System::Cache',
     'Kernel::System::DB',
     'Kernel::System::Log',
     'Kernel::System::Valid',
@@ -53,10 +52,8 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    $Self->{CacheInternalObject} = Kernel::System::CacheInternal->new(
-        Type => 'Group',
-        TTL  => 60 * 60 * 3,
-    );
+    $Self->{CacheType} = 'Group';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
 
     return $Self;
 }
@@ -91,7 +88,10 @@ sub GroupLookup {
     elsif ( $Param{Group} ) {
         $CacheKey = "GroupLookup::Name::$Param{Group}";
     }
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     return $Cache if $Cache;
 
     # get data
@@ -134,7 +134,12 @@ sub GroupLookup {
     }
 
     # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => $Result );
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => $Result,
+    );
 
     # return result
     return $Result;
@@ -195,7 +200,9 @@ sub GroupAdd {
     );
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return $GroupID;
 }
@@ -297,7 +304,9 @@ sub GroupUpdate {
     );
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return 1;
 }
@@ -328,7 +337,10 @@ sub GroupList {
     my $CacheKey = 'GroupList::' . $Valid;
 
     # check cache
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     if ( ref $Cache eq 'HASH' ) {
         return %{$Cache};
     }
@@ -354,7 +366,9 @@ sub GroupList {
         $Groups{ $Data[0] } = $Data[1];
     }
 
-    $Self->{CacheInternalObject}->Set(
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
         Key   => $CacheKey,
         Value => \%Groups,
     );
@@ -466,7 +480,9 @@ sub GroupMemberAdd {
     }
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return 1;
 }
@@ -535,7 +551,10 @@ sub GroupMemberList {
     }
 
     # check cache
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     if ($Cache) {
         return @{$Cache} if ref $Cache eq 'ARRAY';
         return %{$Cache} if ref $Cache eq 'HASH';
@@ -574,7 +593,12 @@ sub GroupMemberList {
         }
 
         # set cache
-        $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@Result );
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => \@Result,
+        );
 
         return @Result;
     }
@@ -613,7 +637,12 @@ sub GroupMemberList {
     }
 
     # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Result );
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%Result,
+    );
 
     return %Result;
 
@@ -646,7 +675,10 @@ sub GroupMemberInvolvedList {
     my $CacheKey = 'GroupMemberInvolvedList::' . $Param{Type} . '::' . $Param{UserID};
 
     # check cache
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     return %{$Cache} if $Cache;
 
     # only allow valid system permissions as Type
@@ -739,7 +771,12 @@ sub GroupMemberInvolvedList {
     }
 
     # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%AllUsers );
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%AllUsers,
+    );
 
     return %AllUsers;
 }
@@ -815,7 +852,10 @@ sub GroupGroupMemberList {
 
     # check cache
     if ( $Param{UserID} || $Param{GroupID} ) {
-        my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+        my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
         if ($Cache) {
             return @{$Cache} if ref $Cache eq 'ARRAY';
             return %{$Cache} if ref $Cache eq 'HASH';
@@ -891,7 +931,12 @@ sub GroupGroupMemberList {
 
         # set cache
         if ( $Param{UserID} || $Param{GroupID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@ID );
+            $Kernel::OM->Get('Kernel::System::Cache')->Set(
+                Type  => $Self->{CacheType},
+                TTL   => $Self->{CacheTTL},
+                Key   => $CacheKey,
+                Value => \@ID,
+            );
         }
         return @ID;
     }
@@ -899,14 +944,24 @@ sub GroupGroupMemberList {
 
         # set cache
         if ( $Param{UserID} || $Param{GroupID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@Name );
+            $Kernel::OM->Get('Kernel::System::Cache')->Set(
+                Type  => $Self->{CacheType},
+                TTL   => $Self->{CacheTTL},
+                Key   => $CacheKey,
+                Value => \@Name,
+            );
         }
         return @Name;
     }
 
     # set cache
     if ( $Param{UserID} || $Param{GroupID} ) {
-        $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => \%Data,
+        );
     }
     return %Data;
 }
@@ -986,7 +1041,10 @@ sub GroupRoleMemberList {
     # check cache
     if ( $Param{RoleID} || $Param{GroupID} ) {
 
-        my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+        my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
         if ($Cache) {
             return @{$Cache} if ref $Cache eq 'ARRAY';
             return %{$Cache} if ref $Cache eq 'HASH';
@@ -1067,7 +1125,12 @@ sub GroupRoleMemberList {
 
         # set cache
         if ( $Param{RoleID} || $Param{GroupID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@ID );
+            $Kernel::OM->Get('Kernel::System::Cache')->Set(
+                Type  => $Self->{CacheType},
+                TTL   => $Self->{CacheTTL},
+                Key   => $CacheKey,
+                Value => \@ID,
+            );
         }
         return @ID;
     }
@@ -1075,14 +1138,24 @@ sub GroupRoleMemberList {
 
         # set cache
         if ( $Param{RoleID} || $Param{GroupID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@Name );
+            $Kernel::OM->Get('Kernel::System::Cache')->Set(
+                Type  => $Self->{CacheType},
+                TTL   => $Self->{CacheTTL},
+                Key   => $CacheKey,
+                Value => \@Name,
+            );
         }
         return @Name;
     }
 
     # set cache
     if ( $Param{RoleID} || $Param{GroupID} ) {
-        $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => \%Data,
+        );
     }
     return %Data;
 }
@@ -1188,7 +1261,9 @@ sub GroupRoleMemberAdd {
     }
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return 1;
 }
@@ -1260,7 +1335,11 @@ sub GroupUserRoleMemberList {
 
     # check cache
     if ( $Param{RoleID} || $Param{UserID} ) {
-        my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+        my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+
         if ($Cache) {
             return @{$Cache} if ref $Cache eq 'ARRAY';
             return %{$Cache} if ref $Cache eq 'HASH';
@@ -1335,7 +1414,12 @@ sub GroupUserRoleMemberList {
 
         # set cache
         if ( $Param{RoleID} || $Param{UserID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@ID );
+            $Kernel::OM->Get('Kernel::System::Cache')->Set(
+                Type  => $Self->{CacheType},
+                TTL   => $Self->{CacheTTL},
+                Key   => $CacheKey,
+                Value => \@ID,
+            );
         }
         return @ID;
     }
@@ -1343,14 +1427,24 @@ sub GroupUserRoleMemberList {
 
         # set cache
         if ( $Param{RoleID} || $Param{UserID} ) {
-            $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \@Name );
+            $Kernel::OM->Get('Kernel::System::Cache')->Set(
+                Type  => $Self->{CacheType},
+                TTL   => $Self->{CacheTTL},
+                Key   => $CacheKey,
+                Value => \@Name,
+            );
         }
         return @Name;
     }
 
     # set cache
     if ( $Param{RoleID} || $Param{UserID} ) {
-        $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => \%Data );
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => \%Data,
+        );
     }
     return %Data;
 }
@@ -1393,7 +1487,9 @@ sub GroupUserRoleMemberAdd {
     if ( !$Param{Active} ) {
 
         # reset cache
-        $Self->{CacheInternalObject}->CleanUp();
+        $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+            Type => $Self->{CacheType},
+        );
 
         return;
     }
@@ -1415,7 +1511,9 @@ sub GroupUserRoleMemberAdd {
     );
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return 1;
 }
@@ -1448,7 +1546,10 @@ sub RoleLookup {
     elsif ( $Param{Role} ) {
         $CacheKey = "RoleLookup::Name::$Param{Role}";
     }
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     return $Cache if $Cache;
 
     # get data
@@ -1490,7 +1591,12 @@ sub RoleLookup {
     }
 
     # set cache
-    $Self->{CacheInternalObject}->Set( Key => $CacheKey, Value => $Result );
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => $Result,
+    );
 
     # return result
     return $Result;
@@ -1603,7 +1709,9 @@ sub RoleAdd {
     );
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return $RoleID;
 }
@@ -1646,7 +1754,9 @@ sub RoleUpdate {
     );
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return 1;
 }
@@ -1677,7 +1787,10 @@ sub RoleList {
     my $CacheKey = 'RoleList::' . $Valid;
 
     # check cache
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     if ( ref $Cache eq 'HASH' ) {
         return %{$Cache};
     }
@@ -1704,7 +1817,9 @@ sub RoleList {
         $Roles{ $Data[0] } = $Data[1];
     }
 
-    $Self->{CacheInternalObject}->Set(
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
         Key   => $CacheKey,
         Value => \%Roles,
     );
