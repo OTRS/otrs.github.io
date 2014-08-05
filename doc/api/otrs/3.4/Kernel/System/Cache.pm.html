@@ -66,11 +66,16 @@
 
 <h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<p>Kernel::System::Cache - cache lib</p>
+<p>Kernel::System::Cache - Key/value based data cache for OTRS</p>
 
 <h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<p>All cache functions.</p>
+<p>This is a simple data cache. It can store key/value data both
+in memory and in a configured cache backend for persistent caching.</p>
+
+<p>This can be controlled via the config settings <code>Cache::InMemory</code> and
+<code>Cache::InBackend</code>. The backend can also be selected with the config setting
+<code>Cache::Module</code> and defaults to file system based storage for permanent caching.</p>
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
@@ -81,49 +86,98 @@
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $CacheObject = $Kernel::OM-&gt;Get('Kernel::System::Cache');
 
+</pre></dd>	<dt>Configure()</dt>
+		<dd><p>change cache configuration settings at runtime. You can use this to disable the cache in
+environments where it is not desired, such as in long running scripts.</p></dd>
+<dd><pre>    $CacheObject-&gt;Configure(
+        CacheInMemory  =&gt; 1,    # optional
+        CacheInBackend =&gt; 1,    # optional
+    );
+
 </pre></dd>	<dt>Set()</dt>
-		<dd><p>set a new cache</p></dd>
+		<dd><p>store a value in the cache.</p></dd>
 <dd><pre>    $CacheObject-&gt;Set(
-        Type  =&gt; 'ObjectName', # only [a-zA-Z0-9_] chars usable
+        Type  =&gt; 'ObjectName',      # only [a-zA-Z0-9_] chars usable
         Key   =&gt; 'SomeKey',
         Value =&gt; 'Some Value',
-        TTL   =&gt; 24*60*60,     # in sec. in this case 24h
+        TTL   =&gt; 60 * 60 * 24 * 20, # seconds, this means 20 days
+    );
+
+</pre></dd>		<dd><p>The Type here refers to the group of entries that should be cached and cleaned up together,
+usually this will represent the OTRS object that is supposed to be cached, like 'Ticket'.</p></dd>
+		<dd><p>The Key identifies the entry (together with the type) for retrieval and deletion of this value.</p></dd>
+		<dd><p>The TTL controls when the cache will expire. Please note that the in-memory cache is not persistent
+and thus has no TTL/expiry mechanism.</p></dd>
+		<dd><p>Please note that if you store complex data, you have to make sure that the data is not modified
+in other parts of the code as the in-memory cache only refers to it. Otherwise also the cache would
+contain the modifications. If you cannot avoid this, you can disable the in-memory cache for this
+value:</p></dd>
+<dd><pre>    $CacheObject-&gt;Set(
+        Type  =&gt; 'ObjectName',
+        Key   =&gt; 'SomeKey',
+        Value =&gt; { ... complex data ... },
+        TTL   =&gt; 60 * 60 * 24 * 20,
+
+</pre></dd><dd><pre>        CacheInMemory =&gt; 0,     # optional, defaults to 1
+        CacheInBackend =&gt; 1,    # optional, defaults to 1
     );
 
 </pre></dd>	<dt>Get()</dt>
-		<dd><p>return a cache</p></dd>
+		<dd><p>fetch a value from the cache.</p></dd>
 <dd><pre>    my $Value = $CacheObject-&gt;Get(
-        Type =&gt; 'ObjectName', # only A-z chars usable
+        Type =&gt; 'ObjectName',       # only [a-zA-Z0-9_] chars usable
         Key  =&gt; 'SomeKey',
     );
 
-</pre></dd>	<dt>Delete()</dt>
-		<dd><p>delete a cache</p></dd>
+</pre></dd>		<dd><p>Please note that if you store complex data, you have to make sure that the data is not modified
+in other parts of the code as the in-memory cache only refers to it. Otherwise also the cache would
+contain the modifications. If you cannot avoid this, you can disable the in-memory cache for this
+value:</p></dd>
+<dd><pre>    my $Value = $CacheObject-&gt;Get(
+        Type =&gt; 'ObjectName',
+        Key  =&gt; 'SomeKey',
+
+</pre></dd><dd><pre>        CacheInMemory =&gt; 0,     # optional, defaults to 1
+        CacheInBackend =&gt; 1,    # optional, defaults to 1
+    );
+
+</pre></dd><dd>
+
+
+</dd>	<dt>Delete()</dt>
+		<dd><p>deletes a single value from the cache.</p></dd>
 <dd><pre>    $CacheObject-&gt;Delete(
-        Type =&gt; 'ObjectName', # only A-z chars usable
+        Type =&gt; 'ObjectName',       # only [a-zA-Z0-9_] chars usable
         Key  =&gt; 'SomeKey',
     );
 
-</pre></dd>	<dt>CleanUp()</dt>
-		<dd><p>delete chache or parts of the cache</p></dd>
-<dd><pre>    To delete the whole cache
+</pre></dd>		<dd><p>Please note that despite the cache configuration, Delete and CleanUp will always
+be executed both in memory and in the backend to avoid inconsistent cache states.</p></dd>
+	<dt>CleanUp()</dt>
+		<dd><p>delete parts of the cache or the full cache data.</p></dd>
+		<dd><p>To delete the whole cache:</p></dd>
+<dd><pre>    $CacheObject-&gt;CleanUp();
 
-</pre></dd><dd><pre>    $CacheObject-&gt;CleanUp();
-
-</pre></dd><dd><pre>    of if you want to cleanup only one object cache
-
-</pre></dd><dd><pre>    $CacheObject-&gt;CleanUp(
-        Type =&gt; 'ObjectName', # only A-z chars are usable
+</pre></dd>		<dd><p>To delete the data of only one cache type:</p></dd>
+<dd><pre>    $CacheObject-&gt;CleanUp(
+        Type =&gt; 'ObjectName',   # only [a-zA-Z0-9_] chars usable
     );
 
-</pre></dd><dd><pre>    of if you want to cleanup only one object cache with expired caches
-
-</pre></dd><dd><pre>    $CacheObject-&gt;CleanUp(
-        Type    =&gt; 'ObjectName', # only A-z chars are usable
-        Expired =&gt; 1, # 1|0, default 0
+</pre></dd>		<dd><p>To delete all data except of some types:</p></dd>
+<dd><pre>    $CacheObject-&gt;CleanUp(
+        KeepTypes =&gt; ['Object1', 'Object2'],
     );
 
-</pre></dd></dl>
+</pre></dd>		<dd><p>To delete only expired cache data:</p></dd>
+<dd><pre>    $CacheObject-&gt;CleanUp(
+        Expired =&gt; 1,   # optional, defaults to 0
+    );
+
+</pre></dd>		<dd><p>Type/KeepTypes and Expired can be combined to only delete expired data of a single type
+or of all types except the types to keep.</p></dd>
+		<dd><p>Please note that despite the cache configuration, Delete and CleanUp will always
+be executed both in memory and in the backend to avoid inconsistent cache states.</p></dd>
+</dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
