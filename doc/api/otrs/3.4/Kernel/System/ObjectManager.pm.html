@@ -57,7 +57,13 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a><br />
+<ul>
+	<li><a href="#How_does_it_work">How does it work?</a></li>
+	<li><a href="#How_to_use_it">How to use it?</a></li>
+	<li><a href="#Which_objects_can_be_loaded">Which objects can be loaded?</a></li>
+</ul>
+</li>
 	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
@@ -70,10 +76,18 @@
 
 <h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<pre>    use Kernel::System::ObjectManager;
+<p>The ObjectManager is the central place to create and access singleton OTRS objects.</p>
 
-    # it's important to store the object in this variable,
-    # since many modules expect it that way.
+<h2 id="How_does_it_work">How does it work?</h2>
+
+<p>It creates objects as late as possible and keeps references to them. Upon destruction the objects
+are destroyed in the correct order, based on their dependencies (see below).</p>
+
+<h2 id="How_to_use_it">How to use it?</h2>
+
+<p>The ObjectManager must always be provided to OTRS by the toplevel script like this:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
         # options for module constructors here
         LogObject {
@@ -81,24 +95,58 @@
         },
     );
 
-    # now you can retrieve any configured object:
+</pre><p>Then in the code any object can be retrieved that the ObjectManager can handle,
+like Kernel::System::DB:</p>
 
-    if ( !$Kernel::OM-&gt;Get('DBObject')-&gt;Prepare('SELECT 1') ) {
-        die &quot;Houston, we have a problem!&quot;;
-    }
+<pre>    return if !$Kernel::OM-&gt;Get('Kernel::System::DB')-&gt;Prepare('SELECT 1');
 
-</pre><h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+
+</pre><h2 id="Which_objects_can_be_loaded">Which objects can be loaded?</h2>
+
+<p>The ObjectManager can load every object that declares its dependencies like this in the perl package:</p>
+
+<pre>    package Kernel::System::Valid;
+
+    use strict;
+    use warnings;
+
+    our @ObjectDependencies = (
+        'Kernel::System::Cache',
+        'Kernel::System::DB',
+        'Kernel::System::Log',
+    );
+    our $ObjectManagerAware = 1;
+
+</pre><p>The <code>@ObjectDependencies</code> is the list of objects that the current object will depend on. They will
+be destroyed only after this object is destroyed. If the dependencies are not specified the
+<code>@DefaultObjectDependencies</code> will be assumed.</p>
+
+<p>The <code>$ObjectManagerAware</code> flag signals that the object knows about the ObjectManager and will use
+it to fetch any objects it needs on demand. If this flag is not set the ObjectManager will create all
+dependencies before creating the objects and pass it to its constructor. This is useful to load old
+OTRS objects which don't know about the ObjectManager yet.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <dl>
 	<dt>new()</dt>
 		<dd><p>Creates a new instance of Kernel::System::ObjectManager.</p></dd>
 <dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
 
-</pre></dd><dd><pre>    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(%Options)
+</pre></dd>		<dd><p>Sometimes objects need parameters to be sent to their constructors,
+these can also be passed to the ObjectManager's constructor like in the following example.
+The hash reference will be flattened and passed to the constructor of the object(s).</p></dd>
+<dd><pre>    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+        Kernel::System::Log =&gt; {
+            LogPrefix =&gt; 'OTRS-MyTestScript',
+        },
+    );
 
-</pre></dd>		<dd><p>Options to this constructor should have object names as keys, and hash
-references as values. The hash reference will be flattened and passed
-to the constructor of the object with the same name as option key.</p></dd>
+</pre></dd>		<dd><p>Alternatively, <code>ObjectParamAdd()</code> can be used to set these parameters at runtime (but this
+must happen before the object was created).</p></dd>
 		<dd><p>If the <code>Debug =&gt; 1</code> option is present, destruction of objects
 is checked, and a warning is emitted if objects persist after the
 attempt to destroy them.</p></dd>
@@ -106,7 +154,7 @@ attempt to destroy them.</p></dd>
 		<dd><p>Retrieves a singleton object, and if it not yet exists, implicitly creates one for you.</p></dd>
 <dd><pre>    my $ConfigObject = $Kernel::OM-&gt;Get('Kernel::Config');
 
-</pre></dd>		<dd><p>For backwards compatibility reasons, object aliases can be defined in <a href="../Config/Defaults.pm.html">Kernel::Config::Defaults</a>.
+</pre></dd>		<dd><p>DEPRECATED: For backwards compatibility reasons, object aliases can be defined in <a href="../Config/Defaults.pm.html">Kernel::Config::Defaults</a>.
 For example <code>-&gt;Get('TicketObject')</code> retrieves a <a href="Ticket.pm.html">Kernel::System::Ticket</a> object.</p></dd>
 <dd><pre>    my $ConfigObject = $Kernel::OM-&gt;Get('ConfigObject'); # returns the same ConfigObject as above
 
@@ -124,8 +172,7 @@ ObjectManager so that it is also available from there as 'Kernel::System::UnitTe
 		<dd><p>Please note that this method is DEPRECATED and will be removed in a future version of OTRS.</p></dd>
 		<dd><p>Returns a hash of already instantiated objects.
 The keys are the object names, and the values are the objects themselves.</p></dd>
-		<dd><p>This method is useful for creating objects of classes that are
-not aware of the object manager yet.</p></dd>
+		<dd><p>This method is useful for creating objects of classes that are not aware of the object manager yet.</p></dd>
 <dd><pre>    $SomeModule-&gt;new(
         $Kernel::OM-&gt;ObjectHash(
             Objects =&gt; ['TicketObject', 'DynamicFieldObject'],
@@ -157,7 +204,7 @@ If no list of object names is passed, all stored objects are destroyed.</p></dd>
 </pre></dd>		<dd><p>Mostly used for tests that rely on fresh objects, or to avoid large
 memory consumption in long-running processes.</p></dd>
 		<dd><p>Note that if you pass a list of objects to be destroyed, they are destroyed
-in in the order they were passed; otherwise they are passed in reverse
+in in the order they were passed; otherwise they are destroyed in reverse
 dependency order.</p></dd>
 	<dt>ObjectRegisterEventHandler()</dt>
 		<dd><p>Registers an object that can handle asynchronous events.</p></dd>
