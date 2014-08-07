@@ -76,25 +76,10 @@
 
 <dl>
 	<dt>new()</dt>
-		<dd><p>create a State object</p></dd>
-<dd><pre>    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::ProcessManagement::DB::Process::State;
-
-</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
-    my $EncodeObject = Kernel::System::Encode-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-    );
-    my $StateObject = Kernel::System::ProcessManagement::DB::Process::State-&gt;new(
-        ConfigObject        =&gt; $ConfigObject,
-        EncodeObject        =&gt; $EncodeObject,
-        LogObject           =&gt; $LogObject,
-    );
+		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $ProcessStateObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::DB::Process::State');
 
 </pre></dd>	<dt>StateList()</dt>
 		<dd><p>get a State list</p></dd>
@@ -115,9 +100,9 @@
     my ( $Self, %Param ) = @_;</p></dd>
 <dd><pre>    # check needed
     if ( !$Param{UserID} ) {
-        $Self-&gt;{LogObject}-&gt;Log(
+        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
             Priority =&gt; 'error',
-            Message  =&gt; &quot;Need UserID!&quot;
+            Message  =&gt; &quot;Need UserID!&quot;,
         );
         return;
     }
@@ -148,24 +133,23 @@
     my ( $Self, %Param ) = @_;</p></dd>
 <dd><pre>    # check needed
     if ( !$Param{UserID} ) {
-        $Self-&gt;{LogObject}-&gt;Log(
+        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
             Priority =&gt; 'error',
-            Message  =&gt; &quot;Need UserID!&quot;
+            Message  =&gt; &quot;Need UserID!&quot;,
         );
         return;
     }
 
 </pre></dd><dd><pre>    if ( !$Param{EntityID} &amp;&amp; !$Param{Name} ) {
-        $Self-&gt;{LogObject}-&gt;Log(
+        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
             Priority =&gt; 'error',
-            Message  =&gt; &quot;EntityID or Name is required!&quot;
+            Message  =&gt; &quot;EntityID or Name is required!&quot;,
         );
         return;
     }
 
-</pre></dd><dd><pre>    my $Result;
-
 </pre></dd><dd><pre>    # return state name
+    my $Result;
     if ( $Param{EntityID} ) {
         $Result = $Self-&gt;{StateList}-&gt;{ $Param{EntityID} };
     }
@@ -175,7 +159,8 @@
         my %ReversedStateList = reverse %{ $Self-&gt;{StateList} };
         $Result = $ReversedStateList{ $Param{Name} }
     }
-    return $Result;
+
+</pre></dd><dd><pre>    return $Result;
 }
 
 </pre></dd>		<dd><p>1;</p></dd>
