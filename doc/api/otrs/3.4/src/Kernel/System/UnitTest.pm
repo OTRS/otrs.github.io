@@ -53,7 +53,7 @@ create unit test object. Do not use it directly, instead use:
 
     use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager->new();
-    my $UnitTestObject = $Kernel::OM->Get('UnitTestObject');
+    my $UnitTestObject = $Kernel::OM->Get('Kernel::System::UnitTest');
 
 =cut
 
@@ -250,12 +250,12 @@ sub Run {
         print $XML;
     }
 
-    if ($Param{SubmitURL}) {
+    if ( $Param{SubmitURL} ) {
         $Self->{EncodeObject}->EncodeOutput( \$XML );
 
-        my $RPC = SOAP::Lite->new (
+        my $RPC = SOAP::Lite->new(
             proxy => $Param{SubmitURL},
-            uri => 'http://localhost/Core',
+            uri   => 'http://localhost/Core',
         );
 
         my $Key = $RPC->Submit( '', '', $XML )->result();
@@ -726,6 +726,17 @@ sub _PrintSummary {
         print " Database:    $ResultSummary{Database}\n";
         print " TestOk:      $ResultSummary{TestOk}\n";
         print " TestNotOk:   $ResultSummary{TestNotOk}\n";
+
+        if ( $ResultSummary{TestNotOk} ) {
+            print " FailedTests:\n";
+            FAILEDFILE:
+            for my $FailedFile ( @{ $Self->{NotOkInfo} || [] } ) {
+                my ( $File, @Tests ) = @{ $FailedFile || [] };
+                next FAILEDFILE if !@Tests;
+                print sprintf "  %s #%s\n", $File, join ", ", @Tests;
+            }
+        }
+
         print "=====================================================================\n";
     }
     return 1;
@@ -811,6 +822,16 @@ sub _Print {
         }
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Result} = 'not ok';
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Name}   = $Name;
+
+        my $ShortName = $Name;
+        $ShortName =~ s{\(.+\)$}{};
+
+        # Store information about failed tests, but only if we are running in a toplevel unit test object
+        #   that is actually processing filed, and not in an embedded object that just runs individual tests.
+        if (ref $Self->{NotOkInfo} eq 'ARRAY') {
+            push @{ $Self->{NotOkInfo}->[-1] }, sprintf "%s - %s", $Self->{TestCount}, $ShortName;
+        }
+
         return;
     }
 }

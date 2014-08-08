@@ -39,7 +39,7 @@ use Kernel::System::User;
 # used to generate better error messages.
 our $CurrentObject;
 
-our @DefaultObjectDependencies = (
+my @DefaultObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::DB',
     'Kernel::System::Encode',
@@ -164,7 +164,7 @@ Retrieves a singleton object, and if it not yet exists, implicitly creates one f
 DEPRECATED: For backwards compatibility reasons, object aliases can be defined in L<Kernel::Config::Defaults>.
 For example C<< ->Get('TicketObject') >> retrieves a L<Kernel::System::Ticket> object.
 
-    my $ConfigObject = $Kernel::OM->Get('ConfigObject'); # returns the same ConfigObject as above
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config'); # returns the same ConfigObject as above
 
 =cut
 
@@ -231,7 +231,7 @@ sub _ObjectBuild {
         $ObjectManagerAware = ${ $Package . '::ObjectManagerAware' } // 0;
 
         if ( ${ $Package . '::ObjectManagerDisabled' } ) {
-            $Self->_DieWithError(Error => "$Package cannot be loaded via ObjectManager!");
+            $Self->_DieWithError( Error => "$Package cannot be loaded via ObjectManager!" );
         }
 
         use strict 'refs';
@@ -498,7 +498,7 @@ sub ObjectsDiscard {
     # (but not infinitely)
     if ( !$Param{Objects} && keys %{ $Self->{Objects} } ) {
         if ( $Self->{DestroyAttempts} && $Self->{DestroyAttempts} > 3 ) {
-            $Self->_DieWithError(Error => "Loop while destroying objects!");
+            $Self->_DieWithError( Error => "Loop while destroying objects!" );
         }
 
         $Self->{DestroyAttempts}++;
@@ -541,7 +541,7 @@ sub _DieWithError {
             Priority => 'Error',
             Message  => $Param{Error},
         );
-        confess $Param{Error}; # this will die()
+        confess $Param{Error};    # this will die()
     }
 
     carp $Param{Error};

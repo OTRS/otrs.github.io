@@ -14,6 +14,11 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+);
+our $ObjectManagerAware = 1;
+
 sub GetDisplayPath {
     return 'Database';
 }
@@ -21,12 +26,15 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    if ( $Self->{DBObject}->GetDatabaseFunction('Type') !~ m{^postgresql} ) {
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $DBObject->GetDatabaseFunction('Type') !~ m{^postgresql} ) {
         return $Self->GetResults();
     }
 
-    $Self->{DBObject}->Prepare( SQL => 'show client_encoding' );
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    $DBObject->Prepare( SQL => 'show client_encoding' );
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         if ( $Row[0] =~ /(UNICODE|utf-?8)/i ) {
             $Self->AddResultOk(
                 Identifier => 'ClientEncoding',
@@ -44,8 +52,8 @@ sub Run {
         }
     }
 
-    $Self->{DBObject}->Prepare( SQL => 'show server_encoding' );
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    $DBObject->Prepare( SQL => 'show server_encoding' );
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         if ( $Row[0] =~ /(UNICODE|utf-?8)/i ) {
             $Self->AddResultOk(
                 Identifier => 'ServerEncoding',

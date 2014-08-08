@@ -14,6 +14,11 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+);
+our $ObjectManagerAware = 1;
+
 sub GetDisplayPath {
     return 'Database';
 }
@@ -21,16 +26,19 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    if ( $Self->{DBObject}->GetDatabaseFunction('Type') !~ m{^postgresql} ) {
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $DBObject->GetDatabaseFunction('Type') !~ m{^postgresql} ) {
         return $Self->GetResults();
     }
 
     # version check
-    $Self->{DBObject}->Prepare(
+    $DBObject->Prepare(
         SQL   => "SELECT pg_size_pretty(pg_database_size(current_database()))",
         LIMIT => 1,
     );
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
 
         if ( $Row[0] ) {
             $Self->AddResultInformation(
