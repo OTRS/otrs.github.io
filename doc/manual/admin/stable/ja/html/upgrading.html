@@ -1,0 +1,206 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>OTRSフレームワークのアップグレード</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 3.3 - 管理者マニュアル"><link rel="up" href="installation.html" title="Chapter 2. インストレーション"><link rel="prev" href="web-installer.html" title="ウェブ・インストーラの使用"><link rel="next" href="upgrade-windows-installer.html" title="Windowsインストーラのアップグレード"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">OTRSフレームワークのアップグレード</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="web-installer.html">Prev</a> </td><th width="60%" align="center">Chapter 2. インストレーション</th><td width="20%" align="right"> <a accesskey="n" href="upgrade-windows-installer.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="upgrading"></a>OTRSフレームワークのアップグレード</h2></div></div></div><p>
+    これらは、OTRSをバージョン<span class="emphasis"><em>3.2</em></span>から<span class="emphasis"><em>3.3</em></span>へアップグレードする方々のための指示書です。RPMとソースコード（tarball)アップグレードの両方に適用されます。
+</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+        OTRS
+3.3は少なくともperlバージョン5.10.0を必要とすることに注意してください。このバージョンを稼働するサーバアップグレードする計画する前にご確認ください。コマンドラインからコマンド<span class="command"><strong>perl
+-v</strong></span>でバージョンをチェックすることができます。perl
+5.8を使用し、まだベンダーにサポートされている既知のLinuxディストリビューションは、ed Hat Enterprise Linux (RHEL)
+5です。また、そのコミュニティーは派生的なCentOS 5をサポートしました。これらのプラットフォームのうちのどの上にもいて、OTRS
+3.3にアップグレードすることを計画すれば、さらに、RHEL 6あるいはCentOS
+6のような支援されたperlを備えたバージョンへのオペレーティング・システムを移動させて計画するべきです。
+    </p></div><p>
+    OTRSの旧バージョンをご利用の場合は、まず3.1までアップグレード順に従わなければなりません。 (1.1-&gt;1.2-&gt;1.3-&gt;
+2.0-&gt; 2.1-&gt; 2.2-&gt; 2.3-&gt; 2.4-&gt; 3.0-&gt; 3.1-&gt; 3.2-&gt; 3.3
+...)!データベース変更およびperlスクリプトのアップグレードを含めて、すべてのバージョンへの十分なアップグレードを実行する必要があります。
+</p><p>
+    OTRS 2.2以前からアップグレードする場合は、余計な手間を踏む必要があります：AA。を読んでください。 <a class="ulink" href="http://bugs.otrs.org/show_bug.cgi?id=6798" target="_top">http://bugs.otrs.org/show_bug.cgi?id=6798</a>を読んで下さい。
+</p><p>
+    Within a single minor version you can skip patch level releases if you want
+to upgrade. For instance you can upgrade directly from OTRS 3.3.1 to version
+3.3.4. If you need to do such a "patch level upgrade", you should skip steps
+9 and 13-16.
+</p><p>
+    Please note that if you perform a patch level upgrade from OTRS 3.3.6 or
+earlier, you need to activate a new cron job that controls the scheduler
+process.  Please copy the file
+<code class="filename">/opt/otrs/var/cron/scheduler_watchdog.dist</code> to
+<code class="filename">/opt/otrs/var/cron/scheduler_watchdog</code> and update your
+crontab with <code class="filename">/opt/otrs/bin/Cron.sh start</code> (as "otrs"
+user, not root).
+</p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+            全ての関連サービスを停止
+        </p><p>
+            例えば（使用中のサービスに依存しますが）：</p><pre class="screen">
+shell&gt; /etc/init.d/cron stop
+shell&gt; /etc/init.d/postfix stop
+shell&gt; /etc/init.d/apache stop
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            以下の全てをバックアップ $OTRS_HOME (default: OTRS_HOME=/opt/otrs):
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li><li class="listitem"><p><code class="filename">var/*</code></p></li><li class="listitem"><p><code class="filename">as well as the database</code></p></li></ul></div><p>
+        </p></li><li class="listitem"><p>
+            全てバックアップしたことを確認して下さい。
+        </p></li><li class="listitem"><p>
+            新規システム（オプション）のセットアップ
+        </p><p>
+            可能ならばまずテスト用にこれを別マシンでインストールしてみて下さい。
+        </p></li><li class="listitem"><p>
+            新規リリースをインストール（tarまたはPRM)。
+        </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                talballで：
+            </p><p>
+                </p><pre class="screen">
+shell&gt; cd /opt
+shell&gt; mv otrs otrs-old
+shell&gt; tar -xzf otrs-x.x.x.tar.gz
+shell&gt; mv otrs-x.x.x otrs
+                </pre><p>
+            </p><p>
+                旧構成ファイルをリストア
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li></ul></div><p>
+            </p><p>
+                TicketCounter.logをリストア
+            </p><p>
+                OTRSにてチケット番号を正確に継続させるために、<code class="filename">$OTRS_HOME/var/log/</code> (default:
+<code class="filename">OTRS_HOME=/opt/otrs</code>)に<code class="filename">TicketCounter.log</code>をリストアしてください。インクリメントのチケット番号を使用しているならば、特にこれは重要です。
+            </p><p>
+                記事データのリストア
+            </p><p>
+                OTRSを構成し、ファイルシステムに記事データを格納するならば、<code class="filename">$OTRS_HOME/var/</code>
+(default:
+<code class="filename">OTRS_HOME=/opt/otrs</code>)に<code class="filename">article</code>フォルダーをリストアしなければなりません。
+            </p></li><li class="listitem"><p>
+                RPMで：</p><pre class="screen">
+shell&gt; rpm -Uvh otrs-x.x.x.-01.rpm
+                </pre><p>
+            </p><p>
+                この場合、RPMアップグレードは自動で旧構成ファイルをリストアします。
+            </p></li></ul></div></li><li class="listitem"><p>
+            自身のテーマ
+        </p><p>
+            ノート: OTRSテーマの3.2と3.3は互換性がありません。だから旧テーマを使用しないで下さい。
+        </p><p>
+            テーマは $OTRS_HOME/Kernel/Output/HTML/*/*.dtl (default: OTRS_HOME=/opt/otrs)
+下にあります。
+        </p><p>
+            dtl-FilesはOTRS 3.3上ではutf-8でなければいけません。
+        </p></li><li class="listitem"><p>
+            ファイル権限を設定
+        </p><p>
+            talballを使用する場合は、システム設定に必要な権限で</p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.SetPermissions.pl
+            </pre><p>を実行します。
+        </p></li><li class="listitem"><p>
+                必要な perlモジュールをチェックします。
+            </p><p>
+               システムに必要とされるperlモジュールがすべてインストールされ不足しているおそれのあるモジュールをインストールすることを確認してください。</p><pre class="screen">
+shell&gt; /opt/otrs/bin/otrs.CheckModules.pl
+               </pre><p>
+            </p></li><li class="listitem"><p>
+            スキーマ・アップデート：
+        </p><p>
+             ノート: MySQL
+UPGRADINGプロセスで作成された新しいテーブルは、MySQLサーバーで設定されたデフォルト・テーブル・ストレージ・エンジンで作成されます。MySQL
+5.5では、新しいデフォルト・タイプはInnoDBです。既存のテーブル(例えば「ユーザ」)にテーブル・ストレージ・エンジンがある場合（例えばMyISAM）外部キー制約を作成するとエラーが表示されます。
+         </p><p>
+            2つのオプションがあります: (1)
+新規テーブルが既存テーブルと同じエンジンを持つように、MySQLのデフォルトのストレージ・エンジンをMyISAMに変更できます。あるいは (2)
+ストレージ・エンジンとしてInnoDBを使用する既存テーブルを変更します。
+        </p><p>
+            otrs.CheckDB.plスクリプトは、ストレージ・エンジンに関するどんな問題も報告するので、可能な問題をチェックするためにそれを実行してください。
+        </p><p>
+            </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+
+# MySQL:
+shell&gt; bin/otrs.CheckDB.pl
+shell&gt; cat scripts/DBUpdate-to-3.3.mysql.sql | mysql -p -f -u root otrs
+
+# PostgreSQL 8.2+:
+shell&gt; cat scripts/DBUpdate-to-3.3.postgresql.sql | psql --set ON_ERROR_STOP=on --single-transaction otrs otrs
+
+# PostgreSQL, older versions:
+shell&gt; cat scripts/DBUpdate-to-3.3.postgresql_before_8_2.sql | psql --set ON_ERROR_STOP=on --single-transaction otrs otrs
+            </pre><p>
+        </p><p>
+            Note: If you use PostgreSQL 8.1 or earlier, you need to activate the new
+legacy driver for these older versions. Do this by adding a new line to your
+<code class="filename">Kernel/Config.pm</code> like this: </p><pre class="screen">
+$Self-&gt;{DatabasePostgresqlBefore82} = 1;
+            </pre><p>
+        </p><p>
+            統合スクリプト（「root」としてではなくユーザ「otrs」として）を走らせます。
+        </p><p>
+            </p><pre class="screen">
+shell&gt; scripts/DBUpdate-to-3.3.pl
+            </pre><p>
+このスクリプトが適切に動かない場合はアップグレードプロセスを継続しないで下さい。そうでなければデータを失いかねません。
+        </p></li><li class="listitem"><p>
+構成をリフレッシュしてキャッシュを削除します。（「root」としてではなくユーザ「otrs」として）
+        </p><p>
+            </p><pre class="screen">
+shell&gt; bin/otrs.RebuildConfig.pl
+shell&gt; bin/otrs.DeleteCache.pl
+            </pre><p>
+        </p></li><li class="listitem"><p>
+            サービスの再起動
+        </p><p>
+            例えば（ご使用中のサービスによりますが）</p><pre class="screen">
+shell&gt; /etc/init.d/cron start
+shell&gt; /etc/init.d/postfix start
+shell&gt; /etc/init.d/apache start
+            </pre><p>今、システムにログインできます。
+        </p></li><li class="listitem"><p>インストール済のパッケージをチェック</p><p>
+            パッケージ・マネージャでは全てのパッケージが正しくインストールされたとしてマークされているか、あるいはなんらかの再インストレーションあるいはパッケージ・アップグレードでさえ必要であるかをチェックします。
+        </p><p>
+            以下のパッケージはアップグレード・プロセス後。自動的にアンインストールされます（先にインストール済ならば）
+        </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>OTRSPostMasterFilterExtensions</p></li><li class="listitem"><p>OTRSFreeTextFromCustomerUser</p></li><li class="listitem"><p>OTRSExternalTicketNumberRecognition</p></li><li class="listitem"><p>OTRSDashboardQueueOverview</p></li><li class="listitem"><p>OTRSImportantArticles</p></li><li class="listitem"><p>OTRSImportantArticlesITSM</p></li><li class="listitem"><p>OTRSDashboardTicketCalendar</p></li><li class="listitem"><p>OTRSMultiServiceSelect</p></li><li class="listitem"><p>OTRSMultiQueueSelect</p></li><li class="listitem"><p>OTRSDynamicFieldMultiLevelSelection</p></li><li class="listitem"><p>OTRSDynamicFieldMultiLevelSelection</p></li><li class="listitem"><p>OTRSTicketAclEditor</p></li><li class="listitem"><p>OTRSCustomerProcessSelection</p></li><li class="listitem"><p>OTRSACLExtensions</p></li><li class="listitem"><p>OTRSGenericStandardTemplates</p></li><li class="listitem"><p>OTRSExtendedDynamicDateFieldSearch</p></li><li class="listitem"><p>OTRSDashboardTicketOverviewFilters</p></li></ul></div></li><li class="listitem"><p>
+            OTRSFreeTextFromCustomerUserの構成設定をチェックします。
+        </p><p>
+            ノート: これは以前にOTRSFreeTextFromCustomerUser パッケージを使用した場合にだけ適用されます。
+        </p><p>
+            このモジュールを以前に使用したならば、それを再構成する必要がああります。それが今OTRSフレームワークの一部であるように、モジュールはアップグレードするスクリプトによって自動的にアンインストールされます。
+        </p><p>
+            それを使用し続けたい場合は、この機能を活性化するために、設定
+"Ticket::EventModulePost###930-DynamicFieldFromCustomerUser" を有効にして下さい。そして設定
+"DynamicFieldFromCustomerUser::Mapping"でマッピングを構成して下さい。
+        </p></li><li class="listitem"><p>
+            ACLを新規ALCエディタ（オプション）へインポートします。
+        </p><p>
+            OTRS
+3.3では、管理インターフェースにACL用グラフィカルなエディタがあります。エディタに既存のACLを利用可能にするために、それらを（例えばConfig.pmあるいは追加ファイル）をbin/otrs.ImportACLsFromConfig.pl
+を使用することによりエディタにインポートする必要があります。インポート手続きをうまく終了させた後では、必ずConfig.pm(または他のファイル)からいかなるACLも削除して下さい。さらに、システムにインポートしたACLを再度展開させるためにACL管理フロント・エンドの中で展開ボタンを使用する必要もあります。
+        </p></li><li class="listitem"><p>
+            ウェブサーバ構成のアップデート
+        </p><p>
+            ノート:  Apacheウェブサーバを使用し、OTRSインストール・ディレクトリ(例えばApache
+構成ディレクトリからのシンボリックリンクで)から設定ファイルを直接使用しない場合のみ、これは当てはまります。
+        </p><p>
+            いくつかの変更をした時は、OTRS用Apache設定ファイルをアップデートして下さい。(
+<code class="filename">scripts/apache2-httpd.include.conf</code>を御覧ください)。
+        </p></li><li class="listitem"><p>
+            活性化しているcronジョブのアップデート
+        </p><p>
+            $OTRS_HOME/var/cron/*.distにいくつかのOTRSデフォルトのcronジョブがあります。それらは ".dist"
+のファイル拡張子なしでそれらをコピーすることで活性化することができますこれを実行する際は、新規cronjobsおよびcronjobsの最新バージョンの入手をご確認下さい。
+</p><pre class="screen">
+shell&amp;gt; cd var/cron
+shell&amp;gt; for foo in *.dist; do cp $foo `basename $foo .dist`; done
+            </pre><p>
+
+        </p><p>
+            コピーされたファイルをチェックして、カスタマイゼーション済ならすべて再適用してください。
+        </p><p>
+            システム上のこれらのcronジョブを予定するために、スクリプトCron.shを使用することができます。必ずOTRSシステム・ユーザとしてそれを実行してください!</p><pre class="screen">
+shell&amp;gt; /opt/otrs/bin/Cron.sh start
+            </pre><p>
+        </p></li><li class="listitem"><p>お疲れ様でした！</p></li></ol></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="web-installer.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="installation.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="upgrade-windows-installer.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">ウェブ・インストーラの使用 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Windowsインストーラのアップグレード</td></tr></table></div></body></html>
