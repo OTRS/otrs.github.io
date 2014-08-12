@@ -4,6 +4,13 @@
 $(document).ready(function() {
     var NavigationConfig, Languages, BasicHTML, $OriginalContent;
 
+    Languages = {
+        en: 'English (en)',
+        de: 'Deutsch (de)',
+        ja: '日本語 (ja)',
+        ru: 'Русский (ru)'
+    };
+
     NavigationConfig = [
         {
             Name: 'OTRS Admin Manual',
@@ -14,7 +21,7 @@ $(document).ready(function() {
                     Version:  '3.3',
                     HTMLPath: 'stable',
                     Name:     'OTRS 3.3',
-                    Languages: ['en',],
+                    Languages: ['en', 'ja'],
                 },
                 {
                     Version:  '3.2',
@@ -133,12 +140,6 @@ $(document).ready(function() {
             ],
         },
     ];
-
-    Languages = {
-        en: 'English',
-        de: 'Deutsch',
-        ru: 'Русский',
-    };
 
     function CreateNavigation () {
 
