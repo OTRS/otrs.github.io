@@ -14,13 +14,14 @@ use warnings;
 
 use MIME::Base64();
 use Mail::Address;
+
 use Kernel::System::VariableCheck qw(:all);
 
 our $ObjectManagerDisabled = 1;
 
 =head1 NAME
 
-Kernel::GenericInterface::Operation::Ticket::Common - common operation functions
+Kernel::GenericInterface::Operation::Ticket::Common - cBase class for all Ticket Operations
 
 =head1 SYNOPSIS
 
@@ -30,45 +31,26 @@ Kernel::GenericInterface::Operation::Ticket::Common - common operation functions
 
 =cut
 
-=item new()
+=item Init()
 
-create an object
+initialize the operation by checking the webservice configuration and gather of the dynamic fields
 
-    use Kernel::GenericInterface::Debugger;
-    use Kernel::GenericInterface::Operation::Ticket::Common;
-
-    my $DebuggerObject = Kernel::GenericInterface::Debugger->new(
-        DebuggerConfig   => {
-            DebugThreshold  => 'debug',
-            TestMode        => 0,           # optional, in testing mode the data will not be
-                                            #   written to the DB
-            #...
-        }
-    };
-
-    my $TicketCommonObject = Kernel::GenericInterface::Operation::Ticket::Common->new(
-        DebuggerObject     => $DebuggerObject,
-        WebserviceID       => $WebserviceID,             # ID of the currently used web service
-     );
+    my $Return = $CommonObject->Init(
+        Success => 1,                       # or 0 in case of failure,
+        ErrorMessage => 'Error Message',
+    );
 
 =cut
 
-sub new {
-    my ( $Type, %Param ) = @_;
+sub Init {
+    my ( $Self, %Param ) = @_;
 
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # check needed objects
-    for my $Needed (qw( DebuggerObject WebserviceID )) {
-        if ( !$Param{$Needed} ) {
-            return {
-                Success      => 0,
-                ErrorMessage => "Got no $Needed!"
-            };
-        }
-
-        $Self->{$Needed} = $Param{$Needed};
+    # check needed
+    if ( !$Param{WebserviceID} ) {
+        return {
+            Success      => 0,
+            ErrorMessage => "Got no WebserviceID!",
+        };
     }
 
     # get webservice configuration
@@ -78,12 +60,12 @@ sub new {
         );
 
     if ( !IsHashRefWithData($Webservice) ) {
-        return $Self->_ReturnError(
-            ErrorCode => 'Webservice.InvalidConfiguration',
+        return {
+            Success => 0,
             ErrorMessage =>
                 'Could not determine Web service configuration'
                 . ' in Kernel::GenericInterface::Operation::Ticket::Common::new()',
-        );
+        };
     }
 
     # get the dynamic fields
@@ -101,38 +83,8 @@ sub new {
         $Self->{DynamicFieldLookup}->{ $DynamicField->{Name} } = $DynamicField;
     }
 
-    return $Self;
-}
-
-=item ReturnError()
-
-helper function to return an error message.
-
-    my $Return = $CommonObject->ReturnError(
-        ErrorCode    => Ticket.AccessDenied,
-        ErrorMessage => 'You do not have rights to access this ticket',
-    );
-
-=cut
-
-sub ReturnError {
-    my ( $Self, %Param ) = @_;
-
-    $Self->{DebuggerObject}->Error(
-        Summary => $Param{ErrorCode},
-        Data    => $Param{ErrorMessage},
-    );
-
-    # return structure
     return {
-        Success      => 1,
-        ErrorMessage => "$Param{ErrorCode}: $Param{ErrorMessage}",
-        Data         => {
-            Error => {
-                ErrorCode    => $Param{ErrorCode},
-                ErrorMessage => $Param{ErrorMessage},
-            },
-        },
+        Success => 1
     };
 }
 

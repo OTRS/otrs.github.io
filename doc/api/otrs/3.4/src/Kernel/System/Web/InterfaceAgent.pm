@@ -12,13 +12,22 @@ package Kernel::System::Web::InterfaceAgent;
 use strict;
 use warnings;
 
-use Kernel::System::ObjectManager;
-
-# There are additional dependencies that are only loaded on demand
-## nofilter(TidyAll::Plugin::OTRS::Perl::ObjectDependencies)
 our @ObjectDependencies = (
-    qw(LogObject EncodeObject SessionObject MainObject TimeObject ParamObject UserObject GroupObject),
+    'Kernel::Config',
+    'Kernel::Output::HTML::Layout',
+    'Kernel::System::Auth',
+    'Kernel::System::AuthSession',
+    'Kernel::System::DB',
+    'Kernel::System::Encode',
+    'Kernel::System::Group',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+    'Kernel::System::Ticket',
+    'Kernel::System::Time',
+    'Kernel::System::User',
+    'Kernel::System::Web::Request',
 );
+our $ObjectManagerAware = 1;
 
 =head1 NAME
 
@@ -41,7 +50,7 @@ create agent web interface object. Do not use it directly, instead use:
     use Kernel::System::ObjectManager;
     my $Debug = 0,
     local $Kernel::OM = Kernel::System::ObjectManager->new(
-        InterfaceAgentObject => {
+        'Kernel::System::Web::InterfaceAgent' => {
             Debug   => 0,
             WebRequest => CGI::Fast->new(), # optional, e. g. if fast cgi is used,
                                             # the CGI object is already provided
@@ -64,20 +73,22 @@ sub new {
 
     $Self->{ConfigObject} = $Kernel::OM->Get('Kernel::Config');
     $Kernel::OM->ObjectParamAdd(
-        LogObject => {
+        'Kernel::System::Log' => {
             LogPrefix => $Self->{ConfigObject}->Get('CGILogPrefix'),
         },
-        ParamObject => {
+        'Kernel::System::Web::Request' => {
             WebRequest => $Param{WebRequest} || 0,
         },
     );
 
-    for my $Object (
-        qw( LogObject EncodeObject SessionObject MainObject TimeObject ParamObject UserObject GroupObject )
-        )
-    {
-        $Self->{$Object} = $Kernel::OM->Get($Object);
-    }
+    $Self->{EncodeObject}  = $Kernel::OM->Get('Kernel::System::Encode');
+    $Self->{GroupObject}   = $Kernel::OM->Get('Kernel::System::Group');
+    $Self->{LogObject}     = $Kernel::OM->Get('Kernel::System::Log');
+    $Self->{MainObject}    = $Kernel::OM->Get('Kernel::System::Main');
+    $Self->{ParamObject}   = $Kernel::OM->Get('Kernel::System::Web::Request');
+    $Self->{SessionObject} = $Kernel::OM->Get('Kernel::System::AuthSession');
+    $Self->{TimeObject}    = $Kernel::OM->Get('Kernel::System::Time');
+    $Self->{UserObject}    = $Kernel::OM->Get('Kernel::System::User');
 
     # debug info
     if ( $Self->{Debug} ) {
@@ -135,7 +146,7 @@ sub Run {
     }
 
     $Kernel::OM->ObjectParamAdd(
-        LayoutObject => {
+        'Kernel::Output::HTML::Layout' => {
             Lang         => $Param{Lang},
             UserLanguage => $Param{Lang},
         },
@@ -218,7 +229,7 @@ sub Run {
             }
 
             $Kernel::OM->ObjectParamAdd(
-                LayoutObject => {
+                'Kernel::Output::HTML::Layout' => {
                     SetCookies => {
                         OTRSBrowserHasCookie => $Self->{ParamObject}->SetCookie(
                             Key      => 'OTRSBrowserHasCookie',
@@ -267,7 +278,7 @@ sub Run {
 
         if ( $Self->{ParamObject}->GetCookie( Key => 'OTRSBrowserHasCookie' ) ) {
             $Kernel::OM->ObjectParamAdd(
-                LayoutObject => {
+                'Kernel::Output::HTML::Layout' => {
                     BrowserHasCookie => 1,
                 },
             );
@@ -380,7 +391,7 @@ sub Run {
         }
 
         $Kernel::OM->ObjectParamAdd(
-            LayoutObject => {
+            'Kernel::Output::HTML::Layout' => {
                 SetCookies => {
                     SessionIDCookie => $Self->{ParamObject}->SetCookie(
                         Key      => $Param{SessionName},
@@ -454,7 +465,7 @@ sub Run {
 
         # create a new LayoutObject with %UserData
         $Kernel::OM->ObjectParamAdd(
-            LayoutObject => {
+            'Kernel::Output::HTML::Layout' => {
                 SetCookies => {
                     SessionIDCookie => $Self->{ParamObject}->SetCookie(
                         Key      => $Param{SessionName},
@@ -468,7 +479,7 @@ sub Run {
                 %UserData,
             },
         );
-        $Kernel::OM->ObjectsDiscard( Objects => ['LayoutObject'] );
+        $Kernel::OM->ObjectsDiscard( Objects => ['Kernel::Output::HTML::Layout'] );
         $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
         # Prevent CSRF attacks
@@ -708,7 +719,7 @@ sub Run {
 
             # put '%Param' into LayoutObject
             $Kernel::OM->ObjectParamAdd(
-                LayoutObject => {
+                'Kernel::Output::HTML::Layout' => {
                     SetCookies => {
                         SessionIDCookie => $Self->{ParamObject}->SetCookie(
                             Key      => $Param{SessionName},
@@ -723,7 +734,7 @@ sub Run {
                     }
             );
 
-            $Kernel::OM->ObjectsDiscard( Objects => ['LayoutObject'] );
+            $Kernel::OM->ObjectsDiscard( Objects => ['Kernel::Output::HTML::Layout'] );
             my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
             # create AuthObject
@@ -849,13 +860,13 @@ sub Run {
 
         # put '%Param' and '%UserData' into LayoutObject
         $Kernel::OM->ObjectParamAdd(
-            LayoutObject => {
+            'Kernel::Output::HTML::Layout' => {
                 %Param,
                 %UserData,
                 ModuleReg => $ModuleReg,
             },
         );
-        $Kernel::OM->ObjectsDiscard( Objects => ['LayoutObject'] );
+        $Kernel::OM->ObjectsDiscard( Objects => ['Kernel::Output::HTML::Layout'] );
 
         # updated last request time
         $Self->{SessionObject}->UpdateSessionID(
@@ -970,12 +981,13 @@ sub Run {
     # print an error screen
     my %Data = $Self->{SessionObject}->GetSessionIDData( SessionID => $Param{SessionID}, );
     $Kernel::OM->ObjectParamAdd(
-        LayoutObject => {
+        'Kernel::Output::HTML::Layout' => {
             %Param,
             %Data,
         },
     );
-    $Kernel::OM->Get('Kernel::Output::HTML::Layout')->FatalError( Comment => 'Please contact your administrator' );
+    $Kernel::OM->Get('Kernel::Output::HTML::Layout')
+        ->FatalError( Comment => 'Please contact your administrator' );
     return;
 }
 

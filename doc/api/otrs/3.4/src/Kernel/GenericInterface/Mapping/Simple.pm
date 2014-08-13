@@ -14,6 +14,8 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(IsHashRefWithData IsString IsStringWithData);
 
+our $ObjectManagerDisabled = 1;
+
 =head1 NAME
 
 Kernel::GenericInterface::Mapping::Simple - GenericInterface simple data mapping backend
@@ -41,7 +43,7 @@ sub new {
     bless( $Self, $Type );
 
     # check needed params
-    for my $Needed (qw(DebuggerObject MainObject MappingConfig)) {
+    for my $Needed (qw(DebuggerObject MappingConfig)) {
         if ( !$Param{$Needed} ) {
             return {
                 Success      => 0,
@@ -421,7 +423,7 @@ sub _ConfigCheck {
             );
         }
 
-        # possible subvalues are ValueMapExact or ValueMapRegEx and need to be hash ref if defined
+        # possible sub-values are ValueMapExact or ValueMapRegEx and need to be hash ref if defined
         SUBKEY:
         for my $SubKeyName (qw(ValueMapExact ValueMapRegEx)) {
             my $ValueMapType = $Config->{ValueMap}->{$KeyName}->{$SubKeyName};
@@ -453,7 +455,7 @@ sub _ConfigCheck {
         }
     }
 
-    # if we arrive here, all checks were ok
+    # if we arrive here, all checks were OK
     return {
         Success => 1,
     };
