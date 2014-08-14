@@ -1,0 +1,430 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>ソース（Linux,Unix)からのインストレーション</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 3.3 - 管理者マニュアル"><link rel="up" href="installation.html" title="第2章 インストレーション"><link rel="prev" href="installation.html" title="第2章 インストレーション"><link rel="next" href="web-installer.html" title="ウェブ・インストーラの使用"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">ソース（Linux,Unix)からのインストレーション</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">戻る</a> </td><th width="60%" align="center">第2章 インストレーション</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">次へ</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>ソース（Linux,Unix)からのインストレーション</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="manual-installation-of-otrs.html#preparing-manual-installation">ソースからのインストレーションの準備</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#installation-of-perl-modules">Perlモジュールのインストレーション</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#web-server-configuration">Apacheウェブサーバの構成</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#database-configuration">データベースの構成</a></span></dt><dd><dl><dt><span class="section"><a href="manual-installation-of-otrs.html#manual-installation-of-database">OTRSデータベースのマニュアル・インストール</a></span></dt></dl></dd><dt><span class="section"><a href="manual-installation-of-otrs.html#cronjobs">OTRS用cronジョブのセットアップ</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#installation-scheduler">OTRSスケジューラ・サービス</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="preparing-manual-installation"></a>ソースからのインストレーションの準備</h3></div></div></div><p>
+ソースからOTRSをインストールしたければ、まず.tar.gz, .tar.bz2, or .zip file <a class="ulink" href="http://www.otrs.com/try/" target="_top">
+<em class="citetitle">http://www.otrs.com/try/</em>
+</a>といったソース・アーカイブからダウンロードして下さい。
+</p><p>
+アーカイブをディレクトリー<code class="filename">/opt</code>へ解凍して(例えば、<span class="command"><strong>tar</strong></span>を使用して)、ディレクトリーを
+otrs-x.x.x から otrs へ改名してください(下記のスクリプトを参照)。
+</p><p>
+</p><pre class="screen">
+linux:/opt# tar xf /tmp/otrs-x.x.x.tar.gz
+linux:/opt# mv otrs-x.x.x otrs
+linux:/opt# ls
+otrs
+linux:/opt#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：OTRSをインストールするファースト・ステップ</em></span>
+</p><p>
+OTRSは、root権限で実行されるべきではありません。今直ぐOTRSのための新規のユーザを追加すべきです。この新規ユーザのホームディレクトリーは<code class="filename">/opt/otrs</code>にあるべきです。ウェブサーバが新規の「otrs」ユーザ(それはほとんどのシステム上の場合である)と同じユーザー権利で作動していなければ、新規の「otrs」ユーザをウェブサーバ・ユーザのグループに追加する必要があります(下記のスクリプトを参照)。
+</p><p>
+</p><pre class="screen">
+linux:/opt# useradd -r -d /opt/otrs/ -c 'OTRS user' otrs
+linux:/opt# usermod -G www otrs
+linux:/opt#
+</pre><p> (SUSE=www, Red Hat/CentOS/Fedora=apache,
+Debian/Ubuntu=www-data)
+</p><p>
+<span class="emphasis"><em>スクリプト：新規 'OTRS' ユーザの追加とグループへの追加</em></span>
+</p><p>
+次に、いくつかのサンプル構成ファイルをコピーしなければなりません。システムは後でコピーされたファイルを使用します。ファイルは、<code class="filename">/opt/otrs/Kernel</code>
+and <code class="filename">/opt/otrs/Kernel/Config</code>
+にあり、接尾辞.distがあります(下記のスクリプトを参照)。
+</p><p>
+</p><pre class="screen">
+linux:/opt# cd otrs/Kernel/
+linux:/opt/otrs/Kernel# cp Config.pm.dist Config.pm
+linux:/opt/otrs/Kernel# cd Config
+linux:/opt/otrs/Kernel/Config# cp GenericAgent.pm.dist GenericAgent.pm
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：いくつかのサンプルファイルのコピー</em></span>
+</p><p>
+OTRSのインストレーションを準備する最後のステップは、ファイル用に適切なアクセス権を設定することです。「otrs」ユーザのホームディレクトリーの中で、スクリプト<span class="command"><strong>otrs.SetPermissions.pl</strong></span>(それは<code class="filename">bin</code>ディレクトリーに位置する)を使用することができます。次のパラメーターを備えたスクリプトを実行することができます:
+</p><p>
+</p><div class="cmdsynopsis"><p><code class="command">otrs.SetPermissions.pl</code>  {
+<em class="replaceable"><code>Home directory of the OTRS user</code></em> } { --otrs-user= <em class="replaceable"><code>OTRS user</code></em> } { --web-user= <em class="replaceable"><code>Web server user</code></em> } [ --otrs-group= <em class="replaceable"><code>Group of the OTRS
+user</code></em> ] [ --web-group= <em class="replaceable"><code>Group
+of the web server user</code></em> ]</p></div><p>
+</p><p>
+ウェブサーバがユーザ「otrs」と同じユーザー権限で作動している場合、適切なアクセス権を設定するコマンドは<span class="command"><strong>otrs.SetPermissions.pl
+/opt/otrs --otrs-user=otrs
+--web-user=otrs</strong></span>。SUSEシステムにおいては、ウェブサーバが「wwwrun」のユーザー権限で作動しています。Debianベースのシステムにおいては、これが「www-data」です。適切なアクセス権限を設定するためにコマンド<span class="command"><strong>otrs.SetPermissions.pl
+/opt/otrs --otrs-user=otrs --web-user=wwwrun --otrs-group=nogroup
+--web-group=www</strong></span>を使います。
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-of-perl-modules"></a>Perlモジュールのインストレーション</h3></div></div></div><p>
+テーブル3-1に述べられているように、OTRSはいくつかの追加のパール・モジュールを必要とします。ソースからOTRSをインストールすれば、これらのモジュールを手動でインストールする必要があります。これは、Linuxディストリビューション<span class="application">yast</span>、<span class="application">apt-get</span>)のパッケージ・マネージャーを、あるいはPerlシェルおよびCPANによって(このセクションに述べられていたように)やめることができます。ActiveState
+Perlを使用していれば、例えば、ウィンドウズにおいては、PPM(内蔵のPerl・パッケージ・マネージャー)を使用するかもしれませんが、私たちはできればパッケージ・マネージャーを使用することを推奨します。
+</p><p>
+<span class="command"><strong>otrs.CheckModules.pl</strong></span>でどのモジュールをインストールする必要があるか確認することができます。このスクリプトは「otrs」ユーザのホームディレクトリーに、<code class="filename">bin</code>ディレクトリーに位置します(下記のスクリプトを参照)。いくつかのモジュールはオプションであることに注意してください。</p><pre class="screen">
+linux:~# cd /opt/otrs/bin/
+linux:/opt/otrs/bin# ./otrs.CheckModules.pl
+   o CGI..............................ok (v3.60)
+   o Crypt::PasswdMD5.................ok (v1.3)
+   o Crypt::SSLeay....................Not installed! (Optional - Required for Generic Interface SOAP SSL connections.)
+   o CSS::Minifier....................ok (v0.01)
+   o Date::Format.....................ok (v2.22)
+   o Date::Pcalc......................ok (v1.2)
+
+   ...
+
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：必要なモジュールのチェック</em></span>
+</p><p>
+Linuxディストリビューションのパッケージ管理システムから不足しているモジュールをインストールするために努力するべきです。そうすることによって、新バージョンが利用可能な場合、あるいはセキュリティ問題が見つかった時、パッケージは自動的に更新されます。追加のパッケージをインストールする方法についての配布ドキュメンテーションを参照してください。（正しいバージョンの）モジュールがパッケージ・リポジトリから利用可能でない場合、CPAN、包括的なPerl・アーカイブ・ネットワークからもインストールすることができます。
+</p><p>
+上記のCPAN経由でモジュールのうちの1つをインストールするために、コマンド<span class="command"><strong>perl -e shell
+-MCPAN</strong></span>を実行しなければなりません。Perlシェルは会話型の中で開始され、CPANモジュールがロードされます。CPANが既に構成されている場合、モジュールの名前に続いて、コマンド<span class="command"><strong>install</strong></span>でモジュールをインストールすることができます。CPANは、他のPerl・モジュールにモジュールの依存性に気を配り、他のモジュールが必要かどうかを知らせます。
+</p><p>
+    コマンド<span class="command"><strong>perl -cw bin/cgi-bin/index.pl</strong></span> <span class="command"><strong>perl -cw
+bin/cgi-bin/customer.pl</strong></span>
+を実行し、ディレクトリ<code class="filename">/opt/otrs</code>に変更した後で、<span class="command"><strong>perl -cw
+bin/otrs.PostMaster.pl</strong></span>を実行します。
+両方のコマンドの出力が"シンタックス OK"である場合、Perlは適切にセット・アップされます(下記のスクリプトを参照)。
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs
+linux:/opt/otrs# perl -cw bin/cgi-bin/index.pl
+cgi-bin/installer.pl syntax OK
+linux:/opt/otrs# perl -cw bin/cgi-bin/customer.pl
+cgi-bin/customer.pl syntax OK
+linux:/opt/otrs# perl -cw bin/otrs.PostMaster.pl
+bin/otrs.PostMaster.pl syntax OK
+linux:/opt/otrs#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：シンタックス・チェック</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="web-server-configuration"></a>Apacheウェブサーバの構成</h3></div></div></div><p>第一に、Apache2ウェブサーバおよびmod_perlをインストールするべきです;典型的にはシステム・パッケージ・マネージャーからこれをします。以下の、最も人気のあるLinuxディストリビューション上でApacheを設定するために必要なコマンドをご覧ください。
+</p><p>
+  </p><pre class="screen">
+
+    # rhel / centos:
+    linux:# yum install httpd mod_perl
+
+    # suse:
+    linux:# zypper install apache2-mod_perl
+
+    # debian/ubuntu:
+    linux:# apt-get install apache2 libapache-mod-perl2
+
+  </pre><p>
+</p><p>
+短いURL、エイリアスおよびScriptAliasエントリー経由でOTRSのウェブ・インターフェースにアクセスすることは必要です。ほとんどの<span class="application">Apache</span>インストレーションは<code class="filename">conf.d</code>ディレクトリを含みます。Linuxシステムにおいては、通常<code class="filename">/etc/apache</code>あるいは<code class="filename">/etc/apache2</code>の下にこのディレクトリーを見つけることができます。rootとしてログインして、<code class="filename">conf.d</code>ディレクトリーを変更して、アパッチ構成ディレクトリー中の<code class="filename">otrs.conf</code>と呼ばれるファイルに<code class="filename">/opt/otrs/scripts/apache2-httpd.include.conf</code>の中の適切なテンプレートをコピーしてください。
+</p><p>
+新しい構成設定をロードするためにウェブサーバを再起動してください。ほとんどのシステムにおいては、コマンド<span class="command"><strong>/etc/init.d/apache2
+restart</strong></span> でウェブサーバを開始/再起動することができます(下記のスクリプトを参照)。
+</p><p>
+</p><pre class="screen">
+linux:/etc/apache2/conf.d# /etc/init.d/apache2 restart
+Forcing reload of web server: Apache2.
+linux:/etc/apache2/conf.d#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：ウェブサーバの再起動</em></span>
+</p><p>
+ここで、ウェブサーバはOTRS用に構成されるべきです。
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="database-configuration"></a>データベースの構成</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="manual-installation-of-database"></a>OTRSデータベースのマニュアル・インストール</h4></div></div></div><p>
+データベースを構成する推奨方法は、<a class="link" href="web-installer.html" title="ウェブ・インストーラの使用">Web
+Installer</a>を走らせることです。何らかの理由でこれを使用することができなければ、本章に述べられているように、データベースを手動で構成することもできます。OTRSデータベースをセットアップするためのウェブ・インストーラーを使用することができない場合、それを手動でセット・アップしなければなりません。データベースを作成し構成するSQLステートメントを備えたスクリプトは「otrs」ユーザのホームディレクトリーに、<code class="filename">scripts/database</code>に位置します(下記のスクリプトを参照)。
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs/scripts/database/
+linux:/opt/otrs/scripts/database# ls
+otrs-initial_insert.db2.sql         otrs-schema.mysql.sql
+otrs-schema.oracle.sql
+otrs-initial_insert.mssql.sql       otrs-schema-post.db2.sql
+otrs-initial_insert.mysql.sql       otrs-schema.postgresql.sql
+otrs-initial_insert.oracle.sql
+otrs-initial_insert.postgresql.sql  otrs-schema-post.mssql.sql
+otrs-initial_insert.xml             otrs-schema-post.mysql.sql
+otrs-schema.db2.sql                 otrs-schema-post.oracle.sql
+ otrs-schema-post.postgresql.sql
+otrs-schema.mssql.sql               otrs-schema.xml
+linux:/opt/otrs/scripts/database#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：データベースを作成し構成するために必要なファイル</em></span>
+</p><p>
+異なるデータベースバックエンド用にデータベースをセットアップするために、.sqlファイルは特殊な順番で処理されなければなりません。
+</p><p>
+</p><div class="orderedlist"><p class="title"><b>OTRSデータベースを手動でステップバイステプで作成します</b></p><ol class="orderedlist" type="1"><li class="listitem"><p>
+DBの作成:データベース・クライアントあるいはデータベース・インターフェースで、OTRSのために使用したいデータベースを作成してください。
+</p></li><li class="listitem"><p>
+テーブルの作成:
+otrs-schema.DatabaseType.sqlファイル(例えば<code class="filename">otrs-schema.oracle.sql</code>,
+<code class="filename">otrs-schema.postgresql.sql</code>)で、OTRSデータベースにテーブルを作成することができます。
+</p></li><li class="listitem"><p>
+初回のシステムデータの挿入:
+OTRSは、適切に稼働するためにある初回のシステムデータ（例えば異なるチケット状態、チケットとその通知タイプ)を必要とします。使用しているデータベースのタイプによって、次のファイルのうちの1つを使用する必要があります:<code class="filename">otrs-initial_insert.mysql.sql</code>,
+<code class="filename">otrs-initial_insert.oracle.sql</code>,
+<code class="filename">otrs-initial_insert.postgresql.sql</code> あるいは
+<code class="filename">otrs-initial_insert.mssql.sql </code>。
+</p></li><li class="listitem"><p>
+テーブル間の参照の作成:
+最後のステップは、OTRSデータベースに異なるテーブル間の参照を作成することです。これらを作成するためにotrs-schema-post.DatabaseType.sql
+ファイルを使用します。(例えば.  <code class="filename">otrs-schema-oracle.post.sql</code>,
+<code class="filename">otrs-schema-post.postgresql.sql</code>)。
+</p></li></ol></div><p>
+</p><p>
+データベース・セットアップを終了後、OTRSデータベース用の適切なアクセス権をチェックし設定するべきです。1人のユーザにアクセスを許可することで十分です。使用しているデータベース・サーバによって、アクセス権の設定は異なります。しかし、それは、データベース・クライアントあるいはグラフィカルなデータベースのフロントエンドのいずれかで可能であるべきです。
+</p><p>
+データベースとアクセス権が適切に構成される場合、どのデータベース・バックエンドを使用したいか、また、チケット・システムがどのようにデータベースに接続することができるかOTRSに伝えなければなりません。「otrs」ユーザのホームディレクトリにあるファイル<code class="filename">Kernel/Config.pm</code>を開き、必要に応じてスクリプトの中で下に示されるパラメーターを変更してください。
+</p><p>
+</p><pre class="programlisting">
+
+    # DatabaseHost
+    # (データベースホスト.)
+    $Self-&gt;{'DatabaseHost'} = 'localhost';
+
+    # Database
+    # (データベース名.)
+    $Self-&gt;{Database} = 'otrs';
+
+    # DatabaseUser
+    # (データベースユーザ.)
+    $Self-&gt;{DatabaseUser} = 'otrs';
+
+    # DatabasePw
+    # (データベースユーザのパスワード.)
+    $Self-&gt;{DatabasePw} = 'some-pass';
+
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：カスタマイズ用パラメタ</em></span>
+</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="cronjobs"></a>OTRS用cronジョブのセットアップ</h3></div></div></div><p>
+OTRSは、適切に稼働するいくつかのcronジョブを必要とします。cronジョブは、OTRSモジュール用に指定されたのと同じユーザー権利で実行されるべきです。それは、cronジョブが「otrs」ユーザのcrontabファイルに挿入されなければならないことを意味します。
+</p><p>
+cronジョブを備えたスクリプトはすべて「otrs」ユーザのホームディレクトリーに、<code class="filename">var/cron</code>にあります(下記のスクリプトを参照)。
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs/var/cron
+linux:/opt/otrs/var/cron# ls
+aaa_base.dist                generic_agent.dist       rebuild_ticket_index.dist
+cache.dist                   pending_jobs.dist        session.dist
+fetchmail.dist               postmaster.dist          unlock.dist
+generic_agent-database.dist  postmaster_mailbox.dist
+linux:/opt/otrs/var/cron#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：cronジョブを作成する必要のあるファイル</em></span>
+</p><p>
+これらのスクリプトには「．dist」の接尾辞があります。接尾辞を削除して、ファイルにそれらをコピーするべきです。bashを使用すれば、以下のスクリプトにリストされたコマンドを使用したいと思うかもしれません。
+</p><p>
+</p><pre class="screen">
+linux:/opt/otrs/var/cron# for foo in *.dist; do cp $foo `basename $foo .dist`; done
+linux:/opt/otrs/var/cron# ls
+aaa_base                generic_agent-database.dist  rebuild_ticket_index
+aaa_base.dist           generic_agent.dist           rebuild_ticket_index.dist
+cache                   pending_jobs                 session
+cache.dist              pending_jobs.dist            session.dist
+fetchmail               postmaster                   unlock
+fetchmail.dist          postmaster.dist              unlock.dist
+generic_agent           postmaster_mailbox
+generic_agent-database  postmaster_mailbox.dist
+linux:/opt/otrs/var/cron#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：cronジョブを作成する必要のある全てのファイルをコピーして改名する</em></span>
+</p><p>
+テーブル 3-2 は異なるcronジョブを記述しています。
+</p><p>
+</p><div class="table"><a name="table-of-cronjobs-for-otrs"></a><p class="title"><b>表2.1 いくつかのcronジョブ・スクリプトの記述</b></p><div class="table-contents"><table summary="いくつかのcronジョブ・スクリプトの記述" border="1"><colgroup><col><col></colgroup><thead><tr><th>
+          Script
+        </th><th>
+          Function
+        </th></tr></thead><tbody><tr><td>
+          aaa_base
+        </td><td>
+          「otrs」ユーザのcrontab用基本を設定します。
+        </td></tr><tr><td>
+          cache
+        </td><td>
+          ディスクから失効したキャッシュを削除します。CCS及びJavaScript用ローダー・キャッシュをクリアします
+        </td></tr><tr><td>
+          fetchmail
+        </td><td>
+          新しいメールがチケット・システムの中へのfetchmailで取って来られる場合のみ使用されます。
+        </td></tr><tr><td>
+          generic_agent
+        </td><td>
+          データベースに格納されず、自身のconfigファイルにあるGenericAgentのジョブを実行します。
+        </td></tr><tr><td>
+          generic_agent-database
+        </td><td>
+          データベースに格納されるGenericAgentのジョブを実行します。
+        </td></tr><tr><td>
+          pending_jobs
+        </td><td>
+          保留チケット用システムをチェックし、それらを完了します。あるいは必要ならばリマインダを送信します。
+        </td></tr><tr><td>
+          postmaster
+        </td><td>
+          チケット・システムのメッセージ・キューをチェックし、キューにまだあるメッセージを配布します。
+        </td></tr><tr><td>
+          postmaster_mailbox
+        </td><td>
+          「PostMasterメールアカウント」用セクションの管理者エリアで指定されたPOP3アカウントからメールを取ってきます。
+        </td></tr><tr><td>
+          rebuild_ticket_index
+        </td><td>
+          キュー・ビューの速度を改善するチケット・インデックスを再構築します。
+        </td></tr><tr><td>
+          session
+        </td><td>
+          古くもう必要のないセクションIDを削除します。
+        </td></tr><tr><td>
+          unlock
+        </td><td>
+          システムのチケットをアンロック
+        </td></tr></tbody></table></div></div><p><br class="table-break">
+</p><p>
+セットアップに、すべてのcronジョブ、「otrs」ユーザのホームディレクトリーにあるスクリプト<code class="filename">bin/Cron.sh</code>は使用することができます。このスクリプトを実行する場合、cronジョブをインストールするか、削除するか、再インストールするかどうかを明示するためにパラメーターを必要とします。次のパラメーターを使用することができます:
+</p><p>
+</p><div class="cmdsynopsis"><p><code class="command">Cron.sh</code>  {
+<em class="replaceable"><code>start</code></em> } {
+<em class="replaceable"><code>stop</code></em> } {
+<em class="replaceable"><code>restart</code></em> } [
+<em class="replaceable"><code>OTRS user</code></em> ]</p></div><p>
+</p><p>
+cronジョブは「otrs」ユーザのcrontabファイルにインストールする必要があるので、「otrs」としてログインする必要があります。rootとしてログインする場合は、<span class="command"><strong>su
+otrs</strong></span>で「otrs」に変わることができます。cronジョブをインストールするために下記スクリプト中で指定されたコマンドを実行してください。
+</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">警告</h3><p>
+「otrs」ユーザの他のcrontabエントリーが<code class="filename">Cron.sh</code>スクリプトによって上書きされるか削除されるだろうことに注意してください。必要な他のcrontabエントリーを保持するために<code class="filename">Cron.sh</code>スクリプトを変更してください。
+</p></div><p>
+</p><pre class="screen">
+linux:/opt/otrs/var/cron# cd /opt/otrs/bin/
+linux:/opt/otrs/bin# su otrs
+linux:~/bin$ ./Cron.sh start
+/opt/otrs/bin
+Cron.sh - start/stop OTRS cronjobs
+Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+(using /opt/otrs) done
+linux:~/bin$ exit
+exit
+linux:/opt/otrs/bin#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：cronジョブのインストール</em></span>
+</p><p>
+rootとして実行可能なコマンド<span class="command"><strong>crontab -l -u
+otrs</strong></span>は、「otrs」ユーザのcrontabファイルを示します。また、全てのエントリーが正確に置かれるかどうかをチェックすることができます(下記のスクリプトを参照)。
+</p><p>
+</p><pre class="screen">
+linux:/opt/otrs/bin# crontab -l -u otrs
+# --
+# cron/aaa_base - base crontab package
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# Who gets the cron emails?
+MAILTO="root@localhost"
+
+# --
+# cron/cache - delete expired cache
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# delete expired cache weekly (Sunday mornings)
+20 0 * * 0  $HOME/bin/otrs.CacheDelete.pl --expired &gt;&gt; /dev/null
+30 0 * * 0  $HOME/bin/otrs.LoaderCache.pl -o delete &gt;&gt; /dev/null
+
+# --
+# cron/fetchmail - fetchmail cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# fetch every 5 minutes emails via fetchmail
+#*/5 * * * * /usr/bin/fetchmail -a &gt;&gt; /dev/null
+
+# --
+# cron/generic_agent - otrs.GenericAgent.pl cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# start generic agent every 20 minutes
+*/20 * * * * $HOME/bin/GenericAgent.pl &gt;&gt; /dev/null
+# example to execute GenericAgent.pl on 23:00 with
+# Kernel::Config::GenericAgentMove job file
+#0 23 * * * $HOME/bin/otrs.GenericAgent.pl -c "Kernel::Config::GenericAgentMove" &gt;&gt; /dev/null
+# --
+# cron/generic_agent - GenericAgent.pl cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# start generic agent every 10 minutes
+*/10 * * * * $HOME/bin/otrs.GenericAgent.pl -c db &gt;&gt; /dev/null
+# --
+# cron/pending_jobs - pending_jobs cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# check every 120 min the pending jobs
+45 */2 * * * $HOME/bin/otrs.PendingJobs.pl &gt;&gt; /dev/null
+# --
+# cron/postmaster - postmaster cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# check daily the spool directory of OTRS
+10 0 * * *  $HOME/bin/otrs.ReprocessMails.pl &gt;&gt; /dev/null
+# --
+# cron/postmaster_mailbox - postmaster_mailbox cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# fetch emails every 10 minutes
+*/10 * * * * $HOME/bin/otrs.PostMasterMailbox.pl &gt;&gt; /dev/null
+# --
+# cron/rebuild_ticket_index - rebuild ticket index for OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# just every day
+01 01 * * * $HOME/bin/otrs.RebuildTicketIndex.pl &gt;&gt; /dev/null
+
+# --
+# cron/session - delete old session ids of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# delete every 120 minutes old/idle session ids
+55 */2 * * * $HOME/bin/otrs.DeleteSessionIDs.pl --expired &gt;&gt; /dev/null
+
+# --
+# cron/unlock - unlock old locked ticket of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# unlock every hour old locked tickets
+35 * * * * $HOME/bin/otrs.UnlockTickets.pl --timeout &gt;&gt; /dev/null
+
+linux:/opt/otrs/bin#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>スクリプト：Cronタブ・ファイル</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-scheduler"></a>OTRSスケジューラ・サービス</h3></div></div></div><p>
+        OTRSには、非同期タスクを行なうために利用されるスケジューラ・サービスが付属しています。
+    </p><p>
+        OTRS
+RPMはスケジューラ・サービスを自動的にセット・アップします。ソースからインストールすれば、<code class="filename">/etc/init.d</code>に<code class="filename">scripts/otrs-scheduler-linux</code>ファイルをコピーしそれに適切なアクセス許可を与えることにより、サービスをインストールすることができます。これで、システム開始時には必ずスケジューラ・サービスが開始するようになります。
+    </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="installation.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="installation.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="web-installer.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第2章 インストレーション </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> ウェブ・インストーラの使用</td></tr></table></div></body></html>
