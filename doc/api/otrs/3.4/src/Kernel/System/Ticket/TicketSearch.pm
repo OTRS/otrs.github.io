@@ -1,5 +1,5 @@
 # --
-# Kernel/System/TicketSearch.pm - all ticket search functions
+# Kernel/System/Ticket/TicketSearch.pm - all ticket search functions
 # Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -7,35 +7,16 @@
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-package Kernel::System::TicketSearch;
+package Kernel::System::Ticket::TicketSearch;
 
 use strict;
 use warnings;
 
-our @ObjectDependencies = (
-    'Kernel::Config',
-    'Kernel::System::Cache',
-    'Kernel::System::CustomerGroup',
-    'Kernel::System::CustomerUser',
-    'Kernel::System::DB',
-    'Kernel::System::DynamicField',
-    'Kernel::System::DynamicField::Backend',
-    'Kernel::System::Group',
-    'Kernel::System::Lock',
-    'Kernel::System::Log',
-    'Kernel::System::Priority',
-    'Kernel::System::Queue',
-    'Kernel::System::SLA',
-    'Kernel::System::Service',
-    'Kernel::System::State',
-    'Kernel::System::Time',
-    'Kernel::System::Type',
-);
-our $ObjectManagerAware = 1;
+our $ObjectManagerDisabled = 1;
 
 =head1 NAME
 
-Kernel::System::TicketSearch - ticket search lib
+Kernel::System::Ticket::TicketSearch - ticket search lib
 
 =head1 SYNOPSIS
 

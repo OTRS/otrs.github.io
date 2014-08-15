@@ -18,8 +18,8 @@ use Encode ();
 
 use Kernel::System::EventHandler;
 use Kernel::System::Ticket::Article;
-use Kernel::System::TicketACL;
-use Kernel::System::TicketSearch;
+use Kernel::System::Ticket::TicketACL;
+use Kernel::System::Ticket::TicketSearch;
 use Kernel::System::VariableCheck qw(:all);
 
 use vars qw(@ISA);
@@ -27,24 +27,30 @@ use vars qw(@ISA);
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Cache',
+    'Kernel::System::CustomerUser',
     'Kernel::System::DB',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
+    'Kernel::System::Email',
     'Kernel::System::Group',
+    'Kernel::System::HTMLUtils',
     'Kernel::System::LinkObject',
     'Kernel::System::Lock',
     'Kernel::System::Log',
     'Kernel::System::Main',
+    'Kernel::System::Notification',
+    'Kernel::System::PostMaster::LoopProtection',
     'Kernel::System::Priority',
     'Kernel::System::Queue',
-    'Kernel::System::SLA',
     'Kernel::System::Service',
+    'Kernel::System::SLA',
     'Kernel::System::State',
+    'Kernel::System::TemplateGenerator',
     'Kernel::System::Time',
     'Kernel::System::Type',
     'Kernel::System::User',
+    'Kernel::System::Valid',
 );
-our $ObjectManagerAware = 1;
 
 =head1 NAME
 
@@ -85,8 +91,8 @@ sub new {
 
     @ISA = qw(
         Kernel::System::Ticket::Article
-        Kernel::System::TicketACL
-        Kernel::System::TicketSearch
+        Kernel::System::Ticket::TicketACL
+        Kernel::System::Ticket::TicketSearch
         Kernel::System::EventHandler
     );
 
@@ -1107,11 +1113,12 @@ sub TicketGet {
         }
 
         $Kernel::OM->Get('Kernel::System::Cache')->Set(
-            Type  => $Self->{CacheType},
-            TTL   => $Self->{CacheTTL},
-            Key   => $CacheKey,
+            Type => $Self->{CacheType},
+            TTL  => $Self->{CacheTTL},
+            Key  => $CacheKey,
+
             # make a local copy of the ticket data to avoid it being altered in-memory later
-            Value => { %Ticket },
+            Value => {%Ticket},
         );
     }
 
