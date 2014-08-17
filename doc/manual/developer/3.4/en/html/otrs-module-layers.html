@@ -2718,9 +2718,11 @@ sub Run {
     </p><p>
         In both ways network transport modules deals with the data in the Remote System format. it
         is not recommended to do any data transformation in this modules, the Mapping layer is the
-        responsible to perform any data transformation needed during the communication.
+        responsible to perform any data transformation needed during the communication. An exception
+        of this is the data conversion that is required specifically by for the transport e.g. XML
+        or JSON from / to Perl conversions.
     </p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="adding_transport"></a>Transport backend</h5></div></div></div><p>
-            Next will see how to develop a new transport backend, each transport backend has to
+            Next will show how to develop a new transport backend, each transport backend has to
             implement these subroutines:
         </p><p>
             </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>new</p></li><li class="listitem"><p>ProviderProcessRequest</p></li><li class="listitem"><p>ProviderGenerateResponse</p></li><li class="listitem"><p>RequesterPerformRequest</p></li></ul></div><p>
@@ -2729,10 +2731,11 @@ sub Run {
             correctly with a Remote System in both ways. All network transport backends are
             handled by the transport module (Kernel/GenericInterface/Transport.pm).
         </p><p>
-            Currently Generic Interface implements the HTTP SOAP transport, if the planned web
-            service can use HTTP SOAP there is no need to create a new network transport
-            module, instead we recommend to take a look into HTTP SOAP configuration to check
-            the settings and how it can be tuned.
+            Currently Generic Interface implements the HTTP SOAP and HTTP REST transports, if the
+            planned web service can use HTTP SOAP or HTTP SOAP there is no need to create a new
+            network transport module, instead we recommend to take a look into HTTP SOAP or HTTP
+            REST configurations to check their settings and how it can be tuned according to the
+            remote system.
         </p><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="transport_code_example"></a>Code example</h6></div></div></div><p>
                 In case that the provided network transports does not match the web service needs,
                 then in this section a sample network transport module is shown and each subroutine
@@ -2740,7 +2743,7 @@ sub Run {
                 the HTTP SOAP transport modules uses SOAP::Lite module as backend.
             </p><p>
                 For this example a custom package is used to return the data without doing a real
-                network request to a Remote System, instead this custom module acts as a loopback
+                network request to a Remote System, instead this custom module acts as a loop-back
                 interface.
             </p><p>
                 </p><pre class="programlisting">
@@ -2758,17 +2761,20 @@ package Kernel::GenericInterface::Transport::HTTP::Test;
 use strict;
 use warnings;
 
+use HTTP::Request::Common;
 use LWP::UserAgent;
 use LWP::Protocol;
-use HTTP::Request::Common;
 
-use Kernel::System::Web::Request;
+# prevent 'Used once' warning for Kernel::OM
+use Kernel::System::ObjectManager;
 
-use vars qw(@ISA $VERSION);
+our $ObjectManagerDisabled = 1;
                 </pre><p>
             </p><p>
                 This is common header that can be found in common OTRS modules. The class/package
                 name is declared via the package keyword.
+            </p><p>
+                transports can not be instantiated by the Object Manager.
             </p><p>
                 </p><pre class="programlisting">
 sub new {
@@ -2777,10 +2783,7 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    for my $Needed (
-        qw(LogObject EncodeObject ConfigObject MainObject DebuggerObject TransportConfig)
-        )
-    {
+    for my $Needed (qw( DebuggerObject TransportConfig)) {
         $Self-&gt;{$Needed} = $Param{$Needed} || return {
             Success      =&gt; 0,
             ErrorMessage =&gt; "Got no $Needed!"
@@ -2789,17 +2792,19 @@ sub new {
 
     return $Self;
 }
+
                 </pre><p>
             </p><p>
                 The constructor 'new' creates a new instance of the class. According to the coding
-                guidelines objects of other classes that are needed in this module have to be
-                created in "new".
+                guidelines only objects of other classes not handled by the object manager that are
+                needed in this module have to be created in "new".
             </p><p>
                 </p><pre class="programlisting">
 sub ProviderProcessRequest {
     my ( $Self, %Param ) = @_;
 
     if ( $Self-&gt;{TransportConfig}-&gt;{Config}-&gt;{Fail} ) {
+
         return {
             Success      =&gt; 0,
             ErrorMessage =&gt; "HTTP status code: 500",
@@ -2807,20 +2812,20 @@ sub ProviderProcessRequest {
         };
     }
 
-    my $ParamObject = Kernel::System::Web::Request-&gt;new( %{$Self} );
+    my $ParamObject = $Kernel::OM-&gt;Get('Kernel::System::Web::Request');
 
     my %Result;
-
     for my $ParamName ( $ParamObject-&gt;GetParamNames() ) {
         $Result{$ParamName} = $ParamObject-&gt;GetParam( Param =&gt; $ParamName );
     }
 
     # special handling for empty post request
-    if ( keys %Result == 1 &amp;&amp; exists $Result{POSTDATA} &amp;&amp; !$Result{POSTDATA} ) {
+    if ( scalar keys %Result == 1 &amp;&amp; exists $Result{POSTDATA} &amp;&amp; !$Result{POSTDATA} ) {
         %Result = ();
     }
 
     if ( !%Result ) {
+
         return $Self-&gt;{DebuggerObject}-&gt;Error(
             Summary =&gt; 'No request data found.',
         );
@@ -2831,7 +2836,6 @@ sub ProviderProcessRequest {
         Data      =&gt; \%Result,
         Operation =&gt; 'test_operation',
     };
-
 }
                 </pre><p>
             </p><p>
@@ -2848,6 +2852,7 @@ sub ProviderGenerateResponse {
     my ( $Self, %Param ) = @_;
 
     if ( $Self-&gt;{TransportConfig}-&gt;{Config}-&gt;{Fail} ) {
+
         return {
             Success      =&gt; 0,
             ErrorMessage =&gt; 'Test response generation failed',
@@ -2872,7 +2877,7 @@ sub ProviderGenerateResponse {
         $Response = HTTP::Response-&gt;new( 200 =&gt; "OK" );
         $Response-&gt;protocol('HTTP/1.0');
         $Response-&gt;content_type("text/plain; charset=UTF-8");
-        $Response-&gt;add_content_utf8( $Request-&gt;content );
+        $Response-&gt;add_content_utf8( $Request-&gt;content() );
         $Response-&gt;date(time);
     }
 
@@ -2901,6 +2906,7 @@ sub RequesterPerformRequest {
     my ( $Self, %Param ) = @_;
 
     if ( $Self-&gt;{TransportConfig}-&gt;{Config}-&gt;{Fail} ) {
+
         return {
             Success      =&gt; 0,
             ErrorMessage =&gt; "HTTP status code: 500",
@@ -2918,7 +2924,7 @@ sub RequesterPerformRequest {
     return {
         Success =&gt; 1,
         Data    =&gt; {
-            ResponseContent =&gt; $Response-&gt;content,
+            ResponseContent =&gt; $Response-&gt;content(),
         },
     };
 }
@@ -2937,21 +2943,27 @@ use base qw(LWP::Protocol);
 
 sub new {
     my $Class = shift;
+
     return $Class-&gt;SUPER::new(@_);
 }
 
-sub request {
+sub request {    ## no critic
     my $Self = shift;
+
     my ( $Request, $Proxy, $Arg, $Size, $Timeout ) = @_;
 
     my $Response = HTTP::Response-&gt;new( 200 =&gt; "OK" );
     $Response-&gt;protocol('HTTP/1.0');
     $Response-&gt;content_type("text/plain; charset=UTF-8");
-    $Response-&gt;add_content_utf8( $Request-&gt;content );
+    $Response-&gt;add_content_utf8( $Request-&gt;content() );
     $Response-&gt;date(time);
+
+    #print $Request-&gt;as_string();
+    #print $Response-&gt;as_string();
 
     return $Response;
 }
+
                 </pre><p>
             </p><p>
                 This is the code for the custom protocol that we use. This approach is only useful
@@ -2963,8 +2975,6 @@ sub request {
                 </p><pre class="programlisting">
 1;
 
-=end Internal:
-
 =head1 TERMS AND CONDITIONS
 
 This software is part of the OTRS project (L&lt;http://otrs.org/&gt;).
@@ -2974,12 +2984,10 @@ the enclosed file COPYING for license information (AGPL). If you
 did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
 
 =cut
-
-=cut
                 </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="transport-configuration"></a>Configuration Example</h6></div></div></div><p>
                 There is the need to register this network transport module to be accessible in the
-                OTRS GUI. This can be done using the xml configuration below.
+                OTRS GUI. This can be done using the XML configuration below.
             </p><p>
                 </p><pre class="programlisting">
 &lt;ConfigItem Name="GenericInterface::Transport::Module###HTTP::Test" Required="0" Valid="1"&gt;
@@ -3047,9 +3055,9 @@ did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
         </p><p>
             So it is highly provable that you don't need to develop a custom mapping module.
             Please check Mapping Simple module (Kernel/GenericInterface/Mapping/Simple.pm)
-            and its online documentation before continue.
+            and its on-line documentation before continue.
         </p><p>
-            If Mapping Simple module does not match your needs then we will see how to develop a
+            If Mapping Simple module does not match your needs then we will show how to develop a
             new Mapping backend, each mapping backend has to implement these subroutines:
         </p><p>
             </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>new</p></li><li class="listitem"><p>Map</p></li></ul></div><p>
@@ -3077,14 +3085,14 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(IsHashRefWithData IsStringWithData);
 
-use vars qw(@ISA $VERSION);
+our $ObjectManagerDisabled = 1;
                 </pre><p>
             </p><p>
                 This is common header that can be found in common OTRS modules. The class/package
                 name is declared via the package keyword.
             </p><p>
                 We also include VariableCheck module to perform certain validation over some
-                variables.
+                variables. Mappings can not be instantiated by the Object Manager.
             </p><p>
                 </p><pre class="programlisting">
 sub new {
@@ -3095,8 +3103,9 @@ sub new {
     bless( $Self, $Type );
 
     # check needed params
-    for my $Needed (qw(DebuggerObject MainObject MappingConfig)) {
+    for my $Needed (qw(DebuggerObject MappingConfig)) {
         if ( !$Param{$Needed} ) {
+
             return {
                 Success      =&gt; 0,
                 ErrorMessage =&gt; "Got no $Needed!"
@@ -3107,6 +3116,7 @@ sub new {
 
     # check mapping config
     if ( !IsHashRefWithData( $Param{MappingConfig} ) ) {
+
         return $Self-&gt;{DebuggerObject}-&gt;Error(
             Summary =&gt; 'Got no MappingConfig as hash ref with content!',
         );
@@ -3118,6 +3128,7 @@ sub new {
         &amp;&amp; !IsHashRefWithData( $Param{MappingConfig}-&gt;{Config} )
         )
     {
+
         return $Self-&gt;{DebuggerObject}-&gt;Error(
             Summary =&gt; 'Got MappingConfig with Data, but Data is no hash ref with content!',
         );
@@ -3128,8 +3139,8 @@ sub new {
                 </pre><p>
             </p><p>
                 The constructor 'new' creates a new instance of the class. According to the coding
-                guidelines objects of other classes that are needed in this module have to be
-                created in "new".
+                guidelines only objects of other classes not handled by the object manager that are
+                needed in this module have to be created in "new".
             </p><p>
                 </p><pre class="programlisting">
 sub Map {
@@ -3137,12 +3148,15 @@ sub Map {
 
     # check data - only accept undef or hash ref
     if ( defined $Param{Data} &amp;&amp; ref $Param{Data} ne 'HASH' ) {
-        return $Self-&gt;{DebuggerObject}
-            -&gt;Error( Summary =&gt; 'Got Data but it is not a hash ref in Mapping Test backend!' );
+
+        return $Self-&gt;{DebuggerObject}-&gt;Error(
+            Summary =&gt; 'Got Data but it is not a hash ref in Mapping Test backend!'
+        );
     }
 
     # return if data is empty
     if ( !defined $Param{Data} || !%{ $Param{Data} } ) {
+
         return {
             Success =&gt; 1,
             Data    =&gt; {},
@@ -3155,6 +3169,7 @@ sub Map {
         || !defined $Self-&gt;{MappingConfig}-&gt;{Config}-&gt;{TestOption}
         )
     {
+
         return {
             Success =&gt; 1,
             Data    =&gt; $Param{Data},
@@ -3163,6 +3178,7 @@ sub Map {
 
     # check TestOption format
     if ( !IsStringWithData( $Self-&gt;{MappingConfig}-&gt;{Config}-&gt;{TestOption} ) ) {
+
         return $Self-&gt;{DebuggerObject}-&gt;Error(
             Summary =&gt; 'Got no TestOption as string with value!',
         );
@@ -3193,8 +3209,8 @@ sub Map {
             </p><p>
                 The 'map' function is the main part of each mapping module, it receives the mapping
                 configuration (rules) and the data in the original format (either OTRS or remote
-                system format) and converts it to a new format, even the strucure of the data can be
-                changed during the mapping process.
+                system format) and converts it to a new format, even the structure of the data can
+                be changed during the mapping process.
             </p><p>
                 In this particular example there are three rules to map the values this rules are
                 set in the mapping configuration key "TestOption" and they are ToUpper, ToLower and
@@ -3213,7 +3229,7 @@ sub _ToUpper {
     my ( $Self, %Param ) = @_;
 
     my $ReturnData = {};
-    for my $Key ( keys %{ $Param{Data} } ) {
+    for my $Key ( sort keys %{ $Param{Data} } ) {
         $ReturnData-&gt;{$Key} = uc $Param{Data}-&gt;{$Key};
     }
 
@@ -3224,7 +3240,7 @@ sub _ToLower {
     my ( $Self, %Param ) = @_;
 
     my $ReturnData = {};
-    for my $Key ( keys %{ $Param{Data} } ) {
+    for my $Key ( sort keys %{ $Param{Data} } ) {
         $ReturnData-&gt;{$Key} = lc $Param{Data}-&gt;{$Key};
     }
 
@@ -3235,21 +3251,19 @@ sub _Empty {
     my ( $Self, %Param ) = @_;
 
     my $ReturnData = {};
-    for my $Key ( keys %{ $Param{Data} } ) {
+    for my $Key ( sort keys %{ $Param{Data} } ) {
         $ReturnData-&gt;{$Key} = '';
     }
 
     return $ReturnData;
 }
+
                 </pre><p>
             </p><p>
                 This are the helper functions that actually performs the string conversions
             </p><p>
                 </p><pre class="programlisting">
-
-=end Internal:
-
-=back
+1;
 
 =head1 TERMS AND CONDITIONS
 
@@ -3260,12 +3274,10 @@ the enclosed file COPYING for license information (AGPL). If you
 did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
 
 =cut
-
-=cut
                 </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="mapping-configuration"></a>Configuration Example</h6></div></div></div><p>
                 There is the need to register this mapping module to be accessible in the OTRS GUI.
-                This can be done using the xml configuration below.
+                This can be done using the XML configuration below.
             </p><p>
                 </p><pre class="programlisting">
 &lt;ConfigItem Name="GenericInterface::Mapping::Module###Test" Required="0" Valid="1"&gt;
@@ -3284,7 +3296,7 @@ did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
         is in charge of perform necessary tasks in OTRS side, to gather the necessary data in order
         to construct the request.
     </p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="adding_invoker"></a>Invoker backend</h5></div></div></div><p>
-            Next we will see how to develop a new Invoker, each invoker has to implement these
+            Next we will show how to develop a new Invoker, each invoker has to implement these
             subroutines:
         </p><p>
             </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>new</p></li><li class="listitem"><p>PrepareRequest</p></li><li class="listitem"><p>HandleResponse</p></li></ul></div><p>
@@ -3311,11 +3323,15 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(IsString IsStringWithData);
 
-use vars qw(@ISA $VERSION);
+# prevent 'Used once' warning for Kernel::OM
+use Kernel::System::ObjectManager;
+
+our $ObjectManagerDisabled = 1;
                 </pre><p>
             </p><p>
-This is common header that can be found in common OTRS modules. The class/package name is declared
-via the package keyword.
+                This is common header that can be found in common OTRS modules. The class/package
+                name is declared via the package keyword. Invokers can not be instantiated by the
+                Object Manager.
             </p><p>
                 </p><pre class="programlisting">
 sub new {
@@ -3326,23 +3342,22 @@ sub new {
     bless( $Self, $Type );
 
     # check needed params
-    for my $Needed (qw(DebuggerObject MainObject TimeObject)) {
-        if ( !$Param{$Needed} ) {
-            return {
-                Success      =&gt; 0,
-                ErrorMessage =&gt; "Got no $Needed!"
-            };
-        }
-
-        $Self-&gt;{$Needed} = $Param{$Needed};
+    if ( !$Param{DebuggerObject} ) {
+        return {
+            Success      =&gt; 0,
+            ErrorMessage =&gt; "Got no DebuggerObject!"
+        };
     }
+
+    $Self-&gt;{DebuggerObject} = $Param{DebuggerObject};
 
     return $Self;
 }
                 </pre><p>
             </p><p>
-The constructor 'new' creates a new instance of the class. According to the coding guidelines
-objects of other classes that are needed in this module have to be created in "new".
+                The constructor 'new' creates a new instance of the class. According to the coding
+                guidelines only objects of other classes not handled by the object manager that are
+                needed in this module have to be created in "new".
             </p><p>
                 </p><pre class="programlisting">
 sub PrepareRequest {
@@ -3364,7 +3379,7 @@ sub PrepareRequest {
 
     # check request for system time
     if ( IsStringWithData( $Param{Data}-&gt;{GetSystemTime} ) &amp;&amp; $Param{Data}-&gt;{GetSystemTime} ) {
-        $ReturnData{SystemTime} = $Self-&gt;{TimeObject}-&gt;SystemTime();
+        $ReturnData{SystemTime} = $Kernel::OM-&gt;Get('Kernel::System::Time')-&gt;SystemTime();
     }
 
     return {
@@ -3374,14 +3389,15 @@ sub PrepareRequest {
 }
                 </pre><p>
             </p><p>
-            The 'PrepareRequest' function is used to handle and collect all needed data to be sent
-            into the request, here we can receive data from the request handler, use it, extend it,
-            generate new data, and after that, we can transfer the results to the mapping layer.
+                The 'PrepareRequest' function is used to handle and collect all needed data to be
+                sent into the request, here we can receive data from the request handler, use it,
+                extend it, generate new data, and after that, we can transfer the results to the
+                mapping layer.
             </p><p>
-            For this example we are expecting to receive a ticket number, if there isn't then we
-            use the debugger method "Error()" that creates an entry in the debug log and also
-            returns a structure with the parameter Success as 0 and Error Message as the passed
-            summary.
+                For this example we are expecting to receive a ticket number, if there isn't then we
+                use the debugger method "Error()" that creates an entry in the debug log and also
+                returns a structure with the parameter Success as 0 and Error Message as the passed
+                summary.
             </p><p>
                 Also this example appends the word "Test" to the parameter "Action" and if
                 GetSystemTime is requested, it will fill the SystemTime parameter with the current
@@ -3412,10 +3428,12 @@ sub HandleResponse {
     # if there was an error in the response, forward it
     if ( !$Param{ResponseSuccess} ) {
         if ( !IsStringWithData( $Param{ResponseErrorMessage} ) ) {
+
             return $Self-&gt;{DebuggerObject}-&gt;Error(
                 Summary =&gt; 'Got response error, but no response error message!',
             );
         }
+
         return {
             Success      =&gt; 0,
             ErrorMessage =&gt; $Param{ResponseErrorMessage},
@@ -3424,6 +3442,7 @@ sub HandleResponse {
 
     # we need a TicketNumber
     if ( !IsStringWithData( $Param{Data}-&gt;{TicketNumber} ) ) {
+
         return $Self-&gt;{DebuggerObject}-&gt;Error( Summary =&gt; 'Got no TicketNumber!' );
     }
 
@@ -3435,6 +3454,7 @@ sub HandleResponse {
     # check Action
     if ( IsStringWithData( $Param{Data}-&gt;{Action} ) ) {
         if ( $Param{Data}-&gt;{Action} !~ m{ \A ( .*? ) Test \z }xms ) {
+
             return $Self-&gt;{DebuggerObject}-&gt;Error(
                 Summary =&gt; 'Got Action but it is not in required format!',
             );
@@ -3464,8 +3484,6 @@ sub HandleResponse {
                 send an error, etc.
             </p><p>
                 </p><pre class="programlisting">
-1;
-
 =back
 
 =head1 TERMS AND CONDITIONS
@@ -3477,12 +3495,10 @@ the enclosed file COPYING for license information (AGPL). If you
 did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
 
 =cut
-
-=cut
                 </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="invoker-configuration"></a>Configuration Example</h6></div></div></div><p>
                 There is the need to register this invoker module to be accessible in the OTRS GUI.
-                This can be done using the xml configuration below.
+                This can be done using the XML configuration below.
             </p><p>
                 </p><pre class="programlisting">
 &lt;ConfigItem Name="GenericInterface::Invoker::Module###Test::Test" Required="0" Valid="1"&gt;
@@ -3499,12 +3515,11 @@ did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
 &lt;/ConfigItem&gt;
                 </pre><p>
             </p></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="operation"></a>Operation</h4></div></div></div><p>
-        The operation is used to perform an action within OTRS,
-        this action is requested by the external system and can include special parameters in order
-        that OTRS receives to correctly execute the action. After the action is performed, OTRS
-        sends a defined confirmation the external system.
+        The operation is used to perform an action within OTRS, this action is requested by the
+        external system and can include special parameters in order to correctly execute the action.
+        After the action is performed, OTRS sends a defined confirmation to the external system.
     </p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="adding_operation"></a>Operation backend</h5></div></div></div><p>
-            Next we will see how to develop a new Operation, each operation has to implement these
+            Next we will show how to develop a new Operation, each operation has to implement these
             subroutines
         </p><p>
             </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>new</p></li><li class="listitem"><p>Run</p></li></ul></div><p>
@@ -3531,14 +3546,14 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(IsHashRefWithData);
 
-use vars qw(@ISA $VERSION);
+our $ObjectManagerDisabled = 1;
                 </pre><p>
             </p><p>
                 This is common header that can be found in common OTRS modules. The class/package
                 name is declared via the package keyword.
             </p><p>
                 We also include VariableCheck module to perform certain validation over some
-                variables.
+                variables. Operations can not be instantiated by the Object Manager.
             </p><p>
                 </p><pre class="programlisting">
 sub new {
@@ -3564,8 +3579,8 @@ sub new {
                 </pre><p>
             </p><p>
                 The constructor 'new' creates a new instance of the class. According to the coding
-                guidelines objects of other classes that are needed in this module have to be
-                created in "new".
+                guidelines only objects of other classes not handled by the object manager that are
+                needed in this module have to be created in "new".
             </p><p>
                 </p><pre class="programlisting">
 sub Run {
@@ -3573,12 +3588,14 @@ sub Run {
 
     # check data - only accept undef or hash ref
     if ( defined $Param{Data} &amp;&amp; ref $Param{Data} ne 'HASH' ) {
+
         return $Self-&gt;{DebuggerObject}-&gt;Error(
             Summary =&gt; 'Got Data but it is not a hash ref in Operation Test backend)!'
         );
     }
 
     if ( defined $Param{Data} &amp;&amp; $Param{Data}-&gt;{TestError} ) {
+
         return {
             Success      =&gt; 0,
             ErrorMessage =&gt; "Error message for error code: $Param{Data}-&gt;{TestError}",
@@ -3607,8 +3624,8 @@ sub Run {
                 </pre><p>
             </p><p>
                 The 'Run' function is the main part of each operation, it receives all internal
-                mapped data from remote system needed by the provider to execute the action,
-                it performs the action and returns the result to the provider to be external mapped
+                mapped data from remote system needed by the provider to execute the action, it
+                performs the action and returns the result to the provider to be external mapped
                 and deliver back to the remote system.
             </p><p>
                 This particular example returns the same data as came from the remote system,
@@ -3616,8 +3633,6 @@ sub Run {
             </p><p>
                 </p><pre class="programlisting">
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 
@@ -3628,12 +3643,10 @@ the enclosed file COPYING for license information (AGPL). If you
 did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
 
 =cut
-
-=cut
                 </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="operation-configuration"></a>Configuration Example</h6></div></div></div><p>
                 There is the need to register this operation module to be accessible in the OTRS
-                GUI. This can be done using the xml configuration below.
+                GUI. This can be done using the XML configuration below.
             </p><p>
                 </p><pre class="programlisting">
 &lt;ConfigItem Name="GenericInterface::Operation::Module###Test::Test" Required="0" Valid="1"&gt;
@@ -3833,7 +3846,7 @@ did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
                 defines a Generic middle API for all Dynamic Field Drivers, and each Driver has
                 the responsibility to implement the middle API for the specific needs for the field.
             </p><p>
-                The Dynamic Field Banckend is the master controller of all the Drivers, each
+                The Dynamic Field Backend is the master controller of all the Drivers, each
                 function in this module is responsible to check the required parameters and call
                 the same function in the specific Driver according to the Dynamic Field
                 Configuration parameter received.
@@ -3993,7 +4006,7 @@ did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
                 </p><p>
                     This is necessary, even if the "other object" does not require any specific
                     data handling in its functions (e.g. after a value is set). All Object Type
-                    Delates must implement the functions that the Backend requires.
+                    Delegates must implement the functions that the Backend requires.
                 </p><p>
                     Take a look in the current Object Type Delegates to implement the same
                     functions, even if they just return a successful value for the "other object".
@@ -4073,8 +4086,8 @@ did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
             provide any level of security and is not recommended for production systems.
         </p></div><p>
         To create this new Dynamic Field we will create 4 files: a Configuration File (XML),
-        to register the modules, an Admin Dialog Module (perl), to setup the field options, a
-        template module, for the Admin Dialog and a Dynamic Field Driver (perl).
+        to register the modules, an Admin Dialog Module (Perl), to setup the field options, a
+        template module, for the Admin Dialog and a Dynamic Field Driver (Perl).
     </p><p>
         File Structure:
     </p><pre class="programlisting">
@@ -4242,6 +4255,7 @@ sub Run {
         );
     }
     if ( $Self-&gt;{Subaction} eq 'Change' ) {
+
         return $Self-&gt;_Change(
             %Param,
         );
@@ -4255,6 +4269,7 @@ sub Run {
             %Param,
         );
     }
+
     return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
         Message =&gt; "Undefined subaction.",
     );
@@ -4273,6 +4288,7 @@ sub _Add {
     for my $Needed (qw(ObjectType FieldType FieldOrder)) {
         $GetParam{$Needed} = $Self-&gt;{ParamObject}-&gt;GetParam( Param =&gt; $Needed );
         if ( !$Needed ) {
+
             return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
                 Message =&gt; "Need $Needed",
             );
@@ -4364,6 +4380,7 @@ sub _AddAction {
 
     # uncorrectable errors
     if ( !$GetParam{ValidID} ) {
+
         return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
             Message =&gt; "Need ValidID",
         );
@@ -4371,6 +4388,7 @@ sub _AddAction {
 
     # return to add screen if errors
     if (%Errors) {
+
         return $Self-&gt;_ShowScreen(
             %Param,
             %Errors,
@@ -4399,6 +4417,7 @@ sub _AddAction {
     );
 
     if ( !$FieldID ) {
+
         return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
             Message =&gt; "Could not create the new field",
         );
@@ -4435,6 +4454,7 @@ sub _Change {
     for my $Needed (qw(ObjectType FieldType)) {
         $GetParam{$Needed} = $Self-&gt;{ParamObject}-&gt;GetParam( Param =&gt; $Needed );
         if ( !$Needed ) {
+
             return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
                 Message =&gt; "Need $Needed",
             );
@@ -4448,6 +4468,7 @@ sub _Change {
     my $FieldID = $Self-&gt;{ParamObject}-&gt;GetParam( Param =&gt; 'ID' );
 
     if ( !$FieldID ) {
+
         return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
             Message =&gt; "Need ID",
         );
@@ -4460,6 +4481,7 @@ sub _Change {
 
     # check for valid dynamic field configuration
     if ( !IsHashRefWithData($DynamicFieldData) ) {
+
         return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
             Message =&gt; "Could not get data for dynamic field $FieldID",
         );
@@ -4506,6 +4528,7 @@ sub _ChangeAction {
 
     my $FieldID = $Self-&gt;{ParamObject}-&gt;GetParam( Param =&gt; 'ID' );
     if ( !$FieldID ) {
+
         return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
             Message =&gt; "Need ID",
         );
@@ -4567,6 +4590,7 @@ sub _ChangeAction {
 
     # uncorrectable errors
     if ( !$GetParam{ValidID} ) {
+
         return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
             Message =&gt; "Need ValidID",
         );
@@ -4579,6 +4603,7 @@ sub _ChangeAction {
 
     # check for valid dynamic field configuration
     if ( !IsHashRefWithData($DynamicFieldData) ) {
+
         return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
             Message =&gt; "Could not get data for dynamic field $FieldID",
         );
@@ -4586,6 +4611,7 @@ sub _ChangeAction {
 
     # return to change screen if errors
     if (%Errors) {
+
         return $Self-&gt;_ShowScreen(
             %Param,
             %Errors,
@@ -4616,6 +4642,7 @@ sub _ChangeAction {
     );
 
     if ( !$UpdateSuccess ) {
+
         return $Self-&gt;{LayoutObject}-&gt;ErrorScreen(
             Message =&gt; "Could not update the field $GetParam{Name}",
         );
@@ -4718,6 +4745,7 @@ sub _ShowScreen {
 
     return $Output;
 }
+
 1;
             </pre><p>
         </p><p>
@@ -4925,7 +4953,7 @@ Core.Agent.Admin.DynamicField.ValidationInit();
         driver only inherits from Base.pm as all other functions are very different from any other
         Base driver.
     </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
-            Please refer to the Perl Online Documentation (POD) of the module
+            Please refer to the Perl On-line Documentation (POD) of the module
             /Kernel/System/DynmicField/Backend.pm to have the list of all attributes and possible
             return data for each function.
         </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-new-field-driver-code"></a>Code Example:</h6></div></div></div><p>
@@ -4952,6 +4980,12 @@ use Kernel::System::VariableCheck qw(:all);
 use Kernel::System::DynamicFieldValue;
 
 use base qw(Kernel::System::DynamicField::Driver::BaseText);
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::DynamicFieldValue',
+    'Kernel::System::Main',
+);
             </pre><p>
         </p><p>
             This is the common header that can be found in common OTRS modules. The class/package
@@ -4965,16 +4999,6 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # get needed objects
-    for my $Needed (qw(ConfigObject EncodeObject LogObject MainObject DBObject)) {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self-&gt;{$Needed} = $Param{$Needed};
-    }
-
-    # create additional objects
-    $Self-&gt;{DynamicFieldValueObject} = Kernel::System::DynamicFieldValue-&gt;new( %{$Self} );
-
     # set field behaviors
     $Self-&gt;{Behaviors} = {
         'IsACLReducible'               =&gt; 0,
@@ -4984,6 +5008,42 @@ sub new {
         'IsStatsCondition'             =&gt; 1,
         'IsCustomerInterfaceCapable'   =&gt; 1,
     };
+
+    # get the Dynamic Field Backend custom extensions
+    my $DynamicFieldDriverExtensions
+        = $Kernel::OM-&gt;Get('Kernel::Config')-&gt;Get('DynamicFields::Extension::Driver::Password');
+
+    EXTENSION:
+    for my $ExtensionKey ( sort keys %{$DynamicFieldDriverExtensions} ) {
+
+        # skip invalid extensions
+        next EXTENSION if !IsHashRefWithData( $DynamicFieldDriverExtensions-&gt;{$ExtensionKey} );
+
+        # create a extension config shortcut
+        my $Extension = $DynamicFieldDriverExtensions-&gt;{$ExtensionKey};
+
+        # check if extension has a new module
+        if ( $Extension-&gt;{Module} ) {
+
+            # check if module can be loaded
+            if (
+                !$Kernel::OM-&gt;Get('Kernel::System::Main')-&gt;RequireBaseClass( $Extension-&gt;{Module} )
+                )
+            {
+                die "Can't load dynamic fields backend module"
+                    . " $Extension-&gt;{Module}! $@";
+            }
+        }
+
+        # check if extension contains more behaviors
+        if ( IsHashRefWithData( $Extension-&gt;{Behaviors} ) ) {
+
+            %{ $Self-&gt;{Behaviors} } = (
+                %{ $Self-&gt;{Behaviors} },
+                %{ $Extension-&gt;{Behaviors} }
+            );
+        }
+    }
 
     return $Self;
 }
@@ -5073,6 +5133,7 @@ EOF
 
     # call EditLabelRender on the common Driver
     my $LabelString = $Self-&gt;EditLabelRender(
+        %Param,
         DynamicFieldConfig =&gt; $Param{DynamicFieldConfig},
         Mandatory          =&gt; $Param{Mandatory} || '0',
         FieldName          =&gt; $FieldName,
@@ -5171,7 +5232,7 @@ sub ReadableValueRender {
     {
 
         # get raw Title and Value strings from field value
-        $Value = defined $Param{Value} ? $Param{Value} : '';
+        $Value = $Param{Value} // '';
         $Title = $Value;
     }
     else {
@@ -5214,8 +5275,6 @@ This software is part of the OTRS project (L&lt;http://otrs.org/&gt;).
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
 did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
-
-=cut
 
 =cut
             </pre><p>
@@ -5446,12 +5505,12 @@ sub ObjectMatch {
             $Param{ObjectAttributes} parameter and if it match the given value.
         </p></div></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamic-fields-extend"></a>Creating a Dynamic Field Functionality Extension</h4></div></div></div><p>
         To illustrate this process a new Dynamic Field functionality extension for the function
-        <span class="emphasis"><em>Foo</em></span> will be added to the Bakend Object as well as in in the Text
+        <span class="emphasis"><em>Foo</em></span> will be added to the Backend Object as well as in in the Text
         field driver.
     </p><p>
         To create this extension we will create 3 files: a Configuration File (XML),
-        to register the modules, a Backend extension (perl), to define the new function, and a
-        Text field Driver extension (perl), that implements the new funtion for Text fields.
+        to register the modules, a Backend extension (Perl), to define the new function, and a
+        Text field Driver extension (Perl), that implements the new function for Text fields.
     </p><p>
         File Structure:
     </p><pre class="programlisting">
@@ -5469,16 +5528,15 @@ $HOME (e. g. /opt/otrs/)
 |   |   |   |--/Driver/
 |   |   |   |   |FooExtensionText.pm
 ...
-        </pre><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="dynamic-fields-extension-full-example-files"></a>Dynamic Field Foo Extension files</h5></div></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-extension-field-config"></a>Dynamic Field Extension Configuration File Example</h6></div></div></div><p>
+        </pre><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="dynamic-fields-extension-full-example-files"></a>Dynamic Field Foo Extension files</h5></div></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-extend-field-config"></a>Dynamic Field Extension Configuration File Example</h6></div></div></div><p>
         The configuration files are used to register the extensions for the Backend and Drivers as
         well as new behaviors for each driver.
     </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
             If a driver is extended with a new function, the backend will need also an extension for
             that function.
-        </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-extension-field-config-code"></a>Code Example:</h6></div></div></div><p>
-                In this section a configuration file for Foo Extension is shown and
-                explained.
-            </p><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-extend-field-config-code"></a>Code Example:</h6></div></div></div><p>
+            In this section a configuration file for Foo Extension is shown and explained.
+        </p><p>
             </p><pre class="programlisting">
 &lt;?xml version="1.0" encoding="utf-8"?&gt;
 &lt;otrs_config version="1.0" init="Application"&gt;
@@ -5499,7 +5557,7 @@ $HOME (e. g. /opt/otrs/)
     &lt;/ConfigItem&gt;
             </pre><p>
         </p><p>
-            This setting registers the extension in the Backend Object, The module will be loaded
+            This setting registers the extension in the Backend Object. The module will be loaded
             from Backend as a base class.
         </p><p>
             </p><pre class="programlisting">
@@ -5531,13 +5589,13 @@ $HOME (e. g. /opt/otrs/)
             </pre><p>
         </p><p>
             Standard closure of a configuration file.
-        </p></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-new-field-backend"></a>Dynamic Field Backend Extension Example</h6></div></div></div><p>
+        </p></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-extend-field-backend"></a>Dynamic Field Backend Extension Example</h6></div></div></div><p>
         Backend extensions will be loaded transparently into the Backed itself as a base class, all
         defined object and properties from the Backend will be accessible in the extension.
     </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
             All new functions defined in the Backend extension should be implemented in a Driver
             extension.
-        </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-Extend-field-backend-code"></a>Code Example:</h6></div></div></div><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-extend-field-backend-code"></a>Code Example:</h6></div></div></div><p>
             In this section the Foo extension for Backend is shown and explained. The
             extension only defines the function Foo().
          </p><p>
@@ -5574,7 +5632,7 @@ DynamicFields Extension for Backend
             </pre><p>
         </p><p>
             This is the common header that can be found in common OTRS modules. The class/package
-            name is declared via the package keyword. Notice that BaseText is used as base class.
+            name is declared via the package keyword.
         </p><p>
             </p><pre class="programlisting">
 =item Foo()
@@ -5596,27 +5654,33 @@ sub Foo {
     # check needed stuff
     for my $Needed (qw(DynamicFieldConfig)) {
         if ( !$Param{$Needed} ) {
-            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need $Needed!" );
+            $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
+                Priority =&gt; 'error',
+                Message  =&gt; "Need $Needed!",
+            );
+
             return;
         }
     }
 
     # check DynamicFieldConfig (general)
     if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
-        $Self-&gt;{LogObject}-&gt;Log(
+        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
             Priority =&gt; 'error',
             Message  =&gt; "The field configuration is invalid",
         );
+
         return;
     }
 
     # check DynamicFieldConfig (internally)
     for my $Needed (qw(ID FieldType ObjectType)) {
         if ( !$Param{DynamicFieldConfig}-&gt;{$Needed} ) {
-            $Self-&gt;{LogObject}-&gt;Log(
+            $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
                 Priority =&gt; 'error',
-                Message  =&gt; "Need $Needed in DynamicFieldConfig!"
+                Message  =&gt; "Need $Needed in DynamicFieldConfig!",
             );
+
             return;
         }
     }
@@ -5625,10 +5689,11 @@ sub Foo {
     my $DynamicFieldBackend = 'DynamicField' . $Param{DynamicFieldConfig}-&gt;{FieldType} . 'Object';
 
     if ( !$Self-&gt;{$DynamicFieldBackend} ) {
-        $Self-&gt;{LogObject}-&gt;Log(
+        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
             Priority =&gt; 'error',
-            Message  =&gt; "Backend $Param{DynamicFieldConfig}-&gt;{FieldType} is invalid!"
+            Message  =&gt; "Backend $Param{DynamicFieldConfig}-&gt;{FieldType} is invalid!",
         );
+
         return;
     }
 
@@ -5647,7 +5712,7 @@ sub Foo {
             function in the driver passing all parameters.
         </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
                 It is also possible to skip the step that test if the Driver can execute the
-                function to do that is necessary to implement a mechanism in the Frontend module
+                function, to do that is necessary to implement a mechanism in the Frontend module
                 to require a special behavior on the Dynamic Field, and only after call the function
                 in the Backend object.
             </p></div><p>
@@ -5663,8 +5728,6 @@ This software is part of the OTRS project (L&lt;http://otrs.org/&gt;).
 This software comes with ABSOLUTELY NO WARRANTY. For details, see
 the enclosed file COPYING for license information (AGPL). If you
 did not receive this file, see L&lt;http://www.gnu.org/licenses/agpl.txt&gt;.
-
-=cut
 
 =cut
             </pre><p>
@@ -5694,6 +5757,7 @@ package Kernel::System::DynamicField::Driver::FooExtensionText;
 
 use strict;
 use warnings;
+
 =head1 NAME
 
 Kernel::System::DynamicField::Driver::FooExtensionText
@@ -5710,7 +5774,6 @@ Please look there for a detailed reference of the functions.
 =over 4
 
 =cut
-
             </pre><p>
         </p><p>
             This is the common header that can be found in common OTRS modules. The class/package
