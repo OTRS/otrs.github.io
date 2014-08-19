@@ -1,5 +1,5 @@
 # --
-# Kernel/System/DynamicField/Driver/Text.pm - Delegate for DynamicField Text Driver
+# Kernel/System/DynamicField/Driver/ProcessManagement/ProcessID.pm - Delegate for DynamicField ProcessID Driver
 # Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -7,7 +7,7 @@
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-package Kernel::System::DynamicField::Driver::Text;
+package Kernel::System::DynamicField::Driver::ProcessManagement::ProcessID;
 
 use strict;
 use warnings;
@@ -20,6 +20,8 @@ our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::DynamicFieldValue',
     'Kernel::System::Main',
+    'Kernel::System::ProcessManagement::Process',
+    'Kernel::System::Ticket::ColumnFilter',
 );
 
 =head1 NAME
@@ -56,7 +58,7 @@ sub new {
         'IsACLReducible'               => 0,
         'IsNotificationEventCondition' => 1,
         'IsSortable'                   => 1,
-        'IsFiltrable'                  => 0,
+        'IsFiltrable'                  => 1,
         'IsStatsCondition'             => 1,
         'IsCustomerInterfaceCapable'   => 1,
     };
@@ -98,6 +100,90 @@ sub new {
     }
 
     return $Self;
+}
+
+sub DisplayValueRender {
+    my ( $Self, %Param ) = @_;
+
+    # set HTMLOuput as default if not specified
+    if ( !defined $Param{HTMLOutput} ) {
+        $Param{HTMLOutput} = 1;
+    }
+
+    # get raw Title and Value strings from field value
+    my $Value = defined $Param{Value} ? $Param{Value} : '';
+
+    # convert the ProcessEntityID to the Process name
+    my $Process = $Kernel::OM->Get('Kernel::System::ProcessManagement::Process')->ProcessGet(
+        ProcessEntityID => $Value,
+    );
+    $Value = $Process->{Name} // $Value;
+
+    my $Title = $Value;
+
+    # HTMLOuput transformations
+    if ( $Param{HTMLOutput} ) {
+        $Value = $Param{LayoutObject}->Ascii2Html(
+            Text => $Value,
+            Max => $Param{ValueMaxChars} || '',
+        );
+
+        $Title = $Param{LayoutObject}->Ascii2Html(
+            Text => $Title,
+            Max => $Param{TitleMaxChars} || '',
+        );
+    }
+    else {
+        if ( $Param{ValueMaxChars} && length($Value) > $Param{ValueMaxChars} ) {
+            $Value = substr( $Value, 0, $Param{ValueMaxChars} ) . '...';
+        }
+        if ( $Param{TitleMaxChars} && length($Title) > $Param{TitleMaxChars} ) {
+            $Title = substr( $Title, 0, $Param{TitleMaxChars} ) . '...';
+        }
+    }
+
+    # set field link form config
+    my $Link = $Param{DynamicFieldConfig}->{Config}->{Link} || '';
+
+    # create return structure
+    my $Data = {
+        Value => $Value,
+        Title => $Title,
+        Link  => $Link,
+    };
+
+    return $Data;
+}
+
+sub ColumnFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # take config from field config
+    my $FieldConfig = $Param{DynamicFieldConfig}->{Config};
+
+    # set PossibleValues
+    my $SelectionData
+        = $Kernel::OM->Get('Kernel::System::ProcessManagement::Process')->ProcessList(
+        ProcessState => [ 'Active', 'FadeAway', 'Inactive' ],
+        Interface => 'all',
+        );
+
+    # get column filter values from database
+    my $ColumnFilterValues
+        = $Kernel::OM->Get('Kernel::System::Ticket::ColumnFilter')->DynamicFieldFilterValuesGet(
+        TicketIDs => $Param{TicketIDs},
+        FieldID   => $Param{DynamicFieldConfig}->{ID},
+        ValueType => 'Text',
+        );
+
+    # get the display value if still exist in dynamic field configuration
+    for my $Key ( sort keys %{$ColumnFilterValues} ) {
+        if ( $SelectionData->{$Key} ) {
+            $ColumnFilterValues->{$Key} = $SelectionData->{$Key}
+        }
+    }
+
+    return $ColumnFilterValues;
 }
 
 1;
