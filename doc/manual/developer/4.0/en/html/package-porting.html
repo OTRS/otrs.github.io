@@ -6,16 +6,16 @@
 <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="../../../../../documentation.js"></script>
 <!-- otrs.github.io -->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Package Porting</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 4 - Developer Manual"><link rel="up" href="how-to-publish-extensions.html" title="Chapter 4. How to Publish Your OTRS Extensions"><link rel="prev" href="package-building.html" title="Package Building"><link rel="next" href="contributing.html" title="Chapter 5. Contributing to OTRS"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Package Porting</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="package-building.html">Prev</a> </td><th width="60%" align="center">Chapter 4. How to Publish Your OTRS Extensions</th><td width="20%" align="right"> <a accesskey="n" href="contributing.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="package-porting"></a>Package Porting</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="package-porting.html#id-1.5.4.3">From OTRS 3.3 to 3.4</a></span></dt><dd><dl><dt><span class="section"><a href="package-porting.html#package-porting-objectmanager">New Object Handling</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-cache">CacheInternalObject removed</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-scheduler-location">Scheduler backend files moved</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-template-engine">New Template Engine</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-fontawesome">New FontAwesome version</a></span></dt></dl></dd></dl></div><p>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Package Porting</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 4 - Developer Manual"><link rel="up" href="how-to-publish-extensions.html" title="Chapter 4. How to Publish Your OTRS Extensions"><link rel="prev" href="package-building.html" title="Package Building"><link rel="next" href="contributing.html" title="Chapter 5. Contributing to OTRS"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Package Porting</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="package-building.html">Prev</a> </td><th width="60%" align="center">Chapter 4. How to Publish Your OTRS Extensions</th><td width="20%" align="right"> <a accesskey="n" href="contributing.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="package-porting"></a>Package Porting</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="package-porting.html#id-1.5.4.3">From OTRS 3.3 to 4</a></span></dt><dd><dl><dt><span class="section"><a href="package-porting.html#package-porting-objectmanager">New Object Handling</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-cache">CacheInternalObject removed</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-scheduler-location">Scheduler backend files moved</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-template-engine">New Template Engine</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-fontawesome">New FontAwesome version</a></span></dt></dl></dd></dl></div><p>
 With every new minor or major version of OTRS, you need to port your package(s) and make sure they
 still work with the OTRS API.
-    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.5.4.3"></a>From OTRS 3.3 to 3.4</h3></div></div></div><p>
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.5.4.3"></a>From OTRS 3.3 to 4</h3></div></div></div><p>
             This section lists changes that you need to examine when porting your package from
-            OTRS 3.3 to 3.4.
+            OTRS 3.3 to 4.
         </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-objectmanager"></a>New Object Handling</h4></div></div></div><p>
-                Up to OTRS 3.4, objects used to be created both centrally and also locally and
+                Up to OTRS 4, objects used to be created both centrally and also locally and
                 then handed down to all objects by passing them to the contructors.
-                With OTRS 3.4 and later versions, there is now an ObjectManager that centralizes
+                With OTRS 4 and later versions, there is now an ObjectManager that centralizes
                 singleton object creation and access.
             </p><p>
                 This will require you first of all to change all toplevel Perl scripts (.pl files only!)
@@ -51,7 +51,7 @@ $CommonObject{DBObject}   = Kernel::System::DB-&gt;new(%CommonObject);
                 </pre><p>
 
                 We can see that a lot of code is used to load the packages and create the common
-                objects that must be passed to OTRS objects to be used in the script. With OTRS 3.4,
+                objects that must be passed to OTRS objects to be used in the script. With OTRS 4,
                 this looks quite different:
 
                 </p><pre class="programlisting">
@@ -103,7 +103,7 @@ our @ObjectDependencies = (
                 The @ObjectDependencies declaration is needed for the ObjectManager to keep the correct
                 order when destroying the objects.
             </p><p>
-                Let's look at <code class="filename">Valid.pm</code> from OTRS 3.3 and 3.4 to see the difference. Old:
+                Let's look at <code class="filename">Valid.pm</code> from OTRS 3.3 and 4 to see the difference. Old:
 
                 </p><pre class="programlisting">
 package Kernel::System::Valid;
@@ -240,13 +240,13 @@ sub ValidList {
                 <code class="filename">Kernel/System/Scheduler</code>. If you have any custom TaskHandler modules,
                 you need to move them also.
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-template-engine"></a>New Template Engine</h4></div></div></div><p>
-                With OTRS 3.4, the DTL template engine was replaced by Template::Toolkit.
+                With OTRS 4, the DTL template engine was replaced by Template::Toolkit.
                 Please refer to the <a class="link" href="TemplatingMechanism.html" title="Templating Mechanism">Templating section</a>
                 for details on how the new template syntax looks like.
             </p><p>
                 These are the changes that you need to apply when converting existing DTL templates
                 to the new Template::Toolkit syntax:
-            </p><div class="table"><a name="id-1.5.4.3.6.4"></a><p class="title"><b>Table 4.1. Template Changes from OTRS 3.3 to 3.4</b></p><div class="table-contents"><table><thead><tr>
+            </p><div class="table"><a name="id-1.5.4.3.6.4"></a><p class="title"><b>Table 4.1. Template Changes from OTRS 3.3 to 4</b></p><div class="table-contents"><table><thead><tr>
                          <td>DTL Tag</td>
                          <td>Template::Toolkit tag</td>
                      </tr></thead><tbody><tr>
@@ -346,7 +346,7 @@ sub ValidList {
                             from being cached. This could lead to serious performance issues. You should definitely not have any pre output filters that operate on all templates, but limit them to certain templates via configuration setting.
                         </p></li></ul></div><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-fontawesome"></a>New FontAwesome version</h4></div></div></div><p>
-                With OTRS 3.4, we've also updated FontAwesome to a new version. As a consequence, the icons css classes have changed. While previously icons were defined by using a schema like <code class="literal">icon-{iconname}</code>, it is now <code class="literal">fa fa-{iconname}</code>.
+                With OTRS 4, we've also updated FontAwesome to a new version. As a consequence, the icons css classes have changed. While previously icons were defined by using a schema like <code class="literal">icon-{iconname}</code>, it is now <code class="literal">fa fa-{iconname}</code>.
             </p><p>
                 Due to this change, you need to make sure to update all custom frontend module registrations which make use of icons (e.g. for the top navigation bar) to use the new schema. This is also true for templates where you're using icon elements like <code class="literal">&lt;i class="icon-{iconname}"&gt;&lt;/i&gt;</code>.
             </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="package-building.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="how-to-publish-extensions.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="contributing.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Package Building </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 5. Contributing to OTRS</td></tr></table></div></body></html>
