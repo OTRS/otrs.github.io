@@ -6,7 +6,7 @@
 <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="../../../../../documentation.js"></script>
 <!-- otrs.github.io -->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Package Porting</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 4 - Developer Manual"><link rel="up" href="how-to-publish-extensions.html" title="Chapter 4. How to Publish Your OTRS Extensions"><link rel="prev" href="package-building.html" title="Package Building"><link rel="next" href="contributing.html" title="Chapter 5. Contributing to OTRS"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Package Porting</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="package-building.html">Prev</a> </td><th width="60%" align="center">Chapter 4. How to Publish Your OTRS Extensions</th><td width="20%" align="right"> <a accesskey="n" href="contributing.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="package-porting"></a>Package Porting</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="package-porting.html#id-1.5.4.3">From OTRS 3.3 to 4</a></span></dt><dd><dl><dt><span class="section"><a href="package-porting.html#package-porting-objectmanager">New Object Handling</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-cache">CacheInternalObject removed</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-scheduler-location">Scheduler backend files moved</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-template-engine">New Template Engine</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-fontawesome">New FontAwesome version</a></span></dt></dl></dd></dl></div><p>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Package Porting</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 4 - Developer Manual"><link rel="up" href="how-to-publish-extensions.html" title="Chapter 4. How to Publish Your OTRS Extensions"><link rel="prev" href="package-building.html" title="Package Building"><link rel="next" href="contributing.html" title="Chapter 5. Contributing to OTRS"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Package Porting</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="package-building.html">Prev</a> </td><th width="60%" align="center">Chapter 4. How to Publish Your OTRS Extensions</th><td width="20%" align="right"> <a accesskey="n" href="contributing.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="package-porting"></a>Package Porting</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="package-porting.html#id-1.5.4.3">From OTRS 3.3 to 4</a></span></dt><dd><dl><dt><span class="section"><a href="package-porting.html#package-porting-objectmanager">New Object Handling</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-cache">CacheInternalObject removed</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-scheduler-location">Scheduler backend files moved</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-sopm-code-tags">Update code sections in SOPM files</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-template-engine">New Template Engine</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-fontawesome">New FontAwesome version</a></span></dt></dl></dd></dl></div><p>
 With every new minor or major version of OTRS, you need to port your package(s) and make sure they
 still work with the OTRS API.
     </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.5.4.3"></a>From OTRS 3.3 to 4</h3></div></div></div><p>
@@ -239,6 +239,53 @@ sub ValidList {
                 The backend files of the scheduler moved from <code class="filename">Kernel/Scheduler</code> to
                 <code class="filename">Kernel/System/Scheduler</code>. If you have any custom TaskHandler modules,
                 you need to move them also.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-sopm-code-tags"></a>Update <a class="link" href="package-building.html#package-code-install" title="CodeInstall">code sections</a> in SOPM files</h4></div></div></div><p>
+                Code tags in SOPM files have to be updated. Please do not use <code class="literal">$Self</code> any more.
+                In the past this was used to get access to OTRS objects like the <code class="literal">MainObject</code>.
+                Please use the ObjectManager now. Here is an example for the old style:
+                </p><pre class="programlisting">
+&lt;CodeInstall Type="post"&gt;
+
+# define function name
+my $FunctionName = 'CodeInstall';
+
+# create the package name
+my $CodeModule = 'var::packagesetup::' . $Param{Structure}-&gt;{Name}-&gt;{Content};
+
+# load the module
+if ( $Self-&gt;{MainObject}-&gt;Require($CodeModule) ) {
+
+    # create new instance
+    my $CodeObject = $CodeModule-&gt;new( %{$Self} );
+
+    if ($CodeObject) {
+
+        # start method
+        if ( !$CodeObject-&gt;$FunctionName(%{$Self}) ) {
+            $Self-&gt;{LogObject}-&gt;Log(
+                Priority =&gt; 'error',
+                Message  =&gt; "Could not call method $FunctionName() on $CodeModule.pm."
+            );
+        }
+    }
+
+    # error handling
+    else {
+        $Self-&gt;{LogObject}-&gt;Log(
+            Priority =&gt; 'error',
+            Message  =&gt; "Could not call method new() on $CodeModule.pm."
+        );
+    }
+}
+
+&lt;/CodeInstall&gt;
+                </pre><p>
+                Now this should be replaced by:
+                </p><pre class="programlisting">
+&lt;CodeInstall Type="post"&gt;&lt;![CDATA[
+$Kernel::OM-&gt;Get('var::packagesetup::MyPackage')-&gt;CodeInstall();
+]]&gt;&lt;/CodeInstall&gt;
+                </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-template-engine"></a>New Template Engine</h4></div></div></div><p>
                 With OTRS 4, the DTL template engine was replaced by Template::Toolkit.
                 Please refer to the <a class="link" href="TemplatingMechanism.html" title="Templating Mechanism">Templating section</a>
@@ -246,7 +293,7 @@ sub ValidList {
             </p><p>
                 These are the changes that you need to apply when converting existing DTL templates
                 to the new Template::Toolkit syntax:
-            </p><div class="table"><a name="id-1.5.4.3.6.4"></a><p class="title"><b>Table 4.1. Template Changes from OTRS 3.3 to 4</b></p><div class="table-contents"><table><thead><tr>
+            </p><div class="table"><a name="id-1.5.4.3.7.4"></a><p class="title"><b>Table 4.1. Template Changes from OTRS 3.3 to 4</b></p><div class="table-contents"><table><thead><tr>
                          <td>DTL Tag</td>
                          <td>Template::Toolkit tag</td>
                      </tr></thead><tbody><tr>
