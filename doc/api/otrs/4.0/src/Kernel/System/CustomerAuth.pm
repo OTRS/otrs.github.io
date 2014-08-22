@@ -68,6 +68,9 @@ sub new {
         $Self->{"Backend$Count"} = $GenericModule->new( %{$Self}, Count => $Count );
     }
 
+    # Initialize last error message
+    $Self->{LastErrorMessage} = '';
+
     return $Self;
 }
 
@@ -104,6 +107,7 @@ sub Auth {
     my ( $Self, %Param ) = @_;
 
     # get customer user object
+    my $ConfigObject       = $Kernel::OM->Get('Kernel::Config');
     my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
 
     # use all 11 backends and return on first auth
@@ -155,6 +159,13 @@ sub Auth {
 
     return $User if !%CustomerData;
 
+    # reset failed logins
+    $CustomerUserObject->SetPreferences(
+        Key    => 'UserLoginFailed',
+        Value  => 0,
+        UserID => $CustomerData{UserLogin},
+    );
+
     # on system maintenance customers
     # shouldn't be allowed get into the system
     my $ActiveMaintenance
@@ -162,15 +173,13 @@ sub Auth {
 
     # check if system maintenance is active
     if ($ActiveMaintenance) {
+
+        $Self->{LastErrorMessage} =
+            $ConfigObject->Get('SystemMaintenance::IsActiveDefaultLoginErrorMessage')
+            || "Is not possible to perform a login, system maintenance is active.";
+
         return;
     }
-
-    # reset failed logins
-    $CustomerUserObject->SetPreferences(
-        Key    => 'UserLoginFailed',
-        Value  => 0,
-        UserID => $CustomerData{UserLogin},
-    );
 
     # last login preferences update
     $CustomerUserObject->SetPreferences(
@@ -180,6 +189,24 @@ sub Auth {
     );
 
     return $User;
+}
+
+=item GetLastErrorMessage()
+
+Retrieve $Self->{LastErrorMessage} content.
+
+    my $AuthErrorMessage = $AuthObject->GetLastErrorMessage();
+
+    Result:
+
+        $AuthErrorMessage = "An error string message.";
+
+=cut
+
+sub GetLastErrorMessage {
+    my ( $Self, %Param ) = @_;
+
+    return $Self->{LastErrorMessage};
 }
 
 1;
