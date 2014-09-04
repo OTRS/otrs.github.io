@@ -884,7 +884,7 @@ sub PackageUpgrade {
         PARTDB:
         for my $Part ( @{ $Structure{DatabaseUpgrade}->{pre} } ) {
 
-            if ( $UseInstalled eq 0 ) {
+            if ( !$UseInstalled ) {
 
                 if (
                     $Part->{TagType} eq 'End'
@@ -981,7 +981,7 @@ sub PackageUpgrade {
         PARTDB:
         for my $Part ( @{ $Structure{DatabaseUpgrade}->{post} } ) {
 
-            if ( $UseInstalled eq 0 ) {
+            if ( !$UseInstalled ) {
 
                 if (
                     $Part->{TagType} eq 'End'
@@ -1384,6 +1384,9 @@ sub PackageOnlineList {
             }
         }
     }
+
+    # if not packages found, just return
+    return if !@Packages;
 
     # just framework packages
     my @NewPackages;
