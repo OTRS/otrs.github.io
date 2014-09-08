@@ -217,7 +217,12 @@ var Text = [% Translate("Change %s settings", Data.Type) | JSON %];
 #     &lt;a href="..."&gt;link&lt;/a&gt;
 # &lt;/div&gt;
                     </pre><p>
-                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="include"></a><code class="literal">[% InsertTemplate("Copyright.tt") %]</code></h5></div></div></div><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="include"></a><code class="literal">[% InsertTemplate("Copyright.tt") %]</code></h5></div></div></div><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3>
+                    Please note that the <code class="literal">InsertTemplate</code> command was added to provide better backwards compatibility
+                    to the old DTL system. It might be deprecated in a future version of OTRS and removed later.
+                    If you don't use <a class="link" href="TemplatingMechanism.html#block" title="[% RenderBlockStart %] / [% RenderBlockEnd %]">block commands</a> in your included template, you don't need
+                    <code class="literal">InsertTemplate</code> and can use standard Template::Toolkit syntax like <code class="literal">INCLUDE/PROCESS</code> instead.
+                </div><p>
                     Includes another template file into the current one. The included file may also contain
                     template commands.
 
@@ -231,7 +236,12 @@ var Text = [% Translate("Change %s settings", Data.Type) | JSON %];
                     actually adds the content of the referenced template into the current template, so that it
                     can be processed together. That makes it possible for the embedded template to access the
                     same environment/data as the main template.
-                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="block"></a><code class="literal">[% RenderBlockStart %]</code> / <code class="literal">[% RenderBlockEnd %]</code></h5></div></div></div><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="block"></a><code class="literal">[% RenderBlockStart %]</code> / <code class="literal">[% RenderBlockEnd %]</code></h5></div></div></div><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3>
+                    Please note that the blocks commands were added to provide better backwards compatibility
+                    to the old DTL system. They might be deprecated in a future version of OTRS and removed later.
+                    We advise you to develop any new code without using the blocks commands.
+                    You can use standard Template::Toolkit syntax like <code class="literal">IF/ELSE</code>, <code class="literal">LOOP</code>s and other helpful things for conditional template output.
+                </div><p>
                     With this command, one can specify parts of a template file as a block. This block
                     needs to be explicitly filled with a function call from the application, to be
                     present in the generated output. The application can call the block 0 (it will not
@@ -286,7 +296,7 @@ var Text = [% Translate("Change %s settings", Data.Type) | JSON %];
                     Let's look at how the blocks are called from the application module:
 
                     </p><pre class="programlisting">
-my %List = $Self-&gt;{StateObject}-&gt;StateList(
+my %List = $Kernel::OM-&gt;Get('Kernel::System::State)-&gt;StateList(
     UserID =&gt; 1,
     Valid  =&gt; 0,
 );
@@ -295,11 +305,11 @@ my %List = $Self-&gt;{StateObject}-&gt;StateList(
 if (%List) {
 
     # get valid list
-    my %ValidList = $Self-&gt;{ValidObject}-&gt;ValidList();
+    my %ValidList = $Kernel::OM-&gt;Get('Kernel::System::Valid')-&gt;ValidList();
     for my $ListKey ( sort { $List{$a} cmp $List{$b} } keys %List ) {
 
-        my %Data = $Self-&gt;{StateObject}-&gt;StateGet( ID =&gt; $ListKey );
-        $Self-&gt;{LayoutObject}-&gt;Block(
+        my %Data = $Kernel::OM-&gt;Get('Kernel::System::State)-&gt;StateGet( ID =&gt; $ListKey );
+        $Kernel::OM-&gt;Get('Kernel::Output::HTML::Layout')-&gt;Block(
             Name =&gt; 'OverviewResultRow',
             Data =&gt; {
                 Valid =&gt; $ValidList{ $Data{ValidID} },
@@ -311,7 +321,7 @@ if (%List) {
 
 # otherwise a no data found msg is displayed
 else {
-    $Self-&gt;{LayoutObject}-&gt;Block(
+    $Kernel::OM-&gt;Get('Kernel::Output::HTML::Layout')-&gt;Block(
         Name =&gt; 'NoDataFoundMsg',
         Data =&gt; {},
     );
@@ -379,7 +389,7 @@ else {
 
             </p><pre class="programlisting">
 # render AdminState.tt
-$Output .= $Self-&gt;{LayoutObject}-&gt;Output(
+$Output .= $Kernel::OM-&gt;Get('Kernel::Output::HTML::Layout')-&gt;Output(
     TemplateFile =&gt; 'AdminState',
     Data         =&gt; \%Param,
 );
