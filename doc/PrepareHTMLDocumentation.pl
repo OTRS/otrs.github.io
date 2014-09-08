@@ -101,10 +101,10 @@ sub ProcessHTMLFile {
 
     my $HTMLInject =<<"EOF";
 <!-- otrs.github.io -->
-<link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
-<link href='//fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
 <link rel="stylesheet" href="$PathToJS/documentation.css">
-<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="$PathToJS/documentation.js"></script>
 <!-- otrs.github.io -->
 EOF
