@@ -12,7 +12,7 @@ package Kernel::System::User;
 use strict;
 use warnings;
 
-use Crypt::PasswdMD5 qw(unix_md5_crypt);
+use Crypt::PasswdMD5 qw(unix_md5_crypt apache_md5_crypt);
 use Digest::SHA;
 
 our @ObjectDependencies = (
@@ -343,6 +343,15 @@ sub UserAdd {
         }
     }
 
+    # check if a user with this login (username) already exits
+    if ( $Self->UserLoginExistsCheck( UserLogin => $Param{UserLogin} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "A user with username '$Param{UserLogin}' already exists!"
+        );
+        return;
+    }
+
     # check email address
     if (
         $Param{UserEmail}
@@ -456,6 +465,15 @@ sub UserUpdate {
                 ->Log( Priority => 'error', Message => "Need $_!" );
             return;
         }
+    }
+
+    # check if a user with this login (username) already exits
+    if ( $Self->UserLoginExistsCheck( UserLogin => $Param{UserLogin}, UserID => $Param{UserID} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "A user with username '$Param{UserLogin}' already exists!"
+        );
+        return;
     }
 
     # check email address
@@ -695,6 +713,16 @@ sub SetPassword {
         $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{UserLogin} );
 
         $CryptedPw = unix_md5_crypt( $Pw, $Param{UserLogin} );
+    }
+
+    # crypt with md5 (compatible with Apache's .htpasswd files)
+    elsif ( $CryptType eq 'apr1' ) {
+
+        # encode output, needed by unix_md5_crypt() only non utf8 signs
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Pw );
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{UserLogin} );
+
+        $CryptedPw = apache_md5_crypt( $Pw, $Param{UserLogin} );
     }
 
     # crypt with sha1
@@ -1297,6 +1325,42 @@ sub _UserFullname {
 =end Internal:
 
 =cut
+
+=item UserLoginExistsCheck()
+
+return 1 if another user with this login (username) already exits
+
+    $Exist = $UserObject->UserLoginExistsCheck(
+        UserLogin => 'Some::UserLogin',
+        UserID => 1, # optional
+    );
+
+=cut
+
+sub UserLoginExistsCheck {
+    my ( $Self, %Param ) = @_;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL =>
+            "SELECT $Self->{UserTableUserID} FROM $Self->{UserTable} WHERE $Self->{UserTableUser} = ?",
+        Bind => [ \$Param{UserLogin} ],
+    );
+
+    # fetch the result
+    my $Flag;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( !$Param{UserID} || $Param{UserID} ne $Row[0] ) {
+            $Flag = 1;
+        }
+    }
+    if ($Flag) {
+        return 1;
+    }
+    return 0;
+}
 
 1;
 
