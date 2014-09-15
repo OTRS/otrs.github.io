@@ -18,6 +18,12 @@ $(document).ready(function() {
             Path: 'admin',
             Versions: [
                 {
+                    Version:  '4.0',
+                    HTMLPath: '4.0',
+                    Name:     'OTRS 4',
+                    Languages: ['en'],
+                },
+                {
                     Version:  '3.3',
                     HTMLPath: 'stable',
                     Name:     'OTRS 3.3',
@@ -87,6 +93,12 @@ $(document).ready(function() {
             Path: 'developer',
             Versions: [
                 {
+                    Version:  '4.0',
+                    HTMLPath: '4.0',
+                    Name:     'OTRS 4',
+                    Languages: ['en'],
+                },
+                {
                     Version:  '3.3',
                     HTMLPath: 'stable',
                     Name:     'OTRS 3.3',
@@ -117,10 +129,15 @@ $(document).ready(function() {
             Type: 'api',
             Path: 'otrs',
             Versions: [
+                // {
+                //     Version:  '4.0',
+                //     HTMLPath: '4.0',
+                //     Name:     'OTRS git (development)',
+                // },
                 {
-                    Version:  '3.4',
-                    HTMLPath: '3.4',
-                    Name:     'OTRS git (development)',
+                    Version:  '4.0',
+                    HTMLPath: '4.0',
+                    Name:     'OTRS 4',
                 },
                 {
                     Version:  '3.3',
