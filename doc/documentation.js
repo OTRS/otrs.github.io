@@ -27,7 +27,7 @@ $(document).ready(function() {
                     Version:  '3.3',
                     HTMLPath: 'stable',
                     Name:     'OTRS 3.3',
-                    Languages: ['en', 'ja'],
+                    Languages: ['en', 'ja', 'ru'],
                 },
                 {
                     Version:  '3.2',
