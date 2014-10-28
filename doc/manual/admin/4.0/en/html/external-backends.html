@@ -533,6 +533,42 @@ $Self-&gt;{'AuthSyncModule::LDAP::UserSyncInitialGroups'} = [
 </pre><p>
 </p><p>
 <span class="emphasis"><em>Script: Synchronizing the user data from the LDAP directory into the OTRS database.</em></span>
+</p><p>
+    Alternatively, you can use LDAP groups to determine group memberships or roles in OTRS. For more information and examples, see Kernel/Config/Defaults.pm. Here is an example for synchronizing from LDAP into OTRS groups.
+</p><p>
+    </p><pre class="programlisting">
+# Attributes needed for group syncs
+# (attribute name for group value key)
+$Self-&gt;{'AuthSyncModule::LDAP::AccessAttr'} = 'memberUid';
+# (select the attribute for type of group content UID/DN for full ldap name)
+# $Self-&gt;{'AuthSyncModule::LDAP::UserAttr'} = 'UID';
+# $Self-&gt;{'AuthSyncModule::LDAP::UserAttr'} = 'DN';
+
+AuthSyncModule::LDAP::UserSyncGroupsDefinition
+# (If "LDAP" was selected for AuthModule and you want to sync LDAP
+# groups to otrs groups, define the following.)
+$Self-&gt;{'AuthSyncModule::LDAP::UserSyncGroupsDefinition'} = {
+    # your ldap group
+    'cn=agent,o=otrs' =&gt; {
+        # otrs group(s)
+        'admin' =&gt; {
+            # permission
+            rw =&gt; 1,
+            ro =&gt; 1,
+        },
+        'faq' =&gt; {
+            rw =&gt; 0,
+            ro =&gt; 1,
+        },
+    },
+    'cn=agent2,o=otrs' =&gt; {
+        'users' =&gt; {
+            rw =&gt; 1,
+            ro =&gt; 1,
+        },
+    }
+};
+    </pre><p>
 </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-httpbasic"></a>HTTPBasicAuth for Agents</h5></div></div></div><p>
 If you want to implement a "single sign on" solution for all your agents, you can use HTTP basic authentication (for all your systems) and the HTTPBasicAuth module for OTRS (see Example 11-8 below).
 </p><div class="example"><a name="configuration-agent-auth-backend-htbasic"></a><p class="title"><b>Example 4.13. Authenticate Agents using HTTPBasic</b></p><div class="example-contents"><p>
