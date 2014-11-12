@@ -121,8 +121,10 @@ sub TokenGet {
     # check needed parameters
     for (qw(OTRSID Password)) {
         if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')
-                ->Log( Priority => 'error', Message => "Need $_!" );
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
             return;
         }
     }
@@ -241,8 +243,10 @@ sub Register {
     # check needed parameters
     for (qw(Token OTRSID Type)) {
         if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')
-                ->Log( Priority => 'error', Message => "Need $_!" );
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
             return;
         }
     }
@@ -255,11 +259,11 @@ sub Register {
     # load operating system info from environment object
     my %OSInfo = $Kernel::OM->Get('Kernel::System::Environment')->OSInfoGet();
     my %System = (
-        PerlVersion => sprintf( "%vd", $^V ),
-        OSType      => $OSInfo{OS},
-        OSVersion   => $OSInfo{OSName},
-        OTRSVersion => $ConfigObject->Get('Version'),
-        FQDN        => $ConfigObject->Get('FQDN'),
+        PerlVersion        => sprintf( "%vd", $^V ),
+        OSType             => $OSInfo{OS},
+        OSVersion          => $OSInfo{OSName},
+        OTRSVersion        => $ConfigObject->Get('Version'),
+        FQDN               => $ConfigObject->Get('FQDN'),
         DatabaseVersion    => $Kernel::OM->Get('Kernel::System::DB')->Version(),
         SupportDataSending => $SupportDataSending,
     );
@@ -547,11 +551,11 @@ sub RegistrationDataGet {
         # read data from environment object
         my %OSInfo = $Kernel::OM->Get('Kernel::System::Environment')->OSInfoGet();
         $RegistrationData{System} = {
-            PerlVersion => sprintf( "%vd", $^V ),
-            OSType      => $OSInfo{OS},
-            OSVersion   => $OSInfo{OSName},
-            OTRSVersion => $ConfigObject->Get('Version'),
-            FQDN        => $ConfigObject->Get('FQDN'),
+            PerlVersion     => sprintf( "%vd", $^V ),
+            OSType          => $OSInfo{OS},
+            OSVersion       => $OSInfo{OSName},
+            OTRSVersion     => $ConfigObject->Get('Version'),
+            FQDN            => $ConfigObject->Get('FQDN'),
             DatabaseVersion => $Kernel::OM->Get('Kernel::System::DB')->Version(),
         };
     }
@@ -602,11 +606,11 @@ sub RegistrationUpdateSend {
     # read data from environment object
     my %OSInfo = $Kernel::OM->Get('Kernel::System::Environment')->OSInfoGet();
     my %System = (
-        PerlVersion => sprintf( "%vd", $^V ),
-        OSType      => $OSInfo{OS},
-        OSVersion   => $OSInfo{OSName},
-        OTRSVersion => $ConfigObject->Get('Version'),
-        FQDN        => $ConfigObject->Get('FQDN'),
+        PerlVersion     => sprintf( "%vd", $^V ),
+        OSType          => $OSInfo{OS},
+        OSVersion       => $OSInfo{OSName},
+        OTRSVersion     => $ConfigObject->Get('Version'),
+        FQDN            => $ConfigObject->Get('FQDN'),
         DatabaseVersion => $Kernel::OM->Get('Kernel::System::DB')->Version(),
     );
 
@@ -617,8 +621,7 @@ sub RegistrationUpdateSend {
         $System{$Key} = $Param{$Key};
     }
 
-    my $SupportDataSending
-        = $Param{SupportDataSending} || $RegistrationData{SupportDataSending} || 'No';
+    my $SupportDataSending = $Param{SupportDataSending} || $RegistrationData{SupportDataSending} || 'No';
 
     # add support data sending flag
     $System{SupportDataSending} = $SupportDataSending;
@@ -687,10 +690,10 @@ sub RegistrationUpdateSend {
             Message  => $Message
         );
 
-        return {
+        return (
             Success => 0,
-            Reson   => $Message,
-        };
+            Reason  => $Message,
+        );
     }
     elsif ( !$RequestResult->{Success} && $RequestResult->{ErrorMessage} ) {
 
@@ -702,7 +705,7 @@ sub RegistrationUpdateSend {
 
         return (
             Success => 0,
-            Reson   => $Message,
+            Reason  => $Message,
         );
     }
 
@@ -722,7 +725,7 @@ sub RegistrationUpdateSend {
 
         return (
             Success => 0,
-            Reson   => $Message,
+            Reason  => $Message,
         );
     }
     elsif ( !$OperationResult->{Success} ) {
@@ -736,7 +739,7 @@ sub RegistrationUpdateSend {
 
         return (
             Success => 0,
-            Reson   => $Message,
+            Reason  => $Message,
         );
     }
 
@@ -813,6 +816,9 @@ sub RegistrationUpdateSend {
         }
     }
 
+    my $Success = 1;
+    my $Reason;
+
     # check if Support Data could be added
     if ($SupportData) {
         my $OperationResult = $CloudServiceObject->OperationResultGet(
@@ -822,15 +828,21 @@ sub RegistrationUpdateSend {
         );
 
         if ( !IsHashRefWithData($OperationResult) ) {
+            $Success = 0;
+            $Reason  = "RegistrationUpdate - Can not add Support Data.";
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "RegistrationUpdate - Can not add Support Data",
+                Message  => $Reason,
             );
         }
         elsif ( !$OperationResult->{Success} ) {
+            $Success = 0;
+            my $ResultMessage
+                = $OperationResult->{ErrorMessage} || $OperationResult->{Data}->{Reason} || '';
+            $Reason = 'RegistrationUpdate - Can not add Support Data. ' . $ResultMessage;
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "RegistrationUpdate - Can not add Support Data",
+                Message  => $Reason,
             );
         }
     }
@@ -869,7 +881,8 @@ sub RegistrationUpdateSend {
     }
 
     return (
-        Success => 1,
+        Success      => $Success,
+        Reason       => $Reason,
         ReScheduleIn => $ResponseData->{NextUpdate} // ( 3600 * 7 * 24 ),
     );
 }
@@ -893,8 +906,10 @@ sub Deregister {
     # check needed parameters
     for (qw(Token OTRSID)) {
         if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')
-                ->Log( Priority => 'error', Message => "Need $_!" );
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
             return;
         }
     }
