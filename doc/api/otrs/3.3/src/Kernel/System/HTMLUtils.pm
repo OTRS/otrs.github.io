@@ -84,7 +84,10 @@ sub ToAscii {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
             return;
         }
     }
@@ -561,7 +564,10 @@ sub ToHTML {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
             return;
         }
     }
@@ -596,7 +602,10 @@ sub DocumentComplete {
     # check needed stuff
     for (qw(String Charset)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
             return;
         }
     }
@@ -631,7 +640,10 @@ sub DocumentStrip {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
             return;
         }
     }
@@ -670,7 +682,10 @@ sub DocumentCleanup {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
             return;
         }
     }
@@ -810,11 +825,11 @@ sub LinkQuote {
             )*
             (?:                                    # param string
                 [\?]                               # if param string is there, "?" must be present
-                [a-zA-Z0-9&;=%]*                   # param string content, this will also catch entities like &amp;
+                [a-zA-Z0-9&;=%\-_]*                # param string content, this will also catch entities like &amp;
             )?
             (?:                                    # link hash string
                 [\#]                               #
-                [a-zA-Z0-9&;=%]*                   # hash string content, this will also catch entities like &amp;
+                [a-zA-Z0-9&;=%\-_]*                # hash string content, this will also catch entities like &amp;
             )?
         )
         (?=                                        # $4
@@ -923,7 +938,10 @@ sub Safety {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log( Priority => 'error', Message => "Need $_!" );
+            $Self->{LogObject}->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
             return;
         }
     }
@@ -1148,11 +1166,17 @@ sub EmbeddedImagesExtract {
     my ( $Self, %Param ) = @_;
 
     if ( ref $Param{DocumentRef} ne 'SCALAR' || !defined ${ $Param{DocumentRef} } ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need DocumentRef!" );
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Need DocumentRef!"
+        );
         return;
     }
     if ( ref $Param{AttachmentsRef} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log( Priority => 'error', Message => "Need DocumentRef!" );
+        $Self->{LogObject}->Log(
+            Priority => 'error',
+            Message  => "Need DocumentRef!"
+        );
         return;
     }
 
