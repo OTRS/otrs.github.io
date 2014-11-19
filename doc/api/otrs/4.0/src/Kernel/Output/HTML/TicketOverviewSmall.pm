@@ -257,7 +257,7 @@ sub ActionRow {
     }
 
     # add translations for the allocation lists for regular columns
-    my $Columns = $Self->{ConfigObject}->Get('DefaultOverviewColumns') || {};
+    my $Columns = $Self->{Config}->{DefaultColumns} || $Self->{ConfigObject}->Get('DefaultOverviewColumns') || {};
     if ( $Columns && IsHashRefWithData($Columns) ) {
 
         COLUMN:
@@ -404,6 +404,15 @@ sub Run {
                 # show ticket create time in small view
                 $Article{Created} = $Ticket{Created};
             }
+
+            # prepare a "long" version of the subject to show in the title attribute. We don't take
+            # the whole string (which could be VERY long) to avoid polluting the DOM and having too
+            # much data to be transferred on large ticket lists
+            $Article{SubjectLong} = $Self->{TicketObject}->TicketSubjectClean(
+                TicketNumber => $Article{TicketNumber},
+                Subject      => $Article{Subject} || '',
+                Size         => 500,
+            );
 
             # prepare subject
             $Article{Subject} = $Self->{TicketObject}->TicketSubjectClean(

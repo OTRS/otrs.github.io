@@ -189,6 +189,7 @@ sub LoadDefaults {
         'sr_Cyrl' => 'Serbian Cyrillic (српски)',
         'sr_Latn' => 'Serbian Latin (Srpski)',
         'sv' => 'Svenska',
+        'sw' => 'Swahili',
         'tr' => 'T&uuml;rk&ccedil;e',
         'uk' => 'Ukrainian (&#x0423;&#x043a;&#x0440;&#x0430;&#x0457;&#x043d;&#x0441;&#x044c;&#x043a;&#x0430;)',
         'vi_VN' => 'Vietnam (Vi&#x0246;t Nam)',
@@ -617,6 +618,10 @@ sub LoadDefaults {
     # agent interface notification module to check the admin user id
     # (don't work with user id 1 notification)
     $Self->{'Frontend::NotifyModule'} = {
+        '100-OTRSBusiness' => {
+            'Group' => 'admin',
+            'Module' => 'Kernel::Output::HTML::NotificationAgentOTRSBusiness'
+        },
         '200-UID-Check' => {
           'Module' => 'Kernel::Output::HTML::NotificationUIDCheck',
         },
