@@ -665,23 +665,6 @@ sub Login {
         );
     }
 
-    # get lost password y
-    if (
-        $Self->{ConfigObject}->Get('LostPassword')
-        && $Self->{ConfigObject}->Get('AuthModule') eq 'Kernel::System::Auth::DB'
-        )
-    {
-        $Self->Block(
-            Name => 'LostPasswordLink',
-            Data => \%Param,
-        );
-
-        $Self->Block(
-            Name => 'LostPassword',
-            Data => \%Param,
-        );
-    }
-
     # Generate the minified CSS and JavaScript files and the tags referencing them (see LayoutLoader)
     $Self->LoaderCreateAgentCSSCalls();
     $Self->LoaderCreateAgentJSCalls();
@@ -777,6 +760,23 @@ sub Login {
             Name => 'LoginBox',
             Data => \%Param,
         );
+
+        # get lost password
+        if (
+            $Self->{ConfigObject}->Get('LostPassword')
+            && $Self->{ConfigObject}->Get('AuthModule') eq 'Kernel::System::Auth::DB'
+            )
+        {
+            $Self->Block(
+                Name => 'LostPasswordLink',
+                Data => \%Param,
+            );
+
+            $Self->Block(
+                Name => 'LostPassword',
+                Data => \%Param,
+            );
+        }
     }
 
     # create & return output
@@ -3157,41 +3157,6 @@ sub CustomerLogin {
         );
     }
 
-    # get lost password output
-    if (
-        $Self->{ConfigObject}->Get('CustomerPanelLostPassword')
-        && $Self->{ConfigObject}->Get('Customer::AuthModule') eq
-        'Kernel::System::CustomerAuth::DB'
-        )
-    {
-        $Self->Block(
-            Name => 'LostPasswordLink',
-            Data => \%Param,
-        );
-        $Self->Block(
-            Name => 'LostPassword',
-            Data => \%Param,
-        );
-    }
-
-    # get lost password output
-    if (
-        $Self->{ConfigObject}->Get('CustomerPanelCreateAccount')
-        && $Self->{ConfigObject}->Get('Customer::AuthModule') eq
-        'Kernel::System::CustomerAuth::DB'
-        )
-
-    {
-        $Self->Block(
-            Name => 'CreateAccountLink',
-            Data => \%Param,
-        );
-        $Self->Block(
-            Name => 'CreateAccount',
-            Data => \%Param,
-        );
-    }
-
     # Generate the minified CSS and JavaScript files and the tags referencing them (see LayoutLoader)
     $Self->LoaderCreateCustomerCSSCalls();
     $Self->LoaderCreateCustomerJSCalls();
@@ -3260,10 +3225,46 @@ sub CustomerLogin {
 
     # if not in PreLogin mode, show normal login form
     else {
+
         $Self->Block(
             Name => 'LoginBox',
             Data => \%Param,
         );
+
+        # get lost password output
+        if (
+            $Self->{ConfigObject}->Get('CustomerPanelLostPassword')
+            && $Self->{ConfigObject}->Get('Customer::AuthModule') eq
+            'Kernel::System::CustomerAuth::DB'
+            )
+        {
+            $Self->Block(
+                Name => 'LostPasswordLink',
+                Data => \%Param,
+            );
+            $Self->Block(
+                Name => 'LostPassword',
+                Data => \%Param,
+            );
+        }
+
+        # get create account output
+        if (
+            $Self->{ConfigObject}->Get('CustomerPanelCreateAccount')
+            && $Self->{ConfigObject}->Get('Customer::AuthModule') eq
+            'Kernel::System::CustomerAuth::DB'
+            )
+
+        {
+            $Self->Block(
+                Name => 'CreateAccountLink',
+                Data => \%Param,
+            );
+            $Self->Block(
+                Name => 'CreateAccount',
+                Data => \%Param,
+            );
+        }
     }
 
     # create & return output
