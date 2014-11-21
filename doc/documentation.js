@@ -19,13 +19,13 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '4.0',
-                    HTMLPath: '4.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS 4',
                     Languages: ['en'],
                 },
                 {
                     Version:  '3.3',
-                    HTMLPath: 'stable',
+                    HTMLPath: '3.3',
                     Name:     'OTRS 3.3',
                     Languages: ['en', 'ja', 'ru'],
                 },
@@ -94,13 +94,13 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '4.0',
-                    HTMLPath: '4.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS 4',
                     Languages: ['en'],
                 },
                 {
                     Version:  '3.3',
-                    HTMLPath: 'stable',
+                    HTMLPath: '3.3',
                     Name:     'OTRS 3.3',
                     Languages: ['en',],
                 },
