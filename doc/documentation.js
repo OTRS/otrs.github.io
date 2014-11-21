@@ -129,19 +129,19 @@ $(document).ready(function() {
             Type: 'api',
             Path: 'otrs',
             Versions: [
-                // {
-                //     Version:  '4.0',
-                //     HTMLPath: '4.0',
-                //     Name:     'OTRS git (development)',
-                // },
+                {
+                    Version:  '5.0',
+                    HTMLPath: '5.0',
+                    Name:     'OTRS git (development)',
+                },
                 {
                     Version:  '4.0',
-                    HTMLPath: '4.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS 4',
                 },
                 {
                     Version:  '3.3',
-                    HTMLPath: 'stable',
+                    HTMLPath: '3.3',
                     Name:     'OTRS 3.3',
                 },
                 {
