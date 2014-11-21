@@ -11,7 +11,13 @@ package Kernel::System::CSV;
 
 use strict;
 use warnings;
+
 use Text::CSV;
+use Excel::Writer::XLSX;
+
+our @ObjectDependencies = (
+    'Kernel::System::Log',
+);
 
 =head1 NAME
 
@@ -27,24 +33,11 @@ All csv functions.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::CSV;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $CSVObject = Kernel::System::CSV->new(
-        LogObject => $LogObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $CSVObject = $Kernel::OM->Get('Kernel::System::CSV');
 
 =cut
 
@@ -54,11 +47,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # check needed objects
-    for (qw(LogObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
 
     return $Self;
 }
@@ -75,8 +63,9 @@ Returns a csv formatted string based on a array with head data.
             [ 1, 9 ],
             [ 34, 4 ],
         ],
-        Separator => ';', # optional separator (default is ;)
-        Quote     => '"', # optional quote (default is ")
+        Separator => ';',  # optional separator (default is ;)
+        Quote     => '"',  # optional quote (default is ")
+        Format    => 'CSV', # optional format [Excel|CSV ] (default is CSV)
     );
 
 =cut
@@ -87,7 +76,7 @@ sub Array2CSV {
     # check required params
     for (qw(Data)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Got no $_ param!"
             );
@@ -104,54 +93,114 @@ sub Array2CSV {
         @Data = @{ $Param{Data} };
     }
 
-    # get separator
-    if ( !defined $Param{Separator} || $Param{Separator} eq '' ) {
-        $Param{Separator} = ';';
-    }
-
-    # get separator
-    if ( !defined $Param{Quote} ) {
-        $Param{Quote} = '"';
-    }
-
-    # create new csv backend object
-    my $CSV = Text::CSV->new(
-        {
-            quote_char          => $Param{Quote},
-            escape_char         => $Param{Quote},
-            sep_char            => $Param{Separator},
-            eol                 => '',
-            always_quote        => 1,
-            binary              => 1,
-            keep_meta_info      => 0,
-            allow_loose_quotes  => 0,
-            allow_loose_escapes => 0,
-            allow_whitespace    => 0,
-            verbatim            => 0,
-        }
-    );
+    # get format
+    $Param{Format} //= 'CSV';
 
     my $Output = '';
 
-    # if we have head param fill in header
-    if (@Head) {
-        my $Status = $CSV->combine(@Head);
-        $Output .= $CSV->string() . "\n";
-    }
+    if ( $Param{Format} eq 'Excel' ) {
 
-    # fill in data
-    for my $Row (@Data) {
-        my $Status = $CSV->combine( @{$Row} );
-        if ($Status) {
+        open my $FileHandle, '>', \$Output;    ## no critic
+        if ( !$FileHandle ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Failed to open FileHandle: $!",
+            );
+            return;
+        }
+        my $Workbook     = Excel::Writer::XLSX->new($FileHandle);
+        my $Worksheet    = $Workbook->add_worksheet();
+        my $HeaderFormat = $Workbook->add_format(
+            bold       => 1,
+            num_format => '@',
+        );
+
+        # We will try to determine the appropriate length for each column.
+        my @ColumnLengths;
+        my $Row = 0;
+        for my $DataRaw ( \@Head, @Data ) {
+            for my $Col ( 0 .. ( scalar @{ $DataRaw // [] } ) - 1 ) {
+                my $CellLength = length( $DataRaw->[$Col] );
+                $CellLength = 30 if ( $CellLength > 30 );
+                if ( !defined $ColumnLengths[$Col] || $ColumnLengths[$Col] < $CellLength ) {
+                    $ColumnLengths[$Col] = $CellLength;
+                }
+                if ( $Row == 0 && @Head ) {
+
+                    # Format header nicely if present.
+                    $Worksheet->write( $Row, $Col, "$DataRaw->[$Col]", $HeaderFormat );
+                }
+                else {
+                    # There are major problems with data recognition in Excel. OTRS
+                    #   ticket numbers will be recognized as numbers, but they are so big that
+                    #   Excel will (incorrectly) round them. Prevent this by using write_string()
+                    #   to protect the data. This might trigger formatting notifications in Excel,
+                    #   but these can be turned off.
+                    $Worksheet->write_string( $Row, $Col, "$DataRaw->[$Col]" );
+                }
+            }
+            $Row++;
+        }
+
+        # Now apply column lengths.
+        my $Col = 0;
+        for my $ColumnLength (@ColumnLengths) {
+            $Worksheet->set_column( $Col, $Col, $ColumnLength );
+            $Col++;
+        }
+
+        $Workbook->close();
+    }
+    else {
+        # get separator
+        if ( !defined $Param{Separator} || $Param{Separator} eq '' ) {
+            $Param{Separator} = ';';
+        }
+
+        # get separator
+        if ( !defined $Param{Quote} ) {
+            $Param{Quote} = '"';
+        }
+
+        # create new csv backend object
+        my $CSV = Text::CSV->new(
+            {
+                quote_char          => $Param{Quote},
+                escape_char         => $Param{Quote},
+                sep_char            => $Param{Separator},
+                eol                 => '',
+                always_quote        => 1,
+                binary              => 1,
+                keep_meta_info      => 0,
+                allow_loose_quotes  => 0,
+                allow_loose_escapes => 0,
+                allow_whitespace    => 0,
+                verbatim            => 0,
+            }
+        );
+
+        # if we have head param fill in header
+        if (@Head) {
+            my $Status = $CSV->combine(@Head);
             $Output .= $CSV->string() . "\n";
         }
-        else {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => 'Failed to build line: ' . $CSV->error_input(),
-            );
+
+        # fill in data
+        for my $Row (@Data) {
+            my $Status = $CSV->combine( @{$Row} );
+            if ($Status) {
+                $Output .= $CSV->string() . "\n";
+            }
+            else {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => 'Failed to build line: ' . $CSV->error_input(),
+                );
+            }
         }
+
     }
+
     return $Output;
 }
 
@@ -210,7 +259,7 @@ sub CSV2Array {
             push @Array, \@Fields;
         }
         else {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => 'Failed to parse line: ' . $CSV->error_input(),
             );

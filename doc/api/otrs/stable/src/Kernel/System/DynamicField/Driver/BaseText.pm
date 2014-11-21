@@ -16,10 +16,17 @@ use Kernel::System::VariableCheck qw(:all);
 
 use base qw(Kernel::System::DynamicField::Driver::Base);
 
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+    'Kernel::System::DynamicFieldValue',
+    'Kernel::System::Log',
+);
+
 =head1 NAME
 
 Kernel::System::DynamicField::Driver::BaseText - sub module of
-Kernel::System::DynamicField::Driver::Text and Kernel::System::DynamicField::Driver::TextArea
+Kernel::System::DynamicField::Driver::Text and
+Kernel::System::DynamicField::Driver::TextArea
 
 =head1 SYNOPSIS
 
@@ -34,7 +41,7 @@ Text common functions.
 sub ValueGet {
     my ( $Self, %Param ) = @_;
 
-    my $DFValue = $Self->{DynamicFieldValueObject}->ValueGet(
+    my $DFValue = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->ValueGet(
         FieldID  => $Param{DynamicFieldConfig}->{ID},
         ObjectID => $Param{ObjectID},
     );
@@ -49,7 +56,7 @@ sub ValueGet {
 sub ValueSet {
     my ( $Self, %Param ) = @_;
 
-    my $Success = $Self->{DynamicFieldValueObject}->ValueSet(
+    my $Success = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->ValueSet(
         FieldID  => $Param{DynamicFieldConfig}->{ID},
         ObjectID => $Param{ObjectID},
         Value    => [
@@ -66,12 +73,36 @@ sub ValueSet {
 sub ValueValidate {
     my ( $Self, %Param ) = @_;
 
-    my $Success = $Self->{DynamicFieldValueObject}->ValueValidate(
+    my $Success = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->ValueValidate(
         Value => {
             ValueText => $Param{Value},
         },
         UserID => $Param{UserID}
     );
+
+    if (
+        IsArrayRefWithData( $Param{DynamicFieldConfig}->{Config}->{RegExList} )
+        && IsStringWithData( $Param{Value} )
+        )
+    {
+        # check regular expressions
+        my @RegExList = @{ $Param{DynamicFieldConfig}->{Config}->{RegExList} };
+
+        REGEXENTRY:
+        for my $RegEx (@RegExList) {
+
+            if ( $Param{Value} !~ $RegEx->{Value} ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "The value '$Param{Value}' is not matching /"
+                        . $RegEx->{Value} . "/ ("
+                        . $RegEx->{ErrorMessage} . ")!",
+                );
+                $Success = undef;
+                last REGEXENTRY;
+            }
+        }
+    }
 
     return $Success;
 }
@@ -87,15 +118,18 @@ sub SearchSQLGet {
         SmallerThanEquals => '<=',
     );
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     if ( $Operators{ $Param{Operator} } ) {
         my $SQL = " $Param{TableAlias}.value_text $Operators{$Param{Operator}} '";
-        $SQL .= $Self->{DBObject}->Quote( $Param{SearchTerm} ) . "' ";
+        $SQL .= $DBObject->Quote( $Param{SearchTerm} ) . "' ";
         return $SQL;
     }
 
     if ( $Param{Operator} eq 'Like' ) {
 
-        my $SQL = $Self->{DBObject}->QueryCondition(
+        my $SQL = $DBObject->QueryCondition(
             Key   => "$Param{TableAlias}.value_text",
             Value => $Param{SearchTerm},
         );
@@ -103,7 +137,7 @@ sub SearchSQLGet {
         return $SQL;
     }
 
-    $Self->{'LogObject'}->Log(
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
         'Priority' => 'error',
         'Message'  => "Unsupported Operator $Param{Operator}",
     );
@@ -174,11 +208,13 @@ EOF
     if ( $Param{Mandatory} ) {
         my $DivID = $FieldName . 'Error';
 
+        my $FieldRequiredMessage = $Param{LayoutObject}->{LanguageObject}->Translate("This field is required.");
+
         # for client side validation
         $HTMLString .= <<"EOF";
 <div id="$DivID" class="TooltipErrorMessage">
     <p>
-        \$Text{"This field is required."}
+        $FieldRequiredMessage
     </p>
 </div>
 EOF
@@ -187,13 +223,14 @@ EOF
     if ( $Param{ServerError} ) {
 
         my $ErrorMessage = $Param{ErrorMessage} || 'This field is required.';
+        $ErrorMessage = $Param{LayoutObject}->{LanguageObject}->Translate($ErrorMessage);
         my $DivID = $FieldName . 'ServerError';
 
         # for server side validation
         $HTMLString .= <<"EOF";
 <div id="$DivID" class="TooltipErrorMessage">
     <p>
-        \$Text{"$ErrorMessage"}
+        $ErrorMessage
     </p>
 </div>
 EOF
@@ -201,9 +238,9 @@ EOF
 
     # call EditLabelRender on the common Driver
     my $LabelString = $Self->EditLabelRender(
-        DynamicFieldConfig => $Param{DynamicFieldConfig},
-        Mandatory          => $Param{Mandatory} || '0',
-        FieldName          => $FieldName,
+        %Param,
+        Mandatory => $Param{Mandatory} || '0',
+        FieldName => $FieldName,
     );
 
     my $Data = {
@@ -263,6 +300,25 @@ sub EditFieldValueValidate {
     # perform necessary validations
     if ( $Param{Mandatory} && $Value eq '' ) {
         $ServerError = 1;
+    }
+    elsif (
+        IsArrayRefWithData( $Param{DynamicFieldConfig}->{Config}->{RegExList} )
+        && ( $Param{Mandatory} || ( !$Param{Mandatory} && $Value ne '' ) )
+        )
+    {
+
+        # check regular expressions
+        my @RegExList = @{ $Param{DynamicFieldConfig}->{Config}->{RegExList} };
+
+        REGEXENTRY:
+        for my $RegEx (@RegExList) {
+
+            if ( $Value !~ $RegEx->{Value} ) {
+                $ServerError  = 1;
+                $ErrorMessage = $RegEx->{ErrorMessage};
+                last REGEXENTRY;
+            }
+        }
     }
 
     # create resulting structure
@@ -366,9 +422,9 @@ EOF
 
     # call EditLabelRender on the common Driver
     my $LabelString = $Self->EditLabelRender(
-        DynamicFieldConfig => $Param{DynamicFieldConfig},
-        FieldName          => $FieldName,
-        AdditionalText     => $AdditionalText,
+        %Param,
+        FieldName      => $FieldName,
+        AdditionalText => $AdditionalText,
     );
 
     my $Data = {
@@ -439,6 +495,7 @@ sub StatsFieldParameterBuild {
     return {
         Name    => $Param{DynamicFieldConfig}->{Label},
         Element => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name},
+        Block   => 'InputField',
     };
 }
 
@@ -554,7 +611,7 @@ sub HistoricalValuesGet {
     my ( $Self, %Param ) = @_;
 
     # get historical values from database
-    my $HistoricalValues = $Self->{DynamicFieldValueObject}->HistoricalValueGet(
+    my $HistoricalValues = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->HistoricalValueGet(
         FieldID   => $Param{DynamicFieldConfig}->{ID},
         ValueType => 'Text',
     );

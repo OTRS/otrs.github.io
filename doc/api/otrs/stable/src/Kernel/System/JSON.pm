@@ -22,6 +22,10 @@ BEGIN {
 
 use JSON;
 
+our @ObjectDependencies = (
+    'Kernel::System::Log',
+);
+
 =head1 NAME
 
 Kernel::System::JSON - the JSON wrapper lib
@@ -38,26 +42,11 @@ Functions for encoding perl data structures to JSON.
 
 =item new()
 
-create a JSON object
+create a JSON object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::JSON;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $JSONObject = Kernel::System::JSON->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
 
 =cut
 
@@ -67,15 +56,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # check needed objects
-    for my $Object (qw(ConfigObject EncodeObject LogObject)) {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
-    }
-
-    # create additional objects
-    $Self->{JSONObject} = JSON->new();
-    $Self->{JSONObject}->allow_nonref(1);
 
     return $Self;
 }
@@ -96,20 +76,25 @@ sub Encode {
 
     # check for needed data
     if ( !defined $Param{Data} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need Data!',
         );
         return;
     }
 
+    # create json object
+    my $JSONObject = JSON->new();
+
+    $JSONObject->allow_nonref(1);
+
     # sort the keys of the JSON data
     if ( $Param{SortKeys} ) {
-        $Self->{JSONObject}->canonical( [1] );
+        $JSONObject->canonical( [1] );
     }
 
     # get JSON-encoded presentation of perl structure
-    my $JSONEncoded = $Self->{JSONObject}->encode( $Param{Data} ) || '""';
+    my $JSONEncoded = $JSONObject->encode( $Param{Data} ) || '""';
 
     return $JSONEncoded;
 }
@@ -130,15 +115,22 @@ sub Decode {
     # check for needed data
     return if !defined $Param{Data};
 
+    # create json object
+    my $JSONObject = JSON->new();
+
+    $JSONObject->allow_nonref(1);
+
     # decode JSON encoded to perl structure
     my $Scalar;
 
     # use eval here, as JSON::XS->decode() dies when providing a malformed JSON string
-    if ( !eval { $Scalar = $Self->{JSONObject}->decode( $Param{Data} ) } ) {
-        $Self->{LogObject}->Log(
+    if ( !eval { $Scalar = $JSONObject->decode( $Param{Data} ) } ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Decoding the JSON string failed: ' . $@,
         );
+
         return;
     }
 

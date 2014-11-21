@@ -14,6 +14,8 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = ();
+
 sub GetDisplayPath {
     return 'Webserver/Environment Variables';
 }

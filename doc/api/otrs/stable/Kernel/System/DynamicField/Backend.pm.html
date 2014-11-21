@@ -35,7 +35,7 @@
   </script></head>
 <body>
 <div class="box">
-  <h1 class="t1">OTRS 3.3 API Reference</h1>
+  <h1 class="t1">OTRS 4.0 API Reference</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -44,7 +44,7 @@
   </table>
 </div>
 <div class="path">
-  <a href="../../../index.html">OTRS 3.3 API Reference</a> &gt; Perl Modules &gt;
+  <a href="../../../index.html">OTRS 4.0 API Reference</a> &gt; Perl Modules &gt;
   Kernel::System::DynamicField::Backend
 </div>
 <div>
@@ -83,47 +83,10 @@
 
 <dl>
 	<dt>new()</dt>
-		<dd><p>create a DynamicField backend object</p></dd>
-<dd><pre>    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::DynamicField::Backend;
-
-</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
-    my $EncodeObject = Kernel::System::Encode-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        LogObject    =&gt; $LogObject,
-    );
-    my $MainObject = Kernel::System::Main-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-        LogObject    =&gt; $LogObject,
-    );
-    my $DBObject = Kernel::System::DB-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-        LogObject    =&gt; $LogObject,
-        MainObject   =&gt; $MainObject,
-    );
-    my $DynamicFieldObject = Kernel::System::DynamicField::Backend-&gt;new(
-        ConfigObject        =&gt; $ConfigObject,
-        EncodeObject        =&gt; $EncodeObject,
-        LogObject           =&gt; $LogObject,
-        TimeObject          =&gt; $TimeObject,
-        MainObject          =&gt; $MainObject,
-        DBObject            =&gt; $DBObject,
-        # Optional: pass TicketObject pass if you already have one (for cache consistency reasons)
-    );
+		<dd><p>create a DynamicField backend object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $DynamicFieldObject = $Kernel::OM-&gt;Get('Kernel::System::DynamicField::Backend');
 
 </pre></dd>	<dt>EditFieldRender()</dt>
 		<dd><p>creates the field HTML to be used in edit masks.</p></dd>
@@ -693,6 +656,8 @@ an ArrayHashRef, otherwise the result will be a HashRef.</p></dd>
         Name               =&gt; 'DynamicField_' . $DynamicFieldConfig-&gt;{Label},
         Element            =&gt; 'DynamicField_' . $DynamicFieldConfig-&gt;{Name},
         TranslatableValues =&gt; 1,
+        TimePeriodFormat   =&gt; 'DateInputFormat',
+        Block              =&gt; 'InputField',              # or 'MultiselectField' or 'Time'
     };
 
 </pre></dd>	<dt>StatsSearchFieldParameterBuild()</dt>
@@ -765,7 +730,7 @@ like the result of a TicketGet() )</p></dd>
 <dd><pre>    # check needed stuff
     for my $Needed (qw(DynamicFieldConfig LayoutObject TicketIDs)) {
         if ( !$Param{$Needed} ) {
-            $Self-&gt;{LogObject}-&gt;Log(
+            $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
                 Priority =&gt; 'error',
                 Message  =&gt; &quot;Need $Needed!&quot;
             );
@@ -775,7 +740,7 @@ like the result of a TicketGet() )</p></dd>
 
 </pre></dd><dd><pre>    # check DynamicFieldConfig (general)
     if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
-        $Self-&gt;{LogObject}-&gt;Log(
+        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
             Priority =&gt; 'error',
             Message  =&gt; &quot;The field configuration is invalid&quot;,
         );
@@ -785,7 +750,7 @@ like the result of a TicketGet() )</p></dd>
 </pre></dd><dd><pre>    # check DynamicFieldConfig (internally)
     for my $Needed (qw(ID FieldType ObjectType)) {
         if ( !$Param{DynamicFieldConfig}-&gt;{$Needed} ) {
-            $Self-&gt;{LogObject}-&gt;Log(
+            $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
                 Priority =&gt; 'error',
                 Message  =&gt; &quot;Need $Needed in DynamicFieldConfig!&quot;
             );
@@ -797,7 +762,7 @@ like the result of a TicketGet() )</p></dd>
     my $DynamicFieldBackend = 'DynamicField' . $Param{DynamicFieldConfig}-&gt;{FieldType} . 'Object';
 
 </pre></dd><dd><pre>    if ( !$Self-&gt;{$DynamicFieldBackend} ) {
-        $Self-&gt;{LogObject}-&gt;Log(
+        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
             Priority =&gt; 'error',
             Message  =&gt; &quot;Backend $Param{DynamicFieldConfig}-&gt;{FieldType} is invalid!&quot;
         );

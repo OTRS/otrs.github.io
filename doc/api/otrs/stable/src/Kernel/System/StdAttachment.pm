@@ -14,8 +14,13 @@ use warnings;
 
 use MIME::Base64;
 
-use Kernel::System::CacheInternal;
-use Kernel::System::Valid;
+our @ObjectDependencies = (
+    'Kernel::System::Cache',
+    'Kernel::System::DB',
+    'Kernel::System::Encode',
+    'Kernel::System::Log',
+    'Kernel::System::Valid',
+);
 
 =head1 NAME
 
@@ -33,40 +38,11 @@ All std. attachment functions.
 
 =item new()
 
-create std. attachment object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::StdAttachment;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $StdAttachmentObject = Kernel::System::StdAttachment->new(
-        ConfigObject => $ConfigObject,
-        DBObject     => $DBObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $StdAttachmentObject = $Kernel::OM->Get('Kernel::System::StdAttachment');
 
 =cut
 
@@ -77,23 +53,10 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # get needed objects
-    for (qw(ConfigObject LogObject DBObject EncodeObject MainObject)) {
-        if ( $Param{$_} ) {
-            $Self->{$_} = $Param{$_};
-        }
-        else {
-            die "Got no $_!";
-        }
-    }
+    $Self->{DBObject} = $Kernel::OM->Get('Kernel::System::DB');
 
-    # create additional objects
-    $Self->{ValidObject}         = Kernel::System::Valid->new( %{$Self} );
-    $Self->{CacheInternalObject} = Kernel::System::CacheInternal->new(
-        %{$Self},
-        Type => 'StdAttachment',
-        TTL  => 60 * 60 * 24 * 20,
-    );
+    $Self->{CacheType} = 'StdAttachment';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
 
     return $Self;
 }
@@ -119,7 +82,7 @@ sub StdAttachmentAdd {
     # check needed stuff
     for (qw(Name ValidID Content ContentType Filename UserID)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -129,7 +92,7 @@ sub StdAttachmentAdd {
 
     # encode attachment if it's a postgresql backend!!!
     if ( !$Self->{DBObject}->GetDatabaseFunction('DirectBlob') ) {
-        $Self->{EncodeObject}->EncodeOutput( \$Param{Content} );
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{Content} );
         $Param{Content} = encode_base64( $Param{Content} );
     }
 
@@ -171,7 +134,7 @@ sub StdAttachmentGet {
 
     # check needed stuff
     if ( !$Param{ID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need ID!'
         );
@@ -233,7 +196,7 @@ sub StdAttachmentUpdate {
     # check needed stuff
     for (qw(ID Name ValidID UserID)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -263,7 +226,7 @@ sub StdAttachmentUpdate {
 
         # encode attachment if it's a postgresql backend!!!
         if ( !$Self->{DBObject}->GetDatabaseFunction('DirectBlob') ) {
-            $Self->{EncodeObject}->EncodeOutput( \$Param{Content} );
+            $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{Content} );
             $Param{Content} = encode_base64( $Param{Content} );
         }
 
@@ -294,7 +257,7 @@ sub StdAttachmentDelete {
     # check needed stuff
     for (qw(ID)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -342,7 +305,7 @@ sub StdAttachmentLookup {
 
     # check needed stuff
     if ( !$Param{StdAttachment} && !$Param{StdAttachmentID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Got no StdAttachment or StdAttachment!',
         );
@@ -388,7 +351,7 @@ sub StdAttachmentLookup {
 
     # check if data exists
     if ( !$Self->{$CacheKey} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Found no $Key found for $Value!",
         );
@@ -415,7 +378,7 @@ sub StdAttachmentsByResponseID {
 
     # check needed stuff
     if ( !$Param{ID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Got no ID!'
         );
@@ -492,7 +455,7 @@ sub StdAttachmentSetResponses {
     # check needed stuff
     for (qw(ID AttachmentIDsRef UserID)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -505,8 +468,10 @@ sub StdAttachmentSetResponses {
         SQL  => 'DELETE FROM standard_template_attachment WHERE standard_template_id = ?',
         Bind => [ \$Param{ID} ],
     );
+
+    ATTACHMENT:
     for my $ID ( @{ $Param{AttachmentIDsRef} } ) {
-        next if !$ID;
+        next ATTACHMENT if !$ID;
         $Self->{DBObject}->Do(
             SQL => 'INSERT INTO standard_template_attachment (standard_attachment_id, '
                 . 'standard_template_id, create_time, create_by, change_time, change_by)'
@@ -517,7 +482,9 @@ sub StdAttachmentSetResponses {
         );
     }
 
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
     return 1;
 }
 
@@ -540,7 +507,7 @@ sub StdAttachmentStandardTemplateMemberAdd {
     # check needed stuff
     for my $Argument (qw(AttachmentID StandardTemplateID UserID)) {
         if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Argument!",
             );
@@ -558,7 +525,9 @@ sub StdAttachmentStandardTemplateMemberAdd {
 
     # return if relation is not active
     if ( !$Param{Active} ) {
-        $Self->{CacheInternalObject}->CleanUp();
+        $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+            Type => $Self->{CacheType},
+        );
         return 1;
     }
 
@@ -574,7 +543,9 @@ sub StdAttachmentStandardTemplateMemberAdd {
         ],
     );
 
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
     return $Success;
 }
 
@@ -604,7 +575,7 @@ sub StdAttachmentStandardTemplateMemberList {
 
     # check needed stuff
     if ( !$Param{AttachmentID} && !$Param{StandardTemplateID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need AttachmentID or StandardTemplateID!',
         );
@@ -612,7 +583,7 @@ sub StdAttachmentStandardTemplateMemberList {
     }
 
     if ( $Param{AttachmentID} && $Param{StandardTemplateID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need AttachmentID or StandardTemplateID, but not both!',
         );
@@ -629,7 +600,10 @@ sub StdAttachmentStandardTemplateMemberList {
     }
 
     # check cache
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     return %{$Cache} if ref $Cache eq 'HASH';
 
     # sql
@@ -641,10 +615,12 @@ sub StdAttachmentStandardTemplateMemberList {
         WHERE';
 
     if ( $Param{AttachmentID} ) {
-        $SQL .= ' st.valid_id IN (' . join ', ', $Self->{ValidObject}->ValidIDsGet() . ')';
+        $SQL .= ' st.valid_id IN (' . join ', ',
+            $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet() . ')';
     }
     elsif ( $Param{StandardTemplateID} ) {
-        $SQL .= ' sa.valid_id IN (' . join ', ', $Self->{ValidObject}->ValidIDsGet() . ')';
+        $SQL .= ' sa.valid_id IN (' . join ', ',
+            $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet() . ')';
     }
 
     $SQL .= '
@@ -675,9 +651,11 @@ sub StdAttachmentStandardTemplateMemberList {
     }
 
     # return result
-    $Self->{CacheInternalObject}->Set(
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
         Key   => $CacheKey,
-        Value => \%Data
+        Value => \%Data,
     );
     return %Data;
 }

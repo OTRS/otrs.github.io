@@ -13,10 +13,14 @@ use strict;
 use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
-use Kernel::System::DynamicFieldValue;
-use Kernel::System::Ticket::ColumnFilter;
 
 use base qw(Kernel::System::DynamicField::Driver::BaseSelect);
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::DynamicFieldValue',
+    'Kernel::System::Main',
+);
 
 =head1 NAME
 
@@ -47,17 +51,6 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # get needed objects
-    for my $Needed (qw(ConfigObject EncodeObject LogObject MainObject DBObject TimeObject)) {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    # create additional objects
-    $Self->{DynamicFieldValueObject} = Kernel::System::DynamicFieldValue->new( %{$Self} );
-    $Self->{ColumnFilterObject}      = Kernel::System::Ticket::ColumnFilter->new( %{$Self} );
-
     # set field behaviors
     $Self->{Behaviors} = {
         'IsACLReducible'               => 1,
@@ -69,7 +62,8 @@ sub new {
     };
 
     # get the Dynamic Field Backend custmom extensions
-    my $DynamicFieldDriverExtensions = $Self->{ConfigObject}->Get('DynamicFields::Extension::Driver::Dropdown');
+    my $DynamicFieldDriverExtensions
+        = $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::Extension::Driver::Dropdown');
 
     EXTENSION:
     for my $ExtensionKey ( sort keys %{$DynamicFieldDriverExtensions} ) {
@@ -84,7 +78,10 @@ sub new {
         if ( $Extension->{Module} ) {
 
             # check if module can be loaded
-            if ( !$Self->{MainObject}->RequireBaseClass( $Extension->{Module} ) ) {
+            if (
+                !$Kernel::OM->Get('Kernel::System::Main')->RequireBaseClass( $Extension->{Module} )
+                )
+            {
                 die "Can't load dynamic fields backend module"
                     . " $Extension->{Module}! $@";
             }

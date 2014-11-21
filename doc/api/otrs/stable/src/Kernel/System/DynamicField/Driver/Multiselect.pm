@@ -13,9 +13,15 @@ use strict;
 use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
-use Kernel::System::DynamicFieldValue;
 
 use base qw(Kernel::System::DynamicField::Driver::BaseSelect);
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::DynamicFieldValue',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+);
 
 =head1 NAME
 
@@ -46,16 +52,6 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # get needed objects
-    for my $Needed (qw(ConfigObject EncodeObject LogObject MainObject DBObject)) {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    # create additional objects
-    $Self->{DynamicFieldValueObject} = Kernel::System::DynamicFieldValue->new( %{$Self} );
-
     # set field behaviors
     $Self->{Behaviors} = {
         'IsACLReducible'               => 1,
@@ -67,7 +63,8 @@ sub new {
     };
 
     # get the Dynamic Field Backend custmom extensions
-    my $DynamicFieldDriverExtensions = $Self->{ConfigObject}->Get('DynamicFields::Extension::Driver::Multiselect');
+    my $DynamicFieldDriverExtensions
+        = $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::Extension::Driver::Multiselect');
 
     EXTENSION:
     for my $ExtensionKey ( sort keys %{$DynamicFieldDriverExtensions} ) {
@@ -82,7 +79,10 @@ sub new {
         if ( $Extension->{Module} ) {
 
             # check if module can be loaded
-            if ( !$Self->{MainObject}->RequireBaseClass( $Extension->{Module} ) ) {
+            if (
+                !$Kernel::OM->Get('Kernel::System::Main')->RequireBaseClass( $Extension->{Module} )
+                )
+            {
                 die "Can't load dynamic fields backend module"
                     . " $Extension->{Module}! $@";
             }
@@ -104,7 +104,7 @@ sub new {
 sub ValueGet {
     my ( $Self, %Param ) = @_;
 
-    my $DFValue = $Self->{DynamicFieldValueObject}->ValueGet(
+    my $DFValue = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->ValueGet(
         FieldID  => $Param{DynamicFieldConfig}->{ID},
         ObjectID => $Param{ObjectID},
     );
@@ -127,7 +127,7 @@ sub ValueSet {
 
     # check for valid possible values list
     if ( !$Param{DynamicFieldConfig}->{Config}->{PossibleValues} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need PossibleValues in DynamicFieldConfig!",
         );
@@ -143,6 +143,9 @@ sub ValueSet {
         @Values = ( $Param{Value} );
     }
 
+    # get dynamic field value object
+    my $DynamicFieldValueObject = $Kernel::OM->Get('Kernel::System::DynamicFieldValue');
+
     my $Success;
     if ( IsArrayRefWithData( \@Values ) ) {
 
@@ -153,7 +156,7 @@ sub ValueSet {
             push @ValueText, { ValueText => $Item };
         }
 
-        $Success = $Self->{DynamicFieldValueObject}->ValueSet(
+        $Success = $DynamicFieldValueObject->ValueSet(
             FieldID  => $Param{DynamicFieldConfig}->{ID},
             ObjectID => $Param{ObjectID},
             Value    => \@ValueText,
@@ -164,7 +167,7 @@ sub ValueSet {
 
         # otherwise no value was selected, then in fact this means that any value there should be
         # deleted
-        $Success = $Self->{DynamicFieldValueObject}->ValueDelete(
+        $Success = $DynamicFieldValueObject->ValueDelete(
             FieldID  => $Param{DynamicFieldConfig}->{ID},
             ObjectID => $Param{ObjectID},
             UserID   => $Param{UserID},
@@ -214,17 +217,22 @@ sub ValueValidate {
         @Values = ( $Param{Value} );
     }
 
+    # get dynamic field value object
+    my $DynamicFieldValueObject = $Kernel::OM->Get('Kernel::System::DynamicFieldValue');
+
     my $Success;
     for my $Item (@Values) {
 
-        $Success = $Self->{DynamicFieldValueObject}->ValueValidate(
+        $Success = $DynamicFieldValueObject->ValueValidate(
             Value => {
                 ValueText => $Item,
             },
             UserID => $Param{UserID}
         );
+
         return if !$Success
     }
+
     return $Success;
 }
 
@@ -316,19 +324,25 @@ sub EditFieldRender {
     );
 
     if ( $FieldConfig->{TreeView} ) {
+        my $TreeSelectionMessage = $Param{LayoutObject}->{LanguageObject}->Translate("Show Tree Selection");
         $HTMLString
-            .= ' <a href="#" title="$Text{"Show Tree Selection"}" class="ShowTreeSelection">$Text{"Show Tree Selection"}</a>';
+            .= ' <a href="#" title="'
+            . $TreeSelectionMessage
+            . '" class="ShowTreeSelection"><span>'
+            . $TreeSelectionMessage . '</span><i class="fa fa-sitemap"></i></a>';
     }
 
     if ( $Param{Mandatory} ) {
         my $DivID = $FieldName . 'Error';
+
+        my $FieldRequiredMessage = $Param{LayoutObject}->{LanguageObject}->Translate("This field is required.");
 
         # for client side validation
         $HTMLString .= <<"EOF";
 
 <div id="$DivID" class="TooltipErrorMessage">
     <p>
-        \$Text{"This field is required."}
+        $FieldRequiredMessage
     </p>
 </div>
 EOF
@@ -337,6 +351,7 @@ EOF
     if ( $Param{ServerError} ) {
 
         my $ErrorMessage = $Param{ErrorMessage} || 'This field is required.';
+        $ErrorMessage = $Param{LayoutObject}->{LanguageObject}->Translate($ErrorMessage);
         my $DivID = $FieldName . 'ServerError';
 
         # for server side validation
@@ -344,7 +359,7 @@ EOF
 
 <div id="$DivID" class="TooltipErrorMessage">
     <p>
-        \$Text{"$ErrorMessage"}
+        $ErrorMessage
     </p>
 </div>
 EOF
@@ -365,29 +380,24 @@ EOF
         }
 
         # add js to call FormUpdate()
-        $HTMLString .= <<"EOF";
-
-<!--dtl:js_on_document_complete-->
-<script type="text/javascript">//<![CDATA[
-    \$('$FieldSelector').bind('change', function (Event) {
-        Core.AJAX.FormUpdate(\$(this).parents('form'), 'AJAXUpdate', '$FieldName', [ $FieldsToUpdate ]);
-    });
-    Core.App.Subscribe('Event.AJAX.FormUpdate.Callback', function(Data) {
-        var FieldName = '$FieldName';
-        if (Data[FieldName] && \$('#' + FieldName).hasClass('DynamicFieldWithTreeView')) {
-            Core.UI.TreeSelection.RestoreDynamicFieldTreeView(\$('#' + FieldName), Data[FieldName], '' , 1);
-        }
-    });
-//]]></script>
-<!--dtl:js_on_document_complete-->
+        $Param{LayoutObject}->AddJSOnDocumentComplete( Code => <<"EOF");
+\$('$FieldSelector').bind('change', function (Event) {
+    Core.AJAX.FormUpdate(\$(this).parents('form'), 'AJAXUpdate', '$FieldName', [ $FieldsToUpdate ]);
+});
+Core.App.Subscribe('Event.AJAX.FormUpdate.Callback', function(Data) {
+    var FieldName = '$FieldName';
+    if (Data[FieldName] && \$('#' + FieldName).hasClass('DynamicFieldWithTreeView')) {
+        Core.UI.TreeSelection.RestoreDynamicFieldTreeView(\$('#' + FieldName), Data[FieldName], '' , 1);
+    }
+});
 EOF
     }
 
     # call EditLabelRender on the common Driver
     my $LabelString = $Self->EditLabelRender(
-        DynamicFieldConfig => $Param{DynamicFieldConfig},
-        Mandatory          => $Param{Mandatory} || '0',
-        FieldName          => $FieldName,
+        %Param,
+        Mandatory => $Param{Mandatory} || '0',
+        FieldName => $FieldName,
     );
 
     my $Data = {
@@ -534,7 +544,7 @@ sub DisplayValueRender {
         if ( $PossibleValues->{$Item} ) {
             $ReadableValue = $PossibleValues->{$Item};
             if ($TranslatableValues) {
-                $ReadableValue = $Param{LayoutObject}->{LanguageObject}->Get($ReadableValue);
+                $ReadableValue = $Param{LayoutObject}->{LanguageObject}->Translate($ReadableValue);
             }
         }
 
@@ -593,7 +603,7 @@ sub DisplayValueRender {
     }
 
     # get specific field settings
-    my $FieldConfig = $Self->{ConfigObject}->Get('DynamicFields::Driver')->{Multiselect} || {};
+    my $FieldConfig = $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::Driver')->{Multiselect} || {};
 
     # set new line separator
     my $ItemSeparator = $FieldConfig->{ItemSeparator} || ', ';
@@ -649,7 +659,7 @@ sub SearchFieldParameterBuild {
                     && defined $Param{LayoutObject}
                     )
                 {
-                    $DisplayItem = $Param{LayoutObject}->{LanguageObject}->Get($DisplayItem);
+                    $DisplayItem = $Param{LayoutObject}->{LanguageObject}->Translate($DisplayItem);
                 }
 
                 push @DisplayItemList, $DisplayItem;
@@ -669,7 +679,7 @@ sub SearchFieldParameterBuild {
                 && defined $Param{LayoutObject}
                 )
             {
-                $DisplayValue = $Param{LayoutObject}->{LanguageObject}->Get($DisplayValue);
+                $DisplayValue = $Param{LayoutObject}->{LanguageObject}->Translate($DisplayValue);
             }
         }
     }
@@ -690,7 +700,7 @@ sub StatsFieldParameterBuild {
     my $Values = $Param{DynamicFieldConfig}->{Config}->{PossibleValues};
 
     # get historical values from database
-    my $HistoricalValues = $Self->{DynamicFieldValueObject}->HistoricalValueGet(
+    my $HistoricalValues = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->HistoricalValueGet(
         FieldID   => $Param{DynamicFieldConfig}->{ID},
         ValueType => 'Text,',
     );
@@ -710,6 +720,7 @@ sub StatsFieldParameterBuild {
         Name               => $Param{DynamicFieldConfig}->{Label},
         Element            => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name},
         TranslatableValues => $Param{DynamicFieldconfig}->{Config}->{TranslatableValues},
+        Block              => 'MultiSelectField',
     };
 }
 
@@ -820,7 +831,7 @@ sub HistoricalValuesGet {
     my ( $Self, %Param ) = @_;
 
     # get historical values from database
-    my $HistoricalValues = $Self->{DynamicFieldValueObject}->HistoricalValueGet(
+    my $HistoricalValues = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->HistoricalValueGet(
         FieldID   => $Param{DynamicFieldConfig}->{ID},
         ValueType => 'Text',
     );
@@ -865,7 +876,7 @@ sub ValueLookup {
             {
 
                 # translate value
-                $Value = $Param{LanguageObject}->Get($Value);
+                $Value = $Param{LanguageObject}->Translate($Value);
             }
         }
         push @Values, $Value;

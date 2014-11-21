@@ -12,13 +12,20 @@ package Kernel::System::Registration;
 use strict;
 use warnings;
 
-use Kernel::System::CacheInternal;
-use Kernel::System::Environment;
-use Kernel::System::JSON;
-use Kernel::System::Scheduler::TaskManager;
-use Kernel::System::SupportDataCollector;
-use Kernel::System::SystemData;
-use Kernel::System::WebUserAgent;
+use Kernel::System::VariableCheck qw(:all);
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::CloudService',
+    'Kernel::System::DB',
+    'Kernel::System::Environment',
+    'Kernel::System::Log',
+    'Kernel::System::OTRSBusiness',
+    'Kernel::System::Scheduler::TaskManager',
+    'Kernel::System::SupportDataCollector',
+    'Kernel::System::SystemData',
+    'Kernel::System::Time',
+);
 
 =head1 NAME
 
@@ -55,41 +62,12 @@ UpdateID the Portal refuses the update and an updated registration is required.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Registration;
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $RegistrationObject = $Kernel::OM->Get('Kernel::System::Registration');
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $RegistrationObject = Kernel::System::Registration->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
-    );
 
 =cut
 
@@ -99,26 +77,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # check needed objects
-    for (qw(DBObject ConfigObject LogObject MainObject EncodeObject TimeObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
-
-    # create additional objects
-    $Self->{EnvironmentObject}          = Kernel::System::Environment->new( %{$Self} );
-    $Self->{JSONObject}                 = Kernel::System::JSON->new( %{$Self} );
-    $Self->{SystemDataObject}           = Kernel::System::SystemData->new( %{$Self} );
-    $Self->{SupportDataCollectorObject} = Kernel::System::SupportDataCollector->new( %{$Self} );
-    $Self->{TaskObject}                 = Kernel::System::Scheduler::TaskManager->new( %{$Self} );
-
-    $Self->{CacheInternalObject} = Kernel::System::CacheInternal->new(
-        %{$Self},
-        Type => 'Registration',
-        TTL  => 60 * 60 * 24 * 20,
-    );
-
-    $Self->{RegistrationURL} = 'https://cloud.otrs.com/otrs/public.pl';
 
     $Self->{APIVersion} = 2;
 
@@ -162,75 +120,87 @@ sub TokenGet {
     my ( $Self, %Param ) = @_;
 
     # check needed parameters
-    for (qw(OTRSID Password)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+    for my $Needed (qw(OTRSID Password)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $Needed!"
             );
             return;
         }
     }
-
-    # create webuseragent object
-    my $WebUserAgentObject = Kernel::System::WebUserAgent->new(
-        DBObject     => $Self->{DBObject},
-        ConfigObject => $Self->{ConfigObject},
-        LogObject    => $Self->{LogObject},
-        MainObject   => $Self->{MainObject},
-        Timeout      => 10,
-    );
-
-    # get token
-    my %Response = $WebUserAgentObject->Request(
-        Type => 'POST',
-        URL  => $Self->{RegistrationURL},
-        Data => {
-            Action     => 'PublicRegistration',
-            Subaction  => 'TokenGet',
-            APIVersion => $Self->{APIVersion},
-            OTRSID     => $Param{OTRSID},
-            Password   => $Param{Password},
-        },
-    );
 
     # initiate result hash
     my %Result = (
         Success => 0,
     );
 
-    # test if the web response was successful
-    if ( $Response{Status} ne '200 OK' ) {
-        $Self->{LogObject}->Log(
+    my $CloudService = 'SystemRegistration';
+    my $Operation    = 'TokenGet';
+
+    # prepare cloud service request
+    my %RequestParams = (
+        %Param,
+        RequestData => {
+            $CloudService => [
+                {
+                    Operation => $Operation,
+                    Data      => {},
+                },
+            ],
+        },
+    );
+
+    # get cloud service object
+    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService');
+
+    # dispatch the cloud service request
+    my $RequestResult = $CloudServiceObject->Request(%RequestParams);
+
+    # as this is the only operation an unsuccessful request means that the operation was also
+    # unsuccessful
+    if ( !IsHashRefWithData($RequestResult) ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'notice',
-            Message  => "Registration - Can't contact server - $Response{Status}",
+            Message  => "Registration - Can't contact server",
         );
         $Result{Reason} = "Can't contact registration server. Please try again later.";
+
+        return %Result;
+    }
+    elsif ( !$RequestResult->{Success} && $RequestResult->{ErrorMessage} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "Registration - Request Failed ($RequestResult->{ErrorMessage})",
+        );
+        $Result{Reason} = "Can't contact registration server. Please try again later.";
+
         return %Result;
     }
 
-    # make sure we have content as a scalar ref
-    if ( !$Response{Content} || ref $Response{Content} ne 'SCALAR' ) {
-        $Self->{LogObject}->Log(
+    my $OperationResult = $CloudServiceObject->OperationResultGet(
+        RequestResult => $RequestResult,
+        CloudService  => $CloudService,
+        Operation     => $Operation,
+    );
+
+    if ( !IsHashRefWithData($OperationResult) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'notice',
             Message  => "Registration - No content received from server",
         );
-        $Result{Reason} = 'No content received from registration server. Please try again later.';
+        $Result{Reason} = "No content received from registration server. Please try again later.";
+
+        return %Result;
+    }
+    elsif ( !$OperationResult->{Success} ) {
+        $Result{Reason} = $OperationResult->{ErrorMessage} || "Can't get Token from sever";
+
         return %Result;
     }
 
-    # decode JSON data
-    my $ResponseData = $Self->{JSONObject}->Decode(
-        Data => ${ $Response{Content} },
-    );
-    if ( !$ResponseData || ref $ResponseData ne 'HASH' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Registration - Can't decode JSON",
-        );
-        $Result{Reason} = 'Problems processing server result. Please try again later.';
-        return %Result;
-    }
+    my $ResponseData = $OperationResult->{Data};
 
     # if auth is incorrect
     if ( !defined $ResponseData->{Auth} || $ResponseData->{Auth} ne 'ok' ) {
@@ -240,7 +210,7 @@ sub TokenGet {
 
     # check if token exists in data
     if ( !$ResponseData->{Token} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Registration - received no Token!",
         );
@@ -272,133 +242,167 @@ sub Register {
     my ( $Self, %Param ) = @_;
 
     # check needed parameters
-    for (qw(Token OTRSID Type)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+    for my $Needed (qw(Token OTRSID Type)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $Needed!"
             );
             return;
         }
     }
 
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
     my $SupportDataSending = $Param{SupportDataSending} || 'No';
 
-    # create webuseragent object
-    my $WebUserAgentObject = Kernel::System::WebUserAgent->new(
-        DBObject     => $Self->{DBObject},
-        ConfigObject => $Self->{ConfigObject},
-        LogObject    => $Self->{LogObject},
-        MainObject   => $Self->{MainObject},
-        Timeout      => 10,
-    );
-
     # load operating system info from environment object
-    my %OSInfo = $Self->{EnvironmentObject}->OSInfoGet();
+    my %OSInfo = $Kernel::OM->Get('Kernel::System::Environment')->OSInfoGet();
     my %System = (
         PerlVersion        => sprintf( "%vd", $^V ),
         OSType             => $OSInfo{OS},
         OSVersion          => $OSInfo{OSName},
-        OTRSVersion        => $Self->{ConfigObject}->Get('Version'),
-        FQDN               => $Self->{ConfigObject}->Get('FQDN'),
-        DatabaseVersion    => $Self->{DBObject}->Version(),
+        OTRSVersion        => $ConfigObject->Get('Version'),
+        FQDN               => $ConfigObject->Get('FQDN'),
+        DatabaseVersion    => $Kernel::OM->Get('Kernel::System::DB')->Version(),
         SupportDataSending => $SupportDataSending,
     );
+
+    my $SupportData;
 
     # send SupportData if sending is activated
     if ( $SupportDataSending eq 'Yes' ) {
 
-        my %SupportData = eval {
-            $Self->{SupportDataCollectorObject}->Collect();
+        my %CollectResult = eval {
+            $Kernel::OM->Get('Kernel::System::SupportDataCollector')->Collect();
         };
-        if ( !$SupportData{Success} ) {
-            my $ErrorMessage = $SupportData{ErrorMessage} || $@ || 'unknown error';
-            $Self->{LogObject}->Log(
+        if ( !$CollectResult{Success} ) {
+            my $ErrorMessage = $CollectResult{ErrorMessage} || $@ || 'unknown error';
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => "error",
                 Message  => "SupportData could not be collected ($ErrorMessage)"
             );
         }
 
-        my $JSON = $Self->{JSONObject}->Encode(
-            Data => $SupportData{Result},
-        );
-
-        $System{SupportData} = $JSON;
+        $SupportData = $CollectResult{Result};
     }
 
     # load old registration data if we have this
     my %OldRegistration = $Self->RegistrationDataGet();
 
-    my %Response = $WebUserAgentObject->Request(
-        Type => 'POST',
-        URL  => $Self->{RegistrationURL},
-        Data => {
-            %System,
-            Action      => 'PublicRegistration',
-            Subaction   => 'Register',
-            APIVersion  => $Self->{APIVersion},
-            State       => 'active',
-            OldUniqueID => $OldRegistration{UniqueID} || '',
-            OldAPIKey   => $OldRegistration{APIKey} || '',
-            Token       => $Param{Token},
-            OTRSID      => $Param{OTRSID},
-            Type        => $Param{Type},
-            Description => $Param{Description},
+    my $CloudService = 'SystemRegistration';
+
+    # prepare cloud service request
+    my %RequestParams = (
+        RequestData => {
+            $CloudService => [
+                {
+                    Operation => 'Register',
+                    Data      => {
+                        %System,
+                        APIVersion  => $Self->{APIVersion},
+                        State       => 'active',
+                        OldUniqueID => $OldRegistration{UniqueID} || '',
+                        OldAPIKey   => $OldRegistration{APIKey} || '',
+                        Token       => $Param{Token},
+                        OTRSID      => $Param{OTRSID},
+                        Type        => $Param{Type},
+                        Description => $Param{Description},
+                    },
+                },
+            ],
         },
     );
 
-    # test if the web response was successful
-    if ( $Response{Status} ne '200 OK' ) {
-        $Self->{LogObject}->Log(
+    # if we have SupportData, call SupportDataAdd on the same request
+    if ($SupportData) {
+        push @{ $RequestParams{RequestData}->{$CloudService} }, {
+            Operation => 'SupportDataAdd',
+            Data      => {
+                SupportData => $SupportData,
+            },
+        };
+    }
+
+    # get cloud service object
+    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService');
+
+    # dispatch the cloud service request
+    my $RequestResult = $CloudServiceObject->Request(%RequestParams);
+
+    # as this is the only operation an unsuccessful request means that the operation was also
+    # unsuccessful
+    if ( !IsHashRefWithData($RequestResult) ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'notice',
-            Message  => "Registration - Can't contact server - $Response{Status}",
+            Message  => "Registration - Can't contact registration server",
         );
+
+        return;
+    }
+    elsif ( !$RequestResult->{Success} && $RequestResult->{ErrorMessage} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "Registration - Request Failed ($RequestResult->{ErrorMessage})",
+        );
+
         return;
     }
 
-    if ( !$Response{Content} || ref $Response{Content} ne 'SCALAR' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
+    my $OperationResult = $CloudServiceObject->OperationResultGet(
+        RequestResult => $RequestResult,
+        CloudService  => $CloudService,
+        Operation     => 'Register',
+    );
+
+    if ( !IsHashRefWithData($OperationResult) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
             Message  => "Registration - No content received from server",
         );
+
+        return;
+    }
+    elsif ( !$OperationResult->{Success} ) {
+        my $Reason = $OperationResult->{ErrorMessage} || $OperationResult->{Data}->{Reason} || '';
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Registration - Can not register system " . $Reason,
+        );
+
         return;
     }
 
-    # decode JSON data
-    my $ResponseData = $Self->{JSONObject}->Decode(
-        Data => ${ $Response{Content} },
-    );
-    if ( !$ResponseData || ref $ResponseData ne 'HASH' ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Registration - Can't decode JSON",
-        );
-        return;
-    }
+    my $ResponseData = $OperationResult->{Data};
 
     # check if data exists
     for my $Key (qw(UniqueID APIKey LastUpdateID NextUpdate)) {
         if ( !$ResponseData->{$Key} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Registration - received no $Key!: " . ${ $Response{Content} },
+                Message  => "Registration - received no $Key!: ",
             );
             return;
         }
     }
 
     # log response, add data to system
-    $Self->{LogObject}->Log(
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'info',
         Message  => "Registration - received UniqueID '$ResponseData->{UniqueID}'.",
     );
+
+    # get time object
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
 
     my %RegistrationData = (
         State              => 'registered',
         UniqueID           => $ResponseData->{UniqueID},
         APIKey             => $ResponseData->{APIKey},
         LastUpdateID       => $ResponseData->{LastUpdateID},
-        LastUpdateTime     => $Self->{TimeObject}->CurrentTimestamp(),
+        LastUpdateTime     => $TimeObject->CurrentTimestamp(),
         Type               => $ResponseData->{Type} || $Param{Type},
         Description        => $ResponseData->{Description} || $Param{Description},
         SupportDataSending => $ResponseData->{SupportDataSending} || $SupportDataSending,
@@ -408,13 +412,16 @@ sub Register {
     # otherwise we should store the original unique ID for future reference
     # so we can keep an overview of all previously registered unique IDs
 
+    # get system data object
+    my $SystemDataObject = $Kernel::OM->Get('Kernel::System::SystemData');
+
     if ( !$OldRegistration{UniqueID} ) {
 
         for my $Key (
             qw(State UniqueID APIKey LastUpdateID LastUpdateTime Description SupportDataSending Type)
             )
         {
-            $Self->{SystemDataObject}->SystemDataAdd(
+            $SystemDataObject->SystemDataAdd(
                 Key    => 'Registration::' . $Key,
                 Value  => $RegistrationData{$Key} || '',
                 UserID => 1,
@@ -426,7 +433,7 @@ sub Register {
         # store original UniqueID, but only if we get back a new one
         if ( $OldRegistration{UniqueID} ne $RegistrationData{UniqueID} ) {
 
-            $Self->{SystemDataObject}->SystemDataAdd(
+            $SystemDataObject->SystemDataAdd(
                 Key    => 'RegistrationUniqueIDs::' . $OldRegistration{UniqueID},
                 Value  => $OldRegistration{UniqueID},
                 UserID => 1,
@@ -440,7 +447,7 @@ sub Register {
         {
             if ( defined $OldRegistration{$Key} ) {
 
-                $Self->{SystemDataObject}->SystemDataUpdate(
+                $SystemDataObject->SystemDataUpdate(
                     Key    => 'Registration::' . $Key,
                     Value  => $RegistrationData{$Key} || '',
                     UserID => 1,
@@ -448,7 +455,7 @@ sub Register {
             }
             else {
 
-                $Self->{SystemDataObject}->SystemDataAdd(
+                $SystemDataObject->SystemDataAdd(
                     Key    => 'Registration::' . $Key,
                     Value  => $RegistrationData{$Key},
                     UserID => 1,
@@ -459,30 +466,55 @@ sub Register {
 
     # calculate due date for next update, fall back to 24h
     my $NextUpdateSeconds = int $ResponseData->{NextUpdate} || ( 3600 * 24 );
-    my $DueTime = $Self->{TimeObject}->SystemTime2TimeStamp(
-        SystemTime => $Self->{TimeObject}->SystemTime() + $NextUpdateSeconds,
+    my $DueTime = $TimeObject->SystemTime2TimeStamp(
+        SystemTime => $TimeObject->SystemTime() + $NextUpdateSeconds,
     );
 
+    # get task object
+    my $TaskObject = $Kernel::OM->Get('Kernel::System::Scheduler::TaskManager');
+
     # remove all existing RegistrationUpdate scheduler task
-    my @TaskList = $Self->{TaskObject}->TaskList();
+    my @TaskList = $TaskObject->TaskList();
 
     TASK:
     for my $Task (@TaskList) {
 
         next TASK if $Task->{Type} ne 'RegistrationUpdate';
 
-        $Self->{TaskObject}->TaskDelete( ID => $Task->{ID} );
+        $TaskObject->TaskDelete( ID => $Task->{ID} );
     }
 
     # schedule update in scheduler
     # after first update the updates will reschedule itself
-    my $Result = $Self->{TaskObject}->TaskAdd(
+    my $Result = $TaskObject->TaskAdd(
         Type    => 'RegistrationUpdate',
         DueTime => $DueTime,
         Data    => {
             ReSchedule => 1,
         },
     );
+
+    # check if Support Data could be added
+    if ($SupportData) {
+        my $OperationResult = $CloudServiceObject->OperationResultGet(
+            RequestResult => $RequestResult,
+            CloudService  => $CloudService,
+            Operation     => 'SupportDataAdd',
+        );
+
+        if ( !IsHashRefWithData($OperationResult) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Registration - Can not add Support Data",
+            );
+        }
+        elsif ( !$OperationResult->{Success} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Registration - Can not add Support Data",
+            );
+        }
+    }
 
     return 1;
 }
@@ -500,27 +532,32 @@ Get the registration data from the system.
 sub RegistrationDataGet {
     my ( $Self, %Param ) = @_;
 
-    my %RegistrationData = $Self->{SystemDataObject}->SystemDataGroupGet(
+    my %RegistrationData =
+        $Kernel::OM->Get('Kernel::System::SystemData')->SystemDataGroupGet(
         Group  => 'Registration',
         UserID => 1,
-    );
+        );
 
     # return empty hash if no UniqueID is found
     return () if !$RegistrationData{UniqueID};
 
     if ( $Param{Extended} ) {
+
+        # get config object
+        my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
         $RegistrationData{SupportDataSending} //= 'No';
         $RegistrationData{APIVersion} = $Self->{APIVersion};
 
         # read data from environment object
-        my %OSInfo = $Self->{EnvironmentObject}->OSInfoGet();
+        my %OSInfo = $Kernel::OM->Get('Kernel::System::Environment')->OSInfoGet();
         $RegistrationData{System} = {
             PerlVersion     => sprintf( "%vd", $^V ),
             OSType          => $OSInfo{OS},
             OSVersion       => $OSInfo{OSName},
-            OTRSVersion     => $Self->{ConfigObject}->Get('Version'),
-            FQDN            => $Self->{ConfigObject}->Get('FQDN'),
-            DatabaseVersion => $Self->{DBObject}->Version(),
+            OTRSVersion     => $ConfigObject->Get('Version'),
+            FQDN            => $ConfigObject->Get('FQDN'),
+            DatabaseVersion => $Kernel::OM->Get('Kernel::System::DB')->Version(),
         };
     }
 
@@ -564,24 +601,18 @@ sub RegistrationUpdateSend {
     # get registration data
     my %RegistrationData = $Self->RegistrationDataGet();
 
-    # create webuseragent object
-    my $WebUserAgentObject = Kernel::System::WebUserAgent->new(
-        DBObject     => $Self->{DBObject},
-        ConfigObject => $Self->{ConfigObject},
-        LogObject    => $Self->{LogObject},
-        MainObject   => $Self->{MainObject},
-        Timeout      => 10,
-    );
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # read data from environment object
-    my %OSInfo = $Self->{EnvironmentObject}->OSInfoGet();
+    my %OSInfo = $Kernel::OM->Get('Kernel::System::Environment')->OSInfoGet();
     my %System = (
         PerlVersion     => sprintf( "%vd", $^V ),
         OSType          => $OSInfo{OS},
         OSVersion       => $OSInfo{OSName},
-        OTRSVersion     => $Self->{ConfigObject}->Get('Version'),
-        FQDN            => $Self->{ConfigObject}->Get('FQDN'),
-        DatabaseVersion => $Self->{DBObject}->Version(),
+        OTRSVersion     => $ConfigObject->Get('Version'),
+        FQDN            => $ConfigObject->Get('FQDN'),
+        DatabaseVersion => $Kernel::OM->Get('Kernel::System::DB')->Version(),
     );
 
     # add description and type if they are set
@@ -596,112 +627,180 @@ sub RegistrationUpdateSend {
     # add support data sending flag
     $System{SupportDataSending} = $SupportDataSending;
 
+    my $SupportData;
+
     # send SupportData if sending is activated
     if ( $SupportDataSending eq 'Yes' ) {
 
-        my %SupportData = eval {
-            $Self->{SupportDataCollectorObject}->Collect();
+        my %CollectResult = eval {
+            $Kernel::OM->Get('Kernel::System::SupportDataCollector')->Collect();
         };
-        if ( !$SupportData{Success} ) {
-            my $ErrorMessage = $SupportData{ErrorMessage} || $@ || 'unknown error';
-            $Self->{LogObject}->Log(
+        if ( !$CollectResult{Success} ) {
+            my $ErrorMessage = $CollectResult{ErrorMessage} || $@ || 'unknown error';
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => "error",
                 Message  => "SupportData could not be collected ($ErrorMessage)"
             );
         }
 
-        my $JSON = $Self->{JSONObject}->Encode(
-            Data => $SupportData{Result},
-        );
-
-        $System{SupportData} = $JSON;
+        $SupportData = $CollectResult{Result};
     }
 
-    # define result
-    my %Result = (
-        Success => 0,
-    );
+    my $SystemRegistrationCloudService = 'SystemRegistration';
 
-    my %Response = $WebUserAgentObject->Request(
-        Type => 'POST',
-        URL  => $Self->{RegistrationURL},
-        Data => {
-            %System,
-            Action          => 'PublicRegistration',
-            Subaction       => 'Update',
-            APIVersion      => $Self->{APIVersion},
-            State           => 'active',
-            APIKey          => $RegistrationData{APIKey},
-            LastUpdateID    => $RegistrationData{LastUpdateID},
-            RegistrationKey => $RegistrationData{UniqueID},
+    # prepare cloud service request
+    my %RequestParams = (
+        RequestData => {
+            $SystemRegistrationCloudService => [
+                {
+                    Operation => 'Update',
+                    Data      => {
+                        %System,
+                        APIVersion   => $Self->{APIVersion},
+                        State        => 'active',
+                        LastUpdateID => $RegistrationData{LastUpdateID},
+                    },
+                },
+            ],
         },
     );
 
-    # test if the web response was successful
-    if ( $Response{Status} ne '200 OK' ) {
-        $Result{Reason} = "Can't connect to server - $Response{Status}";
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => "RegistrationUpdate - $Result{Reason}",
-        );
-
-        return %Result;
+    # If we have an installed OTRSBusiness, call BusinessPermissionCheck cloud service
+    my $OTRSBusinessObject    = $Kernel::OM->Get('Kernel::System::OTRSBusiness');
+    my $OTRSBusinessInstalled = $OTRSBusinessObject->OTRSBusinessIsInstalled();
+    if ($OTRSBusinessInstalled) {
+        push @{ $RequestParams{RequestData}->{OTRSBusiness} }, {
+            Operation => 'BusinessPermission',
+            Data      => {},
+        };
+        # Get OTRSBusiness::ReleaseChannel from SysConfig (Stable = 1, Development = 0)
+        my $OnlyStable = $Kernel::OM->Get('Kernel::Config')->Get('OTRSBusiness::ReleaseChannel') // 1;
+        push @{ $RequestParams{RequestData}->{OTRSBusiness} }, {
+            Operation => 'BusinessVersionCheck',
+            Data      => {
+                OnlyStable => $OnlyStable,
+            },
+        };
     }
 
-    # check if we have content as a scalar ref
-    if ( !$Response{Content} || ref $Response{Content} ne 'SCALAR' ) {
-        $Result{Reason} = 'No content received from registration server. Please try again later.';
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => "RegistrationUpdate - $Result{Reason}",
-        );
-        return %Result;
+    # if we have SupportData, call SupportDataAdd on the same request
+    if ($SupportData) {
+        push @{ $RequestParams{RequestData}->{$SystemRegistrationCloudService} }, {
+            Operation => 'SupportDataAdd',
+            Data      => {
+                SupportData => $SupportData,
+            },
+        };
     }
 
-    # convert internal used charset
-    $Self->{EncodeObject}->EncodeInput( $Response{Content} );
+    # get cloud service object
+    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService');
 
-    # decode JSON data
-    my $ResponseData = $Self->{JSONObject}->Decode(
-        Data => ${ $Response{Content} },
+    # dispatch the cloud service request
+    my $RequestResult = $CloudServiceObject->Request(%RequestParams);
+
+    # as this is the only operation an unsuccessful request means that the operation was also
+    # unsuccessful
+    if ( !IsHashRefWithData($RequestResult) ) {
+
+        my $Message = "RegistrationUpdate - Can't contact registration server";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => $Message
+        );
+
+        return (
+            Success => 0,
+            Reason  => $Message,
+        );
+    }
+    elsif ( !$RequestResult->{Success} && $RequestResult->{ErrorMessage} ) {
+
+        my $Message = "RegistrationUpdate - Request Failed ($RequestResult->{ErrorMessage})";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => $Message,
+        );
+
+        return (
+            Success => 0,
+            Reason  => $Message,
+        );
+    }
+
+    my $OperationResult = $CloudServiceObject->OperationResultGet(
+        RequestResult => $RequestResult,
+        CloudService  => $SystemRegistrationCloudService,
+        Operation     => 'Update',
     );
-    if ( !$ResponseData || ref $ResponseData ne 'HASH' ) {
-        $Result{Reason} = "Can't decode JSON: '" . ${ $Response{Content} } . "'!";
-        $Self->{LogObject}->Log(
+
+    if ( !IsHashRefWithData($OperationResult) ) {
+
+        my $Message = "RegistrationUpdate - No content received from server";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "RegistrationUpdate - $Result{Reason}",
+            Message  => $Message,
         );
-        return %Result;
+
+        return (
+            Success => 0,
+            Reason  => $Message,
+        );
     }
+    elsif ( !$OperationResult->{Success} ) {
+
+        my $Reason = $OperationResult->{ErrorMessage} || $OperationResult->{Data}->{Reason} || '';
+        my $Message = "RegistrationUpdate - Can not update system $Reason";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $Message,
+        );
+
+        return (
+            Success => 0,
+            Reason  => $Message,
+        );
+    }
+
+    my $ResponseData = $OperationResult->{Data};
 
     # check if data exists
-    ATTRIBUTE:
     for my $Attribute (qw(UpdateID Type Description)) {
 
-        next ATTRIBUTE if defined $ResponseData->{$Attribute};
+        if ( !defined $ResponseData->{$Attribute} ) {
 
-        $Result{Reason} = "Received no '$Attribute': '" . ${ $Response{Content} } . "'!";
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "RegistrationUpdate - $Result{Reason}!",
-        );
-        return %Result;
+            my $Message = "Received no '$Attribute'!";
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "RegistrationUpdate - $Message!",
+            );
+            return (
+                Success => 0,
+                Reason  => $Message,
+            );
+        }
     }
 
     # log response, write data.
-    $Self->{LogObject}->Log(
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'info',
         Message  => "RegistrationUpdate - received UpdateID '$ResponseData->{UpdateID}'.",
     );
 
+    # get time object
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
     # gather and update provided data in SystemData table
     my %UpdateData = (
         LastUpdateID       => $ResponseData->{UpdateID},
-        LastUpdateTime     => $Self->{TimeObject}->CurrentTimestamp(),
+        LastUpdateTime     => $TimeObject->CurrentTimestamp(),
         Type               => $ResponseData->{Type},
         Description        => $ResponseData->{Description},
         SupportDataSending => $ResponseData->{SupportDataSending} || $SupportDataSending,
     );
+
+    # get system data object
+    my $SystemDataObject = $Kernel::OM->Get('Kernel::System::SystemData');
 
     # if the registration server provided a new UniqueID and API key, use those.
     if ( $ResponseData->{UniqueID} && $ResponseData->{APIKey} ) {
@@ -711,7 +810,7 @@ sub RegistrationUpdateSend {
         $UpdateData{APIKey}   = $ResponseData->{APIKey};
 
         # preserve old UniqueID
-        $Self->{SystemDataObject}->SystemDataAdd(
+        $SystemDataObject->SystemDataAdd(
             Key    => 'RegistrationUniqueIDs::' . $RegistrationData{UniqueID},
             Value  => $RegistrationData{UniqueID},
             UserID => 1,
@@ -721,14 +820,14 @@ sub RegistrationUpdateSend {
     for my $Key ( sort keys %UpdateData ) {
 
         if ( defined $RegistrationData{$Key} ) {
-            $Self->{SystemDataObject}->SystemDataUpdate(
+            $SystemDataObject->SystemDataUpdate(
                 Key    => 'Registration::' . $Key,
                 Value  => $UpdateData{$Key},
                 UserID => 1,
             );
         }
         else {
-            $Self->{SystemDataObject}->SystemDataAdd(
+            $SystemDataObject->SystemDataAdd(
                 Key    => 'Registration::' . $Key,
                 Value  => $UpdateData{$Key},
                 UserID => 1,
@@ -736,12 +835,91 @@ sub RegistrationUpdateSend {
         }
     }
 
-    # if called from the scheduler process, cleanup the redundant scheduler
+    my $Success = 1;
+    my $Reason;
+
+    if ($OTRSBusinessInstalled) {
+
+        # Check result of BusinessPermission check
+        my $OperationResult = $CloudServiceObject->OperationResultGet(
+            RequestResult => $RequestResult,
+            CloudService  => 'OTRSBusiness',
+            Operation     => 'BusinessPermission',
+        );
+
+        if ( !IsHashRefWithData($OperationResult) || !$OperationResult->{Success} ) {
+            $Success = 0;
+            $Reason .= 'RegistrationUpdate - could not perform BusinessPermission check.';
+            if ( IsHashRefWithData($OperationResult) ) {
+                $Reason .= $OperationResult->{ErrorMessage};
+            }
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $Reason,
+            );
+        }
+        else {
+            $OTRSBusinessObject->HandleBusinessPermissionCloudServiceResult(
+                OperationResult => $OperationResult,
+            );
+        }
+
+        # Check result of BusinessVersionCheck
+        $OperationResult = $CloudServiceObject->OperationResultGet(
+            RequestResult => $RequestResult,
+            CloudService  => 'OTRSBusiness',
+            Operation     => 'BusinessVersionCheck',
+        );
+
+        if ( !IsHashRefWithData($OperationResult) || !$OperationResult->{Success} ) {
+            $Success = 0;
+            $Reason .= 'RegistrationUpdate - could not perform BusinessPermission check.';
+            if ( IsHashRefWithData($OperationResult) ) {
+                $Reason .= $OperationResult->{ErrorMessage};
+            }
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $Reason,
+            );
+        }
+        else {
+            $OTRSBusinessObject->HandleBusinessVersionCheckCloudServiceResult(
+                OperationResult => $OperationResult,
+            );
+        }
+    }
+
+    # check if Support Data could be added
+    if ($SupportData) {
+        my $OperationResult = $CloudServiceObject->OperationResultGet(
+            RequestResult => $RequestResult,
+            CloudService  => $SystemRegistrationCloudService,
+            Operation     => 'SupportDataAdd',
+        );
+
+        if ( !IsHashRefWithData($OperationResult) || !$OperationResult->{Success} ) {
+            $Success = 0;
+            $Reason .= "RegistrationUpdate - Can not add Support Data.";
+            if ( IsHashRefWithData($OperationResult) ) {
+                $Reason .= $OperationResult->{ErrorMessage} || $OperationResult->{Data}->{Reason} || '';
+
+            }
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $Reason,
+            );
+        }
+    }
+
+    # if called from the scheduler process, to cleanup the redundant scheduler
     # registration update tasks
     if ( $Param{RegistrationUpdateTaskID} ) {
 
-        # get all existing scheduler tasks
-        my @TaskList = $Self->{TaskObject}->TaskList();
+        # get task object
+        my $TaskObject = $Kernel::OM->Get('Kernel::System::Scheduler::TaskManager');
+
+        # get all existing scheduler task
+        my @TaskList = $TaskObject->TaskList();
 
         # count the redundant task in the scheduler task table
         my @RegistrationUpdateTasks;
@@ -761,15 +939,16 @@ sub RegistrationUpdateSend {
         if (@RegistrationUpdateTasks) {
 
             for my $RegistrationUpdateTask (@RegistrationUpdateTasks) {
-                $Self->{TaskObject}->TaskDelete( ID => $RegistrationUpdateTask->{ID} );
+                $TaskObject->TaskDelete( ID => $RegistrationUpdateTask->{ID} );
             }
         }
     }
 
-    $Result{Success} = 1;
-    $Result{ReScheduleIn} = $ResponseData->{NextUpdate} // ( 3600 * 7 * 24 );
-
-    return %Result;
+    return (
+        Success      => $Success,
+        Reason       => $Reason,
+        ReScheduleIn => $ResponseData->{NextUpdate} // ( 3600 * 7 * 24 ),
+    );
 }
 
 =item Deregister()
@@ -789,105 +968,122 @@ sub Deregister {
     my ( $Self, %Param ) = @_;
 
     # check needed parameters
-    for (qw(Token OTRSID)) {
-        if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+    for my $Needed (qw(Token OTRSID)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $Needed!"
             );
             return;
         }
     }
 
-    # create webuseragent object
-    my $WebUserAgentObject = Kernel::System::WebUserAgent->new(
-        DBObject     => $Self->{DBObject},
-        ConfigObject => $Self->{ConfigObject},
-        LogObject    => $Self->{LogObject},
-        MainObject   => $Self->{MainObject},
-        Timeout      => 10,
-    );
-
     my %RegistrationInfo = $Self->RegistrationDataGet();
 
-    my %Response = $WebUserAgentObject->Request(
-        Type => 'POST',
-        URL  => $Self->{RegistrationURL},
-        Data => {
-            Action          => 'PublicRegistration',
-            Subaction       => 'Deregister',
-            APIVersion      => $Self->{APIVersion},
-            OTRSID          => $Param{OTRSID},
-            Token           => $Param{Token},
-            APIKey          => $RegistrationInfo{APIKey},
-            RegistrationKey => $RegistrationInfo{UniqueID},
+    my $CloudService = 'SystemRegistration';
+    my $Operation    = 'Deregister';
+
+    # prepare cloud service request
+    my %RequestParams = (
+        RequestData => {
+            $CloudService => [
+                {
+                    Operation => $Operation,
+                    Data      => {
+                        APIVersion => $Self->{APIVersion},
+                        OTRSID     => $Param{OTRSID},
+                        Token      => $Param{Token},
+                        APIKey     => $RegistrationInfo{APIKey},
+                        UniqueID   => $RegistrationInfo{UniqueID},
+                    },
+                },
+            ],
         },
     );
 
-    # test if the web response was successful
-    if ( $Response{Status} ne '200 OK' ) {
-        my $Result = "Can't contact server - $Response{Status}";
-        $Self->{LogObject}->Log(
+    # get cloud service object
+    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService');
+
+    # dispatch the cloud service request
+    my $RequestResult = $CloudServiceObject->Request(%RequestParams);
+
+    # as this is the only operation an unsuccessful request means that the operation was also
+    # unsuccessful
+    if ( !IsHashRefWithData($RequestResult) ) {
+
+        my $Message = "Deregistration - Can't contact registration server";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'notice',
-            Message  => "Registration - $Result",
+            Message  => $Message,
         );
-        return $Result;
+
+        return $Message;
+    }
+    elsif ( !$RequestResult->{Success} && $RequestResult->{ErrorMessage} ) {
+
+        my $Message = "Deregistration - Request Failed ($RequestResult->{ErrorMessage})";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => $Message,
+        );
+
+        return $Message;
     }
 
-    if ( !$Response{Content} || ref $Response{Content} ne 'SCALAR' ) {
-        my $Result = 'No content received from server';
-        $Self->{LogObject}->Log(
-            Priority => 'notice',
-            Message  => "Registration - $Result",
-        );
-        return $Result;
-    }
-
-    # decode JSON data
-    my $ResponseData = $Self->{JSONObject}->Decode(
-        Data => ${ $Response{Content} },
+    my $OperationResult = $CloudServiceObject->OperationResultGet(
+        RequestResult => $RequestResult,
+        CloudService  => $CloudService,
+        Operation     => $Operation,
     );
-    if ( !$ResponseData || ref $ResponseData ne 'HASH' ) {
-        my $Result = 'Can\'t decode JSON';
-        $Self->{LogObject}->Log(
+
+    if ( !IsHashRefWithData($OperationResult) ) {
+
+        my $Message = "Deregistration - No content received from server";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Deregistration - $Result",
+            Message  => $Message,
         );
-        return $Result;
+
+        return $Message;
+    }
+    elsif ( !$OperationResult->{Success} ) {
+
+        my $Reason = $OperationResult->{ErrorMessage} || $OperationResult->{Data}->{Reason} || '';
+        my $Message = "Deregistration - Can not deregister system: $Reason";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $Message,
+        );
+
+        return $Message;
     }
 
-    # check success
-    if ( !$ResponseData->{Success} ) {
-
-        my $Result = "Received no response";
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => "Deregistration $Result " . ${ $Response{Content} },
-        );
-        return $Result;
-    }
+    my $ResponseData = $OperationResult->{Data};
 
     # log response, add data to system
-    $Self->{LogObject}->Log(
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'info',
         Message  => "Registration - deregistered '$RegistrationInfo{UniqueID}'.",
     );
 
-    $Self->{SystemDataObject}->SystemDataUpdate(
+    $Kernel::OM->Get('Kernel::System::SystemData')->SystemDataUpdate(
         Key    => 'Registration::State',
         Value  => 'deregistered',
         UserID => 1,
     );
 
+    # get task object
+    my $TaskObject = $Kernel::OM->Get('Kernel::System::Scheduler::TaskManager');
+
     # remove RegistrationUpdate scheduler task
-    my @TaskList = $Self->{TaskObject}->TaskList();
+    my @TaskList = $TaskObject->TaskList();
 
     TASK:
     for my $Task (@TaskList) {
 
         next TASK if $Task->{Type} ne 'RegistrationUpdate';
 
-        $Self->{TaskObject}->TaskDelete( ID => $Task->{ID} );
+        $TaskObject->TaskDelete( ID => $Task->{ID} );
     }
 
     return 1;

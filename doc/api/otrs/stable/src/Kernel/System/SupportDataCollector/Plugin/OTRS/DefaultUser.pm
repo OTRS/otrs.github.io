@@ -14,9 +14,11 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
-use Kernel::System::Auth;
-use Kernel::System::User;
-use Kernel::System::Group;
+our @ObjectDependencies = (
+    'Kernel::System::Auth',
+    'Kernel::System::Group',
+    'Kernel::System::User',
+);
 
 sub GetDisplayPath {
     return 'OTRS';
@@ -25,9 +27,11 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    my $UserObject  = Kernel::System::User->new( %{$Self} );
-    my $GroupObject = Kernel::System::Group->new( %{$Self} );
-    my %UserList    = $UserObject->UserList(
+    # get needed objects
+    my $UserObject  = $Kernel::OM->Get('Kernel::System::User');
+    my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+
+    my %UserList = $UserObject->UserList(
         Type  => 'Short',
         Valid => '1',
     );
@@ -44,13 +48,8 @@ sub Run {
     }
 
     if ($SuperUserID) {
-        my $AuthObject = Kernel::System::Auth->new(
-            %{$Self},
-            UserObject  => $UserObject,
-            GroupObject => $GroupObject,
-        );
 
-        $DefaultPassword = $AuthObject->Auth(
+        $DefaultPassword = $Kernel::OM->Get('Kernel::System::Auth')->Auth(
             User => 'root@localhost',
             Pw   => 'root',
         );

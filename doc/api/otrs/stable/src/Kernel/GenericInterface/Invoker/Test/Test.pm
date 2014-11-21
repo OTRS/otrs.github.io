@@ -14,6 +14,11 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(IsString IsStringWithData);
 
+# prevent 'Used once' warning for Kernel::OM
+use Kernel::System::ObjectManager;
+
+our $ObjectManagerDisabled = 1;
+
 =head1 NAME
 
 Kernel::GenericInterface::Invoker::Test::Test - GenericInterface test Invoker backend
@@ -41,16 +46,14 @@ sub new {
     bless( $Self, $Type );
 
     # check needed params
-    for my $Needed (qw(DebuggerObject MainObject TimeObject)) {
-        if ( !$Param{$Needed} ) {
-            return {
-                Success      => 0,
-                ErrorMessage => "Got no $Needed!"
-            };
-        }
-
-        $Self->{$Needed} = $Param{$Needed};
+    if ( !$Param{DebuggerObject} ) {
+        return {
+            Success      => 0,
+            ErrorMessage => "Got no DebuggerObject!"
+        };
     }
+
+    $Self->{DebuggerObject} = $Param{DebuggerObject};
 
     return $Self;
 }
@@ -94,7 +97,7 @@ sub PrepareRequest {
 
     # check request for system time
     if ( IsStringWithData( $Param{Data}->{GetSystemTime} ) && $Param{Data}->{GetSystemTime} ) {
-        $ReturnData{SystemTime} = $Self->{TimeObject}->SystemTime();
+        $ReturnData{SystemTime} = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
     }
 
     return {
@@ -131,10 +134,12 @@ sub HandleResponse {
     # if there was an error in the response, forward it
     if ( !$Param{ResponseSuccess} ) {
         if ( !IsStringWithData( $Param{ResponseErrorMessage} ) ) {
+
             return $Self->{DebuggerObject}->Error(
                 Summary => 'Got response error, but no response error message!',
             );
         }
+
         return {
             Success      => 0,
             ErrorMessage => $Param{ResponseErrorMessage},
@@ -143,6 +148,7 @@ sub HandleResponse {
 
     # we need a TicketNumber
     if ( !IsStringWithData( $Param{Data}->{TicketNumber} ) ) {
+
         return $Self->{DebuggerObject}->Error( Summary => 'Got no TicketNumber!' );
     }
 
@@ -154,6 +160,7 @@ sub HandleResponse {
     # check Action
     if ( IsStringWithData( $Param{Data}->{Action} ) ) {
         if ( $Param{Data}->{Action} !~ m{ \A ( .*? ) Test \z }xms ) {
+
             return $Self->{DebuggerObject}->Error(
                 Summary => 'Got Action but it is not in required format!',
             );

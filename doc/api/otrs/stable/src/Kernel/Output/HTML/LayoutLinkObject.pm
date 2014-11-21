@@ -743,7 +743,7 @@ sub _LinkObjectContentStringCreate {
 
             # translate
             if ( $Content->{Translate} ) {
-                $LinkName = $Param{LayoutObject}->{LanguageObject}->Get($LinkName);
+                $LinkName = $Param{LayoutObject}->{LanguageObject}->Translate($LinkName);
             }
 
             push @LinkNameList, $LinkName;
@@ -785,7 +785,7 @@ sub _LinkObjectContentStringCreate {
 
             # translate
             if ( $Content->{Translate} ) {
-                $LinkName = $Param{LayoutObject}->{LanguageObject}->Get($LinkName);
+                $LinkName = $Param{LayoutObject}->{LanguageObject}->Translate($LinkName);
             }
 
             # run checkbox block

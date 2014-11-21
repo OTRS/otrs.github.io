@@ -14,6 +14,8 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(IsHashRefWithData IsStringWithData);
 
+our $ObjectManagerDisabled = 1;
+
 =head1 NAME
 
 Kernel::GenericInterface::Mapping::Test - GenericInterface test data mapping backend
@@ -41,8 +43,9 @@ sub new {
     bless( $Self, $Type );
 
     # check needed params
-    for my $Needed (qw(DebuggerObject MainObject MappingConfig)) {
+    for my $Needed (qw(DebuggerObject MappingConfig)) {
         if ( !$Param{$Needed} ) {
+
             return {
                 Success      => 0,
                 ErrorMessage => "Got no $Needed!"
@@ -53,6 +56,7 @@ sub new {
 
     # check mapping config
     if ( !IsHashRefWithData( $Param{MappingConfig} ) ) {
+
         return $Self->{DebuggerObject}->Error(
             Summary => 'Got no MappingConfig as hash ref with content!',
         );
@@ -64,6 +68,7 @@ sub new {
         && !IsHashRefWithData( $Param{MappingConfig}->{Config} )
         )
     {
+
         return $Self->{DebuggerObject}->Error(
             Summary => 'Got MappingConfig with Data, but Data is no hash ref with content!',
         );
@@ -104,6 +109,7 @@ sub Map {
 
     # check data - only accept undef or hash ref
     if ( defined $Param{Data} && ref $Param{Data} ne 'HASH' ) {
+
         return $Self->{DebuggerObject}->Error(
             Summary => 'Got Data but it is not a hash ref in Mapping Test backend!'
         );
@@ -111,6 +117,7 @@ sub Map {
 
     # return if data is empty
     if ( !defined $Param{Data} || !%{ $Param{Data} } ) {
+
         return {
             Success => 1,
             Data    => {},
@@ -123,6 +130,7 @@ sub Map {
         || !defined $Self->{MappingConfig}->{Config}->{TestOption}
         )
     {
+
         return {
             Success => 1,
             Data    => $Param{Data},
@@ -131,6 +139,7 @@ sub Map {
 
     # check TestOption format
     if ( !IsStringWithData( $Self->{MappingConfig}->{Config}->{TestOption} ) ) {
+
         return $Self->{DebuggerObject}->Error(
             Summary => 'Got no TestOption as string with value!',
         );

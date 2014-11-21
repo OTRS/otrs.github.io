@@ -12,16 +12,17 @@ package Kernel::System::Web::InterfacePublic;
 use strict;
 use warnings;
 
-# all framework needed  modules
-use Kernel::Config;
-use Kernel::System::Log;
-use Kernel::System::Main;
-use Kernel::System::Encode;
-use Kernel::System::Time;
-use Kernel::System::Web::Request;
-use Kernel::System::DB;
-use Kernel::System::CustomerUser;
-use Kernel::Output::HTML::Layout;
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::Output::HTML::Layout',
+    'Kernel::System::CustomerUser',
+    'Kernel::System::DB',
+    'Kernel::System::Encode',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+    'Kernel::System::Time',
+    'Kernel::System::Web::Request',
+);
 
 =head1 NAME
 
@@ -65,18 +66,27 @@ sub new {
     $Self->{PerformanceLogStart} = time();
 
     # create common framework objects 1/3
-    $Self->{ConfigObject} = Kernel::Config->new();
-    $Self->{LogObject}    = Kernel::System::Log->new(
-        LogPrefix => $Self->{ConfigObject}->Get('CGILogPrefix'),
-        %{$Self},
+    $Self->{ConfigObject} = $Kernel::OM->Get('Kernel::Config');
+
+    $Kernel::OM->ObjectParamAdd(
+        'Kernel::System::Log' => {
+            LogPrefix => $Self->{ConfigObject}->Get('CGILogPrefix'),
+        },
+        'Kernel::System::Web::Request' => {
+            WebRequest => $Param{WebRequest} || 0,
+        },
+
+        # Don't autoconnect as this would cause internal server errors on failure.
+        'Kernel::System::DB' => {
+            AutoConnectNo => 1,
+        },
     );
-    $Self->{EncodeObject} = Kernel::System::Encode->new( %{$Self} );
-    $Self->{MainObject}   = Kernel::System::Main->new( %{$Self} );
-    $Self->{TimeObject}   = Kernel::System::Time->new( %{$Self} );
-    $Self->{ParamObject}  = Kernel::System::Web::Request->new(
-        %{$Self},
-        WebRequest => $Param{WebRequest} || 0,
-    );
+
+    $Self->{EncodeObject} = $Kernel::OM->Get('Kernel::System::Encode');
+    $Self->{LogObject}    = $Kernel::OM->Get('Kernel::System::Log');
+    $Self->{MainObject}   = $Kernel::OM->Get('Kernel::System::Main');
+    $Self->{ParamObject}  = $Kernel::OM->Get('Kernel::System::Web::Request');
+    $Self->{TimeObject}   = $Kernel::OM->Get('Kernel::System::Time');
 
     # debug info
     if ( $Self->{Debug} ) {
@@ -146,17 +156,28 @@ sub Run {
     # security check Action Param (replace non-word chars)
     $Param{Action} =~ s/\W//g;
 
-    # create common framework objects 2/3
-    $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new(
-        %Param,
-        SessionIDCookie => 1,
-        %{$Self},
-        Lang => $Param{Lang},
+    $Kernel::OM->ObjectParamAdd(
+        'Kernel::Output::HTML::Layout' => {
+            %Param,
+            SessionIDCookie => 1,
+            Debug           => $Self->{Debug},
+        },
     );
 
-    # check common objects
-    $Self->{DBObject} = Kernel::System::DB->new( %{$Self} );
-    if ( !$Self->{DBObject} ) {
+    $Self->{DBObject} = $Kernel::OM->Get('Kernel::System::DB');
+    my $DBCanConnect = $Self->{DBObject}->Connect();
+
+    # Restore original behaviour of Kernel::System::DB for all objects created in future
+    $Kernel::OM->ObjectParamAdd(
+        'Kernel::System::DB' => {
+            AutoConnectNo => undef,
+        },
+    );
+
+    # create common framework objects 2/3
+    $Self->{LayoutObject} = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    if ( !$DBCanConnect ) {
         $Self->{LayoutObject}->CustomerFatalError( Comment => 'Please contact your administrator' );
     }
     if ( $Self->{ParamObject}->Error() ) {
@@ -167,21 +188,12 @@ sub Run {
     }
 
     # create common framework objects 3/3
-    $Self->{UserObject} = Kernel::System::CustomerUser->new( %{$Self} );
+    $Self->{UserObject} = $Kernel::OM->Get('Kernel::System::CustomerUser');
 
     # application and add-on application common objects
     my %CommonObject = %{ $Self->{ConfigObject}->Get('PublicFrontend::CommonObject') };
     for my $Key ( sort keys %CommonObject ) {
-        if ( $Self->{MainObject}->Require( $CommonObject{$Key} ) ) {
-            $Self->{$Key} = $CommonObject{$Key}->new( %{$Self} );
-        }
-        else {
-
-            # print error
-            $Self->{LayoutObject}->CustomerFatalError(
-                Comment => 'Please contact your administrator',
-            );
-        }
+        $Self->{$Key} //= $Kernel::OM->Get( $CommonObject{$Key} );
     }
 
     # run modules if a version value exists

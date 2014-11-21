@@ -12,18 +12,13 @@ package Kernel::GenericInterface::Operation::Session::Common;
 use strict;
 use warnings;
 
-use Kernel::System::Auth;
-use Kernel::System::AuthSession;
-use Kernel::System::CustomerAuth;
-use Kernel::System::CustomerGroup;
-use Kernel::System::CustomerUser;
-use Kernel::System::Group;
-use Kernel::System::User;
 use Kernel::System::VariableCheck qw(:all);
+
+our $ObjectManagerDisabled = 1;
 
 =head1 NAME
 
-Kernel::GenericInterface::Operation::Common - common operation functions
+Kernel::GenericInterface::Operation::Session::Common - Base class for Session Operations
 
 =head1 SYNOPSIS
 
@@ -32,104 +27,6 @@ Kernel::GenericInterface::Operation::Common - common operation functions
 =over 4
 
 =cut
-
-=item new()
-
-create an object
-
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::GenericInterface::Debugger;
-    use Kernel::GenericInterface::Operation::Session::Common;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $DebuggerObject = Kernel::GenericInterface::Debugger->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-
-        DebuggerConfig   => {
-            DebugThreshold  => 'debug',
-            TestMode        => 0,           # optional, in testing mode the data will not be
-                                            #   written to the DB
-            ...
-        },
-    my $SessionCommonObject = Kernel::GenericInterface::Operation::Session::Common->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-        DebuggerObject     => $DebuggerObject,
-        WebserviceID       => $WebserviceID,             # ID of the currently used web service
-    );
-
-=cut
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # check needed objects
-    for my $Needed (
-        qw( DebuggerObject MainObject TimeObject ConfigObject LogObject DBObject EncodeObject)
-        )
-    {
-
-        if ( !$Param{$Needed} ) {
-            return {
-                Success      => 0,
-                ErrorMessage => "Got no $Needed!"
-            };
-        }
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    # create additional objects
-    $Self->{SessionObject} = Kernel::System::AuthSession->new( %{$Self} );
-    $Self->{UserObject}    = Kernel::System::User->new( %{$Self} );
-    $Self->{GroupObject}   = Kernel::System::Group->new( %{$Self} );
-    $Self->{AuthObject}    = Kernel::System::Auth->new( %{$Self} );
-
-    $Self->{CustomerUserObject}  = Kernel::System::CustomerUser->new( %{$Self} );
-    $Self->{CustomerGroupObject} = Kernel::System::CustomerGroup->new( %{$Self} );
-    $Self->{CustomerAuthObject}  = Kernel::System::CustomerAuth->new( %{$Self} );
-
-    return $Self;
-}
 
 =item CreateSessionID()
 
@@ -166,11 +63,11 @@ sub CreateSessionID {
         my $PostUser = $Param{Data}->{UserLogin} || '';
 
         # check submitted data
-        $User = $Self->{AuthObject}->Auth(
+        $User = $Kernel::OM->Get('Kernel::System::Auth')->Auth(
             User => $PostUser,
             Pw   => $PostPw,
         );
-        %UserData = $Self->{UserObject}->GetUserData(
+        %UserData = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
             User  => $User,
             Valid => 1,
         );
@@ -182,11 +79,11 @@ sub CreateSessionID {
         my $PostUser = $Param{Data}->{CustomerUserLogin} || '';
 
         # check submitted data
-        $User = $Self->{CustomerAuthObject}->Auth(
+        $User = $Kernel::OM->Get('Kernel::System::CustomerAuth')->Auth(
             User => $PostUser,
             Pw   => $PostPw,
         );
-        %UserData = $Self->{CustomerUserObject}->CustomerUserDataGet(
+        %UserData = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
             User  => $PostUser,
             Valid => 1,
         );
@@ -196,11 +93,11 @@ sub CreateSessionID {
     # login is invalid
     return if !$User;
 
-    my $GroupObject = $UserType eq 'User' ? 'GroupObject' : 'CustomerGroupObject';
+    my $GroupObjectName = $UserType eq 'User' ? 'Kernel::System::Group' : 'Kernel::System::CustomerGroup';
 
     # get groups rw/ro
     for my $Type (qw(rw ro)) {
-        my %GroupData = $Self->{$GroupObject}->GroupMemberList(
+        my %GroupData = $Kernel::OM->Get($GroupObjectName)->GroupMemberList(
             Result => 'HASH',
             Type   => $Type,
             UserID => $UserData{UserID},
@@ -216,9 +113,9 @@ sub CreateSessionID {
     }
 
     # create new session id
-    my $NewSessionID = $Self->{SessionObject}->CreateSessionID(
+    my $NewSessionID = $Kernel::OM->Get('Kernel::System::AuthSession')->CreateSessionID(
         %UserData,
-        UserLastRequest => $Self->{TimeObject}->SystemTime(),
+        UserLastRequest => $Kernel::OM->Get('Kernel::System::Time')->SystemTime(),
         UserType        => $UserType,
     );
 

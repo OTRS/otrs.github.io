@@ -15,7 +15,12 @@ use warnings;
 use Scalar::Util;
 
 use Kernel::System::VariableCheck qw(:all);
-use Kernel::System::Ticket;
+
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+    'Kernel::System::Log',
+    'Kernel::System::Ticket',
+);
 
 =head1 NAME
 
@@ -39,37 +44,8 @@ by using Kernel::System::DynamicField::Backend->new();
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # get needed objects
-    for my $Needed (
-        qw(ConfigObject EncodeObject LogObject MainObject DBObject TimeObject)
-        )
-    {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    # check for TicketObject
-    if ( $Param{TicketObject} ) {
-
-        $Self->{TicketObject} = $Param{TicketObject};
-
-        # Make ticket object reference weak so it will not count as a reference on objects destroy.
-        #   This is because the TicketObject has a Kernel::DynamicField::Backend object, which has this
-        #   object, which has a TicketObject again. Without weaken() we'd have a cyclic reference.
-        Scalar::Util::weaken( $Self->{TicketObject} );
-    }
-
-    # otherwise create it
-    else {
-
-        # Here we must not call weaken(), because this is the only reference
-        $Self->{TicketObject} = Kernel::System::Ticket->new( %{$Self} );
-    }
 
     return $Self;
 }
@@ -94,9 +70,9 @@ sub PostValueSet {
     # check needed stuff
     for my $Needed (qw(DynamicFieldConfig ObjectID UserID)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed!"
+                Message  => "Need $Needed!",
             );
             return;
         }
@@ -104,7 +80,7 @@ sub PostValueSet {
 
     # check DynamicFieldConfig (general)
     if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "The field configuration is invalid",
         );
@@ -114,21 +90,39 @@ sub PostValueSet {
     # check DynamicFieldConfig (internally)
     for my $Needed (qw(ID FieldType ObjectType)) {
         if ( !$Param{DynamicFieldConfig}->{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed in DynamicFieldConfig!"
+                Message  => "Need $Needed in DynamicFieldConfig!",
             );
             return;
         }
     }
 
-    my %Article = $Self->{TicketObject}->ArticleGet(
+    # Don't hold a permanent reference to the TicketObject.
+    #   This is because the TicketObject has a Kernel::DynamicField::Backend object, which has this
+    #   object, which has a TicketObject again. Without weaken() we'd have a cyclic reference.
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    my %Article = $TicketObject->ArticleGet(
         ArticleID     => $Param{ObjectID},
         DynamicFields => 0,
     );
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # update change time
+    return if !$DBObject->Do(
+        SQL => 'UPDATE ticket SET change_time = current_timestamp, '
+            . ' change_by = ? WHERE id = ?',
+        Bind => [ \$Param{UserID}, \$Article{TicketID} ],
+    );
+
+    # clear ticket cache
+    $TicketObject->_TicketCacheClear( TicketID => $Article{TicketID} );
+
     # trigger event
-    $Self->{TicketObject}->EventHandler(
+    $TicketObject->EventHandler(
         Event => 'ArticleDynamicFieldUpdate',
         Data  => {
             TicketID  => $Article{TicketID},

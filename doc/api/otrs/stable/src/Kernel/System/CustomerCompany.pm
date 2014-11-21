@@ -12,11 +12,13 @@ package Kernel::System::CustomerCompany;
 use strict;
 use warnings;
 
-use Kernel::System::EventHandler;
-use Kernel::System::Valid;
-use Kernel::System::Cache;
-
 use base qw(Kernel::System::EventHandler);
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+);
 
 =head1 NAME
 
@@ -24,7 +26,7 @@ Kernel::System::CustomerCompany - customer company lib
 
 =head1 SYNOPSIS
 
-All Customer Company functions. E.g. to add and update customer companies.
+All Customer functions. E.g. to add and update customer companies.
 
 =head1 PUBLIC INTERFACE
 
@@ -34,41 +36,11 @@ All Customer Company functions. E.g. to add and update customer companies.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::CustomerCompany;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $CustomerCompanyObject = Kernel::System::CustomerCompany->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        EncodeObject => $EncodeObject,
-        MainObject   => $MainObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $CustomerCompanyObject = $Kernel::OM->Get('Kernel::System::CustomerCompany');
 
 =cut
 
@@ -79,38 +51,30 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # check needed objects
-    for (qw(DBObject ConfigObject LogObject MainObject EncodeObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
-
-    $Self->{ValidObject} = Kernel::System::Valid->new( %{$Self} );
+    # get needed objects
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $MainObject   = $Kernel::OM->Get('Kernel::System::Main');
 
     # load customer company backend modules
+    SOURCE:
     for my $Count ( '', 1 .. 10 ) {
 
-        # next if backend is not used
-        next if !$Self->{ConfigObject}->Get("CustomerCompany$Count");
+        next SOURCE if !$ConfigObject->Get("CustomerCompany$Count");
 
-        my $GenericModule = $Self->{ConfigObject}->Get("CustomerCompany$Count")->{Module}
+        my $GenericModule = $ConfigObject->Get("CustomerCompany$Count")->{Module}
             || 'Kernel::System::CustomerCompany::DB';
-        if ( !$Self->{MainObject}->Require($GenericModule) ) {
-            $Self->{MainObject}->Die("Can't load backend module $GenericModule! $@");
+        if ( !$MainObject->Require($GenericModule) ) {
+            $MainObject->Die("Can't load backend module $GenericModule! $@");
         }
         $Self->{"CustomerCompany$Count"} = $GenericModule->new(
-            Count => $Count,
-            %Param,
-            CustomerCompanyMap => $Self->{ConfigObject}->Get("CustomerCompany$Count"),
+            Count              => $Count,
+            CustomerCompanyMap => $ConfigObject->Get("CustomerCompany$Count"),
         );
     }
 
     # init of event handler
     $Self->EventHandlerInit(
-        Config     => 'CustomerCompany::EventModulePost',
-        BaseObject => 'CustomerCompanyObject',
-        Objects    => {
-            %{$Self},
-        },
+        Config => 'CustomerCompany::EventModulePost',
     );
 
     return $Self;
@@ -122,7 +86,7 @@ add a new customer company
 
     my $ID = $CustomerCompanyObject->CustomerCompanyAdd(
         CustomerID              => 'example.com',
-        CustomerCompanyName     => 'New Customer Company Inc.',
+        CustomerCompanyName     => 'New Customer Inc.',
         CustomerCompanyStreet   => '5201 Blue Lagoon Drive',
         CustomerCompanyZIP      => '33126',
         CustomerCompanyCity     => 'Miami',
@@ -149,7 +113,7 @@ sub CustomerCompanyAdd {
     # check needed stuff
     for (qw(CustomerID UserID)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -184,7 +148,7 @@ get customer company attributes
 Returns:
 
     %CustomerCompany = (
-        'CustomerCompanyName'    => 'Customer Company Inc.',
+        'CustomerCompanyName'    => 'Customer Inc.',
         'CustomerID'             => 'example.com',
         'CustomerCompanyStreet'  => '5201 Blue Lagoon Drive',
         'CustomerCompanyZIP'     => '33126',
@@ -207,29 +171,32 @@ sub CustomerCompanyGet {
 
     # check needed stuff
     if ( !$Param{CustomerID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need CustomerID!"
         );
         return;
     }
 
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    SOURCE:
     for my $Count ( '', 1 .. 10 ) {
 
-        # next if backend is not used
-        next if !$Self->{"CustomerCompany$Count"};
+        next SOURCE if !$Self->{"CustomerCompany$Count"};
 
-        # next if no company got found
         my %Company = $Self->{"CustomerCompany$Count"}->CustomerCompanyGet( %Param, );
-        next if !%Company;
+        next SOURCE if !%Company;
 
         # return company data
         return (
             %Company,
             Source => "CustomerCompany$Count",
-            Config => $Self->{ConfigObject}->Get("CustomerCompany$Count"),
+            Config => $ConfigObject->Get("CustomerCompany$Count"),
         );
     }
+
     return;
 }
 
@@ -240,7 +207,7 @@ update customer company attributes
     $CustomerCompanyObject->CustomerCompanyUpdate(
         CustomerCompanyID       => 'oldexample.com', # required for CustomerCompanyID-update
         CustomerID              => 'example.com',
-        CustomerCompanyName     => 'New Customer Company Inc.',
+        CustomerCompanyName     => 'New Customer Inc.',
         CustomerCompanyStreet   => '5201 Blue Lagoon Drive',
         CustomerCompanyZIP      => '33126',
         CustomerCompanyLocation => 'Miami',
@@ -260,7 +227,7 @@ sub CustomerCompanyUpdate {
 
     # check needed stuff
     if ( !$Param{CustomerCompanyID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need CustomerCompanyID or CustomerID!"
         );
@@ -270,7 +237,7 @@ sub CustomerCompanyUpdate {
     # check if company exists
     my %Company = $Self->CustomerCompanyGet( CustomerID => $Param{CustomerCompanyID} );
     if ( !%Company ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "No such company '$Param{CustomerCompanyID}'!",
         );
@@ -306,14 +273,17 @@ return customer company source list
 sub CustomerCompanySourceList {
     my ( $Self, %Param ) = @_;
 
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
     my %Data;
     SOURCE:
     for my $Count ( '', 1 .. 10 ) {
 
-        # next if backend is not used
-        next SOURCE if !$Self->{ConfigObject}->Get("CustomerCompany$Count");
+        next SOURCE if !$ConfigObject->Get("CustomerCompany$Count");
+
         if ( defined $Param{ReadOnly} ) {
-            my $BackendConfig = $Self->{ConfigObject}->Get("CustomerCompany$Count");
+            my $BackendConfig = $ConfigObject->Get("CustomerCompany$Count");
             if ( $Param{ReadOnly} ) {
                 next SOURCE if !$BackendConfig->{ReadOnly};
             }
@@ -321,9 +291,11 @@ sub CustomerCompanySourceList {
                 next SOURCE if $BackendConfig->{ReadOnly};
             }
         }
-        $Data{"CustomerCompany$Count"} = $Self->{ConfigObject}->Get("CustomerCompany$Count")->{Name}
+
+        $Data{"CustomerCompany$Count"} = $ConfigObject->Get("CustomerCompany$Count")->{Name}
             || "No Name $Count";
     }
+
     return %Data;
 }
 
@@ -344,7 +316,7 @@ get list of customer companies.
 Returns:
 
 %List = {
-          'example.com' => 'example.com Customer Company Inc.        ',
+          'example.com' => 'example.com Customer Inc.        ',
           'acme.com'    => 'acme.com Acme, Inc.        '
         };
 
@@ -354,10 +326,10 @@ sub CustomerCompanyList {
     my ( $Self, %Param ) = @_;
 
     my %Data;
+    SOURCE:
     for my $Count ( '', 1 .. 10 ) {
 
-        # next if backend is not used
-        next if !$Self->{"CustomerCompany$Count"};
+        next SOURCE if !$Self->{"CustomerCompany$Count"};
 
         # get comppany list result of backend and merge it
         my %SubData = $Self->{"CustomerCompany$Count"}->CustomerCompanyList(%Param);

@@ -11,9 +11,16 @@ package Kernel::System::ProcessManagement::TransitionAction::TicketArticleCreate
 
 use strict;
 use warnings;
+use utf8;
+
 use Kernel::System::VariableCheck qw(:all);
 
-use utf8;
+use base qw(Kernel::System::ProcessManagement::TransitionAction::Base);
+
+our @ObjectDependencies = (
+    'Kernel::System::Log',
+    'Kernel::System::Ticket',
+);
 
 =head1 NAME
 
@@ -31,57 +38,11 @@ All TicketArticleCreate functions.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Ticket;
-    use Kernel::System::ProcessManagement::TransitionAction::TicketArticleCreate;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $TicketObject = Kernel::System::Ticket->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-    );
-    my $TicketArticleCreateActionObject = Kernel::System::ProcessManagement::TransitionAction::TicketArticleCreate->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        EncodeObject       => $EncodeObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        TicketObject       => $TicketObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $TicketArticleCreateObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::TransitionAction::TicketArticleCreate');
 
 =cut
 
@@ -91,16 +52,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # get needed objects
-    for my $Needed (
-        qw(ConfigObject LogObject EncodeObject DBObject MainObject TimeObject TicketObject)
-        )
-    {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
 
     return $Self;
 }
@@ -146,7 +97,8 @@ sub new {
                                                                         # sending gets muted, agent will still shown in To:
                                                                         # line of article
 
-            UserID => 123,                                              # optional, to override the UserID from the logged user
+            TimeUnit => 123                                             # optional, to set the acouting time
+            UserID   => 123,                                            # optional, to override the UserID from the logged user
         }
     );
     Ticket contains the result of TicketGet including DynamicFields
@@ -162,53 +114,41 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    for my $Needed (
-        qw(UserID Ticket ProcessEntityID ActivityEntityID TransitionEntityID
-        TransitionActionEntityID Config
-        )
-        )
-    {
-        if ( !defined $Param{$Needed} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
     # define a common message to output in case of any error
     my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
         . " Transition: $Param{TransitionEntityID}"
         . " TransitionAction: $Param{TransitionActionEntityID} - ";
 
-    # Check if we have Ticket to deal with
-    if ( !IsHashRefWithData( $Param{Ticket} ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "Ticket has no values!",
-        );
-        return;
-    }
-
-    # Check if we have a ConfigHash
-    if ( !IsHashRefWithData( $Param{Config} ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "Config has no values!",
-        );
-        return;
-    }
+    # check for missing or wrong params
+    my $Success = $Self->_CheckParams(
+        %Param,
+        CommonMessage => $CommonMessage,
+    );
+    return if !$Success;
 
     # override UserID if specified as a parameter in the TA config
-    if ( IsNumber( $Param{Config}->{UserID} ) ) {
-        $Param{UserID} = $Param{Config}->{UserID};
-        delete $Param{Config}->{UserID};
+    $Param{UserID} = $Self->_OverrideUserID(%Param);
+
+    # use ticket attributes if needed
+    $Self->_ReplaceTicketAttributes(%Param);
+
+    # convert scalar items into array references
+    for my $Attribute (
+        qw(ForceNotificationToUserID ExcludeNotificationToUserID
+        ExcludeMuteNotificationToUserID
+        )
+        )
+    {
+        if ( IsStringWithData( $Param{Config}->{$Attribute} ) ) {
+            $Param{Config}->{$Attribute} = $Self->_ConvertScalar2ArrayRef(
+                Data => $Param{Config}->{$Attribute},
+            );
+        }
     }
 
-    # Check ArticleType
+    # check ArticleType
     if ( $Param{Config}->{ArticleType} =~ m{\A email }msxi ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => $CommonMessage
                 . "ArticleType $Param{Config}->{ArticleType} is not supported",
@@ -216,14 +156,17 @@ sub Run {
         return;
     }
 
-    my $Success = $Self->{TicketObject}->ArticleCreate(
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    my $ArticleID = $TicketObject->ArticleCreate(
         %{ $Param{Config} },
         TicketID => $Param{Ticket}->{TicketID},
         UserID   => $Param{UserID},
     );
 
-    if ( !$Success ) {
-        $Self->{LogObject}->Log(
+    if ( !$ArticleID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => $CommonMessage
                 . "Couldn't create article for Ticket: "
@@ -231,6 +174,17 @@ sub Run {
         );
         return;
     }
+
+    # set time units
+    if ( $Param{Config}->{TimeUnit} ) {
+        $TicketObject->TicketAccountTime(
+            TicketID  => $Param{Ticket}->{TicketID},
+            ArticleID => $ArticleID,
+            TimeUnit  => $Param{Config}->{TimeUnit},
+            UserID    => $Param{UserID},
+        );
+    }
+
     return 1;
 }
 

@@ -35,7 +35,7 @@
   </script></head>
 <body>
 <div class="box">
-  <h1 class="t1">OTRS 3.3 API Reference</h1>
+  <h1 class="t1">OTRS 4.0 API Reference</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -44,7 +44,7 @@
   </table>
 </div>
 <div class="path">
-  <a href="../../../index.html">OTRS 3.3 API Reference</a> &gt; Perl Modules &gt;
+  <a href="../../../index.html">OTRS 4.0 API Reference</a> &gt; Perl Modules &gt;
   Kernel::System::Ticket::Article
 </div>
 <div>
@@ -132,6 +132,7 @@
         HistoryType      =&gt; 'OwnerUpdate',                          # EmailCustomer|Move|AddNote|PriorityUpdate|WebRequestCustomer|...
         HistoryComment   =&gt; 'Some free text!',
         UserID           =&gt; 123,
+        UnlockOnAway     =&gt; 1,                                      # Unlock ticket if owner is away
     );
 
 </pre></dd>		<dd><p>Events:
@@ -218,6 +219,7 @@
         TicketID      =&gt; 123,
         DynamicFields =&gt; 1,         # 0 or 1, default 1. To include or not the dynamic field values on the return structure.
         UserID        =&gt; 1,
+        Order         =&gt; 'ASC',     # 'ASC' or 'DESC', default 'ASC'
     );
 
 </pre></dd>		<dd><p>or with &quot;StripPlainBodyAsAttachment =&gt; 1&quot; feature to not include first
@@ -242,16 +244,29 @@ only with given article types</p></dd>
         TicketID    =&gt; 123,
         UserID      =&gt; 1,
         ArticleType =&gt; [ $ArticleType1, $ArticleType2 ],
+        # or
+        ArticleTypeID =&gt; [ $ArticleTypeID1, $ArticleTypeID2 ],
     );
 
-</pre></dd>		<dd><p>example of how to access the hash ref</p></dd>
+</pre></dd>		<dd><p>Likewise <code>ArticleSenderTypeID</code> allows filtering of only articles with
+the given sender type IDs.</p></dd>
+		<dd><p>example of how to access the hash ref</p></dd>
 <dd><pre>    for my $Article (@ArticleBox) {
         print &quot;From: $Article-&gt;{From}\n&quot;;
     }
 
 </pre></dd>		<dd><p>Note: If an attachment with html body content is available, the attachment id
 is returned as 'AttachmentIDOfHTMLBody' in hash ref.</p></dd>
-	<dt>ArticleGet()</dt>
+		<dd><p>You can limit the list of returned elements with the <code>Page</code> and <code>Limit</code>
+parameters:</p></dd>
+<dd><pre>    my @ArticleBox = $TicketObject-&gt;ArticleContentIndex(
+        TicketID    =&gt; 123,
+        UserID      =&gt; 1,
+        Limit       =&gt; 5,
+        Page        =&gt; 3,   # get 11th to 16th element
+    );
+
+</pre></dd>	<dt>ArticleGet()</dt>
 		<dd><p>returns article data</p></dd>
 <dd><pre>    my %Article = $TicketObject-&gt;ArticleGet(
         ArticleID     =&gt; 123,
@@ -292,9 +307,11 @@ is returned as 'AttachmentIDOfHTMLBody' in hash ref.</p></dd>
 </pre></dd>		<dd><p>returns articles in array / hash by given ticket id but
 only requested article types</p></dd>
 <dd><pre>    my @ArticleIndex = $TicketObject-&gt;ArticleGet(
-        TicketID    =&gt; 123,
-        ArticleType =&gt; [ $ArticleType1, $ArticleType2 ],
-        UserID      =&gt; 123,
+        TicketID      =&gt; 123,
+        ArticleType   =&gt; [ $ArticleType1, $ArticleType2 ],
+        # or
+        ArticleTypeID =&gt; [ $ArticleTypeID1, $ArticleTypeID2 ],
+        UserID        =&gt; 123,
     );
 
 </pre></dd>		<dd><p>returns articles in array / hash by given ticket id but
@@ -304,6 +321,8 @@ certain views)</p></dd>
 <dd><pre>    my @ArticleIndex = $TicketObject-&gt;ArticleGet(
         TicketID            =&gt; 123,
         ArticleSenderType   =&gt; [ $ArticleSenderType1, $ArticleSenderType2 ],
+        # or
+        ArticleSenderTypeID =&gt; [ $ArticleSenderTypeID1, $ArticleSenderTypeID2 ],
         UserID              =&gt; 123,
     );
 
@@ -322,9 +341,42 @@ certain views)</p></dd>
         Limit    =&gt; 5,
     );
 
+</pre></dd>		<dd><p>You can also provide an offset by passing the <code>Page</code> argument. To get the
+6th to 10th article, you can say</p></dd>
+<dd><pre>    my @ArticleIndex = $TicketObject-&gt;ArticleGet(
+        TicketID =&gt; 123,
+        UserID   =&gt; 123,
+        Limit    =&gt; 5,
+        Page     =&gt; 2,
+    );
+
+</pre></dd>		<dd><p>Page numbers start with 1.</p></dd>
+	<dt>ArticleCount()</dt>
+		<dd><p>Returns the number of articles for a ticket, possibly filtered by
+ArticleSenderTypeID and ArticleTypeID</p></dd>
+<dd><pre>    my $ArticleCount = $TicketID-&gt;ArticleCount(
+        TicketID            =&gt; 123,
+        ArticleTypeID       =&gt; [1, 2], # optional
+        ArticleSenderTypeID =&gt; [1, 2], # optional
+    );
+
+</pre></dd>		<dd><p>If the argument <code>UpToArticleID</code> is given, only articles that would normally
+shown before (and including) this article are shown; <code>Order</code> (which can
+be <code>ASC</code> or <code>DESC</code>) controls whether ascending or descending order is used.</p></dd>
+	<dt>ArticlePage()</dt>
+		<dd><p>Get the page number of a given article when pagination is active</p></dd>
+<dd><pre>    my $Page = $TicketObject-&gt;ArticlePage(
+        TicketID            =&gt; 123,
+        ArticleID           =&gt; 4242,
+        RowsPerPage         =&gt; 20,
+        ArticleTypeID       =&gt; [1, 2], # optional
+        ArticleSenderTypeID =&gt; [1],    # optional
+        Order               =&gt; 'DESC', # optional, 'ASC' or 'DESC'
+    );
+
 </pre></dd>	<dt>ArticleUpdate()</dt>
 		<dd><p>update an article</p></dd>
-		<dd><p>Note: Keys &quot;Body&quot;, &quot;Subject&quot;, &quot;From&quot;, &quot;To&quot;, &quot;Cc&quot;, &quot;ArticleType&quot; and &quot;SenderType&quot; are implemented.</p></dd>
+		<dd><p>Note: Keys &quot;Body&quot;, &quot;Subject&quot;, &quot;From&quot;, &quot;To&quot;, &quot;Cc&quot;, &quot;ReplyTo&quot;, &quot;ArticleType&quot; and &quot;SenderType&quot; are implemented.</p></dd>
 <dd><pre>    my $Success = $TicketObject-&gt;ArticleUpdate(
         ArticleID =&gt; 123,
         Key       =&gt; 'Body',
@@ -550,8 +602,9 @@ certain views)</p></dd>
         Content            =&gt; $ContentAsString,
         ContentType        =&gt; 'text/html; charset=&quot;iso-8859-15&quot;',
         Filename           =&gt; 'lala.html',
-        ContentID          =&gt; 'cid-1234', # optional
-        ContentAlternative =&gt; 0,          # optional, alternative content to shown as body
+        ContentID          =&gt; 'cid-1234',   # optional
+        ContentAlternative =&gt; 0,            # optional, alternative content to shown as body
+        Disposition        =&gt; 'attachment', # or 'inline'
         ArticleID          =&gt; 123,
         UserID             =&gt; 123,
     );
@@ -574,6 +627,7 @@ certain views)</p></dd>
         Filename           =&gt; &quot;StdAttachment-Test1.pdf&quot;,
         Filesize           =&gt; &quot;4.6 KBytes&quot;,
         FilesizeRaw        =&gt; 4722,
+        Disposition        =&gt; 'attachment',
     );
 
 </pre></dd>	<dt>ArticleAttachmentIndex()</dt>
@@ -615,20 +669,22 @@ attachment (not include text body and html body as attachment)</p></dd>
 </pre></dd>		<dd><p>returns:</p></dd>
 <dd><pre>    my %Index = {
         '1' =&gt; {
-            'ContentAlternative' =&gt; '',
-            'ContentID' =&gt; '',
-            'Filesize' =&gt; '4.6 KBytes',
-            'ContentType' =&gt; 'application/pdf',
-            'Filename' =&gt; 'StdAttachment-Test1.pdf',
-            'FilesizeRaw' =&gt; 4722
+            ContentAlternative =&gt; '',
+            ContentID          =&gt; '',
+            Filesize           =&gt; '4.6 KBytes',
+            ContentType        =&gt; 'application/pdf',
+            Filename           =&gt; 'StdAttachment-Test1.pdf',
+            FilesizeRaw        =&gt; 4722,
+            Disposition        =&gt; attachment,
         },
         '2' =&gt; {
-            'ContentAlternative' =&gt; '',
-            'ContentID' =&gt; '',
-            'Filesize' =&gt; '183 Bytes',
-            'ContentType' =&gt; 'text/html; charset=&quot;utf-8&quot;',
-            'Filename' =&gt; 'file-2',
-            'FilesizeRaw' =&gt; 183
+            ContentAlternative =&gt; '',
+            ContentID          =&gt; '',
+            Filesize           =&gt; '183 Bytes',
+            ContentType        =&gt; 'text/html; charset=&quot;utf-8&quot;',
+            Filename           =&gt; 'file-2',
+            FilesizeRaw        =&gt; 183,
+            Disposition        =&gt; attachment,
         },
     };
 

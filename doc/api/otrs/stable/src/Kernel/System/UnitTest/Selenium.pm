@@ -20,6 +20,13 @@ use File::Temp();
 use Kernel::Config;
 use Kernel::System::User;
 
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+    'Kernel::System::UnitTest',
+);
+
 =head1 NAME
 
 Kernel::System::UnitTest::Selenium - run frontend tests
@@ -59,15 +66,11 @@ Then you can use the full API of Selenium::Remote::Driver on this object.
 sub new {
     my ( $Class, %Param ) = @_;
 
-    for my $Needed (qw(UnitTestObject)) {
-        if ( !$Param{$Needed} ) {
-            die "Got no $Needed!";
-        }
-    }
+    $Param{UnitTestObject} ||= $Kernel::OM->Get('Kernel::System::UnitTest');
 
     $Param{UnitTestObject}->True( 1, "Starting up Selenium scenario..." );
 
-    my %SeleniumTestsConfig = %{ $Param{UnitTestObject}->{ConfigObject}->Get('SeleniumTestsConfig') // {} };
+    my %SeleniumTestsConfig = %{ $Kernel::OM->Get('Kernel::Config')->Get('SeleniumTestsConfig') // {} };
 
     if ( !%SeleniumTestsConfig ) {
         my $Self = bless {}, $Class;
@@ -89,7 +92,7 @@ sub new {
     $Self->set_window_size( 1024, 768 );
 
     # get remote host with some precautions for certain unit test systems
-    my $FQDN = $Self->{UnitTestObject}->{ConfigObject}->Get('FQDN');
+    my $FQDN = $Kernel::OM->Get('Kernel::Config')->Get('FQDN');
 
     # try to resolve fqdn host
     if ( $FQDN ne 'yourhost.example.com' && gethostbyname($FQDN) ) {
@@ -106,7 +109,7 @@ sub new {
         $Self->{BaseURL} = '127.0.0.1';
     }
 
-    $Self->{BaseURL} = $Self->{UnitTestObject}->{ConfigObject}->Get('HttpType') . '://' . $Self->{BaseURL};
+    $Self->{BaseURL} = $Kernel::OM->Get('Kernel::Config')->Get('HttpType') . '://' . $Self->{BaseURL};
 
     return $Self;
 }
@@ -151,7 +154,7 @@ sub _execute_command {    ## no critic
     my $Result = $Self->SUPER::_execute_command( $Res, $Params );
 
     my $TestName = 'Selenium command success: ';
-    $TestName .= $Self->{UnitTestObject}->{MainObject}->Dump(
+    $TestName .= $Kernel::OM->Get('Kernel::System::Main')->Dump(
         {
             %{ $Res    || {} },
             %{ $Params || {} },
@@ -202,9 +205,9 @@ sub Login {
     # check needed stuff
     for (qw(Type User Password)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
@@ -215,7 +218,7 @@ sub Login {
     eval {
         $Self->delete_all_cookies();
 
-        my $ScriptAlias = $Self->{UnitTestObject}->{ConfigObject}->Get('ScriptAlias');
+        my $ScriptAlias = $Kernel::OM->Get('Kernel::Config')->Get('ScriptAlias');
 
         if ( $Param{Type} eq 'Agent' ) {
             $ScriptAlias .= 'index.pl';
@@ -285,7 +288,7 @@ sub HandleError {
         UNLINK => 0,
     );
     close $FH;
-    $Self->{UnitTestObject}->{MainObject}->FileWrite(
+    $Kernel::OM->Get('Kernel::System::Main')->FileWrite(
         Location => $Filename,
         Content  => \$Data,
     );

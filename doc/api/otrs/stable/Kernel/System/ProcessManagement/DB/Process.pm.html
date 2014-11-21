@@ -35,7 +35,7 @@
   </script></head>
 <body>
 <div class="box">
-  <h1 class="t1">OTRS 3.3 API Reference</h1>
+  <h1 class="t1">OTRS 4.0 API Reference</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -44,7 +44,7 @@
   </table>
 </div>
 <div class="path">
-  <a href="../../../../index.html">OTRS 3.3 API Reference</a> &gt; Perl Modules &gt;
+  <a href="../../../../index.html">OTRS 4.0 API Reference</a> &gt; Perl Modules &gt;
   Kernel::System::ProcessManagement::DB::Process
 </div>
 <div>
@@ -66,7 +66,7 @@
 
 <h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<p>Kernel::System::ProcessManagement::DB::Process.pm</p>
+<p>Kernel::System::ProcessManagement::DB::Process</p>
 
 <h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
@@ -76,45 +76,10 @@
 
 <dl>
 	<dt>new()</dt>
-		<dd><p>create a Process object</p></dd>
-<dd><pre>    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::Time;
-    use Kernel::System::DB;
-    use Kernel::System::ProcessManagement::DB::Process;
-
-</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
-    my $EncodeObject = Kernel::System::Encode-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-        LogObject    =&gt; $LogObject,
-    );
-    my $TimeObject = Kernel::System::Time-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        LogObject    =&gt; $LogObject,
-    );
-    my $DBObject = Kernel::System::DB-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-        LogObject    =&gt; $LogObject,
-        MainObject   =&gt; $MainObject,
-    );
-    my $ProcessObject = Kernel::System::ProcessManagement::DB::Process-&gt;new(
-        ConfigObject        =&gt; $ConfigObject,
-        EncodeObject        =&gt; $EncodeObject,
-        LogObject           =&gt; $LogObject,
-        MainObject          =&gt; $MainObject,
-        DBObject            =&gt; $DBObject,
-    );
+		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $ProcessObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::DB::Process');
 
 </pre></dd>	<dt>ProcessAdd()</dt>
 		<dd><p>add new Process</p></dd>
@@ -224,7 +189,7 @@
         UseEntities     =&gt; 0,                   # default 0, 1 || 0. if 0 the return hash keys are
                                                 #    the process IDs otherwise keys are the
                                                 #    process entity IDs
-        StateEntityIDs  =&gt; ['S1','S2'],         # optional, to filter proceses that match listed
+        StateEntityIDs  =&gt; ['S1','S2'],         # optional, to filter processes that match listed
                                                 #    state entity IDs
         UserID          =&gt; 1,
     );
@@ -246,7 +211,7 @@
     my ( $Self, %Param ) = @_;</p></dd>
 <dd><pre>    # check needed
     if ( !$Param{UserID} ) {
-        $Self-&gt;{LogObject}-&gt;Log(
+        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
             Priority =&gt; 'error',
             Message  =&gt; &quot;Need UserID!&quot;
         );
@@ -267,13 +232,19 @@
         $UseEntities = 1;
     }
 
+</pre></dd><dd><pre>    # get cache object
+    my $CacheObject = $Kernel::OM-&gt;Get('Kernel::System::Cache');
+
 </pre></dd><dd><pre>    my $CacheKey = 'ProcessList::UseEntities::' . $UseEntities . '::StateEntityIDs::'
         . $StateEntityIDsStrg;
-    my $Cache = $Self-&gt;{CacheObject}-&gt;Get(
+    my $Cache = $CacheObject-&gt;Get(
         Type =&gt; 'ProcessManagement_Process',
         Key  =&gt; $CacheKey,
     );
     return $Cache if ref $Cache;
+
+</pre></dd><dd><pre>    # get database object
+    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
 
 </pre></dd><dd><pre>    my $SQL = '
             SELECT id, entity_id, name
@@ -281,15 +252,15 @@
     if ( $StateEntityIDsStrg ne 'ALL' ) {
 
 </pre></dd><dd><pre>        my $StateEntityIDsStrgDB =
-            join ',', map &quot;'&quot; . $Self-&gt;{DBObject}-&gt;Quote($_) . &quot;'&quot;, @{ $Param{StateEntityIDs} };
+            join ',', map &quot;'&quot; . $DBObject-&gt;Quote($_) . &quot;'&quot;, @{ $Param{StateEntityIDs} };
 
 </pre></dd><dd><pre>        $SQL .= &quot;WHERE state_entity_id IN ($StateEntityIDsStrgDB)&quot;;
     }
 
-</pre></dd><dd><pre>    return if !$Self-&gt;{DBObject}-&gt;Prepare( SQL =&gt; $SQL );
+</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare( SQL =&gt; $SQL );
 
 </pre></dd><dd><pre>    my %Data;
-    while ( my @Row = $Self-&gt;{DBObject}-&gt;FetchrowArray() ) {
+    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
         if ( !$UseEntities ) {
             $Data{ $Row[0] } = $Row[2];
         }
@@ -299,7 +270,7 @@
     }
 
 </pre></dd><dd><pre>    # set cache
-    $Self-&gt;{CacheObject}-&gt;Set(
+    $CacheObject-&gt;Set(
         Type  =&gt; 'ProcessManagement_Process',
         Key   =&gt; $CacheKey,
         Value =&gt; \%Data,
@@ -344,11 +315,11 @@
     ];
 
 </pre></dd>	<dt>ProcessDump()</dt>
-		<dd><p>gets a complete procesess information dump from the DB including: Process State, Activities,
+		<dd><p>gets a complete processes information dump from the DB including: Process State, Activities,
 ActivityDialogs, Transitions and TransitionActions</p></dd>
 <dd><pre>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
         ResultType  =&gt; 'SCALAR'                     # 'SCALAR' || 'HASH' || 'FILE'
-        Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatry for ResultType = 'FILE'
+        Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatory for ResultType = 'FILE'
         UserID      =&gt; 1,
     );
 
@@ -458,7 +429,7 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
 
 </pre></dd><dd><pre>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
         ResultType  =&gt; 'HASH'                       # 'SCALAR' || 'HASH' || 'FILE'
-        Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatry for ResultType = 'FILE'
+        Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatory for ResultType = 'FILE'
         UserID      =&gt; 1,
     );
 
@@ -568,7 +539,7 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
 
 </pre></dd><dd><pre>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
         ResultType  =&gt; 'Location'                     # 'SCALAR' || 'HASH' || 'FILE'
-        Location    =&gt; '/opt/otrs/var/myfile.txt'     # mandatry for ResultType = 'FILE'
+        Location    =&gt; '/opt/otrs/var/myfile.txt'     # mandatory for ResultType = 'FILE'
         UserID      =&gt; 1,
     );
 
@@ -584,9 +555,9 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
 
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    %ProcessImport = (
-        Message =&gt; 'The Mesage to show.', # error or success message
-        Comment =&gt; 'Any comment',         # optional
-        Success =&gt; 1,                     # 1 if success or undef otherwise
+        Message =&gt; 'The Message to show.', # error or success message
+        Comment =&gt; 'Any comment',          # optional
+        Success =&gt; 1,                      # 1 if success or undef otherwise
     );
 
 </pre></dd></dl>

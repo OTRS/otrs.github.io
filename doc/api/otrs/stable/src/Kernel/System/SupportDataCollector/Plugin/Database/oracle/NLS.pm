@@ -14,6 +14,10 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+);
+
 sub GetDisplayPath {
     return 'Database';
 }
@@ -21,11 +25,14 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    if ( $Self->{DBObject}->GetDatabaseFunction('Type') ne 'oracle' ) {
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $DBObject->GetDatabaseFunction('Type') ne 'oracle' ) {
         return $Self->GetResults();
     }
 
-    if ( $ENV{NLS_LANG} && $ENV{NLS_LANG} =~ m/utf-?8/i ) {
+    if ( $ENV{NLS_LANG} && $ENV{NLS_LANG} =~ m/al32utf-?8/i ) {
         $Self->AddResultOk(
             Identifier => 'NLS_LANG',
             Label      => 'NLS_LANG Setting',
@@ -37,7 +44,7 @@ sub Run {
             Identifier => 'NLS_LANG',
             Label      => 'NLS_LANG Setting',
             Value      => $ENV{NLS_LANG},
-            Message    => 'NLS_LANG must be set to utf8 (e.g. german_germany.utf8).',
+            Message    => 'NLS_LANG must be set to al32utf8 (e.g. GERMAN_GERMANY.AL32UTF8).',
         );
     }
 
@@ -58,11 +65,11 @@ sub Run {
     }
 
     my $CreateTime;
-    $Self->{DBObject}->Prepare(
+    $DBObject->Prepare(
         SQL   => "SELECT create_time FROM valid",
         Limit => 1
     );
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $CreateTime = $Row[0];
     }
 

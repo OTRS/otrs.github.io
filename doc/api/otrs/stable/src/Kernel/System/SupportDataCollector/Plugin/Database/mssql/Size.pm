@@ -14,6 +14,10 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+);
+
 sub GetDisplayPath {
     return 'Database';
 }
@@ -21,16 +25,19 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    if ( $Self->{DBObject}->GetDatabaseFunction('Type') ne 'mssql' ) {
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $DBObject->GetDatabaseFunction('Type') ne 'mssql' ) {
         return $Self->GetResults();
     }
 
-    $Self->{DBObject}->Prepare(
+    $DBObject->Prepare(
         SQL   => 'exec sp_spaceused',
         Limit => 1,
     );
 
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
 
         # $Row[0] database_name
         # $Row[1] database_size

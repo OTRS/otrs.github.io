@@ -28,20 +28,14 @@ our %Status2Name = (
     $StatusInfo    => 'Information',
 );
 
+our @ObjectDependencies = ();
+
 sub new {
     my ( $Type, %Param ) = @_;
 
     # allocate new hash ref to object
     my $Self = {};
     bless( $Self, $Type );
-
-    # check object list for completeness
-    for my $Object (
-        qw( ConfigObject LogObject MainObject DBObject EncodeObject XMLObject EnvironmentObject TimeObject TicketObject)
-        )
-    {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
-    }
 
     return $Self;
 }

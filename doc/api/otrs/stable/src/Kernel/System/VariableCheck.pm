@@ -460,10 +460,11 @@ sub DataIsDifferent {
         return 1 if $#A ne $#B;
 
         # compare array
+        COUNT:
         for my $Count ( 0 .. $#A ) {
 
             # do nothing, it's ok
-            next if !defined $A[$Count] && !defined $B[$Count];
+            next COUNT if !defined $A[$Count] && !defined $B[$Count];
 
             # return diff, because its different
             return 1 if !defined $A[$Count] || !defined $B[$Count];
@@ -474,7 +475,7 @@ sub DataIsDifferent {
                         Data1 => $A[$Count],
                         Data2 => $B[$Count]
                     );
-                    next;
+                    next COUNT;
                 }
                 return 1;
             }
@@ -488,13 +489,14 @@ sub DataIsDifferent {
         my %B = %{ $Param{Data2} };
 
         # compare %A with %B and remove it if checked
+        KEY:
         for my $Key ( sort keys %A ) {
 
             # Check if both are undefined
             if ( !defined $A{$Key} && !defined $B{$Key} ) {
                 delete $A{$Key};
                 delete $B{$Key};
-                next;
+                next KEY;
             }
 
             # return diff, because its different
@@ -503,7 +505,7 @@ sub DataIsDifferent {
             if ( $A{$Key} eq $B{$Key} ) {
                 delete $A{$Key};
                 delete $B{$Key};
-                next;
+                next KEY;
             }
 
             # return if values are different
@@ -514,7 +516,7 @@ sub DataIsDifferent {
                 );
                 delete $A{$Key};
                 delete $B{$Key};
-                next;
+                next KEY;
             }
             return 1;
         }

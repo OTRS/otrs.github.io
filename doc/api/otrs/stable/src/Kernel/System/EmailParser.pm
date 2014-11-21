@@ -12,14 +12,14 @@ package Kernel::System::EmailParser;
 use strict;
 use warnings;
 
-use Kernel::System::HTMLUtils;
-
 use Mail::Internet;
 use MIME::Parser;
 use MIME::QuotedPrint;
 use MIME::Base64;
 use MIME::Words qw(:all);
 use Mail::Address;
+
+our $ObjectManagerDisabled = 1;
 
 =head1 NAME
 
@@ -37,54 +37,20 @@ A module to parse and encode an email.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
     use Kernel::System::EmailParser;
-
-    # as array ref
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $ParserObject = Kernel::System::EmailParser->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        EncodeObject => $EncodeObject,
-        Email        => \@ArrayOfEmail,
-        Debug        => 0,
-    );
-
-    # as scalar ref
-    my $ParserObject = Kernel::System::EmailParser->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        EncodeObject => $EncodeObject,
-        Email        => \$ScalarOfEmail,
-        Debug        => 0,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
 
     # as string (takes more memory!)
     my $ParserObject = Kernel::System::EmailParser->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        EncodeObject => $EncodeObject,
         Email        => $EmailString,
         Debug        => 0,
     );
 
     # as stand alone mode, without parsing emails
     my $ParserObject = Kernel::System::EmailParser->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        EncodeObject => $EncodeObject,
         Mode         => 'Standalone',
         Debug        => 0,
     );
@@ -100,13 +66,6 @@ sub new {
 
     # get debug level from parent
     $Self->{Debug} = $Param{Debug} || 0;
-
-    # check needed objects
-    for (qw(LogObject ConfigObject EncodeObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
-
-    $Self->{HTMLUtilsObject} = Kernel::System::HTMLUtils->new( %{$Self} );
 
     if ( $Param{Mode} && $Param{Mode} eq 'Standalone' ) {
         return $Self;
@@ -196,6 +155,15 @@ sub GetParam {
 
     my $What = $Param{WHAT} || return;
 
+    if ( !$Self->{Email} || !$Self->{HeaderObject} ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Email and HeaderObject is needed!',
+        );
+        return;
+    }
+
     $Self->{HeaderObject}->unfold();
     $Self->{HeaderObject}->combine($What);
     my $Line = $Self->{HeaderObject}->get($What) || '';
@@ -222,11 +190,12 @@ sub GetParam {
 
     # debug
     if ( $Self->{Debug} > 1 ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'debug',
             Message  => "Get: $What; ReturnLine: $ReturnLine; OrigLine: $Line",
         );
     }
+
     return $ReturnLine;
 }
 
@@ -244,7 +213,7 @@ sub GetEmailAddress {
     my ( $Self, %Param ) = @_;
 
     my $Email = '';
-    for my $EmailSplit ( Mail::Address->parse( $Param{Email} ) ) {
+    for my $EmailSplit ( $Self->_MailAddressParse( Email => $Param{Email} ) ) {
         $Email = $EmailSplit->address();
     }
 
@@ -279,11 +248,11 @@ sub GetRealname {
         return $Realname;
     }
 
-# fallback of Mail::Address
-# use $obj->phrase() from Mail::Address because $obj->name() formats the first letter to uppercase, but sometimes it is not necessary
-    for my $EmailSplit ( Mail::Address->parse( $Param{Email} ) ) {
+    # fallback of Mail::Address
+    for my $EmailSplit ( $Self->_MailAddressParse( Email => $Param{Email} ) ) {
         $Realname = $EmailSplit->phrase();
     }
+
     return $Realname;
 }
 
@@ -303,9 +272,10 @@ sub SplitAddressLine {
     my ( $Self, %Param ) = @_;
 
     my @GetParam;
-    for my $Line ( Mail::Address->parse( $Param{Line} ) ) {
+    for my $Line ( $Self->_MailAddressParse( Email => $Param{Line} ) ) {
         push @GetParam, $Line->format();
     }
+
     return @GetParam;
 }
 
@@ -345,12 +315,21 @@ sub GetCharset {
 
         # debug
         if ( $Self->{Debug} > 0 ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'debug',
                 Message  => "Got charset from mime body: $Self->{Charset}",
             );
         }
         return $Self->{Charset};
+    }
+
+    if ( !$Self->{Email} || !$Self->{HeaderObject} ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Email and HeaderObject is needed!',
+        );
+        return;
     }
 
     # find charset
@@ -366,7 +345,7 @@ sub GetCharset {
 
         # debug
         if ( $Self->{Debug} > 0 ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'debug',
                 Message =>
                     "Got no charset from email body because of ContentType ($Data{ContentType})!",
@@ -385,7 +364,7 @@ sub GetCharset {
 
         # debug
         if ( $Self->{Debug} > 0 ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'debug',
                 Message  => "Got charset from email body: $Data{Charset}",
             );
@@ -403,7 +382,7 @@ sub GetCharset {
 
     # debug
     if ( $Self->{Debug} > 0 ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'debug',
             Message  => 'Got no charset from email body! Take iso-8859-1!',
         );
@@ -435,7 +414,7 @@ sub GetReturnContentType {
 
     # debug
     if ( $Self->{Debug} > 0 ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'debug',
             Message  => "Changed ContentType from '"
                 . $Self->GetContentType()
@@ -476,10 +455,13 @@ sub GetMessageBody {
     # check if message body is already there
     return $Self->{MessageBody} if $Self->{MessageBody};
 
+    # get encode object
+    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
+
     if ( !$Self->{EntityMode} && $Self->{ParserParts}->parts() == 0 ) {
         $Self->{MimeEmail} = 0;
         if ( $Self->{Debug} > 0 ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'debug',
                 Message  => 'It\'s a plain (not mime) email!',
             );
@@ -498,7 +480,7 @@ sub GetMessageBody {
 
         # charset decode
         if ( $Self->GetCharset() ) {
-            $Self->{MessageBody} = $Self->{EncodeObject}->Convert2CharsetInternal(
+            $Self->{MessageBody} = $EncodeObject->Convert2CharsetInternal(
                 Text  => $BodyStrg,
                 From  => $Self->GetCharset(),
                 Check => 1,
@@ -517,7 +499,7 @@ sub GetMessageBody {
     else {
         $Self->{MimeEmail} = 1;
         if ( $Self->{Debug} > 0 ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'debug',
                 Message  => 'It\'s a mime email!',
             );
@@ -530,7 +512,7 @@ sub GetMessageBody {
             $Self->{Charset}     = $Attachments[0]->{Charset};
             $Self->{ContentType} = $Attachments[0]->{ContentType};
             if ( $Self->{Debug} > 0 ) {
-                $Self->{LogObject}->Log(
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'debug',
                     Message  => "First attachment ContentType: $Self->{ContentType}",
                 );
@@ -543,7 +525,7 @@ sub GetMessageBody {
 
             # check if charset exists
             if ( $Self->GetCharset() ) {
-                $Self->{MessageBody} = $Self->{EncodeObject}->Convert2CharsetInternal(
+                $Self->{MessageBody} = $EncodeObject->Convert2CharsetInternal(
                     Text  => $Attachments[0]->{Content},
                     From  => $Self->GetCharset(),
                     Check => 1,
@@ -563,7 +545,7 @@ sub GetMessageBody {
         }
         else {
             if ( $Self->{Debug} > 0 ) {
-                $Self->{LogObject}->Log(
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'debug',
                     Message =>
                         'No attachments returned from GetAttachments(), just an empty attachment!?',
@@ -576,6 +558,7 @@ sub GetMessageBody {
             return '-';
         }
     }
+
     return;
 }
 
@@ -683,7 +666,7 @@ sub PartsAttachments {
     if ( $Part->bodyhandle() ) {
         $PartData{Content} = $Part->bodyhandle()->as_string();
         if ( !$PartData{Content} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'notice',
                 Message  => "Totally empty attachment part ($PartCounter)",
             );
@@ -693,7 +676,7 @@ sub PartsAttachments {
 
     # log error if there is an corrupt MIME email
     else {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'notice',
             Message =>
                 "Was not able to parse corrupt MIME email! Skipped attachment ($PartCounter)",
@@ -703,7 +686,10 @@ sub PartsAttachments {
 
     # check if there is no recommended_filename or subject -> add file-NoFilenamePartCounter
     if ( $Part->head()->recommended_filename() ) {
-        $PartData{Filename} = $Self->_DecodeMimewords( String => $Part->head()->recommended_filename() );
+        $PartData{Filename} = $Self->_DecodeString(
+            String => $Part->head()->recommended_filename(),
+            Encode => 'utf-8',
+        );
         $PartData{ContentDisposition} = $Part->head()->get('Content-Disposition');
         if ( $PartData{ContentDisposition} ) {
             my %Data = $Self->GetContentTypeParams(
@@ -718,27 +704,20 @@ sub PartsAttachments {
         }
 
         # check if reserved filename file-1 or file-2 is already used
+        COUNT:
         for my $Count ( 1 .. 2 ) {
             if ( $PartData{Filename} eq "file-$Count" ) {
                 $PartData{Filename} = "File-$Count";
-                last;
+                last COUNT;
             }
         }
     }
 
     # Guess the filename for nested messages (see bug#1970).
     elsif ( $PartData{ContentType} eq 'message/rfc822' ) {
+
         my ($SubjectString) = $Part->as_string() =~ m/^Subject: ([^\n]*(\n[ \t][^\n]*)*)/m;
-        my $Subject;
-        for my $Decoded ( $Self->_DecodeMimewords( String => $SubjectString ) ) {
-            if ( $Decoded->[0] ) {
-                $Subject .= $Self->{EncodeObject}->Convert2CharsetInternal(
-                    Text  => $Decoded->[0],
-                    From  => $Decoded->[1] || 'us-ascii',
-                    Check => 1,
-                );
-            }
-        }
+        my $Subject = $Self->_DecodeString( String => $SubjectString );
 
         # trim whitespace
         $Subject =~ s/^\s+|\n|\s+$//g;
@@ -757,9 +736,10 @@ sub PartsAttachments {
         $PartData{Filename} = "file-$Self->{NoFilenamePartCounter}";
     }
 
-    # parse/get Content-Id and Content-Location for html email attachments
+    # parse/get Content-Id, Content-Location and Disposition for html email attachments
     $PartData{ContentID}       = $Part->head()->get('Content-Id');
     $PartData{ContentLocation} = $Part->head()->get('Content-Location');
+    $PartData{Disposition}     = $Part->head()->get('Content-Disposition');
 
     if ( $PartData{ContentID} ) {
         chomp $PartData{ContentID};
@@ -767,6 +747,10 @@ sub PartsAttachments {
     elsif ( $PartData{ContentLocation} ) {
         chomp $PartData{ContentLocation};
         $PartData{ContentID} = $PartData{ContentLocation};
+    }
+    if ( $PartData{Disposition} ) {
+        chomp $PartData{Disposition};
+        $PartData{Disposition} = lc $PartData{Disposition}
     }
 
     # get attachment size
@@ -868,7 +852,7 @@ sub CheckMessageBody {
     return if $Self->{MessageChecked};
 
     # return if no auto convert from html2text is needed
-    return if !$Self->{ConfigObject}->Get('PostmasterAutoHTML2Text');
+    return if !$Kernel::OM->Get('Kernel::Config')->Get('PostmasterAutoHTML2Text');
 
     # return if no auto convert from html2text is needed
     return if $Self->{NoHTMLChecks};
@@ -903,19 +887,20 @@ sub CheckMessageBody {
         $Self->{MimeEmail} = 1;
 
         # convert from html to ascii
-        $Self->{MessageBody} = $Self->{HTMLUtilsObject}->ToAscii(
+        $Self->{MessageBody} = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
             String => $Self->{MessageBody},
         );
 
         $Self->{ContentType} = 'text/plain';
         if ( $Self->{Debug} > 0 ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'debug',
                 Message =>
                     'It\'s an html only email, added ascii dump, attached html email as attachment.',
             );
         }
     }
+
     return;
 }
 
@@ -934,14 +919,42 @@ Decode all encoded substrings.
 sub _DecodeString {
     my ( $Self, %Param ) = @_;
 
-    my $DecodedString;
+    # get encode object
+    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
 
-    for my $Entry ( $Self->_DecodeMimewords( String => $Param{String} ) ) {
-        my $Encoding = $Self->{EncodeObject}->FindAsciiSupersetEncoding(
-            Encodings => [ $Entry->[1], $Self->GetCharset() ],
+    my $DecodedString;
+    my $BufferedString;
+    my $PrevEncoding;
+
+    $BufferedString = '';
+
+    # call MIME::Words::decode_mimewords()
+    for my $Entry ( decode_mimewords( $Param{String} ) ) {
+        if (
+            $BufferedString ne ''
+            && ( !$PrevEncoding || !$Entry->[1] || lc($PrevEncoding) ne lc( $Entry->[1] ) )
+            )
+        {
+            my $Encoding = $EncodeObject->FindAsciiSupersetEncoding(
+                Encodings => [ $PrevEncoding, $Param{Encode}, $Self->GetCharset() ],
+            );
+            $DecodedString .= $EncodeObject->Convert2CharsetInternal(
+                Text  => $BufferedString,
+                From  => $Encoding,
+                Check => 1,
+            );
+            $BufferedString = '';
+        }
+        $BufferedString .= $Entry->[0];
+        $PrevEncoding = $Entry->[1];
+    }
+
+    if ( $BufferedString ne '' ) {
+        my $Encoding = $EncodeObject->FindAsciiSupersetEncoding(
+            Encodings => [ $PrevEncoding, $Param{Encode}, $Self->GetCharset() ],
         );
-        $DecodedString .= $Self->{EncodeObject}->Convert2CharsetInternal(
-            Text  => $Entry->[0],
+        $DecodedString .= $EncodeObject->Convert2CharsetInternal(
+            Text  => $BufferedString,
             From  => $Encoding,
             Check => 1,
         );
@@ -950,37 +963,29 @@ sub _DecodeString {
     return $DecodedString;
 }
 
-=item _DecodeMimewords()
+=item _MailAddressParse()
 
-Wrapper for MIME::Words::decode_mimewords().
+    my @Chunks = $ParserObject->_MailAddressParse(Email => $Email);
 
-This wrapper joins splitted quoted strings since the original split might not always split the lines
-in the corect byte (e.g. for utf-8 encoded strings), see bug$9418 for more details
-
-    my $Result = $ParserObject->_DecodeMimewords(
-        String => 'some text',
-    );
+Wrapper for C<Mail::Address->parse($Email)>, but cache it, since it's
+not too fast, and often called.
 
 =cut
 
-sub _DecodeMimewords {
+sub _MailAddressParse {
     my ( $Self, %Param ) = @_;
 
-    my $String = $Param{String};
+    my $Email = $Param{Email};
+    my $Cache = $Self->{EmailCache};
 
-    # check is the string in encoded quote printable (e.g '=?utf-8?Q?=D0=95?=')
-    if ( $String =~ m{\A = \? ([^\?]+) \? Q \?}msx ) {
-
-        # use capturing group as encoding
-        my $Encoding = $1;
-
-        # remove multiple encoding lines, as the line could be splitted in the middle of the byte
-        # but leave the first (regular expession will convert cases like ...=D0?= =?utf-8?Q?=BE...
-        # into ...=D0=BE...)
-        # the result will be a "concatenated string" that will be sent to decode_mnimewords()
-        $String =~ s{\? = \s+ = \? $Encoding \? Q \?}{}gmsx;
+    if ( $Self->{EmailCache}->{$Email} ) {
+        return @{ $Self->{EmailCache}->{$Email} };
     }
-    return decode_mimewords($String);
+
+    my @Chunks = Mail::Address->parse($Email);
+    $Self->{EmailCache}->{$Email} = \@Chunks;
+
+    return @Chunks;
 }
 
 =end Internal:

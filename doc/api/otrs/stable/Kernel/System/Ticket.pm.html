@@ -35,7 +35,7 @@
   </script></head>
 <body>
 <div class="box">
-  <h1 class="t1">OTRS 3.3 API Reference</h1>
+  <h1 class="t1">OTRS 4.0 API Reference</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -44,7 +44,7 @@
   </table>
 </div>
 <div class="path">
-  <a href="../../index.html">OTRS 3.3 API Reference</a> &gt; Perl Modules &gt;
+  <a href="../../index.html">OTRS 4.0 API Reference</a> &gt; Perl Modules &gt;
   Kernel::System::Ticket
 </div>
 <div>
@@ -76,49 +76,10 @@
 
 <dl>
 	<dt>new()</dt>
-		<dd><p>create an object</p></dd>
-<dd><pre>    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Ticket;
-
-</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
-    my $EncodeObject = Kernel::System::Encode-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        LogObject    =&gt; $LogObject,
-    );
-    my $MainObject = Kernel::System::Main-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-        LogObject    =&gt; $LogObject,
-    );
-    my $DBObject = Kernel::System::DB-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-        LogObject    =&gt; $LogObject,
-        MainObject   =&gt; $MainObject,
-    );
-    my $TicketObject = Kernel::System::Ticket-&gt;new(
-        ConfigObject       =&gt; $ConfigObject,
-        LogObject          =&gt; $LogObject,
-        DBObject           =&gt; $DBObject,
-        MainObject         =&gt; $MainObject,
-        TimeObject         =&gt; $TimeObject,
-        EncodeObject       =&gt; $EncodeObject,
-        GroupObject        =&gt; $GroupObject,        # if given
-        CustomerUserObject =&gt; $CustomerUserObject, # if given
-        QueueObject        =&gt; $QueueObject,        # if given
-    );
+		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $TicketObject = $Kernel::OM-&gt;Get('Kernel::System::Ticket');
 
 </pre></dd>	<dt>TicketCreateNumber()</dt>
 		<dd><p>creates a new ticket number</p></dd>
@@ -649,6 +610,16 @@ custom queue.</p></dd>
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    @UserIDs = ( 1, 2, 3 );
 
+</pre></dd>	<dt>GetSubscribedUserIDsByServiceID()</dt>
+		<dd><p>returns an array of user ids which selected the given service id as
+custom service.</p></dd>
+<dd><pre>    my @UserIDs = $TicketObject-&gt;GetSubscribedUserIDsByServiceID(
+        ServiceID =&gt; 123,
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    @UserIDs = ( 1, 2, 3 );
+
 </pre></dd>	<dt>TicketPendingTimeSet()</dt>
 		<dd><p>set ticket pending time:</p></dd>
 <dd><pre>    my $Success = $TicketObject-&gt;TicketPendingTimeSet(
@@ -1069,6 +1040,19 @@ OwnerID, PriorityID, StateID, HistoryTypeID and TypeID)</p></dd>
 
 </pre></dd>		<dd><p>Events:
     TicketMerge</p></dd>
+	<dt>TicketMergeDynamicFields()</dt>
+		<dd><p>merge dynamic fields from one ticket into another, that is, copy
+them from the merge ticket to the main ticket if the value is empty
+in the main ticket.</p></dd>
+<dd><pre>    my $Success = $TicketObject-&gt;TicketMergeDynamicFields(
+        MainTicketID  =&gt; 123,
+        MergeTicketID =&gt; 42,
+        UserID        =&gt; 1,
+        DynamicFields =&gt; ['DynamicField_TicketFreeText1'], # optional
+    );
+
+</pre></dd>		<dd><p>If DynamicFields is not present, it is taken from the Ticket::MergeDynamicFields
+configuration.</p></dd>
 	<dt>TicketWatchGet()</dt>
 		<dd><p>to get all user ids and additional attributes of an watched ticket</p></dd>
 <dd><pre>    my %Watch = $TicketObject-&gt;TicketWatchGet(
@@ -1146,84 +1130,6 @@ OwnerID, PriorityID, StateID, HistoryTypeID and TypeID)</p></dd>
         AllUsers   =&gt; 1, # to get flags all users
     );
 
-</pre></dd>	<dt>TicketAcl()</dt>
-		<dd><p>prepare ACL execution of current state</p></dd>
-<dd><pre>    $TicketObject-&gt;TicketAcl(
-        Data          =&gt; '-',                         # Values to restrict
-
-</pre></dd><dd><pre>        Action        =&gt; 'AgentTicketZoom',           # Optional
-        TicketID      =&gt; 123,                         # Optional
-        DynamicField  =&gt; {                            # Optional
-            DynamicField_NameX =&gt; 123,
-            DynamicField_NameZ =&gt; 'some value',
-        },
-
-</pre></dd><dd><pre>        QueueID          =&gt; 123,                      # Optional
-        Queue            =&gt; 'some queue name',        # Optional
-
-</pre></dd><dd><pre>        ServiceID        =&gt; 123,                      # Optional
-        Service          =&gt; 'some service name',      # Optional
-
-</pre></dd><dd><pre>        TypeID           =&gt; 123,
-        Type             =&gt; 'some ticket type name',  # Optional
-
-</pre></dd><dd><pre>        PriorityID       =&gt; 123,                      # Optional
-        NewPriorityID    =&gt; 123,                      # Optional, PriorityID or NewPriorityID can be
-                                                      #   used and they both refers to PriorityID
-        Priority         =&gt; 'some priority name',     # Optional
-
-</pre></dd><dd><pre>        SLAID            =&gt; 123,
-        SLA              =&gt; 'some SLA name',          # Optional
-
-</pre></dd><dd><pre>        StateID          =&gt; 123,                      # Optional
-        NextStateID      =&gt; 123,                      # Optional, StateID or NextStateID can be
-                                                      #   used and they both refers to StateID
-        State            =&gt; 'some ticket state name', # Optional
-
-</pre></dd><dd><pre>        OwnerID          =&gt; 123,                      # Optional
-        NewOwnerID       =&gt; 123,                      # Optional, OwnerID or NewOwnerID can be
-                                                      #   used and they both refers to OwnerID
-        Owner            =&gt; 'some user login'         # Optional
-
-</pre></dd><dd><pre>        ResponsibleID    =&gt; 123,                      # Optional
-        NewResponsibleID =&gt; 123,                      # Optional, ResponsibleID or NewResposibleID
-                                                      #   can be used and they both refers to
-                                                      #     ResponsibleID
-        Responsible      =&gt; 'some user login'         # Optional
-
-</pre></dd><dd><pre>        ReturnType     =&gt; 'Action',                   # To match Possible or PossibleNot key in ACL
-        ReturnSubType  =&gt; '-',                        # To match Possible or PossibleNot sub-key in
-                                                      #   ACL
-
-</pre></dd><dd><pre>        UserID         =&gt; 123,                        # UserID =&gt; 1 is not affected by this function
-        CustomerUserID =&gt; 'customer login',           # UserID or CustomerUserID are mandatory
-
-</pre></dd><dd><pre>        # Process Management Parameters
-        ProcessEntityID        =&gt; 123,                # Optional
-        ActivityEntityID       =&gt; 123,                # Optional
-        ActivityDialogEntityID =&gt; 123,                # Optional
-
-</pre></dd><dd><pre>    );
-
-</pre></dd>		<dd><p>or</p></dd>
-<dd><pre>    $TicketObject-&gt;TicketAcl(
-        Data =&gt; {
-            1 =&gt; 'new',
-            2 =&gt; 'open',
-            # ...
-        },
-        ReturnType    =&gt; 'Ticket',
-        ReturnSubType =&gt; 'State',
-    )
-
-</pre></dd>	<dt>TicketAclData()</dt>
-		<dd><p>return the current ACL data hash after TicketAcl()</p></dd>
-<dd><pre>    my %Acl = $TicketObject-&gt;TicketAclData();
-
-</pre></dd>	<dt>TicketAclActionData()</dt>
-		<dd><p>return the current ACL action data hash after TicketAcl()</p></dd>
-<dd><pre>    my %AclAction = $TicketObject-&gt;TicketAclActionData();
-
 </pre></dd>	<dt>TicketArticleStorageSwitch()</dt>
 		<dd><p>move article storage from one backend to other backend</p></dd>
 <dd><pre>    my $Success = $TicketObject-&gt;TicketArticleStorageSwitch(
@@ -1240,23 +1146,15 @@ OwnerID, PriorityID, StateID, HistoryTypeID and TypeID)</p></dd>
         TicketID =&gt; 123,
     );
 
-</pre></dd>	<dt>TicketAclActivityDialogData()</dt>
-		<dd><p>return the ACL validated possible activity dialogs as array after TicketAcl()</p></dd>
-<dd><pre>    my @PossibleActivityDialogs = $TicketObject-&gt;TicketAclActivityDialogData(
-        ActivityDialogs =&gt; [ AD1, AD2, AD3 ],
+</pre></dd>	<dt>TicketCalendarGet()</dt>
+		<dd><p>checks calendar to be used for ticket based on sla and queue</p></dd>
+<dd><pre>    my $Calendar = $TicketObject-&gt;TicketCalendarGet(
+        QueueID =&gt; 1,
+        SLAID   =&gt; 1,   # optional
     );
 
-</pre></dd>	<dt>TicketAclProcessData()</dt>
-		<dd><p>return the ACL validated possible processes as hash after TicketAcl()</p></dd>
-<dd><pre>    my %PossibleActivityDialogs = $TicketObject-&gt;TicketAclProcessData(
-        Processes =&gt; {
-            P1 =&gt; 'Process1 Name',
-            P2 =&gt; 'Process2 Name',
-            P3 =&gt; 'Process3 Name',
-        },
-    );
-
-</pre></dd></dl>
+</pre></dd>		<dd><p>returns calendar number or empty string for default calendar</p></dd>
+</dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

@@ -15,7 +15,12 @@ use warnings;
 
 use Digest::MD5;
 
-use Kernel::System::Cache;
+our @ObjectDependencies = (
+    'Kernel::System::Cache',
+    'Kernel::System::DB',
+    'Kernel::System::Encode',
+    'Kernel::System::Log',
+);
 
 =head1 NAME
 
@@ -33,41 +38,11 @@ All xml related functions.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::XML;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $XMLObject = Kernel::System::XML->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $XMLObject = $Kernel::OM->Get('Kernel::System::XML');
 
 =cut
 
@@ -77,13 +52,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # check needed objects
-    for (qw(ConfigObject LogObject DBObject MainObject EncodeObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
-
-    $Self->{CacheObject} = Kernel::System::Cache->new( %{$Self} );
 
     return $Self;
 }
@@ -112,7 +80,7 @@ sub XMLHashAdd {
     # check needed stuff
     for (qw(Type XMLHash)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -121,7 +89,7 @@ sub XMLHashAdd {
     }
 
     if ( !$Param{Key} && !$Param{KeyAutoIncrement} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need Key or KeyAutoIncrement param!',
         );
@@ -138,11 +106,14 @@ sub XMLHashAdd {
         }
         $Self->XMLHashDelete(%Param);
 
+        # get database object
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
         # create rand number
         my $Rand   = int( rand(1000000) );
         my $TmpKey = "TMP-$Rand-$Param{Type}";
         for my $Key ( sort keys %ValueHASH ) {
-            $Self->{DBObject}->Do(
+            $DBObject->Do(
                 SQL =>
                     'INSERT INTO xml_storage (xml_type, xml_key, xml_content_key, xml_content_value) VALUES (?, ?, ?, ?)',
                 Bind => [ \$TmpKey, \$Param{Key}, \$Key, \$ValueHASH{$Key}, ],
@@ -159,7 +130,7 @@ sub XMLHashAdd {
         return $Param{Key};
     }
 
-    $Self->{LogObject}->Log(
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'error',
         Message  => 'Got no %ValueHASH from XMLHash2D()',
     );
@@ -187,7 +158,7 @@ sub XMLHashUpdate {
     # check needed stuff
     for (qw(Type Key XMLHash)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -224,7 +195,7 @@ sub XMLHashGet {
     # check needed stuff
     for (qw(Type Key)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -235,23 +206,32 @@ sub XMLHashGet {
         $Param{Cache} = 1;
     }
 
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
     # check cache
     if ( $Param{Cache} ) {
-        my $Cache = $Self->{CacheObject}->Get(
+        my $Cache = $CacheObject->Get(
             Type => 'XML',
             Key  => "$Param{Type}-$Param{Key}",
+
+            # Don't store complex structure in memory as it will be modified later.
+            CacheInMemory => 0,
         );
         return @{$Cache} if $Cache;
     }
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # sql
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL => 'SELECT xml_content_key, xml_content_value '
             . ' FROM xml_storage WHERE xml_type = ? AND xml_key = ?',
         Bind => [ \$Param{Type}, \$Param{Key} ],
 
     );
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         if ( defined $Data[1] ) {
             $Data[1] =~ s/\\/\\\\/g;
             $Data[1] =~ s/'/\\'/g;
@@ -267,11 +247,14 @@ sub XMLHashGet {
 
     # set cache
     if ( $Param{Cache} && $Content ) {
-        $Self->{CacheObject}->Set(
+        $CacheObject->Set(
             Type  => 'XML',
             Key   => "$Param{Type}-$Param{Key}",
             Value => \@XMLHash,
             TTL   => 24 * 60 * 60,
+
+            # Don't store complex structure in memory as it will be modified later.
+            CacheInMemory => 0,
         );
     }
 
@@ -295,7 +278,7 @@ sub XMLHashDelete {
     # check needed stuff
     for (qw(Type Key)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -304,12 +287,15 @@ sub XMLHashDelete {
     }
 
     # remove cache
-    $Self->{CacheObject}->Delete(
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
         Type => 'XML',
         Key  => "$Param{Type}-$Param{Key}",
     );
 
-    return if !$Self->{DBObject}->Do(
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Do(
         SQL  => 'DELETE FROM xml_storage WHERE xml_type = ? AND xml_key = ?',
         Bind => [ \$Param{Type}, \$Param{Key} ],
     );
@@ -336,7 +322,7 @@ sub XMLHashMove {
     # check needed stuff
     for (qw(OldType OldKey NewType NewKey)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -344,24 +330,30 @@ sub XMLHashMove {
         }
     }
 
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
     # remove cache
-    $Self->{CacheObject}->Delete(
+    $CacheObject->Delete(
         Type => 'XML',
         Key  => "$Param{OldType}-$Param{OldKey}",
     );
-    $Self->{CacheObject}->Delete(
+    $CacheObject->Delete(
         Type => 'XML',
         Key  => "$Param{NewType}-$Param{NewKey}",
     );
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # delete existing xml hash
-    $Self->{DBObject}->Do(
+    $DBObject->Do(
         SQL  => 'DELETE FROM xml_storage WHERE xml_type = ? AND xml_key = ?',
         Bind => [ \$Param{NewType}, \$Param{NewKey} ],
     );
 
     # update xml hash
-    return if !$Self->{DBObject}->Do(
+    return if !$DBObject->Do(
         SQL => 'UPDATE xml_storage SET xml_type = ?, xml_key = ? '
             . 'WHERE xml_type = ? AND xml_key = ?',
         Bind => [ \$Param{NewType}, \$Param{NewKey}, \$Param{OldType}, \$Param{OldKey} ],
@@ -402,14 +394,17 @@ sub XMLHashSearch {
 
     # check needed stuff
     if ( !$Param{Type} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need Type!'
         );
         return;
     }
 
-    return if !$Self->{DBObject}->Prepare(
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
         SQL  => 'SELECT DISTINCT(xml_key) FROM xml_storage WHERE xml_type = ?',
         Bind => [ \$Param{Type} ],
     );
@@ -418,14 +413,14 @@ sub XMLHashSearch {
     my %Hash;
 
     # initially all keys with the correct type are possible
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         $Hash{ $Data[0] } = 1;
     }
 
     if ( $Param{What} && ref $Param{What} eq 'ARRAY' ) {
 
         # get like escape string needed for some databases (e.g. oracle)
-        my $LikeEscapeString = $Self->{DBObject}->GetDatabaseFunction('LikeEscapeString');
+        my $LikeEscapeString = $DBObject->GetDatabaseFunction('LikeEscapeString');
 
         # the array elements are 'and' combined
         for my $And ( @{ $Param{What} } ) {
@@ -433,14 +428,14 @@ sub XMLHashSearch {
             # the key/value pairs are 'or' combined
             my @OrConditions;
             for my $Key ( sort keys %{$And} ) {
-                my $Value = $Self->{DBObject}->Quote( $And->{$Key} );
-                $Key = $Self->{DBObject}->Quote( $Key, 'Like' );
+                my $Value = $DBObject->Quote( $And->{$Key} );
+                $Key = $DBObject->Quote( $Key, 'Like' );
                 if ( $Value && ref $Value eq 'ARRAY' ) {
 
                     # when an array of possible values is given,
                     # we use 'LIKE'-conditions and combine them with 'OR'
                     for my $Element ( @{$Value} ) {
-                        $Element = $Self->{DBObject}->Quote( $Element, 'Like' );
+                        $Element = $DBObject->Quote( $Element, 'Like' );
                         push @OrConditions,
                             " (xml_content_key LIKE '$Key' $LikeEscapeString "
                             . "AND xml_content_value LIKE '$Element' $LikeEscapeString)";
@@ -450,7 +445,7 @@ sub XMLHashSearch {
 
                     # when a single  possible value is given,
                     # we use a 'LIKE'-condition
-                    $Value = $Self->{DBObject}->Quote( $Value, 'Like' );
+                    $Value = $DBObject->Quote( $Value, 'Like' );
                     push @OrConditions,
                         " (xml_content_key LIKE '$Key' $LikeEscapeString "
                         . "AND xml_content_value LIKE '$Value' $LikeEscapeString )";
@@ -464,7 +459,7 @@ sub XMLHashSearch {
             }
 
             # execute
-            $Self->{DBObject}->Prepare(
+            $DBObject->Prepare(
                 SQL  => $SQL,
                 Bind => [ \$Param{Type} ],
             );
@@ -472,7 +467,7 @@ sub XMLHashSearch {
             # intersection between the current key set, and the keys from the last 'SELECT'
             # only the keys which are in all results survive
             my %HashNew;
-            while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+            while ( my @Data = $DBObject->FetchrowArray() ) {
                 if ( $Hash{ $Data[0] } ) {
                     $HashNew{ $Data[0] } = 1;
                 }
@@ -501,20 +496,23 @@ sub XMLHashList {
 
     # check needed stuff
     if ( !$Param{Type} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need Type!'
         );
         return;
     }
 
-    return if !$Self->{DBObject}->Prepare(
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
         SQL  => 'SELECT distinct(xml_key) FROM xml_storage WHERE xml_type = ?',
         Bind => [ \$Param{Type} ],
     );
 
     my @Keys;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         push @Keys, $Data[0];
     }
 
@@ -648,7 +646,7 @@ sub XMLHash2D {
 
     # check needed stuff
     if ( !defined $Param{XMLHash} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'XMLHash not defined!',
         );
@@ -693,7 +691,7 @@ sub XMLStructure2XMLHash {
 
     # check needed stuff
     if ( !defined $Param{XMLStructure} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'XMLStructure not defined!'
         );
@@ -736,7 +734,7 @@ sub XMLParse {
 
     # check needed stuff
     if ( !defined $Param{String} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'String not defined!'
         );
@@ -748,16 +746,22 @@ sub XMLParse {
         $Param{String} = ${ $Param{String} };
     }
 
+    # get encode object
+    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
+
     # create checksum
     my $CookedString = $Param{String};
-    $Self->{EncodeObject}->EncodeOutput( \$CookedString );
+    $EncodeObject->EncodeOutput( \$CookedString );
     my $MD5Object = Digest::MD5->new();
     $MD5Object->add($CookedString);
     my $Checksum = $MD5Object->hexdigest();
 
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
     # check cache
     if ($Checksum) {
-        my $Cache = $Self->{CacheObject}->Get(
+        my $Cache = $CacheObject->Get(
             Type => 'XMLParse',
             Key  => $Checksum,
         );
@@ -776,7 +780,7 @@ sub XMLParse {
         if ( $1 !~ /(utf-8|utf8)/i && $1 =~ /encoding=('|")(.+?)('|")/i ) {
             my $SourceCharset = $2;
             $Param{String} =~ s/$SourceCharset/utf-8/i;
-            $Param{String} = $Self->{EncodeObject}->Convert(
+            $Param{String} = $EncodeObject->Convert(
                 Text  => $Param{String},
                 From  => $SourceCharset,
                 To    => 'utf-8',
@@ -797,6 +801,10 @@ sub XMLParse {
             },
         );
 
+        # get sourcename now to avoid a possible race condition where
+        # $@ could get altered after a failing eval!
+        my $Sourcename = $Param{Sourcename} ? "\n\n($Param{Sourcename})" : '';
+
         if ( eval { $Parser->parse( $Param{String} ) } ) {
             $UseFallback = 0;
 
@@ -804,11 +812,11 @@ sub XMLParse {
             $Self->{XMLQuote} = 0;
         }
         else {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "C-Parser: $@!"
+                Message  => "C-Parser: $@!$Sourcename"
             );
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => 'XML::Parser produced errors. I use XML::Parser::Lite as fallback!'
             );
@@ -838,7 +846,7 @@ sub XMLParse {
 
     # set cache
     if ($Checksum) {
-        $Self->{CacheObject}->Set(
+        $CacheObject->Set(
             Type  => 'XMLParse',
             Key   => $Checksum,
             Value => $Self->{XMLARRAY},
@@ -872,7 +880,7 @@ sub _XMLHashAddAutoIncrement {
     # check needed stuff
     for (qw(Type KeyAutoIncrement)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -880,12 +888,15 @@ sub _XMLHashAddAutoIncrement {
         }
     }
 
-    return if !$Self->{DBObject}->Prepare(
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
         SQL  => 'SELECT DISTINCT(xml_key) FROM xml_storage WHERE xml_type = ?',
         Bind => [ \$Param{Type} ],
     );
 
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         if ( $Data[0] ) {
             push @KeysExists, $Data[0];
         }
@@ -893,7 +904,7 @@ sub _XMLHashAddAutoIncrement {
 
     for my $Key (@KeysExists) {
         if ( $Key !~ /^\d{1,99}$/ ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "No KeyAutoIncrement possible, no int key exists ($Key)!",
             );
@@ -1430,6 +1441,9 @@ sub _XMLStructure2XMLHash {
 sub _Decode {
     my ( $Self, $A ) = @_;
 
+    # get encode object
+    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
+
     for ( sort keys %{$A} ) {
         if ( ref $A->{$_} eq 'ARRAY' ) {
             for my $B ( @{ $A->{$_} } ) {
@@ -1452,7 +1466,7 @@ sub _Decode {
             }
 
             # convert into default charset
-            $A->{$_} = $Self->{EncodeObject}->Convert(
+            $A->{$_} = $EncodeObject->Convert(
                 Text  => $A->{$_},
                 From  => 'utf-8',
                 To    => 'utf-8',

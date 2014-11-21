@@ -14,6 +14,13 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::DB',
+    'Kernel::System::Main',
+    'Kernel::System::XML',
+);
+
 sub GetDisplayPath {
     return 'Database';
 }
@@ -22,16 +29,16 @@ sub Run {
     my $Self = shift;
 
     # table check
-    my $File = $Self->{ConfigObject}->Get('Home') . '/scripts/database/otrs-schema.xml';
+    my $File = $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/scripts/database/otrs-schema.xml';
     if ( !-f $File ) {
         $Self->AddResultProblem(
             Label   => 'Table Presence',
             Value   => '',
-            Message => "Internal Error: Could not open file."
+            Message => "Internal Error: Could not open file.",
         );
     }
 
-    my $ContentRef = $Self->{MainObject}->FileRead(
+    my $ContentRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
         Location => $File,
         Mode     => 'utf8',
     );
@@ -39,25 +46,27 @@ sub Run {
         $Self->AddResultProblem(
             Label   => 'Table Check',
             Value   => '',
-            Message => "Internal Error: Could not read file."
+            Message => "Internal Error: Could not read file.",
         );
     }
 
-    my @MissingTables;
+    my @XMLHash = $Kernel::OM->Get('Kernel::System::XML')->XMLParse2XMLHash( String => ${$ContentRef} );
 
-    my @XMLHash = $Self->{XMLObject}->XMLParse2XMLHash( String => ${$ContentRef} );
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    my @MissingTables;
     TABLE:
     for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
         next TABLE if !$Table;
 
-        my $TableExists = $Self->{DBObject}->Prepare(
+        my $TableExists = $DBObject->Prepare(
             SQL   => "SELECT 1 FROM $Table->{Name}",
-            Limit => 1
+            Limit => 1,
         );
 
-        if ($TableExists)
-        {
-            while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+        if ($TableExists) {
+            while ( my @Row = $DBObject->FetchrowArray() ) {
 
                 # noop
             }
@@ -76,8 +85,7 @@ sub Run {
         $Self->AddResultProblem(
             Label   => 'Table Presence',
             Value   => join( ', ', @MissingTables ),
-            Message => "Tables found which are not present in the database."
-
+            Message => "Tables found which are not present in the database.",
         );
     }
 

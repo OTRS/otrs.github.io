@@ -40,24 +40,32 @@ sub DatepickerGetVacationDays {
     # get the defined vacation days
     my $TimeVacationDays        = $Self->{ConfigObject}->Get('TimeVacationDays');
     my $TimeVacationDaysOneTime = $Self->{ConfigObject}->Get('TimeVacationDaysOneTime');
+    if ( $Param{Calendar} ) {
+        if ( $Self->{ConfigObject}->Get( "TimeZone::Calendar" . $Param{Calendar} . "Name" ) ) {
+            $TimeVacationDays        = $Self->{ConfigObject}->Get( "TimeVacationDays::Calendar" . $Param{Calendar} );
+            $TimeVacationDaysOneTime = $Self->{ConfigObject}->Get(
+                "TimeVacationDaysOneTime::Calendar" . $Param{Calendar}
+            );
+        }
+    }
 
     # translate the vacation description if possible
     for my $Month ( sort keys %{$TimeVacationDays} ) {
         for my $Day ( sort keys %{ $TimeVacationDays->{$Month} } ) {
-            $TimeVacationDays->{$Month}->{$Day} = $Self->{LanguageObject}->Get( $TimeVacationDays->{$Month}->{$Day} );
+            $TimeVacationDays->{$Month}->{$Day}
+                = $Self->{LanguageObject}->Translate( $TimeVacationDays->{$Month}->{$Day} );
         }
     }
 
     for my $Year ( sort keys %{$TimeVacationDaysOneTime} ) {
         for my $Month ( sort keys %{ $TimeVacationDaysOneTime->{$Year} } ) {
             for my $Day ( sort keys %{ $TimeVacationDaysOneTime->{$Year}->{$Month} } ) {
-                $TimeVacationDaysOneTime->{$Year}->{$Month}->{$Day} = $Self->{LanguageObject}->Get(
+                $TimeVacationDaysOneTime->{$Year}->{$Month}->{$Day} = $Self->{LanguageObject}->Translate(
                     $TimeVacationDaysOneTime->{$Year}->{$Month}->{$Day}
                 );
             }
         }
     }
-
     return {
         'TimeVacationDays'        => $TimeVacationDays,
         'TimeVacationDaysOneTime' => $TimeVacationDaysOneTime,

@@ -14,6 +14,10 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+);
+
 sub GetDisplayPath {
     return 'Database';
 }
@@ -21,11 +25,14 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    if ( $Self->{DBObject}->GetDatabaseFunction('Type') !~ m{^postgresql} ) {
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $DBObject->GetDatabaseFunction('Type') !~ m{^postgresql} ) {
         return $Self->GetResults();
     }
 
-    my $Version = $Self->{DBObject}->Version();
+    my $Version = $DBObject->Version();
     if ( $Version =~ /^PostgreSQL (\d{1,3}).*$/ ) {
         if ( $1 > 7 ) {
             $Self->AddResultOk(

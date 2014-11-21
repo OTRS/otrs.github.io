@@ -15,7 +15,13 @@ use warnings;
 use Scalar::Util;
 
 use Kernel::System::VariableCheck qw(:all);
-use Kernel::System::Ticket;
+
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+    'Kernel::System::DynamicField::Backend',
+    'Kernel::System::Log',
+    'Kernel::System::Ticket',
+);
 
 =head1 NAME
 
@@ -39,37 +45,8 @@ by using Kernel::System::DynamicField::ObjectType::Ticket->new();
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # get needed objects
-    for my $Needed (
-        qw(ConfigObject EncodeObject LogObject MainObject DBObject TimeObject)
-        )
-    {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    # check for TicketObject
-    if ( $Param{TicketObject} ) {
-
-        $Self->{TicketObject} = $Param{TicketObject};
-
-        # Make ticket object reference weak so it will not count as a reference on objects destroy.
-        #   This is because the TicketObject has a Kernel::DynamicField::Backend object, which has this
-        #   object, which has a TicketObject again. Without weaken() we'd have a cyclic reference.
-        Scalar::Util::weaken( $Self->{TicketObject} );
-    }
-
-    # otherwise create it
-    else {
-
-        # Here we must not call weaken(), because this is the only reference
-        $Self->{TicketObject} = Kernel::System::Ticket->new( %{$Self} );
-    }
 
     return $Self;
 }
@@ -94,9 +71,9 @@ sub PostValueSet {
     # check needed stuff
     for my $Needed (qw(DynamicFieldConfig ObjectID UserID)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed!"
+                Message  => "Need $Needed!",
             );
             return;
         }
@@ -104,7 +81,7 @@ sub PostValueSet {
 
     # check DynamicFieldConfig (general)
     if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "The field configuration is invalid",
         );
@@ -114,33 +91,50 @@ sub PostValueSet {
     # check DynamicFieldConfig (internally)
     for my $Needed (qw(ID FieldType ObjectType)) {
         if ( !$Param{DynamicFieldConfig}->{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Needed in DynamicFieldConfig!"
+                Message  => "Need $Needed in DynamicFieldConfig!",
             );
             return;
         }
     }
 
-    my %Ticket = $Self->{TicketObject}->TicketGet(
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # update change time
+    return if !$DBObject->Do(
+        SQL => 'UPDATE ticket SET change_time = current_timestamp, '
+            . ' change_by = ? WHERE id = ?',
+        Bind => [ \$Param{UserID}, \$Param{ObjectID} ],
+    );
+
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    my %Ticket = $TicketObject->TicketGet(
         TicketID      => $Param{ObjectID},
         DynamicFields => 0,
     );
 
-    my $HistoryValue;
-    if ( !defined $Param{Value} ) {
-        $HistoryValue = '',
-    }
-    else {
-        $HistoryValue = $Param{Value};
-    }
+    my $HistoryValue    = defined $Param{Value}    ? $Param{Value}    : '';
+    my $HistoryOldValue = defined $Param{OldValue} ? $Param{OldValue} : '';
+
+    # get dynamic field backend object
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
     # get value for storing
-    my $ValueStrg = $Self->{TicketObject}->{DynamicFieldBackendObject}->ReadableValueRender(
+    my $ValueStrg = $DynamicFieldBackendObject->ReadableValueRender(
         DynamicFieldConfig => $Param{DynamicFieldConfig},
         Value              => $HistoryValue,
     );
     $HistoryValue = $ValueStrg->{Value};
+
+    my $OldValueStrg = $DynamicFieldBackendObject->ReadableValueRender(
+        DynamicFieldConfig => $Param{DynamicFieldConfig},
+        Value              => $HistoryOldValue,
+    );
+    $HistoryOldValue = $OldValueStrg->{Value};
 
     my $FieldName;
     if ( !defined $Param{DynamicFieldConfig}->{Name} ) {
@@ -150,56 +144,86 @@ sub PostValueSet {
         $FieldName = $Param{DynamicFieldConfig}->{Name};
     }
 
-    my $FieldNameLength    = length($FieldName);
-    my $HistoryValueLength = length($HistoryValue);
+    my $FieldNameLength       = length $FieldName       || 0;
+    my $HistoryValueLength    = length $HistoryValue    || 0;
+    my $HistoryOldValueLength = length $HistoryOldValue || 0;
 
-# Name in ticket_history is like this form  "\%\%FieldName\%\%$FieldName\%\%Value\%\%$HistoryValue" up to 200 chars
+# Name in ticket_history is like this form "\%\%FieldName\%\%$FieldName\%\%Value\%\%$HistoryValue\%\%OldValue\%\%$HistoryOldValue" up to 200 chars
 # \%\%FieldName\%\% is 13 chars
 # \%\%Value\%\% is 9 chars
-# we have for info part of ticket history data ($FieldName+$HistoryValue) up to 178 chars
-# in this code is made substring. The same number of characters is provided for both of part in Name ($FieldName and $HistoryValue) up to 84 chars
-# First it is made $FieldName, then it is made $HistoryValue.
-# Length $HistoryValue is rest to 168 chars, because it is added "[...]" on substrig, and there is no 178 chars than 168.
-# If $FieldName wasn't cut and not added [...] then rest for $HistoryValue is 173 instead 168
-# Length $HistoryValue can be longer then 83 chars
+# \%\%OldValue\%\%$HistoryOldValue is 12
+# we have for info part of ticket history data ($FieldName+$HistoryValue+$OldValue) up to 166 chars
+# in this code is made substring. The same number of characters is provided for both of part in Name ($FieldName and $HistoryValue and $OldVAlue) up to 55 chars
+# if $FieldName and $HistoryValue and $OldVAlue is cut then info is up to 50 chars plus [...] (5 chars)
+# First it is made $HistoryOldValue, then it is made $FieldName, and then  $HistoryValue
+# Length $HistoryValue can be longer then 55 chars, also is for $OldValue.
 
-    my $NoCharacters = 178;
+    my $NoCharacters = 166;
 
-    if ( ( $FieldNameLength + $HistoryValueLength ) > 178 ) {
+    if ( ( $FieldNameLength + $HistoryValueLength + $HistoryOldValueLength ) > $NoCharacters ) {
 
-        # limit FieldName to 84 chars if is necessary
-        if ( length($FieldName) > 84 ) {
-            $FieldName = substr( $FieldName, 0, 84 );
-            $FieldName .= '[...]';
+        # OldValue is maybe less important
+        # At first it is made HistoryOldValue
+        # and now it is possible that for HistoryValue would FieldName be more than 55 chars
+        if ( length($HistoryOldValue) > 55 ) {
+            $HistoryOldValue = substr( $HistoryOldValue, 0, 50 );
+            $HistoryOldValue .= '[...]';
         }
 
-        my $ValueLength = $NoCharacters - length($FieldName);
-        if ( length($HistoryValue) > $ValueLength ) {
-            $ValueLength -= 5;
-            $HistoryValue = substr( $HistoryValue, 0, $ValueLength );
-            $HistoryValue .= '[...]';
+        # limit FieldName to 55 chars if is necessary
+        my $FieldNameLength = int( ( $NoCharacters - length($HistoryOldValue) ) / 2 );
+        my $ValueLength = $FieldNameLength;
+        if ( length($FieldName) > $FieldNameLength ) {
+
+            # HistoryValue will be at least 55 chars or more, if is FieldName or HistoryOldValue less than 55 chars
+            if ( length($HistoryValue) > $ValueLength ) {
+                $FieldNameLength = $FieldNameLength - 5;
+                $FieldName = substr( $FieldName, 0, $FieldNameLength );
+                $FieldName .= '[...]';
+                $ValueLength = $ValueLength - 5;
+                $HistoryValue = substr( $HistoryValue, 0, $ValueLength );
+                $HistoryValue .= '[...]';
+            }
+            else {
+                $FieldNameLength = $NoCharacters - length($HistoryOldValue) - length($HistoryValue) - 5;
+                $FieldName = substr( $FieldName, 0, $FieldNameLength );
+                $FieldName .= '[...]';
+            }
+        }
+        else {
+            $ValueLength = $NoCharacters - length($HistoryOldValue) - length($FieldName) - 5;
+            if ( length($HistoryValue) > $ValueLength ) {
+                $HistoryValue = substr( $HistoryValue, 0, $ValueLength );
+                $HistoryValue .= '[...]';
+            }
         }
     }
 
+    $HistoryValue    //= '';
+    $HistoryOldValue //= '';
+
     # history insert
-    $Self->{TicketObject}->HistoryAdd(
+    $TicketObject->HistoryAdd(
         TicketID    => $Param{ObjectID},
         QueueID     => $Ticket{QueueID},
         HistoryType => 'TicketDynamicFieldUpdate',
         Name =>
-            "\%\%FieldName\%\%$FieldName\%\%Value\%\%$HistoryValue",
+            "\%\%FieldName\%\%$FieldName"
+            . "\%\%Value\%\%$HistoryValue"
+            . "\%\%OldValue\%\%$HistoryOldValue",
         CreateUserID => $Param{UserID},
     );
 
     # clear ticket cache
-    $Self->{TicketObject}->_TicketCacheClear( TicketID => $Param{ObjectID} );
+    $TicketObject->_TicketCacheClear( TicketID => $Param{ObjectID} );
 
     # Trigger event.
-    $Self->{TicketObject}->EventHandler(
+    $TicketObject->EventHandler(
         Event => 'TicketDynamicFieldUpdate_' . $Param{DynamicFieldConfig}->{Name},
         Data  => {
             FieldName => $Param{DynamicFieldConfig}->{Name},
             Value     => $Param{Value},
+            OldValue  => $Param{OldValue},
             TicketID  => $Param{ObjectID},
             UserID    => $Param{UserID},
         },

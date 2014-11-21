@@ -12,7 +12,11 @@ package Kernel::System::LinkObject::Ticket;
 use strict;
 use warnings;
 
-use Kernel::System::Ticket;
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Log',
+    'Kernel::System::Ticket',
+);
 
 =head1 NAME
 
@@ -30,50 +34,11 @@ Ticket backend for the ticket link object.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::LinkObject::Ticket;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $TicketObject = Kernel::System::LinkObject::Ticket->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-        GroupObject        => $GroupObject,        # if given
-        CustomerUserObject => $CustomerUserObject, # if given
-        QueueObject        => $QueueObject,        # if given
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $LinkObjectTicketObject = $Kernel::OM->Get('Kernel::System::LinkObject::Ticket');
 
 =cut
 
@@ -84,12 +49,6 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # check needed objects
-    for (qw(DBObject ConfigObject LogObject MainObject EncodeObject TimeObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
-    $Self->{TicketObject} = Kernel::System::Ticket->new( %{$Self} );
-
     return $Self;
 }
 
@@ -98,8 +57,9 @@ sub new {
 fill up the link list with data
 
     $Success = $LinkObjectBackend->LinkListWithData(
-        LinkList => $HashRef,
-        UserID   => 1,
+        LinkList                     => $HashRef,
+        IgnoreLinkedTicketStateTypes => 0|1,        # (optional) default 0
+        UserID                       => 1,
     );
 
 =cut
@@ -110,7 +70,7 @@ sub LinkListWithData {
     # check needed stuff
     for my $Argument (qw(LinkList UserID)) {
         if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Argument!",
             );
@@ -120,12 +80,24 @@ sub LinkListWithData {
 
     # check link list
     if ( ref $Param{LinkList} ne 'HASH' ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'LinkList must be a hash reference!',
         );
         return;
     }
+
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    # get config, which ticket state types should not be included in linked tickets overview
+    my @IgnoreLinkedTicketStateTypes = @{
+        $Kernel::OM->Get('Kernel::Config')->Get('LinkObject::IgnoreLinkedTicketStateTypes')
+            // []
+    };
+
+    my %IgnoreLinkTicketStateTypesHash;
+    map { $IgnoreLinkTicketStateTypesHash{$_}++ } @IgnoreLinkedTicketStateTypes;
 
     for my $LinkType ( sort keys %{ $Param{LinkList} } ) {
 
@@ -135,7 +107,7 @@ sub LinkListWithData {
             for my $TicketID ( sort keys %{ $Param{LinkList}->{$LinkType}->{$Direction} } ) {
 
                 # get ticket data
-                my %TicketData = $Self->{TicketObject}->TicketGet(
+                my %TicketData = $TicketObject->TicketGet(
                     TicketID      => $TicketID,
                     UserID        => $Param{UserID},
                     DynamicFields => 0,
@@ -143,6 +115,16 @@ sub LinkListWithData {
 
                 # remove id from hash if ticket can not get
                 if ( !%TicketData ) {
+                    delete $Param{LinkList}->{$LinkType}->{$Direction}->{$TicketID};
+                    next TICKETID;
+                }
+
+                # if param is set, remove entries from hash with configured ticket state types
+                if (
+                    $Param{IgnoreLinkedTicketStateTypes}
+                    && $IgnoreLinkTicketStateTypesHash{ $TicketData{StateType} }
+                    )
+                {
                     delete $Param{LinkList}->{$LinkType}->{$Direction}->{$TicketID};
                     next TICKETID;
                 }
@@ -174,7 +156,7 @@ sub ObjectPermission {
     # check needed stuff
     for my $Argument (qw(Object Key UserID)) {
         if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Argument!",
             );
@@ -182,7 +164,7 @@ sub ObjectPermission {
         }
     }
 
-    return $Self->{TicketObject}->TicketPermission(
+    return $Kernel::OM->Get('Kernel::System::Ticket')->TicketPermission(
         Type     => 'ro',
         TicketID => $Param{Key},
         UserID   => $Param{UserID},
@@ -213,7 +195,7 @@ sub ObjectDescriptionGet {
     # check needed stuff
     for my $Argument (qw(Object Key UserID)) {
         if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Argument!",
             );
@@ -230,7 +212,7 @@ sub ObjectDescriptionGet {
     return %Description if $Param{Mode} && $Param{Mode} eq 'Temporary';
 
     # get ticket
-    my %Ticket = $Self->{TicketObject}->TicketGet(
+    my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
         TicketID      => $Param{Key},
         UserID        => $Param{UserID},
         DynamicFields => 0,
@@ -238,7 +220,7 @@ sub ObjectDescriptionGet {
 
     return if !%Ticket;
 
-    my $ParamHook = $Self->{ConfigObject}->Get('Ticket::Hook') || 'Ticket#';
+    my $ParamHook = $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Hook') || 'Ticket#';
 
     # create description
     %Description = (
@@ -277,7 +259,7 @@ sub ObjectSearch {
 
     # check needed stuff
     if ( !$Param{UserID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need UserID!',
         );
@@ -303,8 +285,11 @@ sub ObjectSearch {
         $Search{Title} = '*' . $Param{SearchParams}->{Title} . '*';
     }
 
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
     # search the tickets
-    my @TicketIDs = $Self->{TicketObject}->TicketSearch(
+    my @TicketIDs = $TicketObject->TicketSearch(
         %{ $Param{SearchParams} },
         %Search,
         Limit               => 50,
@@ -323,7 +308,7 @@ sub ObjectSearch {
     for my $TicketID (@TicketIDs) {
 
         # get ticket data
-        my %TicketData = $Self->{TicketObject}->TicketGet(
+        my %TicketData = $TicketObject->TicketGet(
             TicketID      => $TicketID,
             UserID        => $Param{UserID},
             DynamicFields => 0,
@@ -370,7 +355,7 @@ sub LinkAddPre {
     # check needed stuff
     for my $Argument (qw(Key Type State UserID)) {
         if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Argument!",
             );
@@ -415,7 +400,7 @@ sub LinkAddPost {
     # check needed stuff
     for my $Argument (qw(Key Type State UserID)) {
         if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Argument!",
             );
@@ -425,16 +410,19 @@ sub LinkAddPost {
 
     return 1 if $Param{State} eq 'Temporary';
 
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
     if ( $Param{SourceObject} && $Param{SourceObject} eq 'Ticket' && $Param{SourceKey} ) {
 
         # lookup ticket number
-        my $TicketNumber = $Self->{TicketObject}->TicketNumberLookup(
+        my $TicketNumber = $TicketObject->TicketNumberLookup(
             TicketID => $Param{SourceKey},
             UserID   => $Param{UserID},
         );
 
         # add ticket history entry
-        $Self->{TicketObject}->HistoryAdd(
+        $TicketObject->HistoryAdd(
             TicketID     => $Param{Key},
             CreateUserID => $Param{UserID},
             HistoryType  => 'TicketLinkAdd',
@@ -442,7 +430,7 @@ sub LinkAddPost {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
+        $TicketObject->EventHandler(
             Event => 'TicketSlaveLinkAdd' . $Param{Type},
             Data  => {
                 TicketID => $Param{Key},
@@ -456,13 +444,13 @@ sub LinkAddPost {
     if ( $Param{TargetObject} && $Param{TargetObject} eq 'Ticket' && $Param{TargetKey} ) {
 
         # lookup ticket number
-        my $TicketNumber = $Self->{TicketObject}->TicketNumberLookup(
+        my $TicketNumber = $TicketObject->TicketNumberLookup(
             TicketID => $Param{TargetKey},
             UserID   => $Param{UserID},
         );
 
         # add ticket history entry
-        $Self->{TicketObject}->HistoryAdd(
+        $TicketObject->HistoryAdd(
             TicketID     => $Param{Key},
             CreateUserID => $Param{UserID},
             HistoryType  => 'TicketLinkAdd',
@@ -470,7 +458,7 @@ sub LinkAddPost {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
+        $TicketObject->EventHandler(
             Event  => 'TicketMasterLinkAdd' . $Param{Type},
             UserID => $Param{UserID},
             Data   => {
@@ -516,7 +504,7 @@ sub LinkDeletePre {
     # check needed stuff
     for my $Argument (qw(Key Type State UserID)) {
         if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Argument!",
             );
@@ -561,7 +549,7 @@ sub LinkDeletePost {
     # check needed stuff
     for my $Argument (qw(Key Type State UserID)) {
         if ( !$Param{$Argument} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Argument!",
             );
@@ -571,16 +559,19 @@ sub LinkDeletePost {
 
     return 1 if $Param{State} eq 'Temporary';
 
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
     if ( $Param{SourceObject} && $Param{SourceObject} eq 'Ticket' && $Param{SourceKey} ) {
 
         # lookup ticket number
-        my $TicketNumber = $Self->{TicketObject}->TicketNumberLookup(
+        my $TicketNumber = $TicketObject->TicketNumberLookup(
             TicketID => $Param{SourceKey},
             UserID   => $Param{UserID},
         );
 
         # add ticket history entry
-        $Self->{TicketObject}->HistoryAdd(
+        $TicketObject->HistoryAdd(
             TicketID     => $Param{Key},
             CreateUserID => $Param{UserID},
             HistoryType  => 'TicketLinkDelete',
@@ -588,7 +579,7 @@ sub LinkDeletePost {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
+        $TicketObject->EventHandler(
             Event => 'TicketSlaveLinkDelete' . $Param{Type},
             Data  => {
                 TicketID => $Param{Key},
@@ -602,13 +593,13 @@ sub LinkDeletePost {
     if ( $Param{TargetObject} && $Param{TargetObject} eq 'Ticket' && $Param{TargetKey} ) {
 
         # lookup ticket number
-        my $TicketNumber = $Self->{TicketObject}->TicketNumberLookup(
+        my $TicketNumber = $TicketObject->TicketNumberLookup(
             TicketID => $Param{TargetKey},
             UserID   => $Param{UserID},
         );
 
         # add ticket history entry
-        $Self->{TicketObject}->HistoryAdd(
+        $TicketObject->HistoryAdd(
             TicketID     => $Param{Key},
             CreateUserID => $Param{UserID},
             HistoryType  => 'TicketLinkDelete',
@@ -616,7 +607,7 @@ sub LinkDeletePost {
         );
 
         # ticket event
-        $Self->{TicketObject}->EventHandler(
+        $TicketObject->EventHandler(
             Event => 'TicketMasterLinkDelete' . $Param{Type},
             Data  => {
                 TicketID => $Param{Key},

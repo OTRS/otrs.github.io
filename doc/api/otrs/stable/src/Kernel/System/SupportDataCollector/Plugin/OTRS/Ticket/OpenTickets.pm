@@ -14,6 +14,10 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::System::Ticket',
+);
+
 sub GetDisplayPath {
     return 'OTRS';
 }
@@ -21,7 +25,7 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    my $OpenTickets = $Self->{TicketObject}->TicketSearch(
+    my $OpenTickets = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
         Result     => 'COUNT',
         StateType  => 'Open',
         UserID     => 1,

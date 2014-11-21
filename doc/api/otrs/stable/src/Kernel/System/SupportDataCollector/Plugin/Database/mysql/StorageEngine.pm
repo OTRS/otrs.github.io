@@ -14,6 +14,10 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+);
+
 sub GetDisplayPath {
     return 'Database';
 }
@@ -21,14 +25,17 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    if ( $Self->{DBObject}->GetDatabaseFunction('Type') ne 'mysql' ) {
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $DBObject->GetDatabaseFunction('Type') ne 'mysql' ) {
         return $Self->GetResults();
     }
 
     my $DefaultStorageEngine;
 
-    $Self->{DBObject}->Prepare( SQL => "show variables like 'storage_engine'" );
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    $DBObject->Prepare( SQL => "show variables like 'storage_engine'" );
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $DefaultStorageEngine = $Row[1];
         $Self->AddResultOk(
             Identifier => 'DefaultStorageEngine',
@@ -37,12 +44,12 @@ sub Run {
         );
     }
 
-    $Self->{DBObject}->Prepare(
+    $DBObject->Prepare(
         SQL  => "show table status where engine != ?",
         Bind => [ \$DefaultStorageEngine ],
     );
     my @TablesWithDifferentStorageEngine;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         push @TablesWithDifferentStorageEngine, $Row[0];
     }
 

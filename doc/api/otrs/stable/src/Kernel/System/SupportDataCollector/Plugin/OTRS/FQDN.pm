@@ -14,6 +14,10 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::Config',
+);
+
 sub GetDisplayPath {
     return 'OTRS';
 }
@@ -21,7 +25,7 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    my $FQDN = $Self->{ConfigObject}->Get('FQDN');
+    my $FQDN = $Kernel::OM->Get('Kernel::Config')->Get('FQDN');
 
     # Do we have set our FQDN?
     if ( $FQDN eq 'yourhost.example.com' ) {

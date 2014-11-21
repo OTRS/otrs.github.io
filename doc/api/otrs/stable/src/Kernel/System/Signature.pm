@@ -12,7 +12,10 @@ package Kernel::System::Signature;
 use strict;
 use warnings;
 
-use Kernel::System::Valid;
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+    'Kernel::System::Log',
+);
 
 =head1 NAME
 
@@ -30,41 +33,11 @@ All signature functions.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Signature;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $SignatureObject = Kernel::System::Signature->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        EncodeObject => $EncodeObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $SignatureObject = $Kernel::OM->Get('Kernel::System::Signature');
 
 =cut
 
@@ -74,12 +47,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # check needed objects
-    for (qw(DBObject ConfigObject LogObject MainObject EncodeObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
-    $Self->{ValidObject} = Kernel::System::Valid->new( %{$Self} );
 
     return $Self;
 }
@@ -105,7 +72,7 @@ sub SignatureAdd {
     # check needed stuff
     for (qw(Name Text ContentType ValidID UserID)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -113,7 +80,10 @@ sub SignatureAdd {
         }
     }
 
-    return if !$Self->{DBObject}->Do(
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Do(
         SQL => 'INSERT INTO signature (name, text, content_type, comments, valid_id, '
             . ' create_time, create_by, change_time, change_by)'
             . ' VALUES (?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
@@ -124,14 +94,16 @@ sub SignatureAdd {
     );
 
     # get new signature id
-    $Self->{DBObject}->Prepare(
+    $DBObject->Prepare(
         SQL  => 'SELECT id FROM signature WHERE name = ?',
         Bind => [ \$Param{Name} ],
     );
+
     my $ID;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $ID = $Row[0];
     }
+
     return $ID;
 }
 
@@ -150,21 +122,25 @@ sub SignatureGet {
 
     # check needed stuff
     if ( !$Param{ID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need ID!"
         );
         return;
     }
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # sql
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL => 'SELECT id, name, text, content_type, comments, valid_id, change_time, create_time '
             . ' FROM signature WHERE id = ?',
         Bind => [ \$Param{ID} ],
     );
+
     my %Data;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         %Data = (
             ID          => $Data[0],
             Name        => $Data[1],
@@ -179,14 +155,13 @@ sub SignatureGet {
 
     # no data found
     if ( !%Data ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "SignatureID '$Param{ID}' not found!"
         );
         return;
     }
 
-    # return data
     return %Data;
 }
 
@@ -212,7 +187,7 @@ sub SignatureUpdate {
     # check needed stuff
     for (qw(ID Name Text ContentType ValidID UserID)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -221,7 +196,7 @@ sub SignatureUpdate {
     }
 
     # sql
-    return if !$Self->{DBObject}->Do(
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
         SQL => 'UPDATE signature SET name = ?, text = ?, content_type = ?, comments = ?, '
             . ' valid_id = ?, change_time = current_timestamp, change_by = ? WHERE id = ?',
         Bind => [
@@ -229,6 +204,7 @@ sub SignatureUpdate {
             \$Param{ValidID}, \$Param{UserID}, \$Param{ID},
         ],
     );
+
     return 1;
 }
 
@@ -247,15 +223,14 @@ get signature list
 sub SignatureList {
     my ( $Self, %Param ) = @_;
 
-    my $Valid = 1;
-
     # check needed stuff
+    my $Valid = 1;
     if ( !$Param{Valid} && defined $Param{Valid} ) {
         $Valid = 0;
     }
 
     # sql
-    return $Self->{DBObject}->GetTableData(
+    return $Kernel::OM->Get('Kernel::System::DB')->GetTableData(
         What  => 'id, name',
         Valid => $Valid,
         Clamp => 1,

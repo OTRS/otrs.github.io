@@ -11,10 +11,18 @@ package Kernel::System::ProcessManagement::TransitionAction::TicketStateSet;
 
 use strict;
 use warnings;
+use utf8;
+
 use Kernel::System::VariableCheck qw(:all);
 
-use utf8;
-use Kernel::System::State;
+use base qw(Kernel::System::ProcessManagement::TransitionAction::Base);
+
+our @ObjectDependencies = (
+    'Kernel::System::Log',
+    'Kernel::System::State',
+    'Kernel::System::Ticket',
+    'Kernel::System::Time',
+);
 
 =head1 NAME
 
@@ -32,57 +40,11 @@ All TicketStateSet functions.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Ticket;
-    use Kernel::System::ProcessManagement::TransitionAction::TicketStateSet;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $TicketObject = Kernel::System::Ticket->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-    );
-    my $TicketStateSetActionObject = Kernel::System::ProcessManagement::TransitionAction::TicketStateSet->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        EncodeObject       => $EncodeObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        TicketObject       => $TicketObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $TicketStateSetObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::TransitionAction::TicketStateSet');
 
 =cut
 
@@ -92,23 +54,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # get needed objects
-    for my $Needed (
-        qw(ConfigObject LogObject EncodeObject DBObject MainObject TimeObject TicketObject)
-        )
-    {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    $Self->{StateObject} = Kernel::System::State->new(
-        %Param,
-        DBObject   => $Self->{DBObject},
-        MainObject => $Self->{MainObject},
-        TimeObject => $Self->{TimeObject},
-    );
 
     return $Self;
 }
@@ -130,8 +75,8 @@ sub new {
             StateID => 3,
 
             PendingTimeDiff => 123,             # optional, used for pending states, difference in seconds from
-                                                #   current time to desired penting time (e.g. a value of 3600 means
-                                                #   that the pending time will be 1hr after the Transition Action is
+                                                #   current time to desired pending time (e.g. a value of 3600 means
+                                                #   that the pending time will be 1 hr after the Transition Action is
                                                 #   executed)
             UserID  => 123,                     # optional, to override the UserID from the logged user
         }
@@ -147,59 +92,33 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    for my $Needed (
-        qw(UserID Ticket ProcessEntityID ActivityEntityID TransitionEntityID
-        TransitionActionEntityID Config
-        )
-        )
-    {
-        if ( !defined $Param{$Needed} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
     # define a common message to output in case of any error
     my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
         . " Transition: $Param{TransitionEntityID}"
         . " TransitionAction: $Param{TransitionActionEntityID} - ";
 
-    # Check if we have Ticket to deal with
-    if ( !IsHashRefWithData( $Param{Ticket} ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "Ticket has no values!",
-        );
-        return;
-    }
-
-    # Check if we have a ConfigHash
-    if ( !IsHashRefWithData( $Param{Config} ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "Config has no values!",
-        );
-        return;
-    }
+    # check for missing or wrong params
+    my $Success = $Self->_CheckParams(
+        %Param,
+        CommonMessage => $CommonMessage,
+    );
+    return if !$Success;
 
     # override UserID if specified as a parameter in the TA config
-    if ( IsNumber( $Param{Config}->{UserID} ) ) {
-        $Param{UserID} = $Param{Config}->{UserID};
-        delete $Param{Config}->{UserID};
-    }
+    $Param{UserID} = $Self->_OverrideUserID(%Param);
+
+    # use ticket attributes if needed
+    $Self->_ReplaceTicketAttributes(%Param);
 
     if ( !$Param{Config}->{StateID} && !$Param{Config}->{State} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => $CommonMessage . "No State or StateID configured!",
         );
         return;
     }
 
-    my $Success;
+    $Success = 0;
     my %StateData;
 
     # If Ticket's StateID is already the same as the Value we
@@ -219,17 +138,17 @@ sub Run {
         && $Param{Config}->{StateID} ne $Param{Ticket}->{StateID}
         )
     {
-        %StateData = $Self->{StateObject}->StateGet(
+        %StateData = $Kernel::OM->Get('Kernel::System::State')->StateGet(
             ID => $Param{Config}->{StateID},
         );
-        $Success = $Self->{TicketObject}->TicketStateSet(
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketStateSet(
             TicketID => $Param{Ticket}->{TicketID},
             StateID  => $Param{Config}->{StateID},
             UserID   => $Param{UserID},
         );
 
         if ( !$Success ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => $CommonMessage
                     . 'Ticket StateID '
@@ -257,17 +176,17 @@ sub Run {
         && $Param{Config}->{State} ne $Param{Ticket}->{State}
         )
     {
-        %StateData = $Self->{StateObject}->StateGet(
+        %StateData = $Kernel::OM->Get('Kernel::System::State')->StateGet(
             Name => $Param{Config}->{State},
         );
-        $Success = $Self->{TicketObject}->TicketStateSet(
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketStateSet(
             TicketID => $Param{Ticket}->{TicketID},
             State    => $Param{Config}->{State},
             UserID   => $Param{UserID},
         );
 
         if ( !$Success ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => $CommonMessage
                     . 'Ticket State '
@@ -278,7 +197,7 @@ sub Run {
         }
     }
     else {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => $CommonMessage
                 . "Couldn't update Ticket State - can't find valid State parameter!",
@@ -295,19 +214,22 @@ sub Run {
         )
     {
 
+        # get time object
+        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
         # get current time
-        my $PendingTime = $Self->{TimeObject}->SystemTime();
+        my $PendingTime = $TimeObject->SystemTime();
 
         # add PendingTimeDiff
         $PendingTime += $Param{Config}->{PendingTimeDiff};
 
         # convert pending time to time stamp
-        my $PendingTimeString = $Self->{TimeObject}->SystemTime2TimeStamp(
+        my $PendingTimeString = $TimeObject->SystemTime2TimeStamp(
             SystemTime => $PendingTime,
         );
 
         # set pending time
-        $Self->{TicketObject}->TicketPendingTimeSet(
+        $Kernel::OM->Get('Kernel::System::Ticket')->TicketPendingTimeSet(
             UserID   => $Param{UserID},
             TicketID => $Param{Ticket}->{TicketID},
             String   => $PendingTimeString,

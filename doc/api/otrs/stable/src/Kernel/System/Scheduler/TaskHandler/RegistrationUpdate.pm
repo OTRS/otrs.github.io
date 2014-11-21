@@ -1,5 +1,5 @@
 # --
-# Kernel/Scheduler/TaskHandler/RegistrationUpdate.pm - Scheduler task handler RegistrationUpdate backend
+# Kernel/System/Scheduler/TaskHandler/RegistrationUpdate.pm - Scheduler task handler RegistrationUpdate backend
 # Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -7,17 +7,20 @@
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-package Kernel::Scheduler::TaskHandler::RegistrationUpdate;
+package Kernel::System::Scheduler::TaskHandler::RegistrationUpdate;
 
 use strict;
 use warnings;
 
-use Kernel::System::Encode;
-use Kernel::System::Registration;
+our @ObjectDependencies = (
+    'Kernel::System::Log',
+    'Kernel::System::Registration',
+    'Kernel::System::Time',
+);
 
 =head1 NAME
 
-Kernel::Scheduler::TaskHandler::RegistrationUpdate - RegistrationUpdate backend of the TaskHandler for the Scheduler
+Kernel::System::Scheduler::TaskHandler::RegistrationUpdate - RegistrationUpdate backend of the TaskHandler for the Scheduler
 
 =head1 SYNOPSIS
 
@@ -30,7 +33,7 @@ Kernel::Scheduler::TaskHandler::RegistrationUpdate - RegistrationUpdate backend 
 =item new()
 
 usually, you want to create an instance of this
-by using Kernel::Scheduler::TaskHandler->new();
+by using Kernel::System::Scheduler::TaskHandler->new();
 
 =cut
 
@@ -39,13 +42,6 @@ sub new {
 
     my $Self = {};
     bless( $Self, $Type );
-
-    # check needed objects
-    for my $Needed (qw(MainObject ConfigObject LogObject DBObject TimeObject)) {
-        $Self->{$Needed} = $Param{$Needed} || die "Got no $Needed!";
-    }
-    $Self->{EncodeObject}       = Kernel::System::Encode->new( %{$Self} );
-    $Self->{RegistrationObject} = Kernel::System::Registration->new( %{$Self} );
 
     return $Self;
 }
@@ -79,7 +75,7 @@ sub Run {
 
     # check data - we need a hash ref
     if ( $Param{Data} && ref $Param{Data} ne 'HASH' ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Got no valid Data!',
         );
@@ -89,12 +85,12 @@ sub Run {
         };
     }
 
-    $Self->{LogObject}->Log(
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
         Priority => 'info',
         Message  => "Registration - RegistrationUpdate running.",
     );
 
-    my %Result = $Self->{RegistrationObject}->RegistrationUpdateSend(
+    my %Result = $Kernel::OM->Get('Kernel::System::Registration')->RegistrationUpdateSend(
         RegistrationUpdateTaskID => $Param{TaskID},
     );
 
@@ -102,9 +98,12 @@ sub Run {
     # portal tells us. Otherwise, retry in two hours
     my $ReSchedule = $Result{ReScheduleIn} // ( 3600 * 2 );
 
-    my $SystemTime = $Self->{TimeObject}->SystemTime();
+    # get time object
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
 
-    my $ReScheduleTime = $Self->{TimeObject}->SystemTime2TimeStamp(
+    my $SystemTime = $TimeObject->SystemTime();
+
+    my $ReScheduleTime = $TimeObject->SystemTime2TimeStamp(
         SystemTime => ( $SystemTime + $ReSchedule ),
     );
 

@@ -14,6 +14,7 @@
 #   -->> All changes of this file will be lost after an update! <<--
 #
 # --
+## nofilter(TidyAll::Plugin::OTRS::Perl::LayoutObject)
 
 package Kernel::Config::Defaults;
 
@@ -33,6 +34,8 @@ use lib dirname($Bin) . '/Custom';
 
 use File::stat;
 use Digest::MD5;
+
+our @ObjectDependencies = ();
 
 sub LoadDefaults {
     my $Self = shift;
@@ -79,7 +82,7 @@ sub LoadDefaults {
 
     # ProductName
     # (Application name displayed in frontend.)
-    $Self->{ProductName} = 'OTRS';
+    $Self->{ProductName} = 'OTRS 4';
 
     # --------------------------------------------------- #
     # database settings                                   #
@@ -101,28 +104,26 @@ sub LoadDefaults {
     $Self->{DatabasePw} = 'some-pass';
 
     # DatabaseDSN
-    # (The database DSN for MySQL ==> more: "man DBD::mysql")
+    # The database DSN for MySQL ==> more: "perldoc DBD::mysql"
     $Self->{DatabaseDSN} = "DBI:mysql:database=<OTRS_CONFIG_Database>;host=<OTRS_CONFIG_DatabaseHost>;";
 
-# (The database DSN for PostgreSQL ==> more: "man DBD::Pg")
+    # The database DSN for PostgreSQL ==> more: "perldoc DBD::Pg"
 #    $Self->{DatabaseDSN} = "DBI:Pg:dbname=<OTRS_CONFIG_Database>;host=<OTRS_CONFIG_DatabaseHost>;";
 
-    # (The database DSN for DBI:ODBC ==> more: "man DBD::ODBC")
+    # The database DSN for Microsoft SQL Server - only supported if OTRS is
+    # installed on Windows as well
     #    $Self->{DatabaseDSN} = "DBI:ODBC:$Self->{Database}";
     # If you use ODBC, no database auto detection is possible,
     # so set the database type here. Possible: mysq,postgresql,mssql,oracle
     #    $Self->{'Database::Type'} = 'mssql';
 
-# (The database DSN for Oracle ==> more: "man DBD::oracle")
-#    $Self->{DatabaseDSN} = "DBI:Oracle:sid=$Self->{Database};host=$Self->{DatabaseHost};port=1521;";
-#    $Self->{DatabaseDSN} = "DBI:Oracle:sid=vingador;host=vingador;port=1521;";
-# if needed, oracle env settings
-#    $ENV{ORACLE_HOME} = '/opt/ora9/product/9.2';
-#    $ENV{ORACLE_HOME} = '/oracle/Ora92';
+    # The database DSN for Oracle ==> more: "perldoc DBD::oracle"
+#    $Self->{DatabaseDSN} = "DBI:Oracle://$Self->{DatabaseHost}:1521/$Self->{Database}";
+#
+#    $ENV{ORACLE_HOME}     = '/path/to/your/oracle';
 #    $ENV{NLS_DATE_FORMAT} = 'YYYY-MM-DD HH24:MI:SS';
-#    $ENV{NLS_LANG} = "german_germany.utf8";
-#    $ENV{NLS_LANG} = "german_germany.we8iso8859p15";
-#    $ENV{NLS_LANG} = "american_america.we8iso8859p1";
+#    $ENV{NLS_LANG}        = 'AMERICAN_AMERICA.AL32UTF8';
+#    $ENV{NLS_LANG}        = 'GERMAN_GERMANY.AL32UTF8';
 
     # If you want to use an init sql after connect, use this here.
     # (e. g. can be used for mysql encoding between client and server)
@@ -188,6 +189,7 @@ sub LoadDefaults {
         'sr_Cyrl' => 'Serbian Cyrillic (српски)',
         'sr_Latn' => 'Serbian Latin (Srpski)',
         'sv' => 'Svenska',
+        'sw' => 'Swahili',
         'tr' => 'T&uuml;rk&ccedil;e',
         'uk' => 'Ukrainian (&#x0423;&#x043a;&#x0440;&#x0430;&#x0457;&#x043d;&#x0441;&#x044c;&#x043a;&#x0430;)',
         'vi_VN' => 'Vietnam (Vi&#x0246;t Nam)',
@@ -339,7 +341,7 @@ sub LoadDefaults {
     # example values: AuthSyncBackend, AuthSyncBackend2
 #    $Self->{'AuthModule::UseSyncBackend'} = '';
 
-    # password crypt type (bcrypt|sha2|sha1|md5|crypt|plain)
+    # password crypt type (bcrypt|sha2|sha1|md5|apr1|crypt|plain)
 #    $Self->{'AuthModule::DB::CryptType'} = 'sha2';
 
     # This is an example configuration for an LDAP auth. backend.
@@ -616,14 +618,22 @@ sub LoadDefaults {
     # agent interface notification module to check the admin user id
     # (don't work with user id 1 notification)
     $Self->{'Frontend::NotifyModule'} = {
+        '100-OTRSBusiness' => {
+            'Group' => 'admin',
+            'Module' => 'Kernel::Output::HTML::NotificationAgentOTRSBusiness'
+        },
         '200-UID-Check' => {
-          'Module' => 'Kernel::Output::HTML::NotificationUIDCheck'
+          'Module' => 'Kernel::Output::HTML::NotificationUIDCheck',
         },
         '500-OutofOffice-Check' => {
-          'Module' => 'Kernel::Output::HTML::NotificationOutofOfficeCheck'
+          'Module' => 'Kernel::Output::HTML::NotificationOutofOfficeCheck',
         },
+        '600-SystemMaintenance-Check' => {
+            'Module' => 'Kernel::Output::HTML::NotificationSystemMaintenanceCheck',
+        },
+
         '800-Scheduler-Check' => {
-          'Module' => 'Kernel::Output::HTML::NotificationSchedulerCheck'
+          'Module' => 'Kernel::Output::HTML::NotificationSchedulerCheck',
         },
     };
 
@@ -867,11 +877,11 @@ sub LoadDefaults {
 
     # Customer Common JS
     $Self->{'Loader::Customer::CommonJS'}->{'000-Framework'} =  [
-        'thirdparty/jquery-1.10.0/jquery.js',
+        'thirdparty/jquery-1.11.1/jquery.js',
         'thirdparty/jquery-browser-detection/jquery-browser-detection.js',
-        'thirdparty/jquery-validate-1.11.1/jquery.validate.js',
-        'thirdparty/jquery-ui-1.10.3/jquery-ui.js',
-        'thirdparty/stacktrace-0.4/stacktrace.js',
+        'thirdparty/jquery-validate-1.13.0/jquery.validate.js',
+        'thirdparty/jquery-ui-1.11.1/jquery-ui.js',
+        'thirdparty/stacktrace-0.6.2/stacktrace.js',
         'thirdparty/jquery-pubsub/pubsub.js',
         'thirdparty/jquery-jstree-v.pre1.0/jquery.jstree.js',
         'thirdparty/jquery-jstree-v.pre1.0/_lib/jquery.hotkeys.js',
@@ -899,11 +909,11 @@ sub LoadDefaults {
 
     # Agent Common JS
     $Self->{'Loader::Agent::CommonJS'}->{'000-Framework'} =  [
-        'thirdparty/jquery-1.10.0/jquery.js',
+        'thirdparty/jquery-1.11.1/jquery.js',
         'thirdparty/jquery-browser-detection/jquery-browser-detection.js',
-        'thirdparty/jquery-ui-1.10.3/jquery-ui.js',
-        'thirdparty/jquery-validate-1.11.1/jquery.validate.js',
-        'thirdparty/stacktrace-0.4/stacktrace.js',
+        'thirdparty/jquery-ui-1.11.1/jquery-ui.js',
+        'thirdparty/jquery-validate-1.13.0/jquery.validate.js',
+        'thirdparty/stacktrace-0.6.2/stacktrace.js',
         'thirdparty/jquery-pubsub/pubsub.js',
         'thirdparty/jquery-jstree-v.pre1.0/jquery.jstree.js',
         'thirdparty/jquery-jstree-v.pre1.0/_lib/jquery.hotkeys.js',
@@ -918,6 +928,7 @@ sub LoadDefaults {
         'Core.UI.js',
         'Core.UI.Accordion.js',
         'Core.UI.Datepicker.js',
+        'Core.UI.DnD.js',
         'Core.UI.Resizable.js',
         'Core.UI.Table.js',
         'Core.UI.Accessibility.js',
@@ -955,7 +966,7 @@ sub LoadDefaults {
 
     # Package::Timeout
     # (http/ftp timeout to get packages)
-    $Self->{'Package::Timeout'} = 15;
+    $Self->{'Package::Timeout'} = 120;
 
     # Package::Proxy
     # (fetch packages via proxy)
@@ -1054,7 +1065,7 @@ sub LoadDefaults {
         'Active' => '0',
         'Block' => 'Input',
         'Column' => 'Other Settings',
-        'Data' => '$Env{"UserComment"}',
+        'Data' => '[% Env("UserComment") %]',
         'Key' => 'Comment',
         'Label' => 'Comment',
         'Module' => 'Kernel::Output::HTML::PreferencesGeneric',
@@ -1228,7 +1239,7 @@ via the Preferences button after logging in.
     # if you use odbc or you want to define a database type (without autodetection)
 #    $Self->{'Customer::AuthModule::DB::Type'} = 'mysql';
 
-    # password crypt type (bcrypt|sha2|sha1|md5|crypt|plain)
+    # password crypt type (bcrypt|sha2|sha1|md5|apr1|crypt|plain)
 #    $Self->{'Customer::AuthModule::DB::CryptType'} = 'sha2';
 
     # This is an example configuration for an LDAP auth. backend.
@@ -1315,10 +1326,7 @@ via the Preferences button after logging in.
 #            User => '',
 #            Password => '',
             Table => 'customer_user',
-            # if your frontend is unicode and the charset of your
-            # customer database server is iso-8859-1, use these options.
-#           SourceCharset => 'iso-8859-1',
-#           DestCharset => 'utf-8',
+#            ForeignDB => 0,    # set this to 1 if your table does not have create_time, create_by, change_time and change_by fields
 
             # CaseSensitive will control if the SQL statements need LOWER()
             #   function calls to work case insensitively. Setting this to
@@ -1370,7 +1378,7 @@ via the Preferences button after logging in.
             [ 'UserLogin',      'Username',   'login',      1, 1, 'var', '', 0 ],
             [ 'UserPassword',   'Password',   'pw',         0, 0, 'var', '', 0 ],
             [ 'UserEmail',      'Email',      'email',      1, 1, 'var', '', 0 ],
-#            [ 'UserEmail',      'Email', 'email',           1, 1, 'var', '$Env{"CGIHandle"}?Action=AgentTicketCompose;ResponseID=1;TicketID=$Data{"TicketID"};ArticleID=$Data{"ArticleID"}', 0, '', 'AsPopup OTRSPopup_TicketAction' ],
+#            [ 'UserEmail',      'Email', 'email',           1, 1, 'var', '[% Env("CGIHandle") %]?Action=AgentTicketCompose;ResponseID=1;TicketID=[% Data.TicketID | uri %];ArticleID=[% Data.ArticleID | uri %]', 0, '', 'AsPopup OTRSPopup_TicketAction' ],
             [ 'UserCustomerID', 'CustomerID', 'customer_id', 0, 1, 'var', '', 0 ],
 #            [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
             [ 'UserPhone',        'Phone',       'phone',        1, 0, 'var', '', 0 ],
@@ -1413,13 +1421,8 @@ via the Preferences button after logging in.
 #            # in case you want to add always one filter to each ldap query, use
 #            # this option. e. g. AlwaysFilter => '(mail=*)' or AlwaysFilter => '(objectclass=user)'
 #            AlwaysFilter => '',
-#            # if both your frontend and your LDAP are unicode, use this:
-#            SourceCharset => 'utf-8',
-#            DestCharset   => 'utf-8',
-#            # if your frontend is unicode and the charset of your
-#            # ldap server is iso-8859-1, use these options.
+#            # if the charset of your ldap server is iso-8859-1, use this:
 #            # SourceCharset => 'iso-8859-1',
-#            # DestCharset => 'utf-8',
 #            # die if backend can't work, e. g. can't connect to server
 #            Die => 0,
 #            # Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
@@ -1503,7 +1506,7 @@ via the Preferences button after logging in.
             [ 'CustomerCompanyZIP',     'Zip',        'zip',         1, 0, 'var', '', 0 ],
             [ 'CustomerCompanyCity',    'City',       'city',        1, 0, 'var', '', 0 ],
             [ 'CustomerCompanyCountry', 'Country',    'country',     1, 0, 'var', '', 0 ],
-            [ 'CustomerCompanyURL',     'URL',        'url',         1, 0, 'var', '$Data{"CustomerCompanyURL"}', 0 ],
+            [ 'CustomerCompanyURL',     'URL',        'url',         1, 0, 'var', '[% Data.CustomerCompanyURL | html %]', 0 ],
             [ 'CustomerCompanyComment', 'Comment',    'comments',    1, 0, 'var', '', 0 ],
             [ 'ValidID',                'Valid',      'valid_id',    0, 1, 'int', '', 0 ],
         ],
@@ -1685,7 +1688,7 @@ via the Preferences button after logging in.
             ],
         },
     };
-    # --------------------------------------------------- #
+
     return;
 }
 
@@ -1815,11 +1818,12 @@ sub new {
             }
         }
         @Files = ( @NewFileOrderPre, @NewFileOrderPost );
+        FILE:
         for my $File (@Files) {
 
             # do not use ZZZ files
             if ( $Param{Level} && $Param{Level} eq 'Default' && $File =~ /ZZZ/ ) {
-                next;
+                next FILE;
             }
 
             # check config file format - use 1.0 as eval string, 1.1 as require or do
@@ -1831,15 +1835,16 @@ sub new {
 
                 # only try to find # VERSION:1.1 in the first 8 lines
                 my $TryCount = 0;
+                LINE:
                 while ( my $Line = <$In> ) {
                     if ($Line =~ /^\Q# VERSION:1.1\E/) {
                         $FileFormat = 1.1;
-                        last;
+                        last LINE;
                     }
 
                     $TryCount++;
                     if ( $TryCount >= 8 ) {
-                        last;
+                        last LINE;
                     }
                 }
                 close($In);
@@ -1869,12 +1874,13 @@ sub new {
                     if ( $mod_perl::VERSION >= 1.99 && $OS ne 'MSWin32') {
                     ## use critic
                         my $ApacheReload = 0;
+                        MODULE:
                         for my $Module ( sort keys %INC ) {
                             $Module =~ s/\//::/g;
                             $Module =~ s/\.pm$//g;
                             if ( $Module eq 'Apache::Reload' || $Module eq 'Apache2::Reload' ) {
                                 $ApacheReload = 1;
-                                last;
+                                last MODULE;
                             }
                         }
                         if ( !$ApacheReload ) {
@@ -1931,14 +1937,14 @@ sub new {
         die;
     }
     if ( open( my $Product, '<', "$Self->{Home}/RELEASE" ) ) { ## no critic
-        while (<$Product>) {
+        while (my $Line = <$Product>) {
 
             # filtering of comment lines
-            if ( $_ !~ /^#/ ) {
-                if ( $_ =~ /^PRODUCT\s{0,2}=\s{0,2}(.*)\s{0,2}$/i ) {
+            if ( $Line !~ /^#/ ) {
+                if ( $Line =~ /^PRODUCT\s{0,2}=\s{0,2}(.*)\s{0,2}$/i ) {
                     $Self->{Product} = $1;
                 }
-                elsif ( $_ =~ /^VERSION\s{0,2}=\s{0,2}(.*)\s{0,2}$/i ) {
+                elsif ( $Line =~ /^VERSION\s{0,2}=\s{0,2}(.*)\s{0,2}$/i ) {
                     $Self->{Version} = $1;
                 }
             }
@@ -1957,8 +1963,9 @@ sub new {
     if ( !$Param{Level} ) {
 
         # replace config variables in config variables
+        KEY:
         for my $Key ( sort keys %{$Self} ) {
-            next if !defined $Key;
+            next KEY if !defined $Key;
             if ( defined $Self->{$Key} ) {
                 $Self->{$Key} =~ s/\<OTRS_CONFIG_(.+?)\>/$Self->{$1}/g;
             }

@@ -13,6 +13,10 @@ package Kernel::System::EventHandler;
 use strict;
 use warnings;
 
+use Kernel::System::VariableCheck qw(IsArrayRefWithData);
+
+our $ObjectManagerDisabled = 1;
+
 =head1 NAME
 
 Kernel::System::EventHandler - event handler interface
@@ -46,29 +50,14 @@ Call this to initialize the event handling mechanisms to work
 correctly with your object.
 
     $Self->EventHandlerInit(
-
         # name of configured event modules
         Config     => 'Example::EventModule',
-
-        # current object, $Self, used in events as "ExampleObject"
-        BaseObject => 'ExampleObject',
-
-        # served default objects in any event backend
-        Objects    => {
-            UserObject => $UserObject,
-            XZY        => $XYZ,
-        },
     );
 
 Example 1:
 
     $Self->EventHandlerInit(
-        Config     => 'Ticket::EventModule',
-        BaseObject => 'TicketObject',
-        Objects    => {
-            UserObject  => $UserObject,
-            GroupObject => $GroupObject,
-        },
+        Config     => 'Ticket::EventModulePost',
     );
 
 Example 1 XML config:
@@ -91,8 +80,6 @@ Example 2:
 
     $Self->EventHandlerInit(
         Config     => 'ITSM::EventModule',
-        BaseObject => 'ChangeObject',
-        Objects    => {},
     );
 
 Example 2 XML config:
@@ -130,6 +117,7 @@ sub EventHandlerInit {
     my ( $Self, %Param ) = @_;
 
     $Self->{EventHandlerInit} = \%Param;
+    $Kernel::OM->ObjectRegisterEventHandler( EventHandler => $Self );
 
     return 1;
 }
@@ -167,27 +155,10 @@ Example 2:
 sub EventHandler {
     my ( $Self, %Param ) = @_;
 
-    # check log object
-    if ( !$Self->{LogObject} ) {
-        print STDERR 'Need LogObject to activate event handler!';
-        return;
-    }
-
-    # check needed objects
-    for my $Object (qw(ConfigObject MainObject)) {
-        if ( !$Self->{$Object} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Need $Object to activate event handler!",
-            );
-            return;
-        }
-    }
-
     # check needed stuff
     for (qw(Data Event UserID)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -196,7 +167,7 @@ sub EventHandler {
     }
 
     # get configured modules
-    my $Modules = $Self->{ConfigObject}->Get( $Self->{EventHandlerInit}->{Config} );
+    my $Modules = $Kernel::OM->Get('Kernel::Config')->Get( $Self->{EventHandlerInit}->{Config} );
 
     # return if there is no one
     return 1 if !$Modules;
@@ -205,6 +176,9 @@ sub EventHandler {
     if ( !$Self->{EventHandlerTransaction} ) {
         push @{ $Self->{EventHandlerPipe} }, \%Param;
     }
+
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
 
     # load modules and execute
     MODULE:
@@ -236,21 +210,18 @@ sub EventHandler {
                 #   we are processing a queued event in transaction mode. Only execute
                 #   this if the transaction settings of event and listener are the same.
 
-                # next if we are not in transaction mode, but module is in transaction
+                # skip if we are not in transaction mode, but module is in transaction
                 next MODULE if !$Param{Transaction} && $Modules->{$Module}->{Transaction};
 
-                # next if we are in transaction mode, but module is not in transaction
+                # skip if we are in transaction mode, but module is not in transaction
                 next MODULE if $Param{Transaction} && !$Modules->{$Module}->{Transaction};
             }
 
             # load event module
-            next MODULE if !$Self->{MainObject}->Require( $Modules->{$Module}->{Module} );
+            next MODULE if !$MainObject->Require( $Modules->{$Module}->{Module} );
 
             # execute event backend
-            my $Generic = $Modules->{$Module}->{Module}->new(
-                %{ $Self->{EventHandlerInit}->{Objects} || {} },
-                $Self->{EventHandlerInit}->{BaseObject} => $Self,
-            );
+            my $Generic = $Modules->{$Module}->{Module}->new();
 
             $Generic->Run(
                 %Param,
@@ -307,6 +278,19 @@ sub EventHandlerTransaction {
     $Self->{EventHandlerTransaction} = 0;
 
     return 1;
+}
+
+=item EventHandlerHasQueuedTransactions()
+
+Return a true value if there are queued transactions, which
+C<EventHandlerTransaction> handles, when called.
+
+=cut
+
+sub EventHandlerHasQueuedTransactions {
+    my ( $Self, %Param ) = @_;
+
+    return IsArrayRefWithData( $Self->{EventHandlerPipe} );
 }
 
 1;

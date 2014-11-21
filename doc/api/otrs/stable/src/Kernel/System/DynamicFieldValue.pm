@@ -13,8 +13,14 @@ use strict;
 use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
-use Kernel::System::Time;
-use Kernel::System::Cache;
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Cache',
+    'Kernel::System::DB',
+    'Kernel::System::Log',
+    'Kernel::System::Time',
+);
 
 =head1 NAME
 
@@ -32,41 +38,11 @@ DynamicField values backend
 
 =item new()
 
-create a DynamicFieldValue backend object
+create a DynamicFieldValue object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::DynamicFieldValue;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $DynamicFieldValueObject = Kernel::System::DynamicFieldValue->new(
-        ConfigObject        => $ConfigObject,
-        EncodeObject        => $EncodeObject,
-        LogObject           => $LogObject,
-        MainObject          => $MainObject,
-        DBObject            => $DBObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $DynamicFieldValueObject = $Kernel::OM->Get('Kernel::System::DynamicFieldValue');
 
 =cut
 
@@ -76,20 +52,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # get needed objects
-    for my $Needed (qw(ConfigObject EncodeObject LogObject MainObject DBObject)) {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    # create additional objects
-    $Self->{TimeObject}  = Kernel::System::Time->new( %{$Self} );
-    $Self->{CacheObject} = Kernel::System::Cache->new( %{$Self} );
-
-    # get the cache TTL (in seconds)
-    $Self->{CacheTTL} = int( $Self->{ConfigObject}->Get('DynamicField::CacheTTL') || 60 * 60 * 12 );
 
     return $Self;
 }
@@ -123,7 +85,7 @@ sub ValueSet {
     # check needed stuff
     for my $Needed (qw(FieldID ObjectID Value)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!"
             );
@@ -134,7 +96,7 @@ sub ValueSet {
     # return if no Value was provided
     if ( ref $Param{Value} ne 'ARRAY' || !$Param{Value}->[0] )
     {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need Param{Value}!"
         );
@@ -144,9 +106,10 @@ sub ValueSet {
     my @Values;
 
     my $Counter = 0;
+    VALUE:
     while (1) {
         if ( ref $Param{Value}->[$Counter] ne 'HASH' ) {
-            last;
+            last VALUE;
         }
 
         if (
@@ -155,7 +118,7 @@ sub ValueSet {
             && !defined $Param{Value}->[$Counter]->{ValueDateTime}
             )
         {
-            last;
+            last VALUE;
         }
 
         my %Value = (
@@ -192,10 +155,13 @@ sub ValueSet {
         UserID   => $Param{UserID},
     );
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     for my $Value (@Values) {
 
         # create a new value entry
-        return if !$Self->{DBObject}->Do(
+        return if !$DBObject->Do(
             SQL =>
                 'INSERT INTO dynamic_field_value (field_id, object_id, value_text, value_date, value_int)'
                 . ' VALUES (?, ?, ?, ?, ?)',
@@ -240,13 +206,16 @@ sub ValueGet {
     # check needed stuff
     for my $Needed (qw(FieldID ObjectID)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!"
             );
             return;
         }
     }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
     #
     # Special caching strategy: cache all fields of an object in one cache file.
@@ -255,7 +224,7 @@ sub ValueGet {
 
     my $CacheKey = 'ValueGet::ObjectID::' . $Param{ObjectID};
 
-    my $Cache = $Self->{CacheObject}->Get(
+    my $Cache = $CacheObject->Get(
         Type => 'DynamicFieldValue',
         Key  => $CacheKey,
     );
@@ -269,10 +238,13 @@ sub ValueGet {
         return [];
     }
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # We'll populate cache with all object's dynamic fields to reduce
     # number of db accesses (only one db query for all dynamic fields till
     # cache expiration); return only specified one dynamic field
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL =>
             'SELECT id, value_text, value_date, value_int, field_id
             FROM dynamic_field_value
@@ -283,7 +255,7 @@ sub ValueGet {
 
     my %CacheData;
 
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
 
         # cleanup time stamps (some databases are using e. g. 2008-02-25 22:03:00.000000
         # and 0000-00-00 00:00:00 time stamps)
@@ -302,12 +274,15 @@ sub ValueGet {
         };
     }
 
+    # get the cache TTL (in seconds)
+    my $CacheTTL = $Kernel::OM->Get('Kernel::Config')->Get('DynamicField::CacheTTL') || 60 * 60 * 12;
+
     # set cache
-    $Self->{CacheObject}->Set(
+    $CacheObject->Set(
         Type  => 'DynamicFieldValue',
         Key   => $CacheKey,
         Value => \%CacheData,
-        TTL   => $Self->{CacheTTL},
+        TTL   => $CacheTTL,
     );
 
     if ( exists $CacheData{ $Param{FieldID} } ) {
@@ -338,7 +313,7 @@ sub ValueDelete {
     # check needed stuff
     for my $Needed (qw(FieldID ObjectID UserID)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!"
             );
@@ -347,7 +322,7 @@ sub ValueDelete {
     }
 
     # delete dynamic field value
-    return if !$Self->{DBObject}->Do(
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
         SQL  => 'DELETE FROM dynamic_field_value WHERE field_id = ? AND object_id = ?',
         Bind => [ \$Param{FieldID}, \$Param{ObjectID} ],
     );
@@ -377,7 +352,7 @@ sub AllValuesDelete {
     # check needed stuff
     for my $Needed (qw(FieldID UserID)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!"
             );
@@ -386,13 +361,13 @@ sub AllValuesDelete {
     }
 
     # delete dynamic field value
-    return if !$Self->{DBObject}->Do(
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
         SQL  => 'DELETE FROM dynamic_field_value WHERE field_id = ?',
         Bind => [ \$Param{FieldID} ],
     );
 
     # Cleanup entire cache!
-    $Self->{CacheObject}->CleanUp(
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
         Type => 'DynamicFieldValue',
     );
 
@@ -424,15 +399,18 @@ sub ValueValidate {
     # validate date
     if ( $Value{ValueDateTime} ) {
 
+        # get time object
+        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
         # convert the DateTime value to system time to check errors
-        my $SystemTime = $Self->{TimeObject}->TimeStamp2SystemTime(
+        my $SystemTime = $TimeObject->TimeStamp2SystemTime(
             String => $Value{ValueDateTime},
         );
 
         return if !defined $SystemTime;
 
         # convert back to time stamp to check errors
-        my $TimeStamp = $Self->{TimeObject}->SystemTime2TimeStamp(
+        my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
             SystemTime => $SystemTime,
         );
 
@@ -446,7 +424,7 @@ sub ValueValidate {
     if ( $Value{ValueInt} ) {
 
         if ( $Value{ValueInt} !~ m{\A  -? \d+ \z}smx ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Invalid Integer '$Value{ValueInt}'!"
             );
@@ -483,7 +461,7 @@ sub HistoricalValueGet {
     # check needed stuff
     for my $Needed (qw(FieldID)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!"
             );
@@ -499,10 +477,14 @@ sub HistoricalValueGet {
         $ValueType = 'value_int';
     }
 
-    # check cache
-    my $CacheKey = 'HistoricalValueGet::FieldID::' . $Param{FieldID} . '::ValueType::' . $ValueType;
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
-    my $Cache = $Self->{CacheObject}->Get(
+    # check cache
+    my $CacheKey = join '::', 'HistoricalValueGet::FieldID', $Param{FieldID}, 'ValueType',
+        $ValueType;
+
+    my $Cache = $CacheObject->Get(
         Type => 'DynamicFieldValue',
         Key  => $CacheKey,
     );
@@ -510,14 +492,17 @@ sub HistoricalValueGet {
     # get data from cache
     return $Cache if ($Cache);
 
-    return if !$Self->{DBObject}->Prepare(
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
         SQL =>
             "SELECT DISTINCT($ValueType) FROM dynamic_field_value WHERE field_id = ?",
         Bind => [ \$Param{FieldID} ],
     );
 
     my %Data;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
 
         # check if the value is already stored
         if ( $Row[0] && !$Data{ $Row[0] } ) {
@@ -537,12 +522,15 @@ sub HistoricalValueGet {
         }
     }
 
+    # get the cache TTL (in seconds)
+    my $CacheTTL = $Kernel::OM->Get('Kernel::Config')->Get('DynamicField::CacheTTL') || 60 * 60 * 12;
+
     # set cache
-    $Self->{CacheObject}->Set(
+    $CacheObject->Set(
         Type  => 'DynamicFieldValue',
         Key   => $CacheKey,
         Value => \%Data,
-        TTL   => $Self->{CacheTTL},
+        TTL   => $CacheTTL,
     );
 
     return \%Data;
@@ -558,7 +546,7 @@ sub _DeleteFromCache {
     # check needed stuff
     for my $Needed (qw(FieldID ObjectID)) {
         if ( !$Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!"
             );
@@ -566,22 +554,25 @@ sub _DeleteFromCache {
         }
     }
 
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
     # Clear ValueGet cache
-    $Self->{CacheObject}->Delete(
+    $CacheObject->Delete(
         Type => 'DynamicFieldValue',
         Key  => 'ValueGet::ObjectID::' . $Param{ObjectID},
     );
 
     # Clear HistoricalValueGet caches
-    $Self->{CacheObject}->Delete(
+    $CacheObject->Delete(
         Type => 'DynamicFieldValue',
         Key  => 'HistoricalValueGet::FieldID::' . $Param{FieldID} . '::ValueType::Text',
     );
-    $Self->{CacheObject}->Delete(
+    $CacheObject->Delete(
         Type => 'DynamicFieldValue',
         Key  => 'HistoricalValueGet::FieldID::' . $Param{FieldID} . '::ValueType::DateTime',
     );
-    $Self->{CacheObject}->Delete(
+    $CacheObject->Delete(
         Type => 'DynamicFieldValue',
         Key  => 'HistoricalValueGet::FieldID::' . $Param{FieldID} . '::ValueType::Integer',
     );

@@ -12,9 +12,17 @@ package Kernel::System::WebUserAgent;
 use strict;
 use warnings;
 
+use HTTP::Headers;
+use List::Util qw(first);
 use LWP::UserAgent;
 
 use Kernel::System::VariableCheck qw(:all);
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Encode',
+    'Kernel::System::Log',
+);
 
 =head1 NAME
 
@@ -34,40 +42,11 @@ All web user agent functions.
 
 create an object
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
     use Kernel::System::WebUserAgent;
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
     my $WebUserAgentObject = Kernel::System::WebUserAgent->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-        DBObject     => $DBObject,
-        Timeout      => 15,                  # optional, timeout
-        Proxy        => 'proxy.example.com', # optional, proxy
+        Timeout => 15,                  # optional, timeout
+        Proxy   => 'proxy.example.com', # optional, proxy
     );
 
 =cut
@@ -79,13 +58,11 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # check needed objects
-    for my $Object (qw(DBObject ConfigObject LogObject MainObject)) {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
-    }
+    # get database object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    $Self->{Timeout} = $Param{Timeout} || $Self->{ConfigObject}->Get('WebUserAgent::Timeout') || 15;
-    $Self->{Proxy}   = $Param{Proxy}   || $Self->{ConfigObject}->Get('WebUserAgent::Proxy')   || '';
+    $Self->{Timeout} = $Param{Timeout} || $ConfigObject->Get('WebUserAgent::Timeout') || 15;
+    $Self->{Proxy}   = $Param{Proxy}   || $ConfigObject->Get('WebUserAgent::Proxy')   || '';
 
     return $Self;
 }
@@ -121,6 +98,32 @@ returns
     %Response = (
         Status  => '200 OK',    # http status
         Content => $ContentRef, # content of requested URL
+    );
+
+You can even pass some headers
+
+    my %Response = $WebUserAgentObject->Request(
+        URL    => 'http://example.com/someurl',
+        Type   => 'POST',
+        Data   => [ Attribute => 'Value', Attribute => 'OtherValue' ],
+        Header => {
+            Authorization => 'Basic xxxx',
+            Content_Type  => 'text/json',
+        },
+    );
+
+If you need to set credentials
+
+    my %Response = $WebUserAgentObject->Request(
+        URL          => 'http://example.com/someurl',
+        Type         => 'POST',
+        Data         => [ Attribute => 'Value', Attribute => 'OtherValue' ],
+        Credentials  => {
+            User     => 'otrs_user',
+            Password => 'otrs_password',
+            Realm    => 'OTRS Unittests',
+            Location => 'ftp.otrs.org:80',
+        },
     );
 
 =cut
@@ -160,12 +163,35 @@ sub Request {
         # init agent
         my $UserAgent = LWP::UserAgent->new();
 
+        # set credentials
+        if ( $Param{Credentials} ) {
+            my %CredentialParams    = %{ $Param{Credentials} || {} };
+            my @Keys                = qw(Location Realm User Password);
+            my $AllCredentialParams = !first { !defined $_ } @CredentialParams{@Keys};
+
+            if ($AllCredentialParams) {
+                $UserAgent->credentials(
+                    @CredentialParams{@Keys},
+                );
+            }
+        }
+
+        # set headers
+        if ( $Param{Header} ) {
+            $UserAgent->default_headers(
+                HTTP::Headers->new( %{ $Param{Header} } ),
+            );
+        }
+
         # set timeout
         $UserAgent->timeout( $Self->{Timeout} );
 
+        # get database object
+        my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
         # set user agent
         $UserAgent->agent(
-            $Self->{ConfigObject}->Get('Product') . ' ' . $Self->{ConfigObject}->Get('Version')
+            $ConfigObject->Get('Product') . ' ' . $ConfigObject->Get('Version')
         );
 
         # set proxy - but only for non-https urls, the https urls must use the environment
@@ -184,7 +210,7 @@ sub Request {
 
             # check for Data param
             if ( !IsArrayRefWithData( $Param{Data} ) && !IsHashRefWithData( $Param{Data} ) ) {
-                $Self->{LogObject}->Log(
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'error',
                     Message =>
                         'WebUserAgent POST: Need Data param containing a hashref or arrayref with data.',
@@ -197,7 +223,7 @@ sub Request {
         }
     }
     if ( !$Response->is_success() ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Can't perform $Param{Type} on $Param{URL}: " . $Response->status_line(),
         );
@@ -206,10 +232,21 @@ sub Request {
         );
     }
 
+    # get the content to convert internal used charset
+    my $ResponseContent = $Response->decoded_content();
+    $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$ResponseContent );
+
+    if ( $Param{Return} && $Param{Return} eq 'REQUEST' ) {
+        return (
+            Status  => $Response->status_line(),
+            Content => \$Response->request()->as_string(),
+        );
+    }
+
     # return request
     return (
         Status  => $Response->status_line(),
-        Content => \$Response->content(),
+        Content => \$ResponseContent,
     );
 }
 

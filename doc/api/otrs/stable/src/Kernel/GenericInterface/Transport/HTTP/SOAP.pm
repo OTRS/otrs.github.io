@@ -12,11 +12,14 @@ package Kernel::GenericInterface::Transport::HTTP::SOAP;
 use strict;
 use warnings;
 
-use HTTP::Status;
-use SOAP::Lite;
-use Kernel::System::VariableCheck qw(:all);
 use Encode;
+use HTTP::Status;
 use PerlIO;
+use SOAP::Lite;
+
+use Kernel::System::VariableCheck qw(:all);
+
+our $ObjectManagerDisabled = 1;
 
 =head1 NAME
 
@@ -45,7 +48,7 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for my $Needed (qw(MainObject EncodeObject DebuggerObject TransportConfig ConfigObject)) {
+    for my $Needed (qw(DebuggerObject TransportConfig)) {
         $Self->{$Needed} = $Param{$Needed} || die "Got no $Needed!";
     }
 
@@ -139,7 +142,7 @@ sub ProviderProcessRequest {
     if ( $ENV{'HTTP_SOAPACTION'} ) {
         my ($SOAPAction) = $ENV{'HTTP_SOAPACTION'} =~ m{ \A ["'] ( .+ ) ["'] \z }xms;
 
-        # get namespace and operation from soap action
+        # get name-space and operation from soap action
         if ( IsStringWithData($SOAPAction) ) {
             my ( $NameSpaceFromHeader, $OperationFromHeader ) = $ENV{'HTTP_SOAPACTION'} =~ m{
                 \A
@@ -157,7 +160,7 @@ sub ProviderProcessRequest {
         }
     }
 
-    # check namespace for match to configuration
+    # check name-space for match to configuration
     if ( $NameSpaceFromHeader && $NameSpaceFromHeader ne $Config->{NameSpace} ) {
         $Self->{DebuggerObject}->Notice(
             Summary =>
@@ -188,13 +191,13 @@ sub ProviderProcessRequest {
         $ContentCharset = $2;
     }
     if ( $ContentCharset && $ContentCharset !~ m{ \A utf [-]? 8 \z }xmsi ) {
-        $Content = $Self->{EncodeObject}->Convert2CharsetInternal(
+        $Content = $Kernel::OM->Get('Kernel::System::Encode')->Convert2CharsetInternal(
             Text => $Content,
             From => $ContentCharset,
         );
     }
     else {
-        $Self->{EncodeObject}->EncodeInput( \$Content );
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$Content );
     }
 
     # send received data to debugger
@@ -241,7 +244,7 @@ sub ProviderProcessRequest {
 
     my $OperationData = $Body->{$Operation};
 
-    # all ok - return data
+    # all OK - return data
     return {
         Success   => 1,
         Operation => $Operation,
@@ -307,10 +310,10 @@ sub ProviderGenerateResponse {
             faultstring => $FaultString,
         };
 
-        # override OperationResponse string to Fault to make the corect SOAP envelope
+        # override OperationResponse string to Fault to make the correct SOAP envelope
         $OperationResponse = 'Fault';
 
-        # overide HTTPCode to 500
+        # override HTTPCode to 500
         $HTTPCode = 500;
     }
 
@@ -362,7 +365,7 @@ sub ProviderGenerateResponse {
 
 =item RequesterPerformRequest()
 
-Prepare data payload as xml structure, generate an outgoing web service request,
+Prepare data payload as XML structure, generate an outgoing web service request,
 receive the response and return its data.
 
     my $Result = $TransportObject->RequesterPerformRequest(
@@ -400,7 +403,7 @@ sub RequesterPerformRequest {
     }
     my $Config = $Self->{TransportConfig}->{Config};
 
-    # check namespace and endpoint config
+    # check name-space and endpoint config
     NEEDED:
     for my $Needed (qw(Endpoint NameSpace)) {
         next NEEDED if IsStringWithData( $Config->{$Needed} );
@@ -483,10 +486,10 @@ sub RequesterPerformRequest {
             # force Net::SSL instead of IO::Socket::SSL, otherwise GI can't connect to certificate
             # authentication restricted servers
             my $SSLModule = 'Net::SSL';
-            if ( !$Self->{MainObject}->Require($SSLModule) ) {
+            if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($SSLModule) ) {
                 return {
                     Success      => 0,
-                    ErrorMessage => "The perl module \"$SSLModule\" needed to manage SSL"
+                    ErrorMessage => "The Perl module \"$SSLModule\" needed to manage SSL"
                         . " connections with certificates is missing!",
                 };
             }
@@ -594,13 +597,17 @@ sub RequesterPerformRequest {
     if ( !$SOAPResult->context()->transport()->proxy()->http_response()->request()->content() ) {
         return {
             Success      => 0,
-            ErrorMessage => 'SOAP Transport: Could not get xml data sent to remote system',
+            ErrorMessage => 'SOAP Transport: Could not get XML data sent to remote system',
         };
     }
     my $XMLRequest = $SOAPResult->context()->transport()->proxy()->http_response()->request()->content();
-    $Self->{EncodeObject}->EncodeInput( \$XMLRequest );
+
+    # get encode object
+    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
+
+    $EncodeObject->EncodeInput( \$XMLRequest );
     $Self->{DebuggerObject}->Debug(
-        Summary => 'Xml data sent to remote system',
+        Summary => 'XML data sent to remote system',
         Data    => $XMLRequest,
     );
 
@@ -608,21 +615,21 @@ sub RequesterPerformRequest {
     if ( !$SOAPResult->context()->transport()->proxy()->http_response()->content() ) {
         return {
             Success      => 0,
-            ErrorMessage => 'Could not get xml data received from remote system',
+            ErrorMessage => 'Could not get XML data received from remote system',
         };
     }
     my $XMLResponse = $SOAPResult->context()->transport()->proxy()->http_response()->content();
 
     # convert charset if necessary
     if ( $Config->{Encoding} && $Config->{Encoding} !~ m{ \A utf -? 8 \z }xmsi ) {
-        $XMLResponse = $Self->{EncodeObject}->Convert(
+        $XMLResponse = $EncodeObject->Convert(
             Text => $XMLResponse,
             From => $Config->{Encoding},
             To   => 'utf-8',
         );
     }
     else {
-        $Self->{EncodeObject}->EncodeInput( \$XMLResponse );
+        $EncodeObject->EncodeInput( \$XMLResponse );
     }
 
     # send processed data to debugger
@@ -640,7 +647,7 @@ sub RequesterPerformRequest {
     if ( !defined $Deserialized || !$Deserialized->body() ) {
         return {
             Success      => 0,
-            ErrorMessage => 'SOAP Transport: Could not deserialize received xml data',
+            ErrorMessage => 'SOAP Transport: Could not deserialize received XML data',
         };
     }
 
@@ -669,7 +676,7 @@ sub RequesterPerformRequest {
         };
     }
 
-    # all ok - return result
+    # all OK - return result
     return {
         Success => 1,
         Data    => $Body->{ $Param{Operation} . 'Response' } || undef,
@@ -733,7 +740,7 @@ Returns structure to be passed to provider.
 
     my $Result = $TransportObject->_Output(
         HTTPCode => 200,           # http code to be returned, optional
-        Content  => 'response',    # message content, xml response on normal execution
+        Content  => 'response',    # message content, XML response on normal execution
     );
 
     $Result = {
@@ -767,7 +774,7 @@ sub _Output {
 
     # FIXME
     # according to SOAP::Transport::HTTP the previous should only be used
-    # for IIS to imitate nph- behaviour
+    # for IIS to imitate nph- behavior
     # for all other browser 'Status:' should be used here
     # this breaks apache though
 
@@ -803,7 +810,7 @@ sub _Output {
     );
 
     # set keep-alive
-    my $ConfigKeepAlive = $Self->{ConfigObject}->Get('SOAP::Keep-Alive');
+    my $ConfigKeepAlive = $Kernel::OM->Get('Kernel::Config')->Get('SOAP::Keep-Alive');
     my $Connection = $ConfigKeepAlive ? 'Keep-Alive' : 'close';
 
     # in the constructor of this module STDIN and STDOUT are set to binmode without any additional
@@ -814,7 +821,7 @@ sub _Output {
     # XML parser complains about it... ( but under special circumstances :raw layer was needed
     # instead ).
     # this solution to set the binmode in the constructor and then :utf8 layer before the response
-    # is sent  apparently works in all situations. ( linux circumstances to requires :raw was no
+    # is sent  apparently works in all situations. ( Linux circumstances to requires :raw was no
     # reproducible, and not tested in this solution).
     binmode STDOUT, ':utf8';    ## no critic
 
@@ -835,10 +842,10 @@ sub _Output {
 
 =item _SOAPOutputRecursion()
 
-Turn perl data structure to a structure usable for SOAP::Lite.
+Turn Perl data structure to a structure usable for SOAP::Lite.
 The structure may contain multiple levels with scalars, array refs and hash refs.
 Empty array refs, empty hash refs and array refs directly within array refs
-are not permitted as they don't have a valid xml representation.
+are not permitted as they don't have a valid XML representation.
 Undefined data is treated as empty string.
 
 Because some systems require data in a specific order,
@@ -1042,7 +1049,7 @@ sub _SOAPOutputRecursion {
             # for easier reading
             my $SortKey = $SortArrayElementKeys[0];
 
-            # missing data elements are ok, then we just skip this
+            # missing data elements are OK, then we just skip this
             next ELEMENT if !$Data{$SortKey};
 
             # process element

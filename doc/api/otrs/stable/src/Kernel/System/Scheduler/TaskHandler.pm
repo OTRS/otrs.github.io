@@ -1,5 +1,5 @@
 # --
-# Kernel/Scheduler/TaskHandler.pm - Scheduler task handler interface
+# Kernel/System/Scheduler/TaskHandler.pm - Scheduler task handler interface
 # Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -7,16 +7,21 @@
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-package Kernel::Scheduler::TaskHandler;
+package Kernel::System::Scheduler::TaskHandler;
 
 use strict;
 use warnings;
 
-use Kernel::System::VariableCheck qw(IsHashRefWithData IsStringWithData);
+use Kernel::System::VariableCheck qw(IsStringWithData);
+
+our @ObjectDependencies = (
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+);
 
 =head1 NAME
 
-Kernel::Scheduler::TaskHandler - Scheduler Task Handler interface
+Kernel::System::Scheduler::TaskHandler - Scheduler Task Handler interface
 
 =head1 SYNOPSIS
 
@@ -34,46 +39,13 @@ how to execute this particular task.
 
 create an object.
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::Scheduler::TaskHandler;
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $OperationObject = Kernel::Scheduler::TaskHandler->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
+    use Kernel::System::Scheduler::TaskHandler;
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
 
-        TaskHandlerType    => 'GenericInterface'    # Type of the TaskHandler backend to use
+    my $OperationObject = Kernel::System::Scheduler::TaskHandler->new(
+        TaskHandlerType => 'GenericInterface'    # Type of the TaskHandler backend to use
     );
 
 =cut
@@ -84,14 +56,9 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # check needed objects
-    for my $Needed (qw(MainObject ConfigObject LogObject EncodeObject TimeObject DBObject)) {
-        $Self->{$Needed} = $Param{$Needed} || die "Got no $Needed!";
-    }
-
     # check operation
     if ( !IsStringWithData( $Param{TaskHandlerType} ) ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Got no Task Type with content!',
         );
@@ -99,15 +66,15 @@ sub new {
     }
 
     # load backend module
-    my $GenericModule = 'Kernel::Scheduler::TaskHandler::' . $Param{TaskHandlerType};
-    if ( !$Self->{MainObject}->Require($GenericModule) ) {
-        $Self->{LogObject}->Log(
+    my $GenericModule = 'Kernel::System::Scheduler::TaskHandler::' . $Param{TaskHandlerType};
+    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($GenericModule) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Can't load $Param{Type} task handler backend module!",
         );
         return;
     }
-    $Self->{BackendObject} = $GenericModule->new( %{$Self} );
+    $Self->{BackendObject} = $GenericModule->new();
 
     return ( ref $Self->{BackendObject} eq $GenericModule ) ? $Self : undef;
 }
@@ -143,7 +110,7 @@ sub Run {
 
     # check data - we need a hash ref
     if ( $Param{Data} && ref $Param{Data} ne 'HASH' ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Got no valid Data!',
         );

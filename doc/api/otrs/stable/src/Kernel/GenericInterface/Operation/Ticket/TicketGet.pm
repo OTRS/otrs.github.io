@@ -13,10 +13,15 @@ use strict;
 use warnings;
 
 use MIME::Base64;
-use Kernel::System::Ticket;
-use Kernel::GenericInterface::Operation::Common;
-use Kernel::GenericInterface::Operation::Ticket::Common;
+
 use Kernel::System::VariableCheck qw(IsArrayRefWithData IsHashRefWithData IsStringWithData);
+
+use base qw(
+    Kernel::GenericInterface::Operation::Common
+    Kernel::GenericInterface::Operation::Ticket::Common
+);
+
+our $ObjectManagerDisabled = 1;
 
 =head1 NAME
 
@@ -44,24 +49,16 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for my $Needed (
-        qw(DebuggerObject ConfigObject MainObject LogObject TimeObject DBObject EncodeObject WebserviceID)
-        )
-    {
+    for my $Needed (qw(DebuggerObject WebserviceID)) {
         if ( !$Param{$Needed} ) {
             return {
                 Success      => 0,
-                ErrorMessage => "Got no $Needed!"
+                ErrorMessage => "Got no $Needed!",
             };
         }
 
         $Self->{$Needed} = $Param{$Needed};
     }
-
-    # create additional objects
-    $Self->{CommonObject}       = Kernel::GenericInterface::Operation::Common->new( %{$Self} );
-    $Self->{TicketCommonObject} = Kernel::GenericInterface::Operation::Ticket::Common->new( %{$Self} );
-    $Self->{TicketObject}       = Kernel::System::Ticket->new( %{$Self} );
 
     return $Self;
 }
@@ -236,11 +233,22 @@ one or more ticket entries in one call.
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    my ( $UserID, $UserType ) = $Self->{CommonObject}->Auth(
-        %Param
+    my $Result = $Self->Init(
+        WebserviceID => $Self->{WebserviceID},
     );
 
-    return $Self->{TicketCommonObject}->ReturnError(
+    if ( !$Result->{Success} ) {
+        $Self->ReturnError(
+            ErrorCode    => 'Webservice.InvalidConfiguration',
+            ErrorMessage => $Result->{ErrorMessage},
+        );
+    }
+
+    my ( $UserID, $UserType ) = $Self->Auth(
+        %Param,
+    );
+
+    return $Self->ReturnError(
         ErrorCode    => 'TicketGet.AuthFail',
         ErrorMessage => "TicketGet: Authorization failing!",
     ) if !$UserID;
@@ -248,7 +256,7 @@ sub Run {
     # check needed stuff
     for my $Needed (qw(TicketID)) {
         if ( !$Param{Data}->{$Needed} ) {
-            return $Self->{TicketCommonObject}->ReturnError(
+            return $Self->ReturnError(
                 ErrorCode    => 'TicketGet.MissingParameter',
                 ErrorMessage => "TicketGet: $Needed parameter is missing!",
             );
@@ -256,7 +264,7 @@ sub Run {
     }
     my $ErrorMessage = '';
 
-    # all needed vairables
+    # all needed variables
     my @TicketIDs;
     if ( IsStringWithData( $Param{Data}->{TicketID} ) ) {
         @TicketIDs = split( /,/, $Param{Data}->{TicketID} );
@@ -265,7 +273,7 @@ sub Run {
         @TicketIDs = @{ $Param{Data}->{TicketID} };
     }
     else {
-        return $Self->{TicketCommonObject}->ReturnError(
+        return $Self->ReturnError(
             ErrorCode    => 'TicketGet.WrongStructure',
             ErrorMessage => "TicketGet: Structure for TicketID is not correct!",
         );
@@ -286,8 +294,11 @@ sub Run {
     TICKET:
     for my $TicketID (@TicketIDs) {
 
+        # get ticket object
+        my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
         # get the Ticket entry
-        my %TicketEntry = $Self->{TicketObject}->TicketGet(
+        my %TicketEntry = $TicketObject->TicketGet(
             TicketID      => $TicketID,
             DynamicFields => $DynamicFields,
             Extended      => $Extended,
@@ -299,7 +310,7 @@ sub Run {
             $ErrorMessage = 'Could not get Ticket data'
                 . ' in Kernel::GenericInterface::Operation::Ticket::TicketGet::Run()';
 
-            return $Self->{TicketCommonObject}->ReturnError(
+            return $Self->ReturnError(
                 ErrorCode    => 'TicketGet.NotValidTicketID',
                 ErrorMessage => "TicketGet: $ErrorMessage",
             );
@@ -315,7 +326,7 @@ sub Run {
             next TICKET;
         }
 
-        my @ArticleBox = $Self->{TicketObject}->ArticleGet(
+        my @ArticleBox = $TicketObject->ArticleGet(
             TicketID          => $TicketID,
             ArticleSenderType => $ArticleSenderType,
             DynamicFields     => $DynamicFields,
@@ -329,11 +340,10 @@ sub Run {
         ARTICLE:
         for my $Article (@ArticleBox) {
 
-            # next if not attachments required
             next ARTICLE if !$Attachments;
 
             # get attachment index (without attachments)
-            my %AtmIndex = $Self->{TicketObject}->ArticleAttachmentIndex(
+            my %AtmIndex = $TicketObject->ArticleAttachmentIndex(
                 ContentPath                => $Article->{ContentPath},
                 ArticleID                  => $Article->{ArticleID},
                 StripPlainBodyAsAttachment => 3,
@@ -341,20 +351,18 @@ sub Run {
                 UserID                     => $UserID,
             );
 
-            # next if not attachments
             next ARTICLE if !IsHashRefWithData( \%AtmIndex );
 
             my @Attachments;
             ATTACHMENT:
             for my $FileID ( sort keys %AtmIndex ) {
                 next ATTACHMENT if !$FileID;
-                my %Attachment = $Self->{TicketObject}->ArticleAttachment(
+                my %Attachment = $TicketObject->ArticleAttachment(
                     ArticleID => $Article->{ArticleID},
                     FileID    => $FileID,                 # as returned by ArticleAttachmentIndex
                     UserID    => $UserID,
                 );
 
-                # next if not attachment
                 next ATTACHMENT if !IsHashRefWithData( \%Attachment );
 
                 # convert content to base64
@@ -378,7 +386,7 @@ sub Run {
         $ErrorMessage = 'Could not get Ticket data'
             . ' in Kernel::GenericInterface::Operation::Ticket::TicketGet::Run()';
 
-        return $Self->{TicketCommonObject}->ReturnError(
+        return $Self->ReturnError(
             ErrorCode    => 'TicketGet.NotTicketData',
             ErrorMessage => "TicketGet: $ErrorMessage",
         );

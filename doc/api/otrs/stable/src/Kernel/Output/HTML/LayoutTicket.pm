@@ -38,7 +38,7 @@ sub AgentCustomerViewTable {
         $Self->FatalError( Message => 'Need Hash ref in Data param' );
     }
     elsif ( ref $Param{Data} eq 'HASH' && !%{ $Param{Data} } ) {
-        return $Self->{LanguageObject}->Get('none');
+        return $Self->{LanguageObject}->Translate('none');
     }
 
     # add ticket params if given
@@ -87,6 +87,8 @@ sub AgentCustomerViewTable {
     my $CustomerImage = $Self->{ConfigObject}->Get('Frontend::CustomerUser::Image');
     if ($CustomerImage) {
         my %Modules = %{$CustomerImage};
+
+        MODULE:
         for my $Module ( sort keys %Modules ) {
             if ( !$Self->{MainObject}->Require( $Modules{$Module}->{Module} ) ) {
                 $Self->FatalDie();
@@ -98,7 +100,7 @@ sub AgentCustomerViewTable {
             );
 
             # run module
-            next if !$Object;
+            next MODULE if !$Object;
 
             $Object->Run(
                 Config => $Modules{$Module},
@@ -171,6 +173,8 @@ sub AgentCustomerViewTable {
             Name => 'CustomerItem',
         );
         my %Modules = %{$CustomerItem};
+
+        MODULE:
         for my $Module ( sort keys %Modules ) {
             if ( !$Self->{MainObject}->Require( $Modules{$Module}->{Module} ) ) {
                 $Self->FatalDie();
@@ -182,14 +186,14 @@ sub AgentCustomerViewTable {
             );
 
             # run module
-            next if !$Object;
+            next MODULE if !$Object;
 
             my $Run = $Object->Run(
                 Config => $Modules{$Module},
                 Data   => $Param{Data},
             );
 
-            next if !$Run;
+            next MODULE if !$Run;
 
             $CustomerItemCount++;
         }
@@ -253,6 +257,28 @@ sub AgentQueueListOption {
 
     # just show a simple list
     if ( $Self->{ConfigObject}->Get('Ticket::Frontend::ListType') eq 'list' ) {
+
+        # transform data from Hash in Array because of ordering in frontend by Queue name
+        # it was a problem wit name like '(some_queue)'
+        # see bug#10621 http://bugs.otrs.org/show_bug.cgi?id=10621
+        my %QueueDataHash = %{ $Param{Data} || {} };
+
+        # get StandardResponsesStrg
+        my %ReverseQueueDataHash = reverse %QueueDataHash;
+        my @QueueDataArray       = map {
+            {
+                Key   => $ReverseQueueDataHash{$_},
+                Value => $_
+            }
+        } sort values %QueueDataHash;
+
+        # find index of first element in array @QueueDataArray for displaying in frontend
+        # at the top should be element with ' $QueueDataArray[$_]->{Key} = 0' like "- Move -"
+        # when such element is found, it is moved at the top
+        my ($FirstElementIndex) = grep $QueueDataArray[$_]->{Key} == 0, 0 .. $#QueueDataArray;
+        splice( @QueueDataArray, 0, 0, splice( @QueueDataArray, $FirstElementIndex, 1 ) );
+        $Param{Data} = \@QueueDataArray;
+
         $Param{MoveQueuesStrg} = $Self->BuildSelection(
             %Param,
             HTMLQuote     => 0,
@@ -282,12 +308,43 @@ sub AgentQueueListOption {
     }
 
     # add suffix for correct sorting
+    my $KeyNoQueue;
+    my $ValueNoQueue;
+    my $MoveStr = $Self->{LanguageObject}->Get('Move');
+    my $ValueOfQueueNoKey .= "- " . $MoveStr . " -";
+    DATA:
     for ( sort { $Data{$a} cmp $Data{$b} } keys %Data ) {
+
+        # find value for default item in select box
+        # it can be "-" or "Move"
+        if (
+            $Data{$_} eq "-"
+            || $Data{$_} eq $ValueOfQueueNoKey
+            )
+        {
+            $KeyNoQueue   = $_;
+            $ValueNoQueue = $Data{$_};
+            next DATA;
+        }
         $Data{$_} .= '::';
     }
 
+    # set default item of select box
+    if ($ValueNoQueue) {
+        $Param{MoveQueuesStrg} .= '<option value="'
+            . $KeyNoQueue
+            . '">'
+            . $ValueNoQueue
+            . "</option>\n";
+    }
+
     # build selection string
+    KEY:
     for ( sort { $Data{$a} cmp $Data{$b} } keys %Data ) {
+
+        # default item of select box has set already
+        next KEY if ( $Data{$_} eq "-" || $Data{$_} eq $ValueOfQueueNoKey );
+
         my @Queue = split( /::/, $Param{Data}->{$_} );
         $UsedData{ $Param{Data}->{$_} } = 1;
         my $UpQueue = $Param{Data}->{$_};
@@ -393,8 +450,12 @@ sub AgentQueueListOption {
     $Param{MoveQueuesStrg} .= "</select>\n";
 
     if ( $Param{TreeView} ) {
+        my $TreeSelectionMessage = $Self->{LanguageObject}->Translate("Show Tree Selection");
         $Param{MoveQueuesStrg}
-            .= ' <a href="#" title="$Text{"Show Tree Selection"}" class="ShowTreeSelection">$Text{"Show Tree Selection"}</a>';
+            .= ' <a href="#" title="'
+            . $TreeSelectionMessage
+            . '" class="ShowTreeSelection"><span>'
+            . $TreeSelectionMessage . '</span><i class="fa fa-sitemap"></i></a>';
     }
 
     return $Param{MoveQueuesStrg};
@@ -525,7 +586,6 @@ sub ArticleQuote {
                 ATMCOUNT:
                 for my $AttachmentID ( sort keys %Attachments ) {
 
-                    # next if cid is not matching
                     if ( lc $Attachments{$AttachmentID}->{ContentID} ne lc "<$ContentID>" ) {
                         next ATMCOUNT;
                     }
@@ -565,9 +625,10 @@ sub ArticleQuote {
             }egxi;
 
             # find inline images using Content-Location instead of Content-ID
+            ATTACHMENT:
             for my $AttachmentID ( sort keys %Attachments ) {
 
-                next if !$Attachments{$AttachmentID}->{ContentID};
+                next ATTACHMENT if !$Attachments{$AttachmentID}->{ContentID};
 
                 # get whole attachment
                 my %AttachmentPicture = $Self->{TicketObject}->ArticleAttachment(
@@ -612,8 +673,9 @@ sub ArticleQuote {
             }
 
             # find not inline images
+            ATTACHMENT:
             for my $AttachmentID ( sort keys %Attachments ) {
-                next if $AttachmentAlreadyUsed{$AttachmentID};
+                next ATTACHMENT if $AttachmentAlreadyUsed{$AttachmentID};
                 $NotInlineAttachments{$AttachmentID} = 1;
             }
 
@@ -634,6 +696,7 @@ sub ArticleQuote {
                 $Param{UploadCacheObject}->FormIDAddFile(
                     FormID => $Param{FormID},
                     %Attachment,
+                    Disposition => 'attachment',
                 );
             }
         }
@@ -681,6 +744,7 @@ sub ArticleQuote {
             $Param{UploadCacheObject}->FormIDAddFile(
                 FormID => $Param{FormID},
                 %Attachment,
+                Disposition => 'attachment',
             );
         }
     }
@@ -714,8 +778,15 @@ sub TicketListShow {
     # set default view mode to 'small'
     my $View = $Param{View} || 'Small';
 
-    # set default view mode for AgentTicketQueue
-    if ( !$Param{View} && $Env->{Action} eq 'AgentTicketQueue' ) {
+    # set default view mode for AgentTicketQueue or AgentTicketService
+    if (
+        !$Param{View}
+        && (
+            $Env->{Action} eq 'AgentTicketQueue'
+            || $Env->{Action} eq 'AgentTicketService'
+        )
+        )
+    {
         $View = 'Preview';
     }
 
@@ -753,13 +824,14 @@ sub TicketListShow {
     if ( !$Backends->{$View} ) {
 
         # try to find fallback, take first configured view mode
+        KEY:
         for my $Key ( sort keys %{$Backends} ) {
             $Self->{LogObject}->Log(
                 Priority => 'error',
                 Message  => "No Config option found for view mode $View, took $Key instead!",
             );
             $View = $Key;
-            last;
+            last KEY;
         }
     }
 

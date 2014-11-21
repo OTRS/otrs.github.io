@@ -11,9 +11,17 @@ package Kernel::System::ProcessManagement::TransitionAction::TicketTypeSet;
 
 use strict;
 use warnings;
+use utf8;
+
 use Kernel::System::VariableCheck qw(:all);
 
-use utf8;
+use base qw(Kernel::System::ProcessManagement::TransitionAction::Base);
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Log',
+    'Kernel::System::Ticket',
+);
 
 =head1 NAME
 
@@ -31,57 +39,11 @@ All TicketTypeSet functions.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Ticket;
-    use Kernel::System::ProcessManagement::TransitionAction::TicketTypeSet;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $TicketObject = Kernel::System::Ticket->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-    );
-    my $TicketTypeSetActionObject = Kernel::System::ProcessManagement::TransitionAction::TicketTypeSet->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        EncodeObject       => $EncodeObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        TicketObject       => $TicketObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $TicketTypeSetObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::TransitionAction::TicketTypeSet');
 
 =cut
 
@@ -91,16 +53,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # get needed objects
-    for my $Needed (
-        qw(ConfigObject LogObject EncodeObject DBObject MainObject TimeObject TicketObject)
-        )
-    {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
 
     return $Self;
 }
@@ -135,73 +87,48 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    for my $Needed (
-        qw(UserID Ticket ProcessEntityID ActivityEntityID TransitionEntityID
-        TransitionActionEntityID Config
-        )
-        )
-    {
-        if ( !defined $Param{$Needed} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
     # define a common message to output in case of any error
     my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
         . " Transition: $Param{TransitionEntityID}"
         . " TransitionAction: $Param{TransitionActionEntityID} - ";
 
-    # Check if we have Ticket to deal with
-    if ( !IsHashRefWithData( $Param{Ticket} ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "Ticket has no values!",
-        );
-        return;
-    }
-
-    # Check if we have a ConfigHash
-    if ( !IsHashRefWithData( $Param{Config} ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "Config has no values!",
-        );
-        return;
-    }
+    # check for missing or wrong params
+    my $Success = $Self->_CheckParams(
+        %Param,
+        CommonMessage => $CommonMessage,
+    );
+    return if !$Success;
 
     # override UserID if specified as a parameter in the TA config
-    if ( IsNumber( $Param{Config}->{UserID} ) ) {
-        $Param{UserID} = $Param{Config}->{UserID};
-        delete $Param{Config}->{UserID};
-    }
+    $Param{UserID} = $Self->_OverrideUserID(%Param);
+
+    # use ticket attributes if needed
+    $Self->_ReplaceTicketAttributes(%Param);
 
     if ( !$Param{Config}->{TypeID} && !$Param{Config}->{Type} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => $CommonMessage . "No Type or TypeID configured!",
         );
         return;
     }
 
-    if ( !$Self->{ConfigObject}->Get('Ticket::Type') ) {
-        $Self->{LogObject}->Log(
+    if ( !$Kernel::OM->Get('Kernel::Config')->Get('Ticket::Type') ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => $CommonMessage . "Ticket::Type SysConfig setting is not enabled!",
         );
         return;
     }
 
-    my $Success;
+    $Success = 0;
+
     if (
         defined $Param{Config}->{Type}
         && $Param{Config}->{Type} ne $Param{Ticket}->{Type}
         )
     {
-        $Success = $Self->{TicketObject}->TicketTypeSet(
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketTypeSet(
             Type     => $Param{Config}->{Type},
             TicketID => $Param{Ticket}->{TicketID},
             UserID   => $Param{UserID},
@@ -212,7 +139,7 @@ sub Run {
         && $Param{Config}->{TypeID} ne $Param{Ticket}->{TypeID}
         )
     {
-        $Success = $Self->{TicketObject}->TicketTypeSet(
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketTypeSet(
             TypeID   => $Param{Config}->{TypeID},
             TicketID => $Param{Ticket}->{TicketID},
             UserID   => $Param{UserID},
@@ -232,7 +159,7 @@ sub Run {
         else {
             $CustomMessage = "TypeID: $Param{Config}->{TypeID},";
         }
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => $CommonMessage
                 . 'Ticket type could not be updated to '
@@ -242,6 +169,7 @@ sub Run {
         );
         return;
     }
+
     return 1;
 }
 

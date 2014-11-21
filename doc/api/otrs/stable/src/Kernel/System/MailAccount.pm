@@ -12,8 +12,13 @@ package Kernel::System::MailAccount;
 use strict;
 use warnings;
 
-use Kernel::System::Time;
-use Kernel::System::Valid;
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::DB',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+    'Kernel::System::Valid',
+);
 
 =head1 NAME
 
@@ -31,39 +36,11 @@ All functions to manage the mail accounts.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::MailAccount;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $MailAccount = Kernel::System::MailAccount->new(
-        LogObject    => $LogObject,
-        ConfigObject => $ConfigObject,
-        DBObject     => $DBObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $MailAccountObject = $Kernel::OM->Get('Kernel::System::MailAccount');
 
 =cut
 
@@ -73,15 +50,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # check needed objects
-    for (qw(ConfigObject LogObject DBObject MainObject EncodeObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
-
-    # create additional objects
-    $Self->{TimeObject}  = Kernel::System::Time->new( %{$Self} );
-    $Self->{ValidObject} = Kernel::System::Valid->new( %{$Self} );
 
     return $Self;
 }
@@ -111,7 +79,7 @@ sub MailAccountAdd {
     # check needed stuff
     for (qw(Login Password Host ValidID Trusted DispatchingBy QueueID UserID)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "$_ not defined!"
             );
@@ -120,7 +88,7 @@ sub MailAccountAdd {
     }
     for (qw(Login Password Host Type ValidID UserID)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -133,7 +101,7 @@ sub MailAccountAdd {
         $Param{QueueID} = 0;
     }
     elsif ( $Param{DispatchingBy} eq 'Queue' && !$Param{QueueID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need QueueID for dispatching!"
         );
@@ -151,8 +119,11 @@ sub MailAccountAdd {
         $Param{IMAPFolder} = '';
     }
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # sql
-    return if !$Self->{DBObject}->Do(
+    return if !$DBObject->Do(
         SQL =>
             'INSERT INTO mail_account (login, pw, host, account_type, valid_id, comments, queue_id, '
             . ' imap_folder, trusted, create_time, create_by, change_time, change_by)'
@@ -164,14 +135,16 @@ sub MailAccountAdd {
         ],
     );
 
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL  => 'SELECT id FROM mail_account WHERE login = ? AND host = ? AND account_type = ?',
         Bind => [ \$Param{Login}, \$Param{Host}, \$Param{Type} ],
     );
+
     my $ID;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $ID = $Row[0];
     }
+
     return $ID;
 }
 
@@ -192,22 +165,26 @@ sub MailAccountGet {
 
     # check needed stuff
     if ( !$Param{ID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need ID!"
         );
         return;
     }
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # sql
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL =>
             'SELECT login, pw, host, account_type, queue_id, imap_folder, trusted, comments, valid_id, '
             . ' create_time, change_time FROM mail_account WHERE id = ?',
         Bind => [ \$Param{ID} ],
     );
+
     my %Data;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         %Data = (
             ID         => $Param{ID},
             Login      => $Data[0],
@@ -223,6 +200,7 @@ sub MailAccountGet {
             ChangeTime => $Data[10],
         );
     }
+
     if ( $Data{QueueID} == 0 ) {
         $Data{DispatchingBy} = 'From';
     }
@@ -270,7 +248,7 @@ sub MailAccountUpdate {
     # check needed stuff
     for (qw(ID Login Password Host Type ValidID Trusted DispatchingBy QueueID UserID)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -283,7 +261,7 @@ sub MailAccountUpdate {
         $Param{QueueID} = 0;
     }
     elsif ( $Param{DispatchingBy} eq 'Queue' && !$Param{QueueID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need QueueID for dispatching!"
         );
@@ -302,7 +280,7 @@ sub MailAccountUpdate {
     }
 
     # sql
-    return if !$Self->{DBObject}->Do(
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
         SQL => 'UPDATE mail_account SET login = ?, pw = ?, host = ?, account_type = ?, '
             . ' comments = ?, imap_folder = ?, trusted = ?, valid_id = ?, change_time = current_timestamp, '
             . ' change_by = ?, queue_id = ? WHERE id = ?',
@@ -312,6 +290,7 @@ sub MailAccountUpdate {
             \$Param{UserID},  \$Param{QueueID},    \$Param{ID},
         ],
     );
+
     return 1;
 }
 
@@ -330,7 +309,7 @@ sub MailAccountDelete {
 
     # check needed stuff
     if ( !$Param{ID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need ID!"
         );
@@ -338,10 +317,11 @@ sub MailAccountDelete {
     }
 
     # sql
-    return if !$Self->{DBObject}->Do(
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
         SQL  => 'DELETE FROM mail_account WHERE id = ?',
         Bind => [ \$Param{ID} ],
     );
+
     return 1;
 }
 
@@ -358,15 +338,22 @@ returns a list (Key, Name) of all mail accounts
 sub MailAccountList {
     my ( $Self, %Param ) = @_;
 
+    # get valid object
+    my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
+
     my $Where = $Param{Valid}
-        ? 'WHERE valid_id IN ( ' . join ', ', $Self->{ValidObject}->ValidIDsGet() . ' )'
+        ? 'WHERE valid_id IN ( ' . join ', ', $ValidObject->ValidIDsGet() . ' )'
         : '';
 
-    return if !$Self->{DBObject}->Prepare(
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
         SQL => "SELECT id, host, login FROM mail_account $Where",
     );
+
     my %Data;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $Data{ $Row[0] } = "$Row[1] ($Row[2])";
     }
 
@@ -384,12 +371,14 @@ returns a list of usable backends
 sub MailAccountBackendList {
     my ( $Self, %Param ) = @_;
 
-    my %Backends;
-    my $Directory = $Self->{ConfigObject}->Get('Home') . '/Kernel/System/MailAccount/';
-    my @List      = $Self->{MainObject}->DirectoryRead(
+    my $Directory = $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/Kernel/System/MailAccount/';
+
+    my @List = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
         Directory => $Directory,
         Filter    => '*.pm',
     );
+
+    my %Backends;
     for my $File (@List) {
 
         # remove .pm
@@ -398,7 +387,7 @@ sub MailAccountBackendList {
 
         # try to load module $GenericModule
         if ( eval "require $GenericModule" ) {    ## no critic
-            if ( eval { $GenericModule->new( %{$Self} ) } ) {
+            if ( eval { $GenericModule->new() } ) {
                 $Backends{$File} = $File;
             }
         }
@@ -430,7 +419,7 @@ sub MailAccountFetch {
     # check needed stuff
     for (qw(Login Password Host Type Trusted DispatchingBy QueueID UserID)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -442,12 +431,13 @@ sub MailAccountFetch {
     my $GenericModule = "Kernel::System::MailAccount::$Param{Type}";
 
     # try to load module $GenericModule
-    if ( !$Self->{MainObject}->Require($GenericModule) ) {
+    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($GenericModule) ) {
         return;
     }
 
     # fetch mails
-    my $Backend = $GenericModule->new( %{$Self} );
+    my $Backend = $GenericModule->new();
+
     return $Backend->Fetch(%Param);
 }
 
@@ -472,7 +462,7 @@ sub MailAccountCheck {
     # check needed stuff
     for (qw(Login Password Host Type Timeout Debug)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -484,12 +474,12 @@ sub MailAccountCheck {
     my $GenericModule = "Kernel::System::MailAccount::$Param{Type}";
 
     # try to load module $GenericModule
-    if ( !$Self->{MainObject}->Require($GenericModule) ) {
+    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($GenericModule) ) {
         return;
     }
 
     # check if connect is successful
-    my $Backend = $GenericModule->new( %{$Self} );
+    my $Backend = $GenericModule->new();
     my %Check   = $Backend->Connect(%Param);
 
     if ( $Check{Successful} ) {

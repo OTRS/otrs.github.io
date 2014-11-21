@@ -14,6 +14,10 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::Config',
+);
+
 sub GetDisplayPath {
     return 'OTRS';
 }
@@ -23,7 +27,7 @@ sub Run {
 
     $Self->AddResultInformation(
         Label => 'OTRS Version',
-        Value => $Self->{ConfigObject}->Get('Version'),
+        Value => $Kernel::OM->Get('Kernel::Config')->Get('Version'),
     );
 
     return $Self->GetResults();

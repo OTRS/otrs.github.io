@@ -14,6 +14,11 @@ use warnings;
 
 use MIME::Base64;
 
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Log',
+);
+
 =head1 NAME
 
 Kernel::System::HTMLUtils - creating and modifying html strings
@@ -30,25 +35,11 @@ A module for creating and modifying html strings.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::HTMLUtils;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $HTMLUtilsObject = Kernel::System::HTMLUtils->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $HTMLUtilsObject = $Kernel::OM->Get('Kernel::System::HTMLUtils');
 
 =cut
 
@@ -61,11 +52,6 @@ sub new {
 
     # get debug level from parent
     $Self->{Debug} = $Param{Debug} || 0;
-
-    # check needed objects
-    for (qw(LogObject ConfigObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
 
     return $Self;
 }
@@ -84,13 +70,16 @@ sub ToAscii {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
             return;
         }
     }
+
+    # get length of line for forcing line breakes
+    my $LineLength = $Self->{'Ticket::Frontend::TextAreaNote'} || 78;
 
     # find <a href=....> and replace it with [x]
     my $LinkList = '';
@@ -116,8 +105,8 @@ sub ToAscii {
             String => $2,
         );
         # force line breaking
-        if ( length $Ascii > 78 ) {
-            $Ascii =~ s/(.{4,78})(?:\s|\z)/$1\n/gm;
+        if ( length $Ascii > $LineLength ) {
+            $Ascii =~ s/(.{4,$LineLength})(?:\s|\z)/$1\n/gm;
         }
         $Ascii =~ s/^(.*?)$/> $1/gm;
         $Counter++;
@@ -133,8 +122,8 @@ sub ToAscii {
             String => $1,
         );
         # force line breaking
-        if ( length $Ascii > 78 ) {
-            $Ascii =~ s/(.{4,78})(?:\s|\z)/$1\n/gm;
+        if ( length $Ascii > $LineLength ) {
+            $Ascii =~ s/(.{4,$LineLength})(?:\s|\z)/$1\n/gm;
         }
         $Ascii =~ s/^(.*?)$/> $1/gm;
         $Counter++;
@@ -156,6 +145,10 @@ sub ToAscii {
         $One2One{$Key} = $Content;
         $Key;
     }segxmi;
+
+    # remove comments at the first place to avoid to much work
+    # for the regex engine
+    $Param{String} =~ s{<!-- .*? -->}{}xmgsi;
 
     # remove empty lines
     $Param{String} =~ s/^\s*//mg;
@@ -533,8 +526,8 @@ sub ToAscii {
     $Param{String} =~ s/^\s*\n\s*\n/\n/mg;
 
     # force line breaking
-    if ( length $Param{String} > 78 ) {
-        $Param{String} =~ s/(.{4,78})(?:\s|\z)/$1\n/gm;
+    if ( length $Param{String} > $LineLength ) {
+        $Param{String} =~ s/(.{4,$LineLength})(?:\s|\z)/$1\n/gm;
     }
 
     # remember <blockquote> and <div style=\"cite\"
@@ -564,7 +557,7 @@ sub ToHTML {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -602,7 +595,7 @@ sub DocumentComplete {
     # check needed stuff
     for (qw(String Charset)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -612,7 +605,7 @@ sub DocumentComplete {
 
     return $Param{String} if $Param{String} =~ /<html>/i;
 
-    my $Css = $Self->{ConfigObject}->Get('Frontend::RichText::DefaultCSS')
+    my $Css = $Kernel::OM->Get('Kernel::Config')->Get('Frontend::RichText::DefaultCSS')
         || 'font-size: 12px; font-family:Courier,monospace,fixed;';
 
     # Use the HTML5 doctype because it is compatible with HTML4 and causes the browsers
@@ -640,7 +633,7 @@ sub DocumentStrip {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -682,7 +675,7 @@ sub DocumentCleanup {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -938,7 +931,7 @@ sub Safety {
     # check needed stuff
     for (qw(String)) {
         if ( !defined $Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -1166,21 +1159,21 @@ sub EmbeddedImagesExtract {
     my ( $Self, %Param ) = @_;
 
     if ( ref $Param{DocumentRef} ne 'SCALAR' || !defined ${ $Param{DocumentRef} } ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need DocumentRef!"
         );
         return;
     }
     if ( ref $Param{AttachmentsRef} ne 'ARRAY' ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need DocumentRef!"
         );
         return;
     }
 
-    my $FQDN = $Self->{ConfigObject}->Get('FQDN');
+    my $FQDN = $Kernel::OM->Get('Kernel::Config')->Get('FQDN');
     ${ $Param{DocumentRef} } =~ s{(src=")(data:image/)(png|gif|jpg|jpeg|bmp)(;base64,)(.+?)(")}{
 
         my $Base64String = $5;
@@ -1194,6 +1187,7 @@ sub EmbeddedImagesExtract {
             ContentType => $ContentType,
             ContentID   => $ContentID,
             Filename    => $FileName,
+            Disposition => 'inline',
         };
         push @{$Param{AttachmentsRef}}, $AttachmentData;
 

@@ -11,11 +11,17 @@ package Kernel::System::ProcessManagement::TransitionAction::DynamicFieldSet;
 
 use strict;
 use warnings;
+use utf8;
+
 use Kernel::System::VariableCheck qw(:all);
 
-use utf8;
-use Kernel::System::DynamicField;
-use Kernel::System::DynamicField::Backend;
+use base qw(Kernel::System::ProcessManagement::TransitionAction::Base);
+
+our @ObjectDependencies = (
+    'Kernel::System::DynamicField',
+    'Kernel::System::DynamicField::Backend',
+    'Kernel::System::Log',
+);
 
 =head1 NAME
 
@@ -33,57 +39,11 @@ All DynamicFieldSet functions.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Ticket;
-    use Kernel::System::ProcessManagement::TransitionAction::DynamicFieldSet;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $TicketObject = Kernel::System::Ticket->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        EncodeObject       => $EncodeObject,
-    );
-    my $DynamicFieldSetActionObject = Kernel::System::ProcessManagement::TransitionAction::DynamicFieldSet->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-        EncodeObject       => $EncodeObject,
-        DBObject           => $DBObject,
-        MainObject         => $MainObject,
-        TimeObject         => $TimeObject,
-        TicketObject       => $TicketObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $DynamicFieldSetObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::TransitionAction::DynamicFieldSet');
 
 =cut
 
@@ -94,18 +54,6 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # get needed objects
-    for my $Needed (
-        qw(ConfigObject LogObject EncodeObject DBObject MainObject TimeObject TicketObject)
-        )
-    {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    $Self->{DynamicFieldObject}        = Kernel::System::DynamicField->new( %{$Self} );
-    $Self->{DynamicFieldBackendObject} = Kernel::System::DynamicField::Backend->new( %{$Self} );
     return $Self;
 }
 
@@ -129,7 +77,7 @@ sub new {
     Ticket contains the result of TicketGet including DynamicFields
     Config is the Config Hash stored in a Process::TransitionAction's  Config key
 
-    If a Dynamic Field is named UserID (to avoid conficts) it must be set in the config as:
+    If a Dynamic Field is named UserID (to avoid conflicts) it must be set in the config as:
     DynamicField_UserID => $Value,
 
     Returns:
@@ -143,49 +91,20 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    for my $Needed (
-        qw(UserID Ticket ProcessEntityID ActivityEntityID TransitionEntityID
-        TransitionActionEntityID Config
-        )
-        )
-    {
-        if ( !defined $Param{$Needed} ) {
-            $Self->{LogObject}->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
     # define a common message to output in case of any error
     my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
         . " Transition: $Param{TransitionEntityID}"
         . " TransitionAction: $Param{TransitionActionEntityID} - ";
 
-    # Check if we have Ticket to deal with
-    if ( !IsHashRefWithData( $Param{Ticket} ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "Ticket has no values!",
-        );
-        return;
-    }
-
-    # Check if we have a ConfigHash
-    if ( !IsHashRefWithData( $Param{Config} ) ) {
-        $Self->{LogObject}->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "Config has no values!",
-        );
-        return;
-    }
+    # check for missing or wrong params
+    my $Success = $Self->_CheckParams(
+        %Param,
+        CommonMessage => $CommonMessage,
+    );
+    return if !$Success;
 
     # override UserID if specified as a parameter in the TA config
-    if ( IsNumber( $Param{Config}->{UserID} ) ) {
-        $Param{UserID} = $Param{Config}->{UserID};
-        delete $Param{Config}->{UserID};
-    }
+    $Param{UserID} = $Self->_OverrideUserID(%Param);
 
     # special case for DyanmicField UserID, convert form DynamicField_UserID to UserID
     if ( defined $Param{Config}->{DynamicField_UserID} ) {
@@ -193,16 +112,23 @@ sub Run {
         delete $Param{Config}->{DynamicField_UserID};
     }
 
+    # use ticket attributes if needed
+    $Self->_ReplaceTicketAttributes(%Param);
+
+    # get dynamic field objects
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+
     for my $CurrentDynamicField ( sort keys %{ $Param{Config} } ) {
 
         # get required DynamicField config
-        my $DynamicFieldConfig = $Self->{DynamicFieldObject}->DynamicFieldGet(
+        my $DynamicFieldConfig = $DynamicFieldObject->DynamicFieldGet(
             Name => $CurrentDynamicField,
         );
 
         # check if we have a valid DynamicField
         if ( !IsHashRefWithData($DynamicFieldConfig) ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => $CommonMessage
                     . "Can't get DynamicField config for DynamicField: '$CurrentDynamicField'!",
@@ -211,7 +137,7 @@ sub Run {
         }
 
         # try to set the configured value
-        my $Success = $Self->{DynamicFieldBackendObject}->ValueSet(
+        my $Success = $DynamicFieldBackendObject->ValueSet(
             DynamicFieldConfig => $DynamicFieldConfig,
             ObjectID           => $Param{Ticket}->{TicketID},
             Value              => $Param{Config}->{$CurrentDynamicField},
@@ -220,7 +146,7 @@ sub Run {
 
         # check if everything went right
         if ( !$Success ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => $CommonMessage
                     . "Can't set value '"

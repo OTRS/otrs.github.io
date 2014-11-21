@@ -12,8 +12,10 @@ package Kernel::System::SysConfig::PriorityValidate;
 use strict;
 use warnings;
 
-use Kernel::Config;
-use Kernel::System::Priority;
+our @ObjectDependencies = (
+    'Kernel::System::Log',
+    'Kernel::System::Priority',
+);
 
 =head1 NAME
 
@@ -31,47 +33,11 @@ All functions for the PriorityValidate checks.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::DB;
-    use Kernel::System::Main;
-    use Kernel::System::Time;
-    use Kernel::System::SysConfig::PriorityValidate;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $PriorityValidateObject = Kernel::System::SysConfig::PriorityValidate->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        TimeObject   => $TimeObject,
-        MainObject   => $MainObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $PriorityValidateObject = $Kernel::OM->Get('Kernel::System::SysConfig::PriorityValidate');
 
 =cut
 
@@ -81,14 +47,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # check needed objects
-    for my $Object (qw(DBObject ConfigObject EncodeObject LogObject MainObject TimeObject)) {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
-    }
-
-    # create additional objects
-    $Self->{PriorityObject} = Kernel::System::Priority->new( %{$Self} );
 
     # set the debug flag
     $Self->{Debug} = $Param{Debug} || 0;
@@ -111,7 +69,7 @@ sub Validate {
 
     # check needed stuff
     if ( !$Param{Data} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Need Data!",
         );
@@ -124,7 +82,7 @@ sub Validate {
         # get the reference type
         my $RefType = ref $Param{Data};
 
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Data must be a scalar, but it is a $RefType!",
         );
@@ -132,7 +90,7 @@ sub Validate {
     }
 
     # get list of all valid priorities
-    my %Priorities = $Self->{PriorityObject}->PriorityList(
+    my %Priorities = $Kernel::OM->Get('Kernel::System::Priority')->PriorityList(
         Valid => 1,
     );
 
@@ -158,7 +116,7 @@ sub GetAutoCorrectValue {
     my ( $Self, %Param ) = @_;
 
     # get list of all valid priorities
-    my %Priorities = $Self->{PriorityObject}->PriorityList(
+    my %Priorities = $Kernel::OM->Get('Kernel::System::Priority')->PriorityList(
         Valid => 1,
     );
 

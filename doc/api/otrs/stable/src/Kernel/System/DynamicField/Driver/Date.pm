@@ -13,10 +13,17 @@ use strict;
 use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
-use Kernel::System::DynamicFieldValue;
-use Kernel::System::Time;
 
 use base qw(Kernel::System::DynamicField::Driver::BaseDateTime);
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::DB',
+    'Kernel::System::DynamicFieldValue',
+    'Kernel::System::Main',
+    'Kernel::System::Log',
+    'Kernel::System::Time',
+);
 
 =head1 NAME
 
@@ -47,29 +54,19 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # get needed objects
-    for my $Needed (qw(ConfigObject EncodeObject LogObject MainObject DBObject)) {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    # create additional objects
-    $Self->{DynamicFieldValueObject} = Kernel::System::DynamicFieldValue->new( %{$Self} );
-    $Self->{TimeObject}              = Kernel::System::Time->new( %{$Self} );
-
     # set field behaviors
     $Self->{Behaviors} = {
         'IsACLReducible'               => 0,
         'IsNotificationEventCondition' => 0,
         'IsSortable'                   => 1,
         'IsFiltrable'                  => 0,
-        'IsStatsCondition'             => 0,
+        'IsStatsCondition'             => 1,
         'IsCustomerInterfaceCapable'   => 1,
     };
 
     # get the Dynamic Field Backend custmom extensions
-    my $DynamicFieldDriverExtensions = $Self->{ConfigObject}->Get('DynamicFields::Extension::Driver::Date');
+    my $DynamicFieldDriverExtensions
+        = $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::Extension::Driver::Date');
 
     EXTENSION:
     for my $ExtensionKey ( sort keys %{$DynamicFieldDriverExtensions} ) {
@@ -84,7 +81,10 @@ sub new {
         if ( $Extension->{Module} ) {
 
             # check if module can be loaded
-            if ( !$Self->{MainObject}->RequireBaseClass( $Extension->{Module} ) ) {
+            if (
+                !$Kernel::OM->Get('Kernel::System::Main')->RequireBaseClass( $Extension->{Module} )
+                )
+            {
                 die "Can't load dynamic fields backend module"
                     . " $Extension->{Module}! $@";
             }
@@ -108,7 +108,7 @@ sub ValueSet {
 
     # check for no time in date fields
     if ( $Param{Value} && $Param{Value} !~ m{\A \d{4}-\d{2}-\d{2}\s00:00:00 \z}xms ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "The value for the field Date is invalid!\n"
                 . "The date must be valid and the time must be 00:00:00",
@@ -116,7 +116,7 @@ sub ValueSet {
         return;
     }
 
-    my $Success = $Self->{DynamicFieldValueObject}->ValueSet(
+    my $Success = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->ValueSet(
         FieldID  => $Param{DynamicFieldConfig}->{ID},
         ObjectID => $Param{ObjectID},
         Value    => [
@@ -133,6 +133,9 @@ sub ValueSet {
 sub ValueValidate {
     my ( $Self, %Param ) = @_;
 
+    my $Prefix          = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+    my $DateRestriction = $Param{DynamicFieldConfig}->{Config}->{DateRestriction};
+
     # check for no time in date fields
     if (
         $Param{Value}
@@ -140,7 +143,7 @@ sub ValueValidate {
         && $Param{Value} !~ m{\A \d{4}-\d{2}-\d{2}\s23:59:59 \z}xms
         )
     {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "The value for the field Date is invalid!\n"
                 . "The date must be valid and the time must be 00:00:00"
@@ -149,12 +152,40 @@ sub ValueValidate {
         return;
     }
 
-    my $Success = $Self->{DynamicFieldValueObject}->ValueValidate(
+    my $Success = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->ValueValidate(
         Value => {
             ValueDateTime => $Param{Value},
         },
-        UserID => $Param{UserID}
+        UserID => $Param{UserID},
     );
+
+    if ($DateRestriction) {
+
+        # get time object
+        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+        my $ValueSystemTime = $TimeObject->TimeStamp2SystemTime(
+            String => $Param{Value},
+        );
+        my $SystemTime = $TimeObject->SystemTime();
+
+        if ( $DateRestriction eq 'DisableFutureDates' && $ValueSystemTime > $SystemTime ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message =>
+                    "The value for the field Date is in the future! The date needs to be in the past!",
+            );
+            return;
+        }
+        elsif ( $DateRestriction eq 'DisablePastDates' && $ValueSystemTime < $SystemTime ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message =>
+                    "The value for the field Date is in the past! The date needs to be in the future!",
+            );
+            return;
+        }
+    }
 
     return $Success;
 }
@@ -172,7 +203,7 @@ sub SearchSQLGet {
 
     if ( $Operators{ $Param{Operator} } ) {
         my $SQL = " $Param{TableAlias}.value_date $Operators{$Param{Operator}} '"
-            . $Self->{DBObject}->Quote( $Param{SearchTerm} );
+            . $Kernel::OM->Get('Kernel::System::DB')->Quote( $Param{SearchTerm} );
 
         # Append hh:mm:ss if only the ISO date was supplied to get a full datetime string.
         if ( $Param{SearchTerm} =~ m{\A \d{4}-\d{2}-\d{2}\z}xms ) {
@@ -183,7 +214,7 @@ sub SearchSQLGet {
         return $SQL;
     }
 
-    $Self->{'LogObject'}->Log(
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
         'Priority' => 'error',
         'Message'  => "Unsupported Operator $Param{Operator}",
     );
@@ -272,6 +303,16 @@ sub EditFieldRender {
         );
     }
 
+    # date restrictions
+    if ( $FieldConfig->{DateRestriction} ) {
+        if ( $FieldConfig->{DateRestriction} eq 'DisablePastDates' ) {
+            $FieldConfig->{ValidateDateInFuture} = 1;
+        }
+        elsif ( $FieldConfig->{DateRestriction} eq 'DisableFutureDates' ) {
+            $FieldConfig->{ValidateDateNotInFuture} = 1;
+        }
+    }
+
     my $HTMLString = $Param{LayoutObject}->BuildDateSelection(
         %Param,
         Prefix               => $FieldName,
@@ -290,12 +331,14 @@ sub EditFieldRender {
     if ( $Param{Mandatory} ) {
         my $DivID = $FieldName . 'UsedError';
 
+        my $FieldRequiredMessage = $Param{LayoutObject}->{LanguageObject}->Translate("This field is required.");
+
         # for client side validation
         $HTMLString .= <<"EOF";
 
 <div id="$DivID" class="TooltipErrorMessage">
     <p>
-        \$Text{"This field is required."}
+        $FieldRequiredMessage
     </p>
 </div>
 EOF
@@ -304,6 +347,7 @@ EOF
     if ( $Param{ServerError} ) {
 
         my $ErrorMessage = $Param{ErrorMessage} || 'This field is required.';
+        $ErrorMessage = $Param{LayoutObject}->{LanguageObject}->Translate($ErrorMessage);
         my $DivID = $FieldName . 'UsedServerError';
 
         # for server side validation
@@ -311,7 +355,7 @@ EOF
 
 <div id="$DivID" class="TooltipErrorMessage">
     <p>
-        \$Text{"$ErrorMessage"}
+        $ErrorMessage
     </p>
 </div>
 EOF
@@ -319,9 +363,9 @@ EOF
 
     # call EditLabelRender on the common Driver
     my $LabelString = $Self->EditLabelRender(
-        DynamicFieldConfig => $Param{DynamicFieldConfig},
-        Mandatory          => $Param{Mandatory} || '0',
-        FieldName          => $FieldName . 'Used',
+        %Param,
+        Mandatory => $Param{Mandatory} || '0',
+        FieldName => $FieldName . 'Used',
     );
 
     my $Data = {
@@ -409,6 +453,79 @@ sub EditFieldValueGet {
     return $ManualTimeStamp;
 }
 
+sub EditFieldValueValidate {
+    my ( $Self, %Param ) = @_;
+
+    # get the field value from the http request
+    my $Value = $Self->EditFieldValueGet(
+        DynamicFieldConfig   => $Param{DynamicFieldConfig},
+        ParamObject          => $Param{ParamObject},
+        ReturnValueStructure => 1,
+    );
+
+    # on normal basis Used field could be empty but if there was no value from EditFieldValueGet()
+    # it must be an error
+    if ( !defined $Value ) {
+        return {
+            ServerError  => 1,
+            ErrorMessage => 'Invalid Date!'
+        };
+    }
+
+    my $ServerError;
+    my $ErrorMessage;
+
+    # set the date time prefix as field name
+    my $Prefix = 'DynamicField_' . $Param{DynamicFieldConfig}->{Name};
+
+    # date restriction
+    my $DateRestriction = $Param{DynamicFieldConfig}->{Config}->{DateRestriction};
+
+    # perform necessary validations
+    if ( $Param{Mandatory} && !$Value->{ $Prefix . 'Used' } ) {
+        $ServerError = 1;
+    }
+
+    if ( $Value->{ $Prefix . 'Used' } && $DateRestriction ) {
+
+        my $Year   = $Value->{ $Prefix . 'Year' }   || '0000';
+        my $Month  = $Value->{ $Prefix . 'Month' }  || '00';
+        my $Day    = $Value->{ $Prefix . 'Day' }    || '00';
+        my $Hour   = $Value->{ $Prefix . 'Hour' }   || '00';
+        my $Minute = $Value->{ $Prefix . 'Minute' } || '00';
+        my $Second = $Value->{ $Prefix . 'Second' } || '00';
+
+        my $ManualTimeStamp =
+            $Year . '-' . $Month . '-' . $Day . ' '
+            . $Hour . ':' . $Minute . ':' . $Second;
+
+        # get time object
+        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+        my $ValueSystemTime = $TimeObject->TimeStamp2SystemTime(
+            String => $ManualTimeStamp,
+        );
+        my $SystemTime = $TimeObject->SystemTime();
+
+        if ( $DateRestriction eq 'DisableFutureDates' && $ValueSystemTime > $SystemTime ) {
+            $ServerError  = 1;
+            $ErrorMessage = "Invalid date (need a past date)!";
+        }
+        elsif ( $DateRestriction eq 'DisablePastDates' && $ValueSystemTime < $SystemTime ) {
+            $ServerError  = 1;
+            $ErrorMessage = "Invalid date (need a future date)!";
+        }
+    }
+
+    # create resulting structure
+    my $Result = {
+        ServerError  => $ServerError,
+        ErrorMessage => $ErrorMessage,
+    };
+
+    return $Result;
+}
+
 sub DisplayValueRender {
     my ( $Self, %Param ) = @_;
 
@@ -416,12 +533,11 @@ sub DisplayValueRender {
 
     # convert date to localized string
     if ( defined $Param{Value} ) {
-        $Value = $Param{LayoutObject}->Output(
-            Template => '$Date{"$Data{"Value"}"}',
-            Data     => {
-                Value => $Param{Value},
-            },
+        $Value = $Param{LayoutObject}->{LanguageObject}->FormatTimeString(
+            $Param{Value},
+            'DateFormatShort',
         );
+
     }
 
     # in this Driver there is no need for HTMLOutput
@@ -610,9 +726,9 @@ EOF
 
         # call EditLabelRender on the common driver
         my $LabelString = $Self->EditLabelRender(
-            DynamicFieldConfig => $Param{DynamicFieldConfig},
-            FieldName          => $FieldName,
-            AdditionalText     => $AdditionalText,
+            %Param,
+            FieldName      => $FieldName,
+            AdditionalText => $AdditionalText,
         );
 
         my $Data = {
@@ -635,9 +751,7 @@ EOF
     );
 
     # build HTML for "and" separator
-    $HTMLString .= <<'EOF';
-  $Text{"and"}
-EOF
+    $HTMLString .= ' ' . $Param{LayoutObject}->{LanguageObject}->Translate("and") . "\n";
 
     # build HTML for stop value set
     $HTMLString .= $Param{LayoutObject}->BuildDateSelection(
@@ -657,9 +771,9 @@ EOF
 
     # call EditLabelRender on the common Driver
     my $LabelString = $Self->EditLabelRender(
-        DynamicFieldConfig => $Param{DynamicFieldConfig},
-        FieldName          => $FieldName,
-        AdditionalText     => $AdditionalText,
+        %Param,
+        FieldName      => $FieldName,
+        AdditionalText => $AdditionalText,
     );
 
     my $Data = {
@@ -892,8 +1006,11 @@ sub SearchFieldParameterBuild {
                 $DiffTimeMinutes = $Value * 60 * 24 * 365;
             }
 
+            # get time object
+            my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
             # get the current time in epoch seconds
-            my $Now = $Self->{TimeObject}->SystemTime();
+            my $Now = $TimeObject->SystemTime();
 
             # calculate diff time seconds
             my $DiffTimeSeconds = $DiffTimeMinutes * 60;
@@ -904,12 +1021,12 @@ sub SearchFieldParameterBuild {
             if ( $Start eq 'Before' ) {
 
                 # we must subtract the diff because it is in the past
-                my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $Self->{TimeObject}->SystemTime2Date(
+                my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now - $DiffTimeSeconds,
                 );
 
                 # use the last hour from diff time as it will be the upper limit strict
-                my $SystemTime = $Self->{TimeObject}->Date2SystemTime(
+                my $SystemTime = $TimeObject->Date2SystemTime(
                     Year   => $Year,
                     Month  => $Month,
                     Day    => $Day,
@@ -918,7 +1035,7 @@ sub SearchFieldParameterBuild {
                     Second => 00,
                 );
 
-                my $TimeStamp = $Self->{TimeObject}->SystemTime2TimeStamp(
+                my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
                     SystemTime => $SystemTime,
                 );
 
@@ -930,12 +1047,12 @@ sub SearchFieldParameterBuild {
             }
             elsif ( $Start eq 'Last' ) {
 
-                my ( $NSec, $NMin, $NHour, $NDay, $NMonth, $NYear, $NWeekDay ) = $Self->{TimeObject}->SystemTime2Date(
+                my ( $NSec, $NMin, $NHour, $NDay, $NMonth, $NYear, $NWeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now,
                 );
 
                 # use the last hour from today as it will be the upper limit relative
-                my $NowSystemTime = $Self->{TimeObject}->Date2SystemTime(
+                my $NowSystemTime = $TimeObject->Date2SystemTime(
                     Year   => $NYear,
                     Month  => $NMonth,
                     Day    => $NDay,
@@ -944,17 +1061,17 @@ sub SearchFieldParameterBuild {
                     Second => 59,
                 );
 
-                my $NowTimeStamp = $Self->{TimeObject}->SystemTime2TimeStamp(
+                my $NowTimeStamp = $TimeObject->SystemTime2TimeStamp(
                     SystemTime => $NowSystemTime,
                 );
 
                 # we must subtract the diff because it is in the past
-                my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $Self->{TimeObject}->SystemTime2Date(
+                my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now - $DiffTimeSeconds,
                 );
 
                 # use the first hour from diff time as it will be the lower limit relative
-                my $SystemTime = $Self->{TimeObject}->Date2SystemTime(
+                my $SystemTime = $TimeObject->Date2SystemTime(
                     Year   => $Year,
                     Month  => $Month,
                     Day    => $Day,
@@ -963,7 +1080,7 @@ sub SearchFieldParameterBuild {
                     Second => 00,
                 );
 
-                my $TimeStamp = $Self->{TimeObject}->SystemTime2TimeStamp(
+                my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
                     SystemTime => $SystemTime,
                 );
 
@@ -978,12 +1095,12 @@ sub SearchFieldParameterBuild {
             }
             elsif ( $Start eq 'Next' ) {
 
-                my ( $NSec, $NMin, $NHour, $NDay, $NMonth, $NYear, $NWeekDay ) = $Self->{TimeObject}->SystemTime2Date(
+                my ( $NSec, $NMin, $NHour, $NDay, $NMonth, $NYear, $NWeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now,
                 );
 
                 # use the first hour from today as it will be the lower limit relative
-                my $NowSystemTime = $Self->{TimeObject}->Date2SystemTime(
+                my $NowSystemTime = $TimeObject->Date2SystemTime(
                     Year   => $NYear,
                     Month  => $NMonth,
                     Day    => $NDay,
@@ -992,17 +1109,17 @@ sub SearchFieldParameterBuild {
                     Second => 00,
                 );
 
-                my $NowTimeStamp = $Self->{TimeObject}->SystemTime2TimeStamp(
+                my $NowTimeStamp = $TimeObject->SystemTime2TimeStamp(
                     SystemTime => $NowSystemTime,
                 );
 
                 # we must add the diff because it is in the future
-                my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $Self->{TimeObject}->SystemTime2Date(
+                my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now + $DiffTimeSeconds,
                 );
 
                 # use the last hour from diff time as it will be the upper limit relative
-                my $SystemTime = $Self->{TimeObject}->Date2SystemTime(
+                my $SystemTime = $TimeObject->Date2SystemTime(
                     Year   => $Year,
                     Month  => $Month,
                     Day    => $Day,
@@ -1011,7 +1128,7 @@ sub SearchFieldParameterBuild {
                     Second => 59,
                 );
 
-                my $TimeStamp = $Self->{TimeObject}->SystemTime2TimeStamp(
+                my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
                     SystemTime => $SystemTime,
                 );
 
@@ -1027,12 +1144,12 @@ sub SearchFieldParameterBuild {
             elsif ( $Start eq 'After' ) {
 
                 # we must add the diff because it is in the future
-                my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $Self->{TimeObject}->SystemTime2Date(
+                my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now + $DiffTimeSeconds,
                 );
 
                 # use the last hour from diff time as it will be the lower limit strict
-                my $SystemTime = $Self->{TimeObject}->Date2SystemTime(
+                my $SystemTime = $TimeObject->Date2SystemTime(
                     Year   => $Year,
                     Month  => $Month,
                     Day    => $Day,
@@ -1041,7 +1158,7 @@ sub SearchFieldParameterBuild {
                     Second => 59,
                 );
 
-                my $TimeStamp = $Self->{TimeObject}->SystemTime2TimeStamp(
+                my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
                     SystemTime => $SystemTime,
                 );
 
@@ -1092,6 +1209,71 @@ sub SearchFieldParameterBuild {
     }
 
     return;
+}
+
+sub StatsFieldParameterBuild {
+    my ( $Self, %Param ) = @_;
+
+    return {
+        Name             => $Param{DynamicFieldConfig}->{Label},
+        Element          => 'DynamicField_' . $Param{DynamicFieldConfig}->{Name},
+        TimePeriodFormat => 'DateInputFormat',
+        Block            => 'Time',
+    };
+}
+
+sub StatsSearchFieldParameterBuild {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+
+    # set operator
+    my $Operator = $Param{Operator};
+    return {} if !$Operator;
+
+    return { $Operator => undef } if !$Value;
+
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+    # Date field is limited to full calendar days
+    # prepare restriction getting date/time fields
+    my $SystemTime = $TimeObject->TimeStamp2SystemTime(
+        String => $Value,
+    );
+    my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
+        SystemTime => $SystemTime,
+    );
+
+    # set end of day
+    if ( $Operator eq 'SmallerThanEquals' ) {
+        $Hour = 23;
+        $Min  = 59;
+        $Sec  = 59;
+    }
+
+    # set start of day
+    elsif ( $Operator eq 'GreaterThanEquals' ) {
+        $Hour = 0;
+        $Min  = 0;
+        $Sec  = 0;
+    }
+
+    # get target time using new values (or same values for onknown operators)
+    my $TargetSystemTime = $TimeObject->Date2SystemTime(
+        Year   => $Year,
+        Month  => $Month,
+        Day    => $Day,
+        Hour   => $Hour,
+        Minute => $Min,
+        Second => $Sec,
+    );
+    $Value = $TimeObject->SystemTime2TimeStamp(
+        SystemTime => $TargetSystemTime,
+    );
+
+    return {
+        $Operator => $Value,
+    };
 }
 
 sub RandomValueSet {

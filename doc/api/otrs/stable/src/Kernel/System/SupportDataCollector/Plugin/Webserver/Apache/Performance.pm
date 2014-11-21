@@ -14,6 +14,8 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = ();
+
 sub GetDisplayPath {
     return 'Webserver';
 }
@@ -53,12 +55,13 @@ sub Run {
     }
 
     if ( $ENV{MOD_PERL} ) {
-        my $ModDeflateLoaded = Apache2::Module::loaded('mod_deflate.c');
+        my $ModDeflateLoaded =
+            Apache2::Module::loaded('mod_deflate.c') || Apache2::Module::loaded('mod_deflate.so');
 
         if ($ModDeflateLoaded) {
             $Self->AddResultOk(
                 Identifier => "ModDeflateLoaded",
-                Label      => 'mod_deflate.c Usage',
+                Label      => 'mod_deflate Usage',
                 Value      => 'active',
             );
         }
@@ -71,12 +74,13 @@ sub Run {
             );
         }
 
-        my $ModHeadersLoaded = Apache2::Module::loaded('mod_headers.c');
+        my $ModHeadersLoaded =
+            Apache2::Module::loaded('mod_headers.c') || Apache2::Module::loaded('mod_headers.so');
 
         if ($ModHeadersLoaded) {
             $Self->AddResultOk(
                 Identifier => "ModHeadersLoaded",
-                Label      => 'mod_headers.c Usage',
+                Label      => 'mod_headers Usage',
                 Value      => 'active',
             );
         }

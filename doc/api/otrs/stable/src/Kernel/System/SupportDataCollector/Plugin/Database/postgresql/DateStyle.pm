@@ -14,6 +14,10 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::System::DB',
+);
+
 sub GetDisplayPath {
     return 'Database';
 }
@@ -21,12 +25,15 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    if ( $Self->{DBObject}->GetDatabaseFunction('Type') !~ m{^postgresql} ) {
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $DBObject->GetDatabaseFunction('Type') !~ m{^postgresql} ) {
         return $Self->GetResults();
     }
 
-    $Self->{DBObject}->Prepare( SQL => 'show DateStyle' );
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    $DBObject->Prepare( SQL => 'show DateStyle' );
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         if ( $Row[0] =~ /^ISO/i ) {
             $Self->AddResultOk(
                 Label => 'Date Format',

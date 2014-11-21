@@ -35,7 +35,7 @@
   </script></head>
 <body>
 <div class="box">
-  <h1 class="t1">OTRS 3.3 API Reference</h1>
+  <h1 class="t1">OTRS 4.0 API Reference</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -44,7 +44,7 @@
   </table>
 </div>
 <div class="path">
-  <a href="../../index.html">OTRS 3.3 API Reference</a> &gt; Perl Modules &gt;
+  <a href="../../index.html">OTRS 4.0 API Reference</a> &gt; Perl Modules &gt;
   Kernel::System::Time
 </div>
 <div>
@@ -76,24 +76,10 @@
 
 <dl>
 	<dt>new()</dt>
-		<dd><p>create a time object</p></dd>
-<dd><pre>    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Time;
-
-</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
-    my $EncodeObject = Kernel::System::Encode-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-    );
-    my $TimeObject = Kernel::System::Time-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        LogObject    =&gt; $LogObject,
-    );
+		<dd><p>create a time object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $TimeObject = $Kernel::OM-&gt;Get('Kernel::System::Time');
 
 </pre></dd>	<dt>SystemTime()</dt>
 		<dd><p>returns the number of non-leap seconds since what ever time the
@@ -147,8 +133,8 @@ for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).</p></dd>
     );
 
 </pre></dd>	<dt>MailTimeStamp()</dt>
-		<dd><p>returns the current utc time stamp in &quot;Wed, 22 Sep 2004 16:30:57 +0000&quot;
-format (used for email Date time stamps).</p></dd>
+		<dd><p>returns the current time stamp in RFC 2822 format to be used in email headers:
+&quot;Wed, 22 Sep 2014 16:30:57 +0200&quot;.</p></dd>
 <dd><pre>    my $MailTimeStamp = $TimeObject-&gt;MailTimeStamp();
 
 </pre></dd>	<dt>WorkingTime()</dt>
@@ -166,16 +152,16 @@ format (used for email Date time stamps).</p></dd>
 
 </pre></dd>	<dt>DestinationTime()</dt>
 		<dd><p>get the destination time based on the current calendar working time (fallback: default
-system working time) configuragtion.</p></dd>
+system working time) configuration.</p></dd>
 		<dd><p>The algorithm roughly works as follows:
-    - Check if the start time is acutally in the configured working time.
+    - Check if the start time is actually in the configured working time.
         - If not, set it to the next working time second. Example: start time is
             on a weekend, start time would be set to 8:00 on the following Monday.
     - Then the diff time (in seconds) is added to the start time incrementally, only considering
         the configured working times. So adding 24 hours could actually span multiple days because
         they would be spread over the configured working hours. If we have 8-20, 24 hours would be
         spread over 2 days (13/11 hours).</p></dd>
-		<dd><p>NOTE: Currently, the implementation stops silently after 100 iterations, making it impossible to
+		<dd><p>NOTE: Currently, the implementation stops silently after 600 iterations, making it impossible to
     specify longer escalation times, for example.</p></dd>
 <dd><pre>    my $DestinationTime = $TimeObject-&gt;DestinationTime(
         StartTime =&gt; $Created,

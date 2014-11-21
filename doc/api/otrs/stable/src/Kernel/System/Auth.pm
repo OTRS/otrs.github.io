@@ -12,7 +12,16 @@ package Kernel::System::Auth;
 use strict;
 use warnings;
 
-use Kernel::System::Valid;
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Group',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+    'Kernel::System::SystemMaintenance',
+    'Kernel::System::Time',
+    'Kernel::System::User',
+    'Kernel::System::Valid',
+);
 
 =head1 NAME
 
@@ -30,64 +39,11 @@ The authentication module for the agent interface.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::Time;
-    use Kernel::System::User;
-    use Kernel::System::Group;
-    use Kernel::System::Auth;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $TimeObject = Kernel::System::Time->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-    );
-    my $UserObject = Kernel::System::User->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-        TimeObject   => $TimeObject,
-        DBObject     => $DBObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $GroupObject = Kernel::System::Group->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-    );
-    my $AuthObject = Kernel::System::Auth->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        UserObject   => $UserObject,
-        GroupObject  => $GroupObject,
-        DBObject     => $DBObject,
-        MainObject   => $MainObject,
-        TimeObject   => $TimeObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $AuthObject = $Kernel::OM->Get('Kernel::System::Auth');
 
 =cut
 
@@ -98,45 +54,42 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # check needed objects
-    for (
-        qw(LogObject ConfigObject DBObject UserObject GroupObject MainObject EncodeObject TimeObject)
-        )
-    {
-        $Self->{$_} = $Param{$_} || die "No $_!";
-    }
-
-    $Self->{ValidObject} = Kernel::System::Valid->new( %{$Self} );
+    # get needed objects
+    my $MainObject   = $Kernel::OM->Get('Kernel::System::Main');
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # load auth modules
     COUNT:
     for my $Count ( '', 1 .. 10 ) {
 
-        my $GenericModule = $Self->{ConfigObject}->Get("AuthModule$Count");
+        my $GenericModule = $ConfigObject->Get("AuthModule$Count");
 
         next COUNT if !$GenericModule;
 
-        if ( !$Self->{MainObject}->Require($GenericModule) ) {
-            $Self->{MainObject}->Die("Can't load backend module $GenericModule! $@");
+        if ( !$MainObject->Require($GenericModule) ) {
+            $MainObject->Die("Can't load backend module $GenericModule! $@");
         }
 
-        $Self->{"AuthBackend$Count"} = $GenericModule->new( %{$Self}, Count => $Count );
+        $Self->{"AuthBackend$Count"} = $GenericModule->new( Count => $Count );
     }
 
     # load sync modules
     COUNT:
     for my $Count ( '', 1 .. 10 ) {
 
-        my $GenericModule = $Self->{ConfigObject}->Get("AuthSyncModule$Count");
+        my $GenericModule = $ConfigObject->Get("AuthSyncModule$Count");
 
         next COUNT if !$GenericModule;
 
-        if ( !$Self->{MainObject}->Require($GenericModule) ) {
-            $Self->{MainObject}->Die("Can't load backend module $GenericModule! $@");
+        if ( !$MainObject->Require($GenericModule) ) {
+            $MainObject->Die("Can't load backend module $GenericModule! $@");
         }
 
         $Self->{"AuthSyncBackend$Count"} = $GenericModule->new( %{$Self}, Count => $Count );
     }
+
+    # Initialize last error message
+    $Self->{LastErrorMessage} = '';
 
     return $Self;
 }
@@ -173,23 +126,28 @@ The authentication function.
 sub Auth {
     my ( $Self, %Param ) = @_;
 
+    # get needed objects
+    my $UserObject   = $Kernel::OM->Get('Kernel::System::User');
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
     # use all 11 auth backends and return on first true
     my $User;
+    COUNT:
     for my $Count ( '', 1 .. 10 ) {
 
         # return on no config setting
-        next if !$Self->{"AuthBackend$Count"};
+        next COUNT if !$Self->{"AuthBackend$Count"};
 
         # check auth backend
         $User = $Self->{"AuthBackend$Count"}->Auth(%Param);
 
         # next on no success
-        next if !$User;
+        next COUNT if !$User;
 
         # configured auth sync backend
-        my $AuthSyncBackend = $Self->{ConfigObject}->Get("AuthModule::UseSyncBackend$Count");
+        my $AuthSyncBackend = $ConfigObject->Get("AuthModule::UseSyncBackend$Count");
         if ( !defined $AuthSyncBackend ) {
-            $AuthSyncBackend = $Self->{ConfigObject}->Get("AuthModule{$Count}::UseSyncBackend");
+            $AuthSyncBackend = $ConfigObject->Get("AuthModule{$Count}::UseSyncBackend");
         }
 
         # for backwards compatibility, OTRS 3.1.1, 3.1.2 and 3.1.3 used this wrong format (see bug#8387)
@@ -207,10 +165,11 @@ sub Auth {
 
         # use all 11 sync backends
         else {
+            SOURCE:
             for my $Count ( '', 1 .. 10 ) {
 
                 # return on no config setting
-                next if !$Self->{"AuthSyncBackend$Count"};
+                next SOURCE if !$Self->{"AuthSyncBackend$Count"};
 
                 # sync backend
                 $Self->{"AuthSyncBackend$Count"}->Sync( %Param, User => $User );
@@ -218,33 +177,32 @@ sub Auth {
         }
 
         # remember auth backend
-        my $UserID = $Self->{UserObject}->UserLookup(
+        my $UserID = $UserObject->UserLookup(
             UserLogin => $User,
         );
 
         if ($UserID) {
-            $Self->{UserObject}->SetPreferences(
+            $UserObject->SetPreferences(
                 Key    => 'UserAuthBackend',
                 Value  => $Count,
                 UserID => $UserID,
             );
         }
 
-        # last if user is true
-        last if $User;
+        last COUNT if $User;
     }
 
     # return if no auth user
     if ( !$User ) {
 
         # remember failed logins
-        my $UserID = $Self->{UserObject}->UserLookup(
+        my $UserID = $UserObject->UserLookup(
             UserLogin => $Param{User},
         );
 
         return if !$UserID;
 
-        my %User = $Self->{UserObject}->GetUserData(
+        my %User = $UserObject->GetUserData(
             UserID => $UserID,
             Valid  => 1,
         );
@@ -252,14 +210,14 @@ sub Auth {
         my $Count = $User{UserLoginFailed} || 0;
         $Count++;
 
-        $Self->{UserObject}->SetPreferences(
+        $UserObject->SetPreferences(
             Key    => 'UserLoginFailed',
             Value  => $Count,
             UserID => $UserID,
         );
 
         # set agent to invalid-temporarily if max failed logins reached
-        my $Config = $Self->{ConfigObject}->Get('PreferencesGroups');
+        my $Config = $ConfigObject->Get('PreferencesGroups');
         my $PasswordMaxLoginFailed;
 
         if ( $Config && $Config->{Password} && $Config->{Password}->{PasswordMaxLoginFailed} ) {
@@ -270,9 +228,11 @@ sub Auth {
         return if !$PasswordMaxLoginFailed;
         return if $Count < $PasswordMaxLoginFailed;
 
-        my $ValidID = $Self->{ValidObject}->ValidLookup( Valid => 'invalid-temporarily' );
+        my $ValidID = $Kernel::OM->Get('Kernel::System::Valid')->ValidLookup(
+            Valid => 'invalid-temporarily',
+        );
 
-        my $Update = $Self->{UserObject}->UserUpdate(
+        my $Update = $UserObject->UserUpdate(
             %User,
             ValidID      => $ValidID,
             ChangeUserID => 1,
@@ -280,7 +240,7 @@ sub Auth {
 
         return if !$Update;
 
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'notice',
             Message  => "Login failed $Count times. Set $User{UserLogin} to "
                 . "'invalid-temporarily'.",
@@ -290,27 +250,75 @@ sub Auth {
     }
 
     # remember login attributes
-    my $UserID = $Self->{UserObject}->UserLookup(
+    my $UserID = $UserObject->UserLookup(
         UserLogin => $User,
     );
 
     return $User if !$UserID;
 
+    # on system maintenance just admin users
+    # should be allowed to get into the system
+    my $ActiveMaintenance = $Kernel::OM->Get('Kernel::System::SystemMaintenance')->SystemMaintenanceIsActive();
+
     # reset failed logins
-    $Self->{UserObject}->SetPreferences(
+    $UserObject->SetPreferences(
         Key    => 'UserLoginFailed',
         Value  => 0,
         UserID => $UserID,
     );
 
+    # check if system maintenance is active
+    if ($ActiveMaintenance) {
+
+        # check if user is allow to login
+        # get current user groups
+        my %Groups = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
+            UserID => $UserID,
+            Type   => 'move_into',
+            Result => 'HASH',
+        );
+
+        # reverse groups hash for easy look up
+        %Groups = reverse %Groups;
+
+        # check if the user is in the Admin group
+        # if that is not the case return
+        if ( !$Groups{admin} ) {
+
+            $Self->{LastErrorMessage} =
+                $ConfigObject->Get('SystemMaintenance::IsActiveDefaultLoginErrorMessage')
+                || "It is currently not possible to login due to a scheduled system maintenance.";
+
+            return;
+        }
+    }
+
     # last login preferences update
-    $Self->{UserObject}->SetPreferences(
+    $UserObject->SetPreferences(
         Key    => 'UserLastLogin',
-        Value  => $Self->{TimeObject}->SystemTime(),
+        Value  => $Kernel::OM->Get('Kernel::System::Time')->SystemTime(),
         UserID => $UserID,
     );
 
     return $User;
+}
+
+=item GetLastErrorMessage()
+
+Retrieve $Self->{LastErrorMessage} content.
+
+    my $AuthErrorMessage = $AuthObject->GetLastErrorMessage();
+
+    Result:
+
+        $AuthErrorMessage = "An error string message.";
+
+=cut
+
+sub GetLastErrorMessage {
+    my ( $Self, %Param ) = @_;
+
+    return $Self->{LastErrorMessage};
 }
 
 1;

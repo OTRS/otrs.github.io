@@ -12,16 +12,15 @@ package Kernel::System::Web::InterfaceInstaller;
 use strict;
 use warnings;
 
-# all framework needed  modules
-use Kernel::Config;
-use Kernel::System::Log;
-use Kernel::System::Main;
-use Kernel::System::Encode;
-use Kernel::System::Time;
-use Kernel::System::Web::Request;
-use Kernel::System::DB;
-use Kernel::System::CustomerUser;
-use Kernel::Output::HTML::Layout;
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::Output::HTML::Layout',
+    'Kernel::System::Encode',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+    'Kernel::System::Time',
+    'Kernel::System::Web::Request',
+);
 
 =head1 NAME
 
@@ -41,19 +40,8 @@ the global installer web interface
 
 create installer web interface object
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
     use Kernel::System::Web::InterfaceInstaller;
 
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
     my $Debug = 0;
     my $Interface = Kernel::System::Web::InterfaceInstaller->new( Debug => $Debug );
 
@@ -70,19 +58,25 @@ sub new {
     $Self->{Debug} = $Param{Debug} || 0;
 
     # create common framework objects 1/3
-    $Self->{ConfigObject} = Kernel::Config->new();
-    $Self->{LogObject}    = Kernel::System::Log->new(
-        LogPrefix => $Self->{ConfigObject}->Get('CGILogPrefix') || 'Installer',
-        %{$Self},
+    $Self->{ConfigObject} = $Kernel::OM->Get('Kernel::Config');
+
+    $Kernel::OM->ObjectParamAdd(
+        'Kernel::System::Log' => {
+            LogPrefix => $Self->{ConfigObject}->Get('CGILogPrefix') || 'Installer',
+        },
+        'Kernel::Output::HTML::Layout' => {
+            InstallerOnly => 1,
+        },
+        'Kernel::System::Web::Request' => {
+            WebRequest => $Param{WebRequest} || 0,
+        },
     );
-    $Self->{EncodeObject} = Kernel::System::Encode->new( %{$Self} );
-    $Self->{MainObject}   = Kernel::System::Main->new( %{$Self} );
-    $Self->{TimeObject}   = Kernel::System::Time->new( %{$Self} );
-    $Self->{ParamObject}  = Kernel::System::Web::Request->new(
-        %{$Self},
-        WebRequest => $Param{WebRequest} || 0,
-    );
-    $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new( %{$Self} );
+
+    $Self->{EncodeObject} = $Kernel::OM->Get('Kernel::System::Encode');
+    $Self->{LogObject}    = $Kernel::OM->Get('Kernel::System::Log');
+    $Self->{MainObject}   = $Kernel::OM->Get('Kernel::System::Main');
+    $Self->{ParamObject}  = $Kernel::OM->Get('Kernel::System::Web::Request');
+    $Self->{TimeObject}   = $Kernel::OM->Get('Kernel::System::Time');
 
     # debug info
     if ( $Self->{Debug} ) {
@@ -113,6 +107,14 @@ sub Run {
     $Param{Subaction}  = $Self->{ParamObject}->GetParam( Param => 'Subaction' )  || '';
     $Param{NextScreen} = $Self->{ParamObject}->GetParam( Param => 'NextScreen' ) || '';
 
+    $Kernel::OM->ObjectParamAdd(
+        'Kernel::Output::HTML::Layout' => {
+            %Param,
+        },
+    );
+
+    $Self->{LayoutObject} = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
     # check secure mode
     if ( $Self->{ConfigObject}->Get('SecureMode') ) {
         print $Self->{LayoutObject}->Header();
@@ -126,7 +128,6 @@ sub Run {
 
     # run modules if a version value exists
     elsif ( $Self->{MainObject}->Require("Kernel::Modules::$Param{Action}") ) {
-        $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new( %{$Self}, %Param, );
 
         # proof of concept! - create $GenericObject
         my $GenericObject = ( 'Kernel::Modules::' . $Param{Action} )->new(

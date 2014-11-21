@@ -16,6 +16,8 @@ use Encode;
 use Encode::Locale;
 use IO::Interactive qw(is_interactive);
 
+our @ObjectDependencies = ();
+
 =head1 NAME
 
 Kernel::System::Encode - character encodings
@@ -32,11 +34,11 @@ This module will use Perl's Encode module (Perl 5.8.0 or higher is required).
 
 =item new()
 
-create an encode object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::System::Encode;
-
-    my $EncodeObject = Kernel::System::Encode->new();
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
 
 =cut
 
@@ -272,8 +274,10 @@ sub EncodeInput {
     }
 
     if ( ref $What eq 'ARRAY' ) {
+
+        ROW:
         for my $Row ( @{$What} ) {
-            next if !defined $Row;
+            next ROW if !defined $Row;
             Encode::_utf8_on($Row);
         }
         return $What;
@@ -308,9 +312,11 @@ sub EncodeOutput {
     }
 
     if ( ref $What eq 'ARRAY' ) {
+
+        ROW:
         for my $Row ( @{$What} ) {
-            next if !defined $Row;
-            next if !Encode::is_utf8( ${$Row} );
+            next ROW if !defined $Row;
+            next ROW if !Encode::is_utf8( ${$Row} );
             ${$Row} = Encode::encode_utf8( ${$Row} );
         }
         return $What;
@@ -389,8 +395,9 @@ sub FindAsciiSupersetEncoding {
         print STDERR "Need Encodings!\n";
         return;
     }
+    ENCODING:
     for my $Encoding ( @{ $Param{Encodings} } ) {
-        next if !$Encoding;
+        next ENCODING if !$Encoding;
         if ( $Self->EncodingIsAsciiSuperset( Encoding => $Encoding ) ) {
             return $Encoding;
         }

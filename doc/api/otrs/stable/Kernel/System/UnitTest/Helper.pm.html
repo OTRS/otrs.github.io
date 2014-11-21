@@ -35,7 +35,7 @@
   </script></head>
 <body>
 <div class="box">
-  <h1 class="t1">OTRS 3.3 API Reference</h1>
+  <h1 class="t1">OTRS 4.0 API Reference</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -44,7 +44,7 @@
   </table>
 </div>
 <div class="path">
-  <a href="../../../index.html">OTRS 3.3 API Reference</a> &gt; Perl Modules &gt;
+  <a href="../../../index.html">OTRS 4.0 API Reference</a> &gt; Perl Modules &gt;
   Kernel::System::UnitTest::Helper
 </div>
 <div>
@@ -69,23 +69,14 @@
 <dl>
 	<dt>new()</dt>
 		<dd><p>construct a helper object.</p></dd>
-<dd><pre>    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::UnitTest::Helper;
-
-</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
-    my $EncodeObject = Kernel::System::Encode-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+        'Kernel::System::UnitTest::Helper' =&gt; {
+            RestoreSystemConfiguration =&gt; 1,        # optional, save ZZZAuto.pm
+                                                    # and restore it in the destructor
+        },
     );
-    my $LogObject = Kernel::System::Log-&gt;new(
-        ConfigObject =&gt; $ConfigObject,
-        EncodeObject =&gt; $EncodeObject,
-    );
-    my $Helper = Kernel::System::UnitTest::Helper-&gt;new(
-        %{$Self},
-        RestoreSystemConfiguration =&gt; 1,        # optional, save ZZZAuto.pm and restore it in the destructor
-    );
+    my $Helper = $Kernel::OM-&gt;Get('Kernel::System::UnitTest::Helper');
 
 </pre></dd>	<dt>GetRandomID()</dt>
 		<dd><p>creates a random ID that can be used in tests as a unique identifier.</p></dd>
@@ -95,13 +86,16 @@ be set to invalid automatically during the destructor. Returns
 the login name of the new user, the password is the same.</p></dd>
 <dd><pre>    my $TestUserLogin = $Helper-&gt;TestUserCreate(
         Groups =&gt; ['admin', 'users'],           # optional, list of groups to add this user to (rw rights)
+        Language =&gt; 'de'                        # optional, defaults to 'en' if not set
     );
 
 </pre></dd>	<dt>TestCustomerUserCreate()</dt>
 		<dd><p>creates a test customer user that can be used in tests. It will
 be set to invalid automatically during the destructor. Returns
 the login name of the new customer user, the password is the same.</p></dd>
-<dd><pre>    my $TestUserLogin = $Helper-&gt;TestCustomerUserCreate();
+<dd><pre>    my $TestUserLogin = $Helper-&gt;TestCustomerUserCreate(
+        Language =&gt; 'de',   # optional, defaults to 'en' if not set
+    );
 
 </pre></dd>	<dt>FixedTimeSet()</dt>
 		<dd><p>makes it possible to override the system time as long as this object lives.

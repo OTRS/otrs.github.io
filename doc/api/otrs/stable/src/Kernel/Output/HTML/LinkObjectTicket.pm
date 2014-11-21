@@ -13,9 +13,23 @@ use strict;
 use warnings;
 
 use Kernel::Output::HTML::Layout;
-use Kernel::System::State;
-use Kernel::System::Priority;
-use Kernel::System::Type;
+
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::Language',
+    'Kernel::System::DB',
+    'Kernel::System::Encode',
+    'Kernel::System::Group',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+    'Kernel::System::Priority',
+    'Kernel::System::Queue',
+    'Kernel::System::State',
+    'Kernel::System::Time',
+    'Kernel::System::Type',
+    'Kernel::System::User',
+    'Kernel::System::Web::Request',
+);
 
 =head1 NAME
 
@@ -34,7 +48,8 @@ All layout functions of link object (ticket).
 create an object
 
     $BackendObject = Kernel::Output::HTML::LinkObjectTicket->new(
-        %Param,
+        UserLanguage => 'en',
+        UserID       => 1,
     );
 
 =cut
@@ -47,17 +62,29 @@ sub new {
     bless( $Self, $Type );
 
     # check needed objects
-    for my $Object (
-        qw(ConfigObject LogObject MainObject DBObject UserObject EncodeObject
-        QueueObject GroupObject ParamObject TimeObject LanguageObject UserLanguage UserID)
-        )
-    {
-        $Self->{$Object} = $Param{$Object} || die "Got no $Object!";
+    for my $Needed (qw(UserLanguage UserID)) {
+        $Self->{$Needed} = $Param{$Needed} || die "Got no $Needed!";
     }
-    $Self->{LayoutObject}   = Kernel::Output::HTML::Layout->new( %{$Self} );
-    $Self->{StateObject}    = Kernel::System::State->new( %{$Self} );
-    $Self->{PriorityObject} = Kernel::System::Priority->new( %{$Self} );
-    $Self->{TypeObject}     = Kernel::System::Type->new( %{$Self} );
+
+    # get needed objects
+    $Self->{ConfigObject}   = $Kernel::OM->Get('Kernel::Config');
+    $Self->{LanguageObject} = $Kernel::OM->Get('Kernel::Language');
+    $Self->{LogObject}      = $Kernel::OM->Get('Kernel::System::Log');
+    $Self->{MainObject}     = $Kernel::OM->Get('Kernel::System::Main');
+    $Self->{DBObject}       = $Kernel::OM->Get('Kernel::System::DB');
+    $Self->{UserObject}     = $Kernel::OM->Get('Kernel::System::User');
+    $Self->{EncodeObject}   = $Kernel::OM->Get('Kernel::System::Encode');
+    $Self->{QueueObject}    = $Kernel::OM->Get('Kernel::System::Queue');
+    $Self->{GroupObject}    = $Kernel::OM->Get('Kernel::System::Group');
+    $Self->{TimeObject}     = $Kernel::OM->Get('Kernel::System::Time');
+    $Self->{StateObject}    = $Kernel::OM->Get('Kernel::System::State');
+    $Self->{PriorityObject} = $Kernel::OM->Get('Kernel::System::Priority');
+    $Self->{TypeObject}     = $Kernel::OM->Get('Kernel::System::Type');
+    $Self->{ParamObject}    = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    # We need our own LayoutObject instance to avoid blockdata collisions
+    #   with the main page.
+    $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new( %{$Self} );
 
     # define needed variables
     $Self->{ObjectData} = {
@@ -185,10 +212,12 @@ sub TableCreateComplex {
 
         my @ItemColumns = (
             {
-                Type     => 'Link',
-                Key      => $TicketID,
-                Content  => $Ticket->{TicketNumber},
-                Link     => '$Env{"Baselink"}Action=AgentTicketZoom;TicketID=' . $TicketID,
+                Type    => 'Link',
+                Key     => $TicketID,
+                Content => $Ticket->{TicketNumber},
+                Link    => $Self->{LayoutObject}->{Baselink}
+                    . 'Action=AgentTicketZoom;TicketID='
+                    . $TicketID,
                 Title    => "Ticket# $Ticket->{TicketNumber}",
                 CssClass => $CssClass,
             },
@@ -326,10 +355,12 @@ sub TableCreateSimple {
 
                 # define item data
                 my %Item = (
-                    Type     => 'Link',
-                    Content  => 'T:' . $Ticket->{TicketNumber},
-                    Title    => "$TicketHook$Ticket->{TicketNumber}: $Ticket->{Title}",
-                    Link     => '$Env{"Baselink"}Action=AgentTicketZoom;TicketID=' . $TicketID,
+                    Type    => 'Link',
+                    Content => 'T:' . $Ticket->{TicketNumber},
+                    Title   => "$TicketHook$Ticket->{TicketNumber}: $Ticket->{Title}",
+                    Link    => $Self->{LayoutObject}->{Baselink}
+                        . 'Action=AgentTicketZoom;TicketID='
+                        . $TicketID,
                     CssClass => $CssClass,
                 );
 

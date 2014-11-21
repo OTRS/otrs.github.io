@@ -14,6 +14,11 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
 
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Log',
+);
+
 =head1 NAME
 
 Kernel::System::ProcessManagement::ActivityDialog - activity dialog lib
@@ -30,25 +35,11 @@ All Process Management Activity Dialog functions.
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::ProcessManagement::ActivityDialog;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $ActivityDialogObject = Kernel::System::ProcessManagement::ActivityDialog->new(
-        ConfigObject       => $ConfigObject,
-        LogObject          => $LogObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $ActivityDialogObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::ActivityDialog');
 
 =cut
 
@@ -58,13 +49,6 @@ sub new {
     # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
-
-    # get needed objects
-    for my $Needed (qw(ConfigObject LogObject)) {
-        die "Got no $Needed!" if !$Param{$Needed};
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
 
     return $Self;
 }
@@ -129,7 +113,7 @@ sub ActivityDialogGet {
 
     for my $Needed (qw(ActivityDialogEntityID Interface)) {
         if ( !defined $Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!"
             );
@@ -141,10 +125,10 @@ sub ActivityDialogGet {
         $Param{Interface} = [ $Param{Interface} ];
     }
 
-    my $ActivityDialog = $Self->{ConfigObject}->Get('Process::ActivityDialog');
+    my $ActivityDialog = $Kernel::OM->Get('Kernel::Config')->Get('Process::ActivityDialog');
 
     if ( !IsHashRefWithData($ActivityDialog) ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need ActivityDialog config!'
         );
@@ -152,7 +136,7 @@ sub ActivityDialogGet {
     }
 
     if ( !IsHashRefWithData( $ActivityDialog->{ $Param{ActivityDialogEntityID} } ) ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "No Data for ActivityDialog '$Param{ActivityDialogEntityID}' found!"
         );
@@ -166,7 +150,7 @@ sub ActivityDialogGet {
         )
         )
     {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "No Interface for ActivityDialog '$Param{ActivityDialogEntityID}' found!"
         );
@@ -188,7 +172,7 @@ sub ActivityDialogGet {
 
         if ( !$Success ) {
             if ( !$Param{Silent} ) {
-                $Self->{LogObject}->Log(
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'error',
                     Message =>
                         "Not permitted Interface(s) '"
@@ -228,7 +212,7 @@ sub ActivityDialogCompletedCheck {
 
     for my $Needed (qw(ActivityDialogEntityID Data)) {
         if ( !defined $Param{$Needed} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $Needed!"
             );
@@ -237,7 +221,7 @@ sub ActivityDialogCompletedCheck {
     }
 
     if ( !IsHashRefWithData( $Param{Data} ) ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Data has no values!",
         );
@@ -249,7 +233,7 @@ sub ActivityDialogCompletedCheck {
         Interface              => 'all',
     );
     if ( !$ActivityDialog ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Can't get ActivtyDialog '$Param{ActivityDialogEntityID}'!",
         );
@@ -257,7 +241,7 @@ sub ActivityDialogCompletedCheck {
     }
 
     if ( !$ActivityDialog->{Fields} || ref $ActivityDialog->{Fields} ne 'HASH' ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Can't get fields for ActivtyDialog '$Param{ActivityDialogEntityID}'!",
         );

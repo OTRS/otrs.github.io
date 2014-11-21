@@ -14,6 +14,10 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+our @ObjectDependencies = (
+    'Kernel::System::Environment',
+);
+
 sub GetDisplayPath {
     return 'Operating System';
 }
@@ -21,7 +25,7 @@ sub GetDisplayPath {
 sub Run {
     my $Self = shift;
 
-    my %OSInfo = $Self->{EnvironmentObject}->OSInfoGet();
+    my %OSInfo = $Kernel::OM->Get('Kernel::System::Environment')->OSInfoGet();
 
     # if OSname starts with Unknown, test was not successful
     if ( $OSInfo{OSName} =~ /\A Unknown /xms ) {

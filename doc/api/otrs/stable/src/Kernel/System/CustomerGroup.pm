@@ -12,9 +12,14 @@ package Kernel::System::CustomerGroup;
 use strict;
 use warnings;
 
-use Kernel::System::CacheInternal;
-use Kernel::System::Group;
-use Kernel::System::Valid;
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Cache',
+    'Kernel::System::DB',
+    'Kernel::System::Group',
+    'Kernel::System::Log',
+    'Kernel::System::Valid',
+);
 
 =head1 NAME
 
@@ -32,40 +37,11 @@ All customer group functions. E. g. to add groups or to get a member list of a g
 
 =item new()
 
-create an object
+create an object. Do not use it directly, instead use:
 
-    use Kernel::Config;
-    use Kernel::System::Encode;
-    use Kernel::System::Log;
-    use Kernel::System::Main;
-    use Kernel::System::DB;
-    use Kernel::System::CustomerGroup;
-
-    my $ConfigObject = Kernel::Config->new();
-    my $EncodeObject = Kernel::System::Encode->new(
-        ConfigObject => $ConfigObject,
-    );
-    my $LogObject = Kernel::System::Log->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-    );
-    my $MainObject = Kernel::System::Main->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-    );
-    my $DBObject = Kernel::System::DB->new(
-        ConfigObject => $ConfigObject,
-        EncodeObject => $EncodeObject,
-        LogObject    => $LogObject,
-        MainObject   => $MainObject,
-    );
-    my $CustomerGroupObject = Kernel::System::CustomerGroup->new(
-        ConfigObject => $ConfigObject,
-        LogObject    => $LogObject,
-        DBObject     => $DBObject,
-        EncodeObject => $EncodeObject,
-    );
+    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
+    my $CustomerGroupObject = $Kernel::OM->Get('Kernel::System::CustomerGroup');
 
 =cut
 
@@ -76,18 +52,10 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # check needed objects
-    for (qw(DBObject ConfigObject LogObject EncodeObject MainObject)) {
-        $Self->{$_} = $Param{$_} || die "Got no $_!";
-    }
-    $Self->{GroupObject} = Kernel::System::Group->new( %{$Self} );
-    $Self->{ValidObject} = Kernel::System::Valid->new( %{$Self} );
+    $Self->{DBObject} = $Kernel::OM->Get('Kernel::System::DB');
 
-    $Self->{CacheInternalObject} = Kernel::System::CacheInternal->new(
-        %{$Self},
-        Type => 'CustomerGroup',
-        TTL  => 60 * 60 * 3,
-    );
+    $Self->{CacheType} = 'CustomerGroup';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
 
     return $Self;
 }
@@ -120,7 +88,7 @@ sub GroupMemberAdd {
     # check needed stuff
     for (qw(UID GID UserID Permission)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -134,6 +102,7 @@ sub GroupMemberAdd {
     }
 
     # update permission
+    TYPE:
     for my $Type ( sort keys %{ $Param{Permission} } ) {
 
         # delete existing permission
@@ -145,7 +114,7 @@ sub GroupMemberAdd {
 
         # debug
         if ( $Self->{Debug} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'notice',
                 Message =>
                     "Add UID:$Param{UID} to GID:$Param{GID}, $Type:$Param{Permission}->{$Type}!",
@@ -153,7 +122,7 @@ sub GroupMemberAdd {
         }
 
         # insert new permission (if needed)
-        next if !$Param{Permission}->{$Type};
+        next TYPE if !$Param{Permission}->{$Type};
         $Self->{DBObject}->Do(
             SQL => 'INSERT INTO group_customer_user '
                 . '(user_id, group_id, permission_key, permission_value, '
@@ -167,7 +136,9 @@ sub GroupMemberAdd {
     }
 
     # reset cache
-    $Self->{CacheInternalObject}->CleanUp();
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
 
     return 1;
 }
@@ -200,7 +171,7 @@ sub GroupMemberList {
     # check needed stuff
     for (qw(Result Type)) {
         if ( !$Param{$_} ) {
-            $Self->{LogObject}->Log(
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
             );
@@ -208,7 +179,7 @@ sub GroupMemberList {
         }
     }
     if ( !$Param{UserID} && !$Param{GroupID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Need UserID or GroupID!'
         );
@@ -219,10 +190,10 @@ sub GroupMemberList {
     my @ID;
 
     # check if customer group feature is active, if not, return all groups
-    if ( !$Self->{ConfigObject}->Get('CustomerGroupSupport') ) {
+    if ( !$Kernel::OM->Get('Kernel::Config')->Get('CustomerGroupSupport') ) {
 
         # get permissions
-        %Data = $Self->{GroupObject}->GroupList( Valid => 1 );
+        %Data = $Kernel::OM->Get('Kernel::System::Group')->GroupList( Valid => 1 );
         for ( sort keys %Data ) {
             push @Name, $Data{$_};
             push @ID,   $_;
@@ -239,7 +210,10 @@ sub GroupMemberList {
     }
 
     # check cache
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     if ($Cache) {
         return @{$Cache} if ref $Cache eq 'ARRAY';
         return %{$Cache} if ref $Cache eq 'HASH';
@@ -248,7 +222,7 @@ sub GroupMemberList {
     # if it's active, return just the permitted groups
     my $SQL = "SELECT g.id, g.name, gu.permission_key, gu.permission_value, gu.user_id "
         . " FROM groups g, group_customer_user gu WHERE "
-        . " g.valid_id IN ( ${\(join ', ', $Self->{ValidObject}->ValidIDsGet())} ) AND "
+        . " g.valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} ) AND "
         . " g.id = gu.group_id AND gu.permission_value = 1 AND "
         . " gu.permission_key IN ('" . $Self->{DBObject}->Quote( $Param{Type} ) . "', 'rw') "
         . " AND ";
@@ -279,9 +253,10 @@ sub GroupMemberList {
     }
 
     # add always groups
-    if ( $Self->{ConfigObject}->Get('CustomerGroupAlwaysGroups') ) {
-        my %Groups = $Self->{GroupObject}->GroupList( Valid => 1 );
-        for ( @{ $Self->{ConfigObject}->Get('CustomerGroupAlwaysGroups') } ) {
+    if ( $Kernel::OM->Get('Kernel::Config')->Get('CustomerGroupAlwaysGroups') ) {
+
+        my %Groups = $Kernel::OM->Get('Kernel::System::Group')->GroupList( Valid => 1 );
+        for ( @{ $Kernel::OM->Get('Kernel::Config')->Get('CustomerGroupAlwaysGroups') } ) {
             for my $GroupID ( sort keys %Groups ) {
                 if ( $_ eq $Groups{$GroupID} && !$Data{$GroupID} ) {
                     $Data{$GroupID} = $_;
@@ -296,26 +271,32 @@ sub GroupMemberList {
     if ( $Param{Result} && $Param{Result} eq 'ID' ) {
 
         # set cache
-        $Self->{CacheInternalObject}->Set(
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
             Key   => $CacheKey,
-            Value => \@ID
+            Value => \@ID,
         );
         return @ID;
     }
     if ( $Param{Result} && $Param{Result} eq 'Name' ) {
 
         # set cache
-        $Self->{CacheInternalObject}->Set(
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
             Key   => $CacheKey,
-            Value => \@Name
+            Value => \@Name,
         );
         return @Name;
     }
 
     # set cache
-    $Self->{CacheInternalObject}->Set(
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
         Key   => $CacheKey,
-        Value => \%Data
+        Value => \%Data,
     );
     return %Data;
 }
@@ -335,7 +316,7 @@ sub GroupLookup {
 
     # check needed stuff
     if ( !$Param{Group} && !$Param{GroupID} ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => 'Got no Group or GroupID!'
         );
@@ -351,7 +332,10 @@ sub GroupLookup {
         $CacheKey = "GroupLookup::Name::$Param{Group}";
     }
 
-    my $Cache = $Self->{CacheInternalObject}->Get( Key => $CacheKey );
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
     return ${$Cache} if ( ref $Cache eq 'SCALAR' );
 
     # get data
@@ -384,7 +368,7 @@ sub GroupLookup {
 
     # check if data exists
     if ( !$Result ) {
-        $Self->{LogObject}->Log(
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Found no \$$Suffix for $Param{What}!",
         );
@@ -392,9 +376,11 @@ sub GroupLookup {
     }
 
     # set cache
-    $Self->{CacheInternalObject}->Set(
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
         Key   => $CacheKey,
-        Value => \$Result
+        Value => \$Result,
     );
 
     # return result
