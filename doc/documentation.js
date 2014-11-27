@@ -8,7 +8,8 @@ $(document).ready(function() {
         en: 'English (en)',
         de: 'Deutsch (de)',
         ja: '日本語 (ja)',
-        ru: 'Русский (ru)'
+        ru: 'Русский (ru)',
+        sw: 'Swahili (sw)'
     };
 
     NavigationConfig = [
@@ -27,7 +28,7 @@ $(document).ready(function() {
                     Version:  '3.3',
                     HTMLPath: '3.3',
                     Name:     'OTRS 3.3',
-                    Languages: ['en', 'ja', 'ru'],
+                    Languages: ['en', 'de', 'ja', 'ru', 'sw'],
                 },
                 {
                     Version:  '3.2',
