@@ -1,0 +1,144 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Kapitel 6. Leistungsverbesserung</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 4 - Admin Manual"><link rel="up" href="index.html" title="OTRS 4 - Admin Manual"><link rel="prev" href="translation.html" title="Übersetzung des OTRS-Frontends"><link rel="next" href="performance-tuning-database.html" title="Datenbank"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Kapitel 6. Leistungsverbesserung</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="translation.html">Zurück</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Weiter</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="performance-tuning"></a>Kapitel 6. Leistungsverbesserung</h1></div></div></div><div class="toc"><p><b>Inhaltsverzeichnis</b></p><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs">OTRS</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">TicketIndexModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">TicketStorageModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.8.3.5">Tickets archivieren</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-cache">Cache</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-database.html">Datenbank</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-mysql">MySQL</a></span></dt><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-postgresql">PostgreSQL</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-webserver.html">Webserver</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">Persistente Datenbankverbindungen</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">Vorgeladene Module - startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">Perl Module bei Änderung neu laden</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">Die richtige Strategie wählen</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></dd></dl></div><div class="abstract"><p class="title"><b>Zusammenfassung</b></p><p>
+    Presented below is a list of performance enhancing techniques for your OTRS
+installation, including configuration, coding, memory use, and more.
+    </p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-otrs"></a>OTRS</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">TicketIndexModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">TicketStorageModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.8.3.5">Tickets archivieren</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-cache">Cache</a></span></dt></dl></div><p>
+        Es gibt verschiedene Ansätze zur Leistungssteigerung von OTRS.
+        </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-index"></a>TicketIndexModule</h3></div></div></div><p>
+            Zur Verfügung stehen zwei Backend-Module für den Ticket Index:
+            </p><p>
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
+            Kernel::System::Ticket::IndexAccelerator::RuntimeDB (Standard), generiere
+jede Queue-Ansicht dynamisch aus der Ticket Tabelle. Sie werden keine
+Probleme mit der Leistung bekommen bis zu etwa 60.000 Tickets (oder 6000
+offenen) in Ihrem System.
+            </p></li><li class="listitem"><p>
+            Kernel::System::Ticket::IndexAccelerator::StaticDB, das leistungsfähigste
+Modul. Es sollte ab 80.000 Tickets oder mehr als 6000 offenen eingesetzt
+werden. Benutzt eine extra ticket_index Tabelle, arbeitet wie eine Ansicht
+(View). Führen Sie <code class="filename">bin/otrs.RebuildTicketIndex.pl</code> zum
+erstmaligen Aufbau des Index aus.
+            </p></li></ul></div><p>
+            </p><p>
+            Sie können den IndexAccelerator per SysConfig einstellen.
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-storage"></a>TicketStorageModule</h3></div></div></div><p>
+            Es stehen zwei Module für das Speichern der Tickets und Artikel bereit:
+            </p><p>
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
+            Kernel::System::Ticket::ArticleStorageDB (Standard), speichert Anhänge
+u. A. in der Datenbank. Merke: Benutzen Sie diese Option nicht für größere
+Systeme.
+            </p><p>
+            Pro: Ist der Benutzer, unter dem der Webserver läuft, nicht der Benutzer
+'otrs', können Sie mit diesem Modul Dateiberechtigungsprobleme vermeiden.
+            </p><p>
+            Contra: Es ist nicht wirklich ratsa,, Anhänge in Ihrer Datenbank zu
+speichern. Achten Sie darauf, dass Ihre Datenbank das kann. Für MySQL setzen
+Sie in dessen Konfiguration bspw. "set-variable = max_allowed_packet=8M", um
+8 MB große Objekte zu speichern (Standard ist 2M).
+            </p></li><li class="listitem"><p>
+            Kernel::System::Ticket::ArticleStorageFS, speichert Anhänge u. A. im lokalen
+Filesystem ab. Merke: Benutzen Sie dies für große Installationen.
+            </p><p>
+            Pro: Schneller!
+            </p><p>
+            Con: Your web server user should be the 'otrs' user. Also, if you have
+multiple front-end servers, you should make sure the filesystem is shared
+between the servers. Place it on an NFS share or preferably a SAN or similar
+solution.
+            </p></li></ul></div><p>
+
+            </p><p>
+                Note: you can switch from one back-end to the other on the fly. You can
+switch the backend in the SysConfig, and then run the command line utility
+<code class="filename">otrs.ArticleStorageSwitch.pl</code> to put the articles from
+the database onto the filesystem or the other way around. You can use the
+<span class="emphasis"><em>-s</em></span> and <span class="emphasis"><em>-d</em></span> options to specify the
+source and destination back-ends. Please note that the entire process can
+take considerable time to run, depending on the number of articles you have
+and the available CPU power and/or network capacity.
+            </p><p>
+            </p><pre class="screen">
+shell&gt; bin/otrs.ArticleStorageSwitch.pl -s ArticleStorageDB -d ArticleStorageFS
+            </pre><p>
+            </p><p>
+            <span class="emphasis"><em>Skript: Wechsel des TicketStorage-Backends von Datenbank zu
+Dateisystem.</em></span>
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.8.3.5"></a>Tickets archivieren</h3></div></div></div><p>
+                Da OTRS als revisionssicheres System betrieben werden kann, ist das Löschen
+von geschlossenen Tickets möglicherweise nicht empfehlenswert. Daher haben
+wir eine Funktion implementiert, mit der Sie Tickets archivieren können.
+            </p><p>
+                Tickets that match certain criteria can be marked as "archived" These
+tickets are not accessed if you do a regular ticket search or run a Generic
+Agent job. The system itself does not have to deal with a huge amount of
+tickets any longer as only the "latest" tickets are taken into consideration
+when using OTRS. This can result in a huge performance gain on large
+systems.
+            </p><p>
+                Befolgen Sie folgende Schritte, um die Archivierungsfunktion zu nutzen:
+            </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+                        Archivsystem in der SysConfig aktivieren
+                    </p><p>
+                        Wählen Sie in der SysConfig die Gruppe <code class="literal">Ticket</code> aus.  In
+<code class="literal">Core::Ticket</code> finden Sie die Option
+<code class="literal">Ticket::ArchiveSystem</code>, die standardmäßig auf "Nein"
+steht. Ändern Sie diese auf "Ja" und speichern Sie die Änderung ab.
+                    </p></li><li class="listitem"><p>
+                        Anlegen eines GenericAgent-Jobs
+                    </p><p>
+                        Wählen Sie im Administrationsbereich den "GenericAgent" aus und legen Sie
+dort einen neuen Job an. </p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p>
+                                    Job-Einstellungen
+                                </p><p>
+                                    Geben Sie dem Job einen geeigneten Namen und angemessene Optionen.
+                                </p></li><li class="listitem"><p>
+                                    Ticket-Filter
+                                </p><p>
+                                    Der Ticketfilter ist eine Ticketsuche, die Tickets nach bestimmten Kriterien
+auswählt. Es könnte empfehlenswert sein, nur Tickets zu archivieren, die
+seit einigen Monaten im Status "geschlossen" sind.
+                                </p></li><li class="listitem"><p>
+                                    Ticket-Aktion
+                                </p><p>
+                                    Im Abschnitt "Ticket-Aktion" werden Sie eine Aktion "Ausgewählte Tickets
+archivieren" finden. Wählen Sie dort "Tickets archivieren" aus.
+                                </p></li><li class="listitem"><p>
+                                    Job speichern
+                                </p><p>
+                                    Am Ende der Seite finden Sie einen Knopf zum Speichern des Jobs.
+                                </p></li><li class="listitem"><p>
+                                    Betroffene Tickets
+                                </p><p>
+                                    Das System wird dann alle Tickets anzeigen, die beim Ausführen des
+GenericAgent-Jobs archiviert werden.
+                                </p></li></ol></div><p>
+                    </p></li><li class="listitem"><p>
+                        Ticketsuche
+                    </p><p>
+                        Wenn Sie nun nach Tickets suchen, werden standardmäßig nur Tickets gefunden,
+die nicht archiviert sind. Wenn Sie auch in archivierten Tickets suchen
+wollen, fügen Sie "Archivsuche" zu Ihren Suchkriterien hinzu.
+                    </p></li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-cache"></a>Cache</h3></div></div></div><p>
+                OTRS caches a lot of temporary data in
+<code class="filename">/opt/otrs/var/tmp</code>.  Please make sure that this uses a
+high performance file system/storage.  If you have enough RAM, you can also
+try to put this directory on a ramdisk like this: </p><pre class="screen">
+shell&gt; /opt/otrs/bin/otrs.CleanUp.pl
+shell&gt; /opt/otrs/bin/otrs.DeleteCache.pl
+shell&gt; sudo mount -o size=16G -t tmpfs none /opt/otrs/var/tmp
+
+# add persistent mount point in /etc/fstab
+                </pre><p> </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Anmerkung</h3> Please note that this will be a non-permanent storage that
+will be lost on server reboot.  All your sessions (if you store them in the
+filesystem) and your cache data will be lost.  </div><p> There is also a
+centralized memcached based Cache backend available for purchase from OTRS
+Group.
+            </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="translation.html">Zurück</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Weiter</a></td></tr><tr><td width="40%" align="left" valign="top">Übersetzung des OTRS-Frontends </td><td width="20%" align="center"><a accesskey="h" href="index.html">Zum Anfang</a></td><td width="40%" align="right" valign="top"> Datenbank</td></tr></table></div></body></html>
