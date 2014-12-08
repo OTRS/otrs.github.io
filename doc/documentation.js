@@ -36,8 +36,8 @@ $(document).ready(function() {
                     HTMLPath: '3.2',
                     Name:     'OTRS 3.2',
                     Languages: ['en',],
-                },
-            ],
+                }
+            ]
         },
         {
             Name: 'OTRS ITSM Manual',
@@ -61,8 +61,8 @@ $(document).ready(function() {
                     HTMLPath: '2.0',
                     Name:     'OTRS ITSM 2.0',
                     Languages: ['en', 'de',],
-                },
-            ],
+                }
+            ]
         },
         {
             Name: 'OTRS Appliance Manual',
@@ -74,8 +74,8 @@ $(document).ready(function() {
                     HTMLPath: 'stable',
                     Name:     'OTRS 3.3 Appliance',
                     Languages: ['en', 'de', 'ru', 'sw', 'zh_CN'],
-                },
-            ],
+                }
+            ]
         },
         {
             Name: 'OTRS Developer Manual',
@@ -99,8 +99,8 @@ $(document).ready(function() {
                     HTMLPath: '3.2',
                     Name:     'OTRS 3.2',
                     Languages: ['en',],
-                },
-            ],
+                }
+            ]
         },
         {
             Name: 'OTRS API Reference',
@@ -126,14 +126,9 @@ $(document).ready(function() {
                     Version:  '3.2',
                     HTMLPath: '3.2',
                     Name:     'OTRS 3.2',
-                },
-                {
-                    Version:  '3.1',
-                    HTMLPath: '3.1',
-                    Name:     'OTRS 3.1',
-                },
-            ],
-        },
+                }
+            ]
+        }
     ];
 
     function CreateNavigation () {
