@@ -37,18 +37,6 @@ $(document).ready(function() {
                     Name:     'OTRS 3.2',
                     Languages: ['en',],
                 },
-                {
-                    Version:  '3.1',
-                    HTMLPath: '3.1',
-                    Name:     'OTRS 3.1',
-                    Languages: ['en',],
-                },
-                {
-                    Version:  '3.0',
-                    HTMLPath: '3.0',
-                    Name:     'OTRS 3.0',
-                    Languages: ['en', 'de', 'ru',],
-                },
             ],
         },
         {
@@ -110,18 +98,6 @@ $(document).ready(function() {
                     Version:  '3.2',
                     HTMLPath: '3.2',
                     Name:     'OTRS 3.2',
-                    Languages: ['en',],
-                },
-                {
-                    Version:  '3.1',
-                    HTMLPath: '3.1',
-                    Name:     'OTRS 3.1',
-                    Languages: ['en',],
-                },
-                {
-                    Version:  '3.0',
-                    HTMLPath: '3.0',
-                    Name:     'OTRS 3.0',
                     Languages: ['en',],
                 },
             ],
