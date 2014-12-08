@@ -9,7 +9,8 @@ $(document).ready(function() {
         de: 'Deutsch (de)',
         ja: '日本語 (ja)',
         ru: 'Русский (ru)',
-        sw: 'Swahili (sw)'
+        sw: 'Swahili (sw)',
+        zh_CN: '简体中文 (zh_CN)'
     };
 
     NavigationConfig = [
@@ -84,7 +85,7 @@ $(document).ready(function() {
                     Version:  '3.3',
                     HTMLPath: 'stable',
                     Name:     'OTRS 3.3 Appliance',
-                    Languages: ['en',],
+                    Languages: ['en', 'de', 'ru', 'sw', 'zh_CN'],
                 },
             ],
         },
