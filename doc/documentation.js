@@ -35,7 +35,7 @@ $(document).ready(function() {
                     Version:  '3.2',
                     HTMLPath: '3.2',
                     Name:     'OTRS 3.2',
-                    Languages: ['en',]
+                    Languages: ['en']
                 }
             ]
         },
@@ -48,19 +48,19 @@ $(document).ready(function() {
                     Version:  '3.3',
                     HTMLPath: 'stable',
                     Name:     'OTRS ITSM 3.3',
-                    Languages: ['en',]
+                    Languages: ['en', 'de']
                 },
                 {
                     Version:  '3.2',
                     HTMLPath: '3.2',
                     Name:     'OTRS ITSM 3.2',
-                    Languages: ['en', 'de',]
+                    Languages: ['en', 'de']
                 },
                 {
                     Version:  '2.0',
                     HTMLPath: '2.0',
                     Name:     'OTRS ITSM 2.0',
-                    Languages: ['en', 'de',]
+                    Languages: ['en', 'de']
                 }
             ]
         },
@@ -98,13 +98,13 @@ $(document).ready(function() {
                     Version:  '3.3',
                     HTMLPath: '3.3',
                     Name:     'OTRS 3.3',
-                    Languages: ['en',]
+                    Languages: ['en']
                 },
                 {
                     Version:  '3.2',
                     HTMLPath: '3.2',
                     Name:     'OTRS 3.2',
-                    Languages: ['en',]
+                    Languages: ['en']
                 }
             ]
         },
