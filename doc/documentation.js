@@ -23,19 +23,19 @@ $(document).ready(function() {
                     Version:  '4.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 4',
-                    Languages: ['en'],
+                    Languages: ['en']
                 },
                 {
                     Version:  '3.3',
                     HTMLPath: '3.3',
                     Name:     'OTRS 3.3',
-                    Languages: ['en', 'de', 'ja', 'ru', 'sw'],
+                    Languages: ['en', 'de', 'ja', 'ru', 'sw']
                 },
                 {
                     Version:  '3.2',
                     HTMLPath: '3.2',
                     Name:     'OTRS 3.2',
-                    Languages: ['en',],
+                    Languages: ['en',]
                 }
             ]
         },
@@ -48,19 +48,19 @@ $(document).ready(function() {
                     Version:  '3.3',
                     HTMLPath: 'stable',
                     Name:     'OTRS ITSM 3.3',
-                    Languages: ['en',],
+                    Languages: ['en',]
                 },
                 {
                     Version:  '3.2',
                     HTMLPath: '3.2',
                     Name:     'OTRS ITSM 3.2',
-                    Languages: ['en', 'de',],
+                    Languages: ['en', 'de',]
                 },
                 {
                     Version:  '2.0',
                     HTMLPath: '2.0',
                     Name:     'OTRS ITSM 2.0',
-                    Languages: ['en', 'de',],
+                    Languages: ['en', 'de',]
                 }
             ]
         },
@@ -70,10 +70,16 @@ $(document).ready(function() {
             Path: 'appliance',
             Versions: [
                 {
-                    Version:  '3.3',
+                    Version:  '4',
                     HTMLPath: 'stable',
+                    Name:     'OTRS 4 Appliance',
+                    Languages: ['en', 'de', 'ru', 'sw', 'zh_CN']
+                },
+                {
+                    Version:  '3.3',
+                    HTMLPath: '3.3',
                     Name:     'OTRS 3.3 Appliance',
-                    Languages: ['en', 'de', 'ru', 'sw', 'zh_CN'],
+                    Languages: ['en', 'de', 'ru', 'sw', 'zh_CN']
                 }
             ]
         },
@@ -86,19 +92,19 @@ $(document).ready(function() {
                     Version:  '4.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 4',
-                    Languages: ['en'],
+                    Languages: ['en']
                 },
                 {
                     Version:  '3.3',
                     HTMLPath: '3.3',
                     Name:     'OTRS 3.3',
-                    Languages: ['en',],
+                    Languages: ['en',]
                 },
                 {
                     Version:  '3.2',
                     HTMLPath: '3.2',
                     Name:     'OTRS 3.2',
-                    Languages: ['en',],
+                    Languages: ['en',]
                 }
             ]
         },
@@ -110,22 +116,22 @@ $(document).ready(function() {
                 {
                     Version:  '5.0',
                     HTMLPath: '5.0',
-                    Name:     'OTRS git (development)',
+                    Name:     'OTRS git (development)'
                 },
                 {
                     Version:  '4.0',
                     HTMLPath: 'stable',
-                    Name:     'OTRS 4',
+                    Name:     'OTRS 4'
                 },
                 {
                     Version:  '3.3',
                     HTMLPath: '3.3',
-                    Name:     'OTRS 3.3',
+                    Name:     'OTRS 3.3'
                 },
                 {
                     Version:  '3.2',
                     HTMLPath: '3.2',
-                    Name:     'OTRS 3.2',
+                    Name:     'OTRS 3.2'
                 }
             ]
         }
