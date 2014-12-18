@@ -249,7 +249,7 @@ $(document).ready(function() {
             return false;
         });
 
-        $('div.toc p b').append('<a href="">Hide</a>');
+        $('div.toc p b').append('<a href="" class="toc-hide">Hide</a>');
         $('.section div.toc').prepend('<p><b>Article navigation <a href="">Hide</a></b></p>');
         $('dl.toc').removeClass('toc');
     }
