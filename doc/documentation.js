@@ -40,7 +40,7 @@ $(document).ready(function() {
             ]
         },
         {
-            Name: 'OTRS ITSM Manual',
+            Name: 'OTRS::ITSM Manual',
             Type: 'manual',
             Path: 'itsm',
             Versions: [
