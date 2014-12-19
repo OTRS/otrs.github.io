@@ -45,7 +45,7 @@ $(document).ready(function() {
             Path: 'itsm',
             Versions: [
                 {
-                    Version:  '4',
+                    Version:  '4.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS::ITSM 4',
                     Languages: ['en']
@@ -70,7 +70,7 @@ $(document).ready(function() {
             Path: 'appliance',
             Versions: [
                 {
-                    Version:  '4',
+                    Version:  '4.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 4 Appliance',
                     Languages: ['en', 'de', 'ru', 'sw', 'zh_CN']
