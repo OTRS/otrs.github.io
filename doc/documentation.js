@@ -48,11 +48,11 @@ $(document).ready(function() {
                     Version:  '4',
                     HTMLPath: 'stable',
                     Name:     'OTRS::ITSM 4',
-                    Languages: ['en', 'de']
+                    Languages: ['en']
                 },
                 {
                     Version:  '3.3',
-                    HTMLPath: 'stable',
+                    HTMLPath: '3.3',
                     Name:     'OTRS::ITSM 3.3',
                     Languages: ['en', 'de']
                 },
