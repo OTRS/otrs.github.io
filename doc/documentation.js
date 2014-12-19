@@ -61,12 +61,6 @@ $(document).ready(function() {
                     HTMLPath: '3.2',
                     Name:     'OTRS::ITSM 3.2',
                     Languages: ['en', 'de']
-                },
-                {
-                    Version:  '2.0',
-                    HTMLPath: '2.0',
-                    Name:     'OTRS::ITSM 2.0',
-                    Languages: ['en', 'de']
                 }
             ]
         },
