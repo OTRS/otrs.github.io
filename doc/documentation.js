@@ -221,7 +221,13 @@ $(document).ready(function() {
     $('body').empty().append($.parseHTML(BasicHTML));
     $('div.doconline > div#content > div#doc').append($OriginalContent);
 
-    $('#marginalia a').bind('click', function() {
+    $.each($('#marginalia > li > a'), function() {
+        var text = $(this).text();
+        $(this).after('<span class="SectionHeader">' + text + '</span>');
+        $(this).remove();
+    });
+
+    $('#marginalia li li a').bind('click', function() {
         if ($(this).attr('href') === '#') {
             $(this).next('ul').toggleClass('Hidden');
             return false;
