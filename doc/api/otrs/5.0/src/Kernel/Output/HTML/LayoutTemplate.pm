@@ -256,35 +256,12 @@ sub Output {
             # extract filter config
             my $FilterConfig = $FilterList{$Filter};
 
-            next FILTER if !$FilterConfig;
-            next FILTER if ref $FilterConfig ne 'HASH';
-
             # extract template list
             my %TemplateList = %{ $FilterConfig->{Templates} || {} };
 
-            if ( !%TemplateList ) {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message =>
-                        "Please add a template list to output filter $FilterConfig->{Module} to improve performance.",
-                );
-            }
-            elsif ( $TemplateList{ALL} ) {
-                $Self->{LogObject}->Log(
-                    Priority => 'error',
-                    Message  => <<EOF,
-$FilterConfig->{Module} wants to operate on ALL templates.
-This will prohibit the templates from being cached and can lead to serious performance issues.
-EOF
-                );
-            }
+            next FILTER if !$Param{TemplateFile};
+            next FILTER if !$TemplateList{ $Param{TemplateFile} };
 
-            # check template list
-            if ( $Param{TemplateFile} && !$TemplateList{ALL} ) {
-                next FILTER if !$TemplateList{ $Param{TemplateFile} };
-            }
-
-            next FILTER if !$Param{TemplateFile} && !$TemplateList{ALL};
             next FILTER if !$Self->{MainObject}->Require( $FilterConfig->{Module} );
 
             # create new instance

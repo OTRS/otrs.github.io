@@ -78,38 +78,43 @@ sub OTRSInit {
     #   registered for a particular or for all templates, the template cannot be
     #   cached any more.
     #
-    $Self->{FilterElementPre} = $Kernel::OM->Get('Kernel::Config')->Get('Frontend::Output::FilterElementPre');
 
+    # check Frontend::Output::FilterElementPre
+    $Self->{FilterElementPre} = {};
+
+    # Determine which templates we cannot cache because of pre filters.
+    #   We will need this information in other parts.
     my %UncacheableTemplates;
 
-    my %FilterList = %{ $Self->{FilterElementPre} || {} };
+    my %FilterElementPre = %{ $Kernel::OM->Get('Kernel::Config')->Get('Frontend::Output::FilterElementPre') // {} };
 
     FILTER:
-    for my $Filter ( sort keys %FilterList ) {
+    for my $Filter ( sort keys %FilterElementPre ) {
 
         # extract filter config
-        my $FilterConfig = $FilterList{$Filter};
+        my $FilterConfig = $FilterElementPre{$Filter};
 
-        next FILTER if !$FilterConfig;
-        next FILTER if ref $FilterConfig ne 'HASH';
+        next FILTER if !$FilterConfig || ref $FilterConfig ne 'HASH';
 
         # extract template list
         my %TemplateList = %{ $FilterConfig->{Templates} || {} };
 
-        if ( !%TemplateList ) {
+        if ( !%TemplateList || $TemplateList{ALL} ) {
 
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message =>
-                    "Please add a template list to output filter $FilterConfig->{Module} "
-                    . "to improve performance. Use ALL if OutputFilter should modify all "
-                    . "templates of the system (deprecated).",
+                Message  => <<EOF,
+$FilterConfig->{Module} will be ignored because it wants to operate on all templates or does not specify a template list.
+This would prohibit the templates from being cached and can therefore lead to serious performance issues.
+EOF
             );
 
             next FILTER;
         }
 
         @UncacheableTemplates{ keys %TemplateList } = values %TemplateList;
+
+        $Self->{FilterElementPre}->{$Filter} = $FilterElementPre{$Filter};
     }
 
     # map filtered template names to real tt names (except 'ALL' placeholder)
@@ -384,34 +389,17 @@ sub _PreProcessTemplateContent {
         FILTER:
         for my $Filter ( sort keys %FilterList ) {
 
-            # extract filter config
             my $FilterConfig = $FilterList{$Filter};
-
-            next FILTER if !$FilterConfig;
-            next FILTER if ref $FilterConfig ne 'HASH';
-
-            # extract template list
             my %TemplateList = %{ $FilterConfig->{Templates} || {} };
 
-            if ( !%TemplateList ) {
-
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message =>
-                        "Please add a template list to output filter $FilterConfig->{Module} "
-                        . "to improve performance. Use ALL if OutputFilter should modify all "
-                        . "templates of the system (deprecated).",
-                );
-            }
+            # only operate on real files
+            next FILTER if !$Param{TemplateFile};
 
             # check template list
-            if ( $Param{TemplateFile} && !$TemplateList{ALL} ) {
-                next FILTER if !$TemplateList{$TemplateFileWithoutTT};
-            }
+            next FILTER if !$TemplateList{$TemplateFileWithoutTT};
 
-            next FILTER if !$Param{TemplateFile} && !$TemplateList{ALL};
-            next FILTER
-                if !$Kernel::OM->Get('Kernel::System::Main')->Require( $FilterConfig->{Module} );
+            # check filter construction
+            next FILTER if !$Kernel::OM->Get('Kernel::System::Main')->Require( $FilterConfig->{Module} );
 
             # create new instance
             my $Object = $FilterConfig->{Module}->new(
