@@ -42,7 +42,7 @@ sub Run {
         {
             $Self->AddResultProblem(
                 Label => 'Maximum Query Size',
-                Value => $Row[1],
+                Value => $Row[1] / 1024 / 1024 . ' MB',
                 Message =>
                     "The setting 'max_allowed_packet' must be higher than 20 MB.",
             );
@@ -50,7 +50,7 @@ sub Run {
         else {
             $Self->AddResultOk(
                 Label => 'Maximum Query Size',
-                Value => $Row[1],
+                Value => $Row[1] / 1024 / 1024 . ' MB',
             );
         }
     }
