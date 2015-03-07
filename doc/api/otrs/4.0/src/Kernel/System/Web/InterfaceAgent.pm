@@ -288,7 +288,8 @@ sub Run {
                         What => 'Message',
                         )
                         || $LayoutObject->{LanguageObject}->Translate( $AuthObject->GetLastErrorMessage() )
-                        || $LayoutObject->{LanguageObject}->Translate('Login failed! Your user name or password was entered incorrectly.'),
+                        || $LayoutObject->{LanguageObject}
+                        ->Translate('Login failed! Your user name or password was entered incorrectly.'),
                     LoginFailed => 1,
                     User        => $User,
                     %Param,
@@ -769,9 +770,9 @@ sub Run {
                             Secure   => scalar $CookieSecureAttribute,
                             HTTPOnly => 1,
                         ),
-                        %Param,
                     },
-                    }
+                    %Param,
+                },
             );
 
             $Kernel::OM->ObjectsDiscard( Objects => ['Kernel::Output::HTML::Layout'] );
@@ -802,8 +803,9 @@ sub Run {
             # show login
             $LayoutObject->Print(
                 Output => \$LayoutObject->Login(
-                    Title   => 'Login',
-                    Message => $LayoutObject->{LanguageObject}->Translate( $Self->{SessionObject}->SessionIDErrorMessage() ),
+                    Title => 'Login',
+                    Message =>
+                        $LayoutObject->{LanguageObject}->Translate( $Self->{SessionObject}->SessionIDErrorMessage() ),
                     %Param,
                 ),
             );
