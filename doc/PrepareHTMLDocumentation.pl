@@ -55,6 +55,8 @@ sub FindHTMLFiles {
     my $Wanted = sub {
         return if (!-f $File::Find::name);
         return if (substr($File::Find::name, -5) ne '.html');
+        # ignore jsdoc generated files
+        return if $File::Find::name =~ m{/JavaScript/}smx;
         push @HTMLFiles, $File::Find::name;
     };
     File::Find::find($Wanted, $RealBin);
