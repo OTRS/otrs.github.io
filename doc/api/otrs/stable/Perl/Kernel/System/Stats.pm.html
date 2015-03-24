@@ -1,0 +1,286 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::Stats</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 4.0 API Reference</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 4.0 API Reference</a> &gt; Perl Modules &gt;
+  Kernel::System::Stats
+</div>
+<div>
+<a href="../../src/Kernel/System/Stats.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::Stats - stats lib</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>All stats functions.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+        'Kernel::System::Stats' =&gt; {
+            UserID  =&gt; 123,
+        }
+    );
+    my $StatsObject = $Kernel::OM-&gt;Get('Kernel::System::Stats');
+
+</pre></dd>	<dt>StatsAdd()</dt>
+		<dd><p>add new empty stats</p></dd>
+<dd><pre>    my $StatID = $StatsObject-&gt;StatsAdd();
+
+</pre></dd>	<dt>StatsGet()</dt>
+		<dd><p>get a hash ref of the stats you need</p></dd>
+<dd><pre>    my $HashRef = $StatsObject-&gt;StatsGet(
+        StatID             =&gt; '123',
+        NoObjectAttributes =&gt; 1,       # optional
+    );
+
+</pre></dd>	<dt>StatsUpdate()</dt>
+		<dd><p>update a stat</p></dd>
+<dd><pre>    $StatsObject-&gt;StatsUpdate(
+        StatID =&gt; '123',
+        Hash   =&gt; \%Hash
+    );
+
+</pre></dd>	<dt>StatsDelete()</dt>
+		<dd><p>delete a stats</p></dd>
+<dd><pre>    $StatsObject-&gt;StatsDelete( StatID =&gt; '123' );
+
+</pre></dd>	<dt>StatsListGet()</dt>
+		<dd><p>fetches all statistics that the current user may see</p></dd>
+<dd><pre>    my $StatsRef = $StatsObject-&gt;StatsListGet(
+        AccessRw =&gt; 1, # Optional, indicates that user may see all statistics
+    );
+
+</pre></dd><dd><pre>    Returns
+
+</pre></dd><dd><pre>    {
+        6 =&gt; {
+            Title =&gt; &quot;Title of stat&quot;,
+            ...
+        }
+    }
+
+</pre></dd>	<dt>GetStatsList()</dt>
+		<dd><p>lists all stats id's</p></dd>
+<dd><pre>    my $ArrayRef = $StatsObject-&gt;GetStatsList(
+        AccessRw  =&gt; 1, # Optional, indicates that user may see all statistics
+        OrderBy   =&gt; 'ID' || 'Title' || 'Object', # optional
+        Direction =&gt; 'ASC' || 'DESC',             # optional
+    );
+
+</pre></dd>	<dt>SumBuild()</dt>
+		<dd><p>build sum in x or/and y axis</p></dd>
+<dd><pre>    $StatArray = $StatsObject-&gt;SumBuild(
+        Array  =&gt; \@Result,
+        SumRow =&gt; 1,
+        SumCol =&gt; 0,
+    );
+
+</pre></dd>	<dt>GenerateGraph()</dt>
+		<dd><p>make graph from result array</p></dd>
+<dd><pre>    my $Graph = $StatsObject-&gt;GenerateGraph(
+        Array        =&gt; \@StatArray,
+        GraphSize    =&gt; '800x600',
+        HeadArrayRef =&gt; $HeadArrayRef,
+        Title        =&gt; 'All Tickets of the month',
+        Format       =&gt; 'GD::Graph::lines',
+    );
+
+</pre></dd>	<dt>CompletenessCheck()</dt>
+<dd><pre>    my @Notify = $StatsObject-&gt;CompletenessCheck(
+        StatData =&gt; \%StatData,
+        Section =&gt; 'All' || 'Specification' || 'ValueSeries' || 'Restrictions || Xaxis'
+    );
+
+</pre></dd>	<dt>GetStatsObjectAttributes()</dt>
+		<dd><p>Get all attributes from the object in dependence of the use</p></dd>
+<dd><pre>    my %ObjectAttributes = $StatsObject-&gt;GetStatsObjectAttributes(
+        ObjectModule =&gt; 'Ticket',
+        Use          =&gt; 'UseAsXvalue' || 'UseAsValueSeries' || 'UseAsRestriction',
+    );
+
+</pre></dd>	<dt>GetStaticFiles()</dt>
+		<dd><p>Get all static files</p></dd>
+<dd><pre>    my $FileHash = $StatsObject-&gt;GetStaticFiles(
+        OnlyUnusedFiles =&gt; 1 | 0, # optional default 0
+    );
+
+</pre></dd>	<dt>GetDynamicFiles()</dt>
+		<dd><p>Get all static objects</p></dd>
+<dd><pre>    my $FileHash = $StatsObject-&gt;GetDynamicFiles();
+
+</pre></dd>	<dt>GetObjectName()</dt>
+		<dd><p>Get the name of a dynamic object</p></dd>
+<dd><pre>    my $ObjectName = $StatsObject-&gt;GetObjectName(
+        ObjectModule =&gt; 'Kernel::System::Stats::Dynamic::TicketList',
+    );
+
+</pre></dd>	<dt>GetObjectBehaviours()</dt>
+		<dd><p>get behaviours that a statistic supports</p></dd>
+<dd><pre>    my $Behaviours = $StatsObject-&gt;GetObjectBehaviours(
+        ObjectModule =&gt; 'Kernel::System::Stats::Dynamic::TicketList',
+    );
+
+</pre></dd><dd><pre>    returns
+
+</pre></dd><dd><pre>    {
+        ProvidesDashboardWidget =&gt; 1,
+        ...
+    }
+
+</pre></dd>	<dt>ObjectFileCheck()</dt>
+		<dd><p>check readable object file</p></dd>
+<dd><pre>    my $ObjectFileCheck = $StatsObject-&gt;ObjectFileCheck(
+        Type =&gt; 'static',
+        Name =&gt; 'NewTickets',
+    );
+
+</pre></dd>	<dt>Export()</dt>
+		<dd><p>get content from stats for export</p></dd>
+<dd><pre>    my $ExportFile = $StatsObject-&gt;Export(
+        StatID =&gt; '123',
+        ExportStatNumber =&gt; 1 || 0, # optional, only useful move statistics from the test system to the productive system
+    );
+
+</pre></dd>	<dt>Import()</dt>
+		<dd><p>import a stats from xml file</p></dd>
+<dd><pre>    my $StatID = $StatsObject-&gt;Import(
+        Content =&gt; $UploadStuff{Content},
+    );
+
+</pre></dd>	<dt>GetParams()</dt>
+<dd><pre>    get all edit params from stats for view
+
+</pre></dd><dd><pre>    my $Params = $StatsObject-&gt;GetParams( StatID =&gt; '123' );
+
+</pre></dd>	<dt>StatsRun()</dt>
+		<dd><p>run a statistic.</p></dd>
+<dd><pre>    my $StatArray = $StatsObject-&gt;StatsRun(
+        StatID     =&gt; '123',
+        GetParam   =&gt; \%GetParam,
+    );
+
+</pre></dd>	<dt>StatsResultCacheCompute()</dt>
+		<dd><p>computes stats results and adds them to the cache.
+This can be used to precompute stats data e. g. for dashboard widgets in a cron job.</p></dd>
+<dd><pre>    my $StatArray = $StatsObject-&gt;StatsResultCacheCompute(
+        StatID       =&gt; '123',
+        UserGetParam =&gt; \%UserGetParam, # user settings of non-fixed fields
+    );
+
+</pre></dd>	<dt>StatsResultCacheGet()</dt>
+		<dd><p>gets cached statistic results. Will never run the statistic.
+This can be used to fetch cached stats data e. g. for stats widgets in the dashboard.</p></dd>
+<dd><pre>    my $StatArray = $StatsObject-&gt;StatsResultCacheGet(
+        StatID       =&gt; '123',
+        GetParam     =&gt; \%GetParam,
+    );
+
+</pre></dd>	<dt>StringAndTimestamp2Filename()</dt>
+		<dd><p>builds a filename with a string and a timestamp.
+(space will be replaced with _ and - e.g. Title-of-File_2006-12-31_11-59)</p></dd>
+<dd><pre>    my $Filename = $StatsObject-&gt;StringAndTimestamp2Filename( String =&gt; 'Title' );
+
+</pre></dd>	<dt>StatNumber2StatID()</dt>
+		<dd><p>insert the stat number get the stat id</p></dd>
+<dd><pre>    my $StatID = $StatsObject-&gt;StatNumber2StatID(
+        StatNumber =&gt; 11212,
+    );
+
+</pre></dd>	<dt>StatsInstall()</dt>
+		<dd><p>installs stats</p></dd>
+<dd><pre>    my $Result = $StatsObject-&gt;StatsInstall(
+        FilePrefix =&gt; 'FAQ',  # (optional)
+    );
+
+</pre></dd>	<dt>StatsUninstall()</dt>
+		<dd><p>uninstalls stats</p></dd>
+<dd><pre>    my $Result = $StatsObject-&gt;StatsUninstall(
+        FilePrefix =&gt; 'FAQ',  # (optional)
+    );
+
+</pre></dd>	<dt>StatsCleanUp()</dt>
+		<dd><p>removed stats with not existing backend file</p></dd>
+<dd><pre>    my $Result = $StatsObject-&gt;StatsCleanUp();
+
+</pre></dd>	<dt>_GenerateStaticStats()</dt>
+	<dt>_GenerateDynamicStats()</dt>
+	<dt>_CreateStaticResultCacheFilename()</dt>
+	<dt>_SetResultCache()</dt>
+	<dt>_GetResultCache()</dt>
+	<dt>_DeleteCache()</dt>
+	<dt>_GetCacheString()</dt>
+</dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

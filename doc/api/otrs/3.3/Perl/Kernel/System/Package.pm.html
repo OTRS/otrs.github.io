@@ -1,0 +1,318 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::Package</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 3.3 API Reference</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 3.3 API Reference</a> &gt; Perl Modules &gt;
+  Kernel::System::Package
+</div>
+<div>
+<a href="../../src/Kernel/System/Package.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::Package - to manage application packages/modules</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>All functions to manage application packages/modules.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create an object</p></dd>
+<dd><pre>    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Main;
+    use Kernel::System::DB;
+    use Kernel::System::Time;
+    use Kernel::System::Package;
+
+</pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
+    my $EncodeObject = Kernel::System::Encode-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $DBObject = Kernel::System::DB-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+        MainObject   =&gt; $MainObject,
+    );
+    my $TimeObject = Kernel::System::Time-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $PackageObject = Kernel::System::Package-&gt;new(
+        LogObject    =&gt; $LogObject,
+        ConfigObject =&gt; $ConfigObject,
+        TimeObject   =&gt; $TimeObject,
+        DBObject     =&gt; $DBObject,
+        EncodeObject =&gt; $EncodeObject,
+        MainObject   =&gt; $MainObject,
+    );
+
+</pre></dd>	<dt>RepositoryList()</dt>
+		<dd><p>returns a list of repository packages
+using Result =&gt; 'short' will only return name, version, install_status md5sum and vendor
+instead of the structure</p></dd>
+<dd><pre>    my @List = $PackageObject-&gt;RepositoryList();
+
+</pre></dd><dd><pre>    my @List = $PackageObject-&gt;RepositoryList(
+        Result =&gt; 'short',
+    );
+
+</pre></dd>	<dt>RepositoryGet()</dt>
+		<dd><p>get a package from local repository</p></dd>
+<dd><pre>    my $Package = $PackageObject-&gt;RepositoryGet(
+        Name    =&gt; 'Application A',
+        Version =&gt; '1.0',
+    );
+
+</pre></dd><dd><pre>    my $PackageScalar = $PackageObject-&gt;RepositoryGet(
+        Name    =&gt; 'Application A',
+        Version =&gt; '1.0',
+        Result  =&gt; 'SCALAR',
+    );
+
+</pre></dd>	<dt>RepositoryAdd()</dt>
+		<dd><p>add a package to local repository</p></dd>
+<dd><pre>    $PackageObject-&gt;RepositoryAdd( String =&gt; $FileString );
+
+</pre></dd>	<dt>RepositoryRemove()</dt>
+		<dd><p>remove a package from local repository</p></dd>
+<dd><pre>    $PackageObject-&gt;RepositoryRemove(
+        Name    =&gt; 'Application A',
+        Version =&gt; '1.0',
+    );
+
+</pre></dd>	<dt>PackageInstall()</dt>
+		<dd><p>install a package</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageInstall( String =&gt; $FileString );
+
+</pre></dd>	<dt>PackageReinstall()</dt>
+		<dd><p>reinstall files of a package</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageReinstall( String =&gt; $FileString );
+
+</pre></dd>	<dt>PackageUpgrade()</dt>
+		<dd><p>upgrade a package</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageUpgrade( String =&gt; $FileString );
+
+</pre></dd>	<dt>PackageUninstall()</dt>
+		<dd><p>uninstall a package</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageUninstall( String =&gt; $FileString );
+
+</pre></dd>	<dt>PackageOnlineRepositories()</dt>
+		<dd><p>returns a list of available online repositories</p></dd>
+<dd><pre>    my %List = $PackageObject-&gt;PackageOnlineRepositories();
+
+</pre></dd>	<dt>PackageOnlineList()</dt>
+		<dd><p>returns a list of available on-line packages</p></dd>
+<dd><pre>    my @List = $PackageObject-&gt;PackageOnlineList(
+        URL  =&gt; '',
+        Lang =&gt; 'en',
+        Cache =&gt; 0,   # (optional) do not use cached data
+    );
+
+</pre></dd>	<dt>PackageOnlineGet()</dt>
+		<dd><p>download of an online package and put it into the local repository</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageOnlineGet(
+        Source =&gt; 'http://host.example.com/',
+        File   =&gt; 'SomePackage-1.0.opm',
+    );
+
+</pre></dd>	<dt>DeployCheck()</dt>
+		<dd><p>check if package (files) is deployed, returns true if it's ok</p></dd>
+<dd><pre>    $PackageObject-&gt;DeployCheck(
+        Name    =&gt; 'Application A',
+        Version =&gt; '1.0',
+    );
+
+</pre></dd>	<dt>DeployCheckInfo()</dt>
+		<dd><p>returns the info of the latest DeployCheck(), what's not deployed correctly</p></dd>
+<dd><pre>    my %Hash = $PackageObject-&gt;DeployCheckInfo();
+
+</pre></dd>	<dt>PackageVerify()</dt>
+		<dd><p>check if package is verified by the vendor</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageVerify(
+        Package   =&gt; $Package,
+        Structure =&gt; \%Structure,
+    );
+
+</pre></dd>		<dd><p>or</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageVerify(
+        Package =&gt; $Package,
+        Name    =&gt; 'FAQ',
+    );
+
+</pre></dd>	<dt>PackageVerifyInfo()</dt>
+		<dd><p>returns the info of the latest PackageVerify()</p></dd>
+<dd><pre>    my %Hash = $PackageObject-&gt;PackageVerifyInfo();
+
+</pre></dd>	<dt>PackageVerifyAll()</dt>
+		<dd><p>check if all installed packages are installed by the vendor
+returns a hash with package names and verification status.</p></dd>
+<dd><pre>    my %VerificationInfo = $PackageObject-&gt;PackageVerifyAll();
+
+</pre></dd>		<dd><p>returns:</p></dd>
+<dd><pre>    %VerificationInfo = (
+        FAQ     =&gt; 'verified',
+        Support =&gt; 'verified',
+        MyHack  =&gt; 'not_verified',
+    );
+
+</pre></dd>	<dt>PackageBuild()</dt>
+		<dd><p>build an opm package</p></dd>
+<dd><pre>    my $Package = $PackageObject-&gt;PackageBuild(
+        Name =&gt; {
+            Content =&gt; 'SomePackageName',
+        },
+        Version =&gt; {
+            Content =&gt; '1.0',
+        },
+        Vendor =&gt; {
+            Content =&gt; 'OTRS AG',
+        },
+        URL =&gt; {
+            Content =&gt; 'L&lt;http://otrs.org/&gt;',
+        },
+        License =&gt; {
+            Content =&gt; 'GNU GENERAL PUBLIC LICENSE Version 2, June 1991',
+        }
+        Description =&gt; [
+            {
+                Lang    =&gt; 'en',
+                Content =&gt; 'english description',
+            },
+            {
+                Lang    =&gt; 'de',
+                Content =&gt; 'german description',
+            },
+        ],
+        Filelist = [
+            {
+                Location   =&gt; 'Kernel/System/Lala.pm'
+                Permission =&gt; '644',
+                Content    =&gt; $FileInString,
+            },
+            {
+                Location   =&gt; 'Kernel/System/Lulu.pm'
+                Permission =&gt; '644',
+                Content    =&gt; $FileInString,
+            },
+        ],
+    );
+
+</pre></dd>	<dt>PackageParse()</dt>
+		<dd><p>parse a package</p></dd>
+<dd><pre>    my %Structure = $PackageObject-&gt;PackageParse( String =&gt; $FileString );
+
+</pre></dd>	<dt>PackageExport()</dt>
+		<dd><p>export files of an package</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageExport(
+        String =&gt; $FileString,
+        Home   =&gt; '/path/to/export'
+    );
+
+</pre></dd>	<dt>PackageIsInstalled()</dt>
+		<dd><p>returns true if the package is already installed</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageIsInstalled(
+        String =&gt; $PackageString,    # Attribute String or Name is required
+        Name   =&gt; $NameOfThePackage,
+    );
+
+</pre></dd>	<dt>PackageInstallDefaultFiles()</dt>
+		<dd><p>returns true if the distribution package (located under ) can get installed</p></dd>
+<dd><pre>    $PackageObject-&gt;PackageInstallDefaultFiles();
+
+</pre></dd>	<dt>PackageFileGetMD5Sum()</dt>
+		<dd><p>generates a MD5 Sum for all files in a given package</p></dd>
+<dd><pre>    my $MD5Sum = $PackageObject-&gt;PackageFileGetMD5Sum(
+        Name =&gt; 'Package Name',
+        Version =&gt; 123.0,
+    );
+
+</pre></dd>		<dd><p>returns:
+    $MD5SumLookup = {
+        'Direcoty/File1' =&gt; 'f3f30bd59afadf542770d43edb280489'
+        'Direcoty/File2' =&gt; 'ccb8a0b86adf125a36392e388eb96778'
+    };</p></dd>
+	<dt>_CheckVersion()</dt>
+	<dt>_PackageUninstallMerged()</dt>
+</dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

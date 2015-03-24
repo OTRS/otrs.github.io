@@ -131,21 +131,25 @@ $(document).ready(function() {
                 {
                     Version:  '5.0',
                     HTMLPath: '5.0',
+                    Types:    ['Perl'],
                     Name:     'OTRS git (development)'
                 },
                 {
                     Version:  '4.0',
                     HTMLPath: 'stable',
+                    Types:    ['Perl'],
                     Name:     'OTRS 4'
                 },
                 {
                     Version:  '3.3',
                     HTMLPath: '3.3',
+                    Types:    ['Perl'],
                     Name:     'OTRS 3.3'
                 },
                 {
                     Version:  '3.2',
                     HTMLPath: '3.2',
+                    Types:    ['Perl'],
                     Name:     'OTRS 3.2'
                 }
             ]
@@ -210,7 +214,12 @@ $(document).ready(function() {
             else {
                 $.each(Category.Versions, function(){
                     var Version = this;
-                    Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/index.html">' + Version.Name + '</a></li>';
+                    Navigation += '<li><a href="#">' + Version.Name + '</a><ul class="Hidden">';
+                    $.each(Version.Types, function(){
+                        var Type = this;
+                        Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type + '/index.html">' + Type + '</a></li>';
+                    });
+                    Navigation += '</ul></li>';
                 });
             }
 

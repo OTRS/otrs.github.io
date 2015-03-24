@@ -1,0 +1,192 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::Crypt::PGP</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 3.2 API Reference</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../index.html">OTRS 3.2 API Reference</a> &gt; Perl Modules &gt;
+  Kernel::System::Crypt::PGP
+</div>
+<div>
+<a href="../../../src/Kernel/System/Crypt/PGP.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>Kernel::System::Crypt::PGP - pgp crypt backend lib</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>This is a sub module of Kernel::System::Crypt and contains all pgp functions.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<dl>
+	<dt>Check()</dt>
+		<dd><p>check if environment is working</p></dd>
+<dd><pre>    my $Message = $CryptObject-&gt;Check();
+
+</pre></dd>	<dt>Crypt()</dt>
+		<dd><p>crypt a message</p></dd>
+<dd><pre>    my $Message = $CryptObject-&gt;Crypt(
+        Message =&gt; $Message,
+        Key     =&gt; $PGPPublicKeyID,
+    );
+
+</pre></dd>	<dt>Decrypt()</dt>
+		<dd><p>Decrypt a message and returns a hash (Successful, Message, Data)</p></dd>
+<dd><pre>    my %Result = $CryptObject-&gt;Decrypt(
+        Message =&gt; $CryptedMessage,
+    );
+
+</pre></dd>		<dd><p>The returned hash %Result has the following keys:</p></dd>
+<dd><pre>    Successful =&gt; '1',        # could the given data be decrypted at all (0 or 1)
+    Data       =&gt; '...',      # the decrypted data
+    KeyID      =&gt; 'FA23FB24'  # hex ID of PGP-(secret-)key that was used for decryption
+    Message    =&gt; '...'       # descriptive text containing the result status
+
+</pre></dd>	<dt>Sign()</dt>
+		<dd><p>sign a message</p></dd>
+<dd><pre>    my $Sign = $CryptObject-&gt;Sign(
+        Message =&gt; $Message,
+        Key     =&gt; $PGPPrivateKeyID,
+        Type    =&gt; 'Detached'  # Detached|Inline
+    );
+
+</pre></dd>	<dt>Verify()</dt>
+		<dd><p>verify a message signature and returns a hash (Successful, Message, Data)</p></dd>
+		<dd><p>Inline sign:</p></dd>
+<dd><pre>    my %Result = $CryptObject-&gt;Verify(
+        Message =&gt; $Message,
+        Charset =&gt; 'utf-8',             # optional, 'ISO-8859-1', 'UTF-8', etc.
+    );
+
+</pre></dd>		<dd><p>Attached sign:</p></dd>
+<dd><pre>    my %Result = $CryptObject-&gt;Verify(
+        Message =&gt; $Message,
+        Sign    =&gt; $Sign,
+    );
+
+</pre></dd>		<dd><p>The returned hash %Result has the following keys:</p></dd>
+<dd><pre>    SignatureFound =&gt; 1,                          # was a signature found at all (0 or 1)
+    Successful     =&gt; 1,                          # could the signature be verified (0 or 1)
+    KeyID          =&gt; 'FA23FB24'                  # hex ID of PGP-key that was used for signing
+    KeyUserID      =&gt; 'username &lt;user@test.org&gt;'  # PGP-User-ID (e-mail address) used for signing
+    Message        =&gt; '...'                       # descriptive text containing the result status
+    MessageLong    =&gt; '...'                       # full output of GPG binary
+
+</pre></dd>	<dt>KeySearch()</dt>
+		<dd><p>returns a array with serach result (private and public keys)</p></dd>
+<dd><pre>    my @Keys = $CryptObject-&gt;KeySearch(
+        Search =&gt; 'something to search'
+    );
+
+</pre></dd>	<dt>PrivateKeySearch()</dt>
+		<dd><p>returns an array with search result (private keys)</p></dd>
+<dd><pre>    my @Keys = $CryptObject-&gt;PrivateKeySearch(
+        Search =&gt; 'something to search'
+    );
+
+</pre></dd>	<dt>PublicKeySearch()</dt>
+		<dd><p>returns an array with search result (public keys)</p></dd>
+<dd><pre>    my @Keys = $CryptObject-&gt;PublicKeySearch(
+        Search =&gt; 'something to search'
+    );
+
+</pre></dd>	<dt>PublicKeyGet()</dt>
+		<dd><p>returns public key in ascii</p></dd>
+<dd><pre>    my $Key = $CryptObject-&gt;PublicKeyGet(
+        Key =&gt; $KeyID,
+    );
+
+</pre></dd>	<dt>SecretKeyGet()</dt>
+		<dd><p>returns secret key in ascii</p></dd>
+<dd><pre>    my $Key = $CryptObject-&gt;SecretKeyGet(
+        Key =&gt; $KeyID,
+    );
+
+</pre></dd>	<dt>PublicKeyDelete()</dt>
+		<dd><p>remove public key from key ring</p></dd>
+<dd><pre>    $CryptObject-&gt;PublicKeyDelete(
+        Key =&gt; $KeyID,
+    );
+
+</pre></dd>	<dt>SecretKeyDelete()</dt>
+		<dd><p>remove secret key from key ring</p></dd>
+<dd><pre>    $CryptObject-&gt;SecretKeyDelete(
+        Key =&gt; $KeyID,
+    );
+
+</pre></dd>	<dt>KeyAdd()</dt>
+		<dd><p>add key to key ring</p></dd>
+<dd><pre>    my $Message = $CryptObject-&gt;KeyAdd(
+        Key =&gt; $KeyString,
+    );
+
+</pre></dd>	<dt>_HandleLog()</dt>
+	<dt>_ParseGPGKeyList()</dt>
+</dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

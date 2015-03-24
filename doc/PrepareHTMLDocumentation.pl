@@ -36,26 +36,6 @@ Copyright (C) 2001-2014 OTRS AG, http://otrs.org/
 EOF
 }
 
-my @NavigationConfig = (
-    {
-        Name => 'Admin Manual',
-        Path => 'admin',
-        Versions => [
-            {
-                Version => '3.3',
-                Name    => 'OTRS 3.3',
-                Languages => ['en'],
-            },
-        ],
-    },
-);
-
-my %Languages = (
-    en => 'English',
-    de => 'Deutsch',
-    ru => 'Русский',
-);
-
 sub Run {
 
     PrintUsage();
