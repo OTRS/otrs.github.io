@@ -131,7 +131,7 @@ $(document).ready(function() {
                 {
                     Version:  '5.0',
                     HTMLPath: '5.0',
-                    Types:    ['Perl'],
+                    Types:    ['Perl', 'JavaScript'],
                     Name:     'OTRS git (development)'
                 },
                 {
