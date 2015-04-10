@@ -379,6 +379,12 @@ sub Execute {
             }
     );
 
+    # Don't allow to run these scripts as root.
+    if ( $> == 0 ) {    # $EFFECTIVE_USER_ID
+        $Self->PrintError("You cannot run otrs.Console.pl as root. Please use the otrs user instead.");
+        return $Self->ExitCodeError();
+    }
+
     # Disable in-memory cache to avoid problems with long running scripts.
     $Kernel::OM->Get('Kernel::System::Cache')->Configure(
         CacheInMemory => 0,
@@ -408,10 +414,6 @@ sub Execute {
         return $Self->ExitCodeError();
     }
 
-    # We want to die(), not exit(), to make sure that PostRun() can still run
-    #   if a user presses ^C.
-    local $SIG{INT} = sub { die; };
-
     eval { $Self->PreRun(); };
     if ($@) {
         $Self->PrintError($@);
@@ -420,7 +422,14 @@ sub Execute {
 
     # Make sure we get a proper exit code to return to the shell.
     my $ExitCode;
-    eval { $ExitCode = $Self->Run(); };
+    eval {
+        # Make sure that PostRun() works even if a user presses ^C.
+        local $SIG{INT} = sub {
+            $Self->PostRun();
+            exit $Self->ExitCodeError();
+        };
+        $ExitCode = $Self->Run();
+    };
     if ($@) {
         $Self->PrintError($@);
         $ExitCode = $Self->ExitCodeError();
