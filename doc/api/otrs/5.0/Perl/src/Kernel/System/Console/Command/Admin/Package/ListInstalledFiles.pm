@@ -6,23 +6,23 @@
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
 
-package Kernel::System::Console::Command::Dev::Code::ContributorsListUpdate;
+package Kernel::System::Console::Command::Admin::Package::ListInstalledFiles;
 
 use strict;
 use warnings;
-
-use IO::File;
 
 use base qw(Kernel::System::Console::BaseCommand);
 
 our @ObjectDependencies = (
     'Kernel::Config',
+    'Kernel::System::Main',
+    'Kernel::System::Package',
 );
 
 sub Configure {
     my ( $Self, %Param ) = @_;
 
-    $Self->Description('Update the list of contributors based on git commit information.');
+    $Self->Description('List all installed OTRS package files.');
 
     return;
 }
@@ -30,27 +30,28 @@ sub Configure {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    chdir $Kernel::OM->Get('Kernel::Config')->Get('Home');
+    $Self->Print("<yellow>Listing all installed package files...</yellow>\n");
 
-    my @Lines = qx{git log --format="%aN <%aE>"};
-    my %Seen;
-    map { $Seen{$_}++ } @Lines;
+    my @Packages = $Kernel::OM->Get('Kernel::System::Package')->RepositoryList();
 
-    my $FileHandle = IO::File->new( 'AUTHORS.md', 'w' );
-    $FileHandle->print("The following persons contributed to OTRS:\n\n");
+    PACKAGE:
+    for my $Package (@Packages) {
 
-    AUTHOR:
-    for my $Author ( sort keys %Seen ) {
-        chomp $Author;
-        if ( $Author =~ m/^[^<>]+ \s <>\s?$/smx ) {
-            $Self->Print("<yellow>Could not find Author $Author, skipping.</yellow>\n");
-            next AUTHOR;
+        # Just show if PackageIsVisible flag is enabled.
+        if (
+            defined $Package->{PackageIsVisible}
+            && !$Package->{PackageIsVisible}->{Content}
+            )
+        {
+            next PACKAGE;
         }
-        $FileHandle->print("* $Author\n")
+
+        for my $File ( @{ $Package->{Filelist} } ) {
+            $Self->Print("  $Package->{Name}->{Content}: $File->{Location}\n");
+        }
     }
 
-    $FileHandle->close();
-
+    $Self->Print("<green>Done.</green>\n");
     return $Self->ExitCodeOk();
 }
 

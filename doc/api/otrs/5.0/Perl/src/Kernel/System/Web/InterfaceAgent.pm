@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Web/InterfaceAgent.pm - the agent interface file (incl. auth)
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -910,12 +909,14 @@ sub Run {
         );
         $Kernel::OM->ObjectsDiscard( Objects => ['Kernel::Output::HTML::Layout'] );
 
-        # updated last request time
-        $Self->{SessionObject}->UpdateSessionID(
-            SessionID => $Param{SessionID},
-            Key       => 'UserLastRequest',
-            Value     => $Self->{TimeObject}->SystemTime(),
-        );
+        # update last request time
+        if ( !$Self->{ParamObject}->IsAJAXRequest() ) {
+            $Self->{SessionObject}->UpdateSessionID(
+                SessionID => $Param{SessionID},
+                Key       => 'UserLastRequest',
+                Value     => $Self->{TimeObject}->SystemTime(),
+            );
+        }
 
         # pre application module
         my $PreModule = $Self->{ConfigObject}->Get('PreApplicationModule');

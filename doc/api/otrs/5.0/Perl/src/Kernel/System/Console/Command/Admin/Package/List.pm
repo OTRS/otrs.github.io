@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Console/Command/Admin/Package/List.pm - console command
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -43,7 +42,7 @@ sub Run {
     PACKAGE:
     for my $Package (@Packages) {
 
-        # just shown in list if PackageIsVisible flag is enable
+        # Just show if PackageIsVisible flag is enabled.
         if (
             defined $Package->{PackageIsVisible}
             && !$Package->{PackageIsVisible}->{Content}
