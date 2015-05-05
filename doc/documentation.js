@@ -23,7 +23,7 @@ $(document).ready(function() {
                     Version:  '4.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 4',
-                    Languages: ['en']
+                    Languages: ['en', 'de', 'ja', 'ru', 'sw']
                 },
                 {
                     Version:  '3.3',
@@ -63,7 +63,7 @@ $(document).ready(function() {
                     Version:  '4.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS::ITSM 4',
-                    Languages: ['en']
+                    Languages: ['en', 'ru']
                 },
                 {
                     Version:  '3.3',
