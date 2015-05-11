@@ -80,25 +80,6 @@ $(document).ready(function() {
             ]
         },
         {
-            Name: 'OTRS Appliance Manual',
-            Type: 'manual',
-            Path: 'appliance',
-            Versions: [
-                {
-                    Version:  '4.0',
-                    HTMLPath: 'stable',
-                    Name:     'OTRS 4 Appliance',
-                    Languages: ['en', 'de', 'ru', 'sw', 'zh_CN']
-                },
-                {
-                    Version:  '3.3',
-                    HTMLPath: '3.3',
-                    Name:     'OTRS 3.3 Appliance',
-                    Languages: ['en', 'de', 'ru', 'sw', 'zh_CN']
-                }
-            ]
-        },
-        {
             Name: 'OTRS Developer Manual',
             Type: 'manual',
             Path: 'developer',
