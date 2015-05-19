@@ -13,9 +13,43 @@ still work with the OTRS API.
             This section lists changes that you need to examine when porting your package from
             OTRS 4 to 5.
         </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.3"></a>Pre-Output-Filters</h4></div></div></div><p>
-                With OTRS 5 there is no support for "pre" output filters any more. These filters changed the template content before it was parsed, and that could potentially lead to bad performance issues.
+                With OTRS 5 there is no support for "pre" output filters any more. These filters changed the template content before it was parsed, and that could potentially lead to bad performance issues because the templates could not be cached any more and had to be parsed and compiled every time.
             </p><p>
-                Just switch from "pre" to "post" output filters. To translate content, you can run <code class="code">$LayoutObject-&gt;Translate()</code> directly. If you need other template features, just define a small template file for your output filter and use it to render your content before injecting it into the main data. It can also be helpful to use jQuery DOM operations to reorder/replace content on the screen in some cases instead of using regular expressions.
+                Just switch from "pre" to "post" output filters. To translate content, you can run <code class="code">$LayoutObject-&gt;Translate()</code> directly. If you need other template features, just define a small template file for your output filter and use it to render your content before injecting it into the main data. It can also be helpful to use jQuery DOM operations to reorder/replace content on the screen in some cases instead of using regular expressions. In this case you would inject the new code somewhere in the page as invisible content (e. g. with the class <code class="literal">Hidden</code>), and then move it with jQuery to the correct location in the DOM and show it.
+            </p><p>
+                To make using post output filters easier, there is also a new mechanism to request HTML comment hooks for certain templates/blocks. You can add in your module config XML like:
+                </p><pre class="programlisting">
+&lt;ConfigItem
+Name="Frontend::Template::GenerateBlockHooks###100-OTRSBusiness-ContactWithData"
+Required="1" Valid="1"&gt;
+    &lt;Description Translatable="1"&gt;Generate HTML comment hooks for
+the specified blocks so that filters can use them.&lt;/Description&gt;
+    &lt;Group&gt;OTRSBusiness&lt;/Group&gt;
+    &lt;SubGroup&gt;Core&lt;/SubGroup&gt;
+    &lt;Setting&gt;
+        &lt;Hash&gt;
+            &lt;Item Key="AgentTicketZoom"&gt;
+                &lt;Array&gt;
+                    &lt;Item&gt;CustomerTable&lt;/Item&gt;
+                &lt;/Array&gt;
+            &lt;/Item&gt;
+        &lt;/Hash&gt;
+    &lt;/Setting&gt;
+&lt;/ConfigItem&gt;
+                </pre><p>
+
+                This will cause the block <code class="literal">CustomerTable</code> in <code class="filename">AgentTicketZoom.tt</code> to be
+                wrapped in HTML comments each time it is rendered:
+
+                </p><pre class="programlisting">
+&lt;!--HookStartCustomerTable--&gt;
+... block output ...
+&lt;!--HookEndCustomerTable--&gt;
+                </pre><p>
+
+                With this mechanism every package can request just the block hooks it
+                needs, and they are consistently rendered. These HTML comments can then be used in your
+                output filter for easy regular expression matching.
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.4"></a>IE 8 and IE 9</h4></div></div></div><p>
                 Support for IE 8 and 9 <a class="ulink" href="https://github.com/OTRS/otrs/commit/3b1aff21984d7b32f626df95e072337245615b36" target="_top">was dropped</a>. You can remove any workarounds in your code for these platforms, as well as any old <code class="literal">&lt;CSS_IE7&gt;</code> or <code class="literal">&lt;CSS_IE8&gt;</code> loader tags that might still lurk in your XML config files.
             </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="package-porting-33-to-4"></a>From OTRS 3.3 to 4</h3></div></div></div><p>
