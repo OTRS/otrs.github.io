@@ -150,9 +150,12 @@ $(document).ready(function() {
             // Manual
             if (Category.Type === 'manual') {
                 $.each(Category.Versions, function(){
-                    var Version = this;
+                    var Version = this,
+                        ID = 'manual_' + Category.Path + '_' + Version.Version;
 
-                    Navigation += '<li><a href="#">' + Version.Name + '</a><ul class="Hidden">';
+                    ID = ID.replace(/\./g, '_');
+
+                    Navigation += '<li id="' + ID + '"><a href="#">' + Version.Name + '</a><ul class="Hidden">';
                     if (Version.Languages.length === 1) {
                         var Language    = Version.Languages[0];
                         var PDFPath     = 'doc-' + Category.Path;
@@ -194,8 +197,12 @@ $(document).ready(function() {
             // API
             else {
                 $.each(Category.Versions, function(){
-                    var Version = this;
-                    Navigation += '<li><a href="#">' + Version.Name + '</a><ul class="Hidden">';
+                    var Version = this,
+                        ID = 'api_' + Category.Path + '_' + Version.Version;
+
+                    ID = ID.replace(/\./g, '_');
+
+                    Navigation += '<li id="' + ID + '"><a href="#">' + Version.Name + '</a><ul class="Hidden">';
                     $.each(Version.Types, function(){
                         var Type = this;
                         Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type + '/index.html">' + Type + '</a></li>';
