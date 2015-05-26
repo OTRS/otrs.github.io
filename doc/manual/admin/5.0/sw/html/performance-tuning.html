@@ -1,0 +1,150 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 6. Kuboresha Utendaji</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 4- Muongozo wa msimamizi"><link rel="up" href="index.html" title="OTRS 4- Muongozo wa msimamizi"><link rel="prev" href="translation.html" title="Ujanibishaji wa mazingira ya mbele ya OTRS"><link rel="next" href="performance-tuning-database.html" title="Hifadhidata"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 6. Kuboresha Utendaji</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="translation.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="performance-tuning"></a>Chapter 6. Kuboresha Utendaji</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs">OTRS</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">ModuliKielelezoTiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">ModuliHifadhiTiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.8.3.5">Kuhifadhi Tiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-cache">Hifadhi muda</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-database.html">Hifadhidata</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-mysql">MySQL</a></span></dt><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-postgresql">PostgreSQL</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-webserver.html">Seva ya tovuti</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">Miunganiko ya hifadhidata iliyotengenezwa.</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">Moduli zilizopakiwa tayari -startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">Pakia tena moduli za perl zinapo sasishwa kwnye diski</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">Kuchagua mkakati sahihi</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></dd></dl></div><div class="abstract"><p class="title"><b>Abstract</b></p><p>
+    Inayoonyeshwa chini ni orodha ya mbinu za kuboresha utendaji wa usakinishaji
+wako wa OTRS, ikijumuisha usanidi, uandikaji kanuni, matumizi ya kumbukumbu,
+na mengine.
+    </p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-otrs"></a>OTRS</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">ModuliKielelezoTiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">ModuliHifadhiTiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.8.3.5">Kuhifadhi Tiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-cache">Hifadhi muda</a></span></dt></dl></div><p>
+        Kuna njia tofauti za kuboresha utendaji wa OTRS.
+        </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-index"></a>ModuliKielelezoTiketi</h3></div></div></div><p>
+            Kuna moduli mbili za mazingira ya nyuma ya kielelezo cha tiketi:
+            </p><p>
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
+            Kwa kutumia Kernel::System::Ticket::IndexAccelerator::RuntimeDB
+(chaguo-msingi), zalisha kila muonekano moja kwa moja kutoka kwenye jedwali
+la tiketi. Hautakuwa na matatizo ya kiutendaji mpaka labda ukiwa na tiketi
+60,000 zilizofunguliwa kwenye mfumo wako.
+            </p></li><li class="listitem"><p>
+            Kiini::Mfumo::Tiketi::KielezoKiharakishi::DBTuli, moduli yenye nguvu
+kushinda zote, inatakiwa kutumika wakati una tiketi zilizo wazi zaidi ya
+80,000. Inatumia jedwali la ziada la tiketi_kielezo., ambayo inafanyakazi
+kama muonekano. Tumia <code class="filename">bin/otrs.RebuildTicketIndex.pl</code>
+kuzalisha kielezo kijenzi cha mwanzo baada ya kubadilisha mazingira ya
+nyuma.
+            </p></li></ul></div><p>
+            </p><p>
+            Unaweza kubadilisha IndexAccelerator kupitia SysConfig.
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-storage"></a>ModuliHifadhiTiketi</h3></div></div></div><p>
+            Kuna moduli mbili tofauti za mazingira ya nyuma ya uhifadhi wa
+tiketi/makala:
+            </p><p>
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
+            Sanidi Kernel::System::Ticket::ArticleStorageDB (chaguo-msingi) kuhifadhi
+viambatanishi, na kadh., katika hifadhidata. Tambua: Usitumie na mipangilio
+mkubwa.
+            </p><p>
+            Faida: Kama mtumiaji wako wa seva ya tovuti siyo mtumiaji wa 'otrs', tumia
+hii moduli kuzuia matatizo ya ruhusa za faili.
+            </p><p>
+            Hasara: Haishauriwi kuhifadhi viambatanisho kwenye hifadhidata yako. Chukua
+tahadhari kwamba hifadhidata yako inaweza kuhifadhi vitu vikubwa. Mf. Sanidi
+MySQL na "set-variable = max_allowed_packet=8M" kuhifadhi vitu vyenye 8 MB
+(chaguo msingi ni 2M).
+            </p></li><li class="listitem"><p>
+            Sanidi Kernel::System::Ticket::ArticleStorageFS kuhifadhi viambatanishi na
+kadh. katika mfumo wa faili wa ndani. Tambua: Inashauriwa kwa mipangilio
+mikubwa
+            </p><p>
+            Faida: Ni ya kasi!
+            </p><p>
+            Hasara: Mtumiaji wako wa seva ya tovuti anatakiwa kuwa mtumiaji wa
+'otrs'. Pia, kama una seva za mazingira ya mbele zaidi ya moja, unatakiwa
+kuhakikisha mfumo wa faili unatumiwa kwa pamoja kati ya seva. Iweke kwenye
+ushirika wa NFS au kwa mapendeleo zaidi SAN au inayofanania.
+            </p></li></ul></div><p>
+
+            </p><p>
+                Kumbuka: unaweza kubadilisha kutoka aina moja ya mazingira ya nyuma kwenda
+mengine kwa haraka, Unaweza kubadilisha mazingira ya nyuma katika SysConfig,
+baada ya hapo anzisha zana ya tungo amri
+<code class="filename">otrs.ArticleStorageSwitch.pl</code> ili kuweka makala kutoka
+kwenye hifadhidata kwenda kwenye mfumo wa mafaili na kinyume chake. Unaweza
+kutumia machaguo <span class="emphasis"><em>-s</em></span> na <span class="emphasis"><em>-d</em></span> kuweka
+bayana chanzo na kifikio cha mazingira ya nyuma. Tafadhali tambua mchakato
+mzima unaweza kutumia muda mwingi kufanyika, kutegemeana na idadi ya makala
+ulizonazo na uwezo wa kitengo kikuu cha uchakataji na/au uwezo wa mtandao.
+            </p><p>
+            </p><pre class="screen">
+shell&gt; bin/otrs.ArticleStorageSwitch.pl -s ArticleStorageDB -d ArticleStorageFS
+            </pre><p>
+            </p><p>
+            <span class="emphasis"><em>Hati: Kubadilisha mazingira ya nyuma ya hifadhi kutoka hifadhidata
+kuwa mfumo wa mafaili</em></span>
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.8.3.5"></a>Kuhifadhi Tiketi</h3></div></div></div><p>
+                Kwa kuwa OTRS inaweza kutumika kama mfumo wa kuzuia ukaguzi, kufuta tiketi
+zilizofungwa inaweza kuwa sio wazo zuri. Kwa hiyo tumetengeneza kipengele
+kinachokuruhusu kuhifadhi tiketi kwenye nyaraka.
+            </p><p>
+                Tiketi zinazofanana na vigezo fulani zinaweza kuwekewa alama kama "zilizo
+kwenye nyaraka". Hizi tiketi haziwezi kupatikana kama ukifanya utafutaji
+tiketi wa kawaida au kuanzisha kazi ya Wakala wa Ujumla. Mfumo wenyewe
+hautahangaika na idadi kubwa yatiketi tena kwa sababu tiketi za hivi
+karibuni tu ndio zinatiliwa maanani na OTRS. Hii inaweza kuleta ufanisi
+mkubwa katika mifumo mikubwa.
+            </p><p>
+                Kutumia kipengele cha nyaraka fuata hatua zifuatazo kirahisi:
+            </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+                        Amilisha mfumo wa nyaraka katika SysConfig
+                    </p><p>
+                        Katika kurasa ya msimamizi, nenda kwenye AysConfig na chagua
+<code class="literal">Tiketi</code> ya kundi hilo. Katika
+<code class="literal">Kiini::Tiketi</code> unakuta chaguo
+<code class="literal">Tiketi::MfumoNyaraka</code> ambao umesetiwa kuwa "hapana" kwa
+chaguo-msingi. Badilisha mpangilio huu kuwa "ndiyo" na hifadhi mabadiliko.
+                    </p></li><li class="listitem"><p>
+                        Fafanua kazi ya WakalaWaJumla
+                    </p><p>
+                        Kwenye kurasa ya Msimamizi, chagua WakalaUjumla na ongeza kazi mpya
+hapo. </p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p>
+                                    Mpangilio wa kazi
+                                </p><p>
+                                    Toa jina kwa
+                                </p></li><li class="listitem"><p>
+                                    Chujio la Tiketi
+                                </p><p>
+                                    Vichujio vya tiketi vinatafuta tiketi ambazo zinafanana na kigezo
+kilichochaguliwa. Inaweza kuwa wazo zuri kuweka kwenye nyaraka zile tiketi
+zilizo kwenye hali iliyofungwa na zimefungwa miezi michache nyuma.
+                                </p></li><li class="listitem"><p>
+                                    Kitendo cha Tiketi
+                                </p><p>
+                                    Katika kifungu hiki, seti sehemu yenye lebo"Hifadhi kwenye Nyaraka tiketi
+zilizochaguliwa" kuwa "hifadhi tiketi kwenye nyaraka".
+                                </p></li><li class="listitem"><p>
+                                    Hifadhi kazi
+                                </p><p>
+                                    Mwisho wa kurasa utapata chaguo la kuhifadhi kazi.
+                                </p></li><li class="listitem"><p>
+                                    Tiketi zilizoathirika.
+                                </p><p>
+                                    Mfumo utaonyesha tiketi zote zitakazohifadhiwa kwenye nyaraka wakati wa
+kutekeleza kazi ya Wakala wa Ujumla.
+                                </p></li></ol></div><p>
+                    </p></li><li class="listitem"><p>
+                        Tafuta Tiketi
+                    </p><p>
+                        Ukitafuta tiketi, mfumo kwa kawaida unatafuta tiketi zisizo kwenye
+nyaraka. Kama ukitaka kutafuta tiketi za kwenye nyaraka pia, ongeza kirahisi
+"tafuta nyaraka" wakati wa kufafanua vigezo vya kutafuta.
+                    </p></li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-cache"></a>Hifadhi muda</h3></div></div></div><p>
+                OTRS caches a lot of temporary data in
+<code class="filename">/opt/otrs/var/tmp</code>.  Please make sure that this uses a
+high performance file system/storage.  If you have enough RAM, you can also
+try to put this directory on a ramdisk like this: </p><pre class="screen">
+shell&gt; /opt/otrs/bin/otrs.CleanUp.pl
+shell&gt; /opt/otrs/bin/otrs.DeleteCache.pl
+shell&gt; sudo mount -o size=16G -t tmpfs none /opt/otrs/var/tmp
+
+# add persistent mount point in /etc/fstab
+                </pre><p> </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3> Please note that this will be a non-permanent storage that
+will be lost on server reboot.  All your sessions (if you store them in the
+filesystem) and your cache data will be lost.  </div><p> There is also a
+centralized memcached based Cache backend available for purchase from OTRS
+Group.
+            </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="translation.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Ujanibishaji wa mazingira ya mbele ya OTRS </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Hifadhidata</td></tr></table></div></body></html>
