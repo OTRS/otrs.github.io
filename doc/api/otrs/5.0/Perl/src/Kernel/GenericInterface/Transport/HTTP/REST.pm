@@ -15,6 +15,7 @@ use HTTP::Status;
 use MIME::Base64;
 use REST::Client;
 use URI::Escape;
+use Kernel::Config;
 
 use Kernel::System::VariableCheck qw(:all);
 
@@ -697,6 +698,26 @@ sub RequesterPerformRequest {
             Success      => 0,
             ErrorMessage => $ResponseError,
         };
+    }
+
+    {
+        my $MaxSize = $Kernel::OM->Get('Kernel::Config')->Get('GenericInterface::Operation::ResponseLoggingMaxSize') || 200;
+        $MaxSize = $MaxSize * 1024;
+        use bytes;
+
+        my $ByteSize = length($ResponseContent);
+        if ( $ByteSize < $MaxSize ) {
+            $Self->{DebuggerObject}->Debug(
+                Summary => 'JSON data received from remote system',
+                Data    => $ResponseContent,
+            );
+        }
+        else {
+            $Self->{DebuggerObject}->Debug(
+                Summary => "JSON data received from remote system was too large for logging",
+                Data    => 'See SysConfig option GenericInterface::Operation::ResponseLoggingMaxSize to change the maximum.',
+            );
+        }
     }
 
     # send processed data to debugger
