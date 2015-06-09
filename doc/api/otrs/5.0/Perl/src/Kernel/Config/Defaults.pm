@@ -603,7 +603,7 @@ sub LoadDefaults {
     # Kernel::Modules::AgentInfo check key, if this user preferences key
     # is true, then the message is already accepted
 #    $Self->{InfoKey} = 'wpt22';
-    # shown InfoFile located under Kernel/Output/HTML/Standard/AgentInfo.tt
+    # shown InfoFile located under Kernel/Output/HTML/Templates/Standard/AgentInfo.tt
 #    $Self->{InfoFile} = 'AgentInfo';
 
     # --------------------------------------------------- #
@@ -866,11 +866,11 @@ sub LoadDefaults {
 
     # Customer Common JS
     $Self->{'Loader::Customer::CommonJS'}->{'000-Framework'} =  [
-        'thirdparty/jquery-1.11.1/jquery.js',
+        'thirdparty/jquery-2.1.4/jquery.js',
         'thirdparty/jquery-browser-detection/jquery-browser-detection.js',
-        'thirdparty/jquery-validate-1.13.0/jquery.validate.js',
-        'thirdparty/jquery-ui-1.11.1/jquery-ui.js',
-        'thirdparty/stacktrace-0.6.2/stacktrace.js',
+        'thirdparty/jquery-validate-1.13.1/jquery.validate.js',
+        'thirdparty/jquery-ui-1.11.4/jquery-ui.js',
+        'thirdparty/stacktrace-0.6.4/stacktrace.js',
         'thirdparty/jquery-pubsub/pubsub.js',
         'thirdparty/jquery-jstree-3.1.1/jquery.jstree.js',
         'Core.Debug.js',
@@ -897,11 +897,11 @@ sub LoadDefaults {
 
     # Agent Common JS
     $Self->{'Loader::Agent::CommonJS'}->{'000-Framework'} =  [
-        'thirdparty/jquery-1.11.1/jquery.js',
+        'thirdparty/jquery-2.1.4/jquery.js',
         'thirdparty/jquery-browser-detection/jquery-browser-detection.js',
-        'thirdparty/jquery-ui-1.11.1/jquery-ui.js',
-        'thirdparty/jquery-validate-1.13.0/jquery.validate.js',
-        'thirdparty/stacktrace-0.6.2/stacktrace.js',
+        'thirdparty/jquery-ui-1.11.4/jquery-ui.js',
+        'thirdparty/jquery-validate-1.13.1/jquery.validate.js',
+        'thirdparty/stacktrace-0.6.4/stacktrace.js',
         'thirdparty/jquery-pubsub/pubsub.js',
         'thirdparty/jquery-jstree-3.1.1/jquery.jstree.js',
         'Core.JavaScriptEnhancements.js',
@@ -1164,7 +1164,7 @@ You can log in via the following URL:
     # Kernel::Modules::CustomerAccept check key, if this user preferences key
     # is true, then the message is already accepted
 #    $Self->{'CustomerPanel::InfoKey'} = 'CustomerAccept1';
-    # shown InfoFile located under Kernel/Output/HTML/Standard/CustomerAccept.tt
+    # shown InfoFile located under Kernel/Output/HTML/Templates/Standard/CustomerAccept.tt
 #    $Self->{'CustomerPanel::InfoFile'} = 'CustomerAccept';
 
     # CustomerPanelLostPassword
