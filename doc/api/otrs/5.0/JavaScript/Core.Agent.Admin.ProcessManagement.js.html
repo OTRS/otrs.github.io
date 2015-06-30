@@ -167,7 +167,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                            if (!Response || !Response.Success) {
                                alert(Response.Message);
                                Core.UI.Dialog.CloseDialog($('.Dialog'));
-                               return;
+                               return false;
                            }
 
                            Core.App.InternalRedirect({
@@ -235,7 +235,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                            if (!Response || !Response.Success) {
                                alert(Response.Message);
                                Core.UI.Dialog.CloseDialog($('.Dialog'));
-                               return;
+                               return false;
                            }
 
                            // Remove element from accordion
@@ -494,11 +494,11 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                                 alert(Response.Message);
                             }
                             else {
-                                alert ('Error during AJAX communication');
+                                alert('Error during AJAX communication');
                             }
 
                             TargetNS.Canvas.ShowActivityAddActivityDialogError(Activity);
-                            return;
+                            return false;
                         }
 
                         TargetNS.Canvas.ShowActivityAddActivityDialogSuccess(Activity);
@@ -541,6 +541,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
        * @name AddTransitionToCanvas
        * @memberof Core.Agent.Admin.ProcessManagement.InitAccordionDND
        * @function
+       * @returns {Boolean} False if a another unconnected transition is on the canvas
        * @param {Object} Event - The event object.
        * @param {Object} UI - jQuery UI object.
        * @description
@@ -558,7 +559,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             // connected to an end point. One cannot place two unconnected transitions on the canvas.
             if ($('#Dummy').length &amp;&amp; DummyActivityConnected(ProcessEntityID)) {
               alert(Core.Agent.Admin.ProcessManagement.Localization.UnconnectedTransition);
-              return;
+              return false;
             }
 
             if (typeof Entity !== 'undefined') {
@@ -571,7 +572,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 // you cannot bind it a second time
                 if (Path[Activity] &amp;&amp; typeof Path[Activity][EntityID] !== 'undefined') {
                     alert(Core.Agent.Admin.ProcessManagement.Localization.TransitionAlreadyPlaced);
-                    return;
+                    return false;
                 }
 
                 if (Activity) {
@@ -628,7 +629,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                     ($.inArray(EntityID, Path[Transition.StartActivity][Transition.TransitionID].TransitionAction) >= 0)
                 ) {
                     alert(Core.Agent.Admin.ProcessManagement.Localization.TransitionActionAlreadyPlaced);
-                    return;
+                    return false;
                 }
 
                 if (Transition) {
@@ -749,7 +750,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             Core.UI.Accordion.Init($('ul#ProcessElements'), 'li.AccordionElement h2 a', 'div.Content');
 
             // open accordion element again, which was active before the update
-            Core.UI.Accordion.OpenElement($('ul#ProcessElements > li:nth-child(' + (parseInt(ActiveElement,10) + 1) + ')'));
+            Core.UI.Accordion.OpenElement($('ul#ProcessElements > li:nth-child(' + (parseInt(ActiveElement, 10) + 1) + ')'));
 
             // Initialize filters
             Core.UI.Table.InitTableFilter($('#ActivityFilter'), $('#Activities'));
@@ -824,9 +825,9 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                     alert(Response.Message);
                 }
                 else {
-                    alert ('Error during AJAX communication');
+                    alert('Error during AJAX communication');
                 }
-                return;
+                return false;
             }
             else {
                 if (typeof Callback !== 'undefined') {
@@ -1131,27 +1132,27 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                          Label: TargetNS.Localization.SaveMsg,
                          Class: 'Primary',
                          Function: function () {
-                             var FieldConfig = {};
+                             var FieldConfigElement = {};
 
-                             FieldConfig.DescriptionShort = $('#DescShort').val();
-                             FieldConfig.DescriptionLong = $('#DescLong').val();
-                             FieldConfig.DefaultValue = $('#DefaultValue').val();
-                             FieldConfig.Display = $('#Display').val();
+                             FieldConfigElement.DescriptionShort = $('#DescShort').val();
+                             FieldConfigElement.DescriptionLong = $('#DescLong').val();
+                             FieldConfigElement.DefaultValue = $('#DefaultValue').val();
+                             FieldConfigElement.Display = $('#Display').val();
 
                              if (Fieldname === 'Article') {
-                                 if (typeof FieldConfig.Config === 'undefined'){
-                                     FieldConfig.Config = {};
+                                 if (typeof FieldConfigElement.Config === 'undefined'){
+                                     FieldConfigElement.Config = {};
                                  }
-                                 FieldConfig.Config.ArticleType = $('#ArticleType').val();
+                                 FieldConfigElement.Config.ArticleType = $('#ArticleType').val();
 
                                  // show error if internal article type is set for an interface different than AgentInterface
                                  if ($('#Interface').val() !== 'AgentInterface' &amp;&amp; $('#ArticleType').val().match(/int/i)){
                                      window.alert(Core.Agent.Admin.ProcessManagement.Localization.WrongArticleTypeMsg);
-                                     return;
+                                     return false;
                                  }
                              }
 
-                             $Element.closest('li').data('config', Core.JSON.Stringify(FieldConfig));
+                             $Element.closest('li').data('config', Core.JSON.Stringify(FieldConfigElement));
 
                              Core.UI.Dialog.CloseDialog($('.Dialog'));
                          }
@@ -1416,8 +1417,8 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 $('#StartActivity').attr('title', ActivityInfo[Activity].Name).text(ActivityInfo[Activity].Name);
                 $('#EndActivity').attr('title', ActivityInfo[Transition[CurrentTransitionEntityID].ActivityEntityID].Name).text(ActivityInfo[Transition[CurrentTransitionEntityID].ActivityEntityID].Name);
 
-                StartActivityEntityID     = Activity;
-                EndActivityEntityID       = Transition[CurrentTransitionEntityID].ActivityEntityID;
+                StartActivityEntityID = Activity;
+                EndActivityEntityID = Transition[CurrentTransitionEntityID].ActivityEntityID;
                 AssignedTransitionActions = Transition[CurrentTransitionEntityID].TransitionAction;
 
                 return false;
@@ -1449,7 +1450,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         Core.Form.Validate.SetSubmitFunction($('#PathForm'), function (Form) {
 
             var NewTransitionEntityID = $('#Transition').val(),
-                NewTransitionActions  = [],
+                NewTransitionActions = [],
                 TransitionInfo;
 
             $('#AssignedTransitionActions li').each(function() {
@@ -1458,9 +1459,9 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
 
             // collection transition info for later merging
             TransitionInfo = {
-                StartActivityEntityID  : StartActivityEntityID,
-                NewTransitionEntityID  : NewTransitionEntityID,
-                NewTransitionActions   : NewTransitionActions,
+                StartActivityEntityID: StartActivityEntityID,
+                NewTransitionEntityID: NewTransitionEntityID,
+                NewTransitionActions: NewTransitionActions,
                 NewTransitionActivityID: EndActivityEntityID
             };
 
@@ -1550,8 +1551,8 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             // get all fields of the current condition
             $(this).find('fieldset.Fields').each(function() {
                 Conditions[ConditionKey].Fields[$(this).find('input').first().val()] = {
-                    Type  : $(this).find('select').val(),
-                    Match : $(this).find('input').last().val()
+                    Type: $(this).find('select').val(),
+                    Match: $(this).find('input').last().val()
                 };
             });
 
@@ -1622,7 +1623,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingSimple.html">Core.Agent.Admin.GenericInterfaceMappingSimple</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.SysConfig.html">Core.Agent.Admin.SysConfig</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Scheduler.html">Core.Agent.Scheduler</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingSimple.html">Core.Agent.Admin.GenericInterfaceMappingSimple</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.SysConfig.html">Core.Agent.Admin.SysConfig</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Scheduler.html">Core.Agent.Scheduler</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul>
 </nav>
 
 <br clear="both">
