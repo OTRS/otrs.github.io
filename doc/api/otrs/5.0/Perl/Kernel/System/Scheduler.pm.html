@@ -57,12 +57,7 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a><br />
-<ul>
-	<li><a href="#Registering_new_scheduler_tasks">Registering new scheduler tasks</a></li>
-	<li><a href="#Running_pending_tasks">Running pending tasks</a></li>
-</ul>
-</li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
 	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
@@ -75,58 +70,57 @@
 
 <h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<p>This object can be used in two ways:</p>
-
-<h2 id="Registering_new_scheduler_tasks">Registering new scheduler tasks</h2>
-
-<p>By creating an instance of this object and calling <a href="http://search.cpan.org/perldoc?TaskRegister%28%29">TaskRegister()</a> on it, a task
-can be scheduled for asynchronous execution (either as soon as possible, or with a
-specified future execution time).</p>
-
-<h2 id="Running_pending_tasks">Running pending tasks</h2>
-
-<p>From the scheduler daemon, the <a href="http://search.cpan.org/perldoc?Run%28%29">Run()</a> method will be called to find and process
-all existing tasks.</p>
+<p>Includes the functions to add a new task to the scheduler daemon.</p>
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <dl>
 	<dt>new()</dt>
-		<dd><p>create a time object. Do not use it directly, instead use:</p></dd>
+		<dd><p>create a scheduler object. Do not use it directly, instead use:</p></dd>
 <dd><pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $SchedulerObject = $Kernel::OM-&gt;Get('Kernel::System::Scheduler');
 
-</pre></dd><dd>
-
-
-</dd>	<dt>Run()</dt>
-		<dd><p>find and dispatch pending tasks. This method is used from the scheduler
-daemon to regularly find and execute all pending tasks.</p></dd>
-<dd><pre>    my $Success = $SchedulerObject-&gt;Run();
-
-</pre></dd><dd><pre>    $Success = 1                   # 0 or 1;
-
-</pre></dd>	<dt>TaskRegister()</dt>
-		<dd><p>schedules a task for asynchronous execution (either as soon as possible, or with a
-specified future execution time). Each task has a task type, and for each task type
-a corresponding task handler backend must be present. The task data that is required
-depends on the task type. Please consult the task handler backend specification to find
-out which data is exactly needed.</p></dd>
-<dd><pre>    my $TaskID = $SchedulerObject-&gt;TaskRegister(
-        Type     =&gt; 'GenericInterface',
-        Data     =&gt; {                               # task data, depends task handler backend
+</pre></dd>	<dt>TaskAdd()</dt>
+		<dd><p>add a task to scheduler</p></dd>
+<dd><pre>    my $Success = $SchedulerObject-&gt;TaskAdd(
+        ExecutionTime =&gt; '2015-01-01 00:00:00',  # task will be executed emitiatly if no execution time is given
+        Type          =&gt; 'GenericInterface',     # e. g. GenericInterface, Test
+        Name          =&gt; 'any name',             # optional
+        Attempts      =&gt; 5,                      # optional (default 1)
+        Data          =&gt; {                       # data payload
             ...
         },
-        DueTime  =&gt; '2006-01-19 23:59:59',          # optional (default current time)
     );
 
-</pre></dd>	<dt>_SanityChecks()</dt>
-		<dd><p>performs checks for the currently registered tasks.</p></dd>
-	<dt>_PIDChangedTimeUpdate()</dt>
-		<dd><p>Check if is the case to update the changed time for the PID,
-in order to use it as a keep alive signal.</p></dd>
-<dd><pre>    my $Success = $SchedulerObject-&gt;_PIDChangedTimeUpdate();
+</pre></dd>	<dt>FutureTaskList()</dt>
+		<dd><p>get the list of scheduler future tasks</p></dd>
+<dd><pre>    my @List = $SchedulerObject-&gt;FutureTaskList(
+        Type =&gt; 'some type',  # optional
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    @List = (
+        {
+            TaskID        =&gt; 123,
+            ExecutionTime =&gt; '2015-01-01 00:00:00',
+            Name          =&gt; 'any name',
+            Type          =&gt; 'GenericInterface',
+        },
+        {
+            TaskID        =&gt; 456,
+            ExecutionTime =&gt; '2015-01-01 00:00:00',
+            Name          =&gt; 'any other name',
+            Type          =&gt; 'GenericInterface',
+        },
+        # ...
+    );
+
+</pre></dd>	<dt>FutureTaskDelete()</dt>
+		<dd><p>delete a task from scheduler future task list</p></dd>
+<dd><pre>    my $Success = $Schedulerbject-&gt;FutureTaskDelete(
+        TaskID =&gt; 123,
+    );
 
 </pre></dd></dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>

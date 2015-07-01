@@ -1,0 +1,389 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::Daemon::SchedulerDB</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 5.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../index.html">OTRS 5.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::Daemon::SchedulerDB
+</div>
+<div>
+<a href="../../../src/Kernel/System/Daemon/SchedulerDB.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>Kernel::System::Daemon::SchedulerDB - Scheduler database lib</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>Includes all scheduler related database functions.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create a scheduler database object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $SchedulerDBObject = $Kernel::OM-&gt;Get('Kernel::System::Daemon::SchedulerDB');
+
+</pre></dd>	<dt>TaskAdd()</dt>
+		<dd><p>add a new task to scheduler task list</p></dd>
+<dd><pre>    my $TaskID = $SchedulerDBObject-&gt;TaskAdd(
+        Type     =&gt; 'GenericInterface',  # e. g. GenericInterface, Test
+        Name     =&gt; 'any name',          # optional
+        Attempts =&gt; 5,                   # optional (default 1)
+        Data     =&gt; {                    # data payload
+            ...
+        },
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $TaskID = 123;  # or false in case of an error
+
+</pre></dd>	<dt>TaskGet()</dt>
+		<dd><p>get scheduler task</p></dd>
+<dd><pre>    my %Task = $SchedulerDBObject-&gt;TaskGet(
+        TaskID =&gt; 123,
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    %Task = (
+        TaskID         =&gt; 123,
+        Name           =&gt; 'any name',
+        Type           =&gt; 'GenericInterface',
+        Data           =&gt; $DataRef,
+        Attempts       =&gt; 10,
+        LockKey        =&gt; 'XYZ',
+        LockTime       =&gt; '2011-02-08 15:08:01',
+        LockUpdateTime =&gt; '2011-02-08 15:08:01',
+        CreateTime     =&gt; '2011-02-08 15:08:00',
+    );
+
+</pre></dd>	<dt>TaskDelete()</dt>
+		<dd><p>delete a task from scheduler task list</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;TaskDelete(
+        TaskID =&gt; 123,
+    );
+
+</pre></dd>	<dt>TaskList()</dt>
+		<dd><p>get the list of scheduler tasks</p></dd>
+<dd><pre>    my @List = $SchedulerDBObject-&gt;TaskList(
+        Type =&gt; 'some type',  # optional
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    @List = (
+        {
+            TaskID =&gt; 123,
+            Name   =&gt; 'any name',
+            Type   =&gt; 'GenericInterface',
+        },
+        {
+            TaskID =&gt; 456,
+            Name   =&gt; 'any other name',
+            Type   =&gt; 'GenericInterface',
+        },
+        # ...
+    );
+
+</pre></dd>	<dt>TaskListUnlocked()</dt>
+		<dd><p>get a list of unlocked tasks</p></dd>
+<dd><pre>    my @TaskList = $SchedulerDBObject-&gt;TaskListUnlocked();
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    @TaskList = ( 456, 789, 395 );
+
+</pre></dd>	<dt>TaskLock()</dt>
+		<dd><p>locks task to a specific PID</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;TaskLock(
+        TaskID =&gt; 123,
+        NodeID =&gt; 1,    # the id on the node in a cluster environment
+        PID    =&gt; 456,  # the process ID of the worker that is locking the task
+    );
+
+</pre></dd>	<dt>TaskCleanup()</dt>
+		<dd><p>deletes obsolete worker tasks</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;TaskCleanup();
+
+</pre></dd>	<dt>TaskSummary()</dt>
+		<dd><p>get a summary of the tasks from the worker task table divided into handled and unhandled</p></dd>
+<dd><pre>    my @Summary = $SchedulerDBObject-&gt;TaskSummary();
+
+</pre></dd>	<dt>TaskLockUpdate()</dt>
+		<dd><p>sets the task lock update time as current time for the specified tasks</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;TaskLockUpdate(
+        TaskIDs =&gt; [123, 456],
+    );
+
+</pre></dd>	<dt>TaskUnlockExpired()</dt>
+		<dd><p>remove lock status for working tasks that has not been updated its lock update time for more than 5 minutes</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;TaskUnlockExpired();
+
+</pre></dd>	<dt>FutureTaskAdd()</dt>
+		<dd><p>add a new task to scheduler future task list</p></dd>
+<dd><pre>    my $TaskID = $SchedulerDBObject-&gt;FutureTaskAdd(
+        ExecutionTime =&gt; '2015-01-01 00:00:00',
+        Type          =&gt; 'GenericInterface',  # e. g. GenericInterface, Test
+        Name          =&gt; 'any name',          # optional
+        Attempts      =&gt; 5,                   # optional (default 1)
+        Data          =&gt; {                    # data payload
+            ...
+        },
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $TaskID = 123;  # or false in case of an error
+
+</pre></dd>	<dt>FutureTaskGet()</dt>
+		<dd><p>get scheduler future task</p></dd>
+<dd><pre>    my %Task = $SchedulerDBObject-&gt;FutureTaskGet(
+        TaskID =&gt; 123,
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    %Task = (
+        TaskID        =&gt; 123,
+        ExecutionTime =&gt; '2015-01-01 00:00:00',
+        Name          =&gt; 'any name',
+        Type          =&gt; 'GenericInterface',
+        Data          =&gt; $DataRef,
+        Attempts      =&gt; 10,
+        LockKey       =&gt; 'XYZ',
+        LockTime      =&gt; '2011-02-08 15:08:01',
+        CreateTime    =&gt; '2011-02-08 15:08:00',
+    );
+
+</pre></dd>	<dt>FutureTaskDelete()</dt>
+		<dd><p>delete a task from scheduler future task list</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;FutureTaskDelete(
+        TaskID =&gt; 123,
+    );
+
+</pre></dd>	<dt>FutureTaskList()</dt>
+		<dd><p>get the list of scheduler future tasks</p></dd>
+<dd><pre>    my @List = $SchedulerDBObject-&gt;FutureTaskList(
+        Type =&gt; 'some type',  # optional
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    @List = (
+        {
+            TaskID        =&gt; 123,
+            ExecutionTime =&gt; '2015-01-01 00:00:00',
+            Name          =&gt; 'any name',
+            Type          =&gt; 'GenericInterface',
+        },
+        {
+            TaskID        =&gt; 456,
+            ExecutionTime =&gt; '2015-01-01 00:00:00',
+            Name          =&gt; 'any other name',
+            Type          =&gt; 'GenericInterface',
+        },
+        # ...
+    );
+
+</pre></dd>	<dt>FutureTaskToExecute()</dt>
+		<dd><p>moves all future tasks with reached execution time to the task table to execute</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;FutureTaskToExecute(
+        NodeID =&gt; 1,    # the ID of the node in a cluster environment
+        PID    =&gt; 456,  # the process ID of the daemon that is moving the tasks to execution
+    );
+
+</pre></dd>	<dt>FutureTaskSummary()</dt>
+		<dd><p>get a summary of the tasks from the future task table</p></dd>
+<dd><pre>    my @Summary = $SchedulerDBObject-&gt;FutureTaskSummary();
+
+</pre></dd>	<dt>CronTaskToExecute()</dt>
+		<dd><p>creates cron tasks that needs to be run in the current time into the task table to execute</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;CronTaskToExecute(
+        NodeID =&gt; 1,    # the ID of the node in a cluster environment
+        PID    =&gt; 456,  # the process ID of the daemon that is creating the tasks to execution
+    );
+
+</pre></dd>	<dt>CronTaskCleanup()</dt>
+		<dd><p>removes recurrent tasks that does not have a matching a cron tasks definition in sysconfig</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;CronTaskCleanup();
+
+</pre></dd>	<dt>CronTaskSummary()</dt>
+		<dd><p>get a summary of the cron tasks from the recurrent task table</p></dd>
+<dd><pre>    my @Summary = $SchedulerDBObject-&gt;CronTaskSummary();
+
+</pre></dd>	<dt>GenericAgentTaskToExecute()</dt>
+		<dd><p>creates generic agent tasks that needs to be run in the current time into the task table to execute</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;GenericAgentTaskToExecute(
+        NodeID =&gt; 1,    # the ID of the node in a cluster environment
+        PID    =&gt; 456,  # the process ID of the daemon that is creating the tasks to execution
+    );
+
+</pre></dd>	<dt>GenericAgentTaskCleanup()</dt>
+		<dd><p>removes recurrent tasks that does not have a matching generic agent job</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;GenericAgentTaskCleanup();
+
+</pre></dd>	<dt>GenericAgentTaskSummary()</dt>
+		<dd><p>get a summary of the generic agent tasks from the recurrent task table</p></dd>
+<dd><pre>    my @Summary = $SchedulerDBObject-&gt;GenericAgentTaskSummary();
+
+</pre></dd>	<dt>RecurrentTaskGet()</dt>
+		<dd><p>get scheduler recurrent task</p></dd>
+<dd><pre>    my %Task = $SchedulerDBObject-&gt;RecurrentTaskGet(
+        TaskID =&gt; 123,
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    %Task = (
+        TaskID            =&gt; 123,
+        Name              =&gt; 'any name',
+        Type              =&gt; 'GenericInterface',
+        LastExecutionTime =&gt; '2015-01-01 00:00:00',
+        LockKey           =&gt; 'XYZ',
+        LockTime          =&gt; '2015-01-02 00:00:00'
+        CreateTime        =&gt; '2015-01-01 00:00:00'
+        ChangeTime        =&gt; '2015-01-02 00:00:00'
+    );
+
+</pre></dd>	<dt>RecurrentTaskList()</dt>
+		<dd><p>get the list of scheduler recurrent tasks</p></dd>
+<dd><pre>    my @List = $SchedulerDBObject-&gt;RecurrentTaskList(
+        Type =&gt; 'some type',  # optional
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    @List = (
+        {
+            TaskID            =&gt; 123,
+            Name              =&gt; 'any name',
+            Type              =&gt; 'GenericInterface',
+            LastExecutionTime =&gt; '2015-01-01 00:00:00',
+            LockKey           =&gt; 'XYZ',
+            LockTime          =&gt; '2015-01-02 00:00:00'
+            CreateTime        =&gt; '2015-01-01 00:00:00'
+            ChangeTime        =&gt; '2015-01-02 00:00:00'
+        },
+        {
+            TaskID            =&gt; 456,
+            Name              =&gt; 'any other name',
+            Type              =&gt; 'GenericInterface',
+            LastExecutionTime =&gt; '2015-01-01 00:00:00',
+            LockKey           =&gt; 'XYZ',
+            LockTime          =&gt; '2015-01-02 00:00:00'
+            CreateTime        =&gt; '2015-01-01 00:00:00'
+            ChangeTime        =&gt; '2015-01-02 00:00:00'
+        },
+        # ...
+    );
+
+</pre></dd>	<dt>RecurrentTaskDelete()</dt>
+		<dd><p>delete a task from scheduler recurrent task list</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;RecurrentTaskDelete(
+        TaskID =&gt; 123,
+    );
+
+</pre></dd>	<dt>RecurrentTaskExecute()</dt>
+		<dd><p>executes recurrent tasks like cron or generic agent tasks</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;RecurrentTaskExecute(
+        NodeID                 =&gt; 1,                 # the ID of the node in a cluster environment
+        PID                    =&gt; 456,               # the process ID of the daemon that is creating the tasks to execution
+        TaskName               =&gt; 'UniqueTaskName',
+        TaskType               =&gt; 'Cron',
+        PreviousEventTimestamp =&gt; 1433212343,
+        MaximumPararellTasks   =&gt; 1,                 # number of tasks with the same name and type that can be in execution
+                                                     #  table at the same time, value of 0 means unlimited
+        Data                   =&gt; {                  # data payload
+            ...
+        },
+    );
+
+</pre></dd>	<dt>RecurrentTaskSummary()</dt>
+		<dd><p>get a summary of the recurring tasks for the specified task type</p></dd>
+<dd><pre>    my @Summary = $SchedulerDBObject-&gt;RecurrentTaskSummary(
+        Type         =&gt; 'some_type',
+        DisplayType  =&gt; 'some type',
+        TaskLookup   =&gt; {                       # only tasks with names in this table will be shown
+            TaskName1 =&gt; '* * * * *',           #   the value of the items in this table is a crontab
+            TaskName3 =&gt; '*/1 3,4 * * * 0',     #   format schedule
+        }
+    );
+
+</pre></dd>	<dt>RecurrentTaskWorkerInfoSet()</dt>
+		<dd><p>sets last worker information (success status and running time) to a recurrent task</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;RecurrentTaskWorkerInfoSet(
+        LastWorkerTaskID      =&gt; 123,        # the task ID from the worker table that is performing the
+                                             #      recurring task
+        LastWorkerStatis      =&gt; 1,          # optional 1 or 0, defaults to 0, 1 means success
+        LastWorkerRunningTime =&gt; 123,        # optional, defaults to 0, the number in seconds a worker took
+                                             #      to complete the task
+    );
+
+</pre></dd>	<dt>RecurrentTaskUnlockExpired()</dt>
+		<dd><p>remove lock status for recurring tasks that has been locked for more than 1 minutes</p></dd>
+<dd><pre>    my $Success = $SchedulerDBObject-&gt;RecurrentTaskUnlockExpired(
+        Type =&gt; 'some_type',
+    );
+
+</pre></dd></dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
