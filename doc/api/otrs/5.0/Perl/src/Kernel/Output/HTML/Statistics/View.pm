@@ -72,21 +72,25 @@ sub StatsParamsWidget {
         return;
     }
 
+    my $HasUserGetParam = ref $Param{UserGetParam} eq 'HASH';
+
     my %UserGetParam = %{ $Param{UserGetParam} // {} };
-    my $IsCacheable = $Param{IsCacheable} // 0;
     my $Format = $Param{Formats} || $ConfigObject->Get('Stats::Format');
 
     my $LocalGetParam = sub {
         my (%Param) = @_;
         my $Param = $Param{Param};
-        return $UserGetParam{$Param} // $ParamObject->GetParam( Param => $Param );
+        return $HasUserGetParam ? $UserGetParam{$Param} : $ParamObject->GetParam( Param => $Param );
     };
 
     my $LocalGetArray = sub {
         my (%Param) = @_;
         my $Param = $Param{Param};
-        if ( $UserGetParam{$Param} && ref $UserGetParam{$Param} eq 'ARRAY' ) {
-            return @{ $UserGetParam{$Param} };
+        if ( $HasUserGetParam ) {
+            if ($UserGetParam{$Param} && ref $UserGetParam{$Param} eq 'ARRAY' ) {
+                return @{ $UserGetParam{$Param} };
+            }
+            return;
         }
         return $ParamObject->GetArray( Param => $Param );
     };
@@ -228,8 +232,8 @@ sub StatsParamsWidget {
     elsif ( $Stat->{StatType} eq 'dynamic' ) {
         my %Name = (
             UseAsXvalue      => 'X-axis',
-            UseAsValueSeries => 'Value Series',
-            UseAsRestriction => 'Restrictions',
+            UseAsValueSeries => 'Y-axis',
+            UseAsRestriction => 'Data restrictions',
         );
 
         for my $Use (qw(UseAsXvalue UseAsValueSeries UseAsRestriction)) {
@@ -326,21 +330,26 @@ sub StatsParamsWidget {
                             @Sorted = sort { $ValueHash{$a} cmp $ValueHash{$b} } keys %ValueHash;
                         }
 
+                        my @FixedAttributes;
+
                         for (@Sorted) {
                             my $Value = $ValueHash{$_};
                             if ( $ObjectAttribute->{Translation} ) {
                                 $Value = $LayoutObject->{LanguageObject}->Translate( $ValueHash{$_} );
                             }
-                            $LayoutObject->Block(
-                                Name => 'Fixed',
-                                Data => {
-                                    Value   => $Value,
-                                    Key     => $_,
-                                    Use     => $Use,
-                                    Element => $ObjectAttribute->{Element},
-                                },
-                            );
+                            push @FixedAttributes, $Value;
+
                         }
+
+                        $LayoutObject->Block(
+                            Name => 'Fixed',
+                            Data => {
+                                Value   => join( ', ', @FixedAttributes ),
+                                Key     => $_,
+                                Use     => $Use,
+                                Element => $ObjectAttribute->{Element},
+                            },
+                        );
                     }
                 }
 
@@ -406,28 +415,65 @@ sub StatsParamsWidget {
                         my $ScaleSelectedID = $LocalGetParam->(
                             Param => $ObjectAttribute->{Element} . 'TimeScaleCount',
                         );
+                        my %Time;
+                        if ( $ObjectAttribute->{TimeStart} ) {
+                            if ( $LocalGetParam->( Param => $ElementName . 'StartYear' ) ) {
+                                for my $Limit (qw(Start Stop)) {
+                                    for my $Unit (qw(Year Month Day Hour Minute Second)) {
+                                        if ( defined( $LocalGetParam->( Param => "$ElementName$Limit$Unit" ) ) ) {
+                                            $Time{ $Limit . $Unit } = $LocalGetParam->(
+                                                Param => $ElementName . "$Limit$Unit",
+                                            );
+                                        }
+                                    }
+                                    if ( !defined( $Time{ $Limit . 'Hour' } ) ) {
+                                        if ( $Limit eq 'Start' ) {
+                                            $Time{StartHour}   = 0;
+                                            $Time{StartMinute} = 0;
+                                            $Time{StartSecond} = 0;
+                                        }
+                                        elsif ( $Limit eq 'Stop' ) {
+                                            $Time{StopHour}   = 23;
+                                            $Time{StopMinute} = 59;
+                                            $Time{StopSecond} = 59;
+                                        }
+                                    }
+                                    elsif ( !defined( $Time{ $Limit . 'Second' } ) ) {
+                                        if ( $Limit eq 'Start' ) {
+                                            $Time{StartSecond} = 0;
+                                        }
+                                        elsif ( $Limit eq 'Stop' ) {
+                                            $Time{StopSecond} = 59;
+                                        }
+                                    }
+                                    $Time{"Time$Limit"} = sprintf(
+                                        "%04d-%02d-%02d %02d:%02d:%02d",
+                                        $Time{ $Limit . 'Year' },
+                                        $Time{ $Limit . 'Month' },
+                                        $Time{ $Limit . 'Day' },
+                                        $Time{ $Limit . 'Hour' },
+                                        $Time{ $Limit . 'Minute' },
+                                        $Time{ $Limit . 'Second' },
+                                    );
+                                }
+                            }
+                        }
                         my %TimeData = _Timeoutput(
                             $Self, %{$ObjectAttribute},
                             OnlySelectedAttributes => 1,
                             TimeRelativeCount      => $RelativeSelectedID || $ObjectAttribute->{TimeRelativeCount},
                             TimeScaleCount         => $ScaleSelectedID || $ObjectAttribute->{TimeScaleCount},
+                            %Time
                         );
                         %BlockData = ( %BlockData, %TimeData );
                         if ( $ObjectAttribute->{TimeStart} ) {
                             $BlockData{TimeStartMax} = $ObjectAttribute->{TimeStart};
                             $BlockData{TimeStopMax}  = $ObjectAttribute->{TimeStop};
-                            if ($IsCacheable) {
-                                $LayoutObject->Block(
-                                    Name => 'TimePeriodNotChangeable',
-                                    Data => \%BlockData,
-                                );
-                            }
-                            else {
-                                $LayoutObject->Block(
-                                    Name => 'TimePeriod',
-                                    Data => \%BlockData,
-                                );
-                            }
+
+                            $LayoutObject->Block(
+                                Name => 'TimePeriod',
+                                Data => \%BlockData,
+                            );
                         }
 
                         elsif ( $ObjectAttribute->{TimeRelativeUnit} ) {
@@ -776,7 +822,7 @@ sub XAxisWidget {
         my %BlockData;
         $BlockData{Fixed}   = 'checked="checked"';
         $BlockData{Checked} = '';
-        $BlockData{Block} = $ObjectAttribute->{Block};
+        $BlockData{Block}   = $ObjectAttribute->{Block};
 
         # things which should be done if this attribute is selected
         if ( $ObjectAttribute->{Selected} ) {
@@ -874,7 +920,7 @@ sub YAxisWidget {
         my %BlockData;
         $BlockData{Fixed}   = 'checked="checked"';
         $BlockData{Checked} = '';
-        $BlockData{Block} = $ObjectAttribute->{Block};
+        $BlockData{Block}   = $ObjectAttribute->{Block};
 
         if ( $ObjectAttribute->{Selected} ) {
             $BlockData{Checked} = 'checked="checked"';
@@ -999,7 +1045,7 @@ sub RestrictionsWidget {
         my %BlockData;
         $BlockData{Fixed}   = 'checked="checked"';
         $BlockData{Checked} = '';
-        $BlockData{Block} = $ObjectAttribute->{Block};
+        $BlockData{Block}   = $ObjectAttribute->{Block};
 
         if ( $ObjectAttribute->{Selected} ) {
             $BlockData{Checked} = 'checked="checked"';
@@ -1122,6 +1168,9 @@ sub StatsParamsGet {
     my ( $Self, %Param ) = @_;
 
     my $Stat = $Param{Stat};
+
+    my $HasUserGetParam = ref $Param{UserGetParam} eq 'HASH';
+
     my %UserGetParam = %{ $Param{UserGetParam} // {} };
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
@@ -1131,14 +1180,17 @@ sub StatsParamsGet {
     my $LocalGetParam = sub {
         my (%Param) = @_;
         my $Param = $Param{Param};
-        return $UserGetParam{$Param} // $ParamObject->GetParam( Param => $Param );
+        return $HasUserGetParam ? $UserGetParam{$Param} : $ParamObject->GetParam( Param => $Param );
     };
 
     my $LocalGetArray = sub {
         my (%Param) = @_;
         my $Param = $Param{Param};
-        if ( $UserGetParam{$Param} && ref $UserGetParam{$Param} eq 'ARRAY' ) {
-            return @{ $UserGetParam{$Param} };
+        if ($HasUserGetParam) {
+            if ( $UserGetParam{$Param} && ref $UserGetParam{$Param} eq 'ARRAY' ) {
+                return @{ $UserGetParam{$Param} };
+            }
+            return;
         }
         return $ParamObject->GetArray( Param => $Param );
     };
@@ -1198,6 +1250,7 @@ sub StatsParamsGet {
                         $Element->{SelectedValues} = \@SelectedValues;
                     }
                     if ( $Element->{Block} eq 'InputField' ) {
+
                         # Show warning if restrictions contain stop words within ticket search.
                         my %StopWordFields = $Self->_StopWordFieldsGet();
 
@@ -1226,12 +1279,7 @@ sub StatsParamsGet {
                             # get time object
                             my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
 
-                            if (
-                                $LocalGetParam->(
-                                    Param => $ElementName . 'StartYear'
-                                )
-                                )
-                            {
+                            if ( $LocalGetParam->( Param => $ElementName . 'StartYear' ) ) {
                                 my %Time;
                                 for my $Limit (qw(Start Stop)) {
                                     for my $Unit (qw(Year Month Day Hour Minute Second)) {
@@ -1454,7 +1502,8 @@ sub StatsResultRender {
         my $UserCSVSeparator = $LayoutObject->{LanguageObject}->{Separator};
 
         if ( $ConfigObject->Get('PreferencesGroups')->{CSVSeparator}->{Active} ) {
-            my %UserData = $$Kernel::OM->Get('Kernel::System::User')->GetUserData( UserID => $Self->{StatsObject}->{UserID} );
+            my %UserData
+                = $$Kernel::OM->Get('Kernel::System::User')->GetUserData( UserID => $Self->{StatsObject}->{UserID} );
             $UserCSVSeparator = $UserData{UserCSVSeparator} if $UserData{UserCSVSeparator};
         }
         $Output .= $CSVObject->Array2CSV(
@@ -1544,7 +1593,8 @@ sub StatsResultRender {
             }
 
             # page params
-            my %User = $Kernel::OM->Get('Kernel::System::User')->GetUserData( UserID => $Self->{StatsObject}->{UserID} );
+            my %User
+                = $Kernel::OM->Get('Kernel::System::User')->GetUserData( UserID => $Self->{StatsObject}->{UserID} );
             my %PageParam;
             $PageParam{PageOrientation} = 'landscape';
             $PageParam{MarginTop}       = 30;
@@ -2436,7 +2486,7 @@ sub _StopWordErrorCheck {
 sub _StopWordFieldsGet {
     my ( $Self, %Param ) = @_;
 
-    if (!$Kernel::OM->Get('Kernel::System::Ticket')->SearchStringStopWordsUsageWarningActive() ) {
+    if ( !$Kernel::OM->Get('Kernel::System::Ticket')->SearchStringStopWordsUsageWarningActive() ) {
         return ();
     }
 

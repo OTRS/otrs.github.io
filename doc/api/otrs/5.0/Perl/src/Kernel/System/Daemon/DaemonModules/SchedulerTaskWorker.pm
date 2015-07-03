@@ -99,14 +99,27 @@ sub new {
 
     $Self->{DiscardCount} = $Self->{Discard} / $Self->{SleepPost};
 
+    $Self->{Debug}      = $Param{Debug};
+    $Self->{DaemonName} = 'Daemon: SchedulerTaskWorker';
+
     return $Self;
 }
 
 sub PreRun {
     my ( $Self, %Param ) = @_;
 
-    # check the database connection each 10 seconds
+    # check each 10 seconds
     return 1 if $Self->{DiscardCount} % ( 10 / $Self->{SleepPost} );
+
+    # set running daemon cache
+    $Self->{CacheObject}->Set(
+        Type           => 'DaemonRunning',
+        Key            => $Self->{NodeID},
+        Value          => 1,
+        TTL            => 30,
+        CacheInMemory  => 0,
+        CacheInBackend => 1,
+    );
 
     # check if database is on-line
     return 1 if $Self->{DBObject}->Ping();
@@ -219,6 +232,13 @@ sub Run {
             # create task handler object
             my $TaskHandlerObject;
             eval {
+
+                $Kernel::OM->ObjectParamAdd(
+                    $TaskHandlerModule => {
+                        Debug => $Self->{Debug},
+                    },
+                );
+
                 $TaskHandlerObject = $Kernel::OM->Get($TaskHandlerModule);
             };
 
@@ -288,6 +308,10 @@ sub PostRun {
     return if !$Self->_WorkerPIDsCheck();
 
     $Self->{DiscardCount}--;
+
+    if ( $Self->{Debug} ) {
+        print "  $Self->{DaemonName} Discard Count: $Self->{DiscardCount}\n";
+    }
 
     # update task locks and remove expired each 60 seconds
     if ( !int $Self->{DiscardCount} % ( 60 / $Self->{SleepPost} ) ) {
