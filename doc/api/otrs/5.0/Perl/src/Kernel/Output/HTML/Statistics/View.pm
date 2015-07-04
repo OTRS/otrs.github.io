@@ -54,7 +54,10 @@ sub StatsParamsWidget {
 
     for my $Needed (qw(Stat)) {
         if ( !$Param{$Needed} ) {
-            return $LayoutObject->ErrorScreen( Message => "Need $Needed!" );
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => "error",
+                Message  => "Need $Needed!"
+            );
         }
     }
 
@@ -86,8 +89,8 @@ sub StatsParamsWidget {
     my $LocalGetArray = sub {
         my (%Param) = @_;
         my $Param = $Param{Param};
-        if ( $HasUserGetParam ) {
-            if ($UserGetParam{$Param} && ref $UserGetParam{$Param} eq 'ARRAY' ) {
+        if ($HasUserGetParam) {
+            if ( $UserGetParam{$Param} && ref $UserGetParam{$Param} eq 'ARRAY' ) {
                 return @{ $UserGetParam{$Param} };
             }
             return;
@@ -110,27 +113,13 @@ sub StatsParamsWidget {
 
     # create format select box
     my %SelectFormat;
-    my $Flag    = 0;
-    my $Counter = 0;
-    for my $UseAsValueSeries ( @{ $Stat->{UseAsValueSeries} } ) {
-        if ( $UseAsValueSeries->{Selected} ) {
-            $Counter++;
-        }
-    }
-    my $CounterII = 0;
     VALUE:
     for my $Value ( @{ $Stat->{Format} } ) {
         next VALUE if !defined $Format->{$Value};
-        if ( $Counter == 0 || $Value ne 'GD::Graph::pie' ) {
-            $SelectFormat{$Value} = $Format->{$Value};
-            $CounterII++;
-        }
-        if ( $Value =~ m{^GD::Graph\.*}x ) {
-            $Flag = 1;
-        }
+        $SelectFormat{$Value} = $Format->{$Value};
     }
 
-    if ( $CounterII > 1 ) {
+    if ( keys %SelectFormat > 1 ) {
         my %Frontend;
         $Frontend{SelectFormat} = $LayoutObject->BuildSelection(
             Data       => \%SelectFormat,
@@ -150,37 +139,6 @@ sub StatsParamsWidget {
                 FormatKey => $Stat->{Format}->[0],
             },
         );
-    }
-
-    # create graphic size select box
-    if ( $Stat->{GraphSize} && $Flag ) {
-        my %GraphSize;
-        my %Frontend;
-        my $GraphSizeRef = $ConfigObject->Get('Stats::GraphSize');
-        for my $Value ( @{ $Stat->{GraphSize} } ) {
-            $GraphSize{$Value} = $GraphSizeRef->{$Value};
-        }
-        if ( $#{ $Stat->{GraphSize} } > 0 ) {
-            $Frontend{SelectGraphSize} = $LayoutObject->BuildSelection(
-                Data        => \%GraphSize,
-                Name        => 'GraphSize',
-                SelectedID  => $LocalGetParam->( Param => 'GraphSize' ),
-                Translation => 0,
-            );
-            $LayoutObject->Block(
-                Name => 'Graphsize',
-                Data => \%Frontend,
-            );
-        }
-        else {
-            $LayoutObject->Block(
-                Name => 'GraphsizeFixed',
-                Data => {
-                    GraphSize    => $GraphSizeRef->{ $Stat->{GraphSize}->[0] },
-                    GraphSizeKey => $Stat->{GraphSize}->[0],
-                },
-            );
-        }
     }
 
     if ( $ConfigObject->Get('Stats::ExchangeAxis') ) {
@@ -408,7 +366,6 @@ sub StatsParamsWidget {
                     }
                     elsif ( $ObjectAttribute->{Block} eq 'Time' ) {
                         $ObjectAttribute->{Element} = $Use . $ObjectAttribute->{Element};
-                        my $TimeType = $ConfigObject->Get('Stats::TimeType') || 'Normal';
                         my $RelativeSelectedID = $LocalGetParam->(
                             Param => $ObjectAttribute->{Element} . 'TimeRelativeCount',
                         );
@@ -478,31 +435,29 @@ sub StatsParamsWidget {
 
                         elsif ( $ObjectAttribute->{TimeRelativeUnit} ) {
                             my $TimeScale = _TimeScale();
-                            if ( $TimeType eq 'Extended' ) {
-                                my %TimeScaleOption;
-                                my $SelectedID = $LocalGetParam->(
-                                    Param => $ObjectAttribute->{Element} . 'TimeRelativeUnit'
-                                );
+                            my %TimeScaleOption;
+                            my $SelectedID = $LocalGetParam->(
+                                Param => $ObjectAttribute->{Element} . 'TimeRelativeUnit'
+                            );
 
-                                ITEM:
-                                for (
-                                    sort { $TimeScale->{$a}->{Position} <=> $TimeScale->{$b}->{Position} }
-                                    keys %{$TimeScale}
-                                    )
-                                {
-                                    $TimeScaleOption{$_} = $TimeScale->{$_}{Value};
-                                    last ITEM if $ObjectAttribute->{TimeRelativeUnit} eq $_;
-                                }
-                                $BlockData{TimeRelativeUnit} = $LayoutObject->BuildSelection(
-                                    Name           => $ObjectAttribute->{Element} . 'TimeRelativeUnit',
-                                    Data           => \%TimeScaleOption,
-                                    Sort           => 'IndividualKey',
-                                    SelectedID     => $SelectedID // $ObjectAttribute->{TimeRelativeUnit},
-                                    SortIndividual => [
-                                        'Second', 'Minute', 'Hour', 'Day', 'Week', 'Month', 'Year'
-                                    ],
-                                );
+                            ITEM:
+                            for (
+                                sort { $TimeScale->{$a}->{Position} <=> $TimeScale->{$b}->{Position} }
+                                keys %{$TimeScale}
+                                )
+                            {
+                                $TimeScaleOption{$_} = $TimeScale->{$_}{Value};
+                                last ITEM if $ObjectAttribute->{TimeRelativeUnit} eq $_;
                             }
+                            $BlockData{TimeRelativeUnit} = $LayoutObject->BuildSelection(
+                                Name           => $ObjectAttribute->{Element} . 'TimeRelativeUnit',
+                                Data           => \%TimeScaleOption,
+                                Sort           => 'IndividualKey',
+                                SelectedID     => $SelectedID // $ObjectAttribute->{TimeRelativeUnit},
+                                SortIndividual => [
+                                    'Second', 'Minute', 'Hour', 'Day', 'Week', 'Month', 'Year'
+                                ],
+                            );
                             $BlockData{TimeRelativeCountMax} = $ObjectAttribute->{TimeRelativeCount};
                             $BlockData{TimeRelativeUnitMax}
                                 = $TimeScale->{ $ObjectAttribute->{TimeRelativeUnit} }{Value};
@@ -515,45 +470,38 @@ sub StatsParamsWidget {
 
                         # build the Timescale output
                         if ( $Use ne 'UseAsRestriction' ) {
-                            if ( $TimeType eq 'Normal' ) {
-                                $BlockData{TimeScaleCount} = 1;
-                                $BlockData{TimeScaleUnit}  = $BlockData{TimeSelectField};
+                            my $TimeScale = _TimeScale();
+                            my %TimeScaleOption;
+                            ITEM:
+                            for (
+                                sort { $TimeScale->{$b}->{Position} <=> $TimeScale->{$a}->{Position} }
+                                keys %{$TimeScale}
+                                )
+                            {
+                                $TimeScaleOption{$_} = $TimeScale->{$_}->{Value};
+                                last ITEM if $ObjectAttribute->{SelectedValues}[0] eq $_;
                             }
-                            elsif ( $TimeType eq 'Extended' ) {
-                                my $TimeScale = _TimeScale();
-                                my %TimeScaleOption;
-                                ITEM:
-                                for (
-                                    sort {
-                                        $TimeScale->{$b}->{Position}
-                                            <=> $TimeScale->{$a}->{Position}
-                                    } keys %{$TimeScale}
-                                    )
-                                {
-                                    $TimeScaleOption{$_} = $TimeScale->{$_}->{Value};
-                                    last ITEM if $ObjectAttribute->{SelectedValues}[0] eq $_;
-                                }
-                                $BlockData{TimeScaleUnitMax} = $TimeScale->{ $ObjectAttribute->{SelectedValues}[0] }
-                                    {Value};
-                                $BlockData{TimeScaleCountMax} = $ObjectAttribute->{TimeScaleCount};
+                            $BlockData{TimeScaleUnitMax} = $TimeScale->{ $ObjectAttribute->{SelectedValues}[0] }
+                                {Value};
+                            $BlockData{TimeScaleCountMax} = $ObjectAttribute->{TimeScaleCount};
 
-                                my $SelectedID = $LocalGetParam->(
-                                    Param => $ObjectAttribute->{Element},
-                                );
-                                $BlockData{TimeScaleUnit} = $LayoutObject->BuildSelection(
-                                    Name           => $ObjectAttribute->{Element},
-                                    Data           => \%TimeScaleOption,
-                                    SelectedID     => $SelectedID // $ObjectAttribute->{SelectedValues}[0],
-                                    Sort           => 'IndividualKey',
-                                    SortIndividual => [
-                                        'Second', 'Minute', 'Hour', 'Day', 'Week', 'Month', 'Year'
-                                    ],
-                                );
-                                $LayoutObject->Block(
-                                    Name => 'TimeScaleInfo',
-                                    Data => \%BlockData,
-                                );
-                            }
+                            my $SelectedID = $LocalGetParam->(
+                                Param => $ObjectAttribute->{Element},
+                            );
+                            $BlockData{TimeScaleUnit} = $LayoutObject->BuildSelection(
+                                Name           => $ObjectAttribute->{Element},
+                                Data           => \%TimeScaleOption,
+                                SelectedID     => $SelectedID // $ObjectAttribute->{SelectedValues}[0],
+                                Sort           => 'IndividualKey',
+                                SortIndividual => [
+                                    'Second', 'Minute', 'Hour', 'Day', 'Week', 'Month', 'Year'
+                                ],
+                            );
+                            $LayoutObject->Block(
+                                Name => 'TimeScaleInfo',
+                                Data => \%BlockData,
+                            );
+
                             if ( $ObjectAttribute->{SelectedValues} ) {
                                 $LayoutObject->Block(
                                     Name => 'TimeScale',
@@ -597,11 +545,6 @@ sub StatsParamsWidget {
 
     for my $Field (qw(CreatedBy ChangedBy)) {
         $Stat->{$Field} = $Kernel::OM->Get('Kernel::System::User')->UserName( UserID => $Stat->{$Field} );
-    }
-
-    # check if the PDF module is installed and enabled
-    if ( $ConfigObject->Get('PDF') ) {
-        $Stat->{PDFUsable} = $Kernel::OM->Get('Kernel::System::PDF') ? 1 : 0;
     }
 
     $Output .= $LayoutObject->Output(
@@ -750,25 +693,7 @@ sub GeneralSpecificationsWidget {
     $Stat->{SelectPermission} = $LayoutObject->BuildSelection(%Permission);
 
     # create multiselectboxes 'format'
-    my $GDAvailable;
     my $AvailableFormats = $ConfigObject->Get('Stats::Format');
-
-    # check availability of packages
-    for my $Module ( 'GD', 'GD::Graph' ) {
-        $GDAvailable = ( $Kernel::OM->Get('Kernel::System::Main')->Require($Module) ) ? 1 : 0;
-    }
-
-    # if the GD package is not installed, all the graph options will be disabled
-    if ( !$GDAvailable ) {
-        my @FormatData = map {
-            Key          => $_,
-                Value    => $AvailableFormats->{$_},
-                Disabled => ( ( $_ =~ m/GD/gi ) ? 1 : 0 ),
-        }, keys %{$AvailableFormats};
-
-        $AvailableFormats = \@FormatData;
-        $LayoutObject->Block( Name => 'PackageUnavailableMsg' );
-    }
 
     $Stat->{SelectFormat} = $LayoutObject->BuildSelection(
         Data     => $AvailableFormats,
@@ -777,17 +702,6 @@ sub GeneralSpecificationsWidget {
         Multiple => 1,
         Size     => 5,
         SelectedID => $GetParam{Format} // $Stat->{Format} || $ConfigObject->Get('Stats::DefaultSelectedFormat'),
-    );
-
-    # create multiselectboxes 'graphsize'
-    $Stat->{SelectGraphSize} = $LayoutObject->BuildSelection(
-        Data        => $ConfigObject->Get('Stats::GraphSize'),
-        Name        => 'GraphSize',
-        Multiple    => 1,
-        Size        => 3,
-        SelectedID  => $GetParam{GraphSize} // $Stat->{GraphSize},
-        Translation => 0,
-        Disabled    => ( first { $_ =~ m{^GD::}smx } @{ $Stat->{GraphSize} } ) ? 0 : 1,
     );
 
     my $Output .= $LayoutObject->Output(
@@ -873,13 +787,7 @@ sub XAxisWidget {
         );
 
         if ( $ObjectAttribute->{Block} eq 'Time' ) {
-            my $TimeType = $ConfigObject->Get('Stats::TimeType') || 'Normal';
-            if ( $TimeType eq 'Time' ) {
-                $ObjectAttribute->{Block} = 'Time';
-            }
-            elsif ( $TimeType eq 'Extended' ) {
-                $ObjectAttribute->{Block} = 'TimeExtended';
-            }
+            $ObjectAttribute->{Block} = 'Time';
 
             my %TimeData = _Timeoutput(
                 $Self,
@@ -972,11 +880,10 @@ sub YAxisWidget {
         );
 
         if ( $ObjectAttribute->{Block} eq 'Time' ) {
-            my $TimeType = $ConfigObject->Get("Stats::TimeType") || 'Normal';
             for ( @{ $Stat->{UseAsXvalue} } ) {
                 if (
                     $_->{Selected}
-                    && ( $_->{Fixed} || ( !$_->{SelectedValues}[1] && $TimeType eq 'Normal' ) )
+                    && $_->{Fixed}
                     && $_->{Block} eq 'Time'
                     )
                 {
@@ -1004,8 +911,6 @@ sub YAxisWidget {
                     }
                 }
             }
-
-            $ObjectAttribute->{Block} = $TimeType eq 'Normal' ? 'Time' : 'TimeExtended';
 
             my %TimeData = _Timeoutput(
                 $Self,
@@ -1102,8 +1007,6 @@ sub RestrictionsWidget {
             Data => \%BlockData,
         );
         if ( $ObjectAttribute->{Block} eq 'Time' ) {
-            my $TimeType = $ConfigObject->Get('Stats::TimeType') || 'Normal';
-            $ObjectAttribute->{Block} = $TimeType eq 'Normal' ? 'Time' : 'TimeExtended';
 
             my %TimeData = _Timeoutput(
                 $Self,
@@ -1539,180 +1442,132 @@ sub StatsResultRender {
     elsif ( $Param{Format} eq 'Print' ) {
         $Kernel::OM->Get('Kernel::System::Main')->Require('Kernel::System::PDF');
 
-        # get PDF object
-        my $PDFObject;
+        my $PDFObject = $Kernel::OM->Get('Kernel::System::PDF');
 
-        if ( $ConfigObject->Get('PDF') ) {
-            $PDFObject = $Kernel::OM->Get('Kernel::System::PDF');
+        my $PrintedBy = $LayoutObject->{LanguageObject}->Translate('printed by');
+        my $Page      = $LayoutObject->{LanguageObject}->Translate('Page');
+        my $Time      = $LayoutObject->{Time};
+
+        # get maximum number of pages
+        my $MaxPages = $ConfigObject->Get('PDF::MaxPages');
+        if ( !$MaxPages || $MaxPages < 1 || $MaxPages > 1000 ) {
+            $MaxPages = 100;
         }
 
-        # PDF Output
-        if ($PDFObject) {
-            my $PrintedBy = $LayoutObject->{LanguageObject}->Translate('printed by');
-            my $Page      = $LayoutObject->{LanguageObject}->Translate('Page');
-            my $Time      = $LayoutObject->{Time};
-            my $Url       = ' ';
-            if ( $ENV{REQUEST_URI} ) {
-                $Url = $ConfigObject->Get('HttpType') . '://'
-                    . $ConfigObject->Get('FQDN')
-                    . $ENV{REQUEST_URI};
-            }
-
-            # get maximum number of pages
-            my $MaxPages = $ConfigObject->Get('PDF::MaxPages');
-            if ( !$MaxPages || $MaxPages < 1 || $MaxPages > 1000 ) {
-                $MaxPages = 100;
-            }
-
-            # create the header
-            my $CellData;
-            my $CounterRow  = 0;
-            my $CounterHead = 0;
-            for my $Content ( @{$HeadArrayRef} ) {
-                $CellData->[$CounterRow]->[$CounterHead]->{Content} = $Content;
-                $CellData->[$CounterRow]->[$CounterHead]->{Font}    = 'ProportionalBold';
-                $CounterHead++;
-            }
-            if ( $CounterHead > 0 ) {
-                $CounterRow++;
-            }
-
-            # create the content array
-            for my $Row (@StatArray) {
-                my $CounterColumn = 0;
-                for my $Content ( @{$Row} ) {
-                    $CellData->[$CounterRow]->[$CounterColumn]->{Content} = $Content;
-                    $CounterColumn++;
-                }
-                $CounterRow++;
-            }
-
-            # output 'No matches found', if no content was given
-            if ( !$CellData->[0]->[0] ) {
-                $CellData->[0]->[0]->{Content} = $LayoutObject->{LanguageObject}->Translate('No matches found.');
-            }
-
-            # page params
-            my %User
-                = $Kernel::OM->Get('Kernel::System::User')->GetUserData( UserID => $Self->{StatsObject}->{UserID} );
-            my %PageParam;
-            $PageParam{PageOrientation} = 'landscape';
-            $PageParam{MarginTop}       = 30;
-            $PageParam{MarginRight}     = 40;
-            $PageParam{MarginBottom}    = 40;
-            $PageParam{MarginLeft}      = 40;
-            $PageParam{HeaderRight}     = $ConfigObject->Get('Stats::StatsHook') . $Stat->{StatNumber};
-            $PageParam{FooterLeft}      = $Url;
-            $PageParam{HeadlineLeft}    = $Title;
-            $PageParam{HeadlineRight}   = $PrintedBy . ' '
-                . $User{UserFirstname} . ' '
-                . $User{UserLastname} . ' ('
-                . $User{UserEmail} . ') '
-                . $Time;
-
-            # table params
-            my %TableParam;
-            $TableParam{CellData}            = $CellData;
-            $TableParam{Type}                = 'Cut';
-            $TableParam{FontSize}            = 6;
-            $TableParam{Border}              = 0;
-            $TableParam{BackgroundColorEven} = '#AAAAAA';
-            $TableParam{BackgroundColorOdd}  = '#DDDDDD';
-            $TableParam{Padding}             = 1;
-            $TableParam{PaddingTop}          = 3;
-            $TableParam{PaddingBottom}       = 3;
-
-            # create new pdf document
-            $PDFObject->DocumentNew(
-                Title  => $ConfigObject->Get('Product') . ': ' . $Title,
-                Encode => $LayoutObject->{UserCharset},
-            );
-
-            # start table output
-            $PDFObject->PageNew(
-                %PageParam,
-                FooterRight => $Page . ' 1',
-            );
-            COUNT:
-            for ( 2 .. $MaxPages ) {
-
-                # output table (or a fragment of it)
-                %TableParam = $PDFObject->Table( %TableParam, );
-
-                # stop output or output next page
-                last COUNT if $TableParam{State};
-
-                $PDFObject->PageNew(
-                    %PageParam,
-                    FooterRight => $Page . ' ' . $_,
-                );
-            }
-
-            # return the pdf document
-            my $PDFString = $PDFObject->DocumentOutput();
-            return $LayoutObject->Attachment(
-                Filename    => $Filename . '.pdf',
-                ContentType => 'application/pdf',
-                Content     => $PDFString,
-                Type        => 'inline',
-            );
+        # create the header
+        my $CellData;
+        my $CounterRow  = 0;
+        my $CounterHead = 0;
+        for my $Content ( @{$HeadArrayRef} ) {
+            $CellData->[$CounterRow]->[$CounterHead]->{Content} = $Content;
+            $CellData->[$CounterRow]->[$CounterHead]->{Font}    = 'ProportionalBold';
+            $CounterHead++;
+        }
+        if ( $CounterHead > 0 ) {
+            $CounterRow++;
         }
 
-        # HTML Output
-        else {
-            # $Stat->{Table} = $Self->_OutputHTMLTable(
-            #     Head => $HeadArrayRef,
-            #     Data => \@StatArray,
-            # );
-
-            $Stat->{Title} = $Title;
-
-            # presentation
-            my $Output = $LayoutObject->PrintHeader( Value => $Title );
-            $Output .= $LayoutObject->Output(
-                Data => {
-                    %{$Stat},
-                    HeaderRow => $HeadArrayRef,
-                    DataRows  => \@StatArray,
-                },
-                TemplateFile => 'Statistics/StatsResultRender/Print',
-            );
-            $Output .= $LayoutObject->PrintFooter();
-            return $Output;
+        # create the content array
+        for my $Row (@StatArray) {
+            my $CounterColumn = 0;
+            for my $Content ( @{$Row} ) {
+                $CellData->[$CounterRow]->[$CounterColumn]->{Content} = $Content;
+                $CounterColumn++;
+            }
+            $CounterRow++;
         }
-    }
 
-    # graph
-    elsif ( $Param{Format} =~ m{^GD::Graph\.*}x ) {
+        # output 'No matches found', if no content was given
+        if ( !$CellData->[0]->[0] ) {
+            $CellData->[0]->[0]->{Content} = $LayoutObject->{LanguageObject}->Translate('No matches found.');
+        }
 
-        # make graph
-        my $Ext   = 'png';
-        my $Graph = $Self->{StatsObject}->GenerateGraph(
-            Array        => \@StatArray,
-            HeadArrayRef => $HeadArrayRef,
-            Title        => $Title,
-            Format       => $Param{Format},
-            GraphSize    => $Param{GraphSize},
+        # page params
+        my %User
+            = $Kernel::OM->Get('Kernel::System::User')->GetUserData( UserID => $Self->{StatsObject}->{UserID} );
+        my %PageParam;
+        $PageParam{PageOrientation} = 'landscape';
+        $PageParam{MarginTop}       = 30;
+        $PageParam{MarginRight}     = 40;
+        $PageParam{MarginBottom}    = 40;
+        $PageParam{MarginLeft}      = 40;
+        $PageParam{HeaderRight}     = $ConfigObject->Get('Stats::StatsHook') . $Stat->{StatNumber};
+        $PageParam{HeadlineLeft}    = $Title;
+
+        # table params
+        my %TableParam;
+        $TableParam{CellData}            = $CellData;
+        $TableParam{Type}                = 'Cut';
+        $TableParam{FontSize}            = 6;
+        $TableParam{Border}              = 0;
+        $TableParam{BackgroundColorEven} = '#DDDDDD';
+        $TableParam{Padding}             = 4;
+
+        # create new pdf document
+        $PDFObject->DocumentNew(
+            Title  => $ConfigObject->Get('Product') . ': ' . $Title,
+            Encode => $LayoutObject->{UserCharset},
         );
 
-        # error messages if there is no graph
-        if ( !$Graph ) {
-            if ( $Param{Format} =~ m{^GD::Graph::pie}x ) {
-                return $LayoutObject->ErrorScreen(
-                    Message => 'You use invalid data! Perhaps there are no results.',
-                );
-            }
-            return $LayoutObject->ErrorScreen(
-                Message => "Too much data, can't use it with graph!",
+        # start table output
+        $PDFObject->PageNew(
+            %PageParam,
+            FooterRight => $Page . ' 1',
+        );
+
+        $PDFObject->PositionSet(
+            Move => 'relativ',
+            Y    => -6,
+        );
+
+        # output title
+        $PDFObject->Text(
+            Text     => $Title,
+            FontSize => 13,
+        );
+
+        $PDFObject->PositionSet(
+            Move => 'relativ',
+            Y    => -6,
+        );
+
+        # output "printed by"
+        $PDFObject->Text(
+            Text => $PrintedBy . ' '
+                . $User{UserFirstname} . ' '
+                . $User{UserLastname} . ' ('
+                . $User{UserEmail} . ')'
+                . ', ' . $Time,
+            FontSize => 9,
+        );
+
+        $PDFObject->PositionSet(
+            Move => 'relativ',
+            Y    => -14,
+        );
+
+        COUNT:
+        for ( 2 .. $MaxPages ) {
+
+            # output table (or a fragment of it)
+            %TableParam = $PDFObject->Table( %TableParam, );
+
+            # stop output or output next page
+            last COUNT if $TableParam{State};
+
+            $PDFObject->PageNew(
+                %PageParam,
+                FooterRight => $Page . ' ' . $_,
             );
         }
 
-        # return image to browser
+        # return the pdf document
+        my $PDFString = $PDFObject->DocumentOutput();
         return $LayoutObject->Attachment(
-            Filename    => $Filename . '.' . $Ext,
-            ContentType => "image/$Ext",
-            Content     => $Graph,
-            Type        => 'attachment',             # not inline because of bug# 2757
+            Filename    => $Filename . '.pdf',
+            ContentType => 'application/pdf',
+            Content     => $PDFString,
+            Type        => 'inline',
         );
     }
 }
@@ -1760,16 +1615,6 @@ sub StatsConfigurationValidate {
         if ( $Stat{StatType} && $Stat{StatType} eq 'dynamic' && !$Stat{Object} ) {
             $GeneralSpecificationFieldErrors{Object} = Translatable('This field is required.');
         }
-
-        # if ( !$Param{Stat}{GraphSize} && $Param{Stat}{Format} ) {
-        #     FORMAT:
-        #     for ( @{ $Stat{Format} } ) {
-        #         if ( $_ =~ m{^GD::Graph\.*}x ) {
-        #             push @IndexArray, 3;
-        #             last FORMAT;
-        #         }
-        #     }
-        # }
     }
 
     # get needed objects
@@ -2017,32 +1862,6 @@ sub StatsConfigurationValidate {
     return;
 }
 
-sub _Notify {
-    my ( $Self, %Param ) = @_;
-
-    my $NotifyOutput = '';
-
-    # get layout object
-    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    # check if need params are available
-    for (qw(StatData Section)) {
-        if ( !$Param{$_} ) {
-            return $LayoutObject->ErrorScreen( Message => "_Notify: Need $_!" );
-        }
-    }
-
-    # CompletenessCheck
-    my @Notify = $Self->{StatsObject}->CompletenessCheck(
-        StatData => $Param{StatData},
-        Section  => $Param{Section},
-    );
-    for my $Ref (@Notify) {
-        $NotifyOutput .= $LayoutObject->Notify( %{$Ref} );
-    }
-    return $NotifyOutput;
-}
-
 sub _Timeoutput {
     my ( $Self, %Param ) = @_;
 
@@ -2053,8 +1872,9 @@ sub _Timeoutput {
 
     # check if need params are available
     if ( !$Param{TimePeriodFormat} ) {
-        return $LayoutObject->ErrorScreen(
-            Message => '_Timeoutput: Need TimePeriodFormat!'
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => "error",
+            Message  => '_Timeoutput: Need TimePeriodFormat!'
         );
     }
 
@@ -2232,8 +2052,9 @@ sub _ColumnAndRowTranslation {
     # check if need params are available
     for my $NeededParam (qw(StatArrayRef HeadArrayRef StatRef)) {
         if ( !$Param{$NeededParam} ) {
-            return $Kernel::OM->Get('Kernel::Output::HTML::Layout')->ErrorScreen(
-                Message => "_ColumnAndRowTranslation: Need $NeededParam!"
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => "error",
+                Message  => "_ColumnAndRowTranslation: Need $NeededParam!"
             );
         }
     }
@@ -2416,8 +2237,11 @@ sub _TimeInSeconds {
 
     # check if need params are available
     if ( !$Param{TimeUnit} ) {
-        return $Kernel::OM->Get('Kernel::Output::HTML::Layout')
-            ->ErrorScreen( Message => '_TimeInSeconds: Need TimeUnit!' );
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => "error",
+            Message  => '_TimeInSeconds: Need TimeUnit!',
+        );
+        return;
     }
 
     my %TimeInSeconds = (
