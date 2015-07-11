@@ -19,6 +19,7 @@ our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::Language',
     'Kernel::Output::HTML::Layout',
+    'Kernel::Output::PDF::Statistics',
     'Kernel::System::CSV',
     'Kernel::System::Group',
     'Kernel::System::Log',
@@ -40,8 +41,6 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    $Self->{StatsObject} = $Param{StatsObject} || die 'Need StatsObject!';
-
     return $Self;
 }
 
@@ -58,6 +57,7 @@ sub StatsParamsWidget {
                 Priority => "error",
                 Message  => "Need $Needed!"
             );
+            return;
         }
     }
 
@@ -162,7 +162,7 @@ sub StatsParamsWidget {
     if ( $Stat->{StatType} eq 'static' ) {
 
         # load static module
-        my $Params = $Self->{StatsObject}->GetParams( StatID => $StatID );
+        my $Params = $Kernel::OM->Get('Kernel::System::Stats')->GetParams( StatID => $StatID );
         $LayoutObject->Block(
             Name => 'Static',
         );
@@ -569,7 +569,10 @@ sub GeneralSpecificationsWidget {
 
     my $Stat;
     if ( $Param{StatID} ) {
-        $Stat = $Self->{StatsObject}->StatsGet( StatID => $Param{StatID} );
+        $Stat = $Kernel::OM->Get('Kernel::System::Stats')->StatsGet(
+            StatID => $Param{StatID},
+            UserID => $Param{UserID},
+        );
     }
     else {
         $Stat->{StatID}     = '';
@@ -613,7 +616,7 @@ sub GeneralSpecificationsWidget {
 
     # Create a new statistic
     if ( !$Stat->{StatType} ) {
-        my $DynamicFiles = $Self->{StatsObject}->GetDynamicFiles();
+        my $DynamicFiles = $Kernel::OM->Get('Kernel::System::Stats')->GetDynamicFiles();
 
         my %ObjectModules;
         DYNAMIC_FILE:
@@ -631,8 +634,9 @@ sub GeneralSpecificationsWidget {
             }
         }
 
-        my $StaticFiles = $Self->{StatsObject}->GetStaticFiles(
+        my $StaticFiles = $Kernel::OM->Get('Kernel::System::Stats')->GetStaticFiles(
             OnlyUnusedFiles => 1,
+            UserID          => $Param{UserID},
         );
         for my $StaticFile ( sort keys %{ $StaticFiles // {} } ) {
             $ObjectModules{Static}->{ 'Kernel::System::Stats::Static::' . $StaticFile } = $StaticFiles->{$StaticFile};
@@ -1049,10 +1053,11 @@ sub PreviewWidget {
     my %Frontend;
 
     if ( !%StatsConfigurationErrors ) {
-        $Frontend{PreviewResult} = $Self->{StatsObject}->StatsRun(
+        $Frontend{PreviewResult} = $Kernel::OM->Get('Kernel::System::Stats')->StatsRun(
             StatID   => $Stat->{StatID},
             GetParam => $Stat,
             Preview  => 1,
+            UserID   => $Param{UserID},
         );
     }
 
@@ -1358,7 +1363,7 @@ sub StatsResultRender {
     }
 
     # Generate Filename
-    my $Filename = $Self->{StatsObject}->StringAndTimestamp2Filename(
+    my $Filename = $Kernel::OM->Get('Kernel::System::Stats')->StringAndTimestamp2Filename(
         String => $Stat->{Title} . ' Created',
     );
 
@@ -1404,8 +1409,9 @@ sub StatsResultRender {
         my $UserCSVSeparator = $LayoutObject->{LanguageObject}->{Separator};
 
         if ( $ConfigObject->Get('PreferencesGroups')->{CSVSeparator}->{Active} ) {
-            my %UserData
-                = $$Kernel::OM->Get('Kernel::System::User')->GetUserData( UserID => $Self->{StatsObject}->{UserID} );
+            my %UserData = $$Kernel::OM->Get('Kernel::System::User')->GetUserData(
+                UserID => $Param{UserID}
+            );
             $UserCSVSeparator = $UserData{UserCSVSeparator} if $UserData{UserCSVSeparator};
         }
         my $Output .= $CSVObject->Array2CSV(
@@ -1439,126 +1445,13 @@ sub StatsResultRender {
 
     # pdf or html output
     elsif ( $Param{Format} eq 'Print' ) {
-        my $PDFObject = $Kernel::OM->Get('Kernel::System::PDF');
-
-        my $PrintedBy = $LayoutObject->{LanguageObject}->Translate('printed by');
-        my $Page      = $LayoutObject->{LanguageObject}->Translate('Page');
-        my $Time      = $LayoutObject->{Time};
-
-        # get maximum number of pages
-        my $MaxPages = $ConfigObject->Get('PDF::MaxPages');
-        if ( !$MaxPages || $MaxPages < 1 || $MaxPages > 1000 ) {
-            $MaxPages = 100;
-        }
-
-        # create the header
-        my $CellData;
-        my $CounterRow  = 0;
-        my $CounterHead = 0;
-        for my $Content ( @{$HeadArrayRef} ) {
-            $CellData->[$CounterRow]->[$CounterHead]->{Content} = $Content;
-            $CellData->[$CounterRow]->[$CounterHead]->{Font}    = 'ProportionalBold';
-            $CounterHead++;
-        }
-        if ( $CounterHead > 0 ) {
-            $CounterRow++;
-        }
-
-        # create the content array
-        for my $Row (@StatArray) {
-            my $CounterColumn = 0;
-            for my $Content ( @{$Row} ) {
-                $CellData->[$CounterRow]->[$CounterColumn]->{Content} = $Content;
-                $CounterColumn++;
-            }
-            $CounterRow++;
-        }
-
-        # output 'No matches found', if no content was given
-        if ( !$CellData->[0]->[0] ) {
-            $CellData->[0]->[0]->{Content} = $LayoutObject->{LanguageObject}->Translate('No matches found.');
-        }
-
-        # page params
-        my %User = $Kernel::OM->Get('Kernel::System::User')->GetUserData( UserID => $Self->{StatsObject}->{UserID} );
-        my %PageParam;
-        $PageParam{PageOrientation} = 'landscape';
-        $PageParam{MarginTop}       = 30;
-        $PageParam{MarginRight}     = 40;
-        $PageParam{MarginBottom}    = 40;
-        $PageParam{MarginLeft}      = 40;
-        $PageParam{HeaderRight}     = $ConfigObject->Get('Stats::StatsHook') . $Stat->{StatNumber};
-        $PageParam{HeadlineLeft}    = $Title;
-
-        # table params
-        my %TableParam;
-        $TableParam{CellData}            = $CellData;
-        $TableParam{Type}                = 'Cut';
-        $TableParam{FontSize}            = 6;
-        $TableParam{Border}              = 0;
-        $TableParam{BackgroundColorEven} = '#DDDDDD';
-        $TableParam{Padding}             = 4;
-
-        # create new pdf document
-        $PDFObject->DocumentNew(
-            Title  => $ConfigObject->Get('Product') . ': ' . $Title,
-            Encode => $LayoutObject->{UserCharset},
+        my $PDFString = $Kernel::OM->Get('Kernel::Output::PDF::Statistics')->GeneratePDF(
+            Stat         => $Stat,
+            Title        => $Title,
+            HeadArrayRef => $HeadArrayRef,
+            StatArray    => \@StatArray,
+            UserID       => $Param{UserID},
         );
-
-        # start table output
-        $PDFObject->PageNew(
-            %PageParam,
-            FooterRight => $Page . ' 1',
-        );
-
-        $PDFObject->PositionSet(
-            Move => 'relativ',
-            Y    => -6,
-        );
-
-        # output title
-        $PDFObject->Text(
-            Text     => $Title,
-            FontSize => 13,
-        );
-
-        $PDFObject->PositionSet(
-            Move => 'relativ',
-            Y    => -6,
-        );
-
-        # output "printed by"
-        $PDFObject->Text(
-            Text => $PrintedBy . ' '
-                . $User{UserFirstname} . ' '
-                . $User{UserLastname} . ' ('
-                . $User{UserEmail} . ')'
-                . ', ' . $Time,
-            FontSize => 9,
-        );
-
-        $PDFObject->PositionSet(
-            Move => 'relativ',
-            Y    => -14,
-        );
-
-        COUNT:
-        for ( 2 .. $MaxPages ) {
-
-            # output table (or a fragment of it)
-            %TableParam = $PDFObject->Table( %TableParam, );
-
-            # stop output or output next page
-            last COUNT if $TableParam{State};
-
-            $PDFObject->PageNew(
-                %PageParam,
-                FooterRight => $Page . ' ' . $_,
-            );
-        }
-
-        # return the pdf document
-        my $PDFString = $PDFObject->DocumentOutput();
         return $LayoutObject->Attachment(
             Filename    => $Filename . '.pdf',
             ContentType => 'application/pdf',
@@ -1570,7 +1463,7 @@ sub StatsResultRender {
 
 =item StatsConfigurationValidate()
 
-    my $StatCorrectlyConfigured = $StatsObject->StatsConfigurationValidate(
+    my $StatCorrectlyConfigured = $StatsViewObject->StatsConfigurationValidate(
         StatData => \%StatData,
         Errors   => \%Errors,   # Hash to be populated with errors, if any
     );
@@ -2033,7 +1926,7 @@ sub _TimeScale {
 
 translate the column and row name if needed
 
-    $StatsObject->_ColumnAndRowTranslation(
+    $StatsViewObject->_ColumnAndRowTranslation(
         StatArrayRef => $StatArrayRef,
         HeadArrayRef => $HeadArrayRef,
         StatRef      => $StatRef,

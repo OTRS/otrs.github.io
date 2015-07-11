@@ -78,16 +78,14 @@
 	<dt>new()</dt>
 		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
 <dd><pre>    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
-        'Kernel::System::Stats' =&gt; {
-            UserID  =&gt; 123,
-        }
-    );
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $StatsObject = $Kernel::OM-&gt;Get('Kernel::System::Stats');
 
 </pre></dd>	<dt>StatsAdd()</dt>
 		<dd><p>add new empty stats</p></dd>
-<dd><pre>    my $StatID = $StatsObject-&gt;StatsAdd();
+<dd><pre>    my $StatID = $StatsObject-&gt;StatsAdd(
+        UserID =&gt; $UserID,
+    );
 
 </pre></dd>	<dt>StatsGet()</dt>
 		<dd><p>get a hash ref of the stats you need</p></dd>
@@ -100,7 +98,8 @@
 		<dd><p>update a stat</p></dd>
 <dd><pre>    $StatsObject-&gt;StatsUpdate(
         StatID =&gt; '123',
-        Hash   =&gt; \%Hash
+        Hash   =&gt; \%Hash,
+        UserID =&gt; $UserID,
     );
 
 </pre></dd>	<dt>StatsDelete()</dt>
@@ -111,6 +110,7 @@
 		<dd><p>fetches all statistics that the current user may see</p></dd>
 <dd><pre>    my $StatsRef = $StatsObject-&gt;StatsListGet(
         AccessRw =&gt; 1, # Optional, indicates that user may see all statistics
+        UserID   =&gt; $UserID,
     );
 
 </pre></dd><dd><pre>    Returns
@@ -128,6 +128,7 @@
         AccessRw  =&gt; 1, # Optional, indicates that user may see all statistics
         OrderBy   =&gt; 'ID' || 'Title' || 'Object', # optional
         Direction =&gt; 'ASC' || 'DESC',             # optional
+        UserID    =&gt; $UserID,
     );
 
 </pre></dd>	<dt>SumBuild()</dt>
@@ -136,22 +137,6 @@
         Array  =&gt; \@Result,
         SumRow =&gt; 1,
         SumCol =&gt; 0,
-    );
-
-</pre></dd>	<dt>GenerateGraph()</dt>
-		<dd><p>make graph from result array</p></dd>
-<dd><pre>    my $Graph = $StatsObject-&gt;GenerateGraph(
-        Array        =&gt; \@StatArray,
-        GraphSize    =&gt; '800x600',
-        HeadArrayRef =&gt; $HeadArrayRef,
-        Title        =&gt; 'All Tickets of the month',
-        Format       =&gt; 'GD::Graph::lines',
-    );
-
-</pre></dd>	<dt>CompletenessCheck()</dt>
-<dd><pre>    my @Notify = $StatsObject-&gt;CompletenessCheck(
-        StatData =&gt; \%StatData,
-        Section =&gt; 'All' || 'Specification' || 'ValueSeries' || 'Restrictions || Xaxis'
     );
 
 </pre></dd>	<dt>GetStatsObjectAttributes()</dt>
@@ -165,6 +150,7 @@
 		<dd><p>Get all static files</p></dd>
 <dd><pre>    my $FileHash = $StatsObject-&gt;GetStaticFiles(
         OnlyUnusedFiles =&gt; 1 | 0, # optional default 0
+        UserID =&gt; $UserID,
     );
 
 </pre></dd>	<dt>GetDynamicFiles()</dt>
@@ -207,6 +193,7 @@
 </pre></dd>	<dt>Import()</dt>
 		<dd><p>import a stats from xml file</p></dd>
 <dd><pre>    my $StatID = $StatsObject-&gt;Import(
+        UserID  =&gt; $UserID,
         Content =&gt; $UploadStuff{Content},
     );
 
@@ -221,6 +208,7 @@
         StatID     =&gt; '123',
         GetParam   =&gt; \%GetParam,
         Preview    =&gt; 1,        # optional, return fake data for preview (only for dynamic stats)
+        UserID     =&gt; $UserID,
     );
 
 </pre></dd>	<dt>StatsResultCacheCompute()</dt>
@@ -228,6 +216,7 @@
 This can be used to precompute stats data e. g. for dashboard widgets in a cron job.</p></dd>
 <dd><pre>    my $StatArray = $StatsObject-&gt;StatsResultCacheCompute(
         StatID       =&gt; '123',
+        UserID       =&gt; $UserID,        # target UserID
         UserGetParam =&gt; \%UserGetParam, # user settings of non-fixed fields
     );
 
@@ -236,6 +225,7 @@ This can be used to precompute stats data e. g. for dashboard widgets in a cron 
 This can be used to fetch cached stats data e. g. for stats widgets in the dashboard.</p></dd>
 <dd><pre>    my $StatArray = $StatsObject-&gt;StatsResultCacheGet(
         StatID       =&gt; '123',
+        UserID       =&gt; $UserID,    # target UserID
         GetParam     =&gt; \%GetParam,
     );
 
