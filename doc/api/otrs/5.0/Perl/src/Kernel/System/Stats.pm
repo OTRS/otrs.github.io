@@ -1909,7 +1909,7 @@ sub StatsInstall {
         # import stat
         my $StatID = $Self->Import(
             Content => ${$XMLContentRef},
-            UserID => $Param{UserID},
+            UserID  => $Param{UserID},
         );
 
         next FILE if !$StatID;
@@ -1992,7 +1992,7 @@ removed stats with not existing backend file
 =cut
 
 sub StatsCleanUp {
-    my ($Self, %Param) = @_;
+    my ( $Self, %Param ) = @_;
 
     for my $Needed (qw(UserID)) {
         if ( !$Param{$Needed} ) {
@@ -2226,7 +2226,7 @@ sub _GenerateDynamicStats {
                         $Element->{TimeStart} = sprintf( "%04d-%02d-%02d %02d:%02d:%02d", $Y, $M, 1, 0, 0, 0 );
                     }
                     elsif ( $Element->{TimeRelativeUnit} eq 'Week' ) {
-                        ( $Y, $M, $D ) = Add_Delta_YMD( $Y, $M, $D, 0, 0, 0 );
+                        ( $Y, $M, $D ) = Add_Delta_YMD( $Y, $M, $D, 0, 0, -1 );
                         $Element->{TimeStop} = sprintf(
                             "%04d-%02d-%02d %02d:%02d:%02d",
                             $Y, $M, $D, 23, 59, 59
