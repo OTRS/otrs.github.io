@@ -65,13 +65,12 @@ sub StatsParamsWidget {
     return if !$Param{Stat}->{Valid};
 
     # Check if there are any configuration errors that must be corrected by the stats admin
-    if (
-        !$Self->StatsConfigurationValidate(
-            Stat   => $Param{Stat},
-            Errors => {}
-        )
-        )
-    {
+    my $StatsConfigurationValid = $Self->StatsConfigurationValidate(
+        Stat   => $Param{Stat},
+        Errors => {},
+    );
+
+    if ( !$StatsConfigurationValid ) {
         return;
     }
 
@@ -131,14 +130,17 @@ sub StatsParamsWidget {
             Data => \%Frontend,
         );
     }
-    else {
+    elsif ( keys %SelectFormat == 1 ) {
         $LayoutObject->Block(
             Name => 'FormatFixed',
             Data => {
-                Format    => $Format->{ $Stat->{Format}->[0] },
+                Format    => ( values %SelectFormat )[0],
                 FormatKey => $Stat->{Format}->[0],
             },
         );
+    }
+    else {
+        return;    # no possible output format
     }
 
     if ( $ConfigObject->Get('Stats::ExchangeAxis') ) {
@@ -189,9 +191,9 @@ sub StatsParamsWidget {
     # get dynamic attributes
     elsif ( $Stat->{StatType} eq 'dynamic' ) {
         my %Name = (
-            UseAsXvalue      => 'X-axis',
-            UseAsValueSeries => 'Y-axis',
-            UseAsRestriction => 'Data restrictions',
+            UseAsXvalue      => Translatable('X-axis'),
+            UseAsValueSeries => Translatable('Y-axis'),
+            UseAsRestriction => Translatable('Filter'),
         );
 
         for my $Use (qw(UseAsXvalue UseAsValueSeries UseAsRestriction)) {
@@ -1116,7 +1118,9 @@ sub StatsParamsGet {
         $GetParam{Month} = $M;
         $GetParam{Day}   = $D;
 
-        my $Params = $Self->GetParams( StatID => $Param{StatID} );
+        my $Params = $Kernel::OM->Get('Kernel::System::Stats')->GetParams(
+            StatID => $Stat->{StatID},
+        );
 
         PARAMITEM:
         for my $ParamItem ( @{$Params} ) {
@@ -1506,7 +1510,6 @@ sub StatsConfigurationValidate {
         }
     }
 
-    # get needed objects
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $TimeObject   = $Kernel::OM->Get('Kernel::System::Time');
 
@@ -1836,7 +1839,7 @@ sub _Timeoutput {
     $Timeoutput{TimeScaleUnit} = $LayoutObject->BuildSelection(
         %TimeScale,
         Name       => $Element,
-        SelectedID => $Param{SelectedValues}[0],
+        SelectedID => $Param{SelectedValues}[0] // 'Day',
     );
 
     $Timeoutput{TimeRelativeUnit} = $LayoutObject->BuildSelection(
