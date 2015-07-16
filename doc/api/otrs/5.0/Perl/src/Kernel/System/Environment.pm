@@ -273,7 +273,6 @@ sub PerlInfoGet {
             parent
             Algorithm::Diff
             Apache::DBI
-            Authen::SASL
             CGI
             Class::Inspector
             Crypt::PasswdMD5
@@ -296,7 +295,7 @@ sub PerlInfoGet {
             Net::IMAP::Simple
             Net::HTTP
             Net::SSLGlue
-            Proc::Daemon
+            PDF::API2
             SOAP::Lite
             Sys::Hostname::Long
             Text::CSV
