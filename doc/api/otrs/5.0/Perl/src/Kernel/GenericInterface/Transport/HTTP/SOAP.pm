@@ -154,36 +154,35 @@ sub ProviderProcessRequest {
     }
 
     # do we have a soap action header?
-    my $NameSpaceFromHeader;
     my $OperationFromHeader;
     if ( $ENV{'HTTP_SOAPACTION'} ) {
-        my ($SOAPAction) = $ENV{'HTTP_SOAPACTION'} =~ m{ \A ["'] ( .+ ) ["'] \z }xms;
-
-        # get name-space and operation from soap action
-        if ( IsStringWithData($SOAPAction) ) {
-            my ( $NameSpaceFromHeader, $OperationFromHeader ) = $ENV{'HTTP_SOAPACTION'} =~ m{
-                \A
-                ( .+? )
+        my ( $SOAPAction, $NameSpaceFromHeader );
+        ( $SOAPAction, $NameSpaceFromHeader, $OperationFromHeader ) = $ENV{'HTTP_SOAPACTION'} =~ m{
+             \A
+            ["']{0,1} # optional enclosing single or double quotes
+            (
+                ( .+? )     # namespace
                 [#/]
-                ( [^#/]+ )
-                \z
-            }xms;
-            if ( !$NameSpaceFromHeader || !$OperationFromHeader ) {
-                return $Self->_Error(
-                    Summary   => "Invalid SOAPAction '$SOAPAction'",
-                    HTTPError => 500,
-                );
-            }
-        }
-    }
+                ( [^#/]+? )  # operation
+            )
+            ["']{0,1} # optional enclosing single or double quotes
+            \z
+        }xms;
 
-    # check name-space for match to configuration
-    if ( $NameSpaceFromHeader && $NameSpaceFromHeader ne $Config->{NameSpace} ) {
-        $Self->{DebuggerObject}->Notice(
-            Summary =>
-                "Namespace from SOAPAction '$NameSpaceFromHeader' does not match namespace"
-                . " from configuration '$Config->{NameSpace}'",
-        );
+        if ( !$NameSpaceFromHeader || !$OperationFromHeader ) {
+            return $Self->_Error(
+                Summary => "Invalid SOAPAction '$SOAPAction'",
+            );
+        }
+
+        # check name-space for match to configuration
+        if ( $NameSpaceFromHeader ne $Config->{NameSpace} ) {
+            return $Self->_Error(
+                Summary =>
+                    "Namespace from SOAPAction '$NameSpaceFromHeader' does not match namespace"
+                    . " from configuration '$Config->{NameSpace}'",
+            );
+        }
     }
 
     # if no chunked transfer encoding was used, read request directly
@@ -201,7 +200,7 @@ sub ProviderProcessRequest {
 
     # convert charset if necessary
     my $ContentCharset;
-    if ( $ENV{'CONTENT_TYPE'} =~ m{ \A (.*) ;charset= ["']? ( [^"']+ ) ["']? \z }xmsi ) {
+    if ( $ENV{'CONTENT_TYPE'} =~ m{ \A ( .+ ) ;charset= ["']{0,1} ( .+? ) ["']{0,1} \z }xmsi ) {
 
         # remember content type for the response
         $Self->{ContentType} = $1;
@@ -250,22 +249,33 @@ sub ProviderProcessRequest {
 
     # check operation against header
     if ( $OperationFromHeader && $Operation ne $OperationFromHeader ) {
-        $Self->{DebuggerObject}->Notice(
+        return $Self->_Error(
             Summary =>
                 "Operation from SOAP data '$Operation' does not match operation"
                 . " from SOAPAction '$OperationFromHeader'",
         );
     }
 
-    # remember operation for response
-    $Self->{Operation} = $Operation;
-
     my $OperationData = $Body->{$Operation};
+
+    # determine local operation name from request wrapper name scheme
+    my $LocalOperation = $Operation;
+    if ( $Config->{RequestNameScheme} ) {
+        if ( $Config->{RequestNameScheme} ne 'Append' ) {
+            $LocalOperation =~ s{ $Config->{RequestNameScheme} \z }{}xms;
+        }
+        elsif ( $Config->{RequestNameFreeText} ) {
+            $LocalOperation =~ s{ $Config->{RequestNameFreeText} \z }{}xms;
+        }
+    }
+
+    # remember operation for response
+    $Self->{Operation} = $LocalOperation;
 
     # all OK - return data
     return {
         Success   => 1,
-        Operation => $Operation,
+        Operation => $LocalOperation,
         Data      => $OperationData || undef,
     };
 }
@@ -315,10 +325,11 @@ sub ProviderGenerateResponse {
         );
     }
 
-    my $OperationResponse = $Self->{Operation} . 'Response';
-    my $HTTPCode          = 200;
+    my $Config = $Self->{TransportConfig}->{Config};
 
     # check success param
+    my $OperationResponse;
+    my $HTTPCode;
     if ( !$Param{Success} ) {
 
         # create SOAP Fault structure
@@ -334,12 +345,38 @@ sub ProviderGenerateResponse {
         # override HTTPCode to 500
         $HTTPCode = 500;
     }
+    else {
+        $HTTPCode = 200;
+
+        # build response wrapper name
+        $Config->{ResponseNameScheme}   //= 'Response';
+        $Config->{ResponseNameFreeText} //= '';
+        if (
+            $Config->{ResponseNameScheme} eq 'Replace'
+            && $Config->{ResponseNameFreeText}
+            )
+        {
+
+            # completely replace name with configured text
+            $OperationResponse = $Config->{ResponseNameFreeText};
+        }
+        else {
+            if ( $Config->{ResponseNameScheme} ne 'Append' ) {
+
+                # overwrite text to be appended with scheme name
+                # unless we want to append the actual configured text
+                $Config->{ResponseNameFreeText} = $Config->{ResponseNameScheme};
+            }
+            $OperationResponse = $Self->{Operation} . $Config->{ResponseNameFreeText};
+        }
+    }
 
     # prepare data
     my $SOAPResult;
     if ( defined $Param{Data} && IsHashRefWithData( $Param{Data} ) ) {
         my $SOAPData = $Self->_SOAPOutputRecursion(
             Data => $Param{Data},
+            Sort => $Config->{Sort},
         );
 
         # check output of recursion
@@ -364,8 +401,7 @@ sub ProviderGenerateResponse {
     if ($SOAPResult) {
         push @CallData, $SOAPResult;
     }
-    my $Serialized = SOAP::Serializer->autotype(0)->default_ns( $Self->{TransportConfig}->{Config}->{NameSpace} )
-        ->envelope(@CallData);
+    my $Serialized = SOAP::Serializer->autotype(0)->default_ns( $Config->{NameSpace} )->envelope(@CallData);
     my $SerializedFault = $@ || '';
     if ($SerializedFault) {
         return $Self->_Output(
@@ -453,6 +489,7 @@ sub RequesterPerformRequest {
     if ( defined $Param{Data} && IsHashRefWithData( $Param{Data} ) ) {
         $SOAPData = $Self->_SOAPOutputRecursion(
             Data => $Param{Data},
+            Sort => $Config->{Sort},
         );
 
         # check output of recursion
@@ -464,8 +501,20 @@ sub RequesterPerformRequest {
         }
     }
 
+    # build request wrapper name
+    my $OperationRequest;
+    $Config->{RequestNameScheme}   //= '';
+    $Config->{RequestNameFreeText} //= '';
+    if ( $Config->{RequestNameScheme} ne 'Append' ) {
+
+        # overwrite text to be appended with scheme name
+        # unless we want to append the actual configured text
+        $Config->{RequestNameFreeText} = $Config->{RequestNameScheme};
+    }
+    $OperationRequest = $Param{Operation} . $Config->{RequestNameFreeText};
+
     # prepare method
-    my $SOAPMethod = SOAP::Data->name( $Param{Operation} )->uri( $Config->{NameSpace} );
+    my $SOAPMethod = SOAP::Data->name($OperationRequest)->uri( $Config->{NameSpace} );
     if ( ref $SOAPMethod ne 'SOAP::Data' ) {
         return {
             Success      => 0,
@@ -522,20 +571,20 @@ sub RequesterPerformRequest {
             if ( IsStringWithData( $Config->{SSL}->{SSLCADir} ) ) {
                 $ENV{HTTPS_CA_DIR} = $Config->{SSL}->{SSLCADir};
             }
-
-            # add proxy
-            if ( IsStringWithData( $Config->{SSL}->{SSLProxy} ) ) {
-                $ENV{HTTPS_PROXY} = $Config->{SSL}->{SSLProxy};
-            }
-
-            # add proxy basic authentication
-            if ( IsStringWithData( $Config->{SSL}->{SSLProxyUser} ) ) {
-                $ENV{HTTPS_PROXY_USERNAME} = $Config->{SSL}->{SSLProxyUser};
-            }
-            if ( IsStringWithData( $Config->{SSL}->{SSLProxyPassword} ) ) {
-                $ENV{HTTPS_PROXY_PASSWORD} = $Config->{SSL}->{SSLProxyPassword};
-            }
         }
+    }
+
+    # add proxy
+    if ( IsStringWithData( $Config->{SSL}->{SSLProxy} ) ) {
+        $ENV{HTTPS_PROXY} = $Config->{SSL}->{SSLProxy};
+    }
+
+    # add proxy basic authentication
+    if ( IsStringWithData( $Config->{SSL}->{SSLProxyUser} ) ) {
+        $ENV{HTTPS_PROXY_USERNAME} = $Config->{SSL}->{SSLProxyUser};
+    }
+    if ( IsStringWithData( $Config->{SSL}->{SSLProxyPassword} ) ) {
+        $ENV{HTTPS_PROXY_PASSWORD} = $Config->{SSL}->{SSLProxyPassword};
     }
 
     # prepare connect
@@ -566,7 +615,7 @@ sub RequesterPerformRequest {
 
             # change separator (like for .net web services)
             $SOAPHandle->on_action(
-                sub { '"' . $Config->{NameSpace} . '/' . $Param{Operation} . '"' }
+                sub { '"' . $Config->{NameSpace} . '/' . $OperationRequest . '"' }
             );
         }
     }
@@ -684,8 +733,31 @@ sub RequesterPerformRequest {
         };
     }
 
+    # build response wrapper name
+    my $OperationResponse;
+    $Config->{ResponseNameScheme}   //= 'Response';
+    $Config->{ResponseNameFreeText} //= '';
+    if (
+        $Config->{ResponseNameScheme} eq 'Replace'
+        && $Config->{ResponseNameFreeText}
+        )
+    {
+
+        # completely replace name with configured text
+        $OperationResponse = $Config->{ResponseNameFreeText};
+    }
+    else {
+        if ( $Config->{ResponseNameScheme} ne 'Append' ) {
+
+            # overwrite text to be appended with scheme name
+            # unless we want to append the actual configured text
+            $Config->{ResponseNameFreeText} = $Config->{ResponseNameScheme};
+        }
+        $OperationResponse = $Param{Operation} . $Config->{ResponseNameFreeText};
+    }
+
     # check if we have response data for the specified operation in the soap result
-    if ( !exists $Body->{ $Param{Operation} . 'Response' } ) {
+    if ( !exists $Body->{$OperationResponse} ) {
         return {
             Success => 0,
             ErrorMessage =>
@@ -697,7 +769,7 @@ sub RequesterPerformRequest {
     # all OK - return result
     return {
         Success => 1,
-        Data    => $Body->{ $Param{Operation} . 'Response' } || undef,
+        Data    => $Body->{$OperationResponse} || undef,
     };
 }
 
@@ -1006,14 +1078,16 @@ sub _SOAPOutputRecursion {
     # process array ref
     if ( $Type{Data} eq 'ARRAYREF' ) {
         my @Result;
-        my @Sort = $Param{Sort} ? @{ $Param{Sort} } : ();
         KEY:
         for my $Key ( @{ $Param{Data} } ) {
+
+            # check how to handle sort key
+            my $SortKey = $Type{Sort} eq 'UNDEFINED' ? undef : $Param{Sort};
 
             # process key
             my $RecurseResult = $Self->_SOAPOutputRecursion(
                 Data => $Key,
-                Sort => @Sort ? shift @Sort : undef,
+                Sort => $SortKey,
             );
 
             # return on error

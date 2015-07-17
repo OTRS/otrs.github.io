@@ -423,6 +423,25 @@ sub LoadDefaults {
 #    $Self->{'AuthModule::Radius::Die'} = 1;
 
     # --------------------------------------------------- #
+    # 2 factor authentication settings                    #
+    # check a otp (one-time password)                     #
+    # after successful authentication                     #
+    # as an extra security measure                        #
+    # --------------------------------------------------- #
+    # This is the auth module using the google authenticator mechanism
+#    $Self->{'AuthTwoFactorModule'} = 'Kernel::System::Auth::TwoFactor::GoogleAuthenticator';
+
+    # defines user preference where the secret key is stored
+#    $Self->{'AuthTwoFactorModule::SecretPreferencesKey'} = 'UserGoogleAuthenticatorSecretKey';
+
+    # defines if users can login without a 2 factor authentication if they have no stored shared secret
+#    $Self->{'AuthTwoFactorModule::AllowEmptySecret'} = '1';
+
+    # defines if the otp for the previous timespan (30-60sec ago) will also be valid
+    # helpful to account for timimg issues (server and entry based)
+#    $Self->{'AuthTwoFactorModule::AllowPreviousToken'} = '1';
+
+    # --------------------------------------------------- #
     # authentication sync settings                        #
     # (enable agent data sync. after succsessful          #
     # authentication)                                     #
@@ -862,6 +881,7 @@ sub LoadDefaults {
         'Core.TicketDetail.css',
         'Core.Tooltip.css',
         'Core.Dialog.css',
+        'Core.InputFields.css',
         'Core.Print.css',
         'thirdparty/fontawesome/font-awesome.css',
     ];
@@ -935,6 +955,7 @@ sub LoadDefaults {
         'Core.UI.Popup.js',
         'Core.UI.TreeSelection.js',
         'Core.UI.Autocomplete.js',
+        'Core.UI.InputFields.js',
         'Core.Form.js',
         'Core.Form.ErrorTooltips.js',
         'Core.Form.Validate.js',
@@ -1302,6 +1323,25 @@ via the Preferences button after logging in.
 #    $Self->{'Customer::AuthModule'} = 'Kernel::System::Auth::Radius';
 #    $Self->{'Customer::AuthModule::Radius::Host'} = 'radiushost';
 #    $Self->{'Customer::AuthModule::Radius::Password'} = 'radiussecret';
+
+    # --------------------------------------------------- #
+    # 2 factor customer authentication settings           #
+    # check a otp (one-time password)                     #
+    # after successful authentication                     #
+    # as an extra security measure                        #
+    # --------------------------------------------------- #
+    # This is the auth module using the google authenticator mechanism
+#    $Self->{'Customer::AuthTwoFactorModule'} = 'Kernel::System::CustomerAuth::TwoFactor::GoogleAuthenticator';
+
+    # defines user preference where the secret key is stored
+#    $Self->{'Customer::AuthTwoFactorModule::SecretPreferencesKey'} = 'UserGoogleAuthenticatorSecretKey';
+
+    # defines if users can login without a 2 factor authentication if they have no stored shared secret
+#    $Self->{'Customer::AuthTwoFactorModule::AllowEmptySecret'} = '1';
+
+    # defines if the otp for the previous timespan (30-60sec ago) will also be valid
+    # helpful to account for timimg issues (server and entry based)
+#    $Self->{'Customer::AuthTwoFactorModule::AllowPreviousToken'} = '1';
 
     # --------------------------------------------------- #
     #                                                     #

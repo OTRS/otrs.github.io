@@ -10,7 +10,7 @@
 <!-- otrs.github.io -->
 
     <meta charset="utf-8">
-    <title>OTRS API Reference JavaScript: Source: Core.Agent.Admin.DynamicFieldText.js</title>
+    <title>OTRS API Reference JavaScript: Source: Core.Agent.SortedTree.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -26,7 +26,7 @@
 <div id="main">
 
     <h1 class="page-title">OTRS API Reference JavaScript</h1>
-    <h2 class="page-title">Source: Core.Agent.Admin.DynamicFieldText.js</h2>
+    <h2 class="page-title">Source: Core.Agent.SortedTree.js</h2>
 
     
 
@@ -47,100 +47,188 @@
 
 var Core = Core || {};
 Core.Agent = Core.Agent || {};
-Core.Agent.Admin = Core.Agent.Admin || {};
 
 /**
- * @namespace Core.Agent.Admin.DynamicFieldText
- * @memberof Core.Agent.Admin
+ * @namespace Core.Agent.SortedTree
+ * @memberof Core.Agent
  * @author OTRS AG
  * @description
- *      This namespace contains the special module functions for the DynamicFieldText module.
+ *      This namespace contains the SortedTree functions.
  */
-Core.Agent.Admin.DynamicFieldText = (function (TargetNS) {
+Core.Agent.SortedTree = (function (TargetNS) {
 
     /**
-     * @name RemoveRegEx
-     * @memberof Core.Agent.Admin.DynamicFieldText
+     * @name Init
+     * @memberof Core.Agent.SortedTree
      * @function
-     * @returns {Boolean} Returns true.
-     * @param {String} IDSelector - ID of the pressed remove value button.
+     * @param {jQueryObject} $Element - The jQuery object of an input structure which should get SortedTree functionality.
+     * @param {jQueryObject} $Form - The jQuery object of the form that should commit collected data
+     * @param {jQueryObject} $TargetElement - The jQuery object of the element that should contain the parsed data.
+     * @param {JSONData} JSONData - json data for initial display
      * @description
-     *      This function removes a RegEx.
+     *      This function initializes the SortedTree on the defined elements.
      */
-    TargetNS.RemoveRegEx = function(IDSelector) {
+    TargetNS.Init = function ($Element, $Form, $TargetElement, JSONData) {
 
-        var ObjectIndex = IDSelector.match(/.+_(\d+)/)[1];
-        $('#RegExRow_' + ObjectIndex).remove();
+        /**
+         * @private
+         * @name AddElement
+         * @memberof Core.Agent.SortedTree.Init
+         * @function
+         * @param {JSONData} Data - parsed json data for initial display
+         * @param {jQueryObject} $TargetObj - The jQuery object for data insertion.
+         * @description
+         *      Fill the container with passed JSON data.
+         */
+        function AddElement(Data, $TargetObj) {
+            var $ElementObj,
+                $NewTargetObj;
 
-        return true;
-    };
+            $.each(Data, function(Key, Value) {
+                $ElementObj = $('.ElementTemplate').clone();
+                if (Array.isArray(Value) &amp;&amp; Value.length) {
+                    $NewTargetObj = $('.SortableList').find('li:not(.ElementTemplate)').last();
+                    if (!$NewTargetObj.children('ul').length) {
+                        $NewTargetObj.append('&lt;ul />');
+                    }
+                    AddElement(Value, $NewTargetObj.children('ul'));
+                }
+                else {
+                    $ElementObj
+                        .removeClass('ElementTemplate')
+                        .find('input')
+                        .val(Value);
+                    $ElementObj.appendTo($TargetObj);
+                }
+            });
+        }
 
-    /**
-     * @name AddRegEx
-     * @memberof Core.Agent.Admin.DynamicFieldText
-     * @function
-     * @returns {Boolean} Returns false
-     * @param {Object} RegExInsert - HTML container of the RegEx.
-     * @description
-     *      This function adds a new RegEx.
-     */
-    TargetNS.AddRegEx = function(RegExInsert) {
-        var $Clone = $('.RegExTemplate').clone(),
-            RegExCounter = $('#RegExCounter').val();
+        /**
+         * @private
+         * @name CollectElements
+         * @memberof Core.Agent.SortedTree.Init
+         * @function
+         * @returns {Array} false, if no sorting elements exist.
+         * @param {jQueryObject} $TargetObj - The jQuery object for element collection.
+         * @description
+         *      Fill the container with passed JSON data.
+         */
+        function CollectElements($TargetObj) {
+            var Target = [];
+            $TargetObj.children('li:not(.ElementTemplate)').each(function() {
+                Target.push($(this).find('input').val());
+                if ($(this).children('ul').length &amp;&amp; $(this).children('ul').find('li').length) {
+                    Target.push(CollectElements($(this).children('ul').first()));
+                }
+            });
+            if (Target.length) {
+                return Target;
+            }
+            else {
+                return false;
+            }
+        }
 
-        // increment RegEx counter
-        RegExCounter++;
+        // Remove elements on click
+        $Element.on('click.RemoveElement', 'strong', function() {
 
-        // remove unnecessary classes
-        $Clone.removeClass('Hidden RegExTemplate');
+            // elements which have children can't be removed
+            if ($(this).parent().next('ul').length) {
+                alert("This element has children elements and can currently not be removed.");
+//                alert([% Translate("This element has children elements and can currently not be removed.") | JSON %]);
+                return false;
+            }
 
-        // add needed class and id
-        $Clone.addClass('RegExRow');
-        $Clone.addClass('W50pc');
-        $Clone.attr('id', 'RegExRow_' + RegExCounter);
-
-        // copy RegExs and change ids and names
-        $Clone.find(':input, a.RemoveRegEx').each(function(){
-            var ID = $(this).attr('id');
-            $(this).attr('id', ID + '_' + RegExCounter);
-            $(this).attr('name', ID + '_' + RegExCounter);
-
-            $(this).addClass('Validate_Required');
-
-            // set error controls
-            $(this).parent().find('#' + ID + 'Error').attr('id', ID + '_' + RegExCounter + 'Error');
-            $(this).parent().find('#' + ID + 'Error').attr('name', ID + '_' + RegExCounter + 'Error');
-
-            $(this).parent().find('#' + ID + 'ServerError').attr('id', ID + '_' + RegExCounter + 'ServerError');
-            $(this).parent().find('#' + ID + 'ServerError').attr('name', ID + '_' + RegExCounter + 'ServerError');
-
-            // add event handler to remove button
-            if($(this).hasClass('RemoveRegEx')) {
-
-                // bind click function to remove button
-                $(this).bind('click', function () {
-                    TargetNS.RemoveRegEx($(this).attr('id'));
-                    return false;
+            // if the current element is the last one on the current level, remove the entire list container,
+            // otherwise only remove this list element
+            if (!$(this).closest('ul').hasClass('SortableList') &amp;&amp; $(this).closest('ul').find('li').length === 1) {
+                $(this).closest('ul').fadeOut(function() {
+                    $(this).remove();
+                });
+            }
+            else {
+                $(this).closest('li').fadeOut(function() {
+                    $(this).remove();
                 });
             }
         });
 
-        $Clone.find('label').each(function(){
-            var FOR = $(this).attr('for');
-            $(this).attr('for', FOR + '_' + RegExCounter);
+        // add new sub elements on click
+        $Element.on('click.AddSubElement', '.Icon.Add', function() {
+
+            var $ElementObj = $('.ElementTemplate').clone(),
+                $TargetObj = $(this).closest('li');
+
+            $ElementObj.removeClass('ElementTemplate');
+            if (!$TargetObj.children('ul').length) {
+                $TargetObj.append('&lt;ul />');
+                $TargetObj.children('ul').sortable();
+            }
+            $ElementObj.appendTo($TargetObj.children('ul'));
+            $(this).closest('li').find('ul li:last-child').find('input').focus().select();
         });
 
-        // append to container
-        RegExInsert.append($Clone);
+        // select text on focus of an input element
+        $Element.on('focus.SelectText', 'input.Element', function() {
+            $(this).select();
+        });
 
-        // set new count of RegExs
-        $('#RegExCounter').val(RegExCounter);
+        // blur focused text on enter
+        $Element.on('keydown.BlurText', 'input.Element', function(Event) {
+            if (Event.keyCode === 13) {
+                $(this).blur();
+            }
+        });
 
-        return false;
+        // remove empty newly added elements
+        $Element.on('blur.RemoveElement', 'input.Element', function() {
+            if (!$(this).val()) {
+                $(this).next('strong').trigger('click');
+            }
+        });
+
+        // add new elements using the form
+        $Element.next().find('button').on('click.AddElement', function() {
+            var $InputElement = $(this).parent().find('input'),
+                Input = $InputElement.val(),
+                $ElementObj;
+
+            if (Input) {
+                $ElementObj = $('.ElementTemplate').clone();
+                $ElementObj
+                    .removeClass('ElementTemplate')
+                    .find('input')
+                    .val(Input)
+                    .addClass(Input);
+                $ElementObj.appendTo($Element);
+                $InputElement.val('');
+            }
+
+            return false;
+        });
+
+        // generate JSON data
+        $Form.on('submit.GenerateJSON', function() {
+            var Items = CollectElements($Element),
+                Value = '';
+
+            if (Items) {
+                Value = Core.JSON.Stringify(Items);
+            }
+
+            $TargetElement.val(Value);
+        });
+
+        // Initially fill the container with passed JSON data.
+        AddElement(Core.JSON.Parse(JSONData), $Element);
+
+        // make existing items sortable
+        $Element.sortable();
+        $Element.find('li ul').sortable();
     };
 
     return TargetNS;
-}(Core.Agent.Admin.DynamicFieldText || {}));
+}(Core.Agent.SortedTree || {}));
 </code></pre>
         </article>
     </section>
