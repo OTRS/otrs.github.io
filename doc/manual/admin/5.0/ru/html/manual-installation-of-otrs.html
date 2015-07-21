@@ -6,7 +6,7 @@
 <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="../../../../../documentation.js"></script>
 <!-- otrs.github.io -->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Установка из исходных кодов (Linux, Unix)</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS v.4 - Руководство Администратора"><link rel="up" href="installation.html" title="Chapter 2. Установка"><link rel="prev" href="installation.html" title="Chapter 2. Установка"><link rel="next" href="web-installer.html" title="Использование веб установщика"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Установка из исходных кодов (Linux, Unix)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">Prev</a> </td><th width="60%" align="center">Chapter 2. Установка</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>Установка из исходных кодов (Linux, Unix)</h2></div></div></div><div class="toc"><dl class="toc"></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.2"></a>Шаг 1: Установите .tar.gz</h3></div></div></div><p>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Установка из исходных кодов (Linux, Unix)</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 5 - Admin Manual"><link rel="up" href="installation.html" title="Chapter 2. Установка"><link rel="prev" href="installation.html" title="Chapter 2. Установка"><link rel="next" href="web-installer.html" title="Использование веб установщика"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Установка из исходных кодов (Linux, Unix)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">Prev</a> </td><th width="60%" align="center">Chapter 2. Установка</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>Установка из исходных кодов (Linux, Unix)</h2></div></div></div><div class="toc"><dl class="toc"></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.2"></a>Шаг 1: Установите .tar.gz</h3></div></div></div><p>
         Если вы решили устанавливать OTRS из исходных кодов, перейдите по ссылке
 <a class="ulink" href="http://www.otrs.com/try/" target="_top">http://www.otrs.com/try/</a> и
 загрузите архив с исходными кодами в любом удобном для вас формате: .tar.gz,
@@ -161,34 +161,46 @@ shell&gt; bin/otrs.SetPermissions.pl --web-group=www-data
 учетной записью созданной в веб установщике (пользователь: root@localhost).
         </p><p>
             На этом, начальная установка системы закончена.
-        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.11"></a>Шаг 10: Первое электронное письмо</h3></div></div></div><p>
-            Чтобы проверить прием  электронной почты, вы можете направить письмо
-непосредственно в <code class="filename">/opt/otrs/bin/otrs.Postmaster.pl</code>:
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.11"></a>Step 10: Start the OTRS Daemon</h3></div></div></div><p>
+            The new OTRS daemon is responsible for handling any asynchronous and
+recurring tasks in OTRS.  What has been in cron file definitions previously
+is now handled by the OTRS daemon, which is now required to operate OTRS.
 </p><pre class="screen">
-shell&gt; cat /opt/otrs/doc/sample_mails/test-email-1.box | /opt/otrs/bin/otrs.PostMaster.pl
-    </pre><p>
+shell&gt; cd /opt/otrs/bin/otrs.Daemon.pl start
+            </pre><p>
+
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.12"></a>Шаг 11: Cronjobs для пользователя OTRS</h3></div></div></div><p>
-            В OTRS есть несколько стандартных заданий cron в файле
-<code class="filename">/opt/otrs/var/cron/*.dist</code>. Для их применения скопируйте
-их в файл, опустив в окончании его имени расширение ".dist". </p><pre class="screen">
-shell&gt; cd var/cron
+            There are two default OTRS cron files in
+<code class="filename">/opt/otrs/var/cron/*.dist</code>, and their purpose is to make
+sure that the OTRS Daemon is running.  They need to be be activated by
+copying them without the ".dist" filename extension.  </p><pre class="screen">
+shell&gt; cd /opt/otrs/var/cron
 shell&gt; for foo in *.dist; do cp $foo `basename $foo .dist`; done
-    </pre><p> Для применения этих cronjobs в вашей системе можно
-использовать скрипт <code class="filename">Cron.sh</code>. Убедитесь, что вы
-запускаете от имени пользователя OTRS !
-        </p><p>
-            Первичное размещение заданий cronjobs: </p><pre class="screen">
+            </pre><p> To schedule these cronjobs on your system, you can
+use the script <code class="filename">Cron.sh</code> with the <code class="code">otrs</code>
+user.  </p><pre class="screen">
 shell&gt; /opt/otrs/bin/Cron.sh start
-    </pre><p>
-Обновление заданий cronjobs, если вы делали изменения: </p><pre class="screen">
-shell&gt; /opt/otrs/bin/Cron.sh restart
-    </pre><p> Остановка cronjobs (полезно при техобслуживании):
-</p><pre class="screen">
+            </pre><p> Stopping the cronjobs is also
+possible (useful for maintenance): </p><pre class="screen">
 shell&gt; /opt/otrs/bin/Cron.sh stop
-    </pre><p> Обратите внимание: с версии OTRS 3.3.7
-OTRS Scheduler/Планировщик использует cronjob для запуска и
-поддержки. Убедитесь, что scheduler_watchdog задание cronjob активировано.
-        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.13"></a>Шаг 12: Дополнительная информация</h3></div></div></div><p>
+    </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.13"></a>Step 12: Setup bash autocompletion (optional)</h3></div></div></div><p>
+            All regular OTRS commandline operations happen via the otrs Console
+interface <code class="filename">bin/otrs.Console.pl</code>. This provides an auto
+completion for the bash shell which makes finding the right command and
+options much easier.
+        </p><p>
+
+            You can activate the bash autocompletion by adding this line in the
+<code class="filename">~/.bashrc</code> of the OTRS user: </p><pre class="screen">
+
+source /opt/otrs/bin/otrs.Console.bashrc
+            </pre><p> After restarting your shell, you can just type
+<code class="filename">bin/otrs.Console.pl</code> followed by TAB, and it will list
+all available commands. If you type a few characters of the command name,
+TAB will show all matching commands. After typing a complete command, all
+possible options and arguments will be shown by pressing TAB.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.14"></a>Step 13: Further Information</h3></div></div></div><p>
             Мы советуем вам ознакомиться с <a class="link" href="performance-tuning.html" title="Chapter 6. Настройка Производительности">раздел
 настройки производительности</a>.
         </p><p>
