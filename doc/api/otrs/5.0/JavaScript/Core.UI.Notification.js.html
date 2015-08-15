@@ -10,7 +10,7 @@
 <!-- otrs.github.io -->
 
     <meta charset="utf-8">
-    <title>OTRS API Reference JavaScript: Source: Core.Agent.TicketMerge.js</title>
+    <title>OTRS API Reference JavaScript: Source: Core.UI.Notification.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -26,7 +26,7 @@
 <div id="main">
 
     <h1 class="page-title">OTRS API Reference JavaScript</h1>
-    <h2 class="page-title">Source: Core.Agent.TicketMerge.js</h2>
+    <h2 class="page-title">Source: Core.UI.Notification.js</h2>
 
     
 
@@ -46,74 +46,106 @@
 "use strict";
 
 var Core = Core || {};
-Core.Agent = Core.Agent || {};
+Core.UI = Core.UI || {};
 
 /**
- * @namespace Core.Agent.TicketMerge
- * @memberof Core.Agent
+ * @namespace Core.UI.Notification
+ * @memberof Core.UI
  * @author OTRS AG
  * @description
- *      This namespace contains the TicketMerge functions.
+ *      Popup windows.
  */
-Core.Agent.TicketMerge = (function (TargetNS) {
-
+Core.UI.Notification = (function (TargetNS) {
     /**
-     * @name Init
      * @private
-     * @memberof Core.Agent.TicketMerge
-     * @function
+     * @name Notification
+     * @memberof Core.UI.Notification
+     * @member {Object}
      * @description
-     *      This function switches the given fields between mandatory and optional.
+     *      Notification object.
      */
-    function SwitchMandatoryFields() {
-        var InformSenderChecked = $('#InformSender').prop('checked'),
-            $ElementsLabelObj = $('#To,#Subject,#RichText').parent().prev('label');
-
-        if (InformSenderChecked) {
-            $ElementsLabelObj
-                .addClass('Mandatory')
-                .find('.Marker')
-                .removeClass('Hidden');
-        }
-        else if (!InformSenderChecked) {
-            $ElementsLabelObj
-                .removeClass('Mandatory')
-                .find('.Marker')
-                .addClass('Hidden');
-        }
-    }
+    var Notification = window.Notification || window.mozNotification || window.webkitNotification;
 
     /**
-     * @name Init
-     * @memberof Core.Agent.TicketMerge
+     * @name RequestPermission
+     * @memberof Core.UI.Notification
      * @function
+     * @returns {Boolean} True/false if notifications have been allowed.
      * @description
-     *      This function initializes the functionality for the TicketMerge screen.
+     *      This function requests notification permissions from a browser.
      */
-    TargetNS.Init = function () {
-        // initial setting for to/subject/body
-        SwitchMandatoryFields();
-
-        // watch for changes of inform sender field
-        $('#InformSender').bind('click', function(){
-            SwitchMandatoryFields();
+    TargetNS.RequestPermission = function () {
+        return Notification.requestPermission(function (Result) {
+            if (Result === 'denied' || Result === 'default') {
+                return false;
+            }
+            return true;
         });
+    };
 
-        // Subscribe to ToggleWidget event to handle special behaviour in ticket merge screen
-        Core.App.Subscribe('Event.UI.ToggleWidget', function ($WidgetElement) {
-            if ($WidgetElement.attr('id') !== 'WidgetInformSender') {
-                return;
+    /**
+     * @name Show
+     * @memberof Core.UI.Notification
+     * @function
+     * @returns {Boolean} True/false if notification is showed.
+     * @param {String} Header - A header for notification
+     * @param {String} Body - Body of notification.
+     * @param {Integer} Sticky - should notification be sticky until it's closed.
+     * @param {String} Icon - Path to the icon for the notification.
+     * @param {String} Action - Action to lead on click on notification.
+     * @description
+     *      This function opens a popup window. Every popup is of a specific type and there can only be one window of a type at a time.
+     */
+    TargetNS.Show = function (Header, Body, Sticky, Icon, Action) {
+
+        var Options,
+            NewNotification;
+
+        // Fallback mechanism for old browsers
+        if (!Notification) {
+
+            // Just alert Header and Body and return true
+            alert(Header + " \n " + Body);
+            return true;
+        }
+
+        if (Sticky === 1) {
+            Sticky = true;
+        } else {
+            Sticky = false;
+        }
+
+        // Request permissions
+        return Notification.requestPermission(function (Result) {
+            if (Result === 'denied' || Result === 'default') {
+                return false;
             }
 
-            // if widget is being opened and checkbox is not yet checked, check it
-            if ($WidgetElement.hasClass('Expanded') &amp;&amp; !$('#InformSender').prop('checked')) {
-                $('#InformSender').trigger('click');
+            Options = {
+                body: Body,
+                sticky: Sticky,
+                icon: Icon,
+                vibrate: [200, 100, 200]
+            };
+
+            NewNotification = new Notification(Header, Options);
+
+            // If action parameter is passed
+            if (Action) {
+                NewNotification.onclick = function () {
+                    window.location.href = Core.Config.Get('Baselink') + "Action=" + Action;
+
+                    // Close this notification
+                    NewNotification.close();
+                };
             }
+
+            return true;
         });
     };
 
     return TargetNS;
-}(Core.Agent.TicketMerge || {}));
+}(Core.UI.Notification || {}));
 </code></pre>
         </article>
     </section>
