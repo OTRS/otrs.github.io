@@ -31,6 +31,13 @@ o Date::Pcalc......................ok (v1.2)
 ...
             </pre><p>
 
+            </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+                    Please note that OTRS requires a working Perl installation with all "core" modules such as the module
+                    <code class="literal">version</code>. These modules are not explicitly checked by the script.
+                    You may need to install a <code class="literal">perl-core</code> package on some systems
+                    like RHEL that do not install the perl core packages by default.
+                </p></div><p>
+
             To install missing Perl modules, you can:
         </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.4.3.3"></a>a) Install the packages via the package manager of your Linux distribution</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
                         For Red Hat, CentOS, Fedora or compatible systems:
@@ -121,9 +128,10 @@ shell&gt; perl -cw /opt/otrs/bin/otrs.PostMaster.pl
             </pre><p>
 
             "syntax OK" tells you all mandatory Perl modules are installed.
-        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="web-server-configuration"></a>Step 6: Configuring the Apache web server</h3></div></div></div><p>First of all, you should install the Apache2 web server and mod_perl; you'd typically do this from your systems package manager.
-        Below you'll find the commands needed to set up Apache on the most popular Linux distributions.
-        </p><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="web-server-configuration"></a>Step 6: Configuring the Apache web server</h3></div></div></div><p>
+            First of all, you should install the Apache2 web server and mod_perl; you'd typically do this from your systems package manager.
+            Below you'll find the commands needed to set up Apache on the most popular Linux distributions.
+
             </p><pre class="screen">
 # rhel / centos:
 shell&gt; yum install httpd mod_perl
@@ -134,14 +142,27 @@ shell&gt; zypper install apache2-mod_perl
 # debian/ubuntu:
 shell&gt; apt-get install apache2 libapache2-mod-perl2
         </pre><p>
+
         </p><p>
-        To access the web interface of OTRS via a short URL, Alias and ScriptAlias entries are needed. Most
-        <span class="application">Apache</span>  installations have a <code class="filename">conf.d</code> directory included. On Linux systems you can usually find this directory  under <code class="filename">/etc/apache</code> or <code class="filename">/etc/apache2</code>. Log in as root, change to the <code class="filename">conf.d</code> directory and copy the appropriate template in <code class="filename">/opt/otrs/scripts/apache2-httpd.include.conf</code> to a file called <code class="filename">otrs.conf</code> in the Apache configuration directory.
+            Most <span class="application">Apache</span>  installations have a <code class="filename">conf.d</code> directory included.
+            On Linux systems you can usually find this directory  under <code class="filename">/etc/apache</code> or <code class="filename">/etc/apache2</code>.
+            Log in as root, change to the <code class="filename">conf.d</code> directory and link the appropriate template in
+            <code class="filename">/opt/otrs/scripts/apache2-httpd.include.conf</code> to a file called <code class="filename">otrs.conf</code>
+            in the Apache configuration directory.
         </p><p>
-        Restart your web server to load the new configuration settings. On most systems you can start/restart your web server
-        with the command <span class="command"><strong>/etc/init.d/apache2 restart</strong></span>.
+            OTRS requires a few apache modules to be active for optimal operation. On most platforms you can make sure
+            they are active via the tool <code class="filename">a2enmod</code>.
+
+            </p><pre class="screen">
+shell&gt; a2enmod perl
+shell&gt; a2enmod version
+shell&gt; a2enmod deflate
+shell&gt; a2enmod filter
+shell&gt; a2enmod headers
+        </pre><p>
         </p><p>
-        Now your web server should be configured for OTRS.
+            Now you can restart your web server to load the new configuration settings.
+            On most systems you can do that with the command <span class="command"><strong>systemctl restart apache2.service</strong></span>.
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.8"></a>Step 7: File Permissions</h3></div></div></div><p>
             File permissions need to be adjusted to allow OTRS to read and write files:
 
@@ -185,7 +206,7 @@ shell&gt; bin/otrs.SetPermissions.pl --web-group=www-data
             the <code class="literal">otrs</code> user.
 
             </p><pre class="screen">
-shell&gt; cd /opt/otrs/bin/otrs.Daemon.pl start
+shell&gt; /opt/otrs/bin/otrs.Daemon.pl start
             </pre><p>
 
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.12"></a>Step 11: Cronjobs for the OTRS user</h3></div></div></div><p>
