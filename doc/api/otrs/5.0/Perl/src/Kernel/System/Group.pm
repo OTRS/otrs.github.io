@@ -1209,8 +1209,18 @@ sub PermissionGroupUserAdd {
     }
 
     # reset cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    $CacheObject->CleanUp(
         Type => 'DBGroupUserGet',
+    );
+
+    $CacheObject->CleanUp(
+        Type => 'GroupPermissionUserGet',
+    );
+
+    $CacheObject->CleanUp(
+        Type => 'GroupPermissionGroupGet',
     );
 
     return 1;
@@ -1501,8 +1511,18 @@ sub PermissionGroupRoleAdd {
     }
 
     # reset cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    $CacheObject->CleanUp(
         Type => 'DBGroupRoleGet',
+    );
+
+    $CacheObject->CleanUp(
+        Type => 'GroupPermissionUserGet',
+    );
+
+    $CacheObject->CleanUp(
+        Type => 'GroupPermissionGroupGet',
     );
 
     return 1;
@@ -1715,15 +1735,20 @@ sub PermissionRoleUserAdd {
         Bind => [ \$Param{UID}, \$Param{RID} ],
     );
 
-    if ( !$Param{Active} ) {
+    # reset cache
+    $CacheObject->CleanUp(
+        Type => 'DBRoleUserGet',
+    );
 
-        # reset cache
-        $CacheObject->CleanUp(
-            Type => 'DBRoleUserGet',
-        );
+    $CacheObject->CleanUp(
+        Type => 'GroupPermissionUserGet',
+    );
 
-        return 1;
-    }
+    $CacheObject->CleanUp(
+        Type => 'GroupPermissionGroupGet',
+    );
+
+    return 1 if !$Param{Active};
 
     # insert new relation
     $DBObject->Do(
@@ -1731,11 +1756,6 @@ sub PermissionRoleUserAdd {
             . '(user_id, role_id, create_time, create_by, change_time, change_by) '
             . 'VALUES (?, ?, current_timestamp, ?, current_timestamp, ?)',
         Bind => [ \$Param{UID}, \$Param{RID}, \$Param{UserID}, \$Param{UserID} ],
-    );
-
-    # reset cache
-    $CacheObject->CleanUp(
-        Type => 'DBRoleUserGet',
     );
 
     return 1;
