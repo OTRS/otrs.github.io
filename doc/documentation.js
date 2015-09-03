@@ -110,10 +110,16 @@ $(document).ready(function() {
             Path: 'otrs',
             Versions: [
                 {
+                    Version:  '6.0',
+                    HTMLPath: '6.0',
+                    Types:    ['Perl', 'JavaScript'],
+                    Name:     'OTRS git (development)'
+                },
+                {
                     Version:  '5.0',
                     HTMLPath: '5.0',
                     Types:    ['Perl', 'JavaScript'],
-                    Name:     'OTRS git (development)'
+                    Name:     'OTRS 5 (beta)'
                 },
                 {
                     Version:  '4.0',
@@ -126,12 +132,6 @@ $(document).ready(function() {
                     HTMLPath: '3.3',
                     Types:    ['Perl'],
                     Name:     'OTRS 3.3'
-                },
-                {
-                    Version:  '3.2',
-                    HTMLPath: '3.2',
-                    Types:    ['Perl'],
-                    Name:     'OTRS 3.2'
                 }
             ]
         }
