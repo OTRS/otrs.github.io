@@ -1,0 +1,172 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Upgrading OTRS from 4 to 5</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 5 - Admin Manual"><link rel="up" href="installation.html" title="第2章 インストレーション"><link rel="prev" href="installation-on-windows.html" title="OTRS on Windows"><link rel="next" href="application.html" title="追加のアプリケーション"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Upgrading OTRS from 4 to 5</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation-on-windows.html">戻る</a> </td><th width="60%" align="center">第2章 インストレーション</th><td width="20%" align="right"> <a accesskey="n" href="application.html">次へ</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="upgrading"></a>Upgrading OTRS from 4 to 5</h2></div></div></div><div class="toc"><dl class="toc"></dl></div><p>
+    These instructions are for people upgrading OTRS from <span class="emphasis"><em>4</em></span>
+to <span class="emphasis"><em>5</em></span> or from a <span class="emphasis"><em>5</em></span> to a later
+patchlevel release <span class="emphasis"><em>5</em></span> and applies both for RPM and
+source code (tarball) upgrades.
+    </p><p>
+    If you are running a lower version of OTRS you have to follow the upgrade
+path to 4 first
+(1.1-&gt;1.2-&gt;1.3-&gt;2.0-&gt;2.1-&gt;2.2-&gt;2.3-&gt;2.4-&gt;3.0-&gt;3.1-&gt;3.2-&gt;3.3-&gt;4)! You need to
+perform a full upgrade to every version in between, including database
+changes and the upgrading perl script.
+    </p><p>
+    OTRS2.2またはそれ以前からアップグレードする場合、あなたは<a class="ulink" href="http://bugs.otrs.org/show_bug.cgi?id=6798" target="_top">余分なステップ</a>を取らなければならないことに注意してください。
+    </p><p>
+    Within a single minor version you can skip patch level releases if you want
+to upgrade. For instance you can upgrade directly from OTRS 5 patchlevel 2
+to version 5 patchlevel 6. If you need to do such a "patch level upgrade",
+you should skip steps 6 and 11.
+    </p><p>
+    最初に独立した試験機でのテスト·アップデートを実行することを強くお勧めします。
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.7"></a>Step 1: 関連するすべてのサービスを停止します。</h3></div></div></div><p>
+        OTRSにアクセスしようとする複数の実行中のサービスやcronジョブがないことを確認してください。これはあなたのサービスの構成に依存し、これは一例です。</p><pre class="screen">
+shell&gt; /etc/init.d/cron stop
+shell&gt; /etc/init.d/postfix stop
+shell&gt; /etc/init.d/apache stop
+            </pre><p> OTRS cronジョブとスケジューラを(この順序で)停止します。</p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/Cron.sh stop
+shell&gt; bin/otrs.Scheduler.pl -a stop
+            </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.8"></a>Step 2: <code class="filename">/opt/otrs/</code> 配下の全てをバックアップしてください。</h3></div></div></div><p>
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li><li class="listitem"><p><code class="filename">var/*</code></p></li><li class="listitem"><p>データベースも同様に行います。</p></li></ul></div><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.9"></a>Step 3: 全てを確実にバックアップしたことを確認してください。 ;-)</h3></div></div></div><p></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.10"></a>Step 4: 新しいリリースをインストールします。 (tar や RPM)</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.7.10.2"></a>Step 4.1: tarball を使う場合:</h4></div></div></div><pre class="screen">
+shell&gt; cd /opt
+shell&gt; mv otrs otrs-old
+shell&gt; tar -xzf otrs-x.x.x.tar.gz
+shell&gt; mv otrs-x.x.x otrs
+            </pre><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.10.2.3"></a>旧構成ファイルをリストア</h5></div></div></div><p>
+                    </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li></ul></div><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.10.2.4"></a>TicketCounter.logをリストア</h5></div></div></div><p>
+                    In order to let OTRS continue with the correct ticket number, restore the
+<code class="filename">TicketCounter.log</code> to
+<code class="filename">/opt/otrs/var/log/</code>. This is especially important if you
+use incremental ticketnumbers.
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.10.2.5"></a>記事データのリストア</h5></div></div></div><p>
+                    If you configured OTRS to store article data in the filesystem you have to
+restore the <code class="filename">article</code> folder to
+<code class="filename">/opt/otrs/var/</code>.
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.10.2.6"></a>Set file permissions</h5></div></div></div><p>
+                Please execute </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.SetPermissions.pl
+                </pre><p> with the permissions
+needed for your system setup. For example:
+
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>Web server which runs as the OTRS user: </p><pre class="screen">
+shell&gt; bin/otrs.SetPermissions.pl --web-group=otrs
+                </pre><p>
+                    </p></li><li class="listitem"><p>Webserver with wwwrun user (e. g. SUSE): </p><pre class="screen">
+shell&gt; bin/otrs.SetPermissions.pl --web-group=wwwrun
+                </pre><p>
+                    </p></li><li class="listitem"><p>Webserver with apache user (e. g. Red Hat, CentOS): </p><pre class="screen">
+shell&gt; bin/otrs.SetPermissions.pl --web-group=apache
+                </pre><p>
+                    </p></li><li class="listitem"><p>Webserver with www-data user (e. g. Debian, Ubuntu): </p><pre class="screen">
+shell&gt; bin/otrs.SetPermissions.pl --web-group=www-data
+                </pre><p>
+                    </p></li></ul></div><p>
+
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.7.10.3"></a>Step 4.2: With the RPM:</h4></div></div></div><p>
+            </p><pre class="screen">
+shell&gt; rpm -Uvh otrs-x.x.x.-01.rpm
+            </pre><p> In this case the RPM update
+automatically restores the old configuration files and sets file
+permissions.
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.11"></a>Step 5: Check needed Perl modules</h3></div></div></div><p>
+        システムに必要とされるperlモジュールがすべてインストールされ不足しているおそれのあるモジュールをインストールすることを確認してください。</p><pre class="screen">
+shell&gt; /opt/otrs/bin/otrs.CheckModules.pl
+        </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.12"></a>Step 6: Apply the database changes</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.7.12.2"></a>Step 6.1: Database schema update</h4></div></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.12.2.2"></a>MySQL:</h5></div></div></div><p>
+                Note: new tables created in the MySQL UPGRADING process will be created with
+the default table storage engine set in your MySQL server.  In MySQL 5.5 the
+new default type is <code class="code">InnoDB</code>.  If existing tables, e.g. "users",
+have the table storage engine e.g. <code class="code">MyISAM</code>, then an error will
+be displayed when creating the foreign key constraints.
+                </p><p>
+                You have two options: you can change the default storage engine of MySQL
+back to <code class="code">MyISAM</code> so that new tables will have the same engine as
+the existing tables, or change the existing tables to use InnoDB as storage
+engine.
+                </p><p>
+                Any problems with regards to the storage engine will be reported by the
+<code class="filename">otrs.CheckDB.pl</code> script, so please run it to check for
+possible issues.  </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.CheckDB.pl
+shell&gt; cat scripts/DBUpdate-to-5.mysql.sql | mysql -p -f -u root otrs
+                </pre><p>
+
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.12.2.3"></a>PostgreSQL:</h5></div></div></div><p>
+                </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; cat scripts/DBUpdate-to-5.postgresql.sql | psql --set ON_ERROR_STOP=on --single-transaction otrs otrs
+                </pre><p>
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.7.12.3"></a>Step 6.2: Database migration script</h4></div></div></div><p>
+            Run the migration script (as user <code class="code">otrs</code>, NOT as
+<code class="code">root</code>): </p><pre class="screen">
+shell&gt; scripts/DBUpdate-to-5.pl
+            </pre><p> Do not continue the
+upgrading process if this script did not work properly for you.  Otherwise
+data loss may occur.
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.13"></a>Step 7: Refresh the configuration cache and delete caches</h3></div></div></div><p>
+        Please run (as user <code class="code">otrs</code>, <span class="emphasis"><em>not</em></span> as
+<code class="code">root</code>): </p><pre class="screen">
+shell&gt; bin/otrs.Console.pl Maint::Config::Rebuild
+shell&gt; bin/otrs.Console.pl Maint::Cache::Delete
+        </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.14"></a>Step 9: Restart your services</h3></div></div></div><p>
+        例えば（ご使用中のサービスによりますが）</p><pre class="screen">
+shell&gt; /etc/init.d/apache start
+shell&gt; /etc/init.d/postfix start
+shell&gt; /etc/init.d/cron start
+        </pre><p>今、システムにログインできます。
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.15"></a>Step 8: Check installed packages</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                The OTRS packages of 4 are NOT compatible with OTRS 5, so you have to
+perform a package upgrade!
+            </p></div><p>
+            以下のパッケージはアップグレード・プロセス後。自動的にアンインストールされます（先にインストール済ならば）
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>OTRSGenericInterfaceMappingXSLT</p></li></ul></div><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.16"></a>Step 9: Start the OTRS Daemon</h3></div></div></div><p>
+            The new OTRS daemon is responsible for handling any asynchronous and
+recurring tasks in OTRS.  What has been in cron file definitions previously
+is now handled by the OTRS daemon, which is now required to operate
+OTRS. The daemon also handles all GenericAgent jobs and must be started from
+the <code class="literal">otrs</code> user.  </p><pre class="screen">
+shell&gt; cd /opt/otrs/bin/otrs.Daemon.pl start
+            </pre><p>
+
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.17"></a>Step 10: Update and activate cronjobs</h3></div></div></div><p>
+            There are two default OTRS cron files in
+<code class="filename">/opt/otrs/var/cron/*.dist</code>, and their purpose is to make
+sure that the OTRS Daemon is running.  They need to be be activated by
+copying them without the ".dist" filename extension.  </p><pre class="screen">
+shell&gt; cd /opt/otrs/var/cron
+shell&gt; for foo in *.dist; do cp $foo `basename $foo .dist`; done
+            </pre><p> To schedule these cronjobs on your system, you can
+use the script <code class="filename">Cron.sh</code> with the <code class="literal">otrs</code>
+user.  </p><pre class="screen">
+shell&amp;gt; /opt/otrs/bin/Cron.sh start
+            </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.18"></a>Step 11: Review your ticket notifications</h3></div></div></div><p>
+            With OTRS 5 ticket notifications are configured differently than in previous
+versions.  They are now part of the "Event Notifications" that were
+previously available as well (now called just "Ticket Notifications"). Your
+existing ticket notifications have been migrated into the list of ticket
+notifications, but deactivated. You have also received the new default
+ticket notifications, active by default.
+        </p><p>
+            In case you did not modify the old ticket notifications you don't have to do
+anything. If you have made local modifications or translations, you have two
+choices: a) you can migrate your modifications to the new ticket
+notifications (recommended) or b) you can deactivate the new notifications
+and activate the old notifications again.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.19"></a>Step 12: Well done!</h3></div></div></div><p></p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="installation-on-windows.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="installation.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="application.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">OTRS on Windows </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 追加のアプリケーション</td></tr></table></div></body></html>
