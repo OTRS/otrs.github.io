@@ -11,40 +11,39 @@
     </p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-otrs"></a>OTRS</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">TicketIndexModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">TicketStorageModule</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.8.3.5">Archiving Tickets</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-cache">Cache</a></span></dt></dl></div><p>
         There are several options for improving OTRS performance.
         </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-index"></a>TicketIndexModule</h3></div></div></div><p>
-            There are two backend modules for the ticket index:
-            </p><p>
-            </p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
-            Using Kernel::System::Ticket::IndexAccelerator::RuntimeDB (default), generate each queue view on the fly from the ticket table. You will not have performance trouble until you have about 60,000 open tickets in your system.
-            </p></li><li class="listitem"><p>
-            Kernel::System::Ticket::IndexAccelerator::StaticDB, the most powerful module, should be used when you have above 80,000 open tickets. It uses an extra ticket_index table, which works like a view. Use <code class="filename">bin/otrs.RebuildTicketIndex.pl</code> for generating an initial index build after switching backends.
-            </p></li></ul></div><p>
-            </p><p>
-            You can change the IndexAccelerator via SysConfig.
+                There are two backend modules for the index for the ticket queue view:
+
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                        Using Kernel::System::Ticket::IndexAccelerator::RuntimeDB (default), generate each queue view on the fly from the ticket table. You will not have performance trouble until you have about 60,000 open tickets in your system.
+                        </p></li><li class="listitem"><p>
+                        Kernel::System::Ticket::IndexAccelerator::StaticDB, the most powerful module, should be used when you have above 80,000 open tickets. It uses an extra ticket_index table, which works like a view. Use <code class="filename">bin/otrs.Console.pl Maint::Ticket::QueueIndexRebuild</code> for generating an initial index after switching backends.
+                        </p></li></ul></div><p>
+
+                You can change the IndexAccelerator via SysConfig.
             </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-storage"></a>TicketStorageModule</h3></div></div></div><p>
             There are two different backend modules for the ticket/article storage:
             </p><p>
-            </p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
-            Configure Kernel::System::Ticket::ArticleStorageDB (default) to store attachments, etc., in the database. Note: Don't use it with large setups.
-            </p><p>
-            Pro: If your webserver user isn't the 'otrs' user, use this module to avoid file permission problems.
-            </p><p>
-            Con: It is not advisable to store attachments in your database. Take care that your database is able to store large objects. E.g. Configure MySQL with "set-variable = max_allowed_packet=8M" to store 8 MB objects (the default is 2M).
-            </p></li><li class="listitem"><p>
-            Configure Kernel::System::Ticket::ArticleStorageFS to store attachments etc. on the local file system. Note: Recommended for large setups.
-            </p><p>
-            Pro: It is fast!
-            </p><p>
-            Con: Your web server user should be the 'otrs' user. Also, if you have multiple front-end servers, you should make sure the filesystem is shared between the servers. Place it on an NFS share or preferably a SAN or similar solution.
-            </p></li></ul></div><p>
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                Configure Kernel::System::Ticket::ArticleStorageDB (default) to store attachments, etc., in the database. Note: Don't use it with large setups.
+                </p><p>
+                Pro: If your webserver user isn't the 'otrs' user, use this module to avoid file permission problems.
+                </p><p>
+                Con: It is not advisable to store attachments in your database. Take care that your database is able to store large objects. E.g. Configure MySQL with "set-variable = max_allowed_packet=8M" to store 8 MB objects (the default is 2M).
+                </p></li><li class="listitem"><p>
+                Configure Kernel::System::Ticket::ArticleStorageFS to store attachments etc. on the local file system. Note: Recommended for large setups.
+                </p><p>
+                Pro: It is fast!
+                </p><p>
+                Con: Your web server user should be the 'otrs' user. Also, if you have multiple front-end servers, you should make sure the filesystem is shared between the servers. Place it on an NFS share or preferably a SAN or similar solution.
+                </p></li></ul></div><p>
 
             </p><p>
-                Note: you can switch from one back-end to the other on the fly. You can switch the backend in the SysConfig, and then run the command line utility <code class="filename">otrs.ArticleStorageSwitch.pl</code> to put the articles from the database onto the filesystem or the other way around. You can use the <span class="emphasis"><em>-s</em></span> and <span class="emphasis"><em>-d</em></span> options to specify the source and destination back-ends. Please note that the entire process can take considerable time to run, depending on the number of articles you have and the available CPU power and/or network capacity.
+                Note: you can switch from one back-end to the other on the fly. You can switch the backend in the SysConfig, and then run the command line utility <code class="filename">bin/otrs.Console.pl Admin::Article::StorageSwitch</code> to put the articles from the database onto the filesystem or the other way around. You can use the <span class="emphasis"><em>--target</em></span> options to specify the target back-ends. Please note that the entire process can take considerable time to run, depending on the number of articles you have and the available CPU power and/or network capacity.
             </p><p>
-            </p><pre class="screen">
-shell&gt; bin/otrs.ArticleStorageSwitch.pl -s ArticleStorageDB -d ArticleStorageFS
-            </pre><p>
-            </p><p>
-            <span class="emphasis"><em>Script: Switching storage back-ends from database to filesystem.</em></span>
+                </p><pre class="screen">
+shell&gt; bin/otrs.Console.pl Admin::Article::StorageSwitch --target ArticleStorageFS
+                </pre><p>
+                <span class="emphasis"><em>Script: Switching storage back-ends from database to filesystem.</em></span>
             </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.8.3.5"></a>Archiving Tickets</h3></div></div></div><p>
                 As OTRS can be used as an audit-proof system, deleting closed tickets may not be a good idea. Therefore we implemented a feature that allows you to archive tickets.
             </p><p>
@@ -89,8 +88,8 @@ shell&gt; bin/otrs.ArticleStorageSwitch.pl -s ArticleStorageDB -d ArticleStorage
                 Please make sure that this uses a high performance file system/storage.
                 If you have enough RAM, you can also try to put this directory on a ramdisk like this:
                 </p><pre class="screen">
-shell&gt; /opt/otrs/bin/otrs.CleanUp.pl
-shell&gt; /opt/otrs/bin/otrs.DeleteCache.pl
+shell&gt; /opt/otrs/bin/otrs.Console.pl Maint::Session::DeleteAll
+shell&gt; /opt/otrs/bin/otrs.Console.pl Maint::Maint::Cache::Delete
 shell&gt; sudo mount -o size=16G -t tmpfs none /opt/otrs/var/tmp
 
 # add persistent mount point in /etc/fstab
