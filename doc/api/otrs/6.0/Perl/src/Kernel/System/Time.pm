@@ -67,6 +67,10 @@ returns the number of non-leap seconds since what ever time the
 system considers to be the epoch (that's 00:00:00, January 1, 1904
 for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).
 
+This will the time that the server considers to be the local time (based on
+time zone configuration) plus the configured OTRS "TimeZone" diff (only recommended
+for systems running in UTC).
+
     my $SystemTime = $TimeObject->SystemTime();
 
 =cut
@@ -79,7 +83,7 @@ sub SystemTime {
 
 =item SystemTime2TimeStamp()
 
-returns a time stamp in "yyyy-mm-dd 23:59:59" format.
+returns a time stamp for a given system time in "yyyy-mm-dd 23:59:59" format.
 
     my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
         SystemTime => $SystemTime,
@@ -122,7 +126,8 @@ sub SystemTime2TimeStamp {
 
 =item CurrentTimestamp()
 
-returns a time stamp in "yyyy-mm-dd 23:59:59" format.
+returns a time stamp of the local system time (see L<SystemTime()>)
+in "yyyy-mm-dd 23:59:59" format.
 
     my $TimeStamp = $TimeObject->CurrentTimestamp();
 
@@ -136,7 +141,7 @@ sub CurrentTimestamp {
 
 =item SystemTime2Date()
 
-returns a array of time params.
+converts a system time to a structured date array.
 
     my ($Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay) = $TimeObject->SystemTime2Date(
         SystemTime => $TimeObject->SystemTime(),
@@ -173,9 +178,7 @@ sub SystemTime2Date {
 
 =item TimeStamp2SystemTime()
 
-returns the number of non-leap seconds since what ever time the
-system considers to be the epoch (that's 00:00:00, January 1, 1904
-for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).
+converts a given time stamp to local system time.
 
     my $SystemTime = $TimeObject->TimeStamp2SystemTime(
         String => '2004-08-14 22:45:00',
@@ -312,9 +315,7 @@ sub TimeStamp2SystemTime {
 
 =item Date2SystemTime()
 
-returns the number of non-leap seconds since what ever time the
-system considers to be the epoch (that's 00:00:00, January 1, 1904
-for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).
+converts a structured date array to local system time.
 
     my $SystemTime = $TimeObject->Date2SystemTime(
         Year   => 2004,
@@ -359,6 +360,27 @@ sub Date2SystemTime {
     return $SystemTime;
 }
 
+=item ServerLocalTimeOffsetSeconds()
+
+returns the computed difference in seconds between UTC time and local time.
+
+    my $ServerLocalTimeOffsetSeconds = $TimeObject->ServerLocalTimeOffsetSeconds(
+        SystemTime => $SystemTime,  # optional, otherwise call time()
+    );
+
+=cut
+
+sub ServerLocalTimeOffsetSeconds {
+    my ( $Self, %Param ) = @_;
+
+    my $ServerTime = $Param{SystemTime} || time();
+    my $ServerLocalTime = Time::Local::timegm_nocheck( localtime($ServerTime) );
+
+    # Check if local time and UTC time are different
+    return $ServerLocalTime - $ServerTime;
+
+}
+
 =item MailTimeStamp()
 
 returns the current time stamp in RFC 2822 format to be used in email headers:
@@ -395,34 +417,35 @@ sub MailTimeStamp {
     my @DayMap   = qw/Sun Mon Tue Wed Thu Fri Sat/;
     my @MonthMap = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
 
-    # check if server is in UTC (server diff should be 0 or very close to)
-    my $ServerTimeDiff = Time::Local::timegm_nocheck( localtime( time() ) ) - time();
+    # Here we cannot use the OTRS "TimeZone" because OTRS uses localtime()
+    #   and does not know if that is UTC or another time zone.
+    #   Therefore OTRS cannot generate the correct offset for the mail timestamp.
+    #   So we need to use the real time configuration of the server to determine this properly.
 
-    # calculate offset - should be '+0200', '-0600', or '+0000'
-    my $Diff = $Self->{TimeZone};
-    if ($ServerTimeDiff) {
-        $Diff = int( $ServerTimeDiff / 3600 );
-    }
-    my $Direction = $Diff < 0 ? '-' : '+';
-    $Diff = abs $Diff;
-    my $OffsetHours = $Diff;
+    my $ServerTime = time();
+    my $ServerTimeDiff = $Self->ServerLocalTimeOffsetSeconds( SystemTime => $ServerTime );
+
+    # calculate offset - should be '+0200', '-0600', '+0545' or '+0000'
+    my $Direction   = $ServerTimeDiff < 0 ? '-' : '+';
+    my $DiffHours   = abs int( $ServerTimeDiff / 3600 );
+    my $DiffMinutes = abs int( ( $ServerTimeDiff % 3600 ) / 60 );
 
     my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $Self->SystemTime2Date(
-        SystemTime => $Self->SystemTime(),
+        SystemTime => $ServerTime,
     );
 
     my $TimeString = sprintf "%s, %d %s %d %02d:%02d:%02d %s%02d%02d",
         $DayMap[$WeekDay],    # 'Sat'
         $Day, $MonthMap[ $Month - 1 ], $Year,    # '2', 'Aug', '2014'
-        $Hour,      $Min,         $Sec,          # '12', '34', '36'
-        $Direction, $OffsetHours, 0;             # '+', '02', '00'
+        $Hour,      $Min,       $Sec,            # '12', '34', '36'
+        $Direction, $DiffHours, $DiffMinutes;    # '+', '02', '00'
 
     return $TimeString;
 }
 
 =item WorkingTime()
 
-get the working time in seconds between these times.
+get the working time in seconds between these local system times.
 
     my $WorkingTime = $TimeObject->WorkingTime(
         StartTime => $Created,
