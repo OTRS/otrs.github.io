@@ -57,7 +57,11 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a><br />
+<ul>
+	<li><a href="#Explanation_for_the_time_zone_parame">Explanation for the time zone parameter</a></li>
+</ul>
+</li>
 	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
@@ -71,6 +75,23 @@
 <h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>All stats functions.</p>
+
+<h2 id="Explanation_for_the_time_zone_parame">Explanation for the time zone parameter</h2>
+
+<p>The time zone parameter is available, if the system use UTC as system time and the TimeZoneUser feature is active
+and the statistic is a dynamic statistic. The selected periods in the frontend are time zone neutral and for the
+search parameters, the selection will be converted to UTC time based on the selected time zone, because the times
+are stored as UTC time in the database (if the system is configured correctly).</p>
+
+<p>This means e.g. if a absolute period of time from 2015 2015-08-01 00:00:00 to 2015-09-10 23:59:59 and a time zone +6 has been selected,
+the time zone (+6) will be subtracted (with &quot;_SubtractTimeZone&quot;) from the selected absolute time period for the search parameter,
+so that the right UTC time will be used for the absolute period of time. For the example this would be the 2015-07-31 18:00:00 to 2015-09-10 17:59:59.</p>
+
+<p>For a relative time period, e.g. a relative period of the last full 10 days and the time zone +10, first the selected
+time zone will be added (with &quot;_AddTimeZone&quot;) to the current UTC time, so that the right relative period of time will be used for the frontend output.
+For the example, we have the current UTC time 2015-09-10 16:00:00, that means for the selected relative period and time zone (+10) the period of time
+from 2015-09-01 00:00:00 to 2015-09-10 23:59:59. From the period of time will be substracted the selected time zone (+10) to get the correct UTC time
+for the search in the database (as for the absolute time). In this case that would be the period of time from 2015-08-31 14:00:00 to 2015-09-10 13:59:59.</p>
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
@@ -232,7 +253,10 @@ This can be used to fetch cached stats data e. g. for stats widgets in the dashb
 </pre></dd>	<dt>StringAndTimestamp2Filename()</dt>
 		<dd><p>builds a filename with a string and a timestamp.
 (space will be replaced with _ and - e.g. Title-of-File_2006-12-31_11-59)</p></dd>
-<dd><pre>    my $Filename = $StatsObject-&gt;StringAndTimestamp2Filename( String =&gt; 'Title' );
+<dd><pre>    my $Filename = $StatsObject-&gt;StringAndTimestamp2Filename(
+        String   =&gt; 'Title',
+        TimeZone =&gt; '+2',  # optional
+    );
 
 </pre></dd>	<dt>StatNumber2StatID()</dt>
 		<dd><p>insert the stat number get the stat id</p></dd>
@@ -264,6 +288,8 @@ This can be used to fetch cached stats data e. g. for stats widgets in the dashb
 	<dt>_SetResultCache()</dt>
 	<dt>_GetResultCache()</dt>
 	<dt>_DeleteCache()</dt>
+	<dt>_AddTimeZone()</dt>
+	<dt>_SubtractTimeZone()</dt>
 	<dt>_GetCacheString()</dt>
 </dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
