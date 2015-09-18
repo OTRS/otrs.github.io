@@ -13,7 +13,6 @@ package Kernel::System::UnitTest::Selenium;
 use strict;
 use warnings;
 
-use base qw(Selenium::Remote::Driver);
 use MIME::Base64();
 use File::Temp();
 
@@ -80,6 +79,9 @@ sub new {
             die "SeleniumTestsConfig must provide $Needed!";
         }
     }
+
+    $Param{UnitTestObject}->{MainObject}->RequireBaseClass('Selenium::Remote::Driver')
+        || die "Could not load Selenium::Remote::Driver";
 
     my $Self = $Class->SUPER::new(%SeleniumTestsConfig);
     $Self->{UnitTestObject}      = $Param{UnitTestObject};
@@ -243,6 +245,15 @@ sub Login {
 
         # login
         $Element->submit();
+
+        # Wait until form has loaded, if neccessary
+        ACTIVESLEEP:
+        for my $Second ( 1 .. 20 ) {
+            if ( $Self->execute_script('return typeof($) === "function" && $("a#LogoutButton").length') ) {
+                last ACTIVESLEEP;
+            }
+            sleep 1;
+        }
 
         # login succressful?
         $Element = $Self->find_element( 'a#LogoutButton', 'css' );
