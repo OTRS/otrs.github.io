@@ -80,25 +80,25 @@ In order to get email from your mail server, via a POP3 or IMAP mailbox, to the 
 </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
 A working SMTP configuration on the OTRS machine is required.
 </p></div><p>
-You can use the <code class="filename">.fetchmailrc.dist</code> in the home directory of OTRS and copy it to <code class="filename">.fetchmailrc</code>. Modfiy/change it for your needs (see the Example 7-1 below).
+You can use the <code class="filename">.fetchmailrc.dist</code> in the home directory of OTRS and copy it to <code class="filename">.fetchmailrc</code>. Modfiy/change it for your needs (see the Example below).
 </p><div class="example"><a name="fetchmailrc"></a><p class="title"><b>Example 4.3. .fetchmailrc</b></p><div class="example-contents"><p>
 </p><pre class="programlisting">
 #poll (mailserver) protocol POP3 user (user) password (password) is (localuser)
 poll mail.example.com protocol POP3 user joe password mama is otrs
 </pre><p>
 </p></div></div><br class="example-break"><p>
-Don't forget to set the .fetchmailrc to 710 ("chmod 710 .fetchmailrc")!
+Don't forget to set the <code class="filename">.fetchmailrc</code> to 710 ("chmod 710 .fetchmailrc")!
 </p><p>
-With the <code class="filename">.fetchmailrc</code> from the Example 7-1 above, all email will be forwarded to the local OTRS account, if the command <span class="command"><strong>fetchmail -a</strong></span> is executed. Set up a cronjob with this command if you want to fetch the mails regularly.
+With the <code class="filename">.fetchmailrc</code> from the Example above, all email will be forwarded to the local OTRS account, if the command <span class="command"><strong>fetchmail -a</strong></span> is executed. Set up a cronjob with this command if you want to fetch the mails regularly.
 </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="email-receiving-filter"></a>Filtering/dispatching by OTRS/PostMaster modules (for more complex dispatching)</h5></div></div></div><p>
-If you use the <code class="filename">bin/otrs.Console.pl</code> Maint::PostMaster::Read or <code class="filename">bin/otrs.Console.pl Maint::PostMaster::MailAccountFetch</code> method, you can insert or modify X-OTRS header entries with the PostMaster filter modules. With the X-OTRS headers, the ticket system can execute some actions on
+If you use the <code class="filename">bin/otrs.Console.pl Maint::PostMaster::Read</code> or <code class="filename">bin/otrs.Console.pl Maint::PostMaster::MailAccountFetch</code> method, you can insert or modify X-OTRS header entries with the PostMaster filter modules. With the X-OTRS headers, the ticket system can execute some actions on
 incoming mails, sort them into a specific queue, change the priority or change the customer ID, for example. More information about the X-OTRS headers are available in the section about <a class="link" href="administration.html#adminarea-postmasterpop3-account" title="Using mail accounts">adding mail accounts</a> from the OTRS Admin page.
 </p><p>
 There are some default filter modules:
 </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
 The job name (e.g. $Self-&gt;{'PostMaster::PreFilterModule'}-&gt;{'JobName'}) needs to be unique!
 </p></div><p>
-Kernel::System::PostMaster::Filter::Match is a default module to match on some email header (e.g. From, To, Subject, ...). It can set new email headers (e.g. X-OTRS-Ignore: yes or X-OTRS-Queue: spam) if a filter rule matches. The jobs of the Example 7-2 can be inserted in <code class="filename">Kernel/Config.pm</code>
+Kernel::System::PostMaster::Filter::Match is a default module to match on some email header (e.g. From, To, Subject, ...). It can set new email headers (e.g. X-OTRS-Ignore: yes or X-OTRS-Queue: spam) if a filter rule matches. The jobs of the Example below can be inserted in <code class="filename">Kernel/Config.pm</code>
 </p><div class="example"><a name="filter-module-match-example"></a><p class="title"><b>Example 4.4. Example jobs for the filter module Kernel::System::PostMaster::Filter::Match</b></p><div class="example-contents"><p>
 </p><pre class="programlisting">
     # Job Name: 1-Match
@@ -127,7 +127,7 @@ Kernel::System::PostMaster::Filter::Match is a default module to match on some e
     };
 </pre><p>
 </p></div></div><br class="example-break"><p>
-Kernel::System::PostMaster::Filter::CMD is a default module to pipe the email into an external command. The output is given to STDOUT and if the result is true, then set new email header (e.g. X-OTRS-Ignore: yes or X-OTRS-Queue: spam). The Example 7-3 can be used in <code class="filename">Kernel/Config.pm</code>
+Kernel::System::PostMaster::Filter::CMD is a default module to pipe the email into an external command. The output is given to STDOUT and if the result is true, then set new email header (e.g. X-OTRS-Ignore: yes or X-OTRS-Queue: spam). The Example below can be used in <code class="filename">Kernel/Config.pm</code>
 </p><div class="example"><a name="filter-module-cmd-example"></a><p class="title"><b>Example 4.5. Example job for the filter module Kernel::System::PostMaster::Filter::CMD</b></p><div class="example-contents"><p>
 </p><pre class="programlisting">
     # Job Name: 5-SpamAssassin
@@ -145,21 +145,21 @@ Kernel::System::PostMaster::Filter::CMD is a default module to pipe the email in
     adds the possibility to parse external identifiers, in the email subject, the body or both using
     regular expressions. It then stores this value in a defined dynamic field. When an email comes
     in, OTRS will first search for an external identifier and when it finds one, query OTRS on the
-    pre-defined dynamic field field. If it finds an existing ticket, it will update this ticket,
+    pre-defined dynamic field. If it finds an existing ticket, it will update this ticket,
     otherwise it will create a new ticket with the external reference number in the separate field.
 </p><p>
     OTRS SysConfig already provide 4 different settings to setup different external ticket numbers.
-    If more settings are needed they need to need to be added manually. The following example can be
+    If more settings are needed they need to be added manually. The following example can be
     used in <code class="filename">Kernel/Config.pm</code> to extend SysConfig settings.
 </p><div class="example"><a name="filter-module-externalticketrecognition-example"></a><p class="title"><b>Example 4.6. 
         Example job for the filter module
         Kernel::System::PostMaster::Filter::ExternalTicketNumberRecognition
     </b></p><div class="example-contents"><pre class="programlisting">
-    # Job Name: ExternalNumber
+    # Job Name: ExternalTicketNumberRecognition
     # External Ticket Number Reconition, check for Incident-&lt;number&gt; in incoming mails subject and
     # body from the addeesses &lt;sender&gt;@externalticket.com, if number is found it will be stored in
     # the dynamic field 'ExternalNumber' (that need to be setup in the Admin Panel).
-    $Self-&gt;{'PostMaster::PreFilterModule'}-&gt;{'000-ExternalTicketNumberRecognition5'} =  {
+    $Self-&gt;{'PostMaster::PreFilterModule'}-&gt;{'000-ExternalTicketNumberRecognition'} = {
         'FromAddressRegExp' =&gt; '\\s*@externalticket.com',
         'NumberRegExp'      =&gt; 'Incident-(\\d.*)',
         'SearchInSubject'   =&gt; '1',
