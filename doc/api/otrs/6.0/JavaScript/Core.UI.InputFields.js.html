@@ -239,8 +239,13 @@ Core.UI.InputFields = (function (TargetNS) {
      */
     TargetNS.Activate = function ($Context) {
 
-        // Initialize select fields on all applicable fields
-        TargetNS.InitSelect($('select.Modernize', $Context));
+        // Check SysConfig
+        if (Core.Config.Get('InputFieldsActivated') === 1) {
+
+            // Initialize select fields on all applicable fields
+            TargetNS.InitSelect($('select.Modernize', $Context));
+
+        }
     };
 
     /**
@@ -280,12 +285,8 @@ Core.UI.InputFields = (function (TargetNS) {
      */
     function InitCallback() {
 
-        // Check SysConfig
-        if (Core.Config.Get('InputFieldsActivated') === 1) {
-
-            // Activate the feature
-            TargetNS.Activate();
-        }
+        // Activate the feature
+        TargetNS.Activate();
     }
 
     /**
@@ -996,10 +997,12 @@ Core.UI.InputFields = (function (TargetNS) {
                 // Hide original field
                 $SelectObj.hide();
 
-                // Check to see if tree view should be displayed
+                // Check to see if we are dealing with tree view
                 $ShowTreeObj = $SelectObj.next('.ShowTreeSelection');
-                if ($ShowTreeObj.length) {
-                    $ShowTreeObj.hide();
+                if ($SelectObj.data('tree') || $ShowTreeObj.length) {
+                    if ($ShowTreeObj.length) {
+                        $ShowTreeObj.hide();
+                    }
                     TreeView = true;
                 }
 
@@ -1246,9 +1249,9 @@ Core.UI.InputFields = (function (TargetNS) {
                         // This checks, if an inner element is scrolled (e.g. dialog)
                         // we only need to hide the list in this case, because scrolling the main window
                         // will hide the dropdown list anyway from viewport
-                        if (Event.srcElement !== document) {
+                        if (Event.target !== document &amp;&amp; !$(Event.target).hasClass('InputField_TreeContainer')) {
                             if (
-                                $InputContainerObj.position().top + $InputContainerObj.outerHeight() - $(Event.srcElement).outerHeight()
+                                $InputContainerObj.position().top + $InputContainerObj.outerHeight() - $(Event.target).outerHeight()
                                 >= 0
                             )
                             {
