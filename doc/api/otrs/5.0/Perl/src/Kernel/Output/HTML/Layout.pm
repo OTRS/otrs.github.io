@@ -416,12 +416,9 @@ EOF
 
     # Check if 'Standard' fallback exists
     if ( !-e $Self->{StandardTemplateDir} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message =>
-                "No existing template directory found ('$Self->{TemplateDir}')! Check your Home in Kernel/Config.pm",
+        $Self->FatalDie(
+            Message => "No existing template directory found ('$Self->{TemplateDir}')! Check your Home in Kernel/Config.pm."
         );
-        $Self->FatalDie();
     }
 
     if ( !-e $Self->{TemplateDir} ) {
@@ -455,7 +452,9 @@ EOF
                 $NewFile =~ s{\A.*\/(.+?).pm\z}{$1}xms;
                 my $NewClassName = "Kernel::Output::HTML::Layout::$NewFile";
                 if ( !$MainObject->RequireBaseClass($NewClassName) ) {
-                    $Self->FatalError();
+                    $Self->FatalDie(
+                        Message => "Could not load class Kernel::Output::HTML::Layout::$NewFile.",
+                    );
                 }
             }
         }
@@ -3832,7 +3831,7 @@ sub CustomerNavigationBar {
             if (
                 !$SelectedFlag
                 && $NavBarModule{$Item}->{Link} =~ /Action=$Self->{Action}/
-                && $NavBarModule{$Item}->{Link} =~ /$Self->{Subaction}/       # Subaction can be empty
+                && $NavBarModule{$Item}->{Link} =~ /$Self->{Subaction}/    # Subaction can be empty
                 )
             {
                 $NavBarModule{$Item}->{Class} .= ' Selected';
@@ -3864,7 +3863,7 @@ sub CustomerNavigationBar {
                 if (
                     !$SelectedFlag
                     && $ItemSub->{Link} =~ /Action=$Self->{Action}/
-                    && $ItemSub->{Link} =~ /$Self->{Subaction}/       # Subaction can be empty
+                    && $ItemSub->{Link} =~ /$Self->{Subaction}/    # Subaction can be empty
                     )
                 {
                     $NavBarModule{$Item}->{Class} .= ' Selected';
@@ -4269,7 +4268,7 @@ sub RichTextDocumentServe {
 
         # replace charset in content
         $Param{Data}->{ContentType} =~ s/\Q$Charset\E/utf-8/gi;
-        $Param{Data}->{Content}     =~ s/(charset=("|'|))\Q$Charset\E/$1utf-8/gi;
+        $Param{Data}->{Content} =~ s/(charset=("|'|))\Q$Charset\E/$1utf-8/gi;
     }
 
     # add html links
