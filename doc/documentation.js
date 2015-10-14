@@ -20,6 +20,12 @@ $(document).ready(function() {
             Path: 'admin',
             Versions: [
                 {
+                    Version:  '5.0',
+                    HTMLPath: '5.0',
+                    Name:     'OTRS 4',
+                    Languages: ['en']
+                },
+                {
                     Version:  '4.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 4',
