@@ -22,7 +22,7 @@ $(document).ready(function() {
                 {
                     Version:  '5.0',
                     HTMLPath: '5.0',
-                    Name:     'OTRS 4',
+                    Name:     'OTRS 5',
                     Languages: ['en']
                 },
                 {
@@ -125,7 +125,7 @@ $(document).ready(function() {
                     Version:  '5.0',
                     HTMLPath: '5.0',
                     Types:    ['Perl', 'JavaScript'],
-                    Name:     'OTRS 5 (beta)'
+                    Name:     'OTRS 5'
                 },
                 {
                     Version:  '4.0',
