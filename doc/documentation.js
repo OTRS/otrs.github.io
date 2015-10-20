@@ -21,13 +21,13 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '5.0',
-                    HTMLPath: '5.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS 5',
                     Languages: ['en']
                 },
                 {
                     Version:  '4.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '4.0',
                     Name:     'OTRS 4',
                     Languages: ['en', 'de', 'ja', 'ru', 'sw']
                 },
@@ -51,8 +51,16 @@ $(document).ready(function() {
             Path: 'otrs-business-solution',
             Versions: [
                 {
-                    Version:     '4.0',
+                    Version:     '5.0',
                     HTMLPath:    'stable',
+                    Name:        'OTRS 5',
+                    Languages:   ['en'],
+                    PDFPath:     'doc-otrsbusiness',
+                    PDFFileName: 'otrs_business_solution_book.pdf'
+                },
+                {
+                    Version:     '4.0',
+                    HTMLPath:    '4.0',
                     Name:        'OTRS 4',
                     Languages:   ['en'],
                     PDFPath:     'doc-otrsbusiness',
