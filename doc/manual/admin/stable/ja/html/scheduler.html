@@ -1,0 +1,120 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>OTRSスケジューラ</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 4 - 管理 マニュアル"><link rel="up" href="administration.html" title="第4章 管理"><link rel="prev" href="genericinterface.html" title="一般インターフェイス"><link rel="next" href="customization.html" title="第5章 カスタマイズ"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">OTRSスケジューラ</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="genericinterface.html">戻る</a> </td><th width="60%" align="center">第4章 管理</th><td width="20%" align="right"> <a accesskey="n" href="customization.html">次へ</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="scheduler"></a>OTRSスケジューラ</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="scheduler.html#scheduler-gui">スケジューラ・グラフィカル・インターフェース</a></span></dt><dd><dl><dt><span class="section"><a href="scheduler.html#scheduler-gui-notify">スケジューラ停止中の通知</a></span></dt><dt><span class="section"><a href="scheduler.html#scheduler-gui-start">スタート・スケジューラ</a></span></dt></dl></dd><dt><span class="section"><a href="scheduler.html#scheduler-cli">スケジューラ・コマンドライン・インタフェース</a></span></dt><dd><dl><dt><span class="section"><a href="scheduler.html#scheduler-cli-linux-init">Scheduler init.d files</a></span></dt><dt><span class="section"><a href="scheduler.html#scheduler-cli-linux-daemon">スケジューラ・デーモン・ファイル</a></span></dt></dl></dd></dl></div><p>
+        The OTRS Scheduler is an independent system process that executes tasks in
+background. These kind of processes are know as <span class="emphasis"><em>daemons</em></span>
+in Unix / Linux systems.  It is independent but that doesn't mean that the
+Scheduler does everything alone, it is fully integrated into OTRS and can
+use any OTRS module as needed to complete each task.
+    </p><p>
+        正常な理由のためにスケジューラ・プロセスはときどきリスタートする必要があります。これは、一日に一度スケジューラ・プロセス自体によって自動的に行われます。しかし、必要な時、SysConfigを使用して「Scheduler::RestartAfterSeconds」設定の編集すればそれを調節することができます。
+    </p><p>
+        OTRSスケジューラは完全に自動プロセスです。唯一の人間の介在が必要とされることは、そのステータスを周期的にチェックし、必要な時にそれをスタートするか停止することです。
+    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+            スケジューラが何らかの理由で停止されたら、スケジューラが停止した時に登録された全ての保留タスクと新規タスクは、スケジューラが再開するとすぐに実行されます。(タスクがその後実行される準備ができていない限り)
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="scheduler-gui"></a>スケジューラ・グラフィカル・インターフェース</h3></div></div></div><p>
+            スケジューラは、それが停止しない限り、OTRSグラフィカルユーザーインターフェイスにおいて不可視です。
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="scheduler-gui-notify"></a>スケジューラ停止中の通知</h4></div></div></div><p>
+                スケジューラが停止中をシステムが検知する場合、2つの異なるタイプの通知があります。この検知はスケジューラ・プロセスの更新頻度に基づきます。現在時刻と最終プロセス更新時刻の時間差が２倍以上ならば、OTRS通知エリア内にプロセス更新頻度警告メッセージが表示されます。それが4倍以上のプロセス頻度ならば、警告に変わって警戒メッセージが表示されます。
+            </p><p>
+                スケジューラ・プロセス更新時間は、「Scheduler::PIDUpdateTime」設定中のSysConfigによって構成することができます。警告メッセージを見ても必ずしも処置を講ずる必要はありません。
+            </p><p>
+                しかし、スケジューラ・プロセスが走っているかどうかをチェックすることは強く推奨します。警戒メッセージを見たら、スケジューラが停止している可能性が高いのでスタートすべきです。
+            </p><p>
+                データベースに有効なウェブサービスが登録されていたり、または「管理者」グループのユーザだけに表示されている場合、デフォルトでスケジューラは通知を有効ではありません。
+            </p><p>
+                通知を不能にするためには（推奨しませんが）あるいは、通知グループを変更・追加するためには、SysConfigの中の設定「Frontend::NotifyModule###800-Scheduler-Check」を編集してください。
+            </p><p>
+                </p><div class="screenshot"><div><img src="screenshots/scheduler-notify.png"></div></div><p>
+            </p><p>
+                <span class="emphasis"><em>図:スケジューラ通知</em></span>
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="scheduler-gui-start"></a>スタート・スケジューラ</h4></div></div></div><p>
+                スケジューラ停止中通知リンク(警告か警戒のいずれか)をクリックすることによって、再びスケジューラ・プロセスをを再開させるためにダイアログ・ボックスを開きます。ダイアログ中のチェックボックスを適切にクリックすることでスケジューラは正常にスタートするか強制的にスタートさせられます。
+            </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                    強制的なスケジューラ・スタートは、前のスケジューラ・プロセスが異常に終了し、プロセスIDがデータベース中でまだ登録されている場合のみ、必要です。
+                </p><p>
+                    スケジューラ・プロセスを十分にコントロールをするために、以下の述べるコマンドラインツールをつかって、その実際の状態をチェックして下さい。
+                </p></div><p>
+                </p><div class="screenshot"><div><img src="screenshots/scheduler-start.png"></div></div><p>
+            </p><p>
+                <span class="emphasis"><em>図:スケジューラの開始</em></span>
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="scheduler-cli"></a>スケジューラ・コマンドライン・インタフェース</h3></div></div></div><p>
+            スケジューラ・コマンドライン・ツールによってスケジューラ・プロセス(スタート・ストップ)をコントロールし、スケジュールの状態を尋ねます。さらにオペレーティング・システムによってコントロールされるプロセスを登録するツールがあります。
+        </p><p>
+            Included with OTRS there commandline interface (CLI) tools for the
+scheduler.
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="scheduler-cli-linux-init"></a>Scheduler init.d files</h4></div></div></div><p>
+                init.d ファイルは、スタートアップとシャット・ダウンでオペレーティング・システムによって呼び出される特別なスクリプトです。
+            </p><p>
+                OTRSは、オペレーティング・システムによってOTRSスケジューラ・プロセスを自動的に始める/止めるためにinit.d
+スクリプトを提供します。これらのスクリプトはOTRS_HOME/scriptsの下にあります。
+            </p><p>
+                init.d
+スクリプトは、ご利用のオペレーティング・システムに応じて正しい位置にコピーする必要があります。それらは適切な許可を持つ必要があります。また、いくつかの内部変数を適切に動くようにセットする必要があります。システムをセット・アップにOTRS
+RPMを使用したならば、これは自動的に処理されます。
+            </p><div class="itemizedlist"><p class="title"><b>init.d スクリプト内部変数</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        <span class="command"><strong>OTRS_HOME</strong></span> - OTRSインストールのパス。
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>User</strong></span> - the apache プロセスユーザ名。
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>Group</strong></span> - the apache OTRSインストールのグループ名。
+                    </p></li></ul></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                    現在、OTRSは、Linuxプラットフォームのinit.d スクリプトだけを提供します。
+                </p></div><div class="table"><a name="id-1.6.13.7.4.7"></a><p class="title"><b>表4.7 テーブル4.7. init.d スクリプトのリストとサポートされるオペレーティング・システム</b></p><div class="table-contents"><table summary="テーブル4.7. init.d スクリプトのリストとサポートされるオペレーティング・システム" border="1"><colgroup><col><col></colgroup><thead><tr><th>Init Script</th><th>サポートするOS</th></tr></thead><tbody><tr><td>otrs-scheduler-linux</td><td>Red Hat, Fedora, CentOS, SUSE, openSUSE, Debian, Ubuntu</td></tr><tr><td>otrs-scheduler-gentoo-init.d, otrs-scheduler-gentoo-conf.d</td><td>Gentoo</td></tr></tbody></table></div></div><br class="table-break"><div class="example"><a name="id-1.6.13.7.4.8"></a><p class="title"><b>例4.29 Linux上でOTRSを開始するサンプル</b></p><div class="example-contents"><p>
+                    </p><pre class="screen">
+                        shell&gt; /etc/init.d/otrs-scheduler-linux start
+                    </pre><p>
+                </p></div></div><br class="example-break"><div class="itemizedlist"><p class="title"><b>可能なアクション</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        <span class="command"><strong>start</strong></span> - OTRSスケジューラ・プロセスを開始
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>stop</strong></span> - OTRSスケジューラ・プロセスを停止。
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>restart</strong></span> - OTRSスケジューラ・プロセスを再開。
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>status</strong></span> - OTRSスケジューラ・プロセス・ステータスをクエリー
+                    </p></li></ul></div><p>
+                スケジューラは、そのプロセスIDを登録することができるようにデータベースを必要とします。というのは、この理由は次のものに必要であるからです:
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                            データベース・プロセスの活動開始以後、スケジューラ・プロセスを<span class="emphasis"><em>開始する</em></span>ためにスケジューラinit.d
+スクリプトを実行します。
+                        </p></li><li class="listitem"><p>
+                            データベース・プロセスがシャット・ダウンする前に、スケジューラを<span class="emphasis"><em>停止</em></span>ためにスケジューラinit.d
+スクリプトを実行します。
+                        </p></li></ul></div><p>
+            </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                    スケジューラがシステム起動時に開始することを望むなら、オペレーティング・システムのドキュメンテーションを読んで、init.dスクリプトを置く正しい場所、それらの自動的に開始するための構成方法及び起動順の設定方法を見つけて下さい。
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="scheduler-cli-linux-daemon"></a>スケジューラ・デーモン・ファイル</h4></div></div></div><p>
+                これは、実行すべきタスクをチェックしながらバックグラウンドで稼働し続けるスケジューラの部分です。さらに、それは、プロセスをコントロールするために主機能を提供します。
+            </p><p>
+                全てのUnix/Linuxはファイル <span class="command"><strong>OTRS_HOME/bin/otrs.Scheduler.pl</strong></span>を使用します。
+            </p><div class="example"><a name="id-1.6.13.7.5.4"></a><p class="title"><b>例4.30 OTRSスケジューラを開始するサンプル</b></p><div class="example-contents"><p>
+                    </p><pre class="screen">
+                        shell&gt; OTRS_HOME/bin/otrs.Scheduler.pl -a start
+                    </pre><p>
+                </p></div></div><br class="example-break"><div class="itemizedlist"><p class="title"><b>利用可能なオプション</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        <span class="command"><strong>-a </strong></span> アクション
+                    </p><div class="itemizedlist"><p class="title"><b>可能な値</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                <span class="command"><strong>start</strong></span> - スケジューラ・プロセスを開始。
+                            </p></li><li class="listitem"><p>
+                                <span class="command"><strong>stop</strong></span> - スケジューラ・プロセスを停止。
+                            </p></li><li class="listitem"><p>
+                                <span class="command"><strong>status</strong></span> - スケジューラ・プロセス状態のクエリー。
+                            </p></li></ul></div></li><li class="listitem"><p>
+                        <span class="command"><strong>-f </strong></span> スケジューラ・プロセスの強制的開始または停止。
+                    </p></li></ul></div><div class="example"><a name="id-1.6.13.7.5.6"></a><p class="title"><b>例4.31 OTRSスケジューラを強要停止するサンプル</b></p><div class="example-contents"><p>
+                    </p><pre class="screen">
+                        shell&gt; OTRS_HOME/bin/otrs.Scheduler.pl -a stop -f 1
+                    </pre><p>
+                </p></div></div><br class="example-break"><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                    スケジューラが走っておらず、プロセスがまだ登録されている時に、スケジューラを強制終了させることは、データベースからプロセスIDを取り除くことになります。
+                </p><p>
+                    スケジューラが走っておらず、プロセスがまだ登録されていれば、スケジューラを強制終了させることは、スケジューラプロセスを開始することになります。
+                </p><p>
+                    強制開始または強制停止は、プロセス開始がプロセス更新時間が失効する前になされる必要な場合のみ必要です。そうでなければ　データベース内の失効エントリーは通常開始で破棄されます。
+                </p></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="genericinterface.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="administration.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="customization.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">一般インターフェイス </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第5章 カスタマイズ</td></tr></table></div></body></html>
