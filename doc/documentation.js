@@ -74,8 +74,14 @@ $(document).ready(function() {
             Path: 'itsm',
             Versions: [
                 {
+                    Version:  '5.0',
+                    HTMLPath: '5.0',
+                    Name:     'OTRS::ITSM 5',
+                    Languages: ['en', 'ru']
+                },
+                {
                     Version:  '4.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '4.0',
                     Name:     'OTRS::ITSM 4',
                     Languages: ['en', 'ru']
                 },
@@ -99,8 +105,14 @@ $(document).ready(function() {
             Path: 'developer',
             Versions: [
                 {
+                    Version:  '5.0',
+                    HTMLPath: '5.0',
+                    Name:     'OTRS 4',
+                    Languages: ['en']
+                },
+                {
                     Version:  '4.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '4.0',
                     Name:     'OTRS 4',
                     Languages: ['en']
                 },
