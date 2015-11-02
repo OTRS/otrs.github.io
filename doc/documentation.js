@@ -99,8 +99,14 @@ $(document).ready(function() {
             Path: 'developer',
             Versions: [
                 {
-                    Version:  '4.0',
+                    Version:  '5.0',
                     HTMLPath: 'stable',
+                    Name:     'OTRS 5',
+                    Languages: ['en']
+                },
+                {
+                    Version:  '4.0',
+                    HTMLPath: '4.0',
                     Name:     'OTRS 4',
                     Languages: ['en']
                 },
@@ -131,13 +137,13 @@ $(document).ready(function() {
                 },
                 {
                     Version:  '5.0',
-                    HTMLPath: '5.0',
+                    HTMLPath: 'stable',
                     Types:    ['Perl', 'JavaScript'],
                     Name:     'OTRS 5'
                 },
                 {
                     Version:  '4.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '4.0',
                     Types:    ['Perl'],
                     Name:     'OTRS 4'
                 },
