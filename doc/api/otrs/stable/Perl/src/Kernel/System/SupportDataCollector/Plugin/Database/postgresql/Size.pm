@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/Database/postgresql/Size.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,12 +13,14 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = (
     'Kernel::System::DB',
 );
 
 sub GetDisplayPath {
-    return 'Database';
+    return Translatable('Database');
 }
 
 sub Run {
@@ -41,15 +42,15 @@ sub Run {
 
         if ( $Row[0] ) {
             $Self->AddResultInformation(
-                Label => 'Database Size',
+                Label => Translatable('Database Size'),
                 Value => $Row[0],
             );
         }
         else {
             $Self->AddResultProblem(
-                Label   => 'Database Size',
+                Label   => Translatable('Database Size'),
                 Value   => $Row[0],
-                Message => 'Could not determine database size.'
+                Message => Translatable('Could not determine database size.')
             );
         }
     }

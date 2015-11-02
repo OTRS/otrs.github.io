@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SystemData.pm - Provides simple key/value store for system data
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -38,7 +37,7 @@ create an object. Do not use it directly, instead use:
 
     use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager->new();
-    my $ValidObject = $Kernel::OM->Get('Kernel::System::SystemData');
+    my $SystemDataObject = $Kernel::OM->Get('Kernel::System::SystemData');
 
 =cut
 

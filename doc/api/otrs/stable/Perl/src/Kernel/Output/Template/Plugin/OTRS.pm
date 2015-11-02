@@ -1,5 +1,4 @@
 # --
-# Kernel/Output/Template/Plugin/OTRS.pm - TT plugin for OTRS
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -15,6 +14,8 @@ use warnings;
 use base qw(Template::Plugin);
 
 use Scalar::Util;
+
+our $ObjectManagerDisabled = 1;
 
 =head1 NAME
 
@@ -68,7 +69,7 @@ sub new {
     Scalar::Util::weaken($LayoutObject);
 
     my $ConfigFunction = sub {
-        return $LayoutObject->{ConfigObject}->Get(@_);
+        return $Kernel::OM->Get('Kernel::Config')->Get(@_);
     };
 
     my $EnvFunction = sub {

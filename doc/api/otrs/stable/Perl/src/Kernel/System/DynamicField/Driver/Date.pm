@@ -1,5 +1,4 @@
 # --
-# Kernel/System/DynamicField/Driver/Date.pm - Delegate for DynamicField Date Driver
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -64,7 +63,7 @@ sub new {
         'IsCustomerInterfaceCapable'   => 1,
     };
 
-    # get the Dynamic Field Backend custmom extensions
+    # get the Dynamic Field Backend custom extensions
     my $DynamicFieldDriverExtensions
         = $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::Extension::Driver::Date');
 
@@ -90,7 +89,7 @@ sub new {
             }
         }
 
-        # check if extension contains more behabiors
+        # check if extension contains more behaviors
         if ( IsHashRefWithData( $Extension->{Behaviors} ) ) {
 
             %{ $Self->{Behaviors} } = (
@@ -205,7 +204,7 @@ sub SearchSQLGet {
         my $SQL = " $Param{TableAlias}.value_date $Operators{$Param{Operator}} '"
             . $Kernel::OM->Get('Kernel::System::DB')->Quote( $Param{SearchTerm} );
 
-        # Append hh:mm:ss if only the ISO date was supplied to get a full datetime string.
+        # Append hh:mm:ss if only the ISO date was supplied to get a full date-time string.
         if ( $Param{SearchTerm} =~ m{\A \d{4}-\d{2}-\d{2}\z}xms ) {
             $SQL .= " 00:00:00";
         }
@@ -415,7 +414,7 @@ sub EditFieldValueGet {
         && !$DynamicFieldValues{ $Prefix . 'Month' }
         && !$DynamicFieldValues{ $Prefix . 'Day' };
 
-    # check if return value structure is nedded
+    # check if return value structure is needed
     if ( defined $Param{ReturnValueStructure} && $Param{ReturnValueStructure} eq '1' ) {
         return \%DynamicFieldValues;
     }
@@ -425,7 +424,7 @@ sub EditFieldValueGet {
         return \%DynamicFieldValues;
     }
 
-    # add secnods, as 0 to the DynamicFieldValues hash
+    # add seconds, as 0 to the DynamicFieldValues hash
     $DynamicFieldValues{ 'DynamicField_' . $Param{DynamicFieldConfig}->{Name} . 'Second' } = 0;
 
     my $ManualTimeStamp = '';
@@ -561,7 +560,7 @@ sub ReadableValueRender {
 
     my $Value = defined $Param{Value} ? $Param{Value} : '';
 
-    # only keep date part, loose time part of timestamp
+    # only keep date part, loose time part of time-stamp
     $Value =~ s{ \A (\d{4} - \d{2} - \d{2}) .+?\z }{$1}xms;
 
     # Title is always equal to Value
@@ -833,7 +832,7 @@ sub SearchFieldValueGet {
 
         $DynamicFieldValues{$Prefix} = 1;
 
-        # check if return value structure is nedded
+        # check if return value structure is needed
         if ( defined $Param{ReturnProfileStructure} && $Param{ReturnProfileStructure} eq '1' ) {
             return \%DynamicFieldValues;
         }
@@ -1012,7 +1011,7 @@ sub SearchFieldParameterBuild {
             # get the current time in epoch seconds
             my $Now = $TimeObject->SystemTime();
 
-            # calculate diff time seconds
+            # calculate difference time seconds
             my $DiffTimeSeconds = $DiffTimeMinutes * 60;
 
             my $DisplayValue = '';
@@ -1020,12 +1019,12 @@ sub SearchFieldParameterBuild {
             # define to search before or after that time stamp
             if ( $Start eq 'Before' ) {
 
-                # we must subtract the diff because it is in the past
+                # we must subtract the difference because it is in the past
                 my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now - $DiffTimeSeconds,
                 );
 
-                # use the last hour from diff time as it will be the upper limit strict
+                # use the last hour from difference time as it will be the upper limit strict
                 my $SystemTime = $TimeObject->Date2SystemTime(
                     Year   => $Year,
                     Month  => $Month,
@@ -1065,12 +1064,12 @@ sub SearchFieldParameterBuild {
                     SystemTime => $NowSystemTime,
                 );
 
-                # we must subtract the diff because it is in the past
+                # we must subtract the difference because it is in the past
                 my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now - $DiffTimeSeconds,
                 );
 
-                # use the first hour from diff time as it will be the lower limit relative
+                # use the first hour from difference time as it will be the lower limit relative
                 my $SystemTime = $TimeObject->Date2SystemTime(
                     Year   => $Year,
                     Month  => $Month,
@@ -1113,12 +1112,12 @@ sub SearchFieldParameterBuild {
                     SystemTime => $NowSystemTime,
                 );
 
-                # we must add the diff because it is in the future
+                # we must add the difference because it is in the future
                 my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now + $DiffTimeSeconds,
                 );
 
-                # use the last hour from diff time as it will be the upper limit relative
+                # use the last hour from difference time as it will be the upper limit relative
                 my $SystemTime = $TimeObject->Date2SystemTime(
                     Year   => $Year,
                     Month  => $Month,
@@ -1143,12 +1142,12 @@ sub SearchFieldParameterBuild {
             }
             elsif ( $Start eq 'After' ) {
 
-                # we must add the diff because it is in the future
+                # we must add the difference because it is in the future
                 my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
                     SystemTime => $Now + $DiffTimeSeconds,
                 );
 
-                # use the last hour from diff time as it will be the lower limit strict
+                # use the last hour from difference time as it will be the lower limit strict
                 my $SystemTime = $TimeObject->Date2SystemTime(
                     Year   => $Year,
                     Month  => $Month,
@@ -1258,7 +1257,7 @@ sub StatsSearchFieldParameterBuild {
         $Sec  = 0;
     }
 
-    # get target time using new values (or same values for onknown operators)
+    # get target time using new values (or same values for unknown operators)
     my $TargetSystemTime = $TimeObject->Date2SystemTime(
         Year   => $Year,
         Month  => $Month,

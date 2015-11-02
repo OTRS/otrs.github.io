@@ -35,7 +35,7 @@
   </script></head>
 <body>
 <div class="box">
-  <h1 class="t1">OTRS 4.0 API Reference Perl</h1>
+  <h1 class="t1">OTRS 5.0 API Reference Perl</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -44,7 +44,7 @@
   </table>
 </div>
 <div class="path">
-  <a href="../../index.html">OTRS 4.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  <a href="../../index.html">OTRS 5.0 API Reference Perl</a> &gt; Perl Modules &gt;
   Kernel::System::Stats
 </div>
 <div>
@@ -57,7 +57,11 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a><br />
+<ul>
+	<li><a href="#Explanation_for_the_time_zone_parame">Explanation for the time zone parameter</a></li>
+</ul>
+</li>
 	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
@@ -72,22 +76,37 @@
 
 <p>All stats functions.</p>
 
+<h2 id="Explanation_for_the_time_zone_parame">Explanation for the time zone parameter</h2>
+
+<p>The time zone parameter is available, if the system use UTC as system time and the TimeZoneUser feature is active
+and the statistic is a dynamic statistic. The selected periods in the frontend are time zone neutral and for the
+search parameters, the selection will be converted to UTC time based on the selected time zone, because the times
+are stored as UTC time in the database (if the system is configured correctly).</p>
+
+<p>This means e.g. if a absolute period of time from 2015 2015-08-01 00:00:00 to 2015-09-10 23:59:59 and a time zone +6 has been selected,
+the time zone (+6) will be subtracted (with &quot;_SubtractTimeZone&quot;) from the selected absolute time period for the search parameter,
+so that the right UTC time will be used for the absolute period of time. For the example this would be the 2015-07-31 18:00:00 to 2015-09-10 17:59:59.</p>
+
+<p>For a relative time period, e.g. a relative period of the last full 10 days and the time zone +10, first the selected
+time zone will be added (with &quot;_AddTimeZone&quot;) to the current UTC time, so that the right relative period of time will be used for the frontend output.
+For the example, we have the current UTC time 2015-09-10 16:00:00, that means for the selected relative period and time zone (+10) the period of time
+from 2015-09-01 00:00:00 to 2015-09-10 23:59:59. From the period of time will be substracted the selected time zone (+10) to get the correct UTC time
+for the search in the database (as for the absolute time). In this case that would be the period of time from 2015-08-31 14:00:00 to 2015-09-10 13:59:59.</p>
+
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <dl>
 	<dt>new()</dt>
 		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
 <dd><pre>    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
-        'Kernel::System::Stats' =&gt; {
-            UserID  =&gt; 123,
-        }
-    );
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $StatsObject = $Kernel::OM-&gt;Get('Kernel::System::Stats');
 
 </pre></dd>	<dt>StatsAdd()</dt>
 		<dd><p>add new empty stats</p></dd>
-<dd><pre>    my $StatID = $StatsObject-&gt;StatsAdd();
+<dd><pre>    my $StatID = $StatsObject-&gt;StatsAdd(
+        UserID =&gt; $UserID,
+    );
 
 </pre></dd>	<dt>StatsGet()</dt>
 		<dd><p>get a hash ref of the stats you need</p></dd>
@@ -100,7 +119,8 @@
 		<dd><p>update a stat</p></dd>
 <dd><pre>    $StatsObject-&gt;StatsUpdate(
         StatID =&gt; '123',
-        Hash   =&gt; \%Hash
+        Hash   =&gt; \%Hash,
+        UserID =&gt; $UserID,
     );
 
 </pre></dd>	<dt>StatsDelete()</dt>
@@ -111,6 +131,7 @@
 		<dd><p>fetches all statistics that the current user may see</p></dd>
 <dd><pre>    my $StatsRef = $StatsObject-&gt;StatsListGet(
         AccessRw =&gt; 1, # Optional, indicates that user may see all statistics
+        UserID   =&gt; $UserID,
     );
 
 </pre></dd><dd><pre>    Returns
@@ -128,6 +149,7 @@
         AccessRw  =&gt; 1, # Optional, indicates that user may see all statistics
         OrderBy   =&gt; 'ID' || 'Title' || 'Object', # optional
         Direction =&gt; 'ASC' || 'DESC',             # optional
+        UserID    =&gt; $UserID,
     );
 
 </pre></dd>	<dt>SumBuild()</dt>
@@ -136,22 +158,6 @@
         Array  =&gt; \@Result,
         SumRow =&gt; 1,
         SumCol =&gt; 0,
-    );
-
-</pre></dd>	<dt>GenerateGraph()</dt>
-		<dd><p>make graph from result array</p></dd>
-<dd><pre>    my $Graph = $StatsObject-&gt;GenerateGraph(
-        Array        =&gt; \@StatArray,
-        GraphSize    =&gt; '800x600',
-        HeadArrayRef =&gt; $HeadArrayRef,
-        Title        =&gt; 'All Tickets of the month',
-        Format       =&gt; 'GD::Graph::lines',
-    );
-
-</pre></dd>	<dt>CompletenessCheck()</dt>
-<dd><pre>    my @Notify = $StatsObject-&gt;CompletenessCheck(
-        StatData =&gt; \%StatData,
-        Section =&gt; 'All' || 'Specification' || 'ValueSeries' || 'Restrictions || Xaxis'
     );
 
 </pre></dd>	<dt>GetStatsObjectAttributes()</dt>
@@ -165,6 +171,7 @@
 		<dd><p>Get all static files</p></dd>
 <dd><pre>    my $FileHash = $StatsObject-&gt;GetStaticFiles(
         OnlyUnusedFiles =&gt; 1 | 0, # optional default 0
+        UserID =&gt; $UserID,
     );
 
 </pre></dd>	<dt>GetDynamicFiles()</dt>
@@ -207,6 +214,7 @@
 </pre></dd>	<dt>Import()</dt>
 		<dd><p>import a stats from xml file</p></dd>
 <dd><pre>    my $StatID = $StatsObject-&gt;Import(
+        UserID  =&gt; $UserID,
         Content =&gt; $UploadStuff{Content},
     );
 
@@ -220,6 +228,8 @@
 <dd><pre>    my $StatArray = $StatsObject-&gt;StatsRun(
         StatID     =&gt; '123',
         GetParam   =&gt; \%GetParam,
+        Preview    =&gt; 1,        # optional, return fake data for preview (only for dynamic stats)
+        UserID     =&gt; $UserID,
     );
 
 </pre></dd>	<dt>StatsResultCacheCompute()</dt>
@@ -227,6 +237,7 @@
 This can be used to precompute stats data e. g. for dashboard widgets in a cron job.</p></dd>
 <dd><pre>    my $StatArray = $StatsObject-&gt;StatsResultCacheCompute(
         StatID       =&gt; '123',
+        UserID       =&gt; $UserID,        # target UserID
         UserGetParam =&gt; \%UserGetParam, # user settings of non-fixed fields
     );
 
@@ -235,13 +246,17 @@ This can be used to precompute stats data e. g. for dashboard widgets in a cron 
 This can be used to fetch cached stats data e. g. for stats widgets in the dashboard.</p></dd>
 <dd><pre>    my $StatArray = $StatsObject-&gt;StatsResultCacheGet(
         StatID       =&gt; '123',
-        GetParam     =&gt; \%GetParam,
+        UserID       =&gt; $UserID,    # target UserID
+        UserGetParam =&gt; \%GetParam,
     );
 
 </pre></dd>	<dt>StringAndTimestamp2Filename()</dt>
 		<dd><p>builds a filename with a string and a timestamp.
 (space will be replaced with _ and - e.g. Title-of-File_2006-12-31_11-59)</p></dd>
-<dd><pre>    my $Filename = $StatsObject-&gt;StringAndTimestamp2Filename( String =&gt; 'Title' );
+<dd><pre>    my $Filename = $StatsObject-&gt;StringAndTimestamp2Filename(
+        String   =&gt; 'Title',
+        TimeZone =&gt; '+2',  # optional
+    );
 
 </pre></dd>	<dt>StatNumber2StatID()</dt>
 		<dd><p>insert the stat number get the stat id</p></dd>
@@ -253,12 +268,14 @@ This can be used to fetch cached stats data e. g. for stats widgets in the dashb
 		<dd><p>installs stats</p></dd>
 <dd><pre>    my $Result = $StatsObject-&gt;StatsInstall(
         FilePrefix =&gt; 'FAQ',  # (optional)
+        UserID     =&gt; $UserID,
     );
 
 </pre></dd>	<dt>StatsUninstall()</dt>
 		<dd><p>uninstalls stats</p></dd>
 <dd><pre>    my $Result = $StatsObject-&gt;StatsUninstall(
         FilePrefix =&gt; 'FAQ',  # (optional)
+        UserID     =&gt; $UserID,
     );
 
 </pre></dd>	<dt>StatsCleanUp()</dt>
@@ -271,6 +288,8 @@ This can be used to fetch cached stats data e. g. for stats widgets in the dashb
 	<dt>_SetResultCache()</dt>
 	<dt>_GetResultCache()</dt>
 	<dt>_DeleteCache()</dt>
+	<dt>_AddTimeZone()</dt>
+	<dt>_SubtractTimeZone()</dt>
 	<dt>_GetCacheString()</dt>
 </dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>

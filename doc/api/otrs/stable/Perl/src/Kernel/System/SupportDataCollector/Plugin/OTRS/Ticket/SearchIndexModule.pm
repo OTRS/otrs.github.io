@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OTRS/Ticket/SearchIndexModule.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,13 +13,15 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::DB',
 );
 
 sub GetDisplayPath {
-    return 'OTRS';
+    return Translatable('OTRS');
 }
 
 sub Run {
@@ -40,15 +41,17 @@ sub Run {
 
     if ( $ArticleCount > 50_000 && $Module =~ /RuntimeDB/ ) {
         $Self->AddResultWarning(
-            Label => 'Ticket Search Index Module',
+            Label => Translatable('Ticket Search Index Module'),
             Value => $Module,
             Message =>
-                'You have more than 50,000 articles and should use the StaticDB backend. See admin manual (Performance Tuning) for more information.',
+                Translatable(
+                'You have more than 50,000 articles and should use the StaticDB backend. See admin manual (Performance Tuning) for more information.'
+                ),
         );
     }
     else {
         $Self->AddResultOk(
-            Label => 'Ticket Search Index Module',
+            Label => Translatable('Ticket Search Index Module'),
             Value => $Module,
         );
     }

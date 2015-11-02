@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Email.pm - the global email send module
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -17,12 +16,12 @@ use Mail::Address;
 use MIME::Entity;
 use MIME::Parser;
 
-use Kernel::System::Crypt;
-
 use Kernel::System::VariableCheck qw(:all);
 
 our @ObjectDependencies = (
     'Kernel::Config',
+    'Kernel::System::Crypt::PGP',
+    'Kernel::System::Crypt::SMIME',
     'Kernel::System::Encode',
     'Kernel::System::HTMLUtils',
     'Kernel::System::Log',
@@ -152,6 +151,12 @@ sub Send {
         return;
     }
 
+    # exchanging original reference prevent it to grow up
+    if ( ref $Param{Attachment} && ref $Param{Attachment} eq 'ARRAY' ) {
+        my @LocalAttachment = @{ $Param{Attachment} };
+        $Param{Attachment} = \@LocalAttachment;
+    }
+
     # get config object
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
@@ -173,9 +178,7 @@ sub Send {
     # get sign options for inline
     if ( $Param{Sign} && $Param{Sign}->{SubType} && $Param{Sign}->{SubType} eq 'Inline' ) {
 
-        my $CryptObject = Kernel::System::Crypt->new(
-            CryptType => $Param{Sign}->{Type},
-        );
+        my $CryptObject = $Kernel::OM->Get( 'Kernel::System::Crypt::' . $Param{Sign}->{Type} );
 
         return if !$CryptObject;
 
@@ -194,9 +197,7 @@ sub Send {
     # crypt inline
     if ( $Param{Crypt} && $Param{Crypt}->{Type} eq 'PGP' && $Param{Crypt}->{SubType} eq 'Inline' ) {
 
-        my $CryptObject = Kernel::System::Crypt->new(
-            CryptType => $Param{Crypt}->{Type},
-        );
+        my $CryptObject = $Kernel::OM->Get('Kernel::System::Crypt::PGP');
 
         if ( !$CryptObject ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -466,9 +467,7 @@ sub Send {
     # get sign options for detached
     if ( $Param{Sign} && $Param{Sign}->{SubType} && $Param{Sign}->{SubType} eq 'Detached' ) {
 
-        my $CryptObject = Kernel::System::Crypt->new(
-            CryptType => $Param{Sign}->{Type},
-        );
+        my $CryptObject = $Kernel::OM->Get( 'Kernel::System::Crypt::' . $Param{Sign}->{Type} );
 
         if ( !$CryptObject ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -568,10 +567,7 @@ sub Send {
         && $Param{Crypt}->{SubType} eq 'Detached'
         )
     {
-
-        my $CryptObject = Kernel::System::Crypt->new(
-            CryptType => $Param{Crypt}->{Type},
-        );
+        my $CryptObject = $Kernel::OM->Get('Kernel::System::Crypt::PGP');
 
         return if !$CryptObject;
 
@@ -617,9 +613,7 @@ sub Send {
     }
     elsif ( $Param{Crypt} && $Param{Crypt}->{Type} && $Param{Crypt}->{Type} eq 'SMIME' ) {
 
-        my $CryptObject = Kernel::System::Crypt->new(
-            CryptType => $Param{Crypt}->{Type},
-        );
+        my $CryptObject = $Kernel::OM->Get('Kernel::System::Crypt::SMIME');
 
         if ( !$CryptObject ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(

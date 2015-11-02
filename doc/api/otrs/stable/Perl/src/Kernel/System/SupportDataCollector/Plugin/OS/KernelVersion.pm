@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OS/KernelVersion.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,10 +13,12 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = ();
 
 sub GetDisplayPath {
-    return 'Operating System';
+    return Translatable('Operating System');
 }
 
 sub Run {
@@ -42,13 +43,13 @@ sub Run {
 
     if ($KernelVersion) {
         $Self->AddResultInformation(
-            Label => 'Kernel Version',
+            Label => Translatable('Kernel Version'),
             Value => $KernelVersion,
         );
     }
     else {
         $Self->AddResultProblem(
-            Label => 'Kernel Version',
+            Label => Translatable('Kernel Version'),
             Value => $KernelVersion,
             Value => 'Could not determine kernel version.',
         );

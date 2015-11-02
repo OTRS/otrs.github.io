@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Ticket/TicketSearch.pm - all ticket search functions
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -37,8 +36,10 @@ To find tickets in your system.
         # result limit
         Limit => 100,
 
-        # Use TicketSearch as a ticket filter on a single ticket
+        # Use TicketSearch as a ticket filter on a single ticket,
+        # or a predefined ticket list
         TicketID     => 1234,
+        TicketID     => [1234, 1235],
 
         # ticket number (optional) as STRING or as ARRAYREF
         TicketNumber => '%123546%',
@@ -132,6 +133,9 @@ To find tickets in your system.
             SmallerThanEquals => '2002-02-02 02:02:02',
         }
 
+        # User ID for searching tickets by ticket flags (defaults to UserID)
+        TicketFlagUserID => 1,
+
         # search for ticket flags
         TicketFlag => {
             Seen => 1,
@@ -141,6 +145,15 @@ To find tickets in your system.
         # one given:
         NotTicketFlag => {
             Seen => 1,
+        },
+
+        # User ID for searching tickets by article flags (defaults to UserID)
+        ArticleFlagUserID => 1,
+
+
+        # search for tickets by the presence of flags on articles
+        ArticleFlag => {
+            Important => 1,
         },
 
         # article stuff (optional)
@@ -514,10 +527,15 @@ sub TicketSearch {
 
     my $SQLExt = ' WHERE 1=1';
 
-    # Limit the search to just one TicketID (used by the GenericAgent
+    # Limit the search to just one (or a list) TicketID (used by the GenericAgent
     #   to filter for events on single tickets with the job's ticket filter).
     if ( $Param{TicketID} ) {
-        $SQLExt .= ' AND st.id = ' . $DBObject->Quote( $Param{TicketID}, 'Integer' );
+        $SQLExt .= $Self->_InConditionGet(
+            TableColumn => 'st.id',
+            IDRef       => ref( $Param{TicketID} ) && ref( $Param{TicketID} ) eq 'ARRAY'
+            ? $Param{TicketID}
+            : [ $DBObject->Quote( $Param{TicketID}, 'Integer' ) ],
+        );
     }
 
     # add ticket flag table
@@ -525,6 +543,17 @@ sub TicketSearch {
         my $Index = 1;
         for my $Key ( sort keys %{ $Param{TicketFlag} } ) {
             $SQLFrom .= "INNER JOIN ticket_flag tf$Index ON st.id = tf$Index.ticket_id ";
+            $Index++;
+        }
+    }
+
+    # add article and article_flag tables
+    if ( $Param{ArticleFlag} ) {
+        my $Index = 1;
+        for my $Key ( sort keys %{ $Param{ArticleFlag} } ) {
+            $SQLFrom .= "INNER JOIN article ataf$Index ON st.id = ataf$Index.ticket_id ";
+            $SQLFrom .=
+                "INNER JOIN article_flag taf$Index ON ataf$Index.id = taf$Index.article_id ";
             $Index++;
         }
     }
@@ -867,33 +896,32 @@ sub TicketSearch {
         }
     }
 
-    my @GroupIDs;
+    my %GroupList;
 
     # user groups
     if ( $Param{UserID} && $Param{UserID} != 1 ) {
 
         # get users groups
-        @GroupIDs = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
+        %GroupList = $Kernel::OM->Get('Kernel::System::Group')->PermissionUserGet(
             UserID => $Param{UserID},
             Type   => $Param{Permission} || 'ro',
-            Result => 'ID',
         );
 
         # return if we have no permissions
-        return if !@GroupIDs;
+        return if !%GroupList;
     }
 
     # customer groups
     elsif ( $Param{CustomerUserID} ) {
 
-        @GroupIDs = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupMemberList(
+        %GroupList = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupMemberList(
             UserID => $Param{CustomerUserID},
             Type   => $Param{Permission} || 'ro',
-            Result => 'ID',
+            Result => 'HASH',
         );
 
         # return if we have no permissions
-        return if !@GroupIDs;
+        return if !%GroupList;
 
         # get all customer ids
         $SQLExt .= ' AND (';
@@ -930,8 +958,11 @@ sub TicketSearch {
     }
 
     # add group ids to sql string
-    if (@GroupIDs) {
-        $SQLExt .= " AND sq.group_id IN (${\(join ', ' , sort {$a <=> $b} @GroupIDs)}) ";
+    if (%GroupList) {
+
+        my $GroupIDString = join ',', sort keys %GroupList;
+
+        $SQLExt .= " AND sq.group_id IN ($GroupIDString) ";
     }
 
     # current priority lookup
@@ -1076,6 +1107,25 @@ sub TicketSearch {
             $SQLExt .= " AND tf$Index.ticket_value = '" . $DBObject->Quote($Value) . "'";
             $SQLExt .= " AND tf$Index.create_by = "
                 . $DBObject->Quote( $TicketFlagUserID, 'Integer' );
+
+            $Index++;
+        }
+    }
+
+    # add article flag extension
+    if ( $Param{ArticleFlag} ) {
+        my $ArticleFlagUserID = $Param{ArticleFlagUserID} || $Param{UserID};
+        return if !defined $ArticleFlagUserID;
+
+        my $Index = 1;
+        for my $Key ( sort keys %{ $Param{ArticleFlag} } ) {
+            my $Value = $Param{ArticleFlag}->{$Key};
+            return if !defined $Value;
+
+            $SQLExt .= " AND taf$Index.article_key = '" . $DBObject->Quote($Key) . "'";
+            $SQLExt .= " AND taf$Index.article_value = '" . $DBObject->Quote($Value) . "'";
+            $SQLExt .= " AND taf$Index.create_by = "
+                . $DBObject->Quote( $ArticleFlagUserID, 'Integer' );
 
             $Index++;
         }
@@ -2213,15 +2263,42 @@ sub SearchStringStopWordsFind {
         }
     }
 
-    # create lower case stop words
-    my %StopWordRaw = %{ $Kernel::OM->Get('Kernel::Config')->Get('Ticket::SearchIndex::StopWords') || {} };
-    my %StopWord;
-    WORD:
-    for my $Word ( sort keys %StopWordRaw ) {
+    my $StopWordRaw = $Kernel::OM->Get('Kernel::Config')->Get('Ticket::SearchIndex::StopWords') || {};
+    if ( !$StopWordRaw || ref $StopWordRaw ne 'HASH' ) {
 
-        next WORD if !$Word;
-        $Word = lc $Word;
-        $StopWord{$Word} = 1;
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Invalid config option Ticket::SearchIndex::StopWords! "
+                . "Please reset the search index options to reactivate the factory defaults.",
+        );
+
+        return;
+    }
+
+    my %StopWord;
+    LANGUAGE:
+    for my $Language ( sort keys %{$StopWordRaw} ) {
+
+        if ( !$Language || !$StopWordRaw->{$Language} || ref $StopWordRaw->{$Language} ne 'ARRAY' ) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Invalid config option Ticket::SearchIndex::StopWords###$Language! "
+                    . "Please reset this option to reactivate the factory defaults.",
+            );
+
+            next LANGUAGE;
+        }
+
+        WORD:
+        for my $Word ( @{ $StopWordRaw->{$Language} } ) {
+
+            next WORD if !$Word;
+
+            $Word = lc $Word;
+
+            $StopWord{$Word} = 1;
+        }
     }
 
     my %StopWordsFound;

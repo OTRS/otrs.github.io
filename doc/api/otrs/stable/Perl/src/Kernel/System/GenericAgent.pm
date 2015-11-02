@@ -1,5 +1,4 @@
 # --
-# Kernel/System/GenericAgent.pm - generic agent system module
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -824,7 +823,14 @@ sub JobAdd {
 
 deletes a job from the database
 
-    $GenericAgentObject->JobDelete(Name => 'JobName');
+    my $Success = $GenericAgentObject->JobDelete(
+        Name   => 'JobName',
+        UserID => 123,
+    );
+
+returns:
+
+    $Success = 1;       # or false in case of a failure
 
 =cut
 

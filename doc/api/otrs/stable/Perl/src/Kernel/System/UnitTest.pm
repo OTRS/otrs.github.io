@@ -1,5 +1,4 @@
 # --
-# Kernel/System/UnitTest.pm - the global test wrapper
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -12,11 +11,11 @@ package Kernel::System::UnitTest;
 use strict;
 use warnings;
 
-use if $^O eq 'MSWin32', "Win32::Console::ANSI";
-use Term::ANSIColor;
+use Term::ANSIColor();
 use SOAP::Lite;
 
 use Kernel::System::ObjectManager;
+## nofilter(TidyAll::Plugin::OTRS::Perl::ObjectManagerCreation)
 
 # UnitTest helper must be loaded to override the builtin time functions!
 use Kernel::System::UnitTest::Helper;
@@ -66,6 +65,8 @@ sub new {
     $Self->{Debug} = $Param{Debug} || 0;
 
     $Self->{Output} = $Param{Output} || 'ASCII';
+
+    $Self->{ANSI} = $Param{ANSI};
 
     if ( $Self->{Output} eq 'HTML' ) {
         print "
@@ -125,6 +126,9 @@ sub Run {
     my $Product   = $Param{Product}
         || $Kernel::OM->Get('Kernel::Config')->Get('Product') . " "
         . $Kernel::OM->Get('Kernel::Config')->Get('Version');
+
+    $Self->{Product} = $Product;    # we need this in the Selenium object
+
     my @Names = split( /:/, $Param{Name} || '' );
 
     $Self->{TestCountOk}    = 0;
@@ -255,7 +259,7 @@ sub Run {
         print STDERR "NOTICE: Sent to $Param{SubmitURL} with SubmitID: '$Key'.\n";
     }
 
-    return 1;
+    return $ResultSummary{TestNotOk} ? 0 : 1;
 }
 
 =item True()
@@ -799,8 +803,12 @@ sub _PrintHeadlineEnd {
 
 sub _Print {
     my ( $Self, $Test, $Name ) = @_;
-    if ( !$Name ) {
-        $Name = '->>No Name!<<-';
+
+    $Name ||= '->>No Name!<<-';
+
+    my $PrintName = $Name;
+    if ( length $PrintName > 1000 ) {
+        $PrintName = substr( $PrintName, 0, 1000 ) . "...";
     }
 
     $Self->{TestCount}++;
@@ -811,7 +819,7 @@ sub _Print {
                 .= "<tr><td width='70' bgcolor='green'>ok $Self->{TestCount}</td><td>$Name</td></tr>\n";
         }
         elsif ( $Self->{Output} eq 'ASCII' ) {
-            print color('green') . " ok" . color('reset') . " $Self->{TestCount} - $Name\n";
+            print " " . $Self->_Color( 'green', "ok" ) . " $Self->{TestCount} - $PrintName\n";
         }
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Result} = 'ok';
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Name}   = $Name;
@@ -824,7 +832,7 @@ sub _Print {
                 .= "<tr><td width='70' bgcolor='red'>not ok $Self->{TestCount}</td><td>$Name</td></tr>\n";
         }
         elsif ( $Self->{Output} eq 'ASCII' ) {
-            print color('red') . " not ok" . color('reset') . " $Self->{TestCount} - $Name\n";
+            print " " . $Self->_Color( 'red', "not ok" ) . " $Self->{TestCount} - $PrintName\n";
         }
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Result} = 'not ok';
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Name}   = $Name;
@@ -844,6 +852,22 @@ sub _Print {
 
         return;
     }
+}
+
+=item _Color()
+
+this will color the given text (see Term::ANSIColor::color()) if
+ANSI output is available and active, otherwise the text stays unchanged.
+
+    my $PossiblyColoredText = $CommandObject->_Color('green', $Text);
+
+=cut
+
+sub _Color {
+    my ( $Self, $Color, $Text ) = @_;
+
+    return $Text if !$Self->{ANSI};
+    return Term::ANSIColor::color($Color) . $Text . Term::ANSIColor::color('reset');
 }
 
 sub DESTROY {

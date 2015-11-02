@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OTRS/Ticket/OpenTickets.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,12 +13,14 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = (
     'Kernel::System::Ticket',
 );
 
 sub GetDisplayPath {
-    return 'OTRS';
+    return Translatable('OTRS');
 }
 
 sub Run {
@@ -34,14 +35,14 @@ sub Run {
 
     if ( $OpenTickets > 8000 ) {
         $Self->AddResultWarning(
-            Label   => 'Open Tickets',
+            Label   => Translatable('Open Tickets'),
             Value   => $OpenTickets,
-            Message => 'You should not have more than 8,000 open tickets in your system.',
+            Message => Translatable('You should not have more than 8,000 open tickets in your system.'),
         );
     }
     else {
         $Self->AddResultOk(
-            Label => 'Open Tickets',
+            Label => Translatable('Open Tickets'),
             Value => $OpenTickets,
         );
     }

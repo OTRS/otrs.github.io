@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Environment.pm - collect environment info
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -132,27 +131,6 @@ sub OSInfoGet {
 
         $OSName = 'MacOSX ' . $MacVersion;
     }
-    elsif ( $^O eq 'MSWin32' ) {
-
-        if ( $MainObject->Require('Win32') ) {
-
-            my @WinVersion;
-            no strict 'refs';    ## no critic
-
-            if ( defined &Win32::GetOSDisplayName ) {
-                @WinVersion = Win32::GetOSDisplayName();
-            }
-            else {
-                @WinVersion = Win32::GetOSName();
-            }
-
-            use strict;
-            $OSName = join ' ', @WinVersion;
-        }
-        else {
-            $OSName = "Unknown Windows version";
-        }
-    }
     elsif ( $^O eq 'freebsd' ) {
         $OSName = `uname -r`;
     }
@@ -164,7 +142,6 @@ sub OSInfoGet {
         linux   => 'Linux',
         freebsd => 'FreeBSD',
         darwin  => 'MacOSX',
-        MSWin32 => 'Windows',
     );
 
     # collect OS data
@@ -274,7 +251,6 @@ sub PerlInfoGet {
             parent
             Algorithm::Diff
             Apache::DBI
-            Authen::SASL
             CGI
             Class::Inspector
             Crypt::PasswdMD5
@@ -297,7 +273,7 @@ sub PerlInfoGet {
             Net::IMAP::Simple
             Net::HTTP
             Net::SSLGlue
-            Proc::Daemon
+            PDF::API2
             SOAP::Lite
             Sys::Hostname::Long
             Text::CSV

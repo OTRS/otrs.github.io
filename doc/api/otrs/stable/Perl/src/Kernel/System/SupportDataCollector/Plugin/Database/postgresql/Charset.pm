@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/Database/postgresql/Charset.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,12 +13,14 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = (
     'Kernel::System::DB',
 );
 
 sub GetDisplayPath {
-    return 'Database';
+    return Translatable('Database');
 }
 
 sub Run {
@@ -37,16 +38,16 @@ sub Run {
         if ( $Row[0] =~ /(UNICODE|utf-?8)/i ) {
             $Self->AddResultOk(
                 Identifier => 'ClientEncoding',
-                Label      => 'Client Connection Charset',
+                Label      => Translatable('Client Connection Charset'),
                 Value      => $Row[0],
             );
         }
         else {
             $Self->AddResultProblem(
                 Identifier => 'ClientEncoding',
-                Label      => 'Client Connection Charset',
+                Label      => Translatable('Client Connection Charset'),
                 Value      => $Row[0],
-                Message    => 'Setting client_encoding needs to be UNICODE or UTF8.',
+                Message    => Translatable('Setting client_encoding needs to be UNICODE or UTF8.'),
             );
         }
     }
@@ -56,16 +57,16 @@ sub Run {
         if ( $Row[0] =~ /(UNICODE|utf-?8)/i ) {
             $Self->AddResultOk(
                 Identifier => 'ServerEncoding',
-                Label      => 'Server Database Charset',
+                Label      => Translatable('Server Database Charset'),
                 Value      => $Row[0],
             );
         }
         else {
             $Self->AddResultProblem(
                 Identifier => 'ServerEncoding',
-                Label      => 'Server Database Charset',
+                Label      => Translatable('Server Database Charset'),
                 Value      => $Row[0],
-                Message    => 'Setting server_encoding needs to be UNICODE or UTF8.',
+                Message    => Translatable('Setting server_encoding needs to be UNICODE or UTF8.'),
             );
         }
     }

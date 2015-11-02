@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/Webserver/Apache/MPMModel.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,10 +13,12 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = ();
 
 sub GetDisplayPath {
-    return 'Webserver';
+    return Translatable('Webserver');
 }
 
 sub Run {
@@ -47,16 +48,16 @@ sub Run {
     if ( $MPMModel eq 'prefork.c' ) {
         $Self->AddResultOk(
             Identifier => 'MPMModel',
-            Label      => 'MPM model',
+            Label      => Translatable('MPM model'),
             Value      => $MPMModel,
         );
     }
     else {
         $Self->AddResultProblem(
             Identifier => 'MPMModel',
-            Label      => 'MPM model',
+            Label      => Translatable('MPM model'),
             Value      => $MPMModel,
-            Message    => "OTRS requires apache to be run with the 'prefork' MPM model.",
+            Message    => Translatable("OTRS requires apache to be run with the 'prefork' MPM model."),
         );
     }
 

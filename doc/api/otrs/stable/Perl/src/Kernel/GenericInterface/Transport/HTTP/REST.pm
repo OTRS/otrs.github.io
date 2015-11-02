@@ -1,5 +1,4 @@
 # --
-# Kernel/GenericInterface/Transport/HTTP/REST.pm - GenericInterface network transport interface for HTTP::REST
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -16,6 +15,7 @@ use HTTP::Status;
 use MIME::Base64;
 use REST::Client;
 use URI::Escape;
+use Kernel::Config;
 
 use Kernel::System::VariableCheck qw(:all);
 
@@ -130,11 +130,23 @@ sub ProviderProcessRequest {
         #       UserLogin => 'user',
         #       Password  => 'secret',
         #    );
-        %QueryParams = split /[&=]/, $QueryParamsStr;
+        for my $QueryParam ( split '&', $QueryParamsStr ) {
+            my ( $Key, $Value ) = split '=', $QueryParam;
 
-        # unscape URI strings in query parameters
-        for my $Param ( sort keys %QueryParams ) {
-            $QueryParams{$Param} = URI::Escape::uri_unescape( $QueryParams{$Param} );
+            # unscape URI strings in query parameters
+            $Key   = URI::Escape::uri_unescape($Key);
+            $Value = URI::Escape::uri_unescape($Value);
+            if ( !defined $QueryParams{$Key} ) {
+                $QueryParams{$Key} = $Value || '';
+            }
+
+            # elements specified multiple times will be added as array reference
+            elsif ( ref $QueryParams{$Key} eq '' ) {
+                $QueryParams{$Key} = [ $QueryParams{$Key}, $Value ];
+            }
+            else {
+                push @{ $QueryParams{$Key} }, $Value;
+            }
         }
     }
 
@@ -700,6 +712,31 @@ sub RequesterPerformRequest {
         };
     }
 
+    my $SizeExeeded = 0;
+    {
+        my $MaxSize
+            = $Kernel::OM->Get('Kernel::Config')->Get('GenericInterface::Operation::ResponseLoggingMaxSize') || 200;
+        $MaxSize = $MaxSize * 1024;
+        use bytes;
+
+        my $ByteSize = length($ResponseContent);
+
+        if ( $ByteSize < $MaxSize ) {
+            $Self->{DebuggerObject}->Debug(
+                Summary => 'JSON data received from remote system',
+                Data    => $ResponseContent,
+            );
+        }
+        else {
+            $SizeExeeded = 1;
+            $Self->{DebuggerObject}->Debug(
+                Summary => "JSON data received from remote system was too large for logging",
+                Data =>
+                    'See SysConfig option GenericInterface::Operation::ResponseLoggingMaxSize to change the maximum.',
+            );
+        }
+    }
+
     # send processed data to debugger
     $Self->{DebuggerObject}->Debug(
         Summary => 'JSON data received from remote system',
@@ -731,8 +768,9 @@ sub RequesterPerformRequest {
 
     # all OK - return result
     return {
-        Success => 1,
-        Data    => $Result || undef,
+        Success     => 1,
+        Data        => $Result || undef,
+        SizeExeeded => $SizeExeeded,
     };
 }
 

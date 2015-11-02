@@ -1,5 +1,4 @@
 # --
-# Kernel/System/PDF.pm - PDF lib
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -11,6 +10,8 @@ package Kernel::System::PDF;
 
 use strict;
 use warnings;
+
+use PDF::API2;
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -40,8 +41,8 @@ create an object. Do not use it directly, instead use:
     local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $PDFObject = $Kernel::OM->Get('Kernel::System::PDF');
 
-C<undef> will be returned when the config option C<PDF> is not set,
-or when the L<PDF::API2> is not installed or has an unsupported version.
+Please note that currently you should only create one PDF object per instance of
+this class.
 
 =cut
 
@@ -52,49 +53,13 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # load PDF::API2
-    return if !$Kernel::OM->Get('Kernel::Config')->Get('PDF');
-
     # read string width cache
     $Self->{CacheStringWidth} = $Kernel::OM->Get('Kernel::System::Cache')->Get(
         Type => 'PDF',
         Key  => 'CacheStringWidth',
     ) || {};
 
-    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require('PDF::API2') ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message =>
-                "PDF support activated in SysConfig but cpan-module PDF::API2 isn't installed!"
-        );
-        return;
-    }
-    elsif (
-
-        # version 2.x or newer exports a proper version number
-        $PDF::API2::VERSION =~ m{^(\d)\..*}mx
-        && ( $1 > 1 )
-        )
-    {
-        return $Self;
-    }
-    elsif (
-
-        # versions 0.73 and lower have a special Version.pm
-        $PDF::API2::Version::VERSION =~ m{^(\d)\.(\d\d).*}mx
-        && ( $1 > 0 || ( $1 eq 0 && $2 >= 57 ) )
-        )
-    {
-        return $Self;
-    }
-    else {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message =>
-                "PDF support activated in SysConfig but PDF::API2 0.57 or newer is required. Found version $PDF::API2::Version::VERSION.",
-        );
-        return;
-    }
+    return $Self;
 }
 
 =item DocumentNew()
@@ -155,7 +120,7 @@ sub DocumentNew {
     if ( !$Self->{PDF} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'Can not create new Document!',
+            Message  => 'Can not create new Document: $!',
         );
         return;
     }
@@ -449,7 +414,7 @@ sub PageNew {
     # output the lines in top of the page
     $Self->HLine(
         Color     => '#505050',
-        LineWidth => 1,
+        LineWidth => 0.5,
     );
 
     if ( $Param{FooterLeft} ) {
@@ -519,7 +484,7 @@ sub PageNew {
     # output the lines in bottom of the page
     $Self->HLine(
         Color     => '#505050',
-        LineWidth => 1,
+        LineWidth => 0.5,
     );
 
     if ( $Param{HeadlineLeft} && $Param{HeadlineRight} ) {
@@ -624,16 +589,19 @@ sub DocumentOutput {
 
 =item Table()
 
-Add a table
+Add a table.
+
+In case of missing or misused parameters, C<undef> is returned in scalar context
+and an empty list is returned in list context.
 
     Return
         $Return{State}
         $Return{RequiredWidth}
         $Return{RequiredHeight}
-        $CellData                # (reference) complete calculated
-        $ColumnData              # (reference) complete calculated
+        $Return{CellData}                # (reference) complete calculated
+        $Return{ColumnData}              # (reference) complete calculated
 
-    (%Return, $CellData, $ColumnData) = $PDFObject->Table(
+    %Return = $PDFObject->Table(
         CellData            => $CellData,    # 2D arrayref (see example)
         ColumnData          => $ColumnData,  # arrayref (see example)
         RowData             => $RowData,     # arrayref (see example)
@@ -1768,12 +1736,17 @@ sub DimGet {
 
 =item _TableCalculate()
 
-calculate params of table
+calculate params of table.
 
     Return  # normally no return required, only references
         %Param
 
-    (%Return, $CellData, $ColumnData) = $PDFObject->_TableCalculate(
+The returned hash is usually not needed, as the passed in references are
+modified in place.
+In case of missing or misused parameters, C<undef> is returned in scalar context
+and an empty list is returned in list context.
+
+    %Return = $PDFObject->_TableCalculate(
         CellData            => $CellData,     # 2D arrayref (see example)
         ColumnData          => $ColumnData,   # arrayref (see example)
         RowData             => $RowData,      # arrayref (see example)

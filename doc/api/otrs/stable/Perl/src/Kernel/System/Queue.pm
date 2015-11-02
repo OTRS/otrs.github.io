@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Queue.pm - lib for queue functions
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -47,7 +46,7 @@ create an object. Do not use it directly, instead use:
 
     use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager->new();
-    my $QueueObject = $Kernel::OM->Get('Kernel::System::Auth');
+    my $QueueObject = $Kernel::OM->Get('Kernel::System::Queue');
 
 =cut
 
@@ -404,16 +403,15 @@ sub GetAllQueues {
     my $CacheKey;
     if ( $Param{UserID} ) {
 
-        # get group ids
-        my @GroupIDs = $Kernel::OM->Get('Kernel::System::Group')->GroupMemberList(
+        # get group list
+        my %GroupList = $Kernel::OM->Get('Kernel::System::Group')->PermissionUserGet(
             UserID => $Param{UserID},
             Type   => $Type,
-            Result => 'ID',
         );
 
-        return if !@GroupIDs;
+        return if !%GroupList;
 
-        my $GroupString = join ', ', sort @GroupIDs;
+        my $GroupString = join ', ', sort keys %GroupList;
         $CacheKey = "GetAllQueues::UserID::${Type}::${GroupString}::$Param{UserID}";
 
         # check cache

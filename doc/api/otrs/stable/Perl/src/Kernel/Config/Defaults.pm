@@ -1,19 +1,14 @@
 # --
-# Kernel/Config/Defaults.pm - Default Config file for OTRS kernel
 # Copyright (C) 2001-2013 OTRS AG, http://otrs.org/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
 # did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
 # --
-#
-#  Note:
-#    -->> Don't edit this file! Copy your needed settings into
-#     Kernel/Config.pm. Kernel/Config.pm will not be updated. <<--
-#
-#   -->> All changes of this file will be lost after an update! <<--
-#
-# --
+
+# Default configuration for OTRS. All changes to this file will be lost after an
+#   update, please use AdminSysConfig to configure your system.
+
 ## nofilter(TidyAll::Plugin::OTRS::Perl::LayoutObject)
 
 package Kernel::Config::Defaults;
@@ -58,6 +53,12 @@ sub LoadDefaults {
     # each http session id starts with this number)
     $Self->{SystemID} = 10;
 
+    # NodeID
+    # (The identify of the node. In a clustered environment
+    # each node needs a seperate NodeID. On a setup with just
+    # one frontend server, it is not needed to change this setting)
+    $Self->{NodeID} = 1;
+
     # FQDN
     # (Full qualified domain name of your system.)
     $Self->{FQDN} = 'yourhost.example.com';
@@ -82,7 +83,7 @@ sub LoadDefaults {
 
     # ProductName
     # (Application name displayed in frontend.)
-    $Self->{ProductName} = 'OTRS 4';
+    $Self->{ProductName} = 'OTRS 5';
 
     # --------------------------------------------------- #
     # database settings                                   #
@@ -152,50 +153,98 @@ sub LoadDefaults {
     # (short name = long name and file)
     $Self->{DefaultUsedLanguages} = {
         'ar_SA' => 'Arabic (Saudi Arabia)',
-        'bg' => 'Bulgarian (&#x0411;&#x044a;&#x043b;&#x0433;&#x0430;&#x0440;&#x0441;&#x043a;&#x0438;)',
-        'ca' => 'Catal&agrave;',
-        'cs' => 'Czech (&#x010c;esky)',
-        'da' => 'Dansk',
-        'de' => 'Deutsch',
-        'el' => 'Greek (&#x0395;&#x03bb;&#x03bb;&#x03b7;&#x03bd;&#x03b9;&#x03ba;&#x03ac;)',
+        'bg' => 'Bulgarian',
+        'ca' => 'Catalan',
+        'cs' => 'Czech',
+        'da' => 'Danish',
+        'de' => 'German',
         'en' => 'English (United States)',
         'en_CA' => 'English (Canada)',
         'en_GB' => 'English (United Kingdom)',
-        'es' => 'Espa&ntilde;ol',
-        'es_CO' => 'Espa&ntilde;ol (Colombia)',
-        'es_MX' => 'Espa&ntilde;ol (M&eacute;xico)',
-        'et' => 'Eesti',
-        'fa' => 'Persian (&#x0641;&#x0627;&#x0631;&#x0633;&#x0649;)',
-        'fi' => 'Suomi',
-        'fr' => 'Fran&ccedil;ais',
-        'fr_CA' => 'Fran&ccedil;ais (Canada)',
-        'gl' => 'Galego',
-        'he' => 'Hebrew (עִבְרִית)',
+        'es' => 'Spanish',
+        'es_CO' => 'Spanish (Colombia)',
+        'es_MX' => 'Spanish (Mexico)',
+        'et' => 'Estonian',
+        'el' => 'Greek',
+        'fa' => 'Persian',
+        'fi' => 'Finnish',
+        'fr' => 'French',
+        'fr_CA' => 'French (Canada)',
+        'gl' => 'Galician',
+        'he' => 'Hebrew',
         'hi' => 'Hindi',
+        'hr' => 'Croatian',
+        'hu' => 'Hungarian',
+        'it' => 'Italian',
+        'ja' => 'Japanese',
+        'lt' => 'Lithuanian',
+        'lv' => 'Latvian',
+        'ms' => 'Malay',
+        'nl' => 'Nederlands',
+        'nb_NO' => 'Norwegian',
+        'pt_BR' => 'Portuguese (Brasil)',
+        'pt' => 'Portuguese',
+        'pl' => 'Polish',
+        'ru' => 'Russian',
+        'sl' => 'Slovenian',
+        'sr_Latn' => 'Serbian Latin',
+        'sr_Cyrl' => 'Serbian Cyrillic',
+        'sk_SK' => 'Slovak',
+        'sv' => 'Swedish',
+        'sw' => 'Swahili',
+        'tr' => 'Turkish',
+        'uk' => 'Ukrainian',
+        'vi_VN' => 'Vietnam',
+        'zh_CN' => 'Chinese (Simplified)',
+        'zh_TW' => 'Chinese (Traditional)',
+    };
+
+    $Self->{DefaultUsedLanguagesNative} = {
+        'ar_SA' => 'العَرَبِية‎',
+        'bg' => 'Български',
+        'ca' => 'Català',
+        'cs' => 'Česky',
+        'da' => 'Dansk',
+        'de' => 'Deutsch',
+        'en' => 'English (United States)',
+        'en_CA' => 'English (Canada)',
+        'en_GB' => 'English (United Kingdom)',
+        'es' => 'Español',
+        'es_CO' => 'Español (Colombia)',
+        'es_MX' => 'Español (México)',
+        'et' => 'Eesti',
+        'el' => 'Ελληνικά',
+        'fa' => 'فارسى',
+        'fi' => 'Suomi',
+        'fr' => 'Fraçais',
+        'fr_CA' => 'Français (Canada)',
+        'gl' => 'Galego',
+        'he' => 'עברית',
+        'hi' => 'हिन्दी',
         'hr' => 'Hrvatski',
         'hu' => 'Magyar',
         'it' => 'Italiano',
-        'ja' => 'Japanese (&#x65e5;&#x672c;&#x8a9e;)',
+        'ja' => '日本語',
         'lt' => 'Lietuvių kalba',
         'lv' => 'Latvijas',
-        'ms' => 'Malay',
-        'nb_NO' => 'Norsk bokm&aring;l',
-        'nl' => 'Nederlands',
+        'ms' => 'Melayu',
+        'nl' => 'Nederlandse',
+        'nb_NO' => 'Norsk bokmål',
+        'pt_BR' => 'Português Brasileiro',
+        'pt' => 'Português',
         'pl' => 'Polski',
-        'pt' => 'Portugu&ecirc;s',
-        'pt_BR' => 'Portugu&ecirc;s Brasileiro',
-        'ru' => 'Russian (&#x0420;&#x0443;&#x0441;&#x0441;&#x043a;&#x0438;&#x0439;)',
-        'sk_SK' => 'Slovak (Sloven&#x010d;ina)',
-        'sl' => 'Slovenian (Slovenščina)',
-        'sr_Cyrl' => 'Serbian Cyrillic (српски)',
-        'sr_Latn' => 'Serbian Latin (Srpski)',
+        'ru' => 'Русский',
+        'sl' => 'Slovenščina',
+        'sr_Latn' => 'Srpski',
+        'sr_Cyrl' => 'Српски',
+        'sk_SK' => 'Slovenčina',
         'sv' => 'Svenska',
-        'sw' => 'Swahili',
-        'tr' => 'T&uuml;rk&ccedil;e',
-        'uk' => 'Ukrainian (&#x0423;&#x043a;&#x0440;&#x0430;&#x0457;&#x043d;&#x0441;&#x044c;&#x043a;&#x0430;)',
-        'vi_VN' => 'Vietnam (Vi&#x0246;t Nam)',
-        'zh_CN' => 'Chinese (Sim.) (&#x7b80;&#x4f53;&#x4e2d;&#x6587;)',
-        'zh_TW' => 'Chinese (Tradi.) (&#x6b63;&#x9ad4;&#x4e2d;&#x6587;)'
+        'sw' => 'Kiswahili',
+        'tr' => 'Türkçe',
+        'uk' => 'Українська',
+        'vi_VN' => 'ViɆt Nam',
+        'zh_CN' => '简体中文',
+        'zh_TW' => '正體中文',
     };
 
     # default theme
@@ -423,6 +472,25 @@ sub LoadDefaults {
 #    $Self->{'AuthModule::Radius::Die'} = 1;
 
     # --------------------------------------------------- #
+    # 2 factor authentication settings                    #
+    # check a otp (one-time password)                     #
+    # after successful authentication                     #
+    # as an extra security measure                        #
+    # --------------------------------------------------- #
+    # This is the auth module using the google authenticator mechanism
+#    $Self->{'AuthTwoFactorModule'} = 'Kernel::System::Auth::TwoFactor::GoogleAuthenticator';
+
+    # defines user preference where the secret key is stored
+#    $Self->{'AuthTwoFactorModule::SecretPreferencesKey'} = 'UserGoogleAuthenticatorSecretKey';
+
+    # defines if users can login without a 2 factor authentication if they have no stored shared secret
+#    $Self->{'AuthTwoFactorModule::AllowEmptySecret'} = '1';
+
+    # defines if the otp for the previous timespan (30-60sec ago) will also be valid
+    # helpful to account for timimg issues (server and entry based)
+#    $Self->{'AuthTwoFactorModule::AllowPreviousToken'} = '1';
+
+    # --------------------------------------------------- #
     # authentication sync settings                        #
     # (enable agent data sync. after succsessful          #
     # authentication)                                     #
@@ -609,7 +677,7 @@ sub LoadDefaults {
     # Kernel::Modules::AgentInfo check key, if this user preferences key
     # is true, then the message is already accepted
 #    $Self->{InfoKey} = 'wpt22';
-    # shown InfoFile located under Kernel/Output/HTML/Standard/AgentInfo.dtl
+    # shown InfoFile located under Kernel/Output/HTML/Templates/Standard/AgentInfo.tt
 #    $Self->{InfoFile} = 'AgentInfo';
 
     # --------------------------------------------------- #
@@ -621,20 +689,20 @@ sub LoadDefaults {
     $Self->{'Frontend::NotifyModule'} = {
         '100-OTRSBusiness' => {
             'Group' => 'admin',
-            'Module' => 'Kernel::Output::HTML::NotificationAgentOTRSBusiness'
+            'Module' => 'Kernel::Output::HTML::Notification::AgentOTRSBusiness'
         },
         '200-UID-Check' => {
-          'Module' => 'Kernel::Output::HTML::NotificationUIDCheck',
+          'Module' => 'Kernel::Output::HTML::Notification::UIDCheck',
         },
         '500-OutofOffice-Check' => {
-          'Module' => 'Kernel::Output::HTML::NotificationOutofOfficeCheck',
+          'Module' => 'Kernel::Output::HTML::Notification::OutofOfficeCheck',
         },
         '600-SystemMaintenance-Check' => {
-            'Module' => 'Kernel::Output::HTML::NotificationSystemMaintenanceCheck',
+            'Module' => 'Kernel::Output::HTML::Notification::SystemMaintenanceCheck',
         },
 
-        '800-Scheduler-Check' => {
-          'Module' => 'Kernel::Output::HTML::NotificationSchedulerCheck',
+        '800-Daemon-Check' => {
+          'Module' => 'Kernel::Output::HTML::Notification::DaemonCheck',
         },
     };
 
@@ -818,6 +886,8 @@ sub LoadDefaults {
 
     # tmp dir
     $Self->{TempDir} = '<OTRS_CONFIG_Home>/var/tmp';
+    # article dir
+    $Self->{ArticleDir} = '<OTRS_CONFIG_Home>/var/article';
 
     # html template dirs
     $Self->{TemplateDir}       = '<OTRS_CONFIG_Home>/Kernel/Output';
@@ -838,12 +908,10 @@ sub LoadDefaults {
         'Core.Control.css',
         'Core.Table.css',
         'Core.TicketZoom.css',
+        'Core.InputFields.css',
         'Core.Print.css',
         'thirdparty/fontawesome/font-awesome.css'
     ];
-
-    # Customer Common CSS for IE8
-    $Self->{'Loader::Customer::CommonCSS::IE8'}->{'000-Framework'} =  [];
 
     # Agent Common CSS
     $Self->{'Loader::Agent::CommonCSS'}->{'000-Framework'} =  [
@@ -863,13 +931,9 @@ sub LoadDefaults {
         'Core.TicketDetail.css',
         'Core.Tooltip.css',
         'Core.Dialog.css',
+        'Core.InputFields.css',
         'Core.Print.css',
         'thirdparty/fontawesome/font-awesome.css',
-    ];
-
-    # Agent Common CSS for IE8
-    $Self->{'Loader::Agent::CommonCSS::IE8'}->{'000-Framework'} =  [
-      'Core.OverviewSmall.IE8.css'
     ];
 
     # --------------------------------------------------- #
@@ -878,23 +942,24 @@ sub LoadDefaults {
 
     # Customer Common JS
     $Self->{'Loader::Customer::CommonJS'}->{'000-Framework'} =  [
-        'thirdparty/jquery-1.11.1/jquery.js',
+        'thirdparty/jquery-2.1.4/jquery.js',
         'thirdparty/jquery-browser-detection/jquery-browser-detection.js',
-        'thirdparty/jquery-validate-1.13.0/jquery.validate.js',
-        'thirdparty/jquery-ui-1.11.1/jquery-ui.js',
-        'thirdparty/stacktrace-0.6.2/stacktrace.js',
+        'thirdparty/jquery-validate-1.14.0/jquery.validate.js',
+        'thirdparty/jquery-ui-1.11.4/jquery-ui.js',
+        'thirdparty/stacktrace-0.6.4/stacktrace.js',
         'thirdparty/jquery-pubsub/pubsub.js',
-        'thirdparty/jquery-jstree-v.pre1.0/jquery.jstree.js',
-        'thirdparty/jquery-jstree-v.pre1.0/_lib/jquery.hotkeys.js',
+        'thirdparty/jquery-jstree-3.1.1/jquery.jstree.js',
         'Core.Debug.js',
-        'Core.Data.js',
         'Core.Exception.js',
+        'Core.Data.js',
         'Core.JSON.js',
         'Core.JavaScriptEnhancements.js',
         'Core.Config.js',
         'Core.App.js',
+        'Core.App.Responsive.js',
         'Core.AJAX.js',
         'Core.UI.js',
+        'Core.UI.InputFields.js',
         'Core.UI.Accessibility.js',
         'Core.UI.Dialog.js',
         'Core.UI.RichTextEditor.js',
@@ -905,28 +970,31 @@ sub LoadDefaults {
         'Core.Form.js',
         'Core.Form.ErrorTooltips.js',
         'Core.Form.Validate.js',
-        'Core.Customer.js'
+        'Core.Customer.js',
+        'Core.Customer.Responsive.js'
     ];
 
     # Agent Common JS
     $Self->{'Loader::Agent::CommonJS'}->{'000-Framework'} =  [
-        'thirdparty/jquery-1.11.1/jquery.js',
+        'thirdparty/jquery-2.1.4/jquery.js',
         'thirdparty/jquery-browser-detection/jquery-browser-detection.js',
-        'thirdparty/jquery-ui-1.11.1/jquery-ui.js',
-        'thirdparty/jquery-validate-1.13.0/jquery.validate.js',
-        'thirdparty/stacktrace-0.6.2/stacktrace.js',
+        'thirdparty/jquery-ui-1.11.4/jquery-ui.js',
+        'thirdparty/jquery-ui-touch-punch-0.2.3/jquery.ui.touch-punch.js',
+        'thirdparty/jquery-validate-1.14.0/jquery.validate.js',
+        'thirdparty/stacktrace-0.6.4/stacktrace.js',
         'thirdparty/jquery-pubsub/pubsub.js',
-        'thirdparty/jquery-jstree-v.pre1.0/jquery.jstree.js',
-        'thirdparty/jquery-jstree-v.pre1.0/_lib/jquery.hotkeys.js',
+        'thirdparty/jquery-jstree-3.1.1/jquery.jstree.js',
         'Core.JavaScriptEnhancements.js',
         'Core.Debug.js',
+        'Core.Exception.js',
         'Core.Data.js',
         'Core.Config.js',
-        'Core.Exception.js',
         'Core.JSON.js',
         'Core.App.js',
+        'Core.App.Responsive.js',
         'Core.AJAX.js',
         'Core.UI.js',
+        'Core.UI.InputFields.js',
         'Core.UI.Accordion.js',
         'Core.UI.Datepicker.js',
         'Core.UI.DnD.js',
@@ -944,7 +1012,9 @@ sub LoadDefaults {
         'Core.Form.Validate.js',
         'Core.Agent.js',
         'Core.Agent.Search.js',
-        'Core.Agent.CustomerInformationCenterSearch.js'
+        'Core.Agent.CustomerInformationCenterSearch.js',
+        'Core.UI.Notification.js',
+        'Core.Agent.Responsive.js',
     ];
 
     # --------------------------------------------------- #
@@ -1026,14 +1096,14 @@ sub LoadDefaults {
 
     # PreferencesView
     # (Order of shown items)
-    $Self->{PreferencesView} = [ 'User Profile', 'Email Settings', 'Other Settings' ];
+    $Self->{PreferencesView} = [ 'User Profile', 'Notification Settings', 'Other Settings' ];
 
     $Self->{PreferencesGroups}->{Password} = {
         'Active' => '1',
         'Area' => 'Agent',
         'Column' => 'User Profile',
         'Label' => 'Change password',
-        'Module' => 'Kernel::Output::HTML::PreferencesPassword',
+        'Module' => 'Kernel::Output::HTML::Preferences::Password',
         'PasswordMaxLoginFailed' => '0',
         'PasswordMin2Characters' => '0',
         'PasswordMin2Lower2UpperCharacters' => '0',
@@ -1043,7 +1113,7 @@ sub LoadDefaults {
         'Prio' => '0500'
     };
     $Self->{PreferencesGroups}->{SpellDict} = {
-        Module => 'Kernel::Output::HTML::PreferencesGeneric',
+        Module => 'Kernel::Output::HTML::Preferences::Generic',
         Column => 'Other Options',
         Label  => 'Spelling Dictionary',
         Desc   => 'Select your default spelling dictionary.',
@@ -1069,7 +1139,7 @@ sub LoadDefaults {
         'Data' => '[% Env("UserComment") %]',
         'Key' => 'Comment',
         'Label' => 'Comment',
-        'Module' => 'Kernel::Output::HTML::PreferencesGeneric',
+        'Module' => 'Kernel::Output::HTML::Preferences::Generic',
         'PrefKey' => 'UserComment',
         'Prio' => '6000'
     };
@@ -1077,9 +1147,9 @@ sub LoadDefaults {
     $Self->{PreferencesGroups}->{Language} = {
         'Active' => '1',
         'Column' => 'User Profile',
-        'Key' => 'Frontend language',
+        'Key' => 'Language',
         'Label' => 'Language',
-        'Module' => 'Kernel::Output::HTML::PreferencesLanguage',
+        'Module' => 'Kernel::Output::HTML::Preferences::Language',
         'PrefKey' => 'UserLanguage',
         'Prio' => '1000'
     };
@@ -1088,7 +1158,7 @@ sub LoadDefaults {
         'Column' => 'User Profile',
         'Key' => 'Frontend theme',
         'Label' => 'Theme',
-        'Module' => 'Kernel::Output::HTML::PreferencesTheme',
+        'Module' => 'Kernel::Output::HTML::Preferences::Theme',
         'PrefKey' => 'UserTheme',
         'Prio' => '3000'
     };
@@ -1101,7 +1171,7 @@ sub LoadDefaults {
     # --------------------------------------------------- #
 
     # notification sender
-    $Self->{NotificationSenderName}  = 'OTRS Notification Master';
+    $Self->{NotificationSenderName}  = 'OTRS Notifications';
     $Self->{NotificationSenderEmail} = 'otrs@<OTRS_CONFIG_FQDN>';
 
     # notification email for new password
@@ -1147,7 +1217,7 @@ You can log in via the following URL:
 
     # show online agents
 #    $Self->{'CustomerFrontend::NotifyModule'}->{'1-ShowAgentOnline'} = {
-#        Module      => 'Kernel::Output::HTML::NotificationAgentOnline',
+#        Module      => 'Kernel::Output::HTML::Notification::AgentOnline',
 #        ShowEmail   => 1,
 #        IdleMinutes => 60,
 #    };
@@ -1178,7 +1248,7 @@ You can log in via the following URL:
     # Kernel::Modules::CustomerAccept check key, if this user preferences key
     # is true, then the message is already accepted
 #    $Self->{'CustomerPanel::InfoKey'} = 'CustomerAccept1';
-    # shown InfoFile located under Kernel/Output/HTML/Standard/CustomerAccept.dtl
+    # shown InfoFile located under Kernel/Output/HTML/Templates/Standard/CustomerAccept.tt
 #    $Self->{'CustomerPanel::InfoFile'} = 'CustomerAccept';
 
     # CustomerPanelLostPassword
@@ -1305,6 +1375,25 @@ via the Preferences button after logging in.
 #    $Self->{'Customer::AuthModule'} = 'Kernel::System::Auth::Radius';
 #    $Self->{'Customer::AuthModule::Radius::Host'} = 'radiushost';
 #    $Self->{'Customer::AuthModule::Radius::Password'} = 'radiussecret';
+
+    # --------------------------------------------------- #
+    # 2 factor customer authentication settings           #
+    # check a otp (one-time password)                     #
+    # after successful authentication                     #
+    # as an extra security measure                        #
+    # --------------------------------------------------- #
+    # This is the auth module using the google authenticator mechanism
+#    $Self->{'Customer::AuthTwoFactorModule'} = 'Kernel::System::CustomerAuth::TwoFactor::GoogleAuthenticator';
+
+    # defines user preference where the secret key is stored
+#    $Self->{'Customer::AuthTwoFactorModule::SecretPreferencesKey'} = 'UserGoogleAuthenticatorSecretKey';
+
+    # defines if users can login without a 2 factor authentication if they have no stored shared secret
+#    $Self->{'Customer::AuthTwoFactorModule::AllowEmptySecret'} = '1';
+
+    # defines if the otp for the previous timespan (30-60sec ago) will also be valid
+    # helpful to account for timimg issues (server and entry based)
+#    $Self->{'Customer::AuthTwoFactorModule::AllowPreviousToken'} = '1';
 
     # --------------------------------------------------- #
     #                                                     #
@@ -1522,14 +1611,6 @@ via the Preferences button after logging in.
         0 => 'No',
     };
 
-    # --------------------------------------------------- #
-    # default core objects and params in frontend
-    # --------------------------------------------------- #
-    $Self->{'Frontend::CommonObject'} = {
-
-        # key => module
-#        SomeObject => 'Kernel::System::Some',
-    };
     $Self->{'Frontend::CommonParam'} = {
 
         # param => default value
@@ -1537,33 +1618,23 @@ via the Preferences button after logging in.
         Action => 'AdminInit',
     };
 
-    # --------------------------------------------------- #
-    # default core objects and params in customer frontend
-    # --------------------------------------------------- #
-    $Self->{'CustomerFrontend::CommonObject'} = {
-
-        # key => module
-#        SomeObject => 'Kernel::System::Some',
-    };
     $Self->{'CustomerFrontend::CommonParam'} = {
 
         # param => default value
 #        SomeParam => 'DefaultValue',
     };
 
-    # --------------------------------------------------- #
-    # default core objects and params in public frontend
-    # --------------------------------------------------- #
-    $Self->{'PublicFrontend::CommonObject'} = {
-
-        # key => module
-#        SomeObject => 'Kernel::System::Some',
-    };
     $Self->{'PublicFrontend::CommonParam'} = {
 
         # param => default value
 #        SomeParam => 'DefaultValue',
     };
+
+    # If the public interface is proteceted with .htaccess
+    # we can specify the htaccess login data here,
+    # this is neccessary for the support data collector
+    # $Self->{'PublicFrontend::AuthUser'} = '';
+    # $Self->{'PublicFrontend::AuthPassword'} = '';
 
     # --------------------------------------------------- #
     # Frontend Module Registry (Agent)
@@ -1598,7 +1669,7 @@ via the Preferences button after logging in.
             }
         ],
         'NavBarModule' => {
-            'Module' => 'Kernel::Output::HTML::NavBarModuleAdmin'
+            'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin'
         },
         'NavBarName' => 'Admin',
         'Title' => ''
@@ -1619,7 +1690,7 @@ via the Preferences button after logging in.
         'NavBarModule' => {
             'Block' => 'System',
             'Description' => 'View system log messages.',
-            'Module' => 'Kernel::Output::HTML::NavBarModuleAdmin',
+            'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
             'Name' => 'System Log',
             'Prio' => '600'
         },
@@ -1632,7 +1703,7 @@ via the Preferences button after logging in.
         Title        => 'SysConfig',
         NavBarName   => 'Admin',
         NavBarModule => {
-            Module      => 'Kernel::Output::HTML::NavBarModuleAdmin',
+            Module      => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
             Name        => 'SysConfig',
             Description => 'Edit the system configuration settings.',
             Block       => 'System',
@@ -1655,7 +1726,7 @@ via the Preferences button after logging in.
         'NavBarModule' => {
             'Block' => 'System',
             'Description' => 'Update and extend your system with software packages.',
-            'Module' => 'Kernel::Output::HTML::NavBarModuleAdmin',
+            'Module' => 'Kernel::Output::HTML::NavBar::ModuleAdmin',
             'Name' => 'Package Manager',
             'Prio' => '1000'
         },

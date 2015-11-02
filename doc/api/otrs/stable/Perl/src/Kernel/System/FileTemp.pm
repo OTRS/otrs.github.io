@@ -1,5 +1,4 @@
 # --
-# Kernel/System/FileTemp.pm - tmp files
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -56,20 +55,23 @@ sub new {
 
 =item TempFile()
 
-returns a file handle and its file name
+returns an opened temporary file handle and its file name.
+Please note that you need to close the file handle for other processes to write to it.
 
-    my ($fh, $Filename) = $TempObject->TempFile();
+    my ($FileHandle, $Filename) = $TempObject->TempFile(
+        Suffix => '.png',   # optional, defaults to '.tmp'
+    );
 
 =cut
 
 sub TempFile {
-    my $Self = shift;
+    my ( $Self, %Param ) = @_;
 
     my $TempDir = $Kernel::OM->Get('Kernel::Config')->Get('TempDir');
 
     my ( $FH, $Filename ) = tempfile(
         DIR    => $TempDir,
-        SUFFIX => '.tmp',
+        SUFFIX => $Param{Suffix} // '.tmp',
         UNLINK => 1,
     );
 

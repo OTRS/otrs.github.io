@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Main.pm - main core components
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -19,6 +18,7 @@ use File::stat;
 use Unicode::Normalize;
 use List::Util qw();
 use Storable;
+use Fcntl qw(:flock);
 
 our @ObjectDependencies = (
     'Kernel::System::Encode',
@@ -227,13 +227,15 @@ sub FilenameCleanUp {
         return;
     }
 
-    if ( $Param{Type} && $Param{Type} =~ /^md5/i ) {
+    my $Type = lc( $Param{Type} || 'local' );
+
+    if ( $Type eq 'md5' ) {
         $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{Filename} );
         $Param{Filename} = md5_hex( $Param{Filename} );
     }
 
     # replace invalid token for attachment file names
-    elsif ( $Param{Type} && $Param{Type} =~ /^attachment/i ) {
+    elsif ( $Type eq 'attachment' ) {
 
         # replace invalid token like < > ? " : ; | \ / or *
         $Param{Filename} =~ s/[ <>\?":\\\*\|\/;\[\]]/_/g;
@@ -355,7 +357,7 @@ sub FileRead {
     }
 
     # lock file (Shared Lock)
-    if ( !flock $FH, 1 ) {
+    if ( !flock $FH, LOCK_SH ) {
         if ( !$Param{DisableWarnings} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -467,7 +469,7 @@ sub FileWrite {
     }
 
     # lock file (Exclusive Lock)
-    if ( !flock $FH, 2 ) {
+    if ( !flock $FH, LOCK_EX ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Can't lock '$Param{Location}': $!",

@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Package.pm - lib package manager
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -26,7 +25,7 @@ use base qw(Kernel::System::EventHandler);
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Cache',
-    'Kernel::System::CloudService',
+    'Kernel::System::CloudService::Backend::Run',
     'Kernel::System::DB',
     'Kernel::System::Encode',
     'Kernel::System::JSON',
@@ -1787,7 +1786,7 @@ sub PackageVerify {
     );
 
     # get cloud service object
-    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService');
+    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService::Backend::Run');
 
     # dispatch the cloud service request
     my $RequestResult = $CloudServiceObject->Request(%RequestParams);
@@ -1926,7 +1925,7 @@ sub PackageVerifyAll {
     );
 
     # get cloud service object
-    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService');
+    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService::Backend::Run');
 
     # dispatch the cloud service request
     my $RequestResult = $CloudServiceObject->Request(%RequestParams);
@@ -4023,7 +4022,7 @@ sub CloudFileGet {
     );
 
     # get cloud service object
-    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService');
+    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService::Backend::Run');
 
     # dispatch the cloud service request
     my $RequestResult = $CloudServiceObject->Request(%RequestParams);

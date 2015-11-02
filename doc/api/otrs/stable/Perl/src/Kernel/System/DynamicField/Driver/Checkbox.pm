@@ -1,5 +1,4 @@
 # --
-# Kernel/System/DynamicField/Driver/Checkbox.pm - Delegate for DynamicField Checkbox Driver
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -64,7 +63,7 @@ sub new {
         'IsCustomerInterfaceCapable'   => 1,
     };
 
-    # get the Dynamic Field Backend custmom extensions
+    # get the Dynamic Field Backend custom extensions
     my $DynamicFieldDriverExtensions
         = $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::Extension::Driver::Checkbox');
 
@@ -90,7 +89,7 @@ sub new {
             }
         }
 
-        # check if extension contains more behabiors
+        # check if extension contains more behaviors
         if ( IsHashRefWithData( $Extension->{Behaviors} ) ) {
 
             %{ $Self->{Behaviors} } = (
@@ -449,7 +448,7 @@ sub DisplayValueRender {
         };
     }
 
-    # convert value to user frendly string
+    # convert value to user friendly string
     my $Value = 'Checked';
     if ( $Param{Value} ne 1 ) {
         $Value = 'Unchecked';

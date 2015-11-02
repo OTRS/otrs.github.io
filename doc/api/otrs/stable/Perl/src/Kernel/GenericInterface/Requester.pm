@@ -1,5 +1,4 @@
 # --
-# Kernel/GenericInterface/Requester.pm - GenericInterface Requester handler
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -64,6 +63,7 @@ web service.
     my $Result = $RequesterObject->Run(
         WebserviceID => 1,                      # ID of the configured remote web service to use OR
         Invoker      => 'some_operation',       # Name of the Invoker to be used for sending the request
+        Asynchronous => 1,                      # Optional, 1 or 0, defaults to 0
         Data         => {                       # Data payload for the Invoker request (remote webservice)
            #...
         },
@@ -74,6 +74,18 @@ web service.
         ErrorMessage => '',  # if an error occurred
         Data         => {    # Data payload of Invoker result (web service response)
             #...
+        },
+    };
+
+in case of an error if the request has been made asynchronously it can be re-schedule in future if
+the invoker returns the appropriate information
+
+    $Result = {
+        Success      => 0,   # 0 or 1
+        ErrorMessage => 'some error message',
+        Data         => {
+            ReSchedule    => 1,
+            ExecutionTime => '2015-01-01 00:00:00',     # optional
         },
     };
 
@@ -150,6 +162,10 @@ sub Run {
     # Create Invoker object and prepare the request on it.
     #
 
+    $DebuggerObject->Debug(
+        Summary => "Using invoker '$Param{Invoker}'",
+    );
+
     my $InvokerObject = Kernel::GenericInterface::Invoker->new(
         DebuggerObject => $DebuggerObject,
         Invoker        => $Param{Invoker},
@@ -209,6 +225,8 @@ sub Run {
     {
         my $MappingOutObject = Kernel::GenericInterface::Mapping->new(
             DebuggerObject => $DebuggerObject,
+            Invoker        => $Param{Invoker},
+            InvokerType    => $RequesterConfig->{Invoker}->{ $Param{Invoker} }->{Type},
             MappingConfig =>
                 $RequesterConfig->{Invoker}->{ $Param{Invoker} }->{MappingOutbound},
         );
@@ -264,26 +282,51 @@ sub Run {
         Data      => $DataOut,
     );
 
+    my $IsAsynchronousCall = $Param{Asynchronous} ? 1 : 0;
+
     if ( !$FunctionResult->{Success} ) {
         my $ErrorReturn = $DebuggerObject->Error(
             Summary => $FunctionResult->{ErrorMessage},
         );
 
         # Send error to Invoker
-        $InvokerObject->HandleResponse(
+        my $Response = $InvokerObject->HandleResponse(
             ResponseSuccess      => 0,
             ResponseErrorMessage => $FunctionResult->{ErrorMessage},
         );
+
+        if ($IsAsynchronousCall) {
+
+            RESPONSEKEY:
+            for my $ResponseKey ( sort keys %{$Response} ) {
+
+                # skip Success and ErrorMessage as they are set already
+                next RESPONSEKEY if $ResponseKey eq 'Success';
+                next RESPONSEKEY if $ResponseKey eq 'ErrorMessage';
+
+                # add any other key from the invoker HandleResponse() in Data
+                $ErrorReturn->{$ResponseKey} = $Response->{$ResponseKey}
+            }
+        }
 
         return $ErrorReturn;
     }
 
     my $DataIn = $FunctionResult->{Data};
+    my $SizeExeeded = $FunctionResult->{SizeExeeded} || 0;
 
-    $DebuggerObject->Debug(
-        Summary => "Incoming data before mapping",
-        Data    => $DataIn,
-    );
+    if ($SizeExeeded) {
+        $DebuggerObject->Debug(
+            Summary => "Incoming data before mapping was too large for logging",
+            Data => 'See SysConfig option GenericInterface::Operation::ResponseLoggingMaxSize to change the maximum.',
+        );
+    }
+    else {
+        $DebuggerObject->Debug(
+            Summary => "Incoming data before mapping",
+            Data    => $DataIn,
+        );
+    }
 
     # decide if mapping needs to be used or not
     if (
@@ -294,6 +337,8 @@ sub Run {
     {
         my $MappingInObject = Kernel::GenericInterface::Mapping->new(
             DebuggerObject => $DebuggerObject,
+            Invoker        => $Param{Invoker},
+            InvokerType    => $RequesterConfig->{Invoker}->{ $Param{Invoker} }->{Type},
             MappingConfig =>
                 $RequesterConfig->{Invoker}->{ $Param{Invoker} }->{MappingInbound},
         );
@@ -323,10 +368,19 @@ sub Run {
 
         $DataIn = $FunctionResult->{Data};
 
-        $DebuggerObject->Debug(
-            Summary => "Incoming data after mapping",
-            Data    => $DataIn,
-        );
+        if ($SizeExeeded) {
+            $DebuggerObject->Debug(
+                Summary => "Incoming data after mapping was too large for logging",
+                Data =>
+                    'See SysConfig option GenericInterface::Operation::ResponseLoggingMaxSize to change the maximum.',
+            );
+        }
+        else {
+            $DebuggerObject->Debug(
+                Summary => "Incoming data after mapping",
+                Data    => $DataIn,
+            );
+        }
     }
 
     #
@@ -340,10 +394,26 @@ sub Run {
 
     if ( !$FunctionResult->{Success} ) {
 
-        return $DebuggerObject->Error(
+        my $ErrorReturn = $DebuggerObject->Error(
             Summary => 'Error handling response data in Invoker',
             Data    => $FunctionResult->{ErrorMessage},
         );
+
+        if ($IsAsynchronousCall) {
+
+            RESPONSEKEY:
+            for my $ResponseKey ( sort keys %{$FunctionResult} ) {
+
+                # skip Success and ErrorMessage as they are set already
+                next RESPONSEKEY if $ResponseKey eq 'Success';
+                next RESPONSEKEY if $ResponseKey eq 'ErrorMessage';
+
+                # add any other key from the invoker HandleResponse() in Data
+                $ErrorReturn->{$ResponseKey} = $FunctionResult->{$ResponseKey}
+            }
+        }
+
+        return $ErrorReturn;
     }
 
     $DataIn = $FunctionResult->{Data};

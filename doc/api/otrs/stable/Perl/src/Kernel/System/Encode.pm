@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Encode.pm - character encodings
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -403,36 +402,6 @@ sub FindAsciiSupersetEncoding {
         }
     }
     return 'ASCII';
-}
-
-#
-# DEPRECATED METHODS
-#
-
-# COMPAT: to OTRS 3.0
-sub CharsetInternal {
-    my $Self = shift;
-
-    return 'utf-8';
-}
-
-# COMPAT: to OTRS 1.x and 2.x (can be removed later)
-sub EncodeInternalUsed {
-    my $Self = shift;
-
-    return $Self->CharsetInternal(@_);
-}
-
-sub Encode {
-    my $Self = shift;
-
-    return $Self->EncodeInput(@_);
-}
-
-sub Decode {
-    my $Self = shift;
-
-    return $Self->Convert2CharsetInternal(@_);
 }
 
 1;

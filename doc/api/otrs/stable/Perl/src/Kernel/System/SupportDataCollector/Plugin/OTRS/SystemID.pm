@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OTRS/SystemID.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,12 +13,14 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = (
     'Kernel::Config',
 );
 
 sub GetDisplayPath {
-    return 'OTRS';
+    return Translatable('OTRS');
 }
 
 sub Run {
@@ -31,14 +32,14 @@ sub Run {
     # Does the SystemID contain non-digits?
     if ( $SystemID !~ /^\d+$/ ) {
         $Self->AddResultProblem(
-            Label   => 'SystemID',
+            Label   => Translatable('SystemID'),
             Value   => $SystemID,
-            Message => 'Your SystemID setting is invalid, it should only contain digits.',
+            Message => Translatable('Your SystemID setting is invalid, it should only contain digits.'),
         );
     }
     else {
         $Self->AddResultOk(
-            Label => 'SystemID',
+            Label => Translatable('SystemID'),
             Value => $SystemID,
         );
     }

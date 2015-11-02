@@ -1,5 +1,4 @@
 # --
-# Kernel/System/JSON.pm - Wrapper functions for encoding and decoding JSON
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -66,7 +65,7 @@ Encode a perl data structure to a JSON string.
 
     my $JSONString = $JSONObject->Encode(
         Data     => $Data,
-        SortKeys => 1,    (optional) (0|1) default 0, to sort the keys of the json data
+        SortKeys => 1,          # (optional) (0|1) default 0, to sort the keys of the json data
     );
 
 =cut

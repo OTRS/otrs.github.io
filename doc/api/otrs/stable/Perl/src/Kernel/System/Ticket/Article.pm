@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Ticket/Article.pm - global article module for OTRS kernel
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -467,15 +466,12 @@ sub ArticleCreate {
         DynamicFields => 0,
     );
 
-    # remember already sent agent notifications
-    my %AlreadySent;
-
     # remember agent to exclude notifications
-    my %DoNotSend;
+    my @SkipRecipients;
     if ( $Param{ExcludeNotificationToUserID} && ref $Param{ExcludeNotificationToUserID} eq 'ARRAY' )
     {
         for my $UserID ( @{ $Param{ExcludeNotificationToUserID} } ) {
-            $DoNotSend{$UserID} = 1;
+            push @SkipRecipients, $UserID;
         }
     }
 
@@ -487,8 +483,13 @@ sub ArticleCreate {
         )
     {
         for my $UserID ( @{ $Param{ExcludeMuteNotificationToUserID} } ) {
-            $DoNotSendMute{$UserID} = 1;
+            push @SkipRecipients, $UserID;
         }
+    }
+
+    my $ExtraRecipients;
+    if ( $Param{ForceNotificationToUserID} && ref $Param{ForceNotificationToUserID} eq 'ARRAY' ) {
+        $ExtraRecipients = $Param{ForceNotificationToUserID};
     }
 
     # send agent notification on ticket create
@@ -498,392 +499,58 @@ sub ArticleCreate {
         =~ /^(EmailAgent|EmailCustomer|PhoneCallCustomer|WebRequestCustomer|SystemRequest)$/i
         )
     {
-        # get subscribed users from My Queues in form of a hash
-        my %MyQueuesUserIDs = map { $_ => 1 } $Self->GetSubscribedUserIDsByQueueID( QueueID => $Ticket{QueueID} );
-
-        # get subscribed users from My Services in form of a hash
-        my %MyServicesUserIDs;
-        if ( $Ticket{ServiceID} ) {
-            %MyServicesUserIDs = map { $_ => 1 } $Self->GetSubscribedUserIDsByServiceID(
-                ServiceID => $Ticket{ServiceID},
-            );
-        }
-
-        # combine both subscribed users list (this will also remove duplicates)
-        my %SubscribedUserIDs = ( %MyQueuesUserIDs, %MyServicesUserIDs );
-
-        USER:
-        for my $UserID ( sort keys %SubscribedUserIDs ) {
-
-            # do not send to this user
-            next USER if $DoNotSend{$UserID};
-
-            # check if already sent
-            next USER if $AlreadySent{$UserID};
-
-            # check personal settings
-            my %UserData = $UserObject->GetUserData(
-                UserID => $UserID,
-                Valid  => 1,
-            );
-            next USER if !$UserData{UserSendNewTicketNotification};
-
-            if ( $UserData{UserSendNewTicketNotification} eq 'MyQueues' ) {
-                next USER if !$MyQueuesUserIDs{$UserID};
-            }
-            elsif ( $UserData{UserSendNewTicketNotification} eq 'MyServices' ) {
-                next USER if !$MyServicesUserIDs{$UserID};
-            }
-            elsif ( $UserData{UserSendNewTicketNotification} eq 'MyQueuesOrMyServices' ) {
-                next USER if !$MyQueuesUserIDs{$UserID} && !$MyServicesUserIDs{$UserID};
-            }
-            elsif ( $UserData{UserSendNewTicketNotification} eq 'MyQueuesAndMyServices' ) {
-                next USER if !$MyQueuesUserIDs{$UserID} || !$MyServicesUserIDs{$UserID};
-            }
-            else {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => "Invalid UserSendNewTicketNotification option"
-                        . " '$UserData{UserSendNewTicketNotification}'"
-                        . " for user '$UserData{UserLogin}' ",
-                );
-                next USER;
-            }
-
-            # remember to have sent
-            $AlreadySent{$UserID} = 1;
-
-            # do not send to this user (mute)
-            next USER if $DoNotSendMute{$UserID};
-
-            # send notification
-            $Self->SendAgentNotification(
-                Type                  => $Param{HistoryType},
-                RecipientID           => $UserID,
-                CustomerMessageParams => {%Param},
+        # trigger notification event
+        $Self->EventHandler(
+            Event => 'NotificationNewTicket',
+            Data  => {
                 TicketID              => $Param{TicketID},
+                ArticleID             => $ArticleID,
+                ArticleType           => $Param{ArticleType},
                 Queue                 => $Param{Queue},
-                UserID                => $Param{UserID},
-            );
-        }
+                Recipients            => $ExtraRecipients,
+                SkipRecipients        => \@SkipRecipients,
+                CustomerMessageParams => {%Param},
+            },
+            UserID => $Param{UserID},
+        );
     }
 
     # send agent notification on adding a note
     elsif ( $Param{HistoryType} =~ /^AddNote$/i ) {
 
-        # send notification to owner/responsible/watcher
-        my @UserIDs = $Ticket{OwnerID};
-        if ( $ConfigObject->Get('Ticket::Responsible') ) {
-            push @UserIDs, $Ticket{ResponsibleID};
-        }
-        push @UserIDs, $Self->TicketWatchGet(
-            TicketID => $Param{TicketID},
-            Notify   => 1,
-            Result   => 'ARRAY',
-        );
-        USER:
-        for my $UserID (@UserIDs) {
-            next USER if !$UserID;
-            next USER if $UserID == 1;
-            next USER if $UserID eq $Param{UserID};
-
-            # do not send to this user
-            next USER if $DoNotSend{$UserID};
-
-            # check if already sent
-            next USER if $AlreadySent{$UserID};
-
-            # remember already sent info
-            $AlreadySent{$UserID} = 1;
-
-            # do not send to this user (mute)
-            next USER if $DoNotSendMute{$UserID};
-
-            # send notification
-            $Self->SendAgentNotification(
-                Type                  => $Param{HistoryType},
-                RecipientID           => $UserID,
-                CustomerMessageParams => {%Param},
+        # trigger notification event
+        $Self->EventHandler(
+            Event => 'NotificationAddNote',
+            Data  => {
                 TicketID              => $Param{TicketID},
+                ArticleID             => $ArticleID,
+                ArticleType           => $Param{ArticleType},
                 Queue                 => $Param{Queue},
-                UserID                => $Param{UserID},
-            );
-        }
+                Recipients            => $ExtraRecipients,
+                SkipRecipients        => \@SkipRecipients,
+                CustomerMessageParams => {%Param},
+            },
+            UserID => $Param{UserID},
+        );
     }
 
     # send agent notification on follow up
     elsif ( $Param{HistoryType} =~ /^FollowUp$/i ) {
 
-        # send agent notification to all agents or only to owner
-        if ( $Ticket{OwnerID} == 1 || $Ticket{Lock} eq 'unlock' ) {
-            my %SubscribedUserIDs;
-            my %OwnerUserIDs;
-            my %WatcherUserIDs;
-            my %MyQueuesUserIDs;
-            my %MyServicesUserIDs;
-            if ( $ConfigObject->Get('PostmasterFollowUpOnUnlockAgentNotifyOnlyToOwner') ) {
-                $OwnerUserIDs{ $Ticket{OwnerID} } = 1;
-            }
-            else {
-
-                # get subscribed users from My Queues in form of a hash
-                %MyQueuesUserIDs = map { $_ => 1 } $Self->GetSubscribedUserIDsByQueueID(
-                    QueueID => $Ticket{QueueID}
-                );
-
-                # get subscribed users from My Services in form of a hash
-                my %MyServicesUserIDs;
-                if ( $Ticket{ServiceID} ) {
-                    %MyServicesUserIDs = map { $_ => 1 } $Self->GetSubscribedUserIDsByServiceID(
-                        ServiceID => $Ticket{ServiceID},
-                    );
-                }
-
-                # get ticket watchers in form of a hash
-                # (ResultType HASH does not seams to help here)
-                %WatcherUserIDs = map { $_ => 1 } $Self->TicketWatchGet(
-                    TicketID => $Param{TicketID},
-                    Notify   => 1,
-                    Result   => 'ARRAY',
-                );
-
-                # add also owner to be notified
-                %OwnerUserIDs = ( $Ticket{OwnerID} => 1 );
-
-            }
-
-            # combine both subscribed users list (this will also remove duplicates)
-            %SubscribedUserIDs = ( %MyQueuesUserIDs, %MyServicesUserIDs, %WatcherUserIDs, %OwnerUserIDs );
-
-            USER:
-            for my $UserID ( sort keys %SubscribedUserIDs ) {
-                next USER if !$UserID;
-                next USER if $UserID == 1;
-                next USER if $UserID eq $Param{UserID};
-
-                # do not send to this user
-                next USER if $DoNotSend{$UserID};
-
-                # check if already sent
-                next USER if $AlreadySent{$UserID};
-
-                # check personal settings
-                my %UserData = $UserObject->GetUserData(
-                    UserID => $UserID,
-                    Valid  => 1,
-                );
-                next USER if !$UserData{UserSendFollowUpNotification};
-
-                # check UserSendNewTicketNotification to non owners or watchers
-                if ( !$OwnerUserIDs{$UserID} && !$WatcherUserIDs{$UserID} ) {
-                    if ( $UserData{UserSendFollowUpNotification} eq 'MyQueues' ) {
-                        next USER if !$MyQueuesUserIDs{$UserID};
-                    }
-                    elsif ( $UserData{UserSendFollowUpNotification} eq 'MyServices' ) {
-                        next USER if !$MyServicesUserIDs{$UserID};
-                    }
-                    elsif ( $UserData{UserSendFollowUpNotification} eq 'MyQueuesOrMyServices' ) {
-                        next USER if !$MyQueuesUserIDs{$UserID} && !$MyServicesUserIDs{$UserID};
-                    }
-                    elsif ( $UserData{UserSendFollowUpNotification} eq 'MyQueuesAndMyServices' ) {
-                        next USER if !$MyQueuesUserIDs{$UserID} || !$MyServicesUserIDs{$UserID};
-                    }
-                    else {
-                        $Kernel::OM->Get('Kernel::System::Log')->Log(
-                            Priority => 'error',
-                            Message  => "Invalid UserSendNewTicketNotification option"
-                                . " '$UserData{UserSendNewTicketNotification}'"
-                                . " for user '$UserData{UserLogin}' ",
-                        );
-                        next USER;
-                    }
-                }
-
-                # remember already sent info
-                $AlreadySent{$UserID} = 1;
-
-                # do not send to this user (mute)
-                next USER if $DoNotSendMute{$UserID};
-
-                # send notification
-                $Self->SendAgentNotification(
-                    Type                  => $Param{HistoryType},
-                    RecipientID           => $UserID,
-                    CustomerMessageParams => {%Param},
-                    TicketID              => $Param{TicketID},
-                    Queue                 => $Param{Queue},
-                    UserID                => $Param{UserID},
-                );
-            }
-        }
-
-        # send owner/responsible/watcher notification the agents who locked the ticket
-        else {
-            my @UserIDs = $Ticket{OwnerID};
-            if ( $ConfigObject->Get('Ticket::Responsible') ) {
-                push @UserIDs, $Ticket{ResponsibleID};
-            }
-            push @UserIDs, $Self->TicketWatchGet(
-                TicketID => $Param{TicketID},
-                Notify   => 1,
-                Result   => 'ARRAY',
-            );
-            USER:
-            for my $UserID (@UserIDs) {
-                next USER if !$UserID;
-                next USER if $UserID == 1;
-                next USER if $UserID eq $Param{UserID};
-
-                # do not send to this user
-                next USER if $DoNotSend{$UserID};
-
-                # check if already sent
-                next USER if $AlreadySent{$UserID};
-
-                # check personal settings
-                my %UserData = $UserObject->GetUserData(
-                    UserID => $UserID,
-                    Valid  => 1,
-                );
-                next USER if !$UserData{UserSendFollowUpNotification};
-
-                # remember already sent info
-                $AlreadySent{$UserID} = 1;
-
-                # do not send to this user (mute)
-                next USER if $DoNotSendMute{$UserID};
-
-                # send notification
-                $Self->SendAgentNotification(
-                    Type                  => $Param{HistoryType},
-                    RecipientID           => $UserID,
-                    CustomerMessageParams => {%Param},
-                    TicketID              => $Param{TicketID},
-                    Queue                 => $Param{Queue},
-                    UserID                => $Param{UserID},
-                );
-            }
-
-            # send the rest of agents follow ups
-            # get subscribed users from My Queues in form of a hash
-            my %MyQueuesUserIDs = map { $_ => 1 } $Self->GetSubscribedUserIDsByQueueID(
-                QueueID => $Ticket{QueueID}
-            );
-
-            # get subscribed users from My Services in form of a hash
-            my %MyServicesUserIDs;
-            if ( $Ticket{ServiceID} ) {
-                %MyServicesUserIDs = map { $_ => 1 } $Self->GetSubscribedUserIDsByServiceID(
-                    ServiceID => $Ticket{ServiceID},
-                );
-            }
-
-            # combine both subscribed users list (this will also remove duplicates)
-            my %SubscribedUserIDs = ( %MyQueuesUserIDs, %MyServicesUserIDs );
-
-            USER:
-            for my $UserID ( sort keys %SubscribedUserIDs ) {
-                next USER if !$UserID;
-                next USER if $UserID == 1;
-                next USER if $UserID eq $Param{UserID};
-
-                # do not send to this user
-                next USER if $DoNotSend{$UserID};
-
-                # check if already sent
-                next USER if $AlreadySent{$UserID};
-
-                # check personal settings
-                my %UserData = $UserObject->GetUserData(
-                    UserID => $UserID,
-                    Valid  => 1,
-                );
-
-                # TODO: check $UserData{UserSendFollowUpNotification} eq 2 is used, otherwise this
-                # part of the code is unreachable
-                if (
-                    $UserData{UserSendFollowUpNotification}
-                    && $UserData{UserSendFollowUpNotification} eq '2'
-                    && $Ticket{OwnerID} ne 1
-                    && $Ticket{OwnerID} ne $Param{UserID}
-                    && $Ticket{OwnerID} ne $UserData{UserID}
-                    )
-                {
-
-                    # remember already sent info
-                    $AlreadySent{$UserID} = 1;
-
-                    # do not send to this user (mute)
-                    next USER if $DoNotSendMute{$UserID};
-
-                    # send notification
-                    $Self->SendAgentNotification(
-                        Type                  => $Param{HistoryType},
-                        RecipientID           => $UserID,
-                        CustomerMessageParams => {%Param},
-                        TicketID              => $Param{TicketID},
-                        Queue                 => $Param{Queue},
-                        UserID                => $Param{UserID},
-                    );
-                }
-            }
-        }
-    }
-
-    # send forced notifications
-    if ( $Param{ForceNotificationToUserID} && ref $Param{ForceNotificationToUserID} eq 'ARRAY' ) {
-        USER:
-        for my $UserID ( @{ $Param{ForceNotificationToUserID} } ) {
-
-            # do not send to this user
-            next USER if $DoNotSend{$UserID};
-
-            # check if already sent
-            next USER if $AlreadySent{$UserID};
-
-            # remember already sent info
-            $AlreadySent{$UserID} = 1;
-
-            # do not send to this user (mute)
-            next USER if $DoNotSendMute{$UserID};
-
-            # send notification
-            $Self->SendAgentNotification(
-                Type                  => $Param{HistoryType},
-                RecipientID           => $UserID,
-                CustomerMessageParams => {%Param},
+        # trigger notification event
+        $Self->EventHandler(
+            Event => 'NotificationFollowUp',
+            Data  => {
                 TicketID              => $Param{TicketID},
-                UserID                => $Param{UserID},
-            );
-        }
-    }
-
-    # update note to: field
-    if (%AlreadySent) {
-        if ( !$Param{ArticleType} ) {
-            $Param{ArticleType} = $Self->ArticleTypeLookup(
-                ArticleTypeID => $Param{ArticleTypeID},
-            );
-        }
-        if ( $Param{ArticleType} =~ /^note\-/ && $Param{UserID} ne 1 ) {
-            my $NewTo = $Param{To} || '';
-            for my $UserID ( sort keys %AlreadySent ) {
-                my %UserData = $UserObject->GetUserData(
-                    UserID => $UserID,
-                    Valid  => 1,
-                );
-                if ($NewTo) {
-                    $NewTo .= ', ';
-                }
-                $NewTo .= "$UserData{UserFirstname} $UserData{UserLastname} <$UserData{UserEmail}>";
-            }
-            if ($NewTo) {
-                $DBObject->Do(
-                    SQL  => 'UPDATE article SET a_to = ? WHERE id = ?',
-                    Bind => [ \$NewTo, \$ArticleID ],
-                );
-            }
-        }
+                ArticleID             => $ArticleID,
+                ArticleType           => $Param{ArticleType},
+                Queue                 => $Param{Queue},
+                Recipients            => $ExtraRecipients,
+                SkipRecipients        => \@SkipRecipients,
+                CustomerMessageParams => {%Param},
+            },
+            UserID => $Param{UserID},
+        );
     }
 
     # return ArticleID
@@ -2671,485 +2338,6 @@ sub ArticleBounce {
     return 1;
 }
 
-=item SendAgentNotification()
-
-send an agent notification via email
-
-    my $Success = $TicketObject->SendAgentNotification(
-        TicketID    => 123,
-        CustomerMessageParams => {
-            SomeParams => 'For the message!',
-        },
-        Type        => 'Move', # notification types, see database
-        RecipientID => $UserID,
-        UserID      => 123,
-    );
-
-Events:
-    ArticleAgentNotification
-
-=cut
-
-sub SendAgentNotification {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(CustomerMessageParams TicketID Type RecipientID UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # return if no notification is active
-    return 1 if $Self->{SendNoNotification};
-
-    # get config object
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    # Check if agent receives notifications for actions done by himself.
-    if (
-        !$ConfigObject->Get('AgentSelfNotifyOnAction')
-        && ( $Param{RecipientID} eq $Param{UserID} )
-        )
-    {
-        return 1;
-    }
-
-    # compat Type
-    if (
-        $Param{Type}
-        =~ /(EmailAgent|EmailCustomer|PhoneCallCustomer|WebRequestCustomer|SystemRequest)/
-        )
-    {
-        $Param{Type} = 'NewTicket';
-    }
-
-    # get recipient
-    my %User = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
-        UserID => $Param{RecipientID},
-        Valid  => 1,
-    );
-
-    # check recipients
-    return if !$User{UserEmail};
-    return if $User{UserEmail} !~ /@/;
-
-    # skip users with out ro permissions
-    my $Permission = $Self->TicketPermission(
-        Type     => 'ro',
-        TicketID => $Param{TicketID},
-        UserID   => $Param{RecipientID},
-    );
-
-    return 1 if !$Permission;
-
-    # get ticket object to check state
-    my %Ticket = $Self->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    if (
-        $Ticket{StateType} eq 'closed' &&
-        $Param{Type} eq 'NewTicket'
-        )
-    {
-        return;
-    }
-
-    my %Notification = $Kernel::OM->Get('Kernel::System::TemplateGenerator')->NotificationAgent(
-        Type                  => $Param{Type},
-        TicketID              => $Param{TicketID},
-        CustomerMessageParams => $Param{CustomerMessageParams},
-        RecipientID           => $Param{RecipientID},
-        UserID                => $Param{UserID},
-    );
-
-    # send notify
-    $Kernel::OM->Get('Kernel::System::Email')->Send(
-        From => $ConfigObject->Get('NotificationSenderName') . ' <'
-            . $ConfigObject->Get('NotificationSenderEmail') . '>',
-        To       => $User{UserEmail},
-        Subject  => $Notification{Subject},
-        MimeType => $Notification{ContentType} || 'text/plain',
-        Charset  => $Notification{Charset},
-        Body     => $Notification{Body},
-        Loop     => 1,
-    );
-
-    # write history
-    $Self->HistoryAdd(
-        TicketID     => $Param{TicketID},
-        HistoryType  => 'SendAgentNotification',
-        Name         => "\%\%$Param{Type}\%\%$User{UserEmail}",
-        CreateUserID => $Param{UserID},
-    );
-
-    # log event
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'info',
-        Message  => "Sent agent '$Param{Type}' notification to '$User{UserEmail}'.",
-    );
-
-    # event
-    $Self->EventHandler(
-        Event => 'ArticleAgentNotification',
-        Data  => {
-            TicketID => $Param{TicketID},
-        },
-        UserID => $Param{UserID},
-    );
-
-    return 1;
-}
-
-=item SendCustomerNotification()
-
-DEPRECATED. This function is incompatible with the rich text editor, don't use it any more!
-
-send a customer notification via email
-
-    my $ArticleID = $TicketObject->SendCustomerNotification(
-        Type => 'Move', # notification types, see database
-        CustomerMessageParams => {
-            SomeParams => 'For the message!',
-        },
-        TicketID => 123,
-        UserID   => 123,
-    );
-
-Events:
-    ArticleCustomerNotification
-
-=cut
-
-sub SendCustomerNotification {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(CustomerMessageParams TicketID UserID Type)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # return if no notification is active
-    return 1 if $Self->{SendNoNotification};
-
-    # get old article for quoteing
-    my %Article = $Self->ArticleLastCustomerArticle(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 1,
-    );
-
-    # get queue object
-    my $QueueObject = $Kernel::OM->Get('Kernel::System::Queue');
-
-    # check if notification should be send
-    my %Queue = $QueueObject->QueueGet( ID => $Article{QueueID} );
-    if ( $Param{Type} =~ /^StateUpdate$/ && !$Queue{StateNotify} ) {
-
-        # need no notification
-        return;
-    }
-    elsif ( $Param{Type} =~ /^OwnerUpdate$/ && !$Queue{OwnerNotify} ) {
-
-        # need no notification
-        return;
-    }
-    elsif ( $Param{Type} =~ /^QueueUpdate$/ && !$Queue{MoveNotify} ) {
-
-        # need no notification
-        return;
-    }
-    elsif ( $Param{Type} =~ /^LockUpdate$/ && !$Queue{LockNotify} ) {
-
-        # need no notification
-        return;
-    }
-
-    # get needed objects
-    my $ConfigObject       = $Kernel::OM->Get('Kernel::Config');
-    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
-
-    # check if customer notifications should be send
-    if (
-        $ConfigObject->Get('CustomerNotifyJustToRealCustomer')
-        && !$Article{CustomerUserID}
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'info',
-            Message  => 'Send no customer notification because no customer is set!',
-        );
-        return;
-    }
-
-    # check customer email
-    elsif ( $ConfigObject->Get('CustomerNotifyJustToRealCustomer') ) {
-
-        my %CustomerUser = $CustomerUserObject->CustomerUserDataGet(
-            User => $Article{CustomerUserID},
-        );
-
-        if ( !$CustomerUser{UserEmail} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'info',
-                Message  => "Send no customer notification because of missing "
-                    . "customer email (CustomerUserID=$CustomerUser{CustomerUserID})!",
-            );
-            return;
-        }
-    }
-
-    # get language and send recipient
-    my $Language = $ConfigObject->Get('DefaultLanguage') || 'en';
-    if ( $Article{CustomerUserID} ) {
-
-        my %CustomerUser = $CustomerUserObject->CustomerUserDataGet(
-            User => $Article{CustomerUserID},
-        );
-
-        if ( $CustomerUser{UserEmail} ) {
-            $Article{From} = $CustomerUser{UserEmail};
-        }
-
-        # get user language
-        if ( $CustomerUser{UserLanguage} ) {
-            $Language = $CustomerUser{UserLanguage};
-        }
-    }
-
-    # check recipients
-    if ( !$Article{From} || $Article{From} !~ /@/ ) {
-        return;
-    }
-
-    my %Notification = $Kernel::OM->Get('Kernel::System::Notification')->NotificationGet(
-        Name => $Language . '::Customer::' . $Param{Type},
-    );
-
-    # get notify texts
-    for (qw(Subject Body)) {
-        if ( !$Notification{$_} ) {
-            $Notification{$_} = "No CustomerNotification $_ for $Param{Type} found!";
-        }
-    }
-
-    # prepare customer realname
-    if ( $Notification{Body} =~ /<OTRS_CUSTOMER_REALNAME>/ ) {
-
-        # get realname
-        my $From = '';
-        if ( $Article{CustomerUserID} ) {
-            $From = $CustomerUserObject->CustomerName(
-                UserLogin => $Article{CustomerUserID},
-            );
-        }
-        if ( !$From ) {
-            $From = $Notification{From} || '';
-            $From =~ s/<.*>|\(.*\)|\"|;|,//g;
-            $From =~ s/( $)|(  $)//g;
-        }
-        $Notification{Body} =~ s/<OTRS_CUSTOMER_REALNAME>/$From/g;
-    }
-
-    # replace config options
-    $Notification{Body} =~ s{<OTRS_CONFIG_(.+?)>}{$ConfigObject->Get($1)}egx;
-    $Notification{Subject} =~ s{<OTRS_CONFIG_(.+?)>}{$ConfigObject->Get($1)}egx;
-
-    # cleanup
-    $Notification{Subject} =~ s/<OTRS_CONFIG_.+?>/-/gi;
-    $Notification{Body} =~ s/<OTRS_CONFIG_.+?>/-/gi;
-
-    # COMPAT
-    $Notification{Body} =~ s/<OTRS_TICKET_ID>/$Param{TicketID}/gi;
-    $Notification{Body} =~ s/<OTRS_TICKET_NUMBER>/$Article{TicketNumber}/gi;
-    if ( $Param{Queue} ) {
-        $Notification{Body} =~ s/<OTRS_QUEUE>/$Param{Queue}/gi;
-    }
-
-    # ticket data
-    my %Ticket = $Self->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 1,
-    );
-    for ( sort keys %Ticket ) {
-        if ( defined $Ticket{$_} ) {
-            $Notification{Body} =~ s/<OTRS_TICKET_$_>/$Ticket{$_}/gi;
-            $Notification{Subject} =~ s/<OTRS_TICKET_$_>/$Ticket{$_}/gi;
-        }
-    }
-
-    # get user object
-    my $UserObject = $Kernel::OM->Get('Kernel::System::User');
-
-    # cleanup
-    $Notification{Subject} =~ s/<OTRS_TICKET_.+?>/-/gi;
-    $Notification{Body} =~ s/<OTRS_TICKET_.+?>/-/gi;
-
-    # get current user data
-    my %CurrentPreferences = $UserObject->GetUserData( UserID => $Param{UserID} );
-    for ( sort keys %CurrentPreferences ) {
-        if ( $CurrentPreferences{$_} ) {
-            $Notification{Body} =~ s/<OTRS_CURRENT_$_>/$CurrentPreferences{$_}/gi;
-            $Notification{Subject} =~ s/<OTRS_CURRENT_$_>/$CurrentPreferences{$_}/gi;
-        }
-    }
-
-    # cleanup
-    $Notification{Subject} =~ s/<OTRS_CURRENT_.+?>/-/gi;
-    $Notification{Body} =~ s/<OTRS_CURRENT_.+?>/-/gi;
-
-    # get owner data
-    my %OwnerPreferences = $UserObject->GetUserData(
-        UserID => $Article{OwnerID},
-    );
-    for ( sort keys %OwnerPreferences ) {
-        if ( $OwnerPreferences{$_} ) {
-            $Notification{Body} =~ s/<OTRS_OWNER_$_>/$OwnerPreferences{$_}/gi;
-            $Notification{Subject} =~ s/<OTRS_OWNER_$_>/$OwnerPreferences{$_}/gi;
-        }
-    }
-
-    # cleanup
-    $Notification{Subject} =~ s/<OTRS_OWNER_.+?>/-/gi;
-    $Notification{Body} =~ s/<OTRS_OWNER_.+?>/-/gi;
-
-    # get responsible data
-    my %ResponsiblePreferences = $UserObject->GetUserData(
-        UserID => $Article{ResponsibleID},
-    );
-    for ( sort keys %ResponsiblePreferences ) {
-        if ( $ResponsiblePreferences{$_} ) {
-            $Notification{Body} =~ s/<OTRS_RESPONSIBLE_$_>/$ResponsiblePreferences{$_}/gi;
-            $Notification{Subject} =~ s/<OTRS_RESPONSIBLE_$_>/$ResponsiblePreferences{$_}/gi;
-        }
-    }
-
-    # cleanup
-    $Notification{Subject} =~ s/<OTRS_RESPONSIBLE_.+?>/-/gi;
-    $Notification{Body} =~ s/<OTRS_RESPONSIBLE_.+?>/-/gi;
-
-    # get ref of email params
-    my %GetParam = %{ $Param{CustomerMessageParams} };
-    for ( sort keys %GetParam ) {
-        if ( $GetParam{$_} ) {
-            $Notification{Body} =~ s/<OTRS_CUSTOMER_DATA_$_>/$GetParam{$_}/gi;
-            $Notification{Subject} =~ s/<OTRS_CUSTOMER_DATA_$_>/$GetParam{$_}/gi;
-        }
-    }
-
-    # get customer data and replace it with <OTRS_CUSTOMER_DATA_...
-    if ( $Article{CustomerUserID} ) {
-        my %CustomerUser = $CustomerUserObject->CustomerUserDataGet(
-            User => $Article{CustomerUserID},
-        );
-
-        # replace customer stuff with tags
-        for ( sort keys %CustomerUser ) {
-            if ( $CustomerUser{$_} ) {
-                $Notification{Body} =~ s/<OTRS_CUSTOMER_DATA_$_>/$CustomerUser{$_}/gi;
-                $Notification{Subject} =~ s/<OTRS_CUSTOMER_DATA_$_>/$CustomerUser{$_}/gi;
-            }
-        }
-    }
-
-    # cleanup all not needed <OTRS_CUSTOMER_DATA_ tags
-    $Notification{Body} =~ s/<OTRS_CUSTOMER_DATA_.+?>/-/gi;
-    $Notification{Subject} =~ s/<OTRS_CUSTOMER_DATA_.+?>/-/gi;
-
-    # format body
-    if ( $Article{Body} ) {
-        $Article{Body} =~ s/(^>.+|.{4,72})(?:\s|\z)/$1\n/gm;
-    }
-    for ( sort keys %Article ) {
-        if ( $Article{$_} ) {
-            $Notification{Body} =~ s/<OTRS_CUSTOMER_$_>/$Article{$_}/gi;
-            $Notification{Subject} =~ s/<OTRS_CUSTOMER_$_>/$Article{$_}/gi;
-        }
-    }
-
-    # prepare subject (insert old subject)
-    $Article{Subject} = $Self->TicketSubjectClean(
-        TicketNumber => $Article{TicketNumber},
-        Subject      => $Article{Subject} || '',
-    );
-    if ( $Notification{Subject} =~ /<OTRS_CUSTOMER_SUBJECT\[(.+?)\]>/ ) {
-        my $SubjectChar = $1;
-        $Article{Subject} =~ s/^(.{$SubjectChar}).*$/$1 [...]/;
-        $Notification{Subject} =~ s/<OTRS_CUSTOMER_SUBJECT\[.+?\]>/$Article{Subject}/g;
-    }
-    $Notification{Subject} = $Self->TicketSubjectBuild(
-        TicketNumber => $Article{TicketNumber},
-        Subject      => $Notification{Subject} || '',
-    );
-
-    # prepare body (insert old email)
-    if ( $Notification{Body} =~ /<OTRS_CUSTOMER_EMAIL\[(.+?)\]>/g ) {
-        my $Line       = $1;
-        my @Body       = split( /\n/, $Article{Body} );
-        my $NewOldBody = '';
-        for ( my $i = 0; $i < $Line; $i++ ) {
-
-            # 2002-06-14 patch of Pablo Ruiz Garcia
-            # http://lists.otrs.org/pipermail/dev/2002-June/000012.html
-            if ( $#Body >= $i ) {
-                $NewOldBody .= "> $Body[$i]\n";
-            }
-        }
-        chomp $NewOldBody;
-        $Notification{Body} =~ s/<OTRS_CUSTOMER_EMAIL\[.+?\]>/$NewOldBody/g;
-    }
-
-    # cleanup all not needed <OTRS_CUSTOMER_ tags
-    $Notification{Body} =~ s/<OTRS_CUSTOMER_.+?>/-/gi;
-    $Notification{Subject} =~ s/<OTRS_CUSTOMER_.+?>/-/gi;
-
-    # send notify
-    my %Address = $QueueObject->GetSystemAddress( QueueID => $Article{QueueID} );
-    $Self->ArticleSend(
-        ArticleType    => 'email-notification-ext',
-        SenderType     => 'system',
-        TicketID       => $Param{TicketID},
-        HistoryType    => 'SendCustomerNotification',
-        HistoryComment => "\%\%$Article{From}",
-        From           => "$Address{RealName} <$Address{Email}>",
-        To             => $Article{From},
-        Subject        => $Notification{Subject},
-        Body           => $Notification{Body},
-        MimeType       => 'text/plain',
-        Charset        => $Notification{Charset},
-        UserID         => $Param{UserID},
-        Loop           => 1,
-    );
-
-    # log event
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'info',
-        Message  => "Sent customer '$Param{Type}' notification to '$Article{From}'.",
-    );
-
-    # event
-    $Self->EventHandler(
-        Event => 'ArticleCustomerNotification',
-        Data  => {
-            TicketID => $Param{TicketID},
-        },
-        UserID => $Param{UserID},
-    );
-
-    return 1;
-}
-
 =item SendAutoResponse()
 
 send an auto response to a customer via email
@@ -3385,7 +2573,7 @@ sub SendAutoResponse {
         From           => "$AutoResponse{SenderRealname} <$AutoResponse{SenderAddress}>",
         To             => $AutoReplyAddresses,
         Cc             => $Cc,
-        Charset        => $AutoResponse{Charset},
+        Charset        => 'utf-8',
         MimeType       => $AutoResponse{ContentType},
         Subject        => $AutoResponse{Subject},
         Body           => $AutoResponse{Text},

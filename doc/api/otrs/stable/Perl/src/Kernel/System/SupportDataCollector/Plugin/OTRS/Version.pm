@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OTRS/Version.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,19 +13,21 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = (
     'Kernel::Config',
 );
 
 sub GetDisplayPath {
-    return 'OTRS';
+    return Translatable('OTRS');
 }
 
 sub Run {
     my $Self = shift;
 
     $Self->AddResultInformation(
-        Label => 'OTRS Version',
+        Label => Translatable('OTRS Version'),
         Value => $Kernel::OM->Get('Kernel::Config')->Get('Version'),
     );
 

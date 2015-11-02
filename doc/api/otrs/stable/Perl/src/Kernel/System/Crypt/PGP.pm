@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Crypt/PGP.pm - the main crypt module
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -34,6 +33,27 @@ This is a sub module of Kernel::System::Crypt and contains all pgp functions.
 =over 4
 
 =cut
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self->{Debug} = $Param{Debug} || 0;
+
+    # check if module is enabled
+    return 0 if !$Kernel::OM->Get('Kernel::Config')->Get('PGP');
+
+    # call init()
+    $Self->_Init();
+
+    # check working ENV
+    return 0 if $Self->Check();
+
+    return $Self;
+}
 
 =item Check()
 

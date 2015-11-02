@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Web/Request.pm - a wrapper for CGI.pm or Apache::Request.pm
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -73,15 +72,6 @@ sub new {
     # max 5 MB posts
     $CGI::POST_MAX = $ConfigObject->Get('WebMaxFileUpload') || 1024 * 1024 * 5;    ## no critic
 
-    # we need to modify the tempdir
-    # for windows because the users
-    # group do not have enough rights
-    # for the default tempdir c:\windows\temp
-    # so we use a directory in otrs as tempdir (bug#10522)
-    if ( $^O eq 'MSWin32' ) {
-        $CGITempFile::TMPDIRECTORY = $ConfigObject->Get('TempDir');
-    }
-
     # query object (in case use already existing WebRequest, e. g. fast cgi)
     $Self->{Query} = $Param{WebRequest} || CGI->new();
 
@@ -115,12 +105,11 @@ sub Error {
 
 =item GetParam()
 
-to get single request parameters.
-By default, trimming is performed on the data.
+to get single request parameters. By default, trimming is performed on the data.
 
     my $Param = $ParamObject->GetParam(
         Param => 'ID',
-        Raw   => 1,     # optional, input data is not changed
+        Raw   => 1,       # optional, input data is not changed
     );
 
 =cut
@@ -129,6 +118,13 @@ sub GetParam {
     my ( $Self, %Param ) = @_;
 
     my $Value = $Self->{Query}->param( $Param{Param} );
+
+    # Fallback to query string for mixed requests.
+    my $RequestMethod = $Self->{Query}->request_method() // '';
+    if ( $RequestMethod eq 'POST' && !defined $Value ) {
+        $Value = $Self->{Query}->url_param( $Param{Param} );
+    }
+
     $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$Value );
 
     my $Raw = defined $Param{Raw} ? $Param{Raw} : 0;
@@ -170,7 +166,19 @@ sub GetParamNames {
     # fetch all names
     my @ParamNames = $Self->{Query}->param();
 
-    # is encode needed?
+    # Fallback to query string for mixed requests.
+    my $RequestMethod = $Self->{Query}->request_method() // '';
+    if ( $RequestMethod eq 'POST' ) {
+        my %POSTNames;
+        @POSTNames{@ParamNames} = @ParamNames;
+        my @GetNames = $Self->{Query}->url_param();
+        GETNAME:
+        for my $GetName (@GetNames) {
+            next GETNAME if !defined $GetName;
+            push @ParamNames, $GetName if !exists $POSTNames{$GetName};
+        }
+    }
+
     for my $Name (@ParamNames) {
         $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$Name );
     }
@@ -193,7 +201,13 @@ By default, trimming is performed on the data.
 sub GetArray {
     my ( $Self, %Param ) = @_;
 
-    my @Values = $Self->{Query}->param( $Param{Param} );
+    my @Values = $Self->{Query}->multi_param( $Param{Param} );
+
+    # Fallback to query string for mixed requests.
+    my $RequestMethod = $Self->{Query}->request_method() // '';
+    if ( $RequestMethod eq 'POST' && !@Values ) {
+        @Values = $Self->{Query}->url_param( $Param{Param} );
+    }
 
     $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \@Values );
 

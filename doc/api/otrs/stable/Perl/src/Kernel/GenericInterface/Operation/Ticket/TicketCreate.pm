@@ -1,5 +1,4 @@
 # --
-# Kernel/GenericInterface/Operation/Ticket/TicketCreate.pm - GenericInterface Ticket TicketCreate operation backend
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -111,6 +110,10 @@ perform TicketCreate Operation. This will return the created ticket number.
                     Hour   => 23,
                     Minute => 05,
                 },
+                # or
+                # PendingTime {
+                #     Diff => 10080, # Pending time in minutes
+                #},
             },
             Article => {
                 ArticleTypeID                   => 123,                        # optional

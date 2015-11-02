@@ -1,5 +1,4 @@
 # --
-# Kernel/Output/Template/Document.pm - Template Toolkit document
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,6 +13,8 @@ use strict;
 use warnings;
 
 use base qw (Template::Document);
+
+our $ObjectManagerDisabled = 1;
 
 =head1 NAME
 
@@ -38,6 +39,7 @@ sub process {
 
     $Self->_InstallOTRSExtensions($Context);
     $Self->_PrecalculateBlockStructure($Context);
+    $Self->_PrecalculateBlockHookSubscriptions($Context);
 
     return $Self->SUPER::process($Context);
 }
@@ -85,7 +87,13 @@ sub _InstallOTRSExtensions {
                 return if !exists $ParentBlock->{Children};
                 return if !exists $ParentBlock->{Children}->{$BlockName};
 
+                my $TemplateName = $stash->get('template')->{name} // '';
+                $TemplateName = substr( $TemplateName, 0, -3 );    # remove .tt extension
+                my $GenerateBlockHook =
+                    $Context->{LayoutObject}->{_BlockHookSubscriptions}->{$TemplateName}->{$BlockName};
+
                 for my $TargetBlock ( @{ $ParentBlock->{Children}->{$BlockName} } ) {
+                    $output .= "<!--HookStart${BlockName}-->\n" if $GenerateBlockHook;
                     $output .= $Context->process(
                         $TargetBlock->{Path},
                         {
@@ -93,6 +101,7 @@ sub _InstallOTRSExtensions {
                             'ParentBlock' => $TargetBlock,
                         },
                     );
+                    $output .= "<!--HookEnd${BlockName}-->\n" if $GenerateBlockHook;
                 }
                 delete $ParentBlock->{Children}->{$BlockName};
 
@@ -186,9 +195,6 @@ can be used by PerformRenderBlock in an efficient way.
 sub _PrecalculateBlockStructure {
     my ( $Self, $Context ) = @_;
 
-    #
-    # TODO cache result in current object?
-    #
     my $Defblocks = $Self->{_DEFBLOCKS} || {};
 
     my $BlockData = $Context->stash()->get( [ 'global', 0, 'BlockData', 0 ] ) || [];
@@ -250,6 +256,33 @@ sub _PrecalculateBlockStructure {
         # Remove block data
         splice @{$BlockData}, $BlockIndex, 1;
     }
+
+    return;
+}
+
+=item _PrecalculateBlockHookSubscriptions()
+
+=cut
+
+sub _PrecalculateBlockHookSubscriptions {
+    my ( $Self, $Context ) = @_;
+
+    # Only calculate once per LayoutObject
+    return if defined $Context->{LayoutObject}->{_BlockHookSubscriptions};
+
+    my $Config = $Kernel::OM->Get('Kernel::Config')->Get('Frontend::Template::GenerateBlockHooks') // {};
+
+    my %BlockHooks;
+
+    for my $Key ( sort keys %{ $Config // {} } ) {
+        for my $Template ( sort keys %{ $Config->{$Key} // {} } ) {
+            for my $Block ( @{ $Config->{$Key}->{$Template} // [] } ) {
+                $BlockHooks{$Template}->{$Block} = 1;
+            }
+        }
+    }
+
+    $Context->{LayoutObject}->{_BlockHookSubscriptions} = \%BlockHooks;
 
     return;
 }

@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OTRS/DefaultSOAPUser.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,12 +13,14 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = (
     'Kernel::Config',
 );
 
 sub GetDisplayPath {
-    return 'OTRS';
+    return Translatable('OTRS');
 }
 
 sub Run {
@@ -33,15 +34,17 @@ sub Run {
 
     if ( $SOAPUser eq 'some_user' && ( $SOAPPassword eq 'some_pass' || $SOAPPassword eq '' ) ) {
         $Self->AddResultProblem(
-            Label => 'Default SOAP Username And Password',
+            Label => Translatable('Default SOAP Username And Password'),
             Value => '',
             Message =>
-                'Security risk: you use the default setting for SOAP::User and SOAP::Password. Please change it.',
+                Translatable(
+                'Security risk: you use the default setting for SOAP::User and SOAP::Password. Please change it.'
+                ),
         );
     }
     else {
         $Self->AddResultOk(
-            Label => 'Default SOAP Username And Password',
+            Label => Translatable('Default SOAP Username And Password'),
             Value => '',
         );
     }

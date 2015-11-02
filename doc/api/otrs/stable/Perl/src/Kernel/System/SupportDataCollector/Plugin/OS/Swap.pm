@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OS/Swap.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,10 +13,12 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = ();
 
 sub GetDisplayPath {
-    return 'Operating System';
+    return Translatable('Operating System');
 }
 
 sub Run {
@@ -60,15 +61,15 @@ sub Run {
         if ( !$SwapTotal ) {
             $Self->AddResultProblem(
                 Identifier => 'SwapFree',
-                Label      => 'Free Swap Space (%)',
+                Label      => Translatable('Free Swap Space (%)'),
                 Value      => 0,
-                Message    => 'No swap enabled.',
+                Message    => Translatable('No swap enabled.'),
             );
             $Self->AddResultProblem(
                 Identifier => 'SwapUsed',
-                Label      => 'Used Swap Space (MB)',
+                Label      => Translatable('Used Swap Space (MB)'),
                 Value      => 0,
-                Message    => 'No swap enabled.',
+                Message    => Translatable('No swap enabled.'),
             );
         }
         else {
@@ -76,15 +77,15 @@ sub Run {
             if ( $SwapFreeRelative < 60 ) {
                 $Self->AddResultProblem(
                     Identifier => 'SwapFree',
-                    Label      => 'Free Swap Space (%)',
+                    Label      => Translatable('Free Swap Space (%)'),
                     Value      => $SwapFreeRelative,
-                    Message    => 'There should be more than 60% free swap space.',
+                    Message    => Translatable('There should be more than 60% free swap space.'),
                 );
             }
             else {
                 $Self->AddResultOk(
                     Identifier => 'SwapFree',
-                    Label      => 'Free Swap Space (%)',
+                    Label      => Translatable('Free Swap Space (%)'),
                     Value      => $SwapFreeRelative,
                 );
             }
@@ -94,15 +95,15 @@ sub Run {
             if ( $SwapUsed > 200 ) {
                 $Self->AddResultProblem(
                     Identifier => 'SwapUsed',
-                    Label      => 'Used Swap Space (MB)',
+                    Label      => Translatable('Used Swap Space (MB)'),
                     Value      => $SwapUsed,
-                    Message    => 'There should be no more than 200 MB swap space used.',
+                    Message    => Translatable('There should be no more than 200 MB swap space used.'),
                 );
             }
             else {
                 $Self->AddResultOk(
                     Identifier => 'SwapUsed',
-                    Label      => 'Used Swap Space (MB)',
+                    Label      => Translatable('Used Swap Space (MB)'),
                     Value      => $SwapUsed,
                 );
             }

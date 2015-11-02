@@ -1,5 +1,4 @@
 # --
-# Kernel/System/Log.pm - log wapper
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -51,6 +50,13 @@ create a log object. Do not use it directly, instead use:
 
 =cut
 
+my %LogLevel = (
+    error  => 16,
+    notice => 8,
+    info   => 4,
+    debug  => 2,
+);
+
 sub new {
     my ( $Type, %Param ) = @_;
 
@@ -90,6 +96,10 @@ sub new {
     $Self->{IPC}     = 1;
     $Self->{IPCKey}  = '444423' . $SystemID;
     $Self->{IPCSize} = $ConfigObject->Get('LogSystemCacheSize') || 32 * 1024;
+
+    $Self->{MinimumLevel}    = $ConfigObject->Get('MinimumLogLevel') || 'debug';
+    $Self->{MinimumLevel}    = lc $Self->{MinimumLevel};
+    $Self->{MinimumLevelNum} = $LogLevel{ $Self->{MinimumLevel} };
 
     # init session data mem
     if ( !eval { $Self->{Key} = shmget( $Self->{IPCKey}, $Self->{IPCSize}, oct(1777) ) } ) {
@@ -139,9 +149,13 @@ See for more info L<http://en.wikipedia.org/wiki/Syslog#Severity_levels>
 sub Log {
     my ( $Self, %Param ) = @_;
 
-    my $Priority = $Param{Priority} || 'debug';
-    my $Message  = $Param{MSG}      || $Param{Message} || '???';
-    my $Caller   = $Param{Caller}   || 0;
+    my $Priority    = lc $Param{Priority}  || 'debug';
+    my $PriorityNum = $LogLevel{$Priority} || $LogLevel{debug};
+
+    return 1 if $PriorityNum < $Self->{MinimumLevelNum};
+
+    my $Message = $Param{MSG} || $Param{Message} || '???';
+    my $Caller = $Param{Caller} || 0;
 
     # returns the context of the current subroutine and sub-subroutine!
     my ( $Package1, $Filename1, $Line1, $Subroutine1 ) = caller( $Caller + 0 );

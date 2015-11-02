@@ -1,5 +1,4 @@
 # --
-# Kernel/System/User.pm - some user functions
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -23,6 +22,7 @@ our @ObjectDependencies = (
     'Kernel::System::Encode',
     'Kernel::System::Log',
     'Kernel::System::Main',
+    'Kernel::System::SearchProfile',
     'Kernel::System::Time',
     'Kernel::System::Valid',
 );
@@ -332,6 +332,7 @@ to add new users
         UserLogin     => 'mhuber',
         UserPw        => 'some-pass', # not required
         UserEmail     => 'email@example.com',
+        UserMobile    => '1234567890', # not required
         ValidID       => 1,
         ChangeUserID  => 123,
     );
@@ -346,7 +347,7 @@ sub UserAdd {
         if ( !$Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
@@ -442,12 +443,16 @@ sub UserAdd {
         Value  => $Param{UserEmail}
     );
 
+    # set mobile phone
+    $Self->SetPreferences(
+        UserID => $UserID,
+        Key    => 'UserMobile',
+        Value  => $Param{UserMobile} || '',
+    );
+
     # delete cache
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
         Type => $Self->{CacheType},
-    );
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'Group'
     );
 
     return $UserID;
@@ -464,6 +469,7 @@ to update users
         UserLogin     => 'mhuber',
         UserPw        => 'some-pass', # not required
         UserEmail     => 'email@example.com',
+        UserMobile    => '1234567890', # not required
         ValidID       => 1,
         ChangeUserID  => 123,
     );
@@ -478,13 +484,18 @@ sub UserUpdate {
         if ( !$Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
     }
 
-    # check if a user with this login (username) already exits
+    # store old user login for later use
+    my $OldUserLogin = $Self->UserLookup(
+        UserID => $Param{UserID},
+    );
+
+    # check if a user with this login (username) already exists
     if (
         $Self->UserLoginExistsCheck(
             UserLogin => $Param{UserLogin},
@@ -525,12 +536,6 @@ sub UserUpdate {
         ],
     );
 
-    # log notice
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        Priority => 'notice',
-        Message  => "User: '$Param{UserLogin}' updated successfully ($Param{ChangeUserID})!",
-    );
-
     # check pw
     if ( $Param{UserPw} ) {
         $Self->SetPassword(
@@ -546,12 +551,44 @@ sub UserUpdate {
         Value  => $Param{UserEmail}
     );
 
+    # set email address
+    $Self->SetPreferences(
+        UserID => $Param{UserID},
+        Key    => 'UserMobile',
+        Value  => $Param{UserMobile} || '',
+    );
+
+    # update search profiles if the UserLogin changed
+    if ( lc $OldUserLogin ne lc $Param{UserLogin} ) {
+        $Kernel::OM->Get('Kernel::System::SearchProfile')->SearchProfileUpdateUserLogin(
+            Base         => 'TicketSearch',
+            UserLogin    => $OldUserLogin,
+            NewUserLogin => $Param{UserLogin},
+        );
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
     # delete cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+    $CacheObject->CleanUp(
         Type => $Self->{CacheType},
     );
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'Group',
+
+    # TODO Not needed to delete the cache if ValidID or Name was not changed
+
+    my $SystemPermissionConfig = $Kernel::OM->Get('Kernel::Config')->Get('System::Permission') || [];
+
+    for my $Type ( @{$SystemPermissionConfig}, 'rw' ) {
+
+        $CacheObject->Delete(
+            Type => 'GroupPermissionUserGet',
+            Key  => 'PermissionUserGet::' . $Param{UserID} . '::' . $Type,
+        );
+    }
+
+    $CacheObject->CleanUp(
+        Type => 'GroupPermissionGroupGet',
     );
 
     return 1;
@@ -975,8 +1012,8 @@ return a hash with all users
 
     my %List = $UserObject->UserList(
         Type          => 'Short', # Short|Long, default Short
-        Valid         => 1,       # not required, default 0
-        NoOutOfOffice => 1,       # optional, default 0
+        Valid         => 1,       # default 1
+        NoOutOfOffice => 1,       # (optional) default 0
     );
 
 =cut
@@ -1098,14 +1135,13 @@ generate a random password
 sub GenerateRandomPassword {
     my ( $Self, %Param ) = @_;
 
-    # Generated passwords are eight characters long by default.
+    # generated passwords are eight characters long by default.
     my $Size = $Param{Size} || 8;
 
     my $Password = $Kernel::OM->Get('Kernel::System::Main')->GenerateRandomString(
         Length => $Size,
     );
 
-    # Return the password.
     return $Password;
 }
 
@@ -1396,7 +1432,7 @@ sub _UserFullname {
 
 =item UserLoginExistsCheck()
 
-return 1 if another user with this login (username) already exits
+return 1 if another user with this login (username) already exists
 
     $Exist = $UserObject->UserLoginExistsCheck(
         UserLogin => 'Some::UserLogin',

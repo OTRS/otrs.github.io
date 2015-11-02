@@ -1,5 +1,4 @@
 # --
-# Kernel/GenericInterface/Provider.pm - GenericInterface provider handler
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -72,13 +71,6 @@ web service.
 
 sub Run {
     my ( $Self, %Param ) = @_;
-
-    # common objects
-    local $Kernel::OM = Kernel::System::ObjectManager->new(
-        'Kernel::System::Log' => {
-            LogPrefix => 'GenericInterfaceProvider',
-        },
-    );
 
     #
     # First, we need to locate the desired webservice and load its configuration data.
@@ -212,6 +204,8 @@ sub Run {
     {
         my $MappingInObject = Kernel::GenericInterface::Mapping->new(
             DebuggerObject => $DebuggerObject,
+            Operation      => $Operation,
+            OperationType  => $ProviderConfig->{Operation}->{$Operation}->{Type},
             MappingConfig =>
                 $ProviderConfig->{Operation}->{$Operation}->{MappingInbound},
         );
@@ -255,6 +249,7 @@ sub Run {
 
     my $OperationObject = Kernel::GenericInterface::Operation->new(
         DebuggerObject => $DebuggerObject,
+        Operation      => $Operation,
         OperationType  => $ProviderConfig->{Operation}->{$Operation}->{Type},
         WebserviceID   => $WebserviceID,
     );
@@ -312,6 +307,8 @@ sub Run {
     {
         my $MappingOutObject = Kernel::GenericInterface::Mapping->new(
             DebuggerObject => $DebuggerObject,
+            Operation      => $Operation,
+            OperationType  => $ProviderConfig->{Operation}->{$Operation}->{Type},
             MappingConfig =>
                 $ProviderConfig->{Operation}->{$Operation}->{MappingOutbound},
         );

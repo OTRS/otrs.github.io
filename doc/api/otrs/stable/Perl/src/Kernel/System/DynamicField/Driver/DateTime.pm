@@ -1,5 +1,4 @@
 # --
-# Kernel/System/DynamicField/Driver/DateTime.pm - Delegate for DynamicField DateTime Driver
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -61,7 +60,7 @@ sub new {
         'IsCustomerInterfaceCapable'   => 1,
     };
 
-    # get the Dynamic Field Backend custmom extensions
+    # get the Dynamic Field Backend custom extensions
     my $DynamicFieldDriverExtensions
         = $Kernel::OM->Get('Kernel::Config')->Get('DynamicFields::Extension::Driver::DateTime');
 

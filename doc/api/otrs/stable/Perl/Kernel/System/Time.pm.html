@@ -35,7 +35,7 @@
   </script></head>
 <body>
 <div class="box">
-  <h1 class="t1">OTRS 4.0 API Reference Perl</h1>
+  <h1 class="t1">OTRS 5.0 API Reference Perl</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -44,7 +44,7 @@
   </table>
 </div>
 <div class="path">
-  <a href="../../index.html">OTRS 4.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  <a href="../../index.html">OTRS 5.0 API Reference Perl</a> &gt; Perl Modules &gt;
   Kernel::System::Time
 </div>
 <div>
@@ -85,10 +85,13 @@
 		<dd><p>returns the number of non-leap seconds since what ever time the
 system considers to be the epoch (that's 00:00:00, January 1, 1904
 for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).</p></dd>
+		<dd><p>This will the time that the server considers to be the local time (based on
+time zone configuration) plus the configured OTRS &quot;TimeZone&quot; diff (only recommended
+for systems running in UTC).</p></dd>
 <dd><pre>    my $SystemTime = $TimeObject-&gt;SystemTime();
 
 </pre></dd>	<dt>SystemTime2TimeStamp()</dt>
-		<dd><p>returns a time stamp in &quot;yyyy-mm-dd 23:59:59&quot; format.</p></dd>
+		<dd><p>returns a time stamp for a given system time in &quot;yyyy-mm-dd 23:59:59&quot; format.</p></dd>
 <dd><pre>    my $TimeStamp = $TimeObject-&gt;SystemTime2TimeStamp(
         SystemTime =&gt; $SystemTime,
     );
@@ -101,28 +104,25 @@ pass the Type parameter like this:</p></dd>
     );
 
 </pre></dd>	<dt>CurrentTimestamp()</dt>
-		<dd><p>returns a time stamp in &quot;yyyy-mm-dd 23:59:59&quot; format.</p></dd>
+		<dd><p>returns a time stamp of the local system time (see <a href="http://search.cpan.org/perldoc?SystemTime%28%29">SystemTime()</a>)
+in &quot;yyyy-mm-dd 23:59:59&quot; format.</p></dd>
 <dd><pre>    my $TimeStamp = $TimeObject-&gt;CurrentTimestamp();
 
 </pre></dd>	<dt>SystemTime2Date()</dt>
-		<dd><p>returns a array of time params.</p></dd>
+		<dd><p>converts a system time to a structured date array.</p></dd>
 <dd><pre>    my ($Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay) = $TimeObject-&gt;SystemTime2Date(
         SystemTime =&gt; $TimeObject-&gt;SystemTime(),
     );
 
 </pre></dd>		<dd><p>$WeekDay is the day of the week, with 0 indicating Sunday and 3 indicating Wednesday.</p></dd>
 	<dt>TimeStamp2SystemTime()</dt>
-		<dd><p>returns the number of non-leap seconds since what ever time the
-system considers to be the epoch (that's 00:00:00, January 1, 1904
-for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).</p></dd>
+		<dd><p>converts a given time stamp to local system time.</p></dd>
 <dd><pre>    my $SystemTime = $TimeObject-&gt;TimeStamp2SystemTime(
         String =&gt; '2004-08-14 22:45:00',
     );
 
 </pre></dd>	<dt>Date2SystemTime()</dt>
-		<dd><p>returns the number of non-leap seconds since what ever time the
-system considers to be the epoch (that's 00:00:00, January 1, 1904
-for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).</p></dd>
+		<dd><p>converts a structured date array to local system time.</p></dd>
 <dd><pre>    my $SystemTime = $TimeObject-&gt;Date2SystemTime(
         Year   =&gt; 2004,
         Month  =&gt; 8,
@@ -132,13 +132,19 @@ for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).</p></dd>
         Second =&gt; 0,
     );
 
+</pre></dd>	<dt>ServerLocalTimeOffsetSeconds()</dt>
+		<dd><p>returns the computed difference in seconds between UTC time and local time.</p></dd>
+<dd><pre>    my $ServerLocalTimeOffsetSeconds = $TimeObject-&gt;ServerLocalTimeOffsetSeconds(
+        SystemTime =&gt; $SystemTime,  # optional, otherwise call time()
+    );
+
 </pre></dd>	<dt>MailTimeStamp()</dt>
 		<dd><p>returns the current time stamp in RFC 2822 format to be used in email headers:
 &quot;Wed, 22 Sep 2014 16:30:57 +0200&quot;.</p></dd>
 <dd><pre>    my $MailTimeStamp = $TimeObject-&gt;MailTimeStamp();
 
 </pre></dd>	<dt>WorkingTime()</dt>
-		<dd><p>get the working time in seconds between these times.</p></dd>
+		<dd><p>get the working time in seconds between these local system times.</p></dd>
 <dd><pre>    my $WorkingTime = $TimeObject-&gt;WorkingTime(
         StartTime =&gt; $Created,
         StopTime  =&gt; $TimeObject-&gt;SystemTime(),

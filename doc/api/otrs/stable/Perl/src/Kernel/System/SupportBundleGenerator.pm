@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportBundleGenerator.pm - support bundle generator
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -350,6 +349,7 @@ sub GenerateCustomFilesArchive {
         PGP::Key::Password
         Customer::AuthModule::DB::CustomerPassword
         Customer::AuthModule::Radius::Password
+        PublicFrontend::AuthPassword
     );
 
     STRING:

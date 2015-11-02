@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OS/Load.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,10 +13,12 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = ();
 
 sub GetDisplayPath {
-    return 'Operating System';
+    return Translatable('Operating System');
 }
 
 sub Run {
@@ -57,10 +58,12 @@ sub Run {
 
         if (@Loads) {
             $Self->AddResultInformation(
-                Label => 'System Load',
+                Label => Translatable('System Load'),
                 Value => $Loads[2],
                 Message =>
-                    'The system load should be at maximum the number of CPUs the system has (e.g. a load of 8 or less on a system with 8 CPUs is OK).',
+                    Translatable(
+                    'The system load should be at maximum the number of CPUs the system has (e.g. a load of 8 or less on a system with 8 CPUs is OK).'
+                    ),
             );
         }
     }

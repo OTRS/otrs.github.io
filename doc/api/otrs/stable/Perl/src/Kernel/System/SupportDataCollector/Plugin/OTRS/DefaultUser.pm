@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OTRS/DefaultUser.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,6 +13,8 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = (
     'Kernel::System::Auth',
     'Kernel::System::Group',
@@ -21,7 +22,7 @@ our @ObjectDependencies = (
 );
 
 sub GetDisplayPath {
-    return 'OTRS';
+    return Translatable('OTRS');
 }
 
 sub Run {
@@ -57,15 +58,17 @@ sub Run {
 
     if ($DefaultPassword) {
         $Self->AddResultProblem(
-            Label => 'Default Admin Password',
+            Label => Translatable('Default Admin Password'),
             Value => '',
             Message =>
-                'Security risk: the agent account root@localhost still has the default password. Please change it or invalidate the account.',
+                Translatable(
+                'Security risk: the agent account root@localhost still has the default password. Please change it or invalidate the account.'
+                ),
         );
     }
     else {
         $Self->AddResultOk(
-            Label => 'Default Admin Password',
+            Label => Translatable('Default Admin Password'),
             Value => '',
         );
     }

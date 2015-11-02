@@ -1,5 +1,4 @@
 # --
-# Kernel/System/SupportDataCollector/Plugin/OS/DiskPartitionOTRS.pm - system data collector plugin
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -14,12 +13,14 @@ use warnings;
 
 use base qw(Kernel::System::SupportDataCollector::PluginBase);
 
+use Kernel::Language qw(Translatable);
+
 our @ObjectDependencies = (
     'Kernel::Config',
 );
 
 sub GetDisplayPath {
-    return 'Operating System';
+    return Translatable('Operating System');
 }
 
 sub Run {
@@ -37,7 +38,7 @@ sub Run {
     chomp $OTRSPartition;
 
     $Self->AddResultInformation(
-        Label => 'OTRS Disk Partition',
+        Label => Translatable('OTRS Disk Partition'),
         Value => $OTRSPartition,
     );
 

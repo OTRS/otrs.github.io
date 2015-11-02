@@ -1,5 +1,4 @@
 # --
-# Kernel/System/PostMaster.pm - the global PostMaster module for OTRS
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -17,6 +16,8 @@ use Kernel::System::PostMaster::DestQueue;
 use Kernel::System::PostMaster::NewTicket;
 use Kernel::System::PostMaster::FollowUp;
 use Kernel::System::PostMaster::Reject;
+
+use Kernel::System::VariableCheck qw(IsHashRefWithData);
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -129,7 +130,10 @@ sub new {
 
 to execute the run process
 
-    $PostMasterObject->Run();
+    $PostMasterObject->Run(
+        Queue   => 'Junk',  # optional, specify target queue for new tickets
+        QueueID => 1,       # optional, specify target queue for new tickets
+    );
 
 return params
 
@@ -151,7 +155,7 @@ sub Run {
     my $GetParam = $Self->GetEmailParams();
 
     # check if follow up
-    my ( $Tn, $TicketID ) = $Self->CheckFollowUp( %{$GetParam} );
+    my ( $Tn, $TicketID ) = $Self->CheckFollowUp( GetParam => $GetParam );
 
     # get config objects
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
@@ -213,7 +217,7 @@ sub Run {
     # ----------------------
 
     # check if follow up (again, with new GetParam)
-    ( $Tn, $TicketID ) = $Self->CheckFollowUp( %{$GetParam} );
+    ( $Tn, $TicketID ) = $Self->CheckFollowUp( GetParam => $GetParam );
 
     # check if it's a follow up ...
     if ( $Tn && $TicketID ) {
@@ -438,145 +442,40 @@ sub CheckFollowUp {
     # get ticket object
     my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
 
-    my $Subject = $Param{Subject} || '';
-    my $Tn = $TicketObject->GetTNByString($Subject);
-
-    if ($Tn) {
-
-        my $TicketID = $TicketObject->TicketCheckNumber( Tn => $Tn );
-
-        return if !$TicketID;
-
-        my %Ticket = $TicketObject->TicketGet(
-            TicketID      => $TicketID,
-            DynamicFields => 0,
-        );
-
-        if ( $Self->{Debug} > 1 ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'debug',
-                Message  => "CheckFollowUp: ja, it's a follow up ($Ticket{TicketNumber}/$TicketID)",
-            );
-        }
-
-        return ( $Ticket{TicketNumber}, $TicketID );
-    }
-
     # get config objects
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    # There is no valid ticket number in the subject.
-    # Try to find ticket number in References and In-Reply-To header.
-    if ( $ConfigObject->Get('PostmasterFollowUpSearchInReferences') ) {
+    # Load CheckFollowUp Modules
+    my $Jobs = $ConfigObject->Get('PostMaster::CheckFollowUpModule');
 
-        my @References = $Self->{ParserObject}->GetReferences();
+    if ( IsHashRefWithData($Jobs) ) {
+        my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+        JOB:
+        for my $Job ( sort keys %$Jobs ) {
+            my $Module = $Jobs->{$Job};
 
-        REFERENCE:
-        for my $Reference (@References) {
+            return if !$MainObject->Require( $Jobs->{$Job}->{Module} );
 
-            # get ticket id of message id
-            my $TicketID = $TicketObject->ArticleGetTicketIDOfMessageID(
-                MessageID => "<$Reference>",
+            my $CheckObject = $Jobs->{$Job}->{Module}->new(
+                %{$Self},
             );
 
-            next REFERENCE if !$TicketID;
-
-            my $Tn = $TicketObject->TicketNumberLookup(
-                TicketID => $TicketID,
-            );
-
-            if ( $TicketID && $Tn ) {
-                return ( $Tn, $TicketID );
+            if ( !$CheckObject ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "new() of CheckFollowUp $Jobs->{$Job}->{Module} not successfully!",
+                );
+                next JOB;
             }
-        }
-    }
-
-    # do body ticket number lookup
-    if ( $ConfigObject->Get('PostmasterFollowUpSearchInBody') ) {
-
-        my $Tn = $TicketObject->GetTNByString( $Self->{ParserObject}->GetMessageBody() );
-
-        if ($Tn) {
-
-            my $TicketID = $TicketObject->TicketCheckNumber( Tn => $Tn );
-
+            my $TicketID = $CheckObject->Run(%Param);
             if ($TicketID) {
-
                 my %Ticket = $TicketObject->TicketGet(
                     TicketID      => $TicketID,
                     DynamicFields => 0,
                 );
-
-                if ( $Self->{Debug} > 1 ) {
-                    $Kernel::OM->Get('Kernel::System::Log')->Log(
-                        Priority => 'debug',
-                        Message =>
-                            "CheckFollowUp (in body): ja, it's a follow up ($Ticket{TicketNumber}/$TicketID)",
-                    );
-                }
-
-                return ( $Ticket{TicketNumber}, $TicketID );
-            }
-        }
-    }
-
-    # do attachment ticket number lookup
-    if ( $ConfigObject->Get('PostmasterFollowUpSearchInAttachment') ) {
-
-        for my $Attachment ( $Self->{ParserObject}->GetAttachments() ) {
-
-            my $Tn = $TicketObject->GetTNByString( $Attachment->{Content} );
-
-            if ($Tn) {
-
-                my $TicketID = $TicketObject->TicketCheckNumber( Tn => $Tn );
-
-                if ($TicketID) {
-
-                    my %Ticket = $TicketObject->TicketGet(
-                        TicketID      => $TicketID,
-                        DynamicFields => 0,
-                    );
-
-                    if ( $Self->{Debug} > 1 ) {
-                        $Kernel::OM->Get('Kernel::System::Log')->Log(
-                            Priority => 'debug',
-                            Message =>
-                                "CheckFollowUp (in attachment): ja, it's a follow up ($Ticket{TicketNumber}/$TicketID)",
-                        );
-                    }
-
+                if (%Ticket) {
                     return ( $Ticket{TicketNumber}, $TicketID );
                 }
-            }
-        }
-    }
-
-    # do plain/raw ticket number lookup
-    if ( $ConfigObject->Get('PostmasterFollowUpSearchInRaw') ) {
-
-        my $Tn = $TicketObject->GetTNByString( $Self->{ParserObject}->GetPlainEmail() );
-
-        if ($Tn) {
-
-            my $TicketID = $TicketObject->TicketCheckNumber( Tn => $Tn );
-
-            if ($TicketID) {
-
-                my %Ticket = $TicketObject->TicketGet(
-                    TicketID      => $TicketID,
-                    DynamicFields => 0,
-                );
-
-                if ( $Self->{Debug} > 1 ) {
-                    $Kernel::OM->Get('Kernel::System::Log')->Log(
-                        Priority => 'debug',
-                        Message =>
-                            "CheckFollowUp (in plain/raw): ja, it's a follow up ($Ticket{TicketNumber}/$TicketID)",
-                    );
-                }
-
-                return ( $Ticket{TicketNumber}, $TicketID );
             }
         }
     }

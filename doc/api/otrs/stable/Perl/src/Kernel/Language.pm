@@ -1,5 +1,4 @@
 # --
-# Kernel/Language.pm - provides multi language support
 # Copyright (C) 2001-2015 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -13,6 +12,9 @@ use strict;
 use warnings;
 
 use vars qw(@ISA);
+
+use Exporter qw(import);
+our @EXPORT_OK = qw(Translatable);    ## no critic
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -203,6 +205,16 @@ sub new {
     }
 
     return $Self;
+}
+
+=item Translatable()
+
+this is a no-op to mark a text as translatable in the Perl code.
+
+=cut
+
+sub Translatable {
+    return shift;
 }
 
 =item Translate()
