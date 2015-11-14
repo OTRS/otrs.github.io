@@ -50,19 +50,20 @@ shell&gt; bin/Cron.sh stop
 shell&gt; bin/otrs.Daemon.pl stop
             </pre><p>
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.8"></a>Step 2: Backup everything below <code class="filename">/opt/otrs/</code></h3></div></div></div><p>
-            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li><li class="listitem"><p><code class="filename">var/*</code></p></li><li class="listitem"><p>as well as the database</p></li></ul></div><p>
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code> (only for reference, this file is not needed any more)</p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li><li class="listitem"><p><code class="filename">var/*</code></p></li><li class="listitem"><p>as well as the database</p></li></ul></div><p>
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.9"></a>Step 3: Make sure that you have backed up everything ;-)</h3></div></div></div><p></p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.10"></a>Step 4: Install the new release (tar or RPM)</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.7.10.2"></a>Step 4.1: With the tarball:</h4></div></div></div><pre class="screen">
 shell&gt; cd /opt
 shell&gt; mv otrs otrs-old
 shell&gt; tar -xzf otrs-x.x.x.tar.gz
 shell&gt; mv otrs-x.x.x otrs
             </pre><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.10.2.3"></a>Restore old configuration files</h5></div></div></div><p>
-                    </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/GenericAgent.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li></ul></div><p>
+                    </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code></p></li></ul></div><p>
                 </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.10.2.4"></a>Restore TicketCounter.log</h5></div></div></div><p>
                     In order to let OTRS continue with the correct ticket number, restore the <code class="filename">TicketCounter.log</code> to
                     <code class="filename">/opt/otrs/var/log/</code>. This is especially important if you use incremental ticketnumbers.
                 </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.10.2.5"></a>Restore article data</h5></div></div></div><p>
-                    If you configured OTRS to store article data in the filesystem you have to restore the <code class="filename">article</code> folder to <code class="filename">/opt/otrs/var/</code>.
+                    If you configured OTRS to store article data in the filesystem you have to restore the <code class="filename">article</code> folder to <code class="filename">/opt/otrs/var/</code>
+                    or the folder specified in the SysConfig.
                 </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.10.2.6"></a>Set file permissions</h5></div></div></div><p>
                 Please execute
 
@@ -220,6 +221,9 @@ shell&gt; /opt/otrs/bin/Cron.sh start
             have made local modifications or translations, you have two choices: a) you can migrate your
             modifications to the new ticket notifications (recommended) or b) you can deactivate the new notifications
             and activate the old notifications again.
+        </p><p>
+            Please also review the escalation notification recipient settings and see if they match with your expectations (agents who have the ticket in one of their custom queues vs. all agents with read permissions).
+            This was configured via a setting in the file <code class="filename">Kernel/Config/GenericAgent.pm</code> (now obsolete) previously and can now be controlled via the GUI for each notification separately.
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.21"></a>Step 15: Update system registration (optional)</h3></div></div></div><p>
             If the system is already registered with OTRS Group, it is strongly recommended to update
             the registration information at this time, this will update the registered version of
@@ -236,25 +240,25 @@ shell&gt; cd /opt/otrs/
 shell&gt; bin/otrs.Console.pl Maint::Registration::UpdateSend --force
 shell&gt; bin/otrs.Console.pl Maint::Cache::Delete
             </pre><p>
-        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.22"></a>Step 16: Set Perl based Generic Agent jobs (optional)</h3></div></div></div><p>
-            If there are defined Generic Agent jobs in Perl configuration files such as
-            <code class="filename">Kernel/Config/GenericAgent.pm</code> its needed to register those files
-            as OTRS Daemon cron tasks in the SysConfig
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.22"></a>Step 16: Migrate custom perl based GenericAgent jobs (optional)</h3></div></div></div><p>
+            This is only relevant if you had any custom GenericAgent jobs in Perl OTRS 4 configuration files such as
+            <code class="filename">Kernel/Config/GenericAgent.pm</code> that cannot be handled with the regular ticket notifications.
+            Such jobs now need to be registered as OTRS Daemon cron tasks in the SysConfig
             (<code class="literal">Daemon</code> -&gt; <code class="literal">Daemon::SchedulerCronTaskManager::Task</code>),
             in order to be executed on a regular basis.
         </p><p>
             There are 5 settings in the SysConfig prepared for this purpose
-            Daemon::SchedulerCronTaskManager::Task###GenericAgentFile1 to
-            Daemon::SchedulerCronTaskManager::Task###GenericAgentFile5,
-            if more settings are needed they can be added on a custom SysConfig setting file.
+            (<code class="literal">Daemon::SchedulerCronTaskManager::Task###GenericAgentFile1</code> to
+            <code class="literal">Daemon::SchedulerCronTaskManager::Task###GenericAgentFile5</code>),
+            if more settings are needed they can be added in a custom SysConfig setting file.
         </p><p>
-            Please replace "&lt;ModuleName&gt;" with the file that contains the custom Generic Agent
+            Please replace "&lt;ModuleName&gt;" with the file that contains the custom GenericAgent
             jobs configuration, e.g. <code class="literal">Kernel::Config::GenericAgent</code> for the file:
             <code class="filename">Kernel/Config/GenericAgent.pm</code>, set the schedule to match the
             periodicity as it was executed before, mark the setting as active and save the changes.
         </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
                 To get more information about other parameters that can be used while running the
-                Generic Agent jobs, please execute:
+                GenericAgent jobs, please execute:
                 </p><pre class="screen">
 shell&gt; bin/otrs.Console.pl Maint::GenericAgent::Run --help
             </pre><p>
