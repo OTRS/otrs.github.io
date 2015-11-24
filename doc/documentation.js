@@ -74,8 +74,14 @@ $(document).ready(function() {
             Path: 'itsm',
             Versions: [
                 {
-                    Version:  '4.0',
+                    Version:  '5.0',
                     HTMLPath: 'stable',
+                    Name:     'OTRS::ITSM 4',
+                    Languages: ['en']
+                },
+                {
+                    Version:  '4.0',
+                    HTMLPath: '4.0',
                     Name:     'OTRS::ITSM 4',
                     Languages: ['en', 'ru']
                 },
