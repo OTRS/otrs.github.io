@@ -7,6 +7,7 @@ $(document).ready(function() {
     Languages = {
         en: 'English (en)',
         de: 'Deutsch (de)',
+        hu: 'Magyar (hu)',
         ja: '日本語 (ja)',
         ru: 'Русский (ru)',
         sw: 'Swahili (sw)',
@@ -62,7 +63,7 @@ $(document).ready(function() {
                     Version:     '4.0',
                     HTMLPath:    '4.0',
                     Name:        'OTRS 4',
-                    Languages:   ['en'],
+                    Languages:   ['en', 'hu'],
                     PDFPath:     'doc-otrsbusiness',
                     PDFFileName: 'otrs_business_solution_book.pdf'
                 },
