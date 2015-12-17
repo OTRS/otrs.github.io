@@ -63,7 +63,7 @@ sub AgentCustomerViewTable {
     }
 
     my $ShownType = 1;
-    if ( $Param{Type} && $Param{Type} eq 'Lite' ) {
+    if ( $Param{Type} && $Param{Type} eq Translatable('Lite') ) {
         $ShownType = 2;
 
         # check if min one lite view item is configured, if not, use
@@ -426,7 +426,7 @@ sub AgentQueueListOption {
                 $OptionTitleHTMLValue = ' title="' . $HTMLValue . '"';
             }
             if (
-                $SelectedID eq $_
+                $SelectedID  eq $_
                 || $Selected eq $Param{Data}->{$_}
                 || $Param{SelectedIDRefArrayOK}->{$_}
                 )
