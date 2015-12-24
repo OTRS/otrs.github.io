@@ -55,7 +55,7 @@ $(document).ready(function() {
                     Version:     '5.0',
                     HTMLPath:    'stable',
                     Name:        'OTRS 5',
-                    Languages:   ['en'],
+                    Languages:   ['en', 'hu'],
                     PDFPath:     'doc-otrsbusiness',
                     PDFFileName: 'otrs_business_solution_book.pdf'
                 },
