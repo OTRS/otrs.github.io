@@ -13,11 +13,11 @@ still work with the OTRS API.
             This section lists changes that you need to examine when porting your package from
             OTRS 4 to 5.
         </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.3"></a><code class="filename">Kernel/Output/HTML</code> restructured</h4></div></div></div><p>
-                In OTRS 5, <code class="filename">Kernel/Output/HTML</code> was restructured. All perl modules (except <code class="filename">Layout.pm</code>) were moved to subdirectories (one for every module layer). Template (theme) files were also moved from <code class="filename">Kernel/Output/HTML/Standard</code> to <code class="filename">Kernel/Output/HTML/Templates/Standard</code>. Please perform this migration also in your code.
+                In OTRS 5, <code class="filename">Kernel/Output/HTML</code> was restructured. All Perl modules (except <code class="filename">Layout.pm</code>) were moved to subdirectories (one for every module layer). Template (theme) files were also moved from <code class="filename">Kernel/Output/HTML/Standard</code> to <code class="filename">Kernel/Output/HTML/Templates/Standard</code>. Please perform this migration also in your code.
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.4"></a>Pre-Output-Filters</h4></div></div></div><p>
-                With OTRS 5 there is no support for "pre" output filters any more. These filters changed the template content before it was parsed, and that could potentially lead to bad performance issues because the templates could not be cached any more and had to be parsed and compiled every time.
+                With OTRS 5 there is no support for <code class="literal">pre</code> output filters any more. These filters changed the template content before it was parsed, and that could potentially lead to bad performance issues because the templates could not be cached any more and had to be parsed and compiled every time.
             </p><p>
-                Just switch from "pre" to "post" output filters. To translate content, you can run <code class="code">$LayoutObject-&gt;Translate()</code> directly. If you need other template features, just define a small template file for your output filter and use it to render your content before injecting it into the main data. It can also be helpful to use jQuery DOM operations to reorder/replace content on the screen in some cases instead of using regular expressions. In this case you would inject the new code somewhere in the page as invisible content (e. g. with the class <code class="literal">Hidden</code>), and then move it with jQuery to the correct location in the DOM and show it.
+                Just switch from <code class="literal">pre</code> to <code class="literal">post</code> output filters. To translate content, you can run <code class="code">$LayoutObject-&gt;Translate()</code> directly. If you need other template features, just define a small template file for your output filter and use it to render your content before injecting it into the main data. It can also be helpful to use jQuery DOM operations to reorder/replace content on the screen in some cases instead of using regular expressions. In this case you would inject the new code somewhere in the page as invisible content (e. g. with the class <code class="literal">Hidden</code>), and then move it with jQuery to the correct location in the DOM and show it.
             </p><p>
                 To make using post output filters easier, there is also a new mechanism to request HTML comment hooks for certain templates/blocks. You can add in your module config XML like:
                 </p><pre class="programlisting">
@@ -56,7 +56,7 @@ the specified blocks so that filters can use them.&lt;/Description&gt;
                 Support for IE 8 and 9 <a class="ulink" href="https://github.com/OTRS/otrs/commit/3b1aff21984d7b32f626df95e072337245615b36" target="_top">was dropped</a>. You can remove any workarounds in your code for these platforms, as well as any old <code class="literal">&lt;CSS_IE7&gt;</code> or <code class="literal">&lt;CSS_IE8&gt;</code> loader tags that might still lurk in your XML config files.
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.6"></a>GenericInterface API change in "Ticket" connector</h4></div></div></div><p>
                    The operation <code class="code">TicketGet()</code> returns dynamic field data from ticket and articles differently than in OTRS 4.
-                   Now they are cleanly  separated from the rest of the static ticket and article fields - they are now grouped in a list called DynamicField. Please adapt any applications using this operation accordingly.
+                   Now they are cleanly  separated from the rest of the static ticket and article fields - they are now grouped in a list called <code class="literal">DynamicField</code>. Please adapt any applications using this operation accordingly.
 
                     </p><pre class="programlisting">
 # changed from:
@@ -108,13 +108,13 @@ Ticket =&gt; [
             OTRS 3.3 to 4.
         </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-objectmanager"></a>New Object Handling</h4></div></div></div><p>
                 Up to OTRS 4, objects used to be created both centrally and also locally and
-                then handed down to all objects by passing them to the contructors.
-                With OTRS 4 and later versions, there is now an ObjectManager that centralizes
-                singleton object creation and access.
+                then handed down to all objects by passing them to the constructors.
+                With OTRS 4 and later versions, there is now an <code class="literal">ObjectManager</code>
+                that centralizes singleton object creation and access.
             </p><p>
                 This will require you first of all to change all toplevel Perl scripts (.pl files only!)
-                to load and provide the ObjectManager to all OTRS objects. Let's look at otrs.CheckDB.pl from
-                OTRS 3.3 as an example:
+                to load and provide the <code class="literal">ObjectManager</code> to all OTRS objects.
+                Let's look at otrs.CheckDB.pl from OTRS 3.3 as an example:
 
                 </p><pre class="programlisting">
 use strict;
@@ -172,19 +172,19 @@ my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
                 </pre><p>
 
                 The new code is a bit shorter than the old. It is no longer necessary to load all the
-                packages, just the ObjectManager. Subsequently <code class="literal">$Kernel::OM-&gt;Get('My::Perl::Package')</code>
-                can be used to get instances of Objects which only have to be created once. The <code class="literal">LogPrefix</code> setting
+                packages, just the <code class="literal">ObjectManager</code>. Subsequently <code class="literal">$Kernel::OM-&gt;Get('My::Perl::Package')</code>
+                can be used to get instances of objects which only have to be created once. The <code class="literal">LogPrefix</code> setting
                 controls the log messages that <code class="literal">Kernel::System::Log</code> writes, it could also be omitted.
             </p><p>
                 From this example you can also deduce the general porting guide when it comes to accessing
-                objects: don't store them in $Self any more (unless needed for specific reasons). Just fetch and use
-                the objects on demand like <code class="literal">$Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(...)</code>. This also has
+                objects: don't store them in <code class="literal">$Self</code> any more (unless needed for specific reasons). Just fetch and use
+                the objects on demand like <code class="code">$Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(...)</code>. This also has
                 the benefit that the Log object will only be created if something must be logged.
                 Sometimes it could also be useful to create local variables if an object is used many times in a function,
                 like <code class="literal">$DBObject</code> in the example above.
             </p><p>
-                There's not much more to know when porting packages that should be loadable by the ObjectManager.
-                They should declare the modules they use (via <code class="literal">$Kernel::OM-&gt;Get()</code>) like this:
+                There's not much more to know when porting packages that should be loadable by the <code class="literal">ObjectManager</code>.
+                They should declare the modules they use (via <code class="code">$Kernel::OM-&gt;Get()</code>) like this:
 
                 </p><pre class="programlisting">
 our @ObjectDependencies = (
@@ -194,8 +194,8 @@ our @ObjectDependencies = (
 );
                 </pre><p>
 
-                The @ObjectDependencies declaration is needed for the ObjectManager to keep the correct
-                order when destroying the objects.
+                The <code class="literal">@ObjectDependencies</code> declaration is needed for the
+                <code class="literal">ObjectManager</code> to keep the correct order when destroying the objects.
             </p><p>
                 Let's look at <code class="filename">Valid.pm</code> from OTRS 3.3 and 4 to see the difference. Old:
 
@@ -323,14 +323,14 @@ sub ValidList {
                 </pre><p>
 
                 You can see that the dependencies are declared and the objects are only fetched on demand.
-                We'll talk about the CacheInternalObject in the next section.
+                We'll talk about the <code class="literal">CacheInternalObject</code> in the next section.
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-cache"></a>CacheInternalObject removed</h4></div></div></div><p>
                 Since <code class="literal">Kernel::System::Cache</code> is now also able to cache in-memory,
                 <code class="literal">Kernel::System::CacheInternal</code> was dropped. Please see the previous example
-                for how to migrate your code: you need to use the global Cache object and pass the <code class="literal">Type</code>
-                settings with every call to <code class="literal">Get()</code>, <code class="literal">Set()</code>, <code class="literal">Delete()</code> and <code class="literal">CleanUp()</code>. The <code class="literal">TTL</code> parameter is now optional and defaults to 20 days, so you only have to specify it in <code class="literal">Get()</code> if you require a different TTL value.
+                for how to migrate your code: you need to use the global <code class="literal">Cache</code> object and pass the <code class="literal">Type</code>
+                settings with every call to <code class="code">Get()</code>, <code class="code">Set()</code>, <code class="code">Delete()</code> and <code class="code">CleanUp()</code>. The <code class="literal">TTL</code> parameter is now optional and defaults to 20 days, so you only have to specify it in <code class="code">Get()</code> if you require a different TTL value.
                 </p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>
-                        It is especially important to add the <code class="literal">Type</code> to <code class="literal">CleanUp()</code> as otherwise not just the current cache type but the entire cache would be deleted.
+                        It is especially important to add the <code class="literal">Type</code> to <code class="code">CleanUp()</code> as otherwise not just the current cache type but the entire cache would be deleted.
                     </p></div><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-scheduler-location"></a>Scheduler backend files moved</h4></div></div></div><p>
                 The backend files of the scheduler moved from <code class="filename">Kernel/Scheduler</code> to
@@ -339,7 +339,7 @@ sub ValidList {
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-sopm-code-tags"></a>Update <a class="link" href="package-building.html#package-code-install" title="&lt;CodeInstall&gt;">code sections</a> in SOPM files</h4></div></div></div><p>
                 Code tags in SOPM files have to be updated. Please do not use <code class="literal">$Self</code> any more.
                 In the past this was used to get access to OTRS objects like the <code class="literal">MainObject</code>.
-                Please use the ObjectManager now. Here is an example for the old style:
+                Please use the <code class="literal">ObjectManager</code> now. Here is an example for the old style:
                 </p><pre class="programlisting">
 &lt;CodeInstall Type="post"&gt;
 
@@ -474,18 +474,18 @@ $Kernel::OM-&gt;Get('var::packagesetup::MyPackage')-&gt;CodeInstall();
                 </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
                             All language files must now have the <code class="literal">use utf8;</code> pragma.
                         </p></li><li class="listitem"><p>
-                            <code class="literal">Layout::Get()</code> is now deprecated. Please use <code class="literal">Layout::Translate()</code> instead.
+                            <code class="code">Layout::Get()</code> is now deprecated. Please use <code class="code">Layout::Translate()</code> instead.
                         </p></li><li class="listitem"><p>
-                            All occurrences of <code class="literal">$Text{""}</code> in Perl code must now be replaced by calls to <code class="literal">Layout::Translate()</code>.
+                            All occurrences of <code class="literal">$Text{""}</code> in Perl code must now be replaced by calls to <code class="code">Layout::Translate()</code>.
                         </p><p>This is becase in DTL there was no separation between template and data. If DTL-Tags were inserted as part of some data, the engine would still parse them. This is no longer the case in Template::Toolkit, there is a strict separation of template and data.
                         </p><p>
                             Hint: should you ever need to interpolate tags in data, you can use the <code class="literal">Interpolate</code> filter for this (<code class="literal">[% Data.Name | Interpolate %]</code>). This is not recommended for security and performance reasons!
                         </p></li><li class="listitem"><p>
-                            For the same reason, dynamically injected JavaScript that was enclosed by <code class="literal">dtl:js_on_document_complete</code> will not work any more. Please use <code class="literal">Layout::AddJSOnDocumentComplete()</code> instead of injecting this as template data.
+                            For the same reason, dynamically injected JavaScript that was enclosed by <code class="literal">dtl:js_on_document_complete</code> will not work any more. Please use <code class="code">Layout::AddJSOnDocumentComplete()</code> instead of injecting this as template data.
                         </p><p>
                             You can find an example for this in <code class="filename">Kernel/System/DynamicField/Driver/BaseSelect.pm</code>.
                         </p></li><li class="listitem"><p>
-                            Please be careful with "<code class="literal">pre</code>" output filters (the ones configured in
+                            Please be careful with <code class="literal">pre</code> output filters (the ones configured in
                             <code class="literal">Frontend::Output::FilterElementPre</code>). They still work, but they will prevent the template
                             from being cached. This could lead to serious performance issues. You should definitely not have any pre output filters that operate on all templates, but limit them to certain templates via configuration setting.
                         </p><p>
@@ -497,10 +497,10 @@ $Kernel::OM-&gt;Get('var::packagesetup::MyPackage')-&gt;CodeInstall();
             </p><p>
                 Due to this change, you need to make sure to update all custom frontend module registrations which make use of icons (e.g. for the top navigation bar) to use the new schema. This is also true for templates where you're using icon elements like <code class="literal">&lt;i class="icon-{iconname}"&gt;&lt;/i&gt;</code>.
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-unit-tests"></a>UnitTests</h4></div></div></div><p>
-                With OTRS 4, in UnitTests <code class="literal">$Self</code> no longer provides common objects like the <code class="literal">MainObject</code>, for example. Please always use <code class="literal">$Kernel::OM-&gt;Get('...')</code> to fetch these objects.
+                With OTRS 4, in UnitTests <code class="literal">$Self</code> no longer provides common objects like the <code class="literal">MainObject</code>, for example. Please always use <code class="code">$Kernel::OM-&gt;Get('...')</code> to fetch these objects.
             </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-custom-ticket-history-types"></a>Custom TicketHistory types</h4></div></div></div><p>
                 If you use any custom ticket history types, you have to take two steps for them to be displayed correctly
-                in AgentTicketHistory of OTRS 4+.
+                in <code class="literal">AgentTicketHistory</code> of OTRS 4+.
             </p><p>
                 Firstly, you have to register your custom ticket history types via SysConfig. This could look like:
                 </p><pre class="programlisting">
