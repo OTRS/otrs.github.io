@@ -27,6 +27,8 @@ our @ObjectDependencies = (
     'Kernel::System::State',
     'Kernel::System::Ticket',
     'Kernel::System::Time',
+    'Kernel::System::TemplateGenerator',
+    'Kernel::System::CustomerUser',
 );
 
 =head1 NAME
@@ -975,23 +977,65 @@ sub _JobRunTicket {
         );
     }
 
+    my $ContentType = 'text/plain';
+
     # add note if wanted
     if ( $Param{Config}->{New}->{Note}->{Body} || $Param{Config}->{New}->{NoteBody} ) {
         if ( $Self->{NoticeSTDOUT} ) {
             print "  - Add note to Ticket $Ticket\n";
         }
+
+        my %Ticket = $TicketObject->TicketGet(
+            TicketID      => $Param{TicketID},
+            DynamicFields => 0,
+        );
+
+        my %CustomerUserData;
+
+        # We can only do OTRS Tag replacement if we have a CustomerUserID (langauge settings...)
+        if ( IsHashRefWithData( \%Ticket ) && IsStringWithData( $Ticket{CustomerUserID} ) ) {
+            my %CustomerUserData = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
+                User => $Ticket{CustomerUserID},
+            );
+
+            my %Notification = (
+                Subject     => $Param{Config}->{New}->{NoteSubject},
+                Body        => $Param{Config}->{New}->{NoteBody},
+                ContentType => 'text/plain',
+            );
+
+            my %GenericAgentArticle = $Kernel::OM->Get('Kernel::System::TemplateGenerator')->GenericAgentArticle(
+                TicketID     => $Param{TicketID},
+                Recipient    => \%CustomerUserData,    # Agent or Customer data get result
+                Notification => \%Notification,
+                UserID       => $Param{UserID},
+            );
+
+            if (
+                IsStringWithData( $GenericAgentArticle{Body} )
+                || IsHashRefWithData( $GenericAgentArticle{Subject} )
+                )
+            {
+                $Param{Config}->{New}->{Note}->{Subject} = $GenericAgentArticle{Subject} || '';
+                $Param{Config}->{New}->{Note}->{Body}    = $GenericAgentArticle{Body}    || '';
+                $ContentType                             = $GenericAgentArticle{ContentType};
+            }
+        }
+
         my $ArticleID = $TicketObject->ArticleCreate(
             TicketID    => $Param{TicketID},
-            ArticleType => $Param{Config}->{New}->{Note}->{ArticleType} || 'note-internal',
-            SenderType  => 'agent',
-            From        => $Param{Config}->{New}->{Note}->{From}
+            ArticleType => $Param{Config}->{New}->{Note}->{ArticleType}
+                || $Param{Config}->{New}->{ArticleType}
+                || 'note-internal',
+            SenderType => 'agent',
+            From       => $Param{Config}->{New}->{Note}->{From}
                 || $Param{Config}->{New}->{NoteFrom}
                 || 'GenericAgent',
             Subject => $Param{Config}->{New}->{Note}->{Subject}
                 || $Param{Config}->{New}->{NoteSubject}
                 || 'Note',
             Body => $Param{Config}->{New}->{Note}->{Body} || $Param{Config}->{New}->{NoteBody},
-            MimeType       => 'text/plain',
+            MimeType       => $ContentType,
             Charset        => 'utf-8',
             UserID         => $Param{UserID},
             HistoryType    => 'AddNote',

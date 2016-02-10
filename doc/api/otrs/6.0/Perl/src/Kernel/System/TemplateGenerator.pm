@@ -424,6 +424,105 @@ sub Template {
     return $TemplateText;
 }
 
+=item GenericAgentArticle()
+
+generate internal or external notes
+
+    my $GenericAgentArticle = $TemplateGeneratorObject->GenericAgentArticle(
+        Notification    => $NotificationDataHashRef,
+        TicketID        => 123,
+        UserID          => 123,
+        Data            => $ArticleHashRef,             # Optional
+    );
+
+=cut
+
+sub GenericAgentArticle {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(TicketID Notification UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    my %Template = %{ $Param{Notification} };
+
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    # get ticket
+    my %Ticket = $TicketObject->TicketGet(
+        TicketID      => $Param{TicketID},
+        DynamicFields => 0,
+    );
+
+    # do text/plain to text/html convert
+    if (
+        $Self->{RichText}
+        && $Template{ContentType} =~ /text\/plain/i
+        && $Template{Body}
+        )
+    {
+        $Template{ContentType} = 'text/html';
+        $Template{Body}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToHTML(
+            String => $Template{Body},
+        );
+    }
+
+    # do text/html to text/plain convert
+    if (
+        !$Self->{RichText}
+        && $Template{ContentType} =~ /text\/html/i
+        && $Template{Body}
+        )
+    {
+        $Template{ContentType} = 'text/plain';
+        $Template{Body}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
+            String => $Template{Body},
+        );
+    }
+
+    # replace place holder stuff
+    $Template{Body} = $Self->_Replace(
+        RichText  => $Self->{RichText},
+        Text      => $Template{Body},
+        Recipient => $Param{Recipient},
+        Data      => $Param{Data} || {},
+        TicketID  => $Param{TicketID},
+        UserID    => $Param{UserID},
+    );
+    $Template{Subject} = $Self->_Replace(
+        RichText  => 0,
+        Text      => $Template{Subject},
+        Recipient => $Param{Recipient},
+        Data      => $Param{Data} || {},
+        TicketID  => $Param{TicketID},
+        UserID    => $Param{UserID},
+    );
+
+    $Template{Subject} = $TicketObject->TicketSubjectBuild(
+        TicketNumber => $Ticket{TicketNumber},
+        Subject      => $Template{Subject} || '',
+        Type         => 'New',
+    );
+
+    # add URLs and verify to be full HTML document
+    if ( $Self->{RichText} ) {
+
+        $Template{Body} = $Kernel::OM->Get('Kernel::System::HTMLUtils')->LinkQuote(
+            String => $Template{Body},
+        );
+    }
+
+    return %Template;
+}
+
 =item Attributes()
 
 generate attributes
