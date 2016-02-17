@@ -77,7 +77,8 @@ package Kernel::Modules::AgentHelloWorld;
 use strict;
 use warnings;
 
-use Kernel::System::HelloWorld;
+# Frontend modules are not handled by the ObjectManager.
+our $ObjectManagerDisabled = 1;
 
 sub new {
     my ( $Type, %Param ) = @_;
@@ -86,16 +87,6 @@ sub new {
     my $Self = {%Param};
     bless ($Self, $Type);
 
-    # check needed objects
-    for (qw(ParamObject DBObject TicketObject LayoutObject LogObject QueueObject ConfigObject EncodeObject MainObject)) {
-        if ( !$Self-&gt;{$_} ) {
-            $Self-&gt;{LayoutObject}-&gt;FatalError( Message =&gt; "Got no $_!" );
-        }
-    }
-
-    # create needed objects
-    $Self-&gt;{HelloWorldObject} = Kernel::System::HelloWorld-&gt;new(%Param);
-
     return $Self;
 }
 
@@ -103,16 +94,20 @@ sub Run {
     my ( $Self, %Param ) = @_;
     my %Data = ();
 
-    $Data{HelloWorldText} = $Self-&gt;{HelloWorldObject}-&gt;GetHelloWorldText();
+    my $HelloWorldObject = $Kernel::OM-&gt;Get('Kernel::System::HelloWorld');
+    my $LayoutObject     = $Kernel::OM-&gt;Get('Kernel::Output::HTML::Layout');
+
+    $Data{HelloWorldText} = $HelloWorldObject-&gt;GetHelloWorldText();
 
     # build output
-    my $Output = $Self-&gt;{LayoutObject}-&gt;Header(Title =&gt; "HelloWorld");
-    $Output   .= $Self-&gt;{LayoutObject}-&gt;NavigationBar();
-    $Output   .= $Self-&gt;{LayoutObject}-&gt;Output(
-        Data =&gt; \%Data,
+    my $Output = $LayoutObject-&gt;Header(Title =&gt; "HelloWorld");
+    $Output   .= $LayoutObject-&gt;NavigationBar();
+    $Output   .= $LayoutObject-&gt;Output(
+        Data         =&gt; \%Data,
         TemplateFile =&gt; 'AgentHelloWorld',
     );
-    $Output   .= $Self-&gt;{LayoutObject}-&gt;Footer();
+    $Output   .= $LayoutObject-&gt;Footer();
+
     return $Output;
 }
 
@@ -136,6 +131,11 @@ package Kernel::System::HelloWorld;
 use strict;
 use warnings;
 
+# list your object dependencies (e.g. Kernel::System::DB) here
+our @ObjectDependencies = (
+    # 'Kernel::System::DB',
+);
+
 sub new {
     my ( $Type, %Param ) = @_;
 
@@ -148,6 +148,9 @@ sub new {
 
 sub GetHelloWorldText {
     my ( $Self, %Param ) = @_;
+
+    # Get the DBObject from the central object manager
+    # my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
 
     return 'Hello World!';
 }
