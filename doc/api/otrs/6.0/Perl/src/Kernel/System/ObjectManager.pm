@@ -34,18 +34,14 @@ use Kernel::System::Time;
 use Kernel::System::Web::Request;
 use Kernel::System::User;
 
-# Contains the top-level object being retrieved;
-# used to generate better error messages.
-our $CurrentObject;
-
 =head1 NAME
 
 Kernel::System::ObjectManager - object and dependency manager
 
 =head1 SYNOPSIS
 
-The ObjectManager is the central place to create and access singleton OTRS objects (via C<Get()>)
-as well as create regular (unmanaged) object instances (via C<Create()>).
+The ObjectManager is the central place to create and access singleton OTRS objects (via L<Get()>)
+as well as create regular (unmanaged) object instances (via L<Create()>).
 
 =head2 How does singleton management work?
 
@@ -139,7 +135,7 @@ The hash reference will be flattened and passed to the constructor of the object
         },
     );
 
-Alternatively, C<ObjectParamAdd()> can be used to set these parameters at runtime (but this
+Alternatively, L<ObjectParamAdd()> can be used to set these parameters at runtime (but this
 must happen before the object was created).
 
 If the C<< Debug => 1 >> option is present, destruction of objects
@@ -189,12 +185,6 @@ sub Get {
         );
     }
 
-    # record the object we are about to retrieve to potentially
-    # build better error messages
-    # needs to be a statement-modifying 'if', otherwise 'local'
-    # is local to the scope of the 'if'-block
-    local $CurrentObject = $_[1] if !$CurrentObject;
-
     return $_[0]->_ObjectBuild( Package => $_[1] );
 }
 
@@ -209,16 +199,25 @@ Creates a new object instance. This instance will not be managed by the object m
 It is also possible to pass in constructor parameters:
 
     my $DateTimeObject = $Kernel::OM->Create(
-        'Kernel::System::DateTime'
+        'Kernel::System::DateTime',
         ObjectParams => {
             Param1 => 'Value1',
         },
     );
 
+By default, this method will C<die>, if the package cannot be instantiated.
+You can suppress this with C<< Silent => 1 >>, for example to not cause exceptions when trying
+to load modules based on user configuration.
+
+    my $CustomObject = $Kernel::OM->Create(
+        'Kernel::System::CustomObject',
+        Silent => 1,
+    );
+
 =cut
 
 sub Create {
-    my ( $Self, $Package, %Params ) = @_;
+    my ( $Self, $Package, %Param ) = @_;
 
     if ( !$Package ) {
         $Self->_DieWithError(
@@ -226,15 +225,9 @@ sub Create {
         );
     }
 
-    # record the object we are about to retrieve to potentially
-    # build better error messages
-    # needs to be a statement-modifying 'if', otherwise 'local'
-    # is local to the scope of the 'if'-block
-    local $CurrentObject = $Package if !$CurrentObject;
-
     return $Self->_ObjectBuild(
+        %Param,
         Package      => $Package,
-        ObjectParams => $Params{ObjectParams},
         NoSingleton  => 1,
     );
 }
@@ -250,16 +243,12 @@ sub _ObjectBuild {
         require $FileName;
     };
     if ($@) {
-        if ( $CurrentObject && $CurrentObject ne $Package ) {
-            $Self->_DieWithError(
-                Error => "$CurrentObject depends on $Package, but $Package could not be loaded: $@",
-            );
+        if ($Param{Silent}) {
+            return;     # don't throw
         }
-        else {
-            $Self->_DieWithError(
-                Error => "$Package could not be loaded: $@",
-            );
-        }
+        $Self->_DieWithError(
+            Error => "$Package could not be loaded: $@",
+        );
     }
 
     # Kernel::Config does not declare its dependencies (they would have to be in
@@ -301,17 +290,12 @@ sub _ObjectBuild {
     );
 
     if ( !defined $NewObject ) {
-        if ( $CurrentObject && $CurrentObject ne $Package ) {
-            $Self->_DieWithError(
-                Error =>
-                    "$CurrentObject depends on $Package, but the constructor of $Package returned undef.",
-            );
+        if ($Param{Silent}) {
+            return;     # don't throw
         }
-        else {
-            $Self->_DieWithError(
-                Error => "The constructor of $Package returned undef.",
-            );
-        }
+        $Self->_DieWithError(
+            Error => "The constructor of $Package returned undef.",
+        );
     }
 
     return $NewObject if ( $Param{NoSingleton} );

@@ -53,26 +53,14 @@ sub Run {
 
     my @XMLHash = $Kernel::OM->Get('Kernel::System::XML')->XMLParse2XMLHash( String => ${$ContentRef} );
 
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    my %ExistingTables = map { lc($_) => 1 } $Kernel::OM->Get('Kernel::System::DB')->ListTables();
 
     my @MissingTables;
     TABLE:
     for my $Table ( @{ $XMLHash[1]->{database}->[1]->{Table} } ) {
         next TABLE if !$Table;
 
-        my $TableExists = $DBObject->Prepare(
-            SQL   => "SELECT 1 FROM $Table->{Name}",
-            Limit => 1,
-        );
-
-        if ($TableExists) {
-            while ( my @Row = $DBObject->FetchrowArray() ) {
-
-                # noop
-            }
-        }
-        else {
+        if ( !$ExistingTables{ lc($Table->{Name}) } ) {
             push( @MissingTables, $Table->{Name} );
         }
     }
