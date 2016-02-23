@@ -76,8 +76,8 @@
 
 <h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<p>The ObjectManager is the central place to create and access singleton OTRS objects (via <a href="http://search.cpan.org/perldoc?Get%28%29">Get()</a>)
-as well as create regular (unmanaged) object instances (via <a href="http://search.cpan.org/perldoc?Create%28%29">Create()</a>).</p>
+<p>The ObjectManager is the central place to create and access singleton OTRS objects (via <a href="#Get">Get()</a>)
+as well as create regular (unmanaged) object instances (via <a href="#Create">Create()</a>).</p>
 
 <h2 id="How_does_singleton_management_work">How does singleton management work?</h2>
 
@@ -130,27 +130,28 @@ be destroyed only after this object is destroyed (only for singletons).</p>
     use strict;
     use warnings;
 
-    $ObjectManagerDisabled = 1;
+    our $ObjectManagerDisabled = 1;
 
-</pre><p>To indicate that a certain package can ONLY be loaded as a singleton, you can use the
-<code>$ObjectManagerIsSingleton</code> flag:</p>
+</pre><p>There are a few flags available to convey meta data about the packages to the object manager.</p>
 
-<pre>    package Kernel::System::Singleton;
+<p>To indicate that a certain package can ONLY be loaded as a singleton, you can use the
+<code>IsSingleton</code> flag. Similarly, you can indicate that a certain package can ONLY be created as unmanaged instance,
+and NOT as a singleton via the <code>NonSingleton</code> flag.
+By default, the ObjectManager will die if a constructor does not return an object. To suppress this in the <a href="#Create">Create()</a> method, you can use the <code>AllowConstructorFailure</code> flag (this will not work with <a href="http://search.cpan.org/perldoc?Get%28%29">Get()</a>).</p>
 
-    use strict;
-    use warnings;
+<pre>
 
-    $ObjectManagerIsSingleton = 1;
 
-</pre><p>Similarly, you can indicate that a certain package can ONLY be created as unmanaged instance,
-and NOT as a singleton via the <code>$ObjectManagerNonSingleton</code> flag:</p>
-
-<pre>    package Kernel::System::NonSingleton;
+    package Kernel::System::MyPackage;
 
     use strict;
     use warnings;
 
-    $ObjectManagerNonSingleton = 1;
+    our %ObjectManagerFlags = (
+        IsSingleton             =&gt; 1,  # default 0
+        NonSingleton            =&gt; 0,  # default 0
+        AllowConstructorFailure =&gt; 0,  # default 0
+    );
 
 </pre><h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
@@ -169,7 +170,7 @@ The hash reference will be flattened and passed to the constructor of the object
         },
     );
 
-</pre></dd>		<dd><p>Alternatively, <a href="http://search.cpan.org/perldoc?ObjectParamAdd%28%29">ObjectParamAdd()</a> can be used to set these parameters at runtime (but this
+</pre></dd>		<dd><p>Alternatively, <a href="#ObjectParamAdd">ObjectParamAdd()</a> can be used to set these parameters at runtime (but this
 must happen before the object was created).</p></dd>
 		<dd><p>If the <code>Debug =&gt; 1</code> option is present, destruction of objects
 is checked, and a warning is emitted if objects persist after the
@@ -194,7 +195,7 @@ attempt to destroy them.</p></dd>
         },
     );
 
-</pre></dd>		<dd><p>By default, this method will <code>die</code>, if the package cannot be instantiated.
+</pre></dd>		<dd><p>By default, this method will <code>die</code>, if the package cannot be instantiated or the constructor returns undef.
 You can suppress this with <code>Silent =&gt; 1</code>, for example to not cause exceptions when trying
 to load modules based on user configuration.</p></dd>
 <dd><pre>    my $CustomObject = $Kernel::OM-&gt;Create(
