@@ -100,6 +100,23 @@ sub new {
 
     #$Self->debug_on();
 
+    # Cleanup any leftovers from a previous session
+    my ( $MainHandle, @AdditionalHandles ) = @{ $Self->get_window_handles() // [] };
+    if (@AdditionalHandles) {
+        for my $Handle (@AdditionalHandles) {
+            $Self->switch_to_window($Handle);
+            $Self->close();
+        }
+    }
+    # make sure focus is correct
+    $Self->switch_to_window($MainHandle);
+    eval {
+        # just in case there are pending modal dialogs
+        $Self->dismiss_alert();
+    };
+    $Self->delete_all_cookies();
+    $Self->SUPER::get('about:blank');
+
     # set screen size from config or use defauls
     my $Height = $SeleniumTestsConfig{window_height} || 1000;
     my $Width  = $SeleniumTestsConfig{window_width}  || 1200;
@@ -126,6 +143,41 @@ sub new {
     $Self->{BaseURL} = $Kernel::OM->Get('Kernel::Config')->Get('HttpType') . '://' . $Self->{BaseURL};
 
     return $Self;
+}
+
+#
+# Reuse Selenium session in subsequent tests. For this, we store the Selenium object in a global instance
+#   variable and take over the SessionID from it if a new one is created.
+#
+
+our $Instance;
+our $SessionRequests;
+
+sub _request_new_session {    ## no critic
+    my ( $Self, $Arguments ) = @_;
+
+    # First time call, or session refresh needed?
+    if ( !$Instance || $SessionRequests++ > 100 ) {
+        $Instance->quit() if $Instance;
+        $Self->SUPER::_request_new_session($Arguments);
+        $SessionRequests = 1;
+    }
+
+    # Reuse session from previous Selenium object.
+    else {
+        $Self->session_id( $Instance->session_id() );
+    }
+
+    # Remember new instance.
+    $Instance = $Self;
+    $Self->auto_close(0);
+}
+
+END {
+    # Cleanup: close Selenium session.
+    if ($Instance) {
+        $Instance->SUPER::quit();
+    }
 }
 
 =item RunTest()
@@ -167,6 +219,9 @@ sub _execute_command {    ## no critic
 
     my $Result = $Self->SUPER::_execute_command( $Res, $Params );
 
+    # Skip the rest if we are in global destruction phase (Selenium scenario shutdown).
+    return $Result if !$Kernel::OM;
+
     my $TestName = 'Selenium command success: ';
     $TestName .= $Kernel::OM->Get('Kernel::System::Main')->Dump(
         {
@@ -175,10 +230,9 @@ sub _execute_command {    ## no critic
         }
     );
 
-    $Self->{UnitTestObject}->True(
-        1,
-        $TestName
-    );
+    return if !$Self->{UnitTestObject};
+
+    $Self->{UnitTestObject}->True( 1, $TestName );
 
     return $Result;
 }
@@ -296,14 +350,14 @@ sub Login {
         # Now load it again to login
         $Self->VerifiedGet("${ScriptAlias}");
 
-        $Self->find_element( 'input#User', 'css' )->send_keys( $Param{User} );
+        $Self->find_element( 'input#User',     'css' )->send_keys( $Param{User} );
         $Self->find_element( 'input#Password', 'css' )->send_keys( $Param{Password} );
 
         # login
         $Self->find_element( 'input#User', 'css' )->VerifiedSubmit();
 
         # login successful?
-        $Self->find_element( 'a#LogoutButton', 'css' ); # dies if not found
+        $Self->find_element( 'a#LogoutButton', 'css' );    # dies if not found
 
         $Self->{UnitTestObject}->True( 1, 'Login sequence ended...' );
     };
@@ -408,10 +462,10 @@ cleanup. Adds a unit test result to indicate the shutdown.
 sub DESTROY {
     my $Self = shift;
 
-    # Could be missing on early die.
-    if ( $Self->{UnitTestObject} ) {
-        $Self->{UnitTestObject}->True( 1, "Shutting down Selenium scenario." );
-    }
+    # # Could be missing on early die.
+    # if ( $Self->{UnitTestObject} ) {
+    #     $Self->{UnitTestObject}->True( 1, "Shutting down Selenium scenario." );
+    # }
 
     if ( $Self->{SeleniumTestsActive} ) {
         $Self->SUPER::DESTROY();
