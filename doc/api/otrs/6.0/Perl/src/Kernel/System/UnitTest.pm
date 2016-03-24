@@ -254,6 +254,8 @@ sub Run {
             $Content =~ s/&/&amp;/g;
             $Content =~ s/</&lt;/g;
             $Content =~ s/>/&gt;/g;
+            # Replace characters that are invalid in XML (https://www.w3.org/TR/REC-xml/#charsets)
+            $Content =~ s/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/"\x{FFFD}"/eg;
             $XML .= qq|  <Test Result="$Result" Count="$TestCount">$Content</Test>\n|;
         }
 
@@ -861,7 +863,12 @@ sub _Print {
                 .= "<tr><td width='70' bgcolor='red'>not ok $Self->{TestCount}</td><td>$Name</td></tr>\n";
         }
         elsif ( $Self->{Output} eq 'ASCII' ) {
-            print { $Self->{OriginalSTDOUT} } " " . $Self->_Color( 'red', "not ok" ) . " $Self->{TestCount} - $PrintName\n";
+            if ( !$Self->{Verbose} ) {
+                print { $Self->{OriginalSTDOUT} } "\n";
+            }
+            print { $Self->{OriginalSTDOUT} } " "
+                . $Self->_Color( 'red', "not ok" )
+                . " $Self->{TestCount} - $PrintName\n";
         }
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Result} = 'not ok';
         $Self->{XML}->{Test}->{ $Self->{XMLUnit} }->{ $Self->{TestCount} }->{Name}   = $Name;
