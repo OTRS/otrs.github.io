@@ -66,7 +66,7 @@
 
 <h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<p>Kernel::System::Time - time functions</p>
+<p>Kernel::System::Time - time functions. DEPRECATED, for new code use Kernel::System::DateTime instead.</p>
 
 <h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
@@ -85,9 +85,6 @@
 		<dd><p>returns the number of non-leap seconds since what ever time the
 system considers to be the epoch (that's 00:00:00, January 1, 1904
 for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).</p></dd>
-		<dd><p>This will the time that the server considers to be the local time (based on
-time zone configuration) plus the configured OTRS &quot;TimeZone&quot; diff (only recommended
-for systems running in UTC).</p></dd>
 <dd><pre>    my $SystemTime = $TimeObject-&gt;SystemTime();
 
 </pre></dd>	<dt>SystemTime2TimeStamp()</dt>
@@ -122,7 +119,7 @@ in &quot;yyyy-mm-dd 23:59:59&quot; format.</p></dd>
     );
 
 </pre></dd>	<dt>Date2SystemTime()</dt>
-		<dd><p>converts a structured date array to local system time.</p></dd>
+		<dd><p>converts a structured date array to system time of OTRS.</p></dd>
 <dd><pre>    my $SystemTime = $TimeObject-&gt;Date2SystemTime(
         Year   =&gt; 2004,
         Month  =&gt; 8,
@@ -133,7 +130,11 @@ in &quot;yyyy-mm-dd 23:59:59&quot; format.</p></dd>
     );
 
 </pre></dd>	<dt>ServerLocalTimeOffsetSeconds()</dt>
-		<dd><p>returns the computed difference in seconds between UTC time and local time.</p></dd>
+		<dd><p>All framework code that calls this method only uses it to check if the server runs in UTC
+and therefore user time zones are allowed. It's not needed anymore in the future and is only
+in here to don't break code that hasn't been ported yet. It returns 0 to tell its callers
+that the server runs in UTC and so user time zones are allowed/active.</p></dd>
+		<dd><p>( originally returned the computed difference in seconds between UTC time and local time. )</p></dd>
 <dd><pre>    my $ServerLocalTimeOffsetSeconds = $TimeObject-&gt;ServerLocalTimeOffsetSeconds(
         SystemTime =&gt; $SystemTime,  # optional, otherwise call time()
     );
@@ -159,6 +160,7 @@ in &quot;yyyy-mm-dd 23:59:59&quot; format.</p></dd>
 </pre></dd>	<dt>DestinationTime()</dt>
 		<dd><p>get the destination time based on the current calendar working time (fallback: default
 system working time) configuration.</p></dd>
+		<dd><p>Returns a system time (integer time stamp).</p></dd>
 		<dd><p>The algorithm roughly works as follows:
     - Check if the start time is actually in the configured working time.
         - If not, set it to the next working time second. Example: start time is

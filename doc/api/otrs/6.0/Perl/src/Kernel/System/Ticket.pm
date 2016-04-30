@@ -1168,14 +1168,19 @@ sub TicketGet {
             $Ticket{ChangeBy} = $Row[25];
         }
 
-        $Kernel::OM->Get('Kernel::System::Cache')->Set(
-            Type => $Self->{CacheType},
-            TTL  => $Self->{CacheTTL},
-            Key  => $CacheKey,
+        # use cache only when a ticket number is found otherwise a non-existant ticket
+        # is cached. That can cause errors when the cache isn't expired and postmaster
+        # creates that ticket
+        if ( $Ticket{TicketID} ) {
+            $Kernel::OM->Get('Kernel::System::Cache')->Set(
+                Type => $Self->{CacheType},
+                TTL  => $Self->{CacheTTL},
+                Key  => $CacheKey,
 
-            # make a local copy of the ticket data to avoid it being altered in-memory later
-            Value => {%Ticket},
-        );
+                # make a local copy of the ticket data to avoid it being altered in-memory later
+                Value => {%Ticket},
+            );
+        }
     }
 
     # check ticket
@@ -5165,6 +5170,16 @@ sub HistoryTicketStatusGet {
         $SQLExt .= ')';
     }
 
+    # assemble stop date/time string for database comparison
+    my $StopDateTimeObject = $Kernel::OM->Create(
+        'Kernel::System::DateTime',
+        ObjectParams => {
+            String => "$Param{StopYear}-$Param{StopMonth}-$Param{StopDay} 00:00:00",
+            }
+    );
+    $StopDateTimeObject->Add( Hours => 24 );
+    my $StopDateTimeString = $StopDateTimeObject->Format( Format => '%Y-%m-%d 00:00:00' );
+
     # get database object
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
@@ -5172,7 +5187,7 @@ sub HistoryTicketStatusGet {
         SQL => "
             SELECT DISTINCT(th.ticket_id), th.create_time
             FROM ticket_history th
-            WHERE th.create_time <= '$Param{StopYear}-$Param{StopMonth}-$Param{StopDay} 23:59:59'
+            WHERE th.create_time <= '$StopDateTimeString'
                 AND th.create_time >= '$Param{StartYear}-$Param{StartMonth}-$Param{StartDay} 00:00:01'
                 $SQLExt
             ORDER BY th.create_time DESC",

@@ -78,20 +78,22 @@
 
 <h2 id="Explanation_for_the_time_zone_parame">Explanation for the time zone parameter</h2>
 
-<p>The time zone parameter is available, if the system use UTC as system time and the TimeZoneUser feature is active
-and the statistic is a dynamic statistic. The selected periods in the frontend are time zone neutral and for the
-search parameters, the selection will be converted to UTC time based on the selected time zone, because the times
-are stored as UTC time in the database (if the system is configured correctly).</p>
+<p>The time zone parameter is available, if the statistic is a dynamic statistic. The selected periods in the frontend are time zone neutral and for the
+search parameters, the selection will be converted to the OTRS time zone, because the times
+are stored within this time zone in the database.</p>
 
-<p>This means e.g. if a absolute period of time from 2015 2015-08-01 00:00:00 to 2015-09-10 23:59:59 and a time zone +6 has been selected,
-the time zone (+6) will be subtracted (with &quot;_SubtractTimeZone&quot;) from the selected absolute time period for the search parameter,
-so that the right UTC time will be used for the absolute period of time. For the example this would be the 2015-07-31 18:00:00 to 2015-09-10 17:59:59.</p>
+<p>This means e.g. if an absolute period of time from 2015-08-01 00:00:00 to 2015-09-10 23:59:59 and a time zone with an offset of +6 hours has been selected,
+the period will be converted from the +6 time zone to the OTRS time zone for the search parameter,
+so that the right time will be used for searching the database. Given that the OTRS time zone is set to UTC, this
+would result in a period of 2015-07-31 18:00:00 to 2015-09-10 17:59:59 UTC.</p>
 
-<p>For a relative time period, e.g. a relative period of the last full 10 days and the time zone +10, first the selected
-time zone will be added (with &quot;_AddTimeZone&quot;) to the current UTC time, so that the right relative period of time will be used for the frontend output.
-For the example, we have the current UTC time 2015-09-10 16:00:00, that means for the selected relative period and time zone (+10) the period of time
-from 2015-09-01 00:00:00 to 2015-09-10 23:59:59. From the period of time will be substracted the selected time zone (+10) to get the correct UTC time
-for the search in the database (as for the absolute time). In this case that would be the period of time from 2015-08-31 14:00:00 to 2015-09-10 13:59:59.</p>
+<p>For a relative time period, e. g. the last 10 full days, and a time zone with an offset of +10 hours, a DateTime object with the +10 time zone will be created
+for the current time. For the period end date, this date will be taken and extended to the end of the day. Then, 10 full days will be subtracted from this.
+This is the start of the period, which will be extended to 00:00:00. Start and end date will be converted to the time zone of OTRS to search the database.</p>
+
+<p>Example for relative time period 'last 10 full days' with selected time zone offset +10 hours, current date/time within this time zone 2015-09-10 16:00:00, OTRS time zone is UTC:
+End date: 2015-09-10 16:00:00 -&gt; extended to 2015-09-10 23:59:59 -&gt; 2015-09-10 13:59:59 OTRS time zone (UTC)
+Start date: 2015-09-10 16:00:00 - 10 days -&gt; 2015-08-31 16:00:00 -&gt; extended to 00:00:00: 2015-09-01 00:00:00 -&gt; 2015-08-31 14:00:00 OTRS time zone (UTC)</p>
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
@@ -255,7 +257,7 @@ This can be used to fetch cached stats data e. g. for stats widgets in the dashb
 (space will be replaced with _ and - e.g. Title-of-File_2006-12-31_11-59)</p></dd>
 <dd><pre>    my $Filename = $StatsObject-&gt;StringAndTimestamp2Filename(
         String   =&gt; 'Title',
-        TimeZone =&gt; '+2',  # optional
+        TimeZone =&gt; 'Europe/Berlin',  # optional
     );
 
 </pre></dd>	<dt>StatNumber2StatID()</dt>
@@ -288,9 +290,18 @@ This can be used to fetch cached stats data e. g. for stats widgets in the dashb
 	<dt>_SetResultCache()</dt>
 	<dt>_GetResultCache()</dt>
 	<dt>_DeleteCache()</dt>
-	<dt>_AddTimeZone()</dt>
-	<dt>_SubtractTimeZone()</dt>
+	<dt>_FromOTRSTimeZone()</dt>
+	<dt>_ToOTRSTimeZone()</dt>
 	<dt>_GetCacheString()</dt>
+	<dt>_AddDeltaYMD()</dt>
+	<dt>_AddDeltaDHMS()</dt>
+	<dt>_AddDeltaDays()</dt>
+	<dt>_DaysInMonth()</dt>
+	<dt>_DayOfWeek()</dt>
+	<dt>_DayOfWeekAbbreviation()</dt>
+	<dt>_DayOfWeekToText()</dt>
+	<dt>_MondayOfWeek()</dt>
+	<dt>_WeekOfYear()</dt>
 </dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 

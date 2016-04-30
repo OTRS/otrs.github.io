@@ -1,0 +1,567 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::DateTime</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 6.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::DateTime
+</div>
+<div>
+<a href="../../src/Kernel/System/DateTime.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::DateTime - Handles date and time calculations.</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Handles date and time calculations.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>Creates a DateTime object. Do not use new() directly, instead use the object manager:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+
+</pre></dd><dd><pre>    # Create an object with current date and time
+    # within time zone set in SysConfig OTRSTimeZone:
+    my $DateTimeObject = $Kernel::OM-&gt;Create(
+        'Kernel::System::DateTime'
+    );
+
+</pre></dd><dd><pre>    # Create an object with current date and time
+    # within a certain time zone:
+    my $DateTimeObject = $Kernel::OM-&gt;Create(
+        'Kernel::System::DateTime',
+        ObjectParams =&gt; {
+            TimeZone =&gt; 'Europe/Berlin',        # optional
+        }
+    );
+
+</pre></dd><dd><pre>    # Create an object with a specific date and time:
+    my $DateTimeObject = $Kernel::OM-&gt;Create(
+        'Kernel::System::DateTime',
+        ObjectParams =&gt; {
+            Year     =&gt; 2016,
+            Month    =&gt; 1,
+            Day      =&gt; 22,
+            Hour     =&gt; 12,                     # optional, defaults to 0
+            Minute   =&gt; 35,                     # optional, defaults to 0
+            Second   =&gt; 59,                     # optional, defaults to 0
+            TimeZone =&gt; 'Europe/Berlin',        # optional, defaults to setting of SysConfig OTRSTimeZone
+        }
+    );
+
+</pre></dd><dd><pre>    # Create an object from an epoch timestamp. These timestamps are always UTC/GMT,
+    # hence time zone will automatically be set to UTC.
+    #
+    # If parameter Epoch is present, all other parameters will be ignored.
+    my $DateTimeObject = $Kernel::OM-&gt;Create(
+        'Kernel::System::DateTime',
+        ObjectParams =&gt; {
+            Epoch =&gt; 1453911685,
+        }
+    );
+
+</pre></dd><dd><pre>    # Create an object from a date/time string.
+    #
+    # If parameter String is given, Year, Month, Day, Hour, Minute and Second will be ignored
+    my $DateTimeObject = $Kernel::OM-&gt;Create(
+        'Kernel::System::DateTime',
+        ObjectParams =&gt; {
+            String   =&gt; '2016-08-14 22:45:00',
+            TimeZone =&gt; 'Europe/Berlin',        # optional, defaults to setting of SysConfig OTRSTimeZone
+        }
+    );
+
+</pre></dd>	<dt>Get()</dt>
+		<dd><p>Returns hash ref with the date, time and time zone values of this object.</p></dd>
+<dd><pre>    my $DateTimeSettings = $DateTimeObject-&gt;Get();
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $DateTimeSettings = {
+        Year      =&gt; 2016,
+        Month     =&gt; 1,         # starting at 1
+        Day       =&gt; 22,
+        Hour      =&gt; 16,
+        Minute    =&gt; 35,
+        Second    =&gt; 59,
+        DayOfWeek =&gt; 5,         # starting with 1 for Monday, ending with 7 for Sunday
+        TimeZone  =&gt; 'Europe/Berlin',
+    };
+
+</pre></dd>	<dt>Set()</dt>
+		<dd><p>Sets date and time values of this object.
+You have to give at least one parameter.
+Only given values will be changed.
+Note that the resulting date and time have to be valid.
+On validation error, the current date and time of the object won't be changed.</p></dd>
+		<dd><p>Note that for changing the time zone, you have to use method ToTimeZone.</p></dd>
+<dd><pre>    # Setting values by hash:
+    my $Success = $DateTimeObject-&gt;Set(
+        Year     =&gt; 2016,
+        Month    =&gt; 1,
+        Day      =&gt; 22,
+        Hour     =&gt; 16,
+        Minute   =&gt; 35,
+        Second   =&gt; 59,
+    );
+
+</pre></dd><dd><pre>    # Settings values by date/time string:
+    # If parameter String is present, all other parameters will be ignored.
+    my $Success = $DateTimeObject-&gt;Set( String =&gt; '2016-02-25 20:34:01' );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>   $Success = 1;    # On success, or false otherwise.
+
+</pre></dd>	<dt>Add()</dt>
+		<dd><p>Adds duration or working time to date and time of this object.
+You have to give at least one of the valid parameters.
+On error, the current date and time of this object won't be changed.</p></dd>
+<dd><pre>    my $Success = $DateTimeObject-&gt;Add(
+        Years         =&gt; 1,
+        Months        =&gt; 2,
+        Weeks         =&gt; 4,
+        Days          =&gt; 34,
+        Hours         =&gt; 2,
+        Minutes       =&gt; 5,
+        Seconds       =&gt; 459,
+
+</pre></dd><dd><pre>        # Calculate &quot;destination date&quot; by adding given time values as
+        # working time. Note that for adding working time,
+        # only parameters Seconds, Minutes, Hours and Days are allowed.
+        AsWorkingTime =&gt; 0, # set to 1 to add given values as working time
+
+</pre></dd><dd><pre>        # Calendar to use for working time calculations, optional
+        Calendar =&gt; 9,
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $Success = 1;    # On success, or false otherwise.
+
+</pre></dd>	<dt>Subtract()</dt>
+		<dd><p>Subtracts duration from date and time of this object.
+You have to give at least one of the valid parameters.
+On validation error, the current date and time of this object won't be changed.</p></dd>
+<dd><pre>    my $Success = $DateTimeObject-&gt;Subtract(
+        Years     =&gt; 1,
+        Months    =&gt; 2,
+        Weeks     =&gt; 4,
+        Days      =&gt; 34,
+        Hours     =&gt; 2,
+        Minutes   =&gt; 5,
+        Seconds   =&gt; 459,
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $Success =  1;  # On success, or false otherwise.
+
+</pre></dd>	<dt>Delta()</dt>
+		<dd><p>Calculates delta between this and another DateTime object. Optionally calculates the working
+time between the two.</p></dd>
+<dd><pre>    my $Delta = $DateTimeObject-&gt;Delta( DateTimeObject =&gt; $AnotherDateTimeObject );
+
+</pre></dd><dd><pre>    Note that the returned values are always positive. Use the comparison methods
+    to see if a date is newer/older/equal.
+
+</pre></dd><dd><pre>    # Calculate &quot;working time&quot;
+    ForWorkingTime =&gt; 0, # set to 1 to calculate working time between the two DateTime objects
+
+</pre></dd><dd><pre>    # Calendar to use for working time calculations, optional
+    Calendar =&gt; 9,
+
+</pre></dd><dd>
+
+
+</dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $Delta = {
+        Years           =&gt; 1,           # Set to 0 if working time was calculated
+        Months          =&gt; 2,           # Set to 0 if working time was calculated
+        Weeks           =&gt; 4,           # Set to 0 if working time was calculated
+        Days            =&gt; 34,          # Set to 0 if working time was calculated
+        Hours           =&gt; 2,
+        Minutes         =&gt; 5,
+        Seconds         =&gt; 459,
+        AbsoluteSeconds =&gt; 42084759,    # complete delta in seconds
+    };
+
+</pre></dd>	<dt>Compare()</dt>
+		<dd><p>Compares dates and returns a value suitable for using Perl's sort function (-1, 0, 1).</p></dd>
+<dd><pre>    my $Result = $DateTimeObject-&gt;Compare( DateTimeObject =&gt; $AnotherDateTimeObject );
+
+</pre></dd><dd><pre>    You can also use this as a function for Perl's sort:
+
+</pre></dd><dd><pre>    my @SortedDateTimeObjects = sort { $a-&gt;Compare( DateTimeObject =&gt; $b ); } @UnsortedDateTimeObjects:
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $Result = -1;       # if date/time of this object &lt; date/time of given object
+    $Result = 0;        # if date/time are equal
+    $Result = 1:        # if date/time of this object &gt; date/time of given object
+
+</pre></dd>	<dt>ToTimeZone()</dt>
+		<dd><p>Converts the date and time of this object to the given time zone.</p></dd>
+<dd><pre>    my $Success = $DateTimeObject-&gt;ToTimeZone(
+        TimeZone =&gt; 'Europe/Berlin',
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $Success = 1;   # success, or false otherwise.
+
+</pre></dd>	<dt>ToOTRSTimeZone()</dt>
+		<dd><p>Converts the date and time of this object to the data storage time zone.</p></dd>
+<dd><pre>    my $Success = $DateTimeObject-&gt;ToOTRSTimeZone();
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $Success = 1;   # success, or false otherwise.
+
+</pre></dd>	<dt>Validate()</dt>
+		<dd><p>Checks if given date, time and time zone would result in a valid date.</p></dd>
+<dd><pre>    my $IsValid = $DateTimeObject-&gt;Validate(
+        Year     =&gt; 2016,
+        Month    =&gt; 1,
+        Day      =&gt; 22,
+        Hour     =&gt; 16,
+        Minute   =&gt; 35,
+        Second   =&gt; 59,
+        TimeZone =&gt; 'Europe/Berlin',
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    $IsValid = 1;   # if date/time is valid, or false otherwise.
+
+</pre></dd>	<dt>Format()</dt>
+		<dd><p>Returns the date/time as string formatted according to format given.
+See http://search.cpan.org/~drolsky/DateTime-1.21/lib/DateTime.pm#strftime_Patterns for formatting
+the time.</p></dd>
+		<dd><p>Short overview of essential formatting options:</p></dd>
+<dd><pre>    %Y or %{year}: four digit year
+
+</pre></dd><dd><pre>    %m: month with leading zero
+    %{month}: month without leading zero
+
+</pre></dd><dd><pre>    %d: day of month with leading zero
+    %{day}: day of month without leading zero
+
+</pre></dd><dd><pre>    %H: 24 hour with leading zero
+    %{hour}: 24 hour without leading zero
+
+</pre></dd><dd><pre>    %l: 12 hour with leading zero
+    %{hour_12}: 12 hour without leading zero
+
+</pre></dd><dd><pre>    %M: minute with leading zero
+    %{minute}: minute without leading zero
+
+</pre></dd><dd><pre>    %S: second with leading zero
+    %{second}: second without leading zero
+
+</pre></dd><dd><pre>    %{time_zone_long_name}: Time zone, e. g. 'Europe/Berlin'
+
+</pre></dd><dd><pre>    %{epoch}: Seconds since the epoch (OS specific)
+    %{offset}: Offset in seconds to GMT/UTC
+
+</pre></dd><dd><pre>    my $DateTimeString = $DateTimeObject-&gt;Format( Format =&gt; '%Y-%m-%d %H:%M:%S' );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $String = '2016-01-22 18:07:23';
+
+</pre></dd>	<dt>ToEpoch()</dt>
+		<dd><p>Returns date/time as seconds since the epoch.</p></dd>
+<dd><pre>    my $Epoch = $DateTimeObject-&gt;ToEpoch();
+
+</pre></dd>		<dd><p>Returns e. g.:</p></dd>
+<dd><pre>    my $Epoch = 1454420017;
+
+</pre></dd>	<dt>ToString()</dt>
+		<dd><p>Returns date/time as string.</p></dd>
+<dd><pre>    my $DateTimeString = $DateTimeObject-&gt;ToString();
+
+</pre></dd>		<dd><p>Returns e. g.:</p></dd>
+<dd><pre>    $DateTimeString = '2016-01-31 14:05:45'
+
+</pre></dd>	<dt>ToEmailTimeStamp()</dt>
+		<dd><p>Returns the date/time of this object as time stamp in RFC 2822 format to be used in email headers.</p></dd>
+<dd><pre>    my $MailTimeStamp = $DateTimeObject-&gt;ToEmailTimeStamp();
+
+</pre></dd><dd><pre>    # Typical usage:
+    # You want to have the date/time of OTRS + its UTC offset, so:
+    my $DateTimeObject = $Kernel::OM-&gt;Create('Kernel::System::DateTime');
+    my $MailTimeStamp = $DateTimeObject-&gt;ToEmailTimeStamp();
+
+</pre></dd><dd><pre>    # If you already have a DateTime object, possibly in another time zone:
+    $DateTimeObject-&gt;ToOTRSTimeZone();
+    my $MailTimeStamp = $DateTimeObject-&gt;ToEmailTimeStamp();
+
+</pre></dd><dd>
+
+
+</dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $String = 'Wed, 2 Sep 2014 16:30:57 +0200';
+
+</pre></dd>	<dt>ToCTimeString()</dt>
+		<dd><p>Returns date and time as ctime string, as for example returned by Perl's localtime and gmtime in scalar context.</p></dd>
+<dd><pre>    my $CTimeString = $DateTimeObject-&gt;ToCTimeString();
+
+</pre></dd>		<dd><p>Returns</p></dd>
+<dd><pre>    my $String = 'Fri Feb 19 16:07:31 2016';
+
+</pre></dd>	<dt>IsVacationDay()</dt>
+		<dd><p>Checks if date/time of this object is a vacation day.</p></dd>
+<dd><pre>    my $IsVacationDay = $DateTimeObject-&gt;IsVacationDay(
+        Calendar =&gt; 9, # optional, OTRS vacation days otherwise
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $IsVacationDay = 'some vacation day',    # description of vacation day or 0 if no vacation day.
+
+</pre></dd>	<dt>LastDayOfMonthGet()</dt>
+		<dd><p>Returns the last day of the month.</p></dd>
+<dd><pre>    $LastDayOfMonth = $DateTimeObject-&gt;LastDayOfMonthGet();
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $LastDayOfMonth = {
+        Day       =&gt; 31,
+        DayOfWeek =&gt; 5,
+        DayAbbr   =&gt; 'Fri',
+    };
+
+</pre></dd>	<dt>Clone()</dt>
+		<dd><p>Clones the DateTime object.</p></dd>
+<dd><pre>    my $ClonedDateTimeObject = $DateTimeObject-&gt;Clone();
+
+</pre></dd>	<dt>TimeZoneList()</dt>
+		<dd><p>Returns an array ref of available time zones.</p></dd>
+<dd><pre>    my $TimeZones = $DateTimeObject-&gt;TimeZoneList();
+
+</pre></dd><dd><pre>    # You can also call this method without an object:
+    #my $TimeZones = Kernel::System::DateTime-&gt;TimeZoneList();
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $TimeZoneList = [
+        # ...
+        'Europe/Amsterdam',
+        'Europe/Andorra',
+        'Europe/Athens',
+        # ...
+    ];
+
+</pre></dd>	<dt>TimeZoneByOffsetList()</dt>
+		<dd><p>Returns a list of time zones by offset in hours.
+Of course the resulting list depends on the date/time set within this DateTime object.</p></dd>
+<dd><pre>    my %TimeZoneByOffset = $DateTimeObject-&gt;TimeZoneByOffsetList();
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $TimeZoneByOffsetList = {
+        # ...
+        -9 =&gt; [ 'America/Adak', 'Pacific/Gambier', ],
+        # ...
+        2  =&gt; [
+            # ...
+            'Europe/Berlin',
+            # ...
+        ],
+        # ...
+        8.75 =&gt; [ 'Australia/Eucla', ],
+        # ...
+    };
+
+</pre></dd>	<dt>IsTimeZoneValid()</dt>
+		<dd><p>Checks if the given time zone is valid.</p></dd>
+<dd><pre>    my $Valid = $DateTimeObject-&gt;IsTimeZoneValid( TimeZone =&gt; 'Europe/Berlin' );
+
+</pre></dd>		<dd><p>Returns:
+    $ValidID = 1;    # if given time zone is valid, 0 otherwise.</p></dd>
+	<dt>OTRSTimeZoneGet()</dt>
+		<dd><p>Returns the time zone set for OTRS.</p></dd>
+<dd><pre>    my $OTRSTimeZone = $DateTimeObject-&gt;OTRSTimeZoneGet();
+
+</pre></dd><dd><pre>    # You can also call this method without an object:
+    #my $OTRSTimeZone = Kernel::System::DateTime-&gt;OTRSTimeZoneGet();
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $OTRSTimeZone = 'Europe/Berlin';
+
+</pre></dd>	<dt>UserDefaultTimeZoneGet()</dt>
+		<dd><p>Returns the time zone set as default in SysConfig UserDefaultTimeZone for
+newly created users or existing users without time zone setting.</p></dd>
+<dd><pre>    my $UserDefaultTimeZoneGet = $DateTimeObject-&gt;UserDefaultTimeZoneGet();
+
+</pre></dd><dd><pre>    # You can also call this method without an object:
+    #my $UserDefaultTimeZoneGet = Kernel::System::DateTime-&gt;UserDefaultTimeZoneGet();
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $UserDefaultTimeZone = 'Europe/Berlin';
+
+</pre></dd>	<dt>SystemTimeZoneGet()</dt>
+		<dd><p>Returns the time zone of the system.</p></dd>
+<dd><pre>    my $SystemTimeZone = $DateTimeObject-&gt;SystemTimeZoneGet();
+
+</pre></dd><dd><pre>    # You can also call this method without an object:
+    #my $SystemTimeZone = Kernel::System::DateTime-&gt;SystemTimeZoneGet();
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $SystemTimeZone = 'Europe/Berlin';
+
+</pre></dd>	<dt>_ToCPANDateTimeParamNames()</dt>
+		<dd><p>Maps date/time parameter names expected by the methods of this package to the ones
+expected by CPAN/Perl DateTime package.</p></dd>
+<dd><pre>    my $DateTimeParams = $DateTimeObject-&gt;_ToCPANDateTimeParamNames(
+        Year     =&gt; 2016,
+        Month    =&gt; 1,
+        Day      =&gt; 22,
+        Hour     =&gt; 17,
+        Minute   =&gt; 20,
+        Second   =&gt; 2,
+        TimeZone =&gt; 'Europe/Berlin',
+    );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $CPANDateTimeParamNames = {
+        year      =&gt; 2016,
+        month     =&gt; 1,
+        day       =&gt; 22,
+        hour      =&gt; 17,
+        minute    =&gt; 20,
+        second    =&gt; 2,
+        time_zone =&gt; 'Europe/Berlin',
+    };
+
+</pre></dd>	<dt>_StringToHash()</dt>
+		<dd><p>Parses a date/time string and returns a hash ref.</p></dd>
+<dd><pre>    my $DateTimeHash = $DateTimeObject-&gt;_StringToHash( String =&gt; '2016-08-14 22:45:00' );
+
+</pre></dd><dd><pre>    # Sets second to 0:
+    my $DateTimeHash = $DateTimeObject-&gt;_StringToHash( String =&gt; '2016-08-14 22:45' );
+
+</pre></dd><dd><pre>    # Sets hour, minute and second to 0:
+    my $DateTimeHash = $DateTimeObject-&gt;_StringToHash( String =&gt; '2016-08-14' );
+
+</pre></dd>		<dd><p>Returns:</p></dd>
+<dd><pre>    my $DateTimeHash = {
+        Year   =&gt; 2016,
+        Month  =&gt; 8,
+        Day    =&gt; 14,
+        Hour   =&gt; 22,
+        Minute =&gt; 45,
+        Second =&gt; 0,
+    };
+
+</pre></dd>	<dt>_CPANDateTimeObjectCreate()</dt>
+		<dd><p>Creates a CPAN DateTime object which will be stored within this object and used for date/time calculations.</p></dd>
+<dd><pre>    # Create an object with current date and time
+    # within time zone set in SysConfig OTRSTimeZone:
+    my $CPANDateTimeObject = $DateTimeObject-&gt;_CPANDateTimeObjectCreate();
+
+</pre></dd><dd><pre>    # Create an object with current date and time
+    # within a certain time zone:
+    my $CPANDateTimeObject = $DateTimeObject-&gt;_CPANDateTimeObjectCreate(
+        TimeZone =&gt; 'Europe/Berlin',
+    );
+
+</pre></dd><dd><pre>    # Create an object with a specific date and time:
+    my $CPANDateTimeObject = $DateTimeObject-&gt;_CPANDateTimeObjectCreate(
+        Year     =&gt; 2016,
+        Month    =&gt; 1,
+        Day      =&gt; 22,
+        Hour     =&gt; 12,                 # optional, defaults to 0
+        Minute   =&gt; 35,                 # optional, defaults to 0
+        Second   =&gt; 59,                 # optional, defaults to 0
+        TimeZone =&gt; 'Europe/Berlin',    # optional, defaults to setting of SysConfig OTRSTimeZone
+    );
+
+</pre></dd><dd><pre>    # Create an object from an epoch timestamp. These timestamps are always UTC/GMT,
+    # hence time zone will automatically be set to UTC.
+    #
+    # If parameter Epoch is present, all other parameters except TimeZone will be ignored.
+    my $CPANDateTimeObject = $DateTimeObject-&gt;_CPANDateTimeObjectCreate(
+        Epoch =&gt; 1453911685,
+    );
+
+</pre></dd><dd><pre>    # Create an object from a date/time string.
+    #
+    # If parameter String is given, Year, Month, Day, Hour, Minute and Second will be ignored
+    my $CPANDateTimeObject = $DateTimeObject-&gt;_CPANDateTimeObjectCreate(
+        String   =&gt; '2016-08-14 22:45:00',
+        TimeZone =&gt; 'Europe/Berlin',        # optional, defaults to setting of SysConfig OTRSTimeZone
+    );
+
+</pre></dd>	<dt>_OpIsNewerThan()</dt>
+		<dd><p>Operator overloading for &gt;</p></dd>
+	<dt>_OpIsOlderThan()</dt>
+		<dd><p>Operator overloading for &lt;</p></dd>
+	<dt>_OpIsNewerThanOrEquals()</dt>
+		<dd><p>Operator overloading for &gt;=</p></dd>
+	<dt>_OpIsOlderThanOrEquals()</dt>
+		<dd><p>Operator overloading for &lt;=</p></dd>
+	<dt>_OpEquals()</dt>
+		<dd><p>Operator overloading for ==</p></dd>
+	<dt>_OpNotEquals()</dt>
+		<dd><p>Operator overloading for !=</p></dd>
+</dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
