@@ -78,7 +78,7 @@ $(document).ready(function() {
                     Version:  '5.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS::ITSM 5',
-                    Languages: ['en']
+                    Languages: ['en', 'ru', 'zh_CN']
                 },
                 {
                     Version:  '4.0',
