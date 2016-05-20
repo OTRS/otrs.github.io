@@ -9,6 +9,7 @@ $(document).ready(function() {
         de: 'Deutsch (de)',
         hu: 'Magyar (hu)',
         ja: '日本語 (ja)',
+        pt_BR: 'português brasileiro (pt_BR)',
         ru: 'Русский (ru)',
         sw: 'Swahili (sw)',
         zh_CN: '简体中文 (zh_CN)'
@@ -55,7 +56,7 @@ $(document).ready(function() {
                     Version:     '5.0',
                     HTMLPath:    'stable',
                     Name:        'OTRS 5',
-                    Languages:   ['en', 'hu'],
+                    Languages:   ['en', 'pt_BR', 'hu'],
                     PDFPath:     'doc-otrsbusiness',
                     PDFFileName: 'otrs_business_solution_book.pdf'
                 },
