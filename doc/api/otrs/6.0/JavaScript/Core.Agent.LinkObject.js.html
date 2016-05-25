@@ -10,7 +10,7 @@
 <!-- otrs.github.io -->
 
     <meta charset="utf-8">
-    <title>OTRS API Reference JavaScript: Source: Core.Exception.js</title>
+    <title>OTRS API Reference JavaScript: Source: Core.Agent.LinkObject.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -26,7 +26,7 @@
 <div id="main">
 
     <h1 class="page-title">OTRS API Reference JavaScript</h1>
-    <h2 class="page-title">Source: Core.Exception.js</h2>
+    <h2 class="page-title">Source: Core.Agent.LinkObject.js</h2>
 
     
 
@@ -46,167 +46,45 @@
 "use strict";
 
 var Core = Core || {};
+Core.Agent = Core.Agent || {};
 
 /**
- * @namespace Core.Exception
- * @memberof Core
+ * @namespace Core.Agent.LinkObject
+ * @memberof Core.Agent
  * @author OTRS AG
  * @description
- *      This namespace contains the functions for handling application errors.
+ *      This namespace contains the special module functions for LinkObject.
  */
-Core.Exception = (function (TargetNS) {
+Core.Agent.LinkObject = (function (TargetNS) {
 
     /**
-     * @name Init
-     * @memberof Core.Exception
+     * @name RegisterUpdatePreferences
+     * @memberof Core.Agent.LinkObject
      * @function
+     * @param {jQueryObject} $ClickedElement - The jQuery object of the element(s) that get the event listener.
+     * @param {string} ElementID - The ID of the element whose content should be updated with the server answer.
+     * @param {jQueryObject} $Form - The jQuery object of the form with the data for the server request.
      * @description
-     *      Initializes the module functionality.
+     *      This function binds a click event on an html element to update the preferences of the given linked object widget
      */
-    TargetNS.Init = function () {
-        /*
-         * Register an 'beforeunload' function which puts a status flag that
-         *  the current page is about to be left. Then AJAX errors because of
-         *  pending AJAX requests must be suppressed.
-         */
-        $(window).bind('beforeunload.Exception', function(){
-            // Use a public member so that we can also set it from a test case.
-            TargetNS.AboutToLeave = true;
-        });
-    };
+    TargetNS.RegisterUpdatePreferences = function ($ClickedElement, ElementID, $Form) {
+        if (isJQueryObject($ClickedElement) &amp;&amp; $ClickedElement.length) {
+            $ClickedElement.click(function () {
+                var URL = Core.Config.Get('Baselink') + Core.AJAX.SerializeForm($Form);
 
-    /**
-     * @name ApplicationError
-     * @memberof Core.Exception
-     * @function
-     * @param {String} ErrorMessage - The error message
-     * @param {String} ErrorType - The error type
-     * @description
-     *      This is the constructor for the application error object.
-     */
-    TargetNS.ApplicationError = function (ErrorMessage, ErrorType) {
-        var Type = ErrorType,
-            Message = ErrorMessage,
-            Types = ['Error', 'InternalError', 'TypeError', 'CommunicationError'],
-            DefaultType = 'Error';
-
-        if (!$.inArray(Type, Types)) {
-            Type = DefaultType;
-        }
-
-        /**
-         * @name GetType
-         * @memberof Core.Exception.ApplicationError
-         * @function
-         * @returns {String} Type of error.
-         * @description
-         *      Returns the type of error this ErrorObject is of (e.g. InternalError, TypeError, CommunicationError).
-         */
-        this.GetType = function () {
-            return Type;
-        };
-
-        /**
-         * @name GetMessage
-         * @memberof Core.Exception.ApplicationError
-         * @function
-         * @returns {String} Error message.
-         * @description
-         *      Returns the error message of theErrorObject.
-         */
-        this.GetMessage = function () {
-            return Message;
-        };
-    };
-
-    /**
-     * @name Throw
-     * @memberof Core.Exception
-     * @function
-     * @param {String} ErrorMessage - The error message
-     * @param {String} ErrorType - The error type
-     * @description
-     *      This function throws an application error.
-     */
-    TargetNS.Throw = function (ErrorMessage, ErrorType) {
-        throw new TargetNS.ApplicationError(ErrorMessage, ErrorType);
-    };
-
-    /**
-     * @name Throw
-     * @memberof Core.Exception
-     * @function
-     * @returns {Boolean} True, if ErrorObject is of given type, false otherwise.
-     * @param {Object} ErrorObject - The error object
-     * @param {String} ErrorType - The error type to be checked
-     * @description
-     *      Checks if the given ErrorObject is an ApplicationError of the given Type.
-     */
-    TargetNS.IsErrorOfType = function (ErrorObject, ErrorType) {
-        return (ErrorObject instanceof TargetNS.ApplicationError &amp;&amp; ErrorObject.GetType === ErrorType);
-    };
-
-    /**
-     * @name Throw
-     * @memberof Core.HandleFinalError
-     * @function
-     * @returns {Boolean} If the error could be handled, returns if it was shown to the user or not.
-     * @param {Object} ErrorObject - The error object
-     * @param {String} [Trace] - A string containing the stacktrace
-     * @description
-     *      This function handles the given error object (used as last possibility to catch the error).
-     */
-    TargetNS.HandleFinalError = function (ErrorObject, Trace) {
-        var UserErrorMessage = 'An error occurred! Do you want to see the complete error message?';
-
-        if (ErrorObject instanceof TargetNS.ApplicationError) {
-            // Suppress AJAX errors which were raised by leaving the page while the AJAX call was still running.
-            if (TargetNS.AboutToLeave &amp;&amp; ErrorObject.GetType() === 'CommunicationError') {
-                return false;
-            }
-            TargetNS.ShowError(ErrorObject.GetMessage(), ErrorObject.GetType(), Trace);
-            if (window.confirm(UserErrorMessage)) {
-                alert(ErrorObject.GetMessage() + (Trace ? ('\n\n' + Trace) : ''));
-            }
-            return true;
-        }
-        else if (ErrorObject instanceof Error) {
-            TargetNS.ShowError(ErrorObject.message, 'JavaScriptError', Trace);
-            if (window.confirm(UserErrorMessage)) {
-                alert(ErrorObject.message + (Trace ? ('\n\n' + Trace) : ''));
-            }
-            throw ErrorObject; // rethrow
-        }
-        else {
-            TargetNS.ShowError(ErrorObject, 'UndefinedError', Trace);
-            if (window.confirm(UserErrorMessage)) {
-                alert(ErrorObject + (Trace ? ('\n\n' + Trace) : ''));
-            }
-            throw ErrorObject; // rethrow
+                Core.AJAX.ContentUpdate($('#' + ElementID), URL, function () {
+                    Core.UI.ToggleTwoContainer($('#linkobject' + ElementID + '-setting'), $('#' + ElementID));
+                    Core.UI.InitWidgetActionToggle();
+                    Core.Agent.TableFilters.SetAllocationList();
+                });
+            });
         }
     };
 
-    /**
-     * @name ShowError
-     * @memberof Core.HandleFinalError
-     * @function
-     * @param {String} ErrorMessage - The error message.
-     * @param {String} ErrorType - The error type.
-     * @param {String} [Trace] - The stacktrace.
-     * @description
-     *      This function shows an error message in the log.
-     */
-    TargetNS.ShowError = function (ErrorMessage, ErrorType, Trace) {
-        Core.Debug.Log('[ERROR] ' + ErrorType + ': ' + ErrorMessage);
-        if (typeof Trace !== 'undefined') {
-            Core.Debug.Log('[STACKTRACE] ' + Trace);
-        }
-    };
-
-    Core.Init.RegisterNamespace(TargetNS, 'DOCUMENT_READY');
+    Core.Agent.TableFilters.SetAllocationList();
 
     return TargetNS;
-}(Core.Exception || {}));
+}(Core.Agent.LinkObject || {}));
 </code></pre>
         </article>
     </section>
