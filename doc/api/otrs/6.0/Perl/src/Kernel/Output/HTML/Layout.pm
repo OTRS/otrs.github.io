@@ -1530,6 +1530,13 @@ sub Footer {
     # get OTRS business object
     my $OTRSBusinessObject = $Kernel::OM->Get('Kernel::System::OTRSBusiness');
 
+    # Banner
+    if ( !$ConfigObject->Get('Secure::DisableBanner') ) {
+        $Self->Block(
+            Name => 'Banner',
+        );
+    }
+
     # don't check for business package if the database was not yet configured (in the installer)
     if ( $ConfigObject->Get('SecureMode') ) {
         $Param{OTRSBusinessIsInstalled} = $OTRSBusinessObject->OTRSBusinessIsInstalled();
@@ -1541,6 +1548,7 @@ sub Footer {
         CGIHandle                      => $Self->{CGIHandle},
         WebPath                        => $ConfigObject->Get('Frontend::WebPath'),
         Action                         => $Self->{Action},
+        Subaction                      => $Self->{Subaction},
         SessionIDCookie                => $Self->{SessionIDCookie},
         SessionName                    => $Self->{SessionName},
         SessionID                      => $Self->{SessionID},
@@ -1562,7 +1570,7 @@ sub Footer {
                 &&
                 (
                 $ConfigObject->Get('Ticket::SearchIndexModule')
-                == 'Kernel::System::Ticket::ArticleSearchIndex::StaticDB'
+                eq 'Kernel::System::Ticket::ArticleSearchIndex::StaticDB'
                 )
             ) ? 1 : 0,
         SearchFrontend => $JSCall,
@@ -3469,6 +3477,11 @@ sub CustomerLogin {
     $Self->LoaderCreateCustomerJSCalls();
     $Self->LoaderCreateJavaScriptTranslationData();
 
+    $Self->AddJSData(
+        Key   => 'Baselink',
+        Value => $Self->{Baselink},
+    );
+
     # Add header logo, if configured
     if ( defined $ConfigObject->Get('CustomerLogo') ) {
         my %CustomerLogo = %{ $ConfigObject->Get('CustomerLogo') };
@@ -3794,6 +3807,7 @@ sub CustomerFooter {
         CGIHandle                => $Self->{CGIHandle},
         WebPath                  => $ConfigObject->Get('Frontend::WebPath'),
         Action                   => $Self->{Action},
+        Subaction                => $Self->{Subaction},
         SessionIDCookie          => $Self->{SessionIDCookie},
         SessionName              => $Self->{SessionName},
         SessionID                => $Self->{SessionID},
