@@ -1429,10 +1429,18 @@ via the Preferences button after logging in.
             Table => 'customer_user',
 #            ForeignDB => 0,    # set this to 1 if your table does not have create_time, create_by, change_time and change_by fields
 
-            # CaseSensitive will control if the SQL statements need LOWER()
-            #   function calls to work case insensitively. Setting this to
-            #   1 will improve performance dramatically on large databases.
-            CaseSensitive => 0,
+            # CaseSensitive defines if the data storage of your DBMS is case sensitive and will be
+            # preconfigured within the database driver by default.
+            # If the collation of your data storage differs from the default settings,
+            # you can set the current behavior ( either 1 = CaseSensitive or 0 = CaseINSensitive )
+            # to fit your environment.
+            #
+#            CaseSensitive => 0,
+
+            # SearchCaseSensitive will control if the searches within the data storage are performed
+            # case sensitively (if possible) or not. Change this option to 1, if you want to search case sensitive.
+            # This can improve the performance dramatically on large databases.
+            SearchCaseSensitive => 0,
         },
 
         # customer unique id
@@ -1478,7 +1486,6 @@ via the Preferences button after logging in.
             # CustomerUserSearchFields, CustomerUserPostMasterSearchFields, CustomerUserListFields, CustomerUserNameFields
             #
             # Note that the columns 'frontend' and 'readonly' will be ignored for dynamic fields.
-            # Note that dynamic fields are not supported for LDAP.
 
             # note: Login, Email and CustomerID needed!
             # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
@@ -1596,10 +1603,18 @@ via the Preferences button after logging in.
             Table => 'customer_company',
 #            ForeignDB => 0,    # set this to 1 if your table does not have create_time, create_by, change_time and change_by fields
 
-            # CaseSensitive will control if the SQL statements need LOWER()
-            #   function calls to work case insensitively. Setting this to
-            #   1 will improve performance dramatically on large databases.
-            CaseSensitive => 0,
+            # CaseSensitive defines if the data storage of your DBMS is case sensitive and will be
+            # preconfigured within the database driver by default.
+            # If the collation of your data storage differs from the default settings,
+            # you can set the current behavior ( either 1 = CaseSensitive or 0 = CaseINSensitive )
+            # to fit your environment.
+            #
+#            CaseSensitive => 0,
+
+            # SearchCaseSensitive will control if the searches within the data storage are performed
+            # case sensitively (if possible) or not. Change this option to 1, if you want to search case sensitive.
+            # This can improve the performance dramatically on large databases.
+            SearchCaseSensitive => 0,
         },
 
         # company unique id
