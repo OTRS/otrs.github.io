@@ -1024,20 +1024,20 @@ sub PermissionUserGet {
         UserID => $Param{UserID},
     );
 
-    return %GroupList if !%RoleList;
+    if ( %RoleList ) {
+        ROLEID:
+        for my $RoleID ( sort keys %RoleList ) {
 
-    ROLEID:
-    for my $RoleID ( sort keys %RoleList ) {
+            next ROLEID if !$RoleID;
 
-        next ROLEID if !$RoleID;
+            # get groups of the role
+            my %RoleGroupList = $Self->PermissionRoleGroupGet(
+                RoleID => $RoleID,
+                Type   => $Param{Type},
+            );
 
-        # get groups of the role
-        my %RoleGroupList = $Self->PermissionRoleGroupGet(
-            RoleID => $RoleID,
-            Type   => $Param{Type},
-        );
-
-        %GroupList = ( %GroupList, %RoleGroupList );
+            %GroupList = ( %GroupList, %RoleGroupList );
+        }
     }
 
     # set cache
@@ -1383,12 +1383,11 @@ sub PermissionUserGroupGet {
 
     return if !%PermissionTypeList;
 
-    # get valid user list
-    my %UserList = $Kernel::OM->Get('Kernel::System::User')->UserList(
-        Type => 'Short',
+    # check if user is valid
+    return if !$Kernel::OM->Get('Kernel::System::User')->GetUserData(
+        UserID => $Param{UserID},
+        Valid  => 1,
     );
-
-    return if !$UserList{ $Param{UserID} };
 
     # get group user data
     my %Permissions = $Self->_DBGroupUserGet(
