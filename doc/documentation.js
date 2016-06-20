@@ -110,7 +110,7 @@ $(document).ready(function() {
                     Version:  '5.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 5',
-                    Languages: ['en']
+                    Languages: ['en', 'hu']
                 },
                 {
                     Version:  '4.0',
