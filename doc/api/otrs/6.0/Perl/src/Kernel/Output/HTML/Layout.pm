@@ -2884,8 +2884,10 @@ sub NavigationBar {
             },
         );
 
-        # show sub menu
+        # show sub menu (only if sub elements available)
         next ITEM if !$Sub;
+        next ITEM if !keys %{$Sub};
+
         $Self->Block(
             Name => 'ItemAreaSub',
             Data => $Item,
@@ -2913,11 +2915,9 @@ sub NavigationBar {
     );
 
     my $NavbarOrderItems = $UserPreferences{'UserNavBarItemsOrder'} || '';
-    $Self->Block(
-        Name => 'NavbarOrderItems',
-        Data => {
-            'NavbarOrderItems' => $NavbarOrderItems,
-        },
+    $Self->AddJSData(
+        Key   => 'NavbarOrderItems',
+        Value => $NavbarOrderItems,
     );
 
     # show search icon if any search router is configured
