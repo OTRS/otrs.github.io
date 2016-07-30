@@ -175,12 +175,18 @@ sub ProviderProcessRequest {
             );
         }
 
+        # Remove trailing "/" form configuration and request for comparison
+        $NameSpaceFromHeader =~ s{\A ( .+? ) / \z}{$1}msx;
+
+        my $NameSpace = $Config->{NameSpace};
+        $NameSpace =~ s{\A ( .+? ) / \z}{$1}msx;
+
         # check name-space for match to configuration
-        if ( $NameSpaceFromHeader ne $Config->{NameSpace} ) {
+        if ( $NameSpaceFromHeader ne $NameSpace ) {
             return $Self->_Error(
                 Summary =>
                     "Namespace from SOAPAction '$NameSpaceFromHeader' does not match namespace"
-                    . " from configuration '$Config->{NameSpace}'",
+                    . " from configuration '$NameSpace'",
             );
         }
     }
