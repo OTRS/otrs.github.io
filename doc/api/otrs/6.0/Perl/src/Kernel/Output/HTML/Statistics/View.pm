@@ -796,9 +796,8 @@ sub XAxisWidget {
 
     my $Stat = $Param{Stat};
 
+    # get needed objects
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    #my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # if only one value is available select this value
@@ -806,6 +805,8 @@ sub XAxisWidget {
         $Stat->{UseAsXvalue}[0]{Selected} = 1;
         $Stat->{UseAsXvalue}[0]{Fixed}    = 1;
     }
+
+    my @XAxisElements;
 
     for my $ObjectAttribute ( @{ $Stat->{UseAsXvalue} } ) {
         my %BlockData;
@@ -873,12 +874,21 @@ sub XAxisWidget {
             $Block = 'MultiSelectField';
         }
 
+        # store data, which will be sent to JS
+        push @XAxisElements, $BlockData{Element} if $BlockData{Checked};
+
         # show the input element
         $LayoutObject->Block(
             Name => $Block,
             Data => \%BlockData,
         );
     }
+
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'XAxisElements',
+        Value => \@XAxisElements,
+    );
 
     my $Output .= $LayoutObject->Output(
         TemplateFile => 'Statistics/XAxisWidget',
@@ -894,10 +904,11 @@ sub YAxisWidget {
 
     my $Stat = $Param{Stat};
 
+    # get needed objects
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    #my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my @YAxisElements;
 
     OBJECTATTRIBUTE:
     for my $ObjectAttribute ( @{ $Stat->{UseAsValueSeries} } ) {
@@ -969,12 +980,21 @@ sub YAxisWidget {
             $Block = 'MultiSelectField';
         }
 
+        # store data, which will be sent to JS
+        push @YAxisElements, $BlockData{Element} if $BlockData{Checked};
+
         # show the input element
         $LayoutObject->Block(
             Name => $Block,
             Data => \%BlockData,
         );
     }
+
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'YAxisElements',
+        Value => \@YAxisElements,
+    );
 
     my $Output .= $LayoutObject->Output(
         TemplateFile => 'Statistics/YAxisWidget',
@@ -990,10 +1010,11 @@ sub RestrictionsWidget {
 
     my $Stat = $Param{Stat};
 
+    # get needed objects
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    #my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my @RestrictionElements;
 
     for my $ObjectAttribute ( @{ $Stat->{UseAsRestriction} } ) {
         my %BlockData;
@@ -1066,12 +1087,21 @@ sub RestrictionsWidget {
             %BlockData = ( %BlockData, %TimeData );
         }
 
+        # store data, which will be sent to JS
+        push @RestrictionElements, $BlockData{Element} if $BlockData{Checked};
+
         # show the input element
         $LayoutObject->Block(
             Name => $ObjectAttribute->{Block},
             Data => \%BlockData,
         );
     }
+
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'RestrictionElements',
+        Value => \@RestrictionElements,
+    );
 
     my $Output .= $LayoutObject->Output(
         TemplateFile => 'Statistics/RestrictionsWidget',
@@ -1106,6 +1136,12 @@ sub PreviewWidget {
             UserID   => $Param{UserID},
         );
     }
+
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'PreviewResult',
+        Value => $Frontend{PreviewResult},
+    );
 
     my $Output .= $LayoutObject->Output(
         TemplateFile => 'Statistics/PreviewWidget',
@@ -1470,15 +1506,23 @@ sub StatsResultRender {
             Value => $Title,
             Type  => 'Small',
         );
-        $Output .= $LayoutObject->Output(
-            Data => {
-                %{$Stat},
+
+        # send data to JS
+        $LayoutObject->AddJSData(
+            Key   => 'D3Data',
+            Value => {
                 RawData => [
                     [$Title],
                     $HeadArrayRef,
                     @StatArray,
                 ],
-                %Param,
+                Format => $Param{Format},
+                }
+        );
+
+        $Output .= $LayoutObject->Output(
+            Data => {
+                %{$Stat},
             },
             TemplateFile => 'Statistics/StatsResultRender/D3',
         );
