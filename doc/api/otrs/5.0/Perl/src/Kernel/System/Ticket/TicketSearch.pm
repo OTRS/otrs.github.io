@@ -2137,6 +2137,25 @@ sub TicketSearch {
                 $SQLSelect .= ", $SQLOrderField ";
                 $SQLExt    .= " $SQLOrderField ";
             }
+            elsif (
+                $SortByArray[$Count] eq 'Owner'
+                || $SortByArray[$Count] eq 'Responsible'
+                )
+            {
+                # include first and last name in select
+                $SQLSelect
+                    .= ', ' . $SortOptions{ $SortByArray[$Count] }
+                    . ", u.first_name, u.last_name ";
+
+                # join the users table on user's id
+                $SQLFrom
+                    .= ' JOIN users u '
+                    . ' ON ' . $SortOptions{ $SortByArray[$Count] } . ' = u.id ';
+
+                # sort by first and last name
+                my $OrderBySuffix = $OrderByArray[$Count] eq 'Up' ? 'ASC' : 'DESC';
+                $SQLExt .= " u.first_name $OrderBySuffix, u.last_name ";
+            }
             else {
 
                 # regular sort
