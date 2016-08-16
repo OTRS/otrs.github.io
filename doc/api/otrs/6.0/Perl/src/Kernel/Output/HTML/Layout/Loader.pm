@@ -204,7 +204,10 @@ sub LoaderCreateAgentJSCalls {
 
         # get global js
         my $CommonJSList = $ConfigObject->Get('Loader::Agent::CommonJS');
+
+        KEY:
         for my $Key ( sort keys %{$CommonJSList} ) {
+            next KEY if $Key eq '100-CKEditor' && !$ConfigObject->Get('Frontend::RichText');
             push @FileList, @{ $CommonJSList->{$Key} };
         }
 
@@ -665,7 +668,9 @@ sub LoaderCreateCustomerJSCalls {
 
         my @FileList;
 
+        KEY:
         for my $Key ( sort keys %{$CommonJSList} ) {
+            next KEY if $Key eq '100-CKEditor' && !$ConfigObject->Get('Frontend::RichText');
             push @FileList, @{ $CommonJSList->{$Key} };
         }
 
