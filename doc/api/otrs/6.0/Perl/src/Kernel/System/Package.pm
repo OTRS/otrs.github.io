@@ -481,8 +481,8 @@ sub PackageInstall {
         }
     }
 
-    # permission check
-    die if !$Self->_FileSystemCheck();
+    # write permission check
+    return if !$Self->_FileSystemCheck();
 
     # check OS
     if ( $Structure{OS} && !$Param{Force} ) {
@@ -645,8 +645,8 @@ sub PackageReinstall {
     # parse source file
     my %Structure = $Self->PackageParse(%Param);
 
-    # permission check
-    die if !$Self->_FileSystemCheck();
+    # write permission check
+    return if !$Self->_FileSystemCheck();
 
     # check OS
     if ( $Structure{OS} && !$Param{Force} ) {
@@ -758,8 +758,8 @@ sub PackageUpgrade {
         return;
     }
 
-    # permission check
-    die if !$Self->_FileSystemCheck();
+    # write permission check
+    return if !$Self->_FileSystemCheck();
 
     # check OS
     if ( $Structure{OS} && !$Param{Force} ) {
@@ -1149,8 +1149,8 @@ sub PackageUninstall {
         return if !$Self->_CheckPackageDepends( Name => $Structure{Name}->{Content} );
     }
 
-    # permission check
-    die if !$Self->_FileSystemCheck();
+    # write permission check
+    return if !$Self->_FileSystemCheck();
 
     # uninstall code (pre)
     if ( $Structure{CodeUninstall} ) {
@@ -2625,8 +2625,8 @@ returns true if the distribution package (located under ) can get installed
 sub PackageInstallDefaultFiles {
     my ( $Self, %Param ) = @_;
 
-    # permission check
-    die if !$Self->_FileSystemCheck();
+    # write permission check
+    return if !$Self->_FileSystemCheck();
 
     # get main object
     my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
@@ -3574,43 +3574,29 @@ sub _FileSystemCheck {
 
     my $Home = $Param{Home} || $Self->{Home};
 
-    # check Home
-    if ( !-e $Home ) {
+    my @Filepaths = (
+        '',
+        '/bin/',
+        '/Kernel/',
+        '/Kernel/System/',
+        '/Kernel/Output/',
+        '/Kernel/Output/HTML/',
+        '/Kernel/Modules/',
+    );
+
+    # check write permissions
+    FILEPATH:
+    for my $Filepath (@Filepaths) {
+
+        next FILEPATH if -w $Home . $Filepath;
+
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "No such home directory: $Home!",
+            Message  => "ERROR: Need write permissions for directory $Home$Filepath\n"
+                . " Try: $Home/bin/otrs.SetPermissions.pl!",
         );
+
         return;
-    }
-
-    # get main object
-    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
-
-    # create test files in following directories
-    for my $Filepath (
-        qw(/bin/ /Kernel/ /Kernel/System/ /Kernel/Output/ /Kernel/Output/HTML/ /Kernel/Modules/)
-        )
-    {
-        my $Location = $Home . $Filepath . "check_permissions.$$";
-        my $Content  = 'test';
-
-        # create test file
-        my $Write = $MainObject->FileWrite(
-            Location => $Location,
-            Content  => \$Content,
-        );
-
-        if ( !$Write ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "ERROR: Need write permissions for directory $Home$Filepath\n"
-                    . " Try: $Home/bin/otrs.SetPermissions.pl!",
-            );
-            return;
-        }
-
-        # delete test file
-        $MainObject->FileDelete( Location => $Location );
     }
 
     $Self->{FileSystemCheckAlreadyDone} = 1;
