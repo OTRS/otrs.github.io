@@ -1152,17 +1152,26 @@ sub _GetChecks {
 
         # check if is a dynamic field with data
         next TICKETATTRIBUTE if $TicketAttribute !~ m{ \A DynamicField_ }smx;
-        next TICKETATTRIBUTE if !$Checks{Ticket}->{$TicketAttribute};
-        next TICKETATTRIBUTE if
-            ref $Checks{Ticket}->{$TicketAttribute} eq 'ARRAY'
-            && !IsArrayRefWithData( $Checks{Ticket}->{$TicketAttribute} );
+        next TICKETATTRIBUTE if !defined $Checks{Ticket}->{$TicketAttribute};
+        next TICKETATTRIBUTE if !length $Checks{Ticket}->{$TicketAttribute};
 
-        # compare if data is different and skip on same data
-        if ( $Checks{DynamicField}->{$TicketAttribute} ) {
-            next TICKETATTRIBUTE if !DataIsDifferent(
+        if (
+            ref $Checks{Ticket}->{$TicketAttribute} eq 'ARRAY'
+            && !IsArrayRefWithData( $Checks{Ticket}->{$TicketAttribute} )
+            )
+        {
+            next TICKETATTRIBUTE;
+        }
+
+        # Compare if data is different and skip on same data.
+        if (
+            !DataIsDifferent(
                 Data1 => $Checks{Ticket}->{$TicketAttribute},
                 Data2 => $Checks{DynamicField}->{$TicketAttribute},
-            );
+            )
+            )
+        {
+            next TICKETATTRIBUTE;
         }
 
         $Checks{DynamicField}->{$TicketAttribute} = $Checks{Ticket}->{$TicketAttribute};
