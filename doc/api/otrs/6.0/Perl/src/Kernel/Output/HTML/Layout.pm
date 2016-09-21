@@ -1037,8 +1037,17 @@ sub Error {
             ) || '';
         }
     }
+
     if ( !$Param{Message} ) {
         $Param{Message} = $Param{BackendMessage};
+
+        # Don't check for business package if the database was not yet configured (in the installer).
+        if ( $Kernel::OM->Get('Kernel::Config')->Get('SecureMode')
+            && $Kernel::OM->Get('Kernel::Config')->Get('DatabaseDSN')
+            && !$Kernel::OM->Get('Kernel::System::OTRSBusiness')->OTRSBusinessIsInstalled()
+        ) {
+            $Param{ShowOTRSBusinessHint}++;
+        }
     }
 
     if ( $Param{BackendTraceback} ) {
@@ -1046,11 +1055,6 @@ sub Error {
             Name => 'ShowBackendTraceback',
             Data => \%Param,
         );
-    }
-
-    # Don't check for business package if the database was not yet configured (in the installer)
-    if ( $Kernel::OM->Get('Kernel::Config')->Get('SecureMode') ) {
-        $Param{OTRSBusinessIsInstalled} = $Kernel::OM->Get('Kernel::System::OTRSBusiness')->OTRSBusinessIsInstalled();
     }
 
     # create & return output
@@ -5576,25 +5580,8 @@ sub SetRichTextParameters {
     my $ConfigObject   = $Kernel::OM->Get('Kernel::Config');
 
     # get needed variables
-    my $ScreenRichTextHeight;
-    my $ScreenRichTextWidth;
-
-    # set variable for 'RichText.Height' property
-    if ( $Param{Data}->{RichTextHeight} > 0 ) {
-        $ScreenRichTextHeight = $Param{Data}->{RichTextHeight};
-    }
-    else {
-        $ScreenRichTextHeight = $ConfigObject->Get("Frontend::RichTextHeight");
-    }
-
-    # set variable for 'RichText.Width' property
-    if ( $Param{Data}->{RichTextWidth} > 0 ) {
-        $ScreenRichTextWidth = $Param{Data}->{RichTextWidth};
-    }
-    else {
-        $ScreenRichTextWidth = $ConfigObject->Get("Frontend::RichTextWidth");
-    }
-
+    my $ScreenRichTextHeight = $Param{Data}->{RichTextHeight} || $ConfigObject->Get("Frontend::RichTextHeight");
+    my $ScreenRichTextWidth  = $Param{Data}->{RichTextWidth}  || $ConfigObject->Get("Frontend::RichTextWidth");
     my $PictureUploadAction = $Param{Data}->{RichTextPictureUploadAction} || '';
     my $TextDir             = $Self->{TextDirection}                      || '';
     my $SpellChecker        = $Self->{BrowserSpellCheckerInline}          || '';
