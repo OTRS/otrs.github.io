@@ -15,6 +15,9 @@ use warnings;
 
 use File::Path qw(rmtree);
 
+# Load DateTime so that we can override functions for the FixedTimeSet().
+use DateTime;
+
 use Kernel::System::SysConfig;
 
 our @ObjectDependencies = (
@@ -339,7 +342,7 @@ sub GetTestHTTPHostname {
     return $Host;
 }
 
-my $FixedDateTimeObject;
+my $FixedTime;
 
 =item FixedTimeSet()
 
@@ -350,9 +353,9 @@ the current system time will be used.
 All calls to methods of Kernel::System::Time and Kernel::System::DateTime will
 use the given time afterwards.
 
-    $HelperObject->FixedTimeSet(366475757); # with Timestamp
-    $HelperObject->FixedTimeSet($DateTimeObject); # with previously created DateTime object
-    $HelperObject->FixedTimeSet(); # set to current date and time
+    $HelperObject->FixedTimeSet(366475757);         # with Timestamp
+    $HelperObject->FixedTimeSet($DateTimeObject);   # with previously created DateTime object
+    $HelperObject->FixedTimeSet();                  # set to current date and time
 
 Returns:
     Timestamp
@@ -362,31 +365,19 @@ Returns:
 sub FixedTimeSet {
     my ( $Self, $TimeToSave ) = @_;
 
-    if ( defined $TimeToSave ) {
-        if ( ref $TimeToSave eq 'Kernel::System::DateTime' ) {
-            $FixedDateTimeObject = $TimeToSave;
-        }
-        else {
-            $FixedDateTimeObject = $Kernel::OM->Create(
-                'Kernel::System::DateTime',
-                ObjectParams => {
-                    Epoch => $TimeToSave,
-                },
-            );
-        }
+    if ( $TimeToSave && ref $TimeToSave eq 'Kernel::System::DateTime' ) {
+        $FixedTime = $TimeToSave->ToEpoch();
     }
     else {
-        $FixedDateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+        $FixedTime = $TimeToSave // CORE::time()
     }
 
-    # This is needed to reload objects that directly use the time functions
+    # This is needed to reload objects that directly use the native time functions
     #   to get a hold of the overrides.
     my @Objects = (
         'Kernel::System::Time',
         'Kernel::System::Cache::FileStorable',
         'Kernel::System::PID',
-        'DateTime',
-        'Kernel::System::DateTime',
     );
 
     for my $Object (@Objects) {
@@ -400,7 +391,7 @@ sub FixedTimeSet {
         }
     }
 
-    return $FixedDateTimeObject->ToEpoch();
+    return $FixedTime;
 }
 
 =item FixedTimeUnset()
@@ -412,8 +403,7 @@ restores the regular system time behaviour.
 sub FixedTimeUnset {
     my ($Self) = @_;
 
-    undef $FixedDateTimeObject;
-
+    undef $FixedTime;
     return;
 }
 
@@ -427,49 +417,44 @@ set by FixedTimeSet(). You can pass a negative value to go back in time.
 sub FixedTimeAddSeconds {
     my ( $Self, $SecondsToAdd ) = @_;
 
-    my $FixedDateTimeObject = $Self->FixedDateTimeObjectGet();
-    return if !defined $FixedDateTimeObject;
-
-    if ( $SecondsToAdd > 0 ) {
-        $FixedDateTimeObject->Add( Seconds => $SecondsToAdd );
-    }
-    else {
-        $FixedDateTimeObject->Subtract( Seconds => abs $SecondsToAdd );
-    }
-
+    return if !defined $FixedTime;
+    $FixedTime += $SecondsToAdd;
     return;
-}
-
-=item FixedDateTimeObjectGet()
-
-Returns the fixed DateTime object that is currently being used/set.
-
-=cut
-
-sub FixedDateTimeObjectGet {
-    my ($Self) = @_;
-
-    return $FixedDateTimeObject;
 }
 
 # See http://perldoc.perl.org/5.10.0/perlsub.html#Overriding-Built-in-Functions
 BEGIN {
+    no warnings 'redefine';
     *CORE::GLOBAL::time = sub {
-        return defined $FixedDateTimeObject ? $FixedDateTimeObject->ToEpoch() : CORE::time();
+        return defined $FixedTime ? $FixedTime : CORE::time();
     };
     *CORE::GLOBAL::localtime = sub {
         my ($Time) = @_;
         if ( !defined $Time ) {
-            $Time = defined $FixedDateTimeObject ? $FixedDateTimeObject->ToEpoch() : CORE::time();
+            $Time = defined $FixedTime ? $FixedTime : CORE::time();
         }
         return CORE::localtime($Time);
     };
     *CORE::GLOBAL::gmtime = sub {
         my ($Time) = @_;
         if ( !defined $Time ) {
-            $Time = defined $FixedDateTimeObject ? $FixedDateTimeObject->ToEpoch() : CORE::time();
+            $Time = defined $FixedTime ? $FixedTime : CORE::time();
         }
         return CORE::gmtime($Time);
+    };
+
+    # Newer versions of DateTime provide a function _core_time() to override for time simulations.
+    *DateTime::_core_time = sub {    ## no critic
+        return defined $FixedTime ? $FixedTime : CORE::time();
+    };
+
+    # Make sure versions of DateTime also use _core_time() it by overriding now() as well.
+    *DateTime::now = sub {
+        my $Self = shift;
+        return $Self->from_epoch(
+            epoch => $Self->_core_time(),
+            @_
+        );
     };
 }
 
