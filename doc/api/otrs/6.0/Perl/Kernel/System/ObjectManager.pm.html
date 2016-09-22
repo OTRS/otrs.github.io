@@ -64,7 +64,18 @@
 	<li><a href="#Which_objects_can_be_loaded">Which objects can be loaded?</a></li>
 </ul>
 </li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_METHODS">PUBLIC METHODS</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Get">Get()</a></li>
+	<li><a href="#Create">Create()</a></li>
+	<li><a href="#ObjectInstanceRegister">ObjectInstanceRegister()</a></li>
+	<li><a href="#ObjectParamAdd">ObjectParamAdd()</a></li>
+	<li><a href="#ObjectEventsHandle">ObjectEventsHandle()</a></li>
+	<li><a href="#ObjectsDiscard">ObjectsDiscard()</a></li>
+	<li><a href="#ObjectRegisterEventHandler">ObjectRegisterEventHandler()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -153,98 +164,408 @@ By default, the ObjectManager will die if a constructor does not return an objec
         AllowConstructorFailure =&gt; 0,  # default 0
     );
 
-</pre><h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>Creates a new instance of Kernel::System::ObjectManager.</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+
+
+</pre><h1 id="PUBLIC_METHODS">PUBLIC METHODS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+    my $Self = bless {}, $Type;
+
+    $Self->{Debug} = delete $Param{Debug};
+
+    for my $Parameter ( sort keys %Param ) {
+        $Self->{Param}->{$Parameter} = $Param{$Parameter};
+    }
+
+    # Kernel::System::Encode->new() initializes the environment, so we need to
+    #   already create an instance here to make sure it is always done and done
+    #   at the beginning of things.
+    $Self->Get('Kernel::System::Encode');
+
+    return $Self;
+}
+</pre></div>
+
+<p>Creates a new instance of Kernel::System::ObjectManager.</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
 
-</pre></dd>		<dd><p>Sometimes objects need parameters to be sent to their constructors,
+</pre><p>Sometimes objects need parameters to be sent to their constructors,
 these can also be passed to the ObjectManager's constructor like in the following example.
-The hash reference will be flattened and passed to the constructor of the object(s).</p></dd>
-<dd><pre>    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+The hash reference will be flattened and passed to the constructor of the object(s).</p>
+
+<pre>    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
         Kernel::System::Log =&gt; {
             LogPrefix =&gt; 'OTRS-MyTestScript',
         },
     );
 
-</pre></dd>		<dd><p>Alternatively, <a href="#ObjectParamAdd">ObjectParamAdd()</a> can be used to set these parameters at runtime (but this
-must happen before the object was created).</p></dd>
-		<dd><p>If the <code>Debug =&gt; 1</code> option is present, destruction of objects
+</pre><p>Alternatively, <a href="#ObjectParamAdd">ObjectParamAdd()</a> can be used to set these parameters at runtime (but this
+must happen before the object was created).</p>
+
+<p>If the <code>Debug =&gt; 1</code> option is present, destruction of objects
 is checked, and a warning is emitted if objects persist after the
-attempt to destroy them.</p></dd>
-	<dt>Get()</dt>
-		<dd><p>Retrieves a singleton object, and if it not yet exists, implicitly creates one for you.</p></dd>
-<dd><pre>    my $ConfigObject = $Kernel::OM-&gt;Get('Kernel::Config');
+attempt to destroy them.</p>
 
-</pre></dd><dd><pre>    my $ConfigObject2 = $Kernel::OM-&gt;Get('Kernel::Config'); # returns the same ConfigObject as above
+<h2 id="Get">Get()</h2>
 
-</pre></dd>	<dt>Create()</dt>
-		<dd><p>Creates a new object instance. This instance will not be managed by the object manager later on.</p></dd>
-<dd><pre>    my $DateTimeObject = $Kernel::OM-&gt;Create('Kernel::System::DateTime');
+<p><a href="#" onclick="toggleCode('method_Get');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Get">
+                                        <pre>
 
-</pre></dd><dd><pre>    my $DateTimeObject2 = $Kernel::OM-&gt;Create('Kernel::System::DateTime'); # this is a new independent instance
+sub Get {
 
-</pre></dd>		<dd><p>It is also possible to pass in constructor parameters:</p></dd>
-<dd><pre>    my $DateTimeObject = $Kernel::OM-&gt;Create(
+    # No param unpacking for increased performance
+    if ( $_[1] && $_[0]->{Objects}->{ $_[1] } ) {
+        return $_[0]->{Objects}->{ $_[1] };
+    }
+
+    if ( !$_[1] ) {
+        $_[0]->_DieWithError(
+            Error => "Error: Missing parameter (object name)",
+        );
+    }
+
+    return $_[0]->_ObjectBuild( Package => $_[1] );
+}
+</pre></div>
+
+<p>Retrieves a singleton object, and if it not yet exists, implicitly creates one for you.</p>
+
+<pre>    my $ConfigObject = $Kernel::OM-&gt;Get('Kernel::Config');
+
+    my $ConfigObject2 = $Kernel::OM-&gt;Get('Kernel::Config'); # returns the same ConfigObject as above
+
+</pre><h2 id="Create">Create()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Create');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Create">
+                                        <pre>
+
+sub Create {
+    my ( $Self, $Package, %Param ) = @_;
+
+    if ( !$Package ) {
+        $Self->_DieWithError(
+            Error => "Error: Missing parameter (object name)",
+        );
+    }
+
+    return $Self->_ObjectBuild(
+        %Param,
+        Package     => $Package,
+        NoSingleton => 1,
+    );
+}
+</pre></div>
+
+<p>Creates a new object instance. This instance will not be managed by the object manager later on.</p>
+
+<pre>    my $DateTimeObject = $Kernel::OM-&gt;Create('Kernel::System::DateTime');
+
+    my $DateTimeObject2 = $Kernel::OM-&gt;Create('Kernel::System::DateTime'); # this is a new independent instance
+
+</pre><p>It is also possible to pass in constructor parameters:</p>
+
+<pre>    my $DateTimeObject = $Kernel::OM-&gt;Create(
         'Kernel::System::DateTime',
         ObjectParams =&gt; {
             Param1 =&gt; 'Value1',
         },
     );
 
-</pre></dd>		<dd><p>By default, this method will <code>die</code>, if the package cannot be instantiated or the constructor returns undef.
+</pre><p>By default, this method will <code>die</code>, if the package cannot be instantiated or the constructor returns undef.
 You can suppress this with <code>Silent =&gt; 1</code>, for example to not cause exceptions when trying
-to load modules based on user configuration.</p></dd>
-<dd><pre>    my $CustomObject = $Kernel::OM-&gt;Create(
+to load modules based on user configuration.</p>
+
+<pre>    my $CustomObject = $Kernel::OM-&gt;Create(
         'Kernel::System::CustomObject',
         Silent =&gt; 1,
     );
 
-</pre></dd>	<dt>ObjectInstanceRegister()</dt>
-		<dd><p>Adds an existing object instance to the ObjectManager so that it can be accessed by other objects.</p></dd>
-		<dd><p>This should only be used on special circumstances, e. g. in the unit tests to pass $Self to the
-ObjectManager so that it is also available from there as 'Kernel::System::UnitTest'.</p></dd>
-<dd><pre>    $Kernel::OM-&gt;ObjectInstanceRegister(
+</pre><h2 id="ObjectInstanceRegister">ObjectInstanceRegister()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ObjectInstanceRegister');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ObjectInstanceRegister">
+                                        <pre>
+
+sub ObjectInstanceRegister {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Param{Package} || !$Param{Object} ) {
+        $Self->_DieWithError( Error => 'Need Package and Object.' );
+    }
+
+    if ( defined $Self->{Objects}->{ $Param{Package} } ) {
+        $Self->_DieWithError( Error => 'Need $Param{Package} is already registered.' );
+    }
+
+    $Self->{Objects}->{ $Param{Package} } = $Param{Object};
+    $Self->{ObjectDependencies}->{ $Param{Package} } = $Param{Dependencies} // [];
+
+    return 1;
+}
+</pre></div>
+
+<p>Adds an existing object instance to the ObjectManager so that it can be accessed by other objects.</p>
+
+<p>This should only be used on special circumstances, e. g. in the unit tests to pass $Self to the
+ObjectManager so that it is also available from there as 'Kernel::System::UnitTest'.</p>
+
+<pre>    $Kernel::OM-&gt;ObjectInstanceRegister(
         Package      =&gt; 'Kernel::System::UnitTest',
         Object       =&gt; $UnitTestObject,
         Dependencies =&gt; [],         # optional, specify OM-managed packages that the object might depend on
     );
 
-</pre></dd>	<dt>ObjectParamAdd()</dt>
-		<dd><p>Adds arguments that will be passed to constructors of classes
+</pre><h2 id="ObjectParamAdd">ObjectParamAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ObjectParamAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ObjectParamAdd">
+                                        <pre>
+
+sub ObjectParamAdd {
+    my ( $Self, %Param ) = @_;
+
+    for my $Package ( sort keys %Param ) {
+        if ( ref( $Param{$Package} ) eq 'HASH' ) {
+            for my $Key ( sort keys %{ $Param{$Package} } ) {
+                if ( defined $Key ) {
+                    $Self->{Param}->{$Package}->{$Key} = $Param{$Package}->{$Key};
+                }
+                else {
+                    delete $Self->{Param}->{$Package}->{$Key};
+                }
+            }
+        }
+        else {
+            $Self->{Param}->{$Package} = $Param{$Package};
+        }
+    }
+    return;
+}
+</pre></div>
+
+<p>Adds arguments that will be passed to constructors of classes
 when they are created, in the same format as the <code>new()</code> method
-receives them.</p></dd>
-<dd><pre>    $Kernel::OM-&gt;ObjectParamAdd(
+receives them.</p>
+
+<pre>    $Kernel::OM-&gt;ObjectParamAdd(
         'Kernel::System::Ticket' =&gt; {
             Key =&gt; 'Value',
         },
     );
 
-</pre></dd>		<dd><p>To remove a key again, send undef as a value:</p></dd>
-<dd><pre>    $Kernel::OM-&gt;ObjectParamAdd(
+</pre><p>To remove a key again, send undef as a value:</p>
+
+<pre>    $Kernel::OM-&gt;ObjectParamAdd(
         'Kernel::System::Ticket' =&gt; {
             Key =&gt; undef,               # this will remove the key from the hash
         },
     );
 
-</pre></dd>	<dt>ObjectEventsHandle()</dt>
-		<dd><p>Execute all events for registered objects.</p></dd>
-<dd><pre> $Kernel::OM-&gt;ObjectEventsHandle();
+</pre><h2 id="ObjectEventsHandle">ObjectEventsHandle()</h2>
 
-</pre></dd>	<dt>ObjectsDiscard()</dt>
-		<dd><p>Discards internally stored objects, so that the next access to objects
+<p><a href="#" onclick="toggleCode('method_ObjectEventsHandle');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ObjectEventsHandle">
+                                        <pre>
+
+sub ObjectEventsHandle {
+    my ( $Self, %Param ) = @_;
+
+    my $HasQueuedTransactions;
+    EVENTS:
+    for my $Counter ( 1 .. 10 ) {
+        $HasQueuedTransactions = 0;
+        EVENTHANDLERS:
+        for my $EventHandler ( @{ $Self->{EventHandlers} } ) {
+
+            # since the event handlers are weak references,
+            # they might be undef by now.
+            next EVENTHANDLERS if !defined $EventHandler;
+            if ( $EventHandler->EventHandlerHasQueuedTransactions() ) {
+                $HasQueuedTransactions = 1;
+                $EventHandler->EventHandlerTransaction();
+            }
+        }
+        if ( !$HasQueuedTransactions ) {
+            last EVENTS;
+        }
+    }
+    if ($HasQueuedTransactions) {
+        warn "Unable to handle all pending events in 10 iterations";
+    }
+    delete $Self->{EventHandlers};
+
+    return;
+}
+</pre></div>
+
+<p>Execute all events for registered objects.</p>
+
+<pre> $Kernel::OM-&gt;ObjectEventsHandle();
+
+</pre><h2 id="ObjectsDiscard">ObjectsDiscard()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ObjectsDiscard');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ObjectsDiscard">
+                                        <pre>
+
+sub ObjectsDiscard {
+    my ( $Self, %Param ) = @_;
+
+    # fire outstanding events before destroying anything
+    $Self->ObjectEventsHandle();
+
+    # destroy objects before their dependencies are destroyed
+
+    # first step: get the dependencies into a single hash,
+    # so that the topological sorting goes faster
+    my %ReverseDependencies;
+    my @AllObjects;
+    for my $Object ( sort keys %{ $Self->{Objects} } ) {
+        my $Dependencies = $Self->{ObjectDependencies}->{$Object};
+
+        for my $Dependency (@$Dependencies) {
+
+            # undef happens to be the value that uses the least amount
+            # of memory in Perl, and we are only interested in the keys
+            $ReverseDependencies{$Dependency}->{$Object} = undef;
+        }
+        push @AllObjects, $Object;
+    }
+
+    # During an OTRS package upgrade the packagesetup code module has just
+    # recently been copied to it's location in the file system.
+    # In a persistent Perl environment an old version of the module might still be loaded,
+    # as watchdogs like Apache2::Reload haven't had a chance to reload it.
+    # So we need to make sure that the new version is being loaded.
+    # Kernel::System::Main::Require() checks the relative file path, so we need to remove that from %INC.
+    # This is only needed in persistent Perl environment, but does no harm in a CGI environment.
+    if ( $Param{ForcePackageReload} ) {
+
+        my @Objects;
+        if ( $Param{Objects} && @{ $Param{Objects} } ) {
+            @Objects = @{ $Param{Objects} };
+        }
+        else {
+            @Objects = @AllObjects;
+        }
+
+        for my $Object (@Objects) {
+
+            # convert :: to / in order to build a file system path name
+            my $ObjectPath = $Object;
+            $ObjectPath =~ s/::/\//g;
+
+            # attach .pm as file extension
+            $ObjectPath .= '.pm';
+
+            # delete from global %INC hash
+            delete $INC{$ObjectPath};
+        }
+    }
+
+    # second step: post-order recursive traversal
+    my %Seen;
+    my @OrderedObjects;
+    my $Traverser;
+    $Traverser = sub {
+        my ($Object) = @_;
+        return if $Seen{$Object}++;
+        for my $ReverseDependency ( sort keys %{ $ReverseDependencies{$Object} } ) {
+            $Traverser->($ReverseDependency);
+        }
+        push @OrderedObjects, $Object;
+    };
+
+    if ( $Param{Objects} ) {
+        for my $Object ( @{ $Param{Objects} } ) {
+            $Traverser->($Object);
+        }
+    }
+    else {
+        for my $Object (@AllObjects) {
+            $Traverser->($Object);
+        }
+    }
+    undef $Traverser;
+
+    # third step: destruction
+    if ( $Self->{Debug} ) {
+
+        # If there are undeclared dependencies between objects, destruction
+        # might not work in the order that we calculated, but might still work
+        # out in the end.
+        my %DestructionFailed;
+        for my $Object (@OrderedObjects) {
+            my $Checker = $Self->{Objects}->{$Object};
+            weaken($Checker);
+            delete $Self->{Objects}->{$Object};
+
+            if ( defined $Checker ) {
+                $DestructionFailed{$Object} = $Checker;
+                weaken( $DestructionFailed{$Object} );
+            }
+        }
+        for my $Object ( sort keys %DestructionFailed ) {
+            if ( defined $DestructionFailed{$Object} ) {
+                warn "DESTRUCTION OF $Object FAILED!\n";
+                if ( eval { require Devel::Cycle; 1 } ) {
+                    Devel::Cycle::find_cycle( $DestructionFailed{$Object} );
+                }
+                else {
+                    warn "To get more debugging information, please install Devel::Cycle.";
+                }
+            }
+        }
+    }
+    else {
+        for my $Object (@OrderedObjects) {
+            delete $Self->{Objects}{$Object};
+        }
+    }
+
+    # if an object requests an already destroyed object
+    # in its DESTROY method, we might hold it again, and must try again
+    # (but not infinitely)
+    if ( !$Param{Objects} && keys %{ $Self->{Objects} } ) {
+        if ( $Self->{DestroyAttempts} && $Self->{DestroyAttempts} > 3 ) {
+            $Self->_DieWithError( Error => "Loop while destroying objects!" );
+        }
+
+        $Self->{DestroyAttempts}++;
+        $Self->ObjectsDiscard();
+        $Self->{DestroyAttempts}--;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>Discards internally stored objects, so that the next access to objects
 creates them newly. If a list of object names is passed, only
 the supplied objects and their recursive dependencies are destroyed.
-If no list of object names is passed, all stored objects are destroyed.</p></dd>
-<dd><pre>    $Kernel::OM-&gt;ObjectsDiscard();
+If no list of object names is passed, all stored objects are destroyed.</p>
 
-</pre></dd><dd><pre>    $Kernel::OM-&gt;ObjectsDiscard(
+<pre>    $Kernel::OM-&gt;ObjectsDiscard();
+
+    $Kernel::OM-&gt;ObjectsDiscard(
         Objects            =&gt; ['Kernel::System::Ticket', 'Kernel::System::Queue'],
 
-</pre></dd><dd><pre>        # optional
+        # optional
         # forces the packages to be reloaded from the file system
         # sometimes necessary with mod_perl when running CodeUpgrade during a package upgrade
         # if no list of object names is passed, all stored objects are destroyed
@@ -252,21 +573,40 @@ If no list of object names is passed, all stored objects are destroyed.</p></dd>
         ForcePackageReload =&gt; 1,
     );
 
-</pre></dd>		<dd><p>Mostly used for tests that rely on fresh objects, or to avoid large
-memory consumption in long-running processes.</p></dd>
-		<dd><p>Note that if you pass a list of objects to be destroyed, they are destroyed
+</pre><p>Mostly used for tests that rely on fresh objects, or to avoid large
+memory consumption in long-running processes.</p>
+
+<p>Note that if you pass a list of objects to be destroyed, they are destroyed
 in in the order they were passed; otherwise they are destroyed in reverse
-dependency order.</p></dd>
-	<dt>ObjectRegisterEventHandler()</dt>
-		<dd><p>Registers an object that can handle asynchronous events.</p></dd>
-<dd><pre>    $Kernel::OM-&gt;ObjectRegisterEventHandler(
+dependency order.</p>
+
+<h2 id="ObjectRegisterEventHandler">ObjectRegisterEventHandler()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ObjectRegisterEventHandler');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ObjectRegisterEventHandler">
+                                        <pre>
+
+sub ObjectRegisterEventHandler {
+    my ( $Self, %Param ) = @_;
+    if ( !$Param{EventHandler} ) {
+        die "Missing parameter EventHandler";
+    }
+    push @{ $Self->{EventHandlers} }, $Param{EventHandler};
+    weaken( $Self->{EventHandlers}[-1] );
+    return 1;
+}
+</pre></div>
+
+<p>Registers an object that can handle asynchronous events.</p>
+
+<pre>    $Kernel::OM-&gt;ObjectRegisterEventHandler(
         EventHandler =&gt; $EventHandlerObject,
     );
 
-</pre></dd>		<dd><p>The <code>EventHandler</code> object should inherit from <a href="EventHandler.pm.html">Kernel::System::EventHandler</a>.
+</pre><p>The <code>EventHandler</code> object should inherit from <a href="EventHandler.pm.html">Kernel::System::EventHandler</a>.
 The object manager will call that object's <code>EventHandlerHasQueuedTransactions</code>
-method, and if that returns a true value, calls its <code>EventHandlerTransaction</code> method.</p></dd>
-</dl>
+method, and if that returns a true value, calls its <code>EventHandlerTransaction</code> method.</p>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
