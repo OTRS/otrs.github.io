@@ -66,7 +66,6 @@
 	<li><a href="#LogGetWithData">LogGetWithData()</a></li>
 	<li><a href="#LogDelete">LogDelete()</a></li>
 	<li><a href="#LogSearch">LogSearch()</a></li>
-	<li><a href="#LogAddChain">_LogAddChain()</a></li>
 </ul>
 </li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -804,96 +803,7 @@ when the parameter 'WithData' is set, the complete communication chains will be 
         ...
     ];
 
-</pre><h2 id="LogAddChain">_LogAddChain()</h2>
-
-<p><a href="#" onclick="toggleCode('method__LogAddChain');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method__LogAddChain">
-                                        <pre>
-
-sub _LogAddChain {
-    my ( $Self, %Param ) = @_;
-
-    # check needed params
-    NEEDED:
-    for my $Needed (qw(CommunicationID CommunicationType WebserviceID)) {
-        next NEEDED if IsStringWithData( $Param{$Needed} );
-
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need $Needed as a string!",
-        );
-        return;
-    }
-
-    # param syntax check
-    if ( !IsMD5Sum( $Param{CommunicationID} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'CommunicationID is not an md5sum!',
-        );
-        return;
-    }
-    if ( $Param{CommunicationType} !~ m{ \A (?: Provider | Requester ) \z }xms ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "CommunicationType '$Param{CommunicationType}' is not valid!",
-        );
-        return;
-    }
-    if (
-        defined $Param{RemoteIP} &&
-        $Param{RemoteIP} ne ''
-        )
-    {
-        if ( !IsStringWithData( $Param{RemoteIP} ) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "RemoteIP '$Param{RemoteIP}' is not a valid IPv4 or IPv6 address!",
-            );
-            return;
-        }
-        if ( !IsIPv4Address( $Param{RemoteIP} ) && !IsIPv6Address( $Param{RemoteIP} ) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "RemoteIP '$Param{RemoteIP}' is not a valid IPv4 or IPv6 address!",
-            );
-            return;
-        }
-    }
-    if ( !IsPositiveInteger( $Param{WebserviceID} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'WebserviceID is not a positive integer!',
-        );
-        return;
-    }
-
-    if (
-        !$Kernel::OM->Get('Kernel::System::DB')->Do(
-            SQL =>
-                'INSERT INTO gi_debugger_entry'
-                . ' (communication_id, communication_type, create_time, remote_ip,'
-                . '  webservice_id)'
-                . ' VALUES (?, ?, current_timestamp, ?, ?)',
-            Bind => [
-                \$Param{CommunicationID}, \$Param{CommunicationType},
-                \$Param{RemoteIP},        \$Param{WebserviceID},
-            ],
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Could not create debug entry chain in db!',
-        );
-        return;
-    }
-
-    return 1;
-}
-</pre></div>
-
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

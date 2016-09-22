@@ -64,7 +64,6 @@
 	<li><a href="#NextEventList">NextEventList()</a></li>
 	<li><a href="#PreviousEventGet">PreviousEventGet()</a></li>
 	<li><a href="#GenericAgentSchedule2CronTab">GenericAgentSchedule2CronTab()</a></li>
-	<li><a href="#Init">_Init()</a></li>
 </ul>
 </li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -407,87 +406,7 @@ sub GenericAgentSchedule2CronTab {
 
     my $Schedule = '1,2,3 1,2,3 * * 1,2,3 *'  # or false in case of an error
 
-</pre><h2 id="Init">_Init()</h2>
-
-<p><a href="#" onclick="toggleCode('method__Init');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method__Init">
-                                        <pre>
-
-sub _Init {
-    my ( $Self, %Param ) = @_;
-
-    # check needed params
-    for my $Needed (qw(Schedule StartDateTime)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-
-            return;
-        }
-    }
-
-    # if a day and month are specified validate that the month has that specific day
-    # this could be removed after Schedule::Cron::Events 1.94 is released and tested
-    # see https://rt.cpan.org/Public/Bug/Display.html?id=109246
-    my ( $Min, $Hour, $DayMonth, $Month, $DayWeek ) = split ' ', $Param{Schedule};
-    if ( IsPositiveInteger($DayMonth) && IsPositiveInteger($Month) ) {
-
-        my @MonthLastDay = ( 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 );
-        my $LastDayOfMonth = $MonthLastDay[ $Month - 1 ];
-
-        if ( $DayMonth > $LastDayOfMonth ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Schedule: $Param{Schedule} is invalid",
-            );
-
-            return;
-        }
-    }
-
-    my %Start = %{ $Param{StartDateTime}->Get() };
-
-    # create new internal cron object
-    my $CronObject;
-    eval {
-        $CronObject = Schedule::Cron::Events->new(    ## no critic
-            $Param{Schedule},
-            Date => [
-                $Start{'Second'},
-                $Start{'Minute'},
-                $Start{'Hour'},
-                $Start{'Day'},
-                $Start{'Month'} - 1,
-                $Start{'Year'} - 1900,
-            ],
-        );
-    };
-
-    # error handling
-    if ($@) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Schedule: $Param{Schedule} is invalid.",
-        );
-        return;
-    }
-
-    # check cron object
-    if ( !$CronObject ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Could not create new Schedule::Cron::Events object!",
-        );
-        return;
-    }
-
-    return $CronObject;
-}
-</pre></div>
-
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

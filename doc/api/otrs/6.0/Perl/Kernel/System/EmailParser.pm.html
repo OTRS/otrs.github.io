@@ -73,8 +73,6 @@
 	<li><a href="#GetMessageBody">GetMessageBody()</a></li>
 	<li><a href="#GetAttachments">GetAttachments()</a></li>
 	<li><a href="#GetReferences">GetReferences()</a></li>
-	<li><a href="#DecodeString">_DecodeString()</a></li>
-	<li><a href="#MailAddressParse">_MailAddressParse()</a></li>
 </ul>
 </li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -741,83 +739,6 @@ sub GetReferences {
 <pre>    my @References = $ParserObject-&gt;GetReferences();
 
 </pre><p>This returns an array with ('fasfda@host.de', '4124.2313.1231@host.com').</p>
-
-<h2 id="DecodeString">_DecodeString()</h2>
-
-<p><a href="#" onclick="toggleCode('method__DecodeString');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method__DecodeString">
-                                        <pre>
-
-sub _DecodeString {
-    my ( $Self, %Param ) = @_;
-
-    # get encode object
-    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
-
-    my $DecodedString;
-    my $BufferedString;
-    my $PrevEncoding;
-
-    $BufferedString = '';
-
-    # call MIME::Words::decode_mimewords()
-    for my $Entry ( decode_mimewords( $Param{String} ) ) {
-        if (
-            $BufferedString ne ''
-            && ( !$PrevEncoding || !$Entry->[1] || lc($PrevEncoding) ne lc( $Entry->[1] ) )
-            )
-        {
-            my $Encoding = $EncodeObject->FindAsciiSupersetEncoding(
-                Encodings => [ $PrevEncoding, $Param{Encode}, $Self->GetCharset() ],
-            );
-            $DecodedString .= $EncodeObject->Convert2CharsetInternal(
-                Text  => $BufferedString,
-                From  => $Encoding,
-                Check => 1,
-            );
-            $BufferedString = '';
-        }
-        $BufferedString .= $Entry->[0];
-        $PrevEncoding = $Entry->[1];
-    }
-
-    if ( $BufferedString ne '' ) {
-        my $Encoding = $EncodeObject->FindAsciiSupersetEncoding(
-            Encodings => [ $PrevEncoding, $Param{Encode}, $Self->GetCharset() ],
-        );
-        $DecodedString .= $EncodeObject->Convert2CharsetInternal(
-            Text  => $BufferedString,
-            From  => $Encoding,
-            Check => 1,
-        );
-    }
-
-    return $DecodedString;
-}
-</pre></div>
-
-<h2 id="MailAddressParse">_MailAddressParse()</h2>
-
-<p><a href="#" onclick="toggleCode('method__MailAddressParse');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method__MailAddressParse">
-                                        <pre>
-
-sub _MailAddressParse {
-    my ( $Self, %Param ) = @_;
-
-    my $Email = $Param{Email};
-    my $Cache = $Self->{EmailCache};
-
-    if ( $Self->{EmailCache}->{$Email} ) {
-        return @{ $Self->{EmailCache}->{$Email} };
-    }
-
-    my @Chunks = Mail::Address->parse($Email);
-    $Self->{EmailCache}->{$Email} = \@Chunks;
-
-    return @Chunks;
-}
-</pre></div>
 
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 

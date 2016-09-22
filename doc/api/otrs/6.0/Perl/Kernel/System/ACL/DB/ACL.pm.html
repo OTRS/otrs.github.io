@@ -71,8 +71,6 @@
 	<li><a href="#ACLsNeedSyncReset">ACLsNeedSyncReset()</a></li>
 	<li><a href="#ACLDump">ACLDump()</a></li>
 	<li><a href="#ACLImport">ACLImport()</a></li>
-	<li><a href="#ACLItemOutput">_ACLItemOutput()</a></li>
-	<li><a href="#ACLMigrateFrom33">_ACLMigrateFrom33()</a></li>
 </ul>
 </li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -1162,67 +1160,7 @@ sub ACLImport {
         ACLErrors   =&gt; 'ACL5',                     # list of ACLs that could not be added or updated
     };
 
-</pre><h2 id="ACLItemOutput">_ACLItemOutput()</h2>
-
-<p><a href="#" onclick="toggleCode('method__ACLItemOutput');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method__ACLItemOutput">
-                                        <pre>
-
-sub _ACLItemOutput {
-    my ( $Self, %Param ) = @_;
-
-    my $Output = "# Created: $Param{CreateTime} ($Param{CreateBy})\n";
-    $Output .= "# Changed: $Param{ChangeTime} ($Param{ChangeBy})\n";
-
-    if ( $Param{Comment} ) {
-        $Output .= "# Comment: $Param{Comment}\n";
-    }
-
-    $Output .= $Kernel::OM->Get('Kernel::System::Main')->Dump(
-        $Param{Value},
-    );
-
-    # replace "[empty]" by ''
-    $Output =~ s{\[empty\]}{}xmsg;
-
-    my $Name = $Param{Key};
-    $Name =~ s{\'}{\\'}xmsg;
-    my $Key = '$Self->{TicketAcl}->{\'' . $Name . '\'}';
-
-    $Output =~ s{\$VAR1}{$Key}mxs;
-
-    return $Output . "\n";
-}
-</pre></div>
-
-<h2 id="ACLMigrateFrom33">_ACLMigrateFrom33()</h2>
-
-<p><a href="#" onclick="toggleCode('method__ACLMigrateFrom33');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method__ACLMigrateFrom33">
-                                        <pre>
-
-sub _ACLMigrateFrom33 {
-    my ( $Self, %Param ) = @_;
-
-    my $ACL = $Param{ACL};
-
-    return $ACL if !ref $ACL->{ConfigChange};
-    return $ACL if !$ACL->{ConfigChange}->{Possible}->{Action};
-    return $ACL if ref $ACL->{ConfigChange}->{Possible}->{Action} ne 'HASH';
-
-    # convert old hash into an array using only the keys set to 0, and skip those that are set
-    # to 1, set them as PossibleNot and delete the Possible->Action section from the ACL.
-    my @NewAction = grep { $ACL->{ConfigChange}->{Possible}->{Action}->{$_} == 0 }
-        sort keys %{ $ACL->{ConfigChange}->{Possible}->{Action} };
-
-    delete $ACL->{ConfigChange}->{Possible}->{Action};
-    $ACL->{ConfigChange}->{PossibleNot}->{Action} = \@NewAction;
-
-    return $ACL;
-}
-</pre></div>
-
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
