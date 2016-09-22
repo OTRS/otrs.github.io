@@ -58,7 +58,17 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#SystemDataAdd">SystemDataAdd()</a></li>
+	<li><a href="#SystemDataGet">SystemDataGet()</a></li>
+	<li><a href="#SystemDataGroupGet">SystemDataGroupGet()</a></li>
+	<li><a href="#SystemDataUpdate">SystemDataUpdate()</a></li>
+	<li><a href="#SystemDataDelete">SystemDataDelete()</a></li>
+	<li><a href="#SystemDataCacheKeyDelete">_SystemDataCacheKeyDelete()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,77 +84,436 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # create additional objects
+    $Self->{CacheType} = 'SystemData';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $SystemDataObject = $Kernel::OM-&gt;Get('Kernel::System::SystemData');
 
-</pre></dd>	<dt>SystemDataAdd()</dt>
-		<dd><p>add new systemdata value</p></dd>
-		<dd><p>Result is true if adding was OK, and false if it failed, for instance because
-the key already existed.</p></dd>
-		<dd><p>If your keys contain '::' this will be used as a separator. This allows you to
+</pre><h2 id="SystemDataAdd">SystemDataAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemDataAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemDataAdd">
+                                        <pre>
+
+sub SystemDataAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Key UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( !defined $Param{Value} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Value!"
+        );
+        return;
+    }
+
+    # return if key does not already exists - then we can't do an update
+    my $Value = $Self->SystemDataGet( Key => $Param{Key} );
+    if ( defined $Value ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't add SystemData key '$Param{Key}', it already exists!",
+        );
+        return;
+    }
+
+    # store data
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => '
+            INSERT INTO system_data
+                (data_key, data_value, create_time, create_by, change_time, change_by)
+            VALUES (?, ?, current_timestamp, ?, current_timestamp, ?)
+            ',
+        Bind => [ \$Param{Key}, \$Param{Value}, \$Param{UserID}, \$Param{UserID} ],
+    );
+
+    # delete cache
+    $Self->_SystemDataCacheKeyDelete(
+        Key => $Param{Key},
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>add new systemdata value</p>
+
+<p>Result is true if adding was OK, and false if it failed, for instance because
+the key already existed.</p>
+
+<p>If your keys contain '::' this will be used as a separator. This allows you to
 later for instance fetch all keys that start with 'SystemRegistration::' in
-one go, using SystemDataGetGroup().</p></dd>
-<dd><pre>    my $Result = $SystemDataObject-&gt;SystemDataAdd(
+one go, using SystemDataGetGroup().</p>
+
+<pre>    my $Result = $SystemDataObject-&gt;SystemDataAdd(
         Key    =&gt; 'SomeKey',
         Value  =&gt; 'Some Value',
         UserID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Result = $SystemDataObject-&gt;SystemDataAdd(
+    my $Result = $SystemDataObject-&gt;SystemDataAdd(
         Key    =&gt; 'SystemRegistration::Version',
         Value  =&gt; 'Some Value',
         UserID =&gt; 123,
     );
 
-</pre></dd>	<dt>SystemDataGet()</dt>
-		<dd><p>get system data for key</p></dd>
-<dd><pre>    my $SystemData = $SystemDataObject-&gt;SystemDataGet(
+</pre><h2 id="SystemDataGet">SystemDataGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemDataGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemDataGet">
+                                        <pre>
+
+sub SystemDataGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Key} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Key!"
+        );
+        return;
+    }
+
+    # check cache
+    my $CacheKey = 'SystemDataGet::' . $Param{Key};
+    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+    return $Cache if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT data_value
+            FROM system_data
+            WHERE data_key = ?
+            ',
+        Bind  => [ \$Param{Key} ],
+        Limit => 1,
+    );
+
+    my $Value;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $Value = $Data[0] // '';
+    }
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => $Value // '',
+    );
+
+    return $Value;
+}
+</pre></div>
+
+<p>get system data for key</p>
+
+<pre>    my $SystemData = $SystemDataObject-&gt;SystemDataGet(
         Key =&gt; 'OTRS Version',
     );
 
-</pre></dd>		<dd><p>returns value as a simple scalar, or undef if the key does not exist.
-keys set to NULL return an empty string.</p></dd>
-	<dt>SystemDataGroupGet()</dt>
-		<dd><p>returns a hash of all keys starting with the Group.
+</pre><p>returns value as a simple scalar, or undef if the key does not exist.
+keys set to NULL return an empty string.</p>
+
+<h2 id="SystemDataGroupGet">SystemDataGroupGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemDataGroupGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemDataGroupGet">
+                                        <pre>
+
+sub SystemDataGroupGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Group} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Group!"
+        );
+        return;
+    }
+
+    # check cache
+    my $CacheKey = 'SystemDataGetGroup::' . $Param{Group};
+    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+    return %{$Cache} if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get like escape string needed for some databases (e.g. oracle)
+    my $LikeEscapeString = $DBObject->GetDatabaseFunction('LikeEscapeString');
+
+    # prepare group name search
+    my $Group = $Param{Group};
+    $Group =~ s/\*/%/g;
+    $Group = $DBObject->Quote( $Group, 'Like' );
+
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT data_key, data_value
+            FROM system_data
+            WHERE data_key LIKE '${Group}::%' $LikeEscapeString
+            ",
+    );
+
+    my %Result;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $Data[0] =~ s/^${Group}:://;
+
+        $Result{ $Data[0] } = $Data[1];
+    }
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%Result,
+    );
+
+    return %Result;
+}
+</pre></div>
+
+<p>returns a hash of all keys starting with the Group.
 For instance the code below would return values for
 'SystemRegistration::UniqueID', 'SystemRegistration::UpdateID',
-and so on.</p></dd>
-<dd><pre>    my %SystemData = $SystemDataObject-&gt;SystemDataGroupGet(
+and so on.</p>
+
+<pre>    my %SystemData = $SystemDataObject-&gt;SystemDataGroupGet(
         Group =&gt; 'SystemRegistration',
     );
 
-</pre></dd>		<dd><p>returns</p></dd>
-<dd><pre>    %SystemData = (
+</pre><p>returns</p>
+
+<pre>    %SystemData = (
         UniqueID =&gt; 'CDC782BE-E483-11E2-83DA-9FFD99890B3C',
         UpdateID =&gt; 'D8F55850-E483-11E2-BD60-9FFD99890B3C'
         ...
     );
 
-</pre></dd>	<dt>SystemDataUpdate()</dt>
-		<dd><p>update system data</p></dd>
-		<dd><p>Returns true if update was succesful or false if otherwise - for instance
-if key did not exist.</p></dd>
-<dd><pre>    my $Result = $SystemDataObject-&gt;SystemDataUpdate(
+</pre><h2 id="SystemDataUpdate">SystemDataUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemDataUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemDataUpdate">
+                                        <pre>
+
+sub SystemDataUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Key UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( !defined $Param{Value} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Value!"
+        );
+        return;
+    }
+
+    # return if key does not already exists - then we can't do an update
+    my $Value = $Self->SystemDataGet( Key => $Param{Key} );
+    if ( !defined $Value ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't update SystemData key '$Param{Key}', it does not exist!",
+        );
+        return;
+    }
+
+    # update system data table
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => '
+            UPDATE system_data
+            SET data_value = ?, change_time = current_timestamp, change_by = ?
+            WHERE data_key = ?
+            ',
+        Bind => [
+            \$Param{Value}, \$Param{UserID}, \$Param{Key},
+        ],
+    );
+
+    # delete cache entry
+    $Self->_SystemDataCacheKeyDelete(
+        Type => $Self->{CacheType},
+        Key  => $Param{Key},
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>update system data</p>
+
+<p>Returns true if update was succesful or false if otherwise - for instance
+if key did not exist.</p>
+
+<pre>    my $Result = $SystemDataObject-&gt;SystemDataUpdate(
         Key    =&gt; 'OTRS Version',
         Value  =&gt; 'Some New Value',
         UserID =&gt; 123,
     );
 
-</pre></dd>	<dt>SystemDataDelete()</dt>
-		<dd><p>update system data</p></dd>
-		<dd><p>Returns true if delete was succesful or false if otherwise - for instance
-if key did not exist.</p></dd>
-<dd><pre>    $SystemDataObject-&gt;SystemDataDelete(
+</pre><h2 id="SystemDataDelete">SystemDataDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemDataDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemDataDelete">
+                                        <pre>
+
+sub SystemDataDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Key UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # return if key does not already exists - then we can't do a delete
+    my $Value = $Self->SystemDataGet( Key => $Param{Key} );
+    if ( !defined $Value ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't delete SystemData key '$Param{Key}', it does not exist!",
+        );
+        return;
+    }
+
+    # remove system data
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => '
+            DELETE FROM system_data
+            WHERE data_key = ?
+            ',
+        Bind => [ \$Param{Key} ],
+    );
+
+    # delete cache entry
+    $Self->_SystemDataCacheKeyDelete(
+        Key => $Param{Key},
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>update system data</p>
+
+<p>Returns true if delete was succesful or false if otherwise - for instance
+if key did not exist.</p>
+
+<pre>    $SystemDataObject-&gt;SystemDataDelete(
         Key    =&gt; 'OTRS Version',
         UserID =&gt; 123,
     );
 
-</pre></dd>	<dt>_SystemDataCacheKeyDelete()</dt>
-</dl>
+</pre><h2 id="SystemDataCacheKeyDelete">_SystemDataCacheKeyDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method__SystemDataCacheKeyDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__SystemDataCacheKeyDelete">
+                                        <pre>
+
+sub _SystemDataCacheKeyDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Key} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "_SystemDataCacheKeyDelete: need 'Key'!"
+        );
+        return;
+    }
+
+    # delete cache entry
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => $Self->{CacheType},
+        Key  => 'SystemDataGet::' . $Param{Key},
+    );
+
+    # delete cache for groups if needed
+    my @Parts = split '::', $Param{Key};
+
+    return 1 if scalar @Parts <= 1;
+
+    # remove last value, delete cache
+    PART:
+    for my $Part (@Parts) {
+
+        pop @Parts;
+        my $CacheKey = join '::', @Parts;
+
+        $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+            Type => $Self->{CacheType},
+            Key  => 'SystemDataGetGroup::' . join( '::', @Parts ),
+        );
+
+        # stop if there is just one value left
+        last PART if scalar @Parts == 1;
+    }
+
+    return 1;
+}
+</pre></div>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

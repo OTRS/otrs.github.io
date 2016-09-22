@@ -58,7 +58,25 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#Check">Check()</a></li>
+	<li><a href="#Crypt">Crypt()</a></li>
+	<li><a href="#Decrypt">Decrypt()</a></li>
+	<li><a href="#Sign">Sign()</a></li>
+	<li><a href="#Verify">Verify()</a></li>
+	<li><a href="#KeySearch">KeySearch()</a></li>
+	<li><a href="#PrivateKeySearch">PrivateKeySearch()</a></li>
+	<li><a href="#PublicKeySearch">PublicKeySearch()</a></li>
+	<li><a href="#PublicKeyGet">PublicKeyGet()</a></li>
+	<li><a href="#SecretKeyGet">SecretKeyGet()</a></li>
+	<li><a href="#PublicKeyDelete">PublicKeyDelete()</a></li>
+	<li><a href="#SecretKeyDelete">SecretKeyDelete()</a></li>
+	<li><a href="#KeyAdd">KeyAdd()</a></li>
+	<li><a href="#HandleLog">_HandleLog()</a></li>
+	<li><a href="#ParseGPGKeyList">_ParseGPGKeyList()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,14 +92,125 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>Check()</dt>
-		<dd><p>check if environment is working</p></dd>
-<dd><pre>    my $Message = $CryptObject-&gt;Check();
 
-</pre></dd>	<dt>Crypt()</dt>
-		<dd><p>crypt a message</p></dd>
-<dd><pre>    my $Message = $CryptObject-&gt;Crypt(
+
+
+<p>sub new {
+    my ( $Type, %Param ) = @_;</p>
+
+<pre>    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self-&gt;{Debug} = $Param{Debug} || 0;
+
+    # check if module is enabled
+    return 0 if !$Kernel::OM-&gt;Get('Kernel::Config')-&gt;Get('PGP');
+
+    # call init()
+    $Self-&gt;_Init();
+
+    # check working ENV
+    return 0 if $Self-&gt;Check();
+
+    return $Self;
+}
+
+</pre><h2 id="Check">Check()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Check');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Check">
+                                        <pre>
+
+sub Check {
+    my ( $Self, %Param ) = @_;
+
+    my $GPGBin = $Kernel::OM->Get('Kernel::Config')->Get('PGP::Bin') || '/usr/bin/gpg';
+    if ( !-e $GPGBin ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No such $GPGBin!",
+        );
+        return "No such $GPGBin!";
+    }
+    elsif ( !-x $GPGBin ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$GPGBin not executable!",
+        );
+        return "$GPGBin not executable!";
+    }
+
+    return;
+}
+</pre></div>
+
+<p>check if environment is working</p>
+
+<pre>    my $Message = $CryptObject-&gt;Check();
+
+</pre><h2 id="Crypt">Crypt()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Crypt');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Crypt">
+                                        <pre>
+
+sub Crypt {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw( Message Key )) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    my @PublicKeys;
+    if ( ref $Param{Key} eq 'ARRAY' ) {
+        @PublicKeys = @{ $Param{Key} };
+    }
+    elsif ( ref $Param{Key} eq '' ) {
+        push @PublicKeys, $Param{Key};
+    }
+
+    if ( !@PublicKeys ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Message  => "Got no keys!",
+            Priority => 'error',
+        );
+        return;
+    }
+
+    my $KeyStr = join ' ', map {"-r $_"} @PublicKeys;
+
+    $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{Message} );
+
+    # get temp file object
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    my ( $FH, $Filename ) = $FileTempObject->TempFile();
+    print $FH $Param{Message};
+    close $FH;
+
+    my ( $FHCrypt, $FilenameCrypt ) = $FileTempObject->TempFile();
+    close $FHCrypt;
+    my $GPGOptions = "--always-trust --yes --encrypt --armor -o $FilenameCrypt $KeyStr $Filename";
+    my $LogMessage = qx{$Self->{GPGBin} $GPGOptions 2>&1};
+
+    # get crypted content
+    my $CryptedDataRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead( Location => $FilenameCrypt );
+
+    return $$CryptedDataRef;
+}
+</pre></div>
+
+<p>crypt a message</p>
+
+<pre>    my $Message = $CryptObject-&gt;Crypt(
         Message =&gt; $Message,
         Key     =&gt; [
             $PGPPublicKeyID,
@@ -90,104 +219,963 @@
         ],
     );
 
-</pre></dd><dd><pre>    my $Message = $CryptObject-&gt;Crypt(
+    my $Message = $CryptObject-&gt;Crypt(
         Message =&gt; $Message,
         Key     =&gt; $PGPPublicKeyID,
     );
 
-</pre></dd>	<dt>Decrypt()</dt>
-		<dd><p>Decrypt a message and returns a hash (Successful, Message, Data)</p></dd>
-<dd><pre>    my %Result = $CryptObject-&gt;Decrypt(
+</pre><h2 id="Decrypt">Decrypt()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Decrypt');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Decrypt">
+                                        <pre>
+
+sub Decrypt {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Message)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    my ( $FH, $Filename ) = $Kernel::OM->Get('Kernel::System::FileTemp')->TempFile();
+    print $FH $Param{Message};
+    close $FH;
+
+    my %PasswordHash = %{ $Kernel::OM->Get('Kernel::Config')->Get('PGP::Key::Password') };
+    my @Keys = $Self->_CryptedWithKey( File => $Filename );
+    my %Return;
+
+    KEY:
+    for my $Key (@Keys) {
+        my $Password = $Param{Password} || $PasswordHash{$Key} || '';
+        %Return = $Self->_DecryptPart(
+            Filename => $Filename,
+            Key      => $Key,
+            Password => $Password,
+        );
+        last KEY if $Return{Successful};
+    }
+    if ( !%Return ) {
+        return (
+            Successful => 0,
+            Message    => 'gpg: No private key found to decrypt this message!',
+        );
+    }
+
+    return %Return;
+}
+</pre></div>
+
+<p>Decrypt a message and returns a hash (Successful, Message, Data)</p>
+
+<pre>    my %Result = $CryptObject-&gt;Decrypt(
         Message =&gt; $CryptedMessage,
     );
 
-</pre></dd>		<dd><p>The returned hash %Result has the following keys:</p></dd>
-<dd><pre>    Successful =&gt; '1',        # could the given data be decrypted at all (0 or 1)
+</pre><p>The returned hash %Result has the following keys:</p>
+
+<pre>    Successful =&gt; '1',        # could the given data be decrypted at all (0 or 1)
     Data       =&gt; '...',      # the decrypted data
     KeyID      =&gt; 'FA23FB24'  # hex ID of PGP-(secret-)key that was used for decryption
     Message    =&gt; '...'       # descriptive text containing the result status
 
-</pre></dd>	<dt>Sign()</dt>
-		<dd><p>sign a message</p></dd>
-<dd><pre>    my $Sign = $CryptObject-&gt;Sign(
+</pre><h2 id="Sign">Sign()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Sign');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Sign">
+                                        <pre>
+
+sub Sign {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Message Key)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    my %PasswordHash = %{ $Kernel::OM->Get('Kernel::Config')->Get('PGP::Key::Password') };
+    my $Pw           = $PasswordHash{ $Param{Key} } || '';
+    my $SigType      = $Param{Type} && $Param{Type} eq 'Detached'
+        ? '--detach-sign --armor'
+        : '--clearsign';
+    my $DigestAlgorithm = $Kernel::OM->Get('Kernel::Config')->Get('PGP::Options::DigestPreference') || '';
+    if ($DigestAlgorithm) {
+        $DigestAlgorithm = '--personal-digest-preferences ' . uc $DigestAlgorithm;
+    }
+
+    # get temp file object
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    # create tmp files
+    my ( $FH, $Filename ) = $FileTempObject->TempFile();
+    close $FH;
+    my ( $FHSign, $FileSign ) = $FileTempObject->TempFile();
+    close $FHSign;
+
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
+    $MainObject->FileWrite(
+        Location => $Filename,
+        Content  => \$Param{Message},
+        Mode     => $Param{Charset} && $Param{Charset} =~ /utf(8|\-8)/i ? 'utf8' : 'binmode',
+    );
+
+    my ( $FHPhrase, $FilePhrase ) = $FileTempObject->TempFile();
+    print $FHPhrase $Pw;
+    close $FHPhrase;
+    my $GPGOptions = qq{--passphrase-fd 0 --default-key $Param{Key} -o $FileSign $SigType $DigestAlgorithm $Filename};
+    my $LogMessage = qx{$Self->{GPGBin} $GPGOptions <$FilePhrase 2>&1};
+
+    # error
+    if ($LogMessage) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't sign with Key $Param{Key}: $LogMessage!"
+        );
+        return;
+    }
+
+    # get signed content
+    my $SignedDataRef = $MainObject->FileRead(
+        Location => $FileSign,
+        Mode     => $Param{Charset} && $Param{Charset} =~ /utf(8|\-8)/i ? 'utf8' : 'binmode',
+    );
+    return $$SignedDataRef;
+}
+</pre></div>
+
+<p>sign a message</p>
+
+<pre>    my $Sign = $CryptObject-&gt;Sign(
         Message =&gt; $Message,
         Key     =&gt; $PGPPrivateKeyID,
         Type    =&gt; 'Detached'  # Detached|Inline
     );
 
-</pre></dd>	<dt>Verify()</dt>
-		<dd><p>verify a message signature and returns a hash (Successful, Message, Data)</p></dd>
-		<dd><p>Inline sign:</p></dd>
-<dd><pre>    my %Result = $CryptObject-&gt;Verify(
+</pre><h2 id="Verify">Verify()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Verify');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Verify">
+                                        <pre>
+
+sub Verify {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Message} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Message!'
+        );
+        return;
+    }
+
+    # check if original mail was encoded as UTF8, UTF-8, utf8 or utf-8
+    if ( defined $Param{Charset} && $Param{Charset} =~ m{ utf -?? 8 }imsx ) {
+
+        # encode the message to be written into the FS
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{Message} );
+    }
+
+    # get temp file object
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    my ( $FH, $File ) = $FileTempObject->TempFile();
+    binmode($FH);
+    print $FH $Param{Message};
+    close $FH;
+
+    my $GPGOptions = '--verify --status-fd 1';
+    if ( $Param{Sign} ) {
+        my ( $FHSign, $FilenameSign ) = $FileTempObject->TempFile();
+        binmode($FHSign);
+        print $FHSign $Param{Sign};
+        close $FHSign;
+        $GPGOptions .= " $FilenameSign";
+    }
+
+    my %Return;
+    my $Message = qx{$Self->{GPGBin} $GPGOptions $File 2>&1};
+
+    my %LogMessage = $Self->_HandleLog( LogString => $Message );
+    if ( $LogMessage{GOODSIG} ) {
+        my $KeyID = '';
+
+        if (
+            $LogMessage{GOODSIG}->{MessageLong}
+            =~ m{\Q[GNUPG:] GOODSIG \E (?: [0-9A-F]{8}) ([0-9A-F]{8}) }xms
+            )
+        {
+            $KeyID = $1;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Unable to fetch key-ID from gpg output!'
+            );
+        }
+
+        my $KeyUserID = '';
+        if (
+            $LogMessage{GOODSIG}->{MessageLong}
+            =~ m{\Q[GNUPG:] GOODSIG \E (?:[0-9A-F]{16}) \s (.*) }xms
+            )
+        {
+            $KeyUserID = $1;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Unable to fetch key-user-ID from gpg output!'
+            );
+        }
+
+        %Return = (
+            SignatureFound => 1,
+            Successful     => 1,
+            Message        => $LogMessage{GOODSIG}->{Log} . " : $KeyID $KeyUserID",
+            MessageLong    => $LogMessage{GOODSIG}->{MessageLong},
+            KeyID          => $KeyID,
+            KeyUserID      => $KeyUserID,
+        );
+
+    }
+    elsif ( $LogMessage{ERRSIG} ) {
+        my $KeyID = '';
+
+        # key id
+        if (
+            $LogMessage{ERRSIG}->{MessageLong}
+            =~ m{ \Q[GNUPG:] ERRSIG \E (?:[0-9A-F]{8}) ([0-9A-F]{8}) }xms
+            )
+        {
+            $KeyID = $1;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Unable to fetch key-ID from gpg output!'
+            );
+        }
+
+        my $InternalMessage;
+        if ( $LogMessage{NO_PUBKEY}->{Log} ) {
+            $InternalMessage = $LogMessage{NO_PUBKEY}->{Log} . ": $KeyID";
+        }
+
+        %Return = (
+            SignatureFound => 1,
+            Successful     => 0,
+            Message        => $InternalMessage || $LogMessage{ERRSIG}->{Log},
+        );
+
+    }
+    elsif ( $LogMessage{KEYREVOKED} && $LogMessage{EXPKEYSIG} ) {
+
+        # revoked has the preference but also expired can be shown, is it?
+        my $KeyID;
+        if (
+            $LogMessage{EXPKEYSIG}->{MessageLong}
+            =~ m{\Q[GNUPG:] EXPKEYSIG \E (?:[0-9A-F]{8}) ([0-9A-F]{8})}xms
+            )
+        {
+            $KeyID = $1;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Unable to fetch key-ID from gpg output!'
+            );
+        }
+
+        my $KeyUserID = '';
+        if (
+            $LogMessage{EXPKEYSIG}->{MessageLong}
+            =~ m{\Q[GNUPG:] EXPKEYSIG \E (?:[0-9A-F]{16}) \s (.*) }xms
+            )
+        {
+            $KeyUserID = $1;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Unable to fetch key-user-ID from gpg output!'
+            );
+        }
+
+        my $ComposedMessage = '';
+        if ( $LogMessage{KEYREVOKED}->{Log} ) {
+            $ComposedMessage = $LogMessage{KEYREVOKED}->{Log}
+                . " and the key is also expired. : $KeyID $KeyUserID";
+        }
+
+        %Return = (
+            SignatureFound => 1,
+            Successful     => 0,
+            Message        => $ComposedMessage || $Message,
+        );
+    }
+    elsif ( $LogMessage{REVKEYSIG} ) {
+
+        my $KeyID;
+        if (
+            $LogMessage{REVKEYSIG}->{MessageLong}
+            =~ m{\Q[GNUPG:] REVKEYSIG \E (?:[0-9A-F]{8}) ([0-9A-F]{8}) }xms
+            )
+        {
+            $KeyID = $1;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Unable to fetch key-ID from gpg output!'
+            );
+        }
+
+        my $KeyUserID = '';
+        if (
+            $LogMessage{REVKEYSIG}->{MessageLong}
+            =~ m{\Q[GNUPG:] REVKEYSIG \E (?:[0-9A-F]{16}) \s (.*) }xms
+            )
+        {
+            $KeyUserID = $1;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Unable to fetch key-user-ID from gpg output!'
+            );
+        }
+
+        my $ComposedMessage = '';
+        if ( $LogMessage{REVKEYSIG}->{Log} ) {
+            $ComposedMessage = $LogMessage{REVKEYSIG}->{Log} . ": $KeyID $KeyUserID";
+        }
+
+        %Return = (
+            SignatureFound => 1,
+            Successful     => 0,
+            Message        => $ComposedMessage || $Message,
+        );
+
+    }
+    elsif ( $LogMessage{EXPKEYSIG} ) {
+
+        my $KeyID;
+        if (
+            $LogMessage{EXPKEYSIG}->{MessageLong}
+            =~ m{\Q[GNUPG:] EXPKEYSIG \E (?:[0-9A-F]{8}) ([0-9A-F]{8}) }xms
+            )
+        {
+            $KeyID = $1;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Unable to fetch key-ID from gpg output!'
+            );
+        }
+
+        my $KeyUserID = '';
+        if (
+            $LogMessage{EXPKEYSIG}->{MessageLong}
+            =~ m{\Q[GNUPG:] EXPKEYSIG \E (?:[0-9A-F]{16}) \s (.*) }xms
+            )
+        {
+            $KeyUserID = $1;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Unable to fetch key-user-ID from gpg output!'
+            );
+        }
+
+        my $ComposedMessage = '';
+        if ( $LogMessage{EXPKEYSIG}->{Log} ) {
+            $ComposedMessage = $LogMessage{EXPKEYSIG}->{Log} . ": $KeyID $KeyUserID";
+        }
+        %Return = (
+            SignatureFound => 1,
+            Successful     => 0,
+            Message        => ($ComposedMessage) || $Message,
+        );
+
+    }
+    elsif ( $LogMessage{NODATA} ) {
+        %Return = (
+            SignatureFound => 0,
+            Successful     => 0,
+            Message        => $LogMessage{NODATA}->{Log} || $Message,
+        );
+    }
+    else {
+        %Return = (
+            SignatureFound => 1,
+            Successful     => 0,
+            Message        => $LogMessage{CleanLog} || $Message,
+        );
+    }
+
+    my @WarningTags;
+
+    my $Trusted = $Kernel::OM->Get('Kernel::Config')->Get('PGP::TrustedNetwork');
+    if ( !$Trusted ) {
+        push @WarningTags, 'TRUST_UNDEFINED';
+    }
+
+    # get needed warnings
+    my @Warnings;
+    for my $Tag (@WarningTags) {
+        if ( $LogMessage{$Tag}->{Log} ) {
+            push @Warnings, {
+                Result => 'Error',
+                Key    => 'Sign Warning',
+                Value  => $LogMessage{$Tag}->{Log},
+            };
+        }
+    }
+
+    # looks for text before and after the signature (but ignore if is in quoted text)
+    if (
+        $Param{Message} =~ m{ \s* \S+ \s* ^ \s* -----BEGIN [ ] PGP [ ] SIGNED [ ] MESSAGE----- }xmsg
+        || $Param{Message} =~ m{ ^ \s* -----END [ ] PGP [ ] SIGNATURE----- \s* \S+ \s* }xmsg
+        )
+    {
+        push @Warnings, {
+            Result => 'Error',
+            Key    => 'Sign Warning',
+            Value =>
+                'Just a part of the message is signed, for info please see \'Plain Format\' view of article.',
+        };
+    }
+
+    if ( scalar @Warnings ) {
+        $Return{Warnings} = \@Warnings;
+    }
+
+    return %Return;
+}
+</pre></div>
+
+<p>verify a message signature and returns a hash (Successful, Message, Data)</p>
+
+<p>Inline sign:</p>
+
+<pre>    my %Result = $CryptObject-&gt;Verify(
         Message =&gt; $Message,
         Charset =&gt; 'utf-8',             # optional, 'ISO-8859-1', 'UTF-8', etc.
     );
 
-</pre></dd>		<dd><p>Attached sign:</p></dd>
-<dd><pre>    my %Result = $CryptObject-&gt;Verify(
+</pre><p>Attached sign:</p>
+
+<pre>    my %Result = $CryptObject-&gt;Verify(
         Message =&gt; $Message,
         Sign    =&gt; $Sign,
     );
 
-</pre></dd>		<dd><p>The returned hash %Result has the following keys:</p></dd>
-<dd><pre>    SignatureFound =&gt; 1,                          # was a signature found at all (0 or 1)
+</pre><p>The returned hash %Result has the following keys:</p>
+
+<pre>    SignatureFound =&gt; 1,                          # was a signature found at all (0 or 1)
     Successful     =&gt; 1,                          # could the signature be verified (0 or 1)
     KeyID          =&gt; 'FA23FB24'                  # hex ID of PGP-key that was used for signing
     KeyUserID      =&gt; 'username &lt;user@test.org&gt;'  # PGP-User-ID (e-mail address) used for signing
     Message        =&gt; '...'                       # descriptive text containing the result status
     MessageLong    =&gt; '...'                       # full output of GPG binary
 
-</pre></dd>	<dt>KeySearch()</dt>
-		<dd><p>returns a array with serach result (private and public keys)</p></dd>
-<dd><pre>    my @Keys = $CryptObject-&gt;KeySearch(
+</pre><h2 id="KeySearch">KeySearch()</h2>
+
+<p><a href="#" onclick="toggleCode('method_KeySearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_KeySearch">
+                                        <pre>
+
+sub KeySearch {
+    my ( $Self, %Param ) = @_;
+
+    my @Result;
+    push @Result, $Self->PublicKeySearch(%Param);
+    push @Result, $Self->PrivateKeySearch(%Param);
+
+    return @Result;
+}
+</pre></div>
+
+<p>returns a array with serach result (private and public keys)</p>
+
+<pre>    my @Keys = $CryptObject-&gt;KeySearch(
         Search =&gt; 'something to search'
     );
 
-</pre></dd>	<dt>PrivateKeySearch()</dt>
-		<dd><p>returns an array with search result (private keys)</p></dd>
-<dd><pre>    my @Keys = $CryptObject-&gt;PrivateKeySearch(
+</pre><h2 id="PrivateKeySearch">PrivateKeySearch()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PrivateKeySearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PrivateKeySearch">
+                                        <pre>
+
+sub PrivateKeySearch {
+    my ( $Self, %Param ) = @_;
+
+    my $Search         = $Param{Search} || '';
+    my $GPGOptions     = "--list-secret-keys --with-fingerprint --with-colons $Search";
+    my @GPGOutputLines = qx{$Self->{GPGBin} $GPGOptions 2>&1};
+
+    return $Self->_ParseGPGKeyList( GPGOutputLines => \@GPGOutputLines );
+}
+</pre></div>
+
+<p>returns an array with search result (private keys)</p>
+
+<pre>    my @Keys = $CryptObject-&gt;PrivateKeySearch(
         Search =&gt; 'something to search'
     );
 
-</pre></dd>	<dt>PublicKeySearch()</dt>
-		<dd><p>returns an array with search result (public keys)</p></dd>
-<dd><pre>    my @Keys = $CryptObject-&gt;PublicKeySearch(
+</pre><h2 id="PublicKeySearch">PublicKeySearch()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PublicKeySearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PublicKeySearch">
+                                        <pre>
+
+sub PublicKeySearch {
+    my ( $Self, %Param ) = @_;
+
+    my $Search         = $Param{Search} || '';
+    my $GPGOptions     = "--list-keys --with-fingerprint --with-colons $Search";
+    my @GPGOutputLines = qx{$Self->{GPGBin} $GPGOptions 2>&1};
+
+    return $Self->_ParseGPGKeyList( GPGOutputLines => \@GPGOutputLines );
+}
+</pre></div>
+
+<p>returns an array with search result (public keys)</p>
+
+<pre>    my @Keys = $CryptObject-&gt;PublicKeySearch(
         Search =&gt; 'something to search'
     );
 
-</pre></dd>	<dt>PublicKeyGet()</dt>
-		<dd><p>returns public key in ascii</p></dd>
-<dd><pre>    my $Key = $CryptObject-&gt;PublicKeyGet(
+</pre><h2 id="PublicKeyGet">PublicKeyGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PublicKeyGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PublicKeyGet">
+                                        <pre>
+
+sub PublicKeyGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Key = quotemeta( $Param{Key} || '' );
+    my $LogMessage = qx{$Self->{GPGBin} --export --armor $Key 2>&1};
+    my $PublicKey;
+    if ( $LogMessage =~ /nothing exported/i ) {
+        $LogMessage =~ s/\n//g;
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't export key: $LogMessage!",
+        );
+        return;
+    }
+    elsif ( $LogMessage =~ /-----BEGIN PGP PUBLIC KEY BLOCK-----/i ) {
+
+        # filter the key
+        $PublicKey = $LogMessage;
+
+        # delete text before
+        $PublicKey =~ s{
+            .* ( \Q-----BEGIN PGP PUBLIC KEY BLOCK-----\E .*
+                 \Q-----END PGP PUBLIC KEY BLOCK-----\E ) .*
+        }{$1}xmsg;
+
+        return $PublicKey;
+    }
+
+    return $LogMessage;
+}
+</pre></div>
+
+<p>returns public key in ascii</p>
+
+<pre>    my $Key = $CryptObject-&gt;PublicKeyGet(
         Key =&gt; $KeyID,
     );
 
-</pre></dd>	<dt>SecretKeyGet()</dt>
-		<dd><p>returns secret key in ascii</p></dd>
-<dd><pre>    my $Key = $CryptObject-&gt;SecretKeyGet(
+</pre><h2 id="SecretKeyGet">SecretKeyGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SecretKeyGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SecretKeyGet">
+                                        <pre>
+
+sub SecretKeyGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Key = quotemeta( $Param{Key} || '' );
+
+    my $LogMessage = qx{$Self->{GPGBin} --export-secret-keys --armor $Key 2>&1};
+    my $SecretKey  = '';
+
+    if ( $LogMessage =~ /nothing exported/i ) {
+        $LogMessage =~ s/\n//g;
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't export key: $LogMessage!",
+        );
+        return;
+    }
+    elsif ( $LogMessage =~ /-----BEGIN PGP PRIVATE KEY BLOCK-----/i ) {
+
+        # filter the key
+        $SecretKey = $LogMessage;
+        $SecretKey =~ s{
+            .* ( \Q-----BEGIN PGP PRIVATE KEY BLOCK-----\E .*
+                 \Q-----END PGP PRIVATE KEY BLOCK-----\E ) .*
+        }{$1}xmsg;
+
+        return $SecretKey;
+    }
+
+    return $LogMessage;
+}
+</pre></div>
+
+<p>returns secret key in ascii</p>
+
+<pre>    my $Key = $CryptObject-&gt;SecretKeyGet(
         Key =&gt; $KeyID,
     );
 
-</pre></dd>	<dt>PublicKeyDelete()</dt>
-		<dd><p>remove public key from key ring</p></dd>
-<dd><pre>    $CryptObject-&gt;PublicKeyDelete(
+</pre><h2 id="PublicKeyDelete">PublicKeyDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PublicKeyDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PublicKeyDelete">
+                                        <pre>
+
+sub PublicKeyDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Key} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Key!',
+        );
+        return;
+    }
+
+    my $Key        = quotemeta( $Param{Key} || '' );
+    my $GPGOptions = '--status-fd 1';
+    my $Message    = qx{$Self->{GPGBin} $GPGOptions --delete-key $Key 2>&1};
+
+    my %LogMessage = $Self->_HandleLog( LogString => $Message );
+
+    if ( $LogMessage{DELETE_PROBLEM} ) {
+        $LogMessage{CleanLog} =~ s/\n//g;
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't delete key: $LogMessage{CleanLog}!",
+        );
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>remove public key from key ring</p>
+
+<pre>    $CryptObject-&gt;PublicKeyDelete(
         Key =&gt; $KeyID,
     );
 
-</pre></dd>	<dt>SecretKeyDelete()</dt>
-		<dd><p>remove secret key from key ring</p></dd>
-<dd><pre>    $CryptObject-&gt;SecretKeyDelete(
+</pre><h2 id="SecretKeyDelete">SecretKeyDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SecretKeyDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SecretKeyDelete">
+                                        <pre>
+
+sub SecretKeyDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Key} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Key!',
+        );
+        return;
+    }
+
+    my @Keys = $Self->PrivateKeySearch( Search => $Param{Key} );
+    if ( @Keys > 1 ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't delete key, multiple key for $Param{Key}!",
+        );
+        return;
+    }
+    if ( !$Keys[0]->{FingerprintShort} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't delete key, found no fingerprint for $Param{Key}!",
+        );
+        return;
+    }
+    my $GPGOptions = '--status-fd 1 --delete-secret-key ' . quotemeta( $Keys[0]->{FingerprintShort} );
+    my $Message    = qx{$Self->{GPGBin} $GPGOptions 2>&1};
+
+    my %LogMessage = $Self->_HandleLog( LogString => $Message );
+
+    # waiting for better solution, some times gpg returns just enviroment warnings and
+    # with next code lines is wrong detected like an error
+    #    if ($Message) {
+    #        $Message =~ s/\n//g;
+    #        $Kernel::OM->Get('Kernel::System::Log')->Log(
+    #            Priority => 'error',
+    #            Message  => "Can't delete private key: $Message!",
+    #        );
+    #        return;
+    #    }
+
+    return 1;
+}
+</pre></div>
+
+<p>remove secret key from key ring</p>
+
+<pre>    $CryptObject-&gt;SecretKeyDelete(
         Key =&gt; $KeyID,
     );
 
-</pre></dd>	<dt>KeyAdd()</dt>
-		<dd><p>add key to key ring</p></dd>
-<dd><pre>    my $Message = $CryptObject-&gt;KeyAdd(
+</pre><h2 id="KeyAdd">KeyAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_KeyAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_KeyAdd">
+                                        <pre>
+
+sub KeyAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Key} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Key!',
+        );
+        return;
+    }
+    my ( $FH, $Filename ) = $Kernel::OM->Get('Kernel::System::FileTemp')->TempFile();
+    print $FH $Param{Key};
+    my $GPGOptions = "--status-fd 1 --import $Filename";
+    my $Message    = qx{$Self->{GPGBin} $GPGOptions 2>&1};
+
+    my %LogMessage = $Self->_HandleLog( LogString => $Message );
+
+    if ( !$LogMessage{IMPORT_OK} ) {
+        $Message =~ s/\n//g;
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't add key: $LogMessage{CleanLog}!",
+        );
+        return;
+    }
+
+    return $LogMessage{CleanLog};
+}
+</pre></div>
+
+<p>add key to key ring</p>
+
+<pre>    my $Message = $CryptObject-&gt;KeyAdd(
         Key =&gt; $KeyString,
     );
 
-</pre></dd>	<dt>_HandleLog()</dt>
-	<dt>_ParseGPGKeyList()</dt>
-</dl>
+</pre><h2 id="HandleLog">_HandleLog()</h2>
+
+<p><a href="#" onclick="toggleCode('method__HandleLog');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__HandleLog">
+                                        <pre>
+
+sub _HandleLog {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(LogString)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    my %Log;
+    $Log{OriginalLog} = $Param{LogString};
+
+    # get computable log lines
+    my @ComputableLines;
+    while ( $Log{OriginalLog} =~ m{(\[GNUPG\:\]\s.*)}g ) {
+        push @ComputableLines, $1;
+    }
+
+    # get the hash of messages
+    my $LogDictionary = $Kernel::OM->Get('Kernel::Config')->Get('PGP::Log');
+
+    my %ComputableLog;
+    for my $Line (@ComputableLines) {
+
+        # get tag
+        $Line =~ m{(:?\[GNUPG\:\]\s)(\w*)(:?\s.*)?}xms;
+        my $Tag     = $2;
+        my $Message = $Line;
+
+        $ComputableLog{$Tag} = {
+            Log => $LogDictionary->{$Tag} || $Line,
+            MessageLong => $Line || $LogDictionary->{$Tag},
+            }
+    }
+
+    # get clean log lines
+    my $CleanLog = '';
+    while ( $Param{LogString} =~ m{(gpg\:\s.*)}g ) {
+        $CleanLog .= ' ' . $1;
+    }
+
+    $ComputableLog{CleanLog} = $CleanLog;
+
+    return %ComputableLog;
+}
+</pre></div>
+
+<h2 id="ParseGPGKeyList">_ParseGPGKeyList()</h2>
+
+<p><a href="#" onclick="toggleCode('method__ParseGPGKeyList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__ParseGPGKeyList">
+                                        <pre>
+
+sub _ParseGPGKeyList {
+    my ( $Self, %Param ) = @_;
+
+    # get time object
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+    my %Key;
+    my $InKey;
+    my @Result;
+    LINE:
+    for my $Line ( @{ $Param{GPGOutputLines} } ) {
+
+        # The option '--with-colons' causes gpg to output a machine-parsable format where the
+        # individual fields are separated by a colon (':') - for a detailed description,
+        # see the file doc/DETAILS in the gpg source distribution.
+        my @Fields = split ':', $Line;
+        my $Type = $Fields[0];
+
+        # 'sec' or 'pub' indicate the start of a info block for a specific key
+        if ( $Type eq 'sec' || $Type eq 'pub' ) {
+
+            # push last key and restart with empty key info
+            if (%Key) {
+                push( @Result, {%Key} );
+                %Key = ();
+            }
+            $InKey = 1;
+            $Key{Type} = $Type;
+
+            # is the key expired, revoked or good?
+            if ( $Fields[1] eq 'e' ) {
+                $Key{Status} = 'expired';
+            }
+            elsif ( $Fields[1] eq 'r' ) {
+                $Key{Status} = 'revoked';
+            }
+            else {
+                $Key{Status} = 'good';
+            }
+
+            $Key{Bit}              = $Fields[2];
+            $Key{Key}              = substr( $Fields[4], -8, 8 );    # only use last 8 chars of key-ID
+                                                                     # in order to be compatible with
+                                                                     # previous parser
+            $Key{Created}          = $Fields[5];
+            $Key{Expires}          = $Fields[6] || 'never';
+            $Key{Identifier}       = $Fields[9];
+            $Key{IdentifierMaster} = $Fields[9];
+        }
+
+        # skip anything before we've seen the first key
+        next LINE if !$InKey;
+
+        # add any additional info to the current key
+        if ( $Type eq 'uid' ) {
+            if ( $Key{Identifier} ) {
+                $Key{Identifier} .= ', ' . $Fields[9];
+            }
+            else {
+                $Key{Identifier} .= $Fields[9];
+            }
+        }
+        elsif ( $Type eq 'ssb' ) {
+            $Key{Bit} = $Fields[2];
+
+            # only use last 8 chars of key-ID in order to be compatible with previous parser
+            $Key{Key} = substr( $Fields[4], -8, 8 );
+            $Key{Created} = $Fields[5];
+        }
+        elsif ( $Type eq 'sub' ) {
+
+            # only use last 8 chars of key-ID in order to be compatible with previous parser
+            $Key{KeyPrivate} = substr( $Fields[4], -8, 8 );
+        }
+        elsif ( $Type eq 'fpr' ) {
+            $Key{FingerprintShort} = $Fields[9];
+
+            # add fingerprint in standard format, too
+            if (
+                $Fields[9] =~ m{
+                (\w\w\w\w)(\w\w\w\w)(\w\w\w\w)(\w\w\w\w)(\w\w\w\w)
+                (\w\w\w\w)(\w\w\w\w)(\w\w\w\w)(\w\w\w\w)(\w\w\w\w)
+            }x
+                )
+            {
+                $Key{Fingerprint} = "$1 $2 $3 $4 $5  $6 $7 $8 $9 $10";
+            }
+        }
+
+        # convert system time to timestamp
+        if ( $Key{Created} !~ /-/ ) {
+            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
+                SystemTime => $Key{Created},
+            );
+            $Key{Created} = "$Year-$Month-$Day";
+        }
+
+        # expires
+        if ( $Key{Expires} =~ /^\d*$/ ) {
+            my ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay ) = $TimeObject->SystemTime2Date(
+                SystemTime => $Key{Expires},
+            );
+            $Key{Expires} = "$Year-$Month-$Day";
+        }
+    }
+
+    if (%Key) {
+        push( @Result, \%Key );
+    }
+
+    return @Result;
+}
+</pre></div>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

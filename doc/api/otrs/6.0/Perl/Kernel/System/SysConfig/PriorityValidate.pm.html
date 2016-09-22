@@ -58,7 +58,13 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Validate">Validate()</a></li>
+	<li><a href="#GetAutoCorrectValue">GetAutoCorrectValue()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,26 +80,136 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # set the debug flag
+    $Self->{Debug} = $Param{Debug} || 0;
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $PriorityValidateObject = $Kernel::OM-&gt;Get('Kernel::System::SysConfig::PriorityValidate');
 
-</pre></dd>	<dt>Validate()</dt>
-		<dd><p>Validates the given data, checks if the given priority exists and if it is valid.</p></dd>
-<dd><pre>    my $Success = $PriorityValidateObject-&gt;Validate(
+</pre><h2 id="Validate">Validate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Validate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Validate">
+                                        <pre>
+
+sub Validate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Data} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Data!",
+        );
+        return;
+    }
+
+    # data is a not a scalar
+    if ( ref $Param{Data} ) {
+
+        # get the reference type
+        my $RefType = ref $Param{Data};
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Data must be a scalar, but it is a $RefType!",
+        );
+        return;
+    }
+
+    # get list of all valid priorities
+    my %Priorities = $Kernel::OM->Get('Kernel::System::Priority')->PriorityList(
+        Valid => 1,
+    );
+
+    # build lookup hash for priority names
+    my %Priority2ID = reverse %Priorities;
+
+    # priority does not exist or is invalid
+    return if !$Priority2ID{ $Param{Data} };
+
+    return 1;
+}
+</pre></div>
+
+<p>Validates the given data, checks if the given priority exists and if it is valid.</p>
+
+<pre>    my $Success = $PriorityValidateObject-&gt;Validate(
         Data =&gt; '3 normal',
     );
 
-</pre></dd>	<dt>GetAutoCorrectValue()</dt>
-		<dd><p>Returns a valid priority name which can be used to auto-correct
-a sysconfig option with an invalid priority name.</p></dd>
-<dd><pre>    my $Value = $PriorityValidateObject-&gt;GetAutoCorrectValue();
+</pre><h2 id="GetAutoCorrectValue">GetAutoCorrectValue()</h2>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<p><a href="#" onclick="toggleCode('method_GetAutoCorrectValue');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetAutoCorrectValue">
+                                        <pre>
+
+sub GetAutoCorrectValue {
+    my ( $Self, %Param ) = @_;
+
+    # get list of all valid priorities
+    my %Priorities = $Kernel::OM->Get('Kernel::System::Priority')->PriorityList(
+        Valid => 1,
+    );
+
+    # build lookup hash for priority names
+    my %Priority2ID = reverse %Priorities;
+
+    # try to find the priority '3 normal'
+    if ( $Priority2ID{'3 normal'} ) {
+        return '3 normal';
+    }
+
+    # try to find the first priority containing 'normal'
+    elsif ( my ($Priority) = grep { $_ =~ m{ normal }xms } sort keys %Priority2ID ) {
+        return $Priority;
+    }
+
+    # try to find the first priority starting with '3 '
+    elsif ( ($Priority) = grep { $_ =~ m{ \A 3 [ ] }xms } sort keys %Priority2ID ) {
+        return $Priority;
+    }
+
+    # return the first valid priority in the list
+    else {
+        my @SortedPriorities = sort keys %Priority2ID;
+        return $SortedPriorities[0];
+    }
+
+    # return undef if no priority could be found
+    return;
+}
+</pre></div>
+
+<p>Returns a valid priority name which can be used to auto-correct
+a sysconfig option with an invalid priority name.</p>
+
+<pre>    my $Value = $PriorityValidateObject-&gt;GetAutoCorrectValue();
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

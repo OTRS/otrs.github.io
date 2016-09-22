@@ -58,7 +58,17 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#ActivityDialogAdd">ActivityDialogAdd()</a></li>
+	<li><a href="#ActivityDialogDelete">ActivityDialogDelete()</a></li>
+	<li><a href="#ActivityDialogGet">ActivityDialogGet()</a></li>
+	<li><a href="#ActivityDialogUpdate">ActivityDialogUpdate()</a></li>
+	<li><a href="#ActivityDialogList">ActivityDialogList()</a></li>
+	<li><a href="#ActivityDialogListGet">ActivityDialogListGet()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,17 +84,166 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get the cache TTL (in seconds)
+    $Self->{CacheTTL} = int( $Kernel::OM->Get('Kernel::Config')->Get('Process::CacheTTL') || 3600 );
+
+    # set lower if database is case sensitive
+    $Self->{Lower} = '';
+    if ( $Kernel::OM->Get('Kernel::System::DB')->GetDatabaseFunction('CaseSensitive') ) {
+        $Self->{Lower} = 'LOWER';
+    }
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $ActivityDialogObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::DB::ActivityDialog');
 
-</pre></dd>	<dt>ActivityDialogAdd()</dt>
-		<dd><p>add new ActivityDialog</p></dd>
-		<dd><p>returns the id of the created activity dialog if success or undef otherwise</p></dd>
-<dd><pre>    my $ID = $ActivityDialogObject-&gt;ActivityDialogAdd(
+</pre><h2 id="ActivityDialogAdd">ActivityDialogAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityDialogAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityDialogAdd">
+                                        <pre>
+
+sub ActivityDialogAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(EntityID Name Config UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!",
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # check if EntityID already exists
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT id
+            FROM pm_activity_dialog
+            WHERE $Self->{Lower}(entity_id) = $Self->{Lower}(?)",
+        Bind  => [ \$Param{EntityID} ],
+        Limit => 1,
+    );
+
+    my $EntityExists;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $EntityExists = 1;
+    }
+
+    if ($EntityExists) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The EntityID:$Param{EntityID} already exists for an activity dialog!"
+        );
+        return;
+    }
+
+    # check config valid format (at least it must contain the description short, fields and field
+    # order)
+    if ( !IsHashRefWithData( $Param{Config} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Config needs to be a valid Hash reference!",
+        );
+        return;
+    }
+    for my $Needed (qw(DescriptionShort Fields FieldOrder)) {
+        if ( !$Param{Config}->{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed in Config!",
+            );
+            return;
+        }
+    }
+
+    # check config formats
+    if ( ref $Param{Config}->{Fields} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Config Fields must be a Hash!",
+        );
+        return;
+    }
+    if ( ref $Param{Config}->{FieldOrder} ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Config Fields must be an Array!",
+        );
+        return;
+    }
+
+    # dump layout and config as string
+    my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
+
+    # Make sure the resulting string has the UTF-8 flag. YAML only sets it if
+    #   part of the data already had it.
+    utf8::upgrade($Config);
+
+    # sql
+    return if !$DBObject->Do(
+        SQL => '
+            INSERT INTO pm_activity_dialog ( entity_id, name, config, create_time,
+                create_by, change_time, change_by )
+            VALUES (?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{EntityID}, \$Param{Name}, \$Config, \$Param{UserID}, \$Param{UserID},
+        ],
+    );
+
+    return if !$DBObject->Prepare(
+        SQL  => 'SELECT id FROM pm_activity_dialog WHERE entity_id = ?',
+        Bind => [ \$Param{EntityID} ],
+    );
+
+    my $ID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $ID = $Row[0];
+    }
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ProcessManagement_ActivityDialog',
+    );
+
+    return if !$ID;
+
+    return $ID;
+}
+</pre></div>
+
+<p>add new ActivityDialog</p>
+
+<p>returns the id of the created activity dialog if success or undef otherwise</p>
+
+<pre>    my $ID = $ActivityDialogObject-&gt;ActivityDialogAdd(
         EntityID    =&gt; 'AD1'                   # mandatory, exportable unique identifier
         Name        =&gt; 'NameOfActivityDialog', # mandatory
         Config      =&gt; $ConfigHashRef,         # mandatory, activity dialog configuration to be
@@ -92,27 +251,174 @@
         UserID      =&gt; 123,                    # mandatory
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $ID = 567;
+</pre><p>Returns:</p>
 
-</pre></dd>	<dt>ActivityDialogDelete()</dt>
-		<dd><p>delete an ActivityDialog</p></dd>
-		<dd><p>returns 1 if success or undef otherwise</p></dd>
-<dd><pre>    my $Success = $ActivityDialogObject-&gt;ActivityDialogDelete(
+<pre>    $ID = 567;
+
+</pre><h2 id="ActivityDialogDelete">ActivityDialogDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityDialogDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityDialogDelete">
+                                        <pre>
+
+sub ActivityDialogDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!"
+            );
+            return;
+        }
+    }
+
+    # check if exists
+    my $ActivityDialog = $Self->ActivityDialogGet(
+        ID     => $Param{ID},
+        UserID => 1,
+    );
+    return if !IsHashRefWithData($ActivityDialog);
+
+    # delete activity dialog
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL  => 'DELETE FROM pm_activity_dialog WHERE id = ?',
+        Bind => [ \$Param{ID} ],
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ProcessManagement_ActivityDialog',
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>delete an ActivityDialog</p>
+
+<p>returns 1 if success or undef otherwise</p>
+
+<pre>    my $Success = $ActivityDialogObject-&gt;ActivityDialogDelete(
         ID      =&gt; 123,
         UserID  =&gt; 123,
     );
 
-</pre></dd>	<dt>ActivityDialogGet()</dt>
-		<dd><p>get Activity Dialog attributes</p></dd>
-<dd><pre>    my $ActivityDialog = $ActivityDialogObject-&gt;ActivityDialogGet(
+</pre><h2 id="ActivityDialogGet">ActivityDialogGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityDialogGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityDialogGet">
+                                        <pre>
+
+sub ActivityDialogGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} && !$Param{EntityID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ID or EntityID!'
+        );
+        return;
+    }
+
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+        return;
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # check cache
+    my $CacheKey;
+    if ( $Param{ID} ) {
+        $CacheKey = 'ActivityDialogGet::ID::' . $Param{ID};
+    }
+    else {
+        $CacheKey = 'ActivityDialogGet::EntityID::' . $Param{EntityID};
+    }
+
+    my $Cache = $CacheObject->Get(
+        Type => 'ProcessManagement_ActivityDialog',
+        Key  => $CacheKey,
+    );
+    return $Cache if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    if ( $Param{ID} ) {
+        return if !$DBObject->Prepare(
+            SQL => '
+                SELECT id, entity_id, name, config, create_time, change_time
+                FROM pm_activity_dialog
+                WHERE id = ?',
+            Bind  => [ \$Param{ID} ],
+            Limit => 1,
+        );
+    }
+    else {
+        return if !$DBObject->Prepare(
+            SQL => '
+                SELECT id, entity_id, name, config, create_time, change_time
+                FROM pm_activity_dialog
+                WHERE entity_id = ?',
+            Bind  => [ \$Param{EntityID} ],
+            Limit => 1,
+        );
+    }
+
+    # get yaml object
+    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
+
+    my %Data;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+
+        my $Config = $YAMLObject->Load( Data => $Data[3] );
+
+        %Data = (
+            ID         => $Data[0],
+            EntityID   => $Data[1],
+            Name       => $Data[2],
+            Config     => $Config,
+            CreateTime => $Data[4],
+            ChangeTime => $Data[5],
+
+        );
+    }
+
+    return if !$Data{ID};
+
+    # set cache
+    $CacheObject->Set(
+        Type  => 'ProcessManagement_ActivityDialog',
+        Key   => $CacheKey,
+        Value => \%Data,
+        TTL   => $Self->{CacheTTL},
+    );
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get Activity Dialog attributes</p>
+
+<pre>    my $ActivityDialog = $ActivityDialogObject-&gt;ActivityDialogGet(
         ID            =&gt; 123,            # ID or EntityID is needed
         EntityID      =&gt; 'P1',
         UserID        =&gt; 123,            # mandatory
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $ActivityDialog = {
+</pre><p>Returns:</p>
+
+<pre>    $ActivityDialog = {
         ID           =&gt; 123,
         EntityID     =&gt; 'AD1',
         Name         =&gt; 'some name',
@@ -121,10 +427,145 @@
         ChangeTime   =&gt; '2012-07-04 15:08:00',
     };
 
-</pre></dd>	<dt>ActivityDialogUpdate()</dt>
-		<dd><p>update ActivityDialog attributes</p></dd>
-		<dd><p>returns 1 if success or undef otherwise</p></dd>
-<dd><pre>    my $Success = $ActivityDialogObject-&gt;ActivityDialogUpdate(
+</pre><h2 id="ActivityDialogUpdate">ActivityDialogUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityDialogUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityDialogUpdate">
+                                        <pre>
+
+sub ActivityDialogUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID EntityID Name Config UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!"
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # check if EntityID already exists
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT id FROM pm_activity_dialog
+            WHERE $Self->{Lower}(entity_id) = $Self->{Lower}(?)
+            AND id != ?",
+        Bind  => [ \$Param{EntityID}, \$Param{ID} ],
+        LIMIT => 1,
+    );
+
+    my $EntityExists;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $EntityExists = 1;
+    }
+
+    if ($EntityExists) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The EntityID:$Param{Name} already exists for an ActivityDialog!",
+        );
+        return;
+    }
+
+    # check config valid format (at least it must contain the description)
+    if ( !IsHashRefWithData( $Param{Config} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Config needs to be a valid Hash reference!",
+        );
+        return;
+    }
+    for my $Needed (qw(DescriptionShort Fields FieldOrder)) {
+        if ( !$Param{Config}->{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed in Config!",
+            );
+            return;
+        }
+    }
+
+    # check config formats
+    if ( ref $Param{Config}->{Fields} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Config Fields must be a Hash!",
+        );
+        return;
+    }
+    if ( ref $Param{Config}->{FieldOrder} ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Config Fields must be an Array!",
+        );
+        return;
+    }
+
+    # dump layout and config as string
+    my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
+
+    # Make sure the resulting string has the UTF-8 flag. YAML only sets it if
+    #   part of the data already had it.
+    utf8::upgrade($Config);
+
+    # check if need to update db
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT entity_id, name, config
+            FROM pm_activity_dialog
+            WHERE id = ?',
+        Bind  => [ \$Param{ID} ],
+        Limit => 1,
+    );
+
+    my $CurrentEntityID;
+    my $CurrentName;
+    my $CurrentConfig;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $CurrentEntityID = $Data[0];
+        $CurrentName     = $Data[1];
+        $CurrentConfig   = $Data[2];
+    }
+
+    if ($CurrentEntityID) {
+
+        return 1 if $CurrentEntityID eq $Param{EntityID}
+            && $CurrentName eq $Param{Name}
+            && $CurrentConfig eq $Config;
+    }
+
+    # sql
+    return if !$DBObject->Do(
+        SQL => '
+            UPDATE pm_activity_dialog
+            SET entity_id = ?, name = ?,  config = ?, change_time = current_timestamp,
+                change_by = ?
+            WHERE id = ?',
+        Bind => [
+            \$Param{EntityID}, \$Param{Name}, \$Config, \$Param{UserID}, \$Param{ID},
+        ],
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ProcessManagement_ActivityDialog',
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>update ActivityDialog attributes</p>
+
+<p>returns 1 if success or undef otherwise</p>
+
+<pre>    my $Success = $ActivityDialogObject-&gt;ActivityDialogUpdate(
         ID          =&gt; 123,                    # mandatory
         EntityID    =&gt; 'AD1'                   # mandatory, exportable unique identifier
         Name        =&gt; 'NameOfActivityDialog', # mandatory
@@ -133,66 +574,51 @@
         UserID      =&gt; 123,                    # mandatory
     );
 
-</pre></dd>	<dt>ActivityDialogList()</dt>
-		<dd><p>get an ActivityDialog list</p></dd>
-<dd><pre>    my $List = $ActivityDialogObject-&gt;ActivityDialogList(
-        UseEntities =&gt; 0,                       # default 0, 1 || 0. if 0 the return hash keys are
-                                                #    the activity dialog IDs otherwise keys are the
-                                                #    activity dialog entity IDs
-        UserID      =&gt; 1,
-    );
+</pre><h2 id="ActivityDialogList">ActivityDialogList()</h2>
 
-</pre></dd><dd><pre>    Returns:
+<p><a href="#" onclick="toggleCode('method_ActivityDialogList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityDialogList">
+                                        <pre>
 
-</pre></dd><dd><pre>    $List = {
-        1 =&gt; 'NameOfActivityDialog',
-    }
+sub ActivityDialogList {
+    my ( $Self, %Param ) = @_;
 
-</pre></dd><dd><pre>    or
-
-</pre></dd><dd><pre>    $List = {
-        'AD1' =&gt; 'NameOfActivityDialog',
-    }
-=cut
-
-</pre></dd>		<dd><p>sub ActivityDialogList {
-    my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    # check needed
+    # check needed
     if ( !$Param{UserID} ) {
-        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
-            Priority =&gt; 'error',
-            Message  =&gt; &quot;Need UserID!&quot;
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need UserID!"
         );
         return;
     }
 
-</pre></dd><dd><pre>    # check cache
+    # check cache
     my $UseEntities = 0;
-    if ( defined $Param{UseEntities} &amp;&amp; $Param{UseEntities} ) {
+    if ( defined $Param{UseEntities} && $Param{UseEntities} ) {
         $UseEntities = 1;
     }
 
-</pre></dd><dd><pre>    # get cache object
-    my $CacheObject = $Kernel::OM-&gt;Get('Kernel::System::Cache');
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
-</pre></dd><dd><pre>    my $CacheKey = 'ActivityDialogList::UseEntities::' . $UseEntities;
-    my $Cache    = $CacheObject-&gt;Get(
-        Type =&gt; 'ProcessManagement_ActivityDialog',
-        Key  =&gt; $CacheKey,
+    my $CacheKey = 'ActivityDialogList::UseEntities::' . $UseEntities;
+    my $Cache    = $CacheObject->Get(
+        Type => 'ProcessManagement_ActivityDialog',
+        Key  => $CacheKey,
     );
     return $Cache if ref $Cache;
 
-</pre></dd><dd><pre>    # get database object
-    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
-</pre></dd><dd><pre>    my $SQL = '
+    my $SQL = '
             SELECT id, entity_id, name
             FROM pm_activity_dialog';
 
-</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare( SQL =&gt; $SQL );
+    return if !$DBObject->Prepare( SQL => $SQL );
 
-</pre></dd><dd><pre>    my %Data;
-    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         if ( !$UseEntities ) {
             $Data{ $Row[0] } = $Row[2];
         }
@@ -201,25 +627,116 @@
         }
     }
 
-</pre></dd><dd><pre>    # set cache
-    $CacheObject-&gt;Set(
-        Type  =&gt; 'ProcessManagement_ActivityDialog',
-        Key   =&gt; $CacheKey,
-        Value =&gt; \%Data,
-        TTL   =&gt; $Self-&gt;{CacheTTL},
+    # set cache
+    $CacheObject->Set(
+        Type  => 'ProcessManagement_ActivityDialog',
+        Key   => $CacheKey,
+        Value => \%Data,
+        TTL   => $Self->{CacheTTL},
     );
 
-</pre></dd><dd><pre>    return \%Data;
+    return \%Data;
 }
+</pre></div>
 
-</pre></dd>	<dt>ActivityDialogListGet()</dt>
-		<dd><p>get an Activity Dialog list with all activity dialog details</p></dd>
-<dd><pre>    my $List = $ActivityDialogObject-&gt;ActivityDialogListGet(
+<p>get an ActivityDialog list</p>
+
+<pre>    my $List = $ActivityDialogObject-&gt;ActivityDialogList(
+        UseEntities =&gt; 0,                       # default 0, 1 || 0. if 0 the return hash keys are
+                                                #    the activity dialog IDs otherwise keys are the
+                                                #    activity dialog entity IDs
         UserID      =&gt; 1,
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $List = [
+    Returns:
+
+    $List = {
+        1 =&gt; 'NameOfActivityDialog',
+    }
+
+    or
+
+    $List = {
+        'AD1' =&gt; 'NameOfActivityDialog',
+    }
+
+</pre><h2 id="ActivityDialogListGet">ActivityDialogListGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityDialogListGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityDialogListGet">
+                                        <pre>
+
+sub ActivityDialogListGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+        return;
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # check cache
+    my $CacheKey = 'ActivityDialogListGet';
+
+    my $Cache = $CacheObject->Get(
+        Type => 'ProcessManagement_ActivityDialog',
+        Key  => $CacheKey,
+    );
+    return $Cache if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT id, entity_id
+            FROM pm_activity_dialog
+            ORDER BY id',
+    );
+
+    my @ActivityDialogIDs;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        push @ActivityDialogIDs, $Row[0];
+    }
+
+    my @Data;
+    for my $ItemID (@ActivityDialogIDs) {
+
+        my $ActivityDialogData = $Self->ActivityDialogGet(
+            ID     => $ItemID,
+            UserID => 1,
+        );
+        push @Data, $ActivityDialogData;
+    }
+
+    # set cache
+    $CacheObject->Set(
+        Type  => 'ProcessManagement_ActivityDialog',
+        Key   => $CacheKey,
+        Value => \@Data,
+        TTL   => $Self->{CacheTTL},
+    );
+
+    return \@Data;
+}
+</pre></div>
+
+<p>get an Activity Dialog list with all activity dialog details</p>
+
+<pre>    my $List = $ActivityDialogObject-&gt;ActivityDialogListGet(
+        UserID      =&gt; 1,
+    );
+
+</pre><p>Returns:</p>
+
+<pre>    $List = [
         {
             ID             =&gt; 123,
             EntityID       =&gt; 'AD1',
@@ -238,8 +755,7 @@
         }
     ];
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

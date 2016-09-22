@@ -58,7 +58,15 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#SalutationAdd">SalutationAdd()</a></li>
+	<li><a href="#SalutationGet">SalutationGet()</a></li>
+	<li><a href="#SalutationUpdate">SalutationUpdate()</a></li>
+	<li><a href="#SalutationList">SalutationList()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,16 +82,94 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self->{CacheType} = 'Salutation';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $SalutationObject = $Kernel::OM-&gt;Get('Kernel::System::Salutation');
 
-</pre></dd>	<dt>SalutationAdd()</dt>
-		<dd><p>add new salutations</p></dd>
-<dd><pre>    my $ID = $SalutationObject-&gt;SalutationAdd(
+</pre><h2 id="SalutationAdd">SalutationAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SalutationAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SalutationAdd">
+                                        <pre>
+
+sub SalutationAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name Text ValidID UserID ContentType)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Do(
+        SQL => 'INSERT INTO salutation (name, text, content_type, comments, valid_id, '
+            . ' create_time, create_by, change_time, change_by) VALUES '
+            . ' (?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{Name}, \$Param{Text}, \$Param{ContentType}, \$Param{Comment},
+            \$Param{ValidID}, \$Param{UserID}, \$Param{UserID},
+        ],
+    );
+
+    # get new salutation id
+    $DBObject->Prepare(
+        SQL   => 'SELECT id FROM salutation WHERE name = ?',
+        Bind  => [ \$Param{Name} ],
+        Limit => 1,
+    );
+
+    my $ID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $ID = $Row[0];
+    }
+
+    return if !$ID;
+
+    # reset cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
+
+    return $ID;
+}
+</pre></div>
+
+<p>add new salutations</p>
+
+<pre>    my $ID = $SalutationObject-&gt;SalutationAdd(
         Name        =&gt; 'New Salutation',
         Text        =&gt; &quot;--\nSome Salutation Infos&quot;,
         ContentType =&gt; 'text/plain; charset=utf-8',
@@ -92,15 +178,128 @@
         UserID      =&gt; 123,
     );
 
-</pre></dd>	<dt>SalutationGet()</dt>
-		<dd><p>get salutations attributes</p></dd>
-<dd><pre>    my %Salutation = $SalutationObject-&gt;SalutationGet(
+</pre><h2 id="SalutationGet">SalutationGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SalutationGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SalutationGet">
+                                        <pre>
+
+sub SalutationGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need ID!",
+        );
+        return;
+    }
+
+    # check cache
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => 'SalutationGet' . $Param{ID},
+    );
+    return %{$Cache} if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get the salutation
+    return if !$DBObject->Prepare(
+        SQL => 'SELECT id, name, text, content_type, comments, valid_id, change_time, create_time '
+            . 'FROM salutation WHERE id = ?',
+        Bind => [ \$Param{ID} ],
+    );
+
+    # fetch the result
+    my %Data;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        %Data = (
+            ID          => $Data[0],
+            Name        => $Data[1],
+            Text        => $Data[2],
+            ContentType => $Data[3] || 'text/plain',
+            Comment     => $Data[4],
+            ValidID     => $Data[5],
+            ChangeTime  => $Data[6],
+            CreateTime  => $Data[7],
+        );
+    }
+
+    # no data found
+    if ( !%Data ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "SalutationID '$Param{ID}' not found!",
+        );
+        return;
+    }
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => 'SalutationGet' . $Param{ID},
+        Value => \%Data,
+    );
+
+    return %Data;
+}
+</pre></div>
+
+<p>get salutations attributes</p>
+
+<pre>    my %Salutation = $SalutationObject-&gt;SalutationGet(
         ID =&gt; 123,
     );
 
-</pre></dd>	<dt>SalutationUpdate()</dt>
-		<dd><p>update salutation attributes</p></dd>
-<dd><pre>    $SalutationObject-&gt;SalutationUpdate(
+</pre><h2 id="SalutationUpdate">SalutationUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SalutationUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SalutationUpdate">
+                                        <pre>
+
+sub SalutationUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(ID Name Text ContentType ValidID UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    return if !$DBObject->Do(
+        SQL => 'UPDATE salutation SET name = ?, text = ?, content_type = ?, comments = ?, '
+            . 'valid_id = ?, change_time = current_timestamp, change_by = ? WHERE id = ?',
+        Bind => [
+            \$Param{Name}, \$Param{Text}, \$Param{ContentType}, \$Param{Comment},
+            \$Param{ValidID}, \$Param{UserID}, \$Param{ID},
+        ],
+    );
+
+    # reset cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>update salutation attributes</p>
+
+<pre>    $SalutationObject-&gt;SalutationUpdate(
         ID          =&gt; 123,
         Name        =&gt; 'New Salutation',
         Text        =&gt; &quot;--\nSome Salutation Infos&quot;,
@@ -110,16 +309,75 @@
         UserID      =&gt; 123,
     );
 
-</pre></dd>	<dt>SalutationList()</dt>
-		<dd><p>get salutation list</p></dd>
-<dd><pre>    my %List = $SalutationObject-&gt;SalutationList();
+</pre><h2 id="SalutationList">SalutationList()</h2>
 
-</pre></dd><dd><pre>    my %List = $SalutationObject-&gt;SalutationList(
+<p><a href="#" onclick="toggleCode('method_SalutationList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SalutationList">
+                                        <pre>
+
+sub SalutationList {
+    my ( $Self, %Param ) = @_;
+
+    # check valid param
+    if ( !defined $Param{Valid} ) {
+        $Param{Valid} = 1;
+    }
+
+    # create cachekey
+    my $CacheKey;
+    if ( $Param{Valid} ) {
+        $CacheKey = 'SalutationList::Valid';
+    }
+    else {
+        $CacheKey = 'SalutationList::All';
+    }
+
+    # check cache
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+    return %{$Cache} if $Cache;
+
+    # create sql
+    my $SQL = 'SELECT id, name FROM salutation ';
+    if ( $Param{Valid} ) {
+        $SQL
+            .= "WHERE valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare( SQL => $SQL );
+
+    # fetch the result
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[1];
+    }
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%Data,
+    );
+
+    return %Data;
+}
+</pre></div>
+
+<p>get salutation list</p>
+
+<pre>    my %List = $SalutationObject-&gt;SalutationList();
+
+    my %List = $SalutationObject-&gt;SalutationList(
         Valid =&gt; 0,
     );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

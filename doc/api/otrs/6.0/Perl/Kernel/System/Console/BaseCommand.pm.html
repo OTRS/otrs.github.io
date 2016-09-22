@@ -58,7 +58,32 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Configure">Configure()</a></li>
+	<li><a href="#Name">Name()</a></li>
+	<li><a href="#Description">Description()</a></li>
+	<li><a href="#AdditionalHelp">AdditionalHelp()</a></li>
+	<li><a href="#AddArgument">AddArgument()</a></li>
+	<li><a href="#GetArgument">GetArgument()</a></li>
+	<li><a href="#AddOption">AddOption()</a></li>
+	<li><a href="#GetOption">GetOption()</a></li>
+	<li><a href="#PreRun">PreRun()</a></li>
+	<li><a href="#Run">Run()</a></li>
+	<li><a href="#PostRun">PostRun()</a></li>
+	<li><a href="#Execute">Execute()</a></li>
+	<li><a href="#ExitCodeError">ExitCodeError()</a></li>
+	<li><a href="#ExitCodeOk">ExitCodeOk()</a></li>
+	<li><a href="#GetUsageHelp">GetUsageHelp()</a></li>
+	<li><a href="#ANSI">ANSI()</a></li>
+	<li><a href="#PrintError">PrintError()</a></li>
+	<li><a href="#Print">Print()</a></li>
+	<li><a href="#ParseGlobalOptions">_ParseGlobalOptions()</a></li>
+	<li><a href="#ParseCommandlineArguments">_ParseCommandlineArguments()</a></li>
+	<li><a href="#Color">_Color()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,43 +99,269 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>constructor for new objects. You should not need to reimplement this in your command,
-override <a href="#Configure">Configure()</a> instead if you need to.</p></dd>
-	<dt>Configure()</dt>
-		<dd><p>initializes this object. Override this method in your commands.</p></dd>
-		<dd><p>This method might throw exceptions.</p></dd>
-	<dt>Name()</dt>
-		<dd><p>get the Name of the current Command, e. g. 'Admin::User::SetPassword'.</p></dd>
-	<dt>Description()</dt>
-		<dd><p>get/set description for the current command. Call this in your Configure() method.</p></dd>
-	<dt>AdditionalHelp()</dt>
-		<dd><p>get/set additional help text for the current command. Call this in your Configure() method.</p></dd>
-		<dd><p>You can use color tags (see <a href="#Print">Print()</a>) in your help tags.</p></dd>
-	<dt>AddArgument()</dt>
-		<dd><p>adds an argument that can/must be specified on the command line.
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # for usage help
+    $Self->{Name} = $Type;
+    $Self->{Name} =~ s{Kernel::System::Console::Command::}{}smx;
+
+    $Self->{ANSI} = 1;
+
+    # Check if we are in an interactive terminal, disable colors otherwise.
+    if ( !IO::Interactive::is_interactive() ) {
+        $Self->{ANSI} = 0;
+    }
+
+    # Force creation of the EncodeObject as it initialzes STDOUT/STDERR for unicode output.
+    $Kernel::OM->Get('Kernel::System::Encode');
+
+    # Call object specific configure method. We use an eval to trap any exceptions
+    #   that might occur here. Only if everything was ok we set the _ConfigureSuccessful
+    #   flag.
+    eval {
+        $Self->Configure();
+        $Self->{_ConfigureSuccessful} = 1;
+    };
+
+    $Self->{_GlobalOptions} = [
+        {
+            Name        => 'help',
+            Description => 'Display help for this command.',
+        },
+        {
+            Name        => 'no-ansi',
+            Description => 'Do not perform ANSI terminal output coloring.',
+        },
+        {
+            Name        => 'quiet',
+            Description => 'Suppress informative output, only retain error messages.',
+        },
+        {
+            Name => 'allow-root',
+            Description =>
+                'Allow root user to execute the command. This might damage your system; use at your own risk.',
+            Invisible => 1,    # hide from usage screen
+        },
+    ];
+
+    return $Self;
+}
+</pre></div>
+
+<p>constructor for new objects. You should not need to reimplement this in your command,
+override <a href="#Configure">Configure()</a> instead if you need to.</p>
+
+<h2 id="Configure">Configure()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Configure');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Configure">
+                                        <pre>
+
+sub Configure {
+    return;
+}
+</pre></div>
+
+<p>initializes this object. Override this method in your commands.</p>
+
+<p>This method might throw exceptions.</p>
+
+<h2 id="Name">Name()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Name');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Name">
+                                        <pre>
+
+sub Name {
+    my ($Self) = @_;
+
+    return $Self->{Name};
+}
+</pre></div>
+
+<p>get the Name of the current Command, e. g. 'Admin::User::SetPassword'.</p>
+
+<h2 id="Description">Description()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Description');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Description">
+                                        <pre>
+
+sub Description {
+    my ( $Self, $Description ) = @_;
+
+    $Self->{Description} = $Description if defined $Description;
+
+    return $Self->{Description};
+}
+</pre></div>
+
+<p>get/set description for the current command. Call this in your Configure() method.</p>
+
+<h2 id="AdditionalHelp">AdditionalHelp()</h2>
+
+<p><a href="#" onclick="toggleCode('method_AdditionalHelp');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AdditionalHelp">
+                                        <pre>
+
+sub AdditionalHelp {
+    my ( $Self, $AdditionalHelp ) = @_;
+
+    $Self->{AdditionalHelp} = $AdditionalHelp if defined $AdditionalHelp;
+
+    return $Self->{AdditionalHelp};
+}
+</pre></div>
+
+<p>get/set additional help text for the current command. Call this in your Configure() method.</p>
+
+<p>You can use color tags (see <a href="#Print">Print()</a>) in your help tags.</p>
+
+<h2 id="AddArgument">AddArgument()</h2>
+
+<p><a href="#" onclick="toggleCode('method_AddArgument');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AddArgument">
+                                        <pre>
+
+sub AddArgument {
+    my ( $Self, %Param ) = @_;
+
+    for my $Key (qw(Name Description ValueRegex)) {
+        if ( !$Param{$Key} ) {
+            $Self->PrintError("Need $Key.");
+            die;
+        }
+    }
+
+    for my $Key (qw(Required)) {
+        if ( !defined $Param{$Key} ) {
+            $Self->PrintError("Need $Key.");
+            die;
+        }
+    }
+
+    if ( $Self->{_ArgumentSeen}->{ $Param{Name} }++ ) {
+        $Self->PrintError("Cannot register argument '$Param{Name}' twice.");
+        die;
+    }
+
+    if ( $Self->{_OptionSeen}->{ $Param{Name} } ) {
+        $Self->PrintError("Cannot add argument '$Param{Name}', because it is already registered as an option.");
+        die;
+    }
+
+    $Self->{_Arguments} //= [];
+    push @{ $Self->{_Arguments} }, \%Param;
+}
+</pre></div>
+
+<p>adds an argument that can/must be specified on the command line.
 This function must be called during Configure() by the command to
-indicate which arguments it can process.</p></dd>
-<dd><pre>    $CommandObject-&gt;AddArgument(
+indicate which arguments it can process.</p>
+
+<pre>    $CommandObject-&gt;AddArgument(
         Name         =&gt; 'filename',
         Description  =&gt; 'name of the file to be loaded',
         Required     =&gt; 1,
         ValueRegex   =&gt; qr{a-zA-Z0-9]\.txt},
     );
 
-</pre></dd>		<dd><p>Please note that required arguments have to be specified before any optional ones.</p></dd>
-		<dd><p>The information about known arguments and options (see below) will be used to generate
-usage help and also to automatically verify the data provided by the user on the commandline.</p></dd>
-	<dt>GetArgument()</dt>
-		<dd><p>fetch an argument value as provided by the user on the commandline.</p></dd>
-<dd><pre>    my $Filename = $CommandObject-&gt;GetArgument('filename');
+</pre><p>Please note that required arguments have to be specified before any optional ones.</p>
 
-</pre></dd>	<dt>AddOption()</dt>
-		<dd><p>adds an option that can/must be specified on the command line.
+<p>The information about known arguments and options (see below) will be used to generate
+usage help and also to automatically verify the data provided by the user on the commandline.</p>
+
+<h2 id="GetArgument">GetArgument()</h2>
+
+<p><a href="#" onclick="toggleCode('method_GetArgument');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetArgument">
+                                        <pre>
+
+sub GetArgument {
+    my ( $Self, $Argument ) = @_;
+
+    if ( !$Self->{_ArgumentSeen}->{$Argument} ) {
+        $Self->PrintError("Argument '$Argument' was not configured and cannot be accessed.");
+        return;
+    }
+
+    return $Self->{_ParsedARGV}->{Arguments}->{$Argument};
+}
+</pre></div>
+
+<p>fetch an argument value as provided by the user on the commandline.</p>
+
+<pre>    my $Filename = $CommandObject-&gt;GetArgument('filename');
+
+</pre><h2 id="AddOption">AddOption()</h2>
+
+<p><a href="#" onclick="toggleCode('method_AddOption');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AddOption">
+                                        <pre>
+
+sub AddOption {
+    my ( $Self, %Param ) = @_;
+
+    for my $Key (qw(Name Description)) {
+        if ( !$Param{$Key} ) {
+            $Self->PrintError("Need $Key.");
+            die;
+        }
+    }
+
+    for my $Key (qw(Required HasValue)) {
+        if ( !defined $Param{$Key} ) {
+            $Self->PrintError("Need $Key.");
+            die;
+        }
+    }
+
+    if ( $Param{HasValue} ) {
+        if ( !$Param{ValueRegex} ) {
+            $Self->PrintError("Need ValueRegex.");
+            die;
+        }
+    }
+
+    if ( $Param{Multiple} && !$Param{HasValue} ) {
+        $Self->PrintError("Multiple can only be specified if HasValue is true.");
+        die;
+    }
+
+    if ( $Self->{_OptionSeen}->{ $Param{Name} }++ ) {
+        $Self->PrintError("Cannot register option '$Param{Name}' twice.");
+        die;
+    }
+
+    if ( $Self->{_ArgumentSeen}->{ $Param{Name} } ) {
+        $Self->PrintError("Cannot add option '$Param{Name}', because it is already registered as an argument.");
+        die;
+    }
+
+    $Self->{_Options} //= [];
+    push @{ $Self->{_Options} }, \%Param;
+
+}
+</pre></div>
+
+<p>adds an option that can/must be specified on the command line.
 This function must be called during <a href="#Configure">Configure()</a> by the command to
-indicate which arguments it can process.</p></dd>
-<dd><pre>    $CommandObject-&gt;AddOption(
+indicate which arguments it can process.</p>
+
+<pre>    $CommandObject-&gt;AddOption(
         Name         =&gt; 'iterations',
         Description  =&gt; 'number of script iterations to perform',
         Required     =&gt; 1,
@@ -119,79 +370,552 @@ indicate which arguments it can process.</p></dd>
         Multiple     =&gt; 0,  # optional, allow more than one occurrence (only possible if HasValue is true)
     );
 
-</pre></dd>		<dd><p><strong>Option Naming Conventions</strong></p></dd>
-		<dd><p>If there is a source and a target involved in the command, the related options should start
-with <code>--source</code> and <code>--target</code>, for example <code>--source-path</code>.</p></dd>
-		<dd><p>For specifying filesystem locations, <code>--*-path</code> should be used for directory/filename
+</pre><p><strong>Option Naming Conventions</strong></p>
+
+<p>If there is a source and a target involved in the command, the related options should start
+with <code>--source</code> and <code>--target</code>, for example <code>--source-path</code>.</p>
+
+<p>For specifying filesystem locations, <code>--*-path</code> should be used for directory/filename
 combinations (e.g. <code>mydirectory/myfile.pl</code>), <code>--*-filename</code> for filenames without directories,
-and <code>--*-directory</code> for directories.</p></dd>
-		<dd><p>Example: <code>--target-path /tmp/test.out --source-filename test.txt --source-directory /tmp</code></p></dd>
-	<dt>GetOption()</dt>
-		<dd><p>fetch an option as provided by the user on the commandline.</p></dd>
-<dd><pre>    my $Iterations = $CommandObject-&gt;GetOption('iterations');
+and <code>--*-directory</code> for directories.</p>
 
-</pre></dd>		<dd><p>If the option was specified with HasValue =&gt; 1, the user provided value will be
-returned. Otherwise 1 will be returned if the option was present.</p></dd>
-		<dd><p>In case of an option with <code>Multiple =</code> 1&gt;, an array reference will be returned
-if the option was specified, and undef otherwise.</p></dd>
-	<dt>PreRun()</dt>
-		<dd><p>perform additional validations/preparations before Run(). Override this method in your commands.</p></dd>
-		<dd><p>If this method returns, execution will be continued. If it throws an exception with die(), the program aborts at this point, and Run() will not be called.</p></dd>
-	<dt>Run()</dt>
-		<dd><p>runs the command. Override this method in your commands.</p></dd>
-		<dd><p>This method needs to return the exit code to be used for the whole program.
-For this, the convenience methods ExitCodeOk() and ExitCodeError() can be used.</p></dd>
-		<dd><p>In case of an exception, the error code will be set to 1 (error).</p></dd>
-	<dt>PostRun()</dt>
-		<dd><p>perform additional cleanups after Run(). Override this method in your commands.</p></dd>
-		<dd><p>The return value of this method will be ignored. It will be called after Run(), even
-if Run() caused an exception or returned an error exit code.</p></dd>
-		<dd><p>In case of an exception in this method, the exit code will be set to 1 (error) if
-Run() returned 0 (ok).</p></dd>
-	<dt>Execute()</dt>
-		<dd><p>this method will parse/validate the commandline arguments supplied by the user.
-If that was ok, the Run() method of the command will be called.</p></dd>
-	<dt>ExitCodeError()</dt>
-		<dd><p>returns an exit code to signal something went wrong (mostly for better
-code readabiliby).</p></dd>
-<dd><pre>    return $CommandObject-&gt;ExitCodeError();
+<p>Example: <code>--target-path /tmp/test.out --source-filename test.txt --source-directory /tmp</code></p>
 
-</pre></dd>		<dd><p>You can also provide a custom error code for special use cases:</p></dd>
-<dd><pre>    return $CommandObject-&gt;ExitCodeError(255);
+<h2 id="GetOption">GetOption()</h2>
 
-</pre></dd>	<dt>ExitCodeOk()</dt>
-		<dd><p>returns 0 as exit code to indicate everything went fine in the command
-(mostly for better code readability).</p></dd>
-	<dt>GetUsageHelp()</dt>
-		<dd><p>generates usage / help screen for this command.</p></dd>
-<dd><pre>    my $UsageHelp = $CommandObject-&gt;GetUsageHelp();
+<p><a href="#" onclick="toggleCode('method_GetOption');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetOption">
+                                        <pre>
 
-</pre></dd>	<dt>ANSI()</dt>
-		<dd><p>get/set support for colored text.</p></dd>
-	<dt>PrintError()</dt>
-		<dd><p>shorthand method to print an error message to STDERR.</p></dd>
-		<dd><p>It will be prefixed with 'Error: ' and colored in red,
-if the terminal supports it (see <a href="#ANSI">ANSI()</a>).</p></dd>
-	<dt>Print()</dt>
-		<dd><p>this method will print the given text to STDOUT.</p></dd>
-		<dd><p>You can add color tags (<code>&lt;green&gt;...&lt;/green&gt;, &lt;yellow&gt;...&lt;/yellow&gt;, &lt;red&gt;...&lt;/red&gt;</code>)
+sub GetOption {
+    my ( $Self, $Option ) = @_;
+
+    if ( !$Self->{_OptionSeen}->{$Option} ) {
+        $Self->PrintError("Option '--$Option' was not configured and cannot be accessed.");
+        return;
+    }
+
+    return $Self->{_ParsedARGV}->{Options}->{$Option};
+
+}
+</pre></div>
+
+<p>fetch an option as provided by the user on the commandline.</p>
+
+<pre>    my $Iterations = $CommandObject-&gt;GetOption('iterations');
+
+</pre><p>If the option was specified with HasValue =&gt; 1, the user provided value will be
+returned. Otherwise 1 will be returned if the option was present.</p>
+
+<p>In case of an option with <code>Multiple =</code> 1&gt;, an array reference will be returned
+if the option was specified, and undef otherwise.</p>
+
+<h2 id="PreRun">PreRun()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PreRun');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PreRun">
+                                        <pre>
+
+sub PreRun {
+    return 1;
+}
+</pre></div>
+
+<p>perform additional validations/preparations before Run(). Override this method in your commands.</p>
+
+<p>If this method returns, execution will be continued. If it throws an exception with die(), the program aborts at this point, and Run() will not be called.</p>
+
+<h2 id="Run">Run()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my $Self = shift;
+
+    return $Self->ExitCodeOk();
+}
+</pre></div>
+
+<p>runs the command. Override this method in your commands.</p>
+
+<p>This method needs to return the exit code to be used for the whole program.
+For this, the convenience methods ExitCodeOk() and ExitCodeError() can be used.</p>
+
+<p>In case of an exception, the error code will be set to 1 (error).</p>
+
+<h2 id="PostRun">PostRun()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PostRun');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PostRun">
+                                        <pre>
+
+sub PostRun {
+    return;
+}
+</pre></div>
+
+<p>perform additional cleanups after Run(). Override this method in your commands.</p>
+
+<p>The return value of this method will be ignored. It will be called after Run(), even
+if Run() caused an exception or returned an error exit code.</p>
+
+<p>In case of an exception in this method, the exit code will be set to 1 (error) if
+Run() returned 0 (ok).</p>
+
+<h2 id="Execute">Execute()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Execute');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Execute">
+                                        <pre>
+
+sub Execute {
+    my ( $Self, @CommandlineArguments ) = @_;
+
+    # Normally, nothing was logged until this point, so the LogObject does not exist yet.
+    #   Change the LogPrefix so that it indicates which command causes the log entry.
+    #   In future we might need to check if it was created and update it on the fly.
+    $Kernel::OM->ObjectParamAdd(
+        'Kernel::System::Log' => {
+            LogPrefix => 'OTRS-otrs.Console.pl-' . $Self->Name(),
+        },
+    );
+
+    my $ParsedGlobalOptions = $Self->_ParseGlobalOptions( \@CommandlineArguments );
+
+    # Don't allow to run these scripts as root.
+    if ( !$ParsedGlobalOptions->{'allow-root'} && $> == 0 ) {    # $EFFECTIVE_USER_ID
+        $Self->PrintError(
+            "You cannot run otrs.Console.pl as root. Please run it as the 'otrs' user or with the help of su:"
+        );
+        $Self->Print("  <yellow>su -c \"bin/otrs.Console.pl MyCommand\" -s /bin/bash otrs</yellow>\n");
+        return $Self->ExitCodeError();
+    }
+
+    # Disable in-memory cache to avoid problems with long running scripts.
+    $Kernel::OM->Get('Kernel::System::Cache')->Configure(
+        CacheInMemory => 0,
+    );
+
+    # Only run if the command was setup ok.
+    if ( !$Self->{_ConfigureSuccessful} ) {
+        $Self->PrintError("Aborting because the command was not successfully configured.");
+        return $Self->ExitCodeError();
+    }
+
+    # First handle the optional global options.
+    if ( $ParsedGlobalOptions->{'no-ansi'} ) {
+        $Self->ANSI(0);
+    }
+
+    if ( $ParsedGlobalOptions->{help} ) {
+        print "\n" . $Self->GetUsageHelp();
+        return $Self->ExitCodeOk();
+    }
+
+    if ( $ParsedGlobalOptions->{quiet} ) {
+        $Self->{Quiet} = 1;
+    }
+
+    # Parse command line arguments and bail out in case of error,
+    # of course with a helpful usage screen.
+    $Self->{_ParsedARGV} = $Self->_ParseCommandlineArguments( \@CommandlineArguments );
+    if ( !%{ $Self->{_ParsedARGV} // {} } ) {
+        print STDERR "\n" . $Self->GetUsageHelp();
+        return $Self->ExitCodeError();
+    }
+
+    eval { $Self->PreRun(); };
+    if ($@) {
+        $Self->PrintError($@);
+        return $Self->ExitCodeError();
+    }
+
+    # Make sure we get a proper exit code to return to the shell.
+    my $ExitCode;
+    eval {
+        # Make sure that PostRun() works even if a user presses ^C.
+        local $SIG{INT} = sub {
+            $Self->PostRun();
+            exit $Self->ExitCodeError();
+        };
+        $ExitCode = $Self->Run();
+    };
+    if ($@) {
+        $Self->PrintError($@);
+        $ExitCode = $Self->ExitCodeError();
+    }
+
+    eval { $Self->PostRun(); };
+    if ($@) {
+        $Self->PrintError($@);
+        $ExitCode ||= $Self->ExitCodeError();    # switch from 0 (ok) to error
+    }
+
+    if ( !defined $ExitCode ) {
+        $Self->PrintError("Command $Self->{Name} did not return a proper exit code.");
+        $ExitCode = $Self->ExitCodeError();
+    }
+
+    return $ExitCode;
+}
+</pre></div>
+
+<p>this method will parse/validate the commandline arguments supplied by the user.
+If that was ok, the Run() method of the command will be called.</p>
+
+<h2 id="ExitCodeError">ExitCodeError()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ExitCodeError');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ExitCodeError">
+                                        <pre>
+
+sub ExitCodeError {
+    my ( $Self, $CustomExitCode ) = @_;
+
+    return $CustomExitCode // 1;
+}
+</pre></div>
+
+<p>returns an exit code to signal something went wrong (mostly for better
+code readabiliby).</p>
+
+<pre>    return $CommandObject-&gt;ExitCodeError();
+
+</pre><p>You can also provide a custom error code for special use cases:</p>
+
+<pre>    return $CommandObject-&gt;ExitCodeError(255);
+
+</pre><h2 id="ExitCodeOk">ExitCodeOk()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ExitCodeOk');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ExitCodeOk">
+                                        <pre>
+
+sub ExitCodeOk {
+    return 0;
+}
+</pre></div>
+
+<p>returns 0 as exit code to indicate everything went fine in the command
+(mostly for better code readability).</p>
+
+<h2 id="GetUsageHelp">GetUsageHelp()</h2>
+
+<p><a href="#" onclick="toggleCode('method_GetUsageHelp');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetUsageHelp">
+                                        <pre>
+
+sub GetUsageHelp {
+    my $Self = shift;
+
+    my $UsageText = "<green>$Self->{Description}</green>\n";
+    $UsageText .= "\n<yellow>Usage:</yellow>\n";
+    $UsageText .= " otrs.Console.pl $Self->{Name}";
+
+    my $OptionsText   = "<yellow>Options:</yellow>\n";
+    my $ArgumentsText = "<yellow>Arguments:</yellow>\n";
+
+    OPTION:
+    for my $Option ( @{ $Self->{_Options} // [] } ) {
+        my $OptionShort = "--$Option->{Name}";
+        if ( $Option->{HasValue} ) {
+            $OptionShort .= " ...";
+            if ( $Option->{Multiple} ) {
+                $OptionShort .= "(+)";
+            }
+        }
+        if ( !$Option->{Required} ) {
+            $OptionShort = "[$OptionShort]";
+        }
+        $UsageText .= " $OptionShort";
+        $OptionsText .= sprintf " <green>%-30s</green> - %s", $OptionShort, $Option->{Description} . "\n";
+    }
+
+    # Global options only show up at the end of the options section, but not in the command line string as
+    #   they don't actually belong to the current command (only).
+    GLOBALOPTION:
+    for my $Option ( @{ $Self->{_GlobalOptions} // [] } ) {
+        next GLOBALOPTION if $Option->{Invisible};
+        my $OptionShort = "[--$Option->{Name}]";
+        $OptionsText .= sprintf " <green>%-30s</green> - %s", $OptionShort, $Option->{Description} . "\n";
+    }
+
+    ARGUMENT:
+    for my $Argument ( @{ $Self->{_Arguments} // [] } ) {
+        my $ArgumentShort = $Argument->{Name};
+        if ( !$Argument->{Required} ) {
+            $ArgumentShort = "[$ArgumentShort]";
+        }
+        $UsageText .= " $ArgumentShort";
+        $ArgumentsText .= sprintf " <green>%-30s</green> - %s", $ArgumentShort,
+            $Argument->{Description} . "\n";
+    }
+
+    $UsageText .= "\n";
+
+    $UsageText .= "\n$OptionsText";    # Always present because of global options
+
+    if ( @{ $Self->{_Arguments} // [] } ) {
+        $UsageText .= "\n$ArgumentsText";
+    }
+
+    if ( $Self->AdditionalHelp() ) {
+        $UsageText .= "\n<yellow>Help:</yellow>\n";
+        $UsageText .= $Self->AdditionalHelp();
+    }
+
+    $UsageText .= "\n";
+
+    return $Self->_ReplaceColorTags($UsageText);
+}
+</pre></div>
+
+<p>generates usage / help screen for this command.</p>
+
+<pre>    my $UsageHelp = $CommandObject-&gt;GetUsageHelp();
+
+</pre><h2 id="ANSI">ANSI()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ANSI');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ANSI">
+                                        <pre>
+
+sub ANSI {
+    my ( $Self, $ANSI ) = @_;
+
+    $Self->{ANSI} = $ANSI if defined $ANSI;
+    return $Self->{ANSI};
+}
+</pre></div>
+
+<p>get/set support for colored text.</p>
+
+<h2 id="PrintError">PrintError()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PrintError');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PrintError">
+                                        <pre>
+
+sub PrintError {
+    my ( $Self, $Text ) = @_;
+
+    chomp $Text;
+    print STDERR $Self->_Color( 'red', "Error: $Text\n" );
+    return;
+}
+</pre></div>
+
+<p>shorthand method to print an error message to STDERR.</p>
+
+<p>It will be prefixed with 'Error: ' and colored in red,
+if the terminal supports it (see <a href="#ANSI">ANSI()</a>).</p>
+
+<h2 id="Print">Print()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Print');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Print">
+                                        <pre>
+
+sub Print {
+    my ( $Self, $Text ) = @_;
+
+    if ( !$Self->{Quiet} ) {
+        print $Self->_ReplaceColorTags($Text);
+    }
+    return;
+}
+</pre></div>
+
+<p>this method will print the given text to STDOUT.</p>
+
+<p>You can add color tags (<code>&lt;green&gt;...&lt;/green&gt;, &lt;yellow&gt;...&lt;/yellow&gt;, &lt;red&gt;...&lt;/red&gt;</code>)
 to your text, and they will be replaced with the corresponding terminal escape sequences
-if the terminal supports it (see <a href="#ANSI">ANSI()</a>).</p></dd>
-	<dt>_ParseGlobalOptions()</dt>
-		<dd><p>parses any global options possibly provided by the user.</p></dd>
-		<dd><p>Returns a hash with the option values.</p></dd>
-	<dt>_ParseCommandlineArguments()</dt>
-		<dd><p>parses and validates the commandline arguments provided by the user according to
-the configured arguments and options of the command.</p></dd>
-		<dd><p>Returns a hash with argument and option values if all needed values were supplied
-and correct, or undef otherwise.</p></dd>
-	<dt>_Color()</dt>
-		<dd><p>this will color the given text (see Term::ANSIColor::color()) if
-ANSI output is available and active, otherwise the text stays unchanged.</p></dd>
-<dd><pre>    my $PossiblyColoredText = $CommandObject-&gt;_Color('green', $Text);
+if the terminal supports it (see <a href="#ANSI">ANSI()</a>).</p>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h2 id="ParseGlobalOptions">_ParseGlobalOptions()</h2>
+
+<p><a href="#" onclick="toggleCode('method__ParseGlobalOptions');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__ParseGlobalOptions">
+                                        <pre>
+
+sub _ParseGlobalOptions {
+    my ( $Self, $Arguments ) = @_;
+
+    Getopt::Long::Configure('pass_through');
+    Getopt::Long::Configure('no_auto_abbrev');
+
+    my %OptionValues;
+
+    OPTION:
+    for my $Option ( @{ $Self->{_GlobalOptions} } ) {
+        my $Value;
+        my $Lookup = $Option->{Name};
+
+        Getopt::Long::GetOptionsFromArray(
+            $Arguments,
+            $Lookup => \$Value,
+        );
+
+        $OptionValues{ $Option->{Name} } = $Value;
+    }
+
+    return \%OptionValues;
+}
+</pre></div>
+
+<p>parses any global options possibly provided by the user.</p>
+
+<p>Returns a hash with the option values.</p>
+
+<h2 id="ParseCommandlineArguments">_ParseCommandlineArguments()</h2>
+
+<p><a href="#" onclick="toggleCode('method__ParseCommandlineArguments');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__ParseCommandlineArguments">
+                                        <pre>
+
+sub _ParseCommandlineArguments {
+    my ( $Self, $Arguments ) = @_;
+
+    Getopt::Long::Configure('pass_through');
+    Getopt::Long::Configure('no_auto_abbrev');
+
+    my %OptionValues;
+
+    OPTION:
+    for my $Option ( @{ $Self->{_Options} // [] }, @{ $Self->{_GlobalOptions} } ) {
+        my $Lookup = $Option->{Name};
+        if ( $Option->{HasValue} ) {
+            $Lookup .= '=s';
+            if ( $Option->{Multiple} ) {
+                $Lookup .= '@';
+            }
+        }
+
+        # Option with multiple values
+        if ( $Option->{HasValue} && $Option->{Multiple} ) {
+
+            my @Values;
+
+            Getopt::Long::GetOptionsFromArray(
+                $Arguments,
+                $Lookup => \@Values,
+            );
+
+            if ( !@Values ) {
+                if ( !$Option->{Required} ) {
+                    next OPTION;
+                }
+
+                $Self->PrintError("please provide option '--$Option->{Name}'.");
+                return;
+            }
+
+            for my $Value (@Values) {
+                if ( $Option->{HasValue} && $Value !~ $Option->{ValueRegex} ) {
+                    $Self->PrintError("please provide a valid value for option '--$Option->{Name}'.");
+                    return;
+                }
+            }
+
+            $OptionValues{ $Option->{Name} } = \@Values;
+        }
+
+        # Option with no or a single value
+        else {
+
+            my $Value;
+
+            Getopt::Long::GetOptionsFromArray(
+                $Arguments,
+                $Lookup => \$Value,
+            );
+
+            if ( !defined $Value ) {
+                if ( !$Option->{Required} ) {
+                    next OPTION;
+                }
+
+                $Self->PrintError("please provide option '--$Option->{Name}'.");
+                return;
+            }
+
+            if ( $Option->{HasValue} && $Value !~ $Option->{ValueRegex} ) {
+                $Self->PrintError("please provide a valid value for option '--$Option->{Name}'.");
+                return;
+            }
+
+            $OptionValues{ $Option->{Name} } = $Value;
+        }
+    }
+
+    my %ArgumentValues;
+
+    ARGUMENT:
+    for my $Argument ( @{ $Self->{_Arguments} // [] } ) {
+        if ( !@{$Arguments} ) {
+            if ( !$Argument->{Required} ) {
+                next ARGUMENT;
+            }
+
+            $Self->PrintError("please provide a value for argument '$Argument->{Name}'.");
+            return;
+        }
+
+        my $Value = shift @{$Arguments};
+
+        if ( $Value !~ $Argument->{ValueRegex} ) {
+            $Self->PrintError("please provide a valid value for argument '$Argument->{Name}'.");
+            return;
+        }
+
+        $ArgumentValues{ $Argument->{Name} } = $Value;
+    }
+
+    # check for superfluous arguments
+    if ( @{$Arguments} ) {
+        my $Error = "found unknown arguments on the command line ('";
+        $Error .= join "', '", @{$Arguments};
+        $Error .= "').\n";
+        $Self->PrintError($Error);
+        return;
+    }
+
+    return {
+        Options   => \%OptionValues,
+        Arguments => \%ArgumentValues,
+    };
+}
+</pre></div>
+
+<p>parses and validates the commandline arguments provided by the user according to
+the configured arguments and options of the command.</p>
+
+<p>Returns a hash with argument and option values if all needed values were supplied
+and correct, or undef otherwise.</p>
+
+<h2 id="Color">_Color()</h2>
+
+<p><a href="#" onclick="toggleCode('method__Color');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__Color">
+                                        <pre>
+
+sub _Color {
+    my ( $Self, $Color, $Text ) = @_;
+
+    return $Text if !$Self->{ANSI};
+    return $Text if $SuppressANSI;
+    return Term::ANSIColor::color($Color) . $Text . Term::ANSIColor::color('reset');
+}
+</pre></div>
+
+<p>this will color the given text (see Term::ANSIColor::color()) if
+ANSI output is available and active, otherwise the text stays unchanged.</p>
+
+<pre>    my $PossiblyColoredText = $CommandObject-&gt;_Color('green', $Text);
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

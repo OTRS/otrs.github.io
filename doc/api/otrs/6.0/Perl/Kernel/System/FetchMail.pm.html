@@ -57,7 +57,12 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Fetch">Fetch()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -71,31 +76,276 @@
 
 <p>Functions for email fetch.</p>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create a FetchMail object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create a FetchMail object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $FetchMailObject = $Kernel::OM-&gt;Get('Kernel::System::FetchMail');
 
-</pre></dd>	<dt>Fetch()</dt>
-		<dd><p>Retrieves messages from an email server using fetchmail backend.</p></dd>
-<dd><pre>    my $Success = $FetchMailObject-&gt;Fetch(
+</pre><h2 id="Fetch">Fetch()</h2>
 
-</pre></dd><dd><pre>        # General Options:
+<p><a href="#" onclick="toggleCode('method_Fetch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Fetch">
+                                        <pre>
+
+sub Fetch {
+    my ( $Self, %Param ) = @_;
+
+    # set possible locations for fetchmail bin
+    my @PossibleLocations = (
+        '/usr/bin/fetchmail',
+        '/usr/sbin/fetchmail',
+        '/usr/local/bin/fetchmail',
+        '/opt/local/bin/fetchmail',
+    );
+
+    # get SysConfig setting as a fall-back
+    my $ConfigLocation = $Kernel::OM->Get('Kernel::Config')->Get('Fetchmail::Bin') || '';
+
+    # check if setting is defined and valid
+    if ( $ConfigLocation && $ConfigLocation =~ m{[/|\w]+ fetchmail\z}msx ) {
+        push @PossibleLocations, $ConfigLocation;
+    }
+
+    my $FetchMailBin;
+
+    # set FetMail bin
+    LOCATION:
+    for my $Location (@PossibleLocations) {
+        if ( -e $Location ) {
+            $FetchMailBin = $Location;
+            last LOCATION
+        }
+    }
+
+    if ( !$FetchMailBin ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "FetchMail bin was not found",
+        );
+        return
+    }
+
+    my %ParamLookup = (
+
+        # General Options:
+        Check        => '--check',
+        Silent       => '--silent',
+        Verbose      => '--verbose',
+        NoSoftBounce => '--nosoftbounce',
+        SoftBounce   => '--softbounce',
+
+        # Disposal Options:
+        Keep       => '--keep',
+        NoKeep     => '--nokeep',
+        Flush      => '--flush',
+        LimitFlush => '--limitflush',
+
+        # Protocol and Query Options:
+        UIDL        => '--uidl',
+        TracePolls  => '--tracepolls',
+        SSL         => '--ssl',
+        SSLCertCeck => '--sslcertck',
+
+        # Delivery Control Options:
+        LMTP => '--lmtp',
+
+        # Miscellaneous Options:
+        NoRewrite => '--norewrite',
+
+        # Administrative Options:
+        NoBouce => '--nobounce',
+    );
+
+    my %HasValueParamLookup = (
+
+        # Protocol and Query Options:
+        Protocol       => '--protocol',
+        Service        => '--service',
+        Principal      => '--principal',
+        Timeout        => '--timeout',
+        Plugin         => '--plugin',
+        Plugout        => '--plugout',
+        Folder         => '--folder',
+        SSLCert        => '--sslcert',
+        SSLKey         => '--sslkey',
+        SSLProto       => '--sslproto',
+        SSLCertFile    => '--sslcertfile',
+        SSLCertPath    => '--sslcertpath',
+        SSLFingerprint => '--sslfingerprint',
+
+        # Delivery Control Options:
+        SMTPHost     => '--smtphost',
+        FetchDomains => '--fetchdomains',
+        SMTPAddress  => '--smtpaddress',
+        SMTPName     => '--smtpname',
+        AntiSpam     => '--antispam',
+        MDA          => '--mda',
+        BSMTP        => '--bsmtp',
+        BadHeader    => '--bad-header',
+
+        # Resource Limit Control Options
+        Limit          => '--limit',
+        Warnings       => '--warnings',
+        BatchLimit     => '--batchlimit',
+        FetchLimit     => '--fetchlimit',
+        FetchSizeLimit => '--fetchsizelimit',
+        FastUIDL       => '--fastuidl',
+        Expunge        => '--expunge',
+
+        # Authentication Options:
+        Username => '--username',
+        Auth     => '--auth',
+
+        # Miscellaneous Options:
+        FetchMailrc => '--fetchmailrc',
+        IDFile      => '--idfile',
+        Envelope    => '--envelope',
+        QVirtual    => '--qvirtual',
+
+        # Administrative Options:
+        Postmaster => '--postmaster',
+    );
+
+    # define base command
+    my $Command = "$FetchMailBin -a";
+
+    OPTION:
+    for my $Option ( sort keys %Param ) {
+
+        next OPTION if !$Param{$Option};
+
+        # check params without value
+        if ( $ParamLookup{$Option} ) {
+            $Command .= " $ParamLookup{$Option}";
+        }
+
+        # check params with values
+        elsif ( $HasValueParamLookup{$Option} ) {
+            $Command .= " $HasValueParamLookup{$Option} $Param{$Option}";
+        }
+    }
+
+    # to capture standard in, out and error
+    my ( $INFH, $OUTFH, $ERRFH );
+
+    # create a symbol for the error file handle
+    $ERRFH = gensym();
+
+    # call the command, capturing output and error
+    my $ProcessID;
+    eval {
+        $ProcessID = open3( $INFH, $OUTFH, $ERRFH, $Command );
+    };
+
+    my $ErrorMessage;
+    my $ExitCode;
+
+    if ($ProcessID) {
+
+        while (<$ERRFH>) {
+            $ErrorMessage .= $_;
+        }
+        waitpid( $ProcessID, 0 );
+        $ExitCode = $? >> 8;
+    }
+    else {
+        $ErrorMessage = $@;
+    }
+
+    my $Success = 1;
+
+    # fetchmail ExitCode 1 means no mails to retrieve (this is OK)
+    if ( $ExitCode == 1 ) {
+        $ExitCode = 0;
+    }
+
+    # fetchmail ExitCode 13 means early termination due to limit (this is OK)
+    elsif ( $ExitCode == 13 ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "fetchmail: Poll terminated by a fetch limit",
+        );
+        $ExitCode = 0;
+    }
+
+    # check if there are errors
+    if ( $ErrorMessage || $ExitCode ) {
+
+        $ErrorMessage //= '';
+
+        my %ErrorMessageLookup = (
+            2  => 'Error opening a socket to retrieve mail.',
+            3  => 'User authentication step failed.',
+            4  => 'Fatal protocol error.',
+            5  => 'There was a syntax error in the arguments to fetchmail',
+            6  => 'The run control file had bad permissions.',
+            7  => 'There was an error condition reported by the server.',
+            8  => 'Fetchmail is already running',
+            9  => 'User authentication step failed because the server responded "lock  busy", try again later.',
+            10 => 'Fetchmail run failed while trying to do an SMTP port open or transaction.',
+            11 =>
+                'Fatal DNS error. Fetchmail encountered an error while performing a DNS lookup at startup and could not proceed.',
+            12 => 'BSMTP batch file could not be opened.',
+            14 => 'Server busy indication.',
+            23 => 'Internal error.',
+        );
+
+        if ( $ExitCode && !$ErrorMessage ) {
+            $ErrorMessage = $ErrorMessageLookup{$ExitCode} || 'Unknown';
+        }
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "There was an error executing $Command: $ErrorMessage",
+        );
+
+        $Success = 0;
+    }
+
+    return $Success;
+
+}
+</pre></div>
+
+<p>Retrieves messages from an email server using fetchmail backend.</p>
+
+<pre>    my $Success = $FetchMailObject-&gt;Fetch(
+
+        # General Options:
         Check        =&gt; 1,                          # Optional, check for messages without fetching
         Silent       =&gt; 1,                          # Optional, work silently
         Verbose      =&gt; 1,                          # Optional, work noisily (diagnostic output)
         NoSoftBounce =&gt; 1,                          # Optional, fetchmail deletes permanently undeliverable messages.
         SoftBounce   =&gt; 1,                          # Optional, keep permanently undeliverable messages on server (default).
 
-</pre></dd><dd><pre>        # Disposal Options:
+        # Disposal Options:
         Keep       =&gt; 1,                            # Optional, save new messages after retrieval
         NoKeep     =&gt; 1,                            # Optional, delete new messages after retrieval
         Flush      =&gt; 1,                            # Optional, delete old messages from server
         LimitFlush =&gt; 1,                            # Optional, delete oversized messages
 
-</pre></dd><dd><pre>        # Protocol and Query Options:
+        # Protocol and Query Options:
         Protocol       =&gt; 'imap',                   # Optional, (auto || pop2 || pop3 || apop || rpop || kpop || sdps
                                                     #   || imap || etrn || odmr) specify retrieval protocol
         UIDL           =&gt; 1,                        # Optional, force the use of UIDLs (pop3 only)
@@ -115,7 +365,7 @@
         SSLCertPath    =&gt; 'SomeCertPath',           # Optional, path to trusted-CA ssl certificate directory
         SSLFingerprint =&gt; 'SomeFingerprint',        # Optional, fingerprint that must match that of the server's cert.
 
-</pre></dd><dd><pre>        # Delivery Control Options:
+        # Delivery Control Options:
         SMTPHost     =&gt; 'SomeHosts',                # Optional, set SMTP forwarding host
         FetchDomains =&gt; 'SomeDomains',              # Optional, fetch mail for specified domains
         SMTPAddress  =&gt; 'SomeAddress',              # Optional, set SMTP delivery domain to use
@@ -126,7 +376,7 @@
         BSMTP        =&gt; 'SomeFile',                 # Optional, set output BSMTP file
         BadHeader    =&gt; 'reject',                   # Optional, (reject || accept), specify policy for handling messages with bad headers
 
-</pre></dd><dd><pre>        # Resource Limit Control Options
+        # Resource Limit Control Options
         Limit          =&gt; 123,                      # Optional, don't fetch messages over given size
         Warnings       =&gt; 123,                      # Optional, interval between warning mail notification
         BatchLimit     =&gt; 123,                      # Optional, set batch limit for SMTP connections
@@ -135,27 +385,28 @@
         FastUIDL       =&gt; 123,                      # Optional, do a binary search for UIDLs
         Expunge        =&gt; 123,                      # Optional, set max deletions between expunges
 
-</pre></dd><dd><pre>        # Authentication Options:
+        # Authentication Options:
         Username =&gt; 'SomeUserName',                 # Optional, specify users's login on server
         Auth     =&gt; 'ssh',                          # Optional, (password || kerberos || ssh || otp) authentication type
 
-</pre></dd><dd><pre>        # Miscellaneous Options:
+        # Miscellaneous Options:
         FetchMailrc =&gt; 'SomeFile',                  # Optional, specify alternate run control file
         IDFile      =&gt; 'SomeFile',                  # Optional, specify alternate UIDs file
         NoRewrite   =&gt;  1,                          # Optional, don't rewrite header addresses
         Envelope    =&gt; 'SomeXHeader',               # Optional, envelope address header
         QVirtual    =&gt; 'SomePrefix',                # Optional, prefix to remove from local user id
 
-</pre></dd><dd><pre>        # Administrative Options:
+        # Administrative Options:
         Postmaster  =&gt; 'SomeName',                  # Optional, specify recipient of last resort
         NoBouce     =&gt; 1,                           # Optional, redirect bounces from user to postmaster.
     );
 
-</pre></dd>		<dd><p>Returns:
-    $Success = 1,       # or false in case of an error</p></dd>
-		<dd><p>Note:
-To get more information about the parameters please check fetchmail man pages for the corresponding option</p></dd>
-</dl>
+</pre><p>Returns:
+    $Success = 1,       # or false in case of an error</p>
+
+<p>Note:
+To get more information about the parameters please check fetchmail man pages for the corresponding option</p>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

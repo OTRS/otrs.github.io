@@ -57,8 +57,40 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#Init">Init()</a></li>
+	<li><a href="#ValidateQueue">ValidateQueue()</a></li>
+	<li><a href="#ValidateLock">ValidateLock()</a></li>
+	<li><a href="#ValidateType">ValidateType()</a></li>
+	<li><a href="#ValidateCustomer">ValidateCustomer()</a></li>
+	<li><a href="#ValidateService">ValidateService()</a></li>
+	<li><a href="#ValidateSLA">ValidateSLA()</a></li>
+	<li><a href="#ValidateState">ValidateState()</a></li>
+	<li><a href="#ValidatePriority">ValidatePriority()</a></li>
+	<li><a href="#ValidateOwner">ValidateOwner()</a></li>
+	<li><a href="#ValidateResponsible">ValidateResponsible()</a></li>
+	<li><a href="#ValidatePendingTime">ValidatePendingTime()</a></li>
+	<li><a href="#ValidateAutoResponseType">ValidateAutoResponseType()</a></li>
+	<li><a href="#ValidateArticleType">ValidateArticleType()</a></li>
+	<li><a href="#ValidateFrom">ValidateFrom()</a></li>
+	<li><a href="#ValidateSenderType">ValidateSenderType()</a></li>
+	<li><a href="#ValidateMimeType">ValidateMimeType()</a></li>
+	<li><a href="#ValidateCharset">ValidateCharset()</a></li>
+	<li><a href="#ValidateHistoryType">ValidateHistoryType()</a></li>
+	<li><a href="#ValidateTimeUnit">ValidateTimeUnit()</a></li>
+	<li><a href="#ValidateUserID">ValidateUserID()</a></li>
+	<li><a href="#ValidateDynamicFieldName">ValidateDynamicFieldName()</a></li>
+	<li><a href="#ValidateDynamicFieldValue">ValidateDynamicFieldValue()</a></li>
+	<li><a href="#ValidateDynamicFieldObjectType">ValidateDynamicFieldObjectType()</a></li>
+	<li><a href="#SetDynamicFieldValue">SetDynamicFieldValue()</a></li>
+	<li><a href="#CreateAttachment">CreateAttachment()</a></li>
+	<li><a href="#CheckCreatePermissions">CheckCreatePermissions ()</a></li>
+	<li><a href="#CheckAccessPermissions">CheckAccessPermissions()</a></li>
+	<li><a href="#ValidateUser">_ValidateUser()</a></li>
+	<li><a href="#CharsetList">_CharsetList()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -68,159 +100,760 @@
 
 <p>Kernel::GenericInterface::Operation::Ticket::Common - Base class for all Ticket Operations</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
-
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>Init()</dt>
-		<dd><p>initialize the operation by checking the webservice configuration and gather of the dynamic fields</p></dd>
-<dd><pre>    my $Return = $CommonObject-&gt;Init(
+
+
+
+<h2 id="Init">Init()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Init');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Init">
+                                        <pre>
+
+sub Init {
+    my ( $Self, %Param ) = @_;
+
+    # check needed
+    if ( !$Param{WebserviceID} ) {
+        return {
+            Success      => 0,
+            ErrorMessage => "Got no WebserviceID!",
+        };
+    }
+
+    # get webservice configuration
+    my $Webservice = $Kernel::OM->Get('Kernel::System::GenericInterface::Webservice')->WebserviceGet(
+        ID => $Param{WebserviceID},
+    );
+
+    if ( !IsHashRefWithData($Webservice) ) {
+        return {
+            Success => 0,
+            ErrorMessage =>
+                'Could not determine Web service configuration'
+                . ' in Kernel::GenericInterface::Operation::Ticket::Common::new()',
+        };
+    }
+
+    # get the dynamic fields
+    my $DynamicField = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
+        Valid      => 1,
+        ObjectType => [ 'Ticket', 'Article' ],
+    );
+
+    # create a Dynamic Fields lookup table (by name)
+    DYNAMICFIELD:
+    for my $DynamicField ( @{$DynamicField} ) {
+        next DYNAMICFIELD if !$DynamicField;
+        next DYNAMICFIELD if !IsHashRefWithData($DynamicField);
+        next DYNAMICFIELD if !$DynamicField->{Name};
+        $Self->{DynamicFieldLookup}->{ $DynamicField->{Name} } = $DynamicField;
+    }
+
+    return {
+        Success => 1,
+    };
+}
+</pre></div>
+
+<p>initialize the operation by checking the webservice configuration and gather of the dynamic fields</p>
+
+<pre>    my $Return = $CommonObject-&gt;Init(
         WebserviceID =&gt; 1,
     );
 
-</pre></dd><dd><pre>    $Return = {
+    $Return = {
         Success =&gt; 1,                       # or 0 in case of failure,
         ErrorMessage =&gt; 'Error Message',
     }
 
-</pre></dd>	<dt>ValidateQueue()</dt>
-		<dd><p>checks if the given queue or queue ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateQueue(
+</pre><h2 id="ValidateQueue">ValidateQueue()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateQueue');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateQueue">
+                                        <pre>
+
+sub ValidateQueue {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{QueueID} && !$Param{Queue};
+
+    my %QueueData;
+
+    # check for Queue name sent
+    if (
+        $Param{Queue}
+        && $Param{Queue} ne ''
+        && !$Param{QueueID}
+        )
+    {
+        %QueueData = $Kernel::OM->Get('Kernel::System::Queue')->QueueGet(
+            Name => $Param{Queue},
+        );
+
+    }
+
+    # otherwise use QueueID
+    elsif ( $Param{QueueID} ) {
+        %QueueData = $Kernel::OM->Get('Kernel::System::Queue')->QueueGet(
+            ID => $Param{QueueID},
+        );
+    }
+    else {
+        return;
+    }
+
+    # return false if queue data is empty
+    return if !IsHashRefWithData( \%QueueData );
+
+    # return false if queue is not valid
+
+    if (
+        $Kernel::OM->Get('Kernel::System::Valid')->ValidLookup( ValidID => $QueueData{ValidID} ) ne
+        'valid'
+        )
+    {
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given queue or queue ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateQueue(
         QueueID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateQueue(
+    my $Success = $CommonObject-&gt;ValidateQueue(
         Queue   =&gt; 'some queue',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateLock()</dt>
-		<dd><p>checks if the given lock or lock ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateLock(
+</pre><h2 id="ValidateLock">ValidateLock()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateLock');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateLock">
+                                        <pre>
+
+sub ValidateLock {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{LockID} && !$Param{Lock};
+
+    # check for Lock name sent
+    if (
+        $Param{Lock}
+        && $Param{Lock} ne ''
+        && !$Param{LockID}
+        )
+    {
+        my $LockID = $Kernel::OM->Get('Kernel::System::Lock')->LockLookup(
+            Lock => $Param{Lock},
+        );
+        return if !$LockID;
+    }
+
+    # otherwise use LockID
+    elsif ( $Param{LockID} ) {
+        my $Lock = $Kernel::OM->Get('Kernel::System::Lock')->LockLookup(
+            LockID => $Param{LockID},
+        );
+        return if !$Lock;
+    }
+    else {
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given lock or lock ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateLock(
         LockID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateLock(
+    my $Success = $CommonObject-&gt;ValidateLock(
         Lock   =&gt; 'some lock',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateType()</dt>
-		<dd><p>checks if the given type or type ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateType(
+</pre><h2 id="ValidateType">ValidateType()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateType">
+                                        <pre>
+
+sub ValidateType {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{TypeID} && !$Param{Type};
+
+    my %TypeData;
+
+    # check for Type name sent
+    if (
+        $Param{Type}
+        && $Param{Type} ne ''
+        && !$Param{TypeID}
+        )
+    {
+        %TypeData = $Kernel::OM->Get('Kernel::System::Type')->TypeGet(
+            Name => $Param{Type},
+        );
+    }
+
+    # otherwise use TypeID
+    elsif ( $Param{TypeID} ) {
+        %TypeData = $Kernel::OM->Get('Kernel::System::Type')->TypeGet(
+            ID => $Param{TypeID},
+        );
+    }
+    else {
+        return;
+    }
+
+    # return false if type data is empty
+    return if !IsHashRefWithData( \%TypeData );
+
+    # return false if type is not valid
+    if (
+        $Kernel::OM->Get('Kernel::System::Valid')->ValidLookup( ValidID => $TypeData{ValidID} ) ne
+        'valid'
+        )
+    {
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given type or type ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateType(
         TypeID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateType(
+    my $Success = $CommonObject-&gt;ValidateType(
         Type   =&gt; 'some type',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateCustomer()</dt>
-		<dd><p>checks if the given customer user or customer ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateCustomer(
+</pre><h2 id="ValidateCustomer">ValidateCustomer()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateCustomer');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateCustomer">
+                                        <pre>
+
+sub ValidateCustomer {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{CustomerUser};
+
+    my %CustomerData;
+
+    # check for customer user sent
+    if (
+        $Param{CustomerUser}
+        && $Param{CustomerUser} ne ''
+        )
+    {
+        %CustomerData = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
+            User => $Param{CustomerUser},
+        );
+    }
+    else {
+        return;
+    }
+
+    # if customer is not registered in the database, check if email is valid
+    if ( !IsHashRefWithData( \%CustomerData ) ) {
+        return $Self->ValidateFrom( From => $Param{CustomerUser} )
+    }
+
+    # if ValidID is present, check if it is valid!
+    if ( defined $CustomerData{ValidID} ) {
+
+        # return false if customer is not valid
+        if (
+            $Kernel::OM->Get('Kernel::System::Valid')->ValidLookup( ValidID => $CustomerData{ValidID} ) ne 'valid'
+            )
+        {
+            return;
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given customer user or customer ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateCustomer(
         CustomerID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateCustomer(
+    my $Success = $CommonObject-&gt;ValidateCustomer(
         CustomerUser   =&gt; 'some type',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateService()</dt>
-		<dd><p>checks if the given service or service ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateService(
+</pre><h2 id="ValidateService">ValidateService()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateService');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateService">
+                                        <pre>
+
+sub ValidateService {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{ServiceID} && !$Param{Service};
+    return if !$Param{CustomerUser};
+
+    my %ServiceData;
+
+    # get service object
+    my $ServiceObject = $Kernel::OM->Get('Kernel::System::Service');
+
+    # check for Service name sent
+    if (
+        $Param{Service}
+        && $Param{Service} ne ''
+        && !$Param{ServiceID}
+        )
+    {
+        %ServiceData = $ServiceObject->ServiceGet(
+            Name   => $Param{Service},
+            UserID => 1,
+        );
+    }
+
+    # otherwise use ServiceID
+    elsif ( $Param{ServiceID} ) {
+        %ServiceData = $ServiceObject->ServiceGet(
+            ServiceID => $Param{ServiceID},
+            UserID    => 1,
+        );
+    }
+    else {
+        return;
+    }
+
+    # return false if service data is empty
+    return if !IsHashRefWithData( \%ServiceData );
+
+    # return false if service is not valid
+    if (
+        $Kernel::OM->Get('Kernel::System::Valid')->ValidLookup( ValidID => $ServiceData{ValidID} )
+        ne 'valid'
+        )
+    {
+        return;
+    }
+
+    # get customer services
+    my %CustomerServices = $ServiceObject->CustomerUserServiceMemberList(
+        CustomerUserLogin => $Param{CustomerUser},
+        Result            => 'HASH',
+        DefaultServices   => 1,
+    );
+
+    # return if user does not have permission to use the service
+    return if !$CustomerServices{ $ServiceData{ServiceID} };
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given service or service ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateService(
         ServiceID    =&gt; 123,
         CustomerUser =&gt; 'Test',
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateService(
+    my $Success = $CommonObject-&gt;ValidateService(
         Service      =&gt; 'some service',
         CustomerUser =&gt; 'Test',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateSLA()</dt>
-		<dd><p>checks if the given service or service ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateSLA(
+</pre><h2 id="ValidateSLA">ValidateSLA()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateSLA');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateSLA">
+                                        <pre>
+
+sub ValidateSLA {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{SLAID}     && !$Param{SLA};
+    return if !$Param{ServiceID} && !$Param{Service};
+
+    my %SLAData;
+
+    # get SLA object
+    my $SLAObject = $Kernel::OM->Get('Kernel::System::SLA');
+
+    # check for SLA name sent
+    if (
+        $Param{SLA}
+        && $Param{SLA} ne ''
+        && !$Param{SLAID}
+        )
+    {
+        my $SLAID = $SLAObject->SLALookup(
+            Name => $Param{SLA},
+        );
+        %SLAData = $SLAObject->SLAGet(
+            SLAID  => $SLAID,
+            UserID => 1,
+        );
+    }
+
+    # otherwise use SLAID
+    elsif ( $Param{SLAID} ) {
+        %SLAData = $SLAObject->SLAGet(
+            SLAID  => $Param{SLAID},
+            UserID => 1,
+        );
+    }
+    else {
+        return;
+    }
+
+    # return false if SLA data is empty
+    return if !IsHashRefWithData( \%SLAData );
+
+    # return false if SLA is not valid
+    if (
+        $Kernel::OM->Get('Kernel::System::Valid')->ValidLookup( ValidID => $SLAData{ValidID} )
+        ne 'valid'
+        )
+    {
+        return;
+    }
+
+    # get service ID
+    my $ServiceID;
+    if (
+        $Param{Service}
+        && $Param{Service} ne ''
+        && !$Param{ServiceID}
+        )
+    {
+        $ServiceID = $Kernel::OM->Get('Kernel::System::Service')->ServiceLookup( Name => $Param{Service} )
+            || 0;
+    }
+    else {
+        $ServiceID = $Param{ServiceID} || 0;
+    }
+
+    return if !$ServiceID;
+
+    # check if SLA belongs to service
+    my $SLABelongsToService;
+
+    SERVICEID:
+    for my $SLAServiceID ( @{ $SLAData{ServiceIDs} } ) {
+        next SERVICEID if !$SLAServiceID;
+        if ( $SLAServiceID eq $ServiceID ) {
+            $SLABelongsToService = 1;
+            last SERVICEID;
+        }
+    }
+
+    # return if SLA does not belong to the service
+    return if !$SLABelongsToService;
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given service or service ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateSLA(
         SLAID     =&gt; 12,
         ServiceID =&gt; 123,       # || Service =&gt; 'some service'
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateService(
+    my $Success = $CommonObject-&gt;ValidateService(
         SLA       =&gt; 'some SLA',
         ServiceID =&gt; 123,       # || Service =&gt; 'some service'
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateState()</dt>
-		<dd><p>checks if the given state or state ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateState(
+</pre><h2 id="ValidateState">ValidateState()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateState');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateState">
+                                        <pre>
+
+sub ValidateState {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{StateID} && !$Param{State};
+
+    my %StateData;
+
+    # check for State name sent
+    if (
+        $Param{State}
+        && $Param{State} ne ''
+        && !$Param{StateID}
+        )
+    {
+        %StateData = $Kernel::OM->Get('Kernel::System::State')->StateGet(
+            Name => $Param{State},
+        );
+
+    }
+
+    # otherwise use StateID
+    elsif ( $Param{StateID} ) {
+        %StateData = $Kernel::OM->Get('Kernel::System::State')->StateGet(
+            ID => $Param{StateID},
+        );
+    }
+    else {
+        return;
+    }
+
+    # return false if state data is empty
+    return if !IsHashRefWithData( \%StateData );
+
+    # return false if queue is not valid
+    if (
+        $Kernel::OM->Get('Kernel::System::Valid')->ValidLookup( ValidID => $StateData{ValidID} )
+        ne 'valid'
+        )
+    {
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given state or state ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateState(
         StateID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateState(
+    my $Success = $CommonObject-&gt;ValidateState(
         State   =&gt; 'some state',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidatePriority()</dt>
-		<dd><p>checks if the given priority or priority ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidatePriority(
+</pre><h2 id="ValidatePriority">ValidatePriority()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidatePriority');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidatePriority">
+                                        <pre>
+
+sub ValidatePriority {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{PriorityID} && !$Param{Priority};
+
+    my %PriorityData;
+
+    # get priority object
+    my $PriorityObject = $Kernel::OM->Get('Kernel::System::Priority');
+
+    # check for Priority name sent
+    if (
+        $Param{Priority}
+        && $Param{Priority} ne ''
+        && !$Param{PriorityID}
+        )
+    {
+        my $PriorityID = $PriorityObject->PriorityLookup(
+            Priority => $Param{Priority},
+        );
+        %PriorityData = $PriorityObject->PriorityGet(
+            PriorityID => $PriorityID,
+            UserID     => 1,
+        );
+    }
+
+    # otherwise use PriorityID
+    elsif ( $Param{PriorityID} ) {
+        %PriorityData = $PriorityObject->PriorityGet(
+            PriorityID => $Param{PriorityID},
+            UserID     => 1,
+        );
+    }
+    else {
+        return;
+    }
+
+    # return false if priority data is empty
+    return if !IsHashRefWithData( \%PriorityData );
+
+    # return false if priority is not valid
+    if (
+        $Kernel::OM->Get('Kernel::System::Valid')->ValidLookup( ValidID => $PriorityData{ValidID} )
+        ne 'valid'
+        )
+    {
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given priority or priority ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidatePriority(
         PriorityID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidatePriority(
+    my $Success = $CommonObject-&gt;ValidatePriority(
         Priority   =&gt; 'some priority',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateOwner()</dt>
-		<dd><p>checks if the given owner or owner ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateOwner(
+</pre><h2 id="ValidateOwner">ValidateOwner()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateOwner');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateOwner">
+                                        <pre>
+
+sub ValidateOwner {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{OwnerID} && !$Param{Owner};
+
+    return $Self->_ValidateUser(
+        UserID => $Param{OwnerID} || '',
+        User   => $Param{Owner}   || '',
+    );
+}
+</pre></div>
+
+<p>checks if the given owner or owner ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateOwner(
         OwnerID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateOwner(
+    my $Success = $CommonObject-&gt;ValidateOwner(
         Owner   =&gt; 'some user',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateResponsible()</dt>
-		<dd><p>checks if the given responsible or responsible ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateResponsible(
+</pre><h2 id="ValidateResponsible">ValidateResponsible()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateResponsible');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateResponsible">
+                                        <pre>
+
+sub ValidateResponsible {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{ResponsibleID} && !$Param{Responsible};
+
+    return $Self->_ValidateUser(
+        UserID => $Param{ResponsibleID} || '',
+        User   => $Param{Responsible}   || '',
+    );
+}
+</pre></div>
+
+<p>checks if the given responsible or responsible ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateResponsible(
         ResponsibleID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateResponsible(
+    my $Success = $CommonObject-&gt;ValidateResponsible(
         Responsible   =&gt; 'some user',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidatePendingTime()</dt>
-		<dd><p>checks if the given pending time is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidatePendingTime(
+</pre><h2 id="ValidatePendingTime">ValidatePendingTime()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidatePendingTime');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidatePendingTime">
+                                        <pre>
+
+sub ValidatePendingTime {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{PendingTime};
+    return if !IsHashRefWithData( $Param{PendingTime} );
+
+    # if only the Diff attribute is present, check if it's a valid number and return.
+    # Nothing else needs to be checked in that case.
+    if ( keys %{ $Param{PendingTime} } == 1 && defined $Param{PendingTime}->{Diff} ) {
+        return if $Param{PendingTime}->{Diff} !~ m{\A \d+ \z}msx;
+        return 1;
+    }
+    elsif ( defined $Param{PendingTime}->{Diff} ) {
+
+        # the use of Diff along with any other option is forbidden
+        return;
+    }
+
+    # check that no time attribute is empty or negative
+    for my $TimeAttribute ( sort keys %{ $Param{PendingTime} } ) {
+        return if $Param{PendingTime}->{$TimeAttribute} eq '';
+        return if int $Param{PendingTime}->{$TimeAttribute} < 0,
+    }
+
+    # try to convert pending time to a SystemTime
+    my $SystemTime = $Kernel::OM->Get('Kernel::System::Time')->Date2SystemTime(
+        %{ $Param{PendingTime} },
+        Second => 0,
+    );
+    return if !$SystemTime;
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given pending time is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidatePendingTime(
         PendingTime =&gt; {
             Year   =&gt; 2011,
             Month  =&gt; 12,
@@ -230,143 +863,546 @@
         },
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidatePendingTime(
+    my $Success = $CommonObject-&gt;ValidatePendingTime(
         PendingTime =&gt; {
             Diff =&gt; 10080,
         },
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateAutoResponseType()</dt>
-		<dd><p>checks if the given AutoResponseType is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateAutoResponseType(
+</pre><h2 id="ValidateAutoResponseType">ValidateAutoResponseType()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateAutoResponseType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateAutoResponseType">
+                                        <pre>
+
+sub ValidateAutoResponseType {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{AutoResponseType};
+
+    # get all AutoResponse Types
+    my %AutoResponseType = $Kernel::OM->Get('Kernel::System::AutoResponse')->AutoResponseTypeList();
+
+    return if !%AutoResponseType;
+
+    for my $AutoResponseType ( values %AutoResponseType ) {
+        return 1 if $AutoResponseType eq $Param{AutoResponseType}
+    }
+    return;
+}
+</pre></div>
+
+<p>checks if the given AutoResponseType is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateAutoResponseType(
         AutoResponseType =&gt; 'Some AutoRespobse',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateArticleType()</dt>
-		<dd><p>checks if the given ArticleType or ArticleType ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateArticleType(
+</pre><h2 id="ValidateArticleType">ValidateArticleType()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateArticleType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateArticleType">
+                                        <pre>
+
+sub ValidateArticleType {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{ArticleTypeID} && !$Param{ArticleType};
+
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    my %ArticleTypeList = $TicketObject->ArticleTypeList(
+        Result => 'HASH',
+
+        # add type parameter for customer as requester with UserType parameter, if is not set
+        # to  'Customer' the Type parameter is ignored
+        Type => $Param{UserType} || '',
+    );
+
+    # check for ArticleType name sent
+    if (
+        $Param{ArticleType}
+        && $Param{ArticleType} ne ''
+        && !$Param{ArticleTypeID}
+        )
+    {
+        my $ArticleTypeID = $TicketObject->ArticleTypeLookup(
+            ArticleType => $Param{ArticleType},
+        );
+
+        return if !$ArticleTypeID;
+
+        # check if $ArticleType is valid
+        return if !$ArticleTypeList{$ArticleTypeID};
+    }
+
+    # otherwise use ArticleTypeID
+    elsif ( $Param{ArticleTypeID} ) {
+        my $ArticleType = $TicketObject->ArticleTypeLookup(
+            ArticleTypeID => $Param{ArticleTypeID},
+        );
+
+        return if !$ArticleType;
+
+        # check if $ArticleType is valid
+        return if !$ArticleTypeList{ $Param{ArticleTypeID} };
+    }
+    else {
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given ArticleType or ArticleType ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateArticleType(
         ArticleTypeID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateArticleType(
+    my $Success = $CommonObject-&gt;ValidateArticleType(
         ArticleType =&gt; 'some ArticleType',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateFrom()</dt>
-		<dd><p>checks if the given from is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateFrom(
+</pre><h2 id="ValidateFrom">ValidateFrom()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateFrom');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateFrom">
+                                        <pre>
+
+sub ValidateFrom {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{From};
+
+    # check email address
+    for my $Email ( Mail::Address->parse( $Param{From} ) ) {
+        if (
+            !$Kernel::OM->Get('Kernel::System::CheckItem')->CheckEmail( Address => $Email->address() )
+            )
+        {
+            return;
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given from is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateFrom(
         From =&gt; 'user@domain.com',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateSenderType()</dt>
-		<dd><p>checks if the given SenderType or SenderType ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateSenderType(
+</pre><h2 id="ValidateSenderType">ValidateSenderType()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateSenderType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateSenderType">
+                                        <pre>
+
+sub ValidateSenderType {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{SenderTypeID} && !$Param{SenderType};
+
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    my %SenderTypeList = $TicketObject->ArticleSenderTypeList(
+        Result => 'HASH',
+    );
+
+    # check for SenderType name sent
+    if (
+        $Param{SenderType}
+        && $Param{SenderType} ne ''
+        && !$Param{SenderTypeID}
+        )
+    {
+        my $SenderTypeID = $TicketObject->ArticleSenderTypeLookup(
+            SenderType => $Param{SenderType},
+        );
+
+        return if !$SenderTypeID;
+
+        # check if $SenderType is valid
+        return if !$SenderTypeList{$SenderTypeID};
+    }
+
+    # otherwise use SenderTypeID
+    elsif ( $Param{SenderTypeID} ) {
+        my $SenderType = $TicketObject->ArticleSenderTypeLookup(
+            SenderTypeID => $Param{SenderTypeID},
+        );
+
+        return if !$SenderType;
+
+        # check if $SenderType is valid
+        return if !$SenderTypeList{ $Param{SenderTypeID} };
+    }
+    else {
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given SenderType or SenderType ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateSenderType(
         SenderTypeID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateenderType(
+    my $Success = $CommonObject-&gt;ValidateenderType(
         SenderType =&gt; 'some SenderType',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateMimeType()</dt>
-		<dd><p>checks if the given MimeType is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateMimeType(
+</pre><h2 id="ValidateMimeType">ValidateMimeType()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateMimeType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateMimeType">
+                                        <pre>
+
+sub ValidateMimeType {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{MimeType};
+
+    return if $Param{MimeType} !~ m{\A\w+\/\w+\z};
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given MimeType is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateMimeType(
         MimeTypeID =&gt; 'some MimeType',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateCharset()</dt>
-		<dd><p>checks if the given Charset is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateCharset(
+</pre><h2 id="ValidateCharset">ValidateCharset()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateCharset');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateCharset">
+                                        <pre>
+
+sub ValidateCharset {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{Charset};
+
+    my $CharsetList = $Self->_CharsetList();
+
+    return if !$CharsetList->{ $Param{Charset} };
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given Charset is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateCharset(
         Charset =&gt; 'some charset',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateHistoryType()</dt>
-		<dd><p>checks if the given HistoryType is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateHistoryType(
+</pre><h2 id="ValidateHistoryType">ValidateHistoryType()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateHistoryType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateHistoryType">
+                                        <pre>
+
+sub ValidateHistoryType {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{HistoryType};
+
+    # check for HistoryType name sent
+    if (
+        $Param{HistoryType}
+        && $Param{HistoryType} ne ''
+        )
+    {
+        my $HistoryTypeID = $Kernel::OM->Get('Kernel::System::Ticket')->HistoryTypeLookup(
+            Type => $Param{HistoryType},
+        );
+
+        return if !$HistoryTypeID;
+    }
+    else {
+        return;
+    }
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given HistoryType is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateHistoryType(
         HistoryType =&gt; 'some HostoryType',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateTimeUnit()</dt>
-		<dd><p>checks if the given TimeUnit is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateTimeUnit(
+</pre><h2 id="ValidateTimeUnit">ValidateTimeUnit()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateTimeUnit');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateTimeUnit">
+                                        <pre>
+
+sub ValidateTimeUnit {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{TimeUnit};
+
+    # TimeUnit must be positive
+    return if $Param{TimeUnit} !~ m{\A \d+([.,]\d+)? \z}xms;
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given TimeUnit is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateTimeUnit(
         TimeUnit =&gt; 1,
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateUserID()</dt>
-		<dd><p>checks if the given user ID is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateUserID(
+</pre><h2 id="ValidateUserID">ValidateUserID()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateUserID');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateUserID">
+                                        <pre>
+
+sub ValidateUserID {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{UserID};
+
+    return $Self->_ValidateUser(
+        UserID => $Param{UserID} || '',
+    );
+}
+</pre></div>
+
+<p>checks if the given user ID is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateUserID(
         UserID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateDynamicFieldName()</dt>
-		<dd><p>checks if the given dynamic field name is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateDynamicFieldName(
+</pre><h2 id="ValidateDynamicFieldName">ValidateDynamicFieldName()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateDynamicFieldName');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateDynamicFieldName">
+                                        <pre>
+
+sub ValidateDynamicFieldName {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !IsHashRefWithData( $Self->{DynamicFieldLookup} );
+    return if !$Param{Name};
+
+    return if !$Self->{DynamicFieldLookup}->{ $Param{Name} };
+    return if !IsHashRefWithData( $Self->{DynamicFieldLookup}->{ $Param{Name} } );
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given dynamic field name is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateDynamicFieldName(
         Name =&gt; 'some name',
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>ValidateDynamicFieldValue()</dt>
-		<dd><p>checks if the given dynamic field value is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateDynamicFieldValue(
+</pre><h2 id="ValidateDynamicFieldValue">ValidateDynamicFieldValue()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateDynamicFieldValue');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateDynamicFieldValue">
+                                        <pre>
+
+sub ValidateDynamicFieldValue {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !IsHashRefWithData( $Self->{DynamicFieldLookup} );
+
+    # possible structures are string and array, no data inside is needed
+    if ( !IsString( $Param{Value} ) && ref $Param{Value} ne 'ARRAY' ) {
+        return;
+    }
+
+    # get dynamic field config
+    my $DynamicFieldConfig = $Self->{DynamicFieldLookup}->{ $Param{Name} };
+
+    my $ValueType = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueValidate(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        Value              => $Param{Value},
+        UserID             => 1,
+    );
+
+    return $ValueType;
+}
+</pre></div>
+
+<p>checks if the given dynamic field value is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateDynamicFieldValue(
         Name  =&gt; 'some name',
         Value =&gt; 'some value',          # String or Integer or DateTime format
     );
 
-</pre></dd><dd><pre>    my $Success = $CommonObject-&gt;ValidateDynamicFieldValue(
+    my $Success = $CommonObject-&gt;ValidateDynamicFieldValue(
         Value =&gt; [                      # Only for fields that can handle multiple values like
             'some value',               #   Multiselect
             'some other value',
         ],
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1                        # or 0
 
-</pre></dd>	<dt>ValidateDynamicFieldObjectType()</dt>
-		<dd><p>checks if the given dynamic field name is valid.</p></dd>
-<dd><pre>    my $Success = $CommonObject-&gt;ValidateDynamicFieldObjectType(
+</pre><h2 id="ValidateDynamicFieldObjectType">ValidateDynamicFieldObjectType()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidateDynamicFieldObjectType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidateDynamicFieldObjectType">
+                                        <pre>
+
+sub ValidateDynamicFieldObjectType {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !IsHashRefWithData( $Self->{DynamicFieldLookup} );
+    return if !$Param{Name};
+
+    return if !$Self->{DynamicFieldLookup}->{ $Param{Name} };
+    return if !IsHashRefWithData( $Self->{DynamicFieldLookup}->{ $Param{Name} } );
+
+    my $DynamicFieldConfg = $Self->{DynamicFieldLookup}->{ $Param{Name} };
+    return if $DynamicFieldConfg->{ObjectType} eq 'Article' && !$Param{Article};
+
+    return 1;
+}
+</pre></div>
+
+<p>checks if the given dynamic field name is valid.</p>
+
+<pre>    my $Success = $CommonObject-&gt;ValidateDynamicFieldObjectType(
         Name    =&gt; 'some name',
         Article =&gt; 1,               # if article exists
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Success = 1            # or 0
 
-</pre></dd>	<dt>SetDynamicFieldValue()</dt>
-		<dd><p>sets the value of a dynamic field.</p></dd>
-<dd><pre>    my $Result = $CommonObject-&gt;SetDynamicFieldValue(
+</pre><h2 id="SetDynamicFieldValue">SetDynamicFieldValue()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SetDynamicFieldValue');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SetDynamicFieldValue">
+                                        <pre>
+
+sub SetDynamicFieldValue {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(Name UserID)) {
+        if ( !IsString( $Param{$Needed} ) ) {
+            return {
+                Success      => 0,
+                ErrorMessage => "SetDynamicFieldValue() Invalid value for $Needed, just string is allowed!"
+            };
+        }
+    }
+
+    # check value structure
+    if ( !IsString( $Param{Value} ) && ref $Param{Value} ne 'ARRAY' ) {
+        return {
+            Success      => 0,
+            ErrorMessage => "SetDynamicFieldValue() Invalid value for Value, just string and array are allowed!"
+        };
+    }
+
+    return if !IsHashRefWithData( $Self->{DynamicFieldLookup} );
+
+    # get dynamic field config
+    my $DynamicFieldConfig = $Self->{DynamicFieldLookup}->{ $Param{Name} };
+
+    my $ObjectID;
+    if ( $DynamicFieldConfig->{ObjectType} eq 'Ticket' ) {
+        $ObjectID = $Param{TicketID} || '';
+    }
+    else {
+        $ObjectID = $Param{ArticleID} || '';
+    }
+
+    if ( !$ObjectID ) {
+        return {
+            Success      => 0,
+            ErrorMessage => "SetDynamicFieldValue() Could not set $ObjectID!",
+        };
+    }
+
+    my $Success = $Kernel::OM->Get('Kernel::System::DynamicField::Backend')->ValueSet(
+        DynamicFieldConfig => $DynamicFieldConfig,
+        ObjectID           => $ObjectID,
+        Value              => $Param{Value},
+        UserID             => $Param{UserID},
+    );
+
+    return {
+        Success => $Success,
+        }
+}
+</pre></div>
+
+<p>sets the value of a dynamic field.</p>
+
+<pre>    my $Result = $CommonObject-&gt;SetDynamicFieldValue(
         Name      =&gt; 'some name',           # the name of the dynamic field
         Value     =&gt; 'some value',          # String or Integer or DateTime format
         TicketID  =&gt; 123
@@ -374,7 +1410,7 @@
         UserID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    my $Result = $CommonObject-&gt;SetDynamicFieldValue(
+    my $Result = $CommonObject-&gt;SetDynamicFieldValue(
         Name   =&gt; 'some name',           # the name of the dynamic field
         Value =&gt; [
             'some value',
@@ -383,19 +1419,52 @@
         UserID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Result = {
         Success =&gt; 1,                        # if everything is ok
     }
 
-</pre></dd><dd><pre>    $Result = {
+    $Result = {
         Success      =&gt; 0,
         ErrorMessage =&gt; 'Error description'
     }
 
-</pre></dd>	<dt>CreateAttachment()</dt>
-		<dd><p>cretes a new attachment for the given article.</p></dd>
-<dd><pre>    my $Result = $CommonObject-&gt;CreateAttachment(
+</pre><h2 id="CreateAttachment">CreateAttachment()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CreateAttachment');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CreateAttachment">
+                                        <pre>
+
+sub CreateAttachment {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(Attachment ArticleID UserID)) {
+        if ( !$Param{$Needed} ) {
+            return {
+                Success      => 0,
+                ErrorMessage => "CreateAttachment() Got no $Needed!"
+            };
+        }
+    }
+
+    # write attachment
+    my $Success = $Kernel::OM->Get('Kernel::System::Ticket')->ArticleWriteAttachment(
+        %{ $Param{Attachment} },
+        Content   => MIME::Base64::decode_base64( $Param{Attachment}->{Content} ),
+        ArticleID => $Param{ArticleID},
+        UserID    => $Param{UserID},
+    );
+
+    return {
+        Success => $Success,
+        }
+}
+</pre></div>
+
+<p>cretes a new attachment for the given article.</p>
+
+<pre>    my $Result = $CommonObject-&gt;CreateAttachment(
         Content     =&gt; $Data,                   # file content (Base64 encoded)
         ContentType =&gt; 'some content type',
         Filename    =&gt; 'some filename',
@@ -403,39 +1472,186 @@
         UserID      =&gt; 123.
     );
 
-</pre></dd><dd><pre>    returns
+    returns
     $Result = {
         Success =&gt; 1,                        # if everything is ok
     }
 
-</pre></dd><dd><pre>    $Result = {
+    $Result = {
         Success      =&gt; 0,
         ErrorMessage =&gt; 'Error description'
     }
 
-</pre></dd>	<dt>CheckCreatePermissions ()</dt>
-		<dd><p>Tests if the user have the permissions to create a ticket on a determined queue</p></dd>
-<dd><pre>    my $Result = $CommonObject-&gt;CheckCreatePermissions(
+</pre><h2 id="CheckCreatePermissions">CheckCreatePermissions ()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CheckCreatePermissions');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CheckCreatePermissions">
+                                        <pre>
+
+sub CheckCreatePermissions {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(Ticket UserID UserType)) {
+        if ( !$Param{$Needed} ) {
+            return;
+        }
+    }
+
+    # get create permission groups
+    my %UserGroups;
+
+    if ( $Param{UserType} ne 'Customer' ) {
+        %UserGroups = $Kernel::OM->Get('Kernel::System::Group')->PermissionUserGet(
+            UserID => $Param{UserID},
+            Type   => 'create',
+        );
+    }
+    else {
+        %UserGroups = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupMemberList(
+            UserID => $Param{UserID},
+            Type   => 'create',
+            Result => 'HASH',
+        );
+    }
+
+    my %QueueData;
+    if ( defined $Param{Ticket}->{Queue} && $Param{Ticket}->{Queue} ne '' ) {
+        %QueueData = $Kernel::OM->Get('Kernel::System::Queue')->QueueGet( Name => $Param{Ticket}->{Queue} );
+    }
+    else {
+        %QueueData = $Kernel::OM->Get('Kernel::System::Queue')->QueueGet( ID => $Param{Ticket}->{QueueID} );
+    }
+
+    # permission check, can we create new tickets in queue
+    return if !$UserGroups{ $QueueData{GroupID} };
+
+    return 1;
+}
+</pre></div>
+
+<p>Tests if the user have the permissions to create a ticket on a determined queue</p>
+
+<pre>    my $Result = $CommonObject-&gt;CheckCreatePermissions(
         Ticket     =&gt; $TicketHashReference,
         UserID     =&gt; 123,                      # or 'CustomerLogin'
         UserType   =&gt; 'Agent',                  # or 'Customer'
     );
 
-</pre></dd>		<dd><p>returns:
-    $Success = 1                                # if everything is OK</p></dd>
-	<dt>CheckAccessPermissions()</dt>
-		<dd><p>Tests if the user have access permissions over a ticket</p></dd>
-<dd><pre>    my $Result = $CommonObject-&gt;CheckAccessPermissions(
+</pre><p>returns:
+    $Success = 1                                # if everything is OK</p>
+
+<h2 id="CheckAccessPermissions">CheckAccessPermissions()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CheckAccessPermissions');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CheckAccessPermissions">
+                                        <pre>
+
+sub CheckAccessPermissions {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(TicketID UserID UserType)) {
+        if ( !$Param{$Needed} ) {
+            return;
+        }
+    }
+
+    my $TicketPermissionFunction = 'TicketPermission';
+    if ( $Param{UserType} eq 'Customer' ) {
+        $TicketPermissionFunction = 'TicketCustomerPermission';
+    }
+
+    my $Access = $Kernel::OM->Get('Kernel::System::Ticket')->$TicketPermissionFunction(
+        Type     => 'ro',
+        TicketID => $Param{TicketID},
+        UserID   => $Param{UserID},
+    );
+
+    return $Access;
+}
+</pre></div>
+
+<p>Tests if the user have access permissions over a ticket</p>
+
+<pre>    my $Result = $CommonObject-&gt;CheckAccessPermissions(
         TicketID   =&gt; 123,
         UserID     =&gt; 123,                      # or 'CustomerLogin'
         UserType   =&gt; 'Agent',                  # or 'Customer'
     );
 
-</pre></dd>		<dd><p>returns:
-    $Success = 1                                # if everything is OK</p></dd>
-	<dt>_ValidateUser()</dt>
-	<dt>_CharsetList()</dt>
-</dl>
+</pre><p>returns:
+    $Success = 1                                # if everything is OK</p>
+
+<h2 id="ValidateUser">_ValidateUser()</h2>
+
+<p><a href="#" onclick="toggleCode('method__ValidateUser');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__ValidateUser">
+                                        <pre>
+
+sub _ValidateUser {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    return if !$Param{UserID} && !$Param{User};
+
+    my %UserData;
+
+    # check for User name sent
+    if (
+        $Param{User}
+        && $Param{User} ne ''
+        && !$Param{UserID}
+        )
+    {
+        %UserData = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
+            User  => $Param{User},
+            Valid => 1,
+        );
+    }
+
+    # otherwise use UserID
+    elsif ( $Param{UserID} ) {
+        %UserData = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
+            UserID => $Param{UserID},
+            Valid  => 1,
+        );
+    }
+    else {
+        return;
+    }
+
+    # return false if priority data is empty
+    return if !IsHashRefWithData( \%UserData );
+
+    return 1;
+}
+</pre></div>
+
+<h2 id="CharsetList">_CharsetList()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CharsetList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CharsetList">
+                                        <pre>
+
+sub _CharsetList {
+    my ( $Self, %Param ) = @_;
+
+    # get charset array
+    use Encode;
+    my @CharsetList = Encode->encodings(":all");
+
+    my %CharsetHash;
+
+    # create a charset lookup table
+    for my $Charset (@CharsetList) {
+        $CharsetHash{$Charset} = 1;
+    }
+
+    return \%CharsetHash;
+}
+</pre></div>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

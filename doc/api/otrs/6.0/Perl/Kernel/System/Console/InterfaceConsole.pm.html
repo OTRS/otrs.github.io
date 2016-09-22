@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,19 +79,79 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $InterfaceConsoleObject = $Kernel::OM-&gt;Get('Kernel::System::Console::InterfaceConsole');
 
-</pre></dd>	<dt>Run()</dt>
-		<dd><p>execute a command. Returns the shell status code to be used by exit().</p></dd>
-<dd><pre>    my $StatusCode = $InterfaceConsoleObject-&gt;Run( @ARGV );
+</pre><h2 id="Run">Run()</h2>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, @CommandlineArguments ) = @_;
+
+    my $CommandName;
+
+    # Catch bash completion calls
+    if ( $ENV{COMP_LINE} ) {
+        $CommandName = 'Kernel::System::Console::Command::Internal::BashCompletion';
+        return $Kernel::OM->Get($CommandName)->Execute(@CommandlineArguments);
+    }
+
+    # If we don't have any arguments OR the first argument is an option and not a command name,
+    #   show the overview screen instead.
+    if ( !@CommandlineArguments || substr( $CommandlineArguments[0], 0, 2 ) eq '--' ) {
+        $CommandName = 'Kernel::System::Console::Command::List';
+        return $Kernel::OM->Get($CommandName)->Execute(@CommandlineArguments);
+    }
+
+    # Ok, let's try to find the command.
+    $CommandName = 'Kernel::System::Console::Command::' . $CommandlineArguments[0];
+
+    if ( $Kernel::OM->Get('Kernel::System::Main')->Require( $CommandName, Silent => 1 ) ) {
+
+        # Regular case: everything was ok, execute command.
+        # Remove first parameter (command itself) to not confuse further parsing
+        shift @CommandlineArguments;
+        return $Kernel::OM->Get($CommandName)->Execute(@CommandlineArguments);
+    }
+
+    # If the command cannot be found/loaded, also show the overview screen.
+    my $CommandObject = $Kernel::OM->Get('Kernel::System::Console::Command::List');
+    $CommandObject->PrintError("Could not find $CommandName.\n\n");
+    $CommandObject->Execute();
+    return 127;    # EXIT_CODE_COMMAND_NOT_FOUND, see http://www.tldp.org/LDP/abs/html/exitcodes.html
+}
+</pre></div>
+
+<p>execute a command. Returns the shell status code to be used by exit().</p>
+
+<pre>    my $StatusCode = $InterfaceConsoleObject-&gt;Run( @ARGV );
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

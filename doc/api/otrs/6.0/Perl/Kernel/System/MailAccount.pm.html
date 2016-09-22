@@ -58,7 +58,19 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#MailAccountAdd">MailAccountAdd()</a></li>
+	<li><a href="#MailAccountGet">MailAccountGet()</a></li>
+	<li><a href="#MailAccountUpdate">MailAccountUpdate()</a></li>
+	<li><a href="#MailAccountDelete">MailAccountDelete()</a></li>
+	<li><a href="#MailAccountList">MailAccountList()</a></li>
+	<li><a href="#MailAccountBackendList">MailAccountBackendList()</a></li>
+	<li><a href="#MailAccountFetch">MailAccountFetch()</a></li>
+	<li><a href="#MailAccountCheck">MailAccountCheck()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,16 +86,117 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $MailAccountObject = $Kernel::OM-&gt;Get('Kernel::System::MailAccount');
 
-</pre></dd>	<dt>MailAccountAdd()</dt>
-		<dd><p>adds a new mail account</p></dd>
-<dd><pre>    $MailAccount-&gt;MailAccountAdd(
+</pre><h2 id="MailAccountAdd">MailAccountAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_MailAccountAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_MailAccountAdd">
+                                        <pre>
+
+sub MailAccountAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Login Password Host ValidID Trusted DispatchingBy QueueID UserID)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "$_ not defined!"
+            );
+            return;
+        }
+    }
+    for (qw(Login Password Host Type ValidID UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # check if dispatching is by From
+    if ( $Param{DispatchingBy} eq 'From' ) {
+        $Param{QueueID} = 0;
+    }
+    elsif ( $Param{DispatchingBy} eq 'Queue' && !$Param{QueueID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need QueueID for dispatching!"
+        );
+        return;
+    }
+
+    # only set IMAP folder on IMAP type accounts
+    # fallback to 'INBOX' if none given
+    if ( $Param{Type} =~ m{ IMAP .* }xmsi ) {
+        if ( !defined $Param{IMAPFolder} || !$Param{IMAPFolder} ) {
+            $Param{IMAPFolder} = 'INBOX';
+        }
+    }
+    else {
+        $Param{IMAPFolder} = '';
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    return if !$DBObject->Do(
+        SQL =>
+            'INSERT INTO mail_account (login, pw, host, account_type, valid_id, comments, queue_id, '
+            . ' imap_folder, trusted, create_time, create_by, change_time, change_by)'
+            . ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{Login},   \$Param{Password}, \$Param{Host},    \$Param{Type},
+            \$Param{ValidID}, \$Param{Comment},  \$Param{QueueID}, \$Param{IMAPFolder},
+            \$Param{Trusted}, \$Param{UserID},   \$Param{UserID},
+        ],
+    );
+
+    return if !$DBObject->Prepare(
+        SQL  => 'SELECT id FROM mail_account WHERE login = ? AND host = ? AND account_type = ?',
+        Bind => [ \$Param{Login}, \$Param{Host}, \$Param{Type} ],
+    );
+
+    my $ID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $ID = $Row[0];
+    }
+
+    return $ID;
+}
+</pre></div>
+
+<p>adds a new mail account</p>
+
+<pre>    $MailAccount-&gt;MailAccountAdd(
         Login         =&gt; 'mail',
         Password      =&gt; 'SomePassword',
         Host          =&gt; 'pop3.example.com',
@@ -96,16 +209,145 @@
         UserID        =&gt; 123,
     );
 
-</pre></dd>	<dt>MailAccountGet()</dt>
-		<dd><p>returns a hash of mail account data</p></dd>
-<dd><pre>    my %MailAccount = $MailAccount-&gt;MailAccountGet(
+</pre><h2 id="MailAccountGet">MailAccountGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_MailAccountGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_MailAccountGet">
+                                        <pre>
+
+sub MailAccountGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need ID!"
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    return if !$DBObject->Prepare(
+        SQL =>
+            'SELECT login, pw, host, account_type, queue_id, imap_folder, trusted, comments, valid_id, '
+            . ' create_time, change_time FROM mail_account WHERE id = ?',
+        Bind => [ \$Param{ID} ],
+    );
+
+    my %Data;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        %Data = (
+            ID         => $Param{ID},
+            Login      => $Data[0],
+            Password   => $Data[1],
+            Host       => $Data[2],
+            Type       => $Data[3] || 'POP3',    # compat for old setups
+            QueueID    => $Data[4],
+            IMAPFolder => $Data[5],
+            Trusted    => $Data[6],
+            Comment    => $Data[7],
+            ValidID    => $Data[8],
+            CreateTime => $Data[9],
+            ChangeTime => $Data[10],
+        );
+    }
+
+    if ( $Data{QueueID} == 0 ) {
+        $Data{DispatchingBy} = 'From';
+    }
+    else {
+        $Data{DispatchingBy} = 'Queue';
+    }
+
+    # only return IMAP folder on IMAP type accounts
+    # fallback to 'INBOX' if none given
+    if ( $Data{Type} =~ m{ IMAP .* }xmsi ) {
+        if ( defined $Data{IMAPFolder} && !$Data{IMAPFolder} ) {
+            $Data{IMAPFolder} = 'INBOX';
+        }
+    }
+    else {
+        $Data{IMAPFolder} = '';
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<p>returns a hash of mail account data</p>
+
+<pre>    my %MailAccount = $MailAccount-&gt;MailAccountGet(
         ID =&gt; 123,
     );
 
-</pre></dd>		<dd><p>(returns: ID, Login, Password, Host, Type, QueueID, Trusted, IMAPFolder, Comment, DispatchingBy, ValidID)</p></dd>
-	<dt>MailAccountUpdate()</dt>
-		<dd><p>update a new mail account</p></dd>
-<dd><pre>    $MailAccount-&gt;MailAccountUpdate(
+</pre><p>(returns: ID, Login, Password, Host, Type, QueueID, Trusted, IMAPFolder, Comment, DispatchingBy, ValidID)</p>
+
+<h2 id="MailAccountUpdate">MailAccountUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_MailAccountUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_MailAccountUpdate">
+                                        <pre>
+
+sub MailAccountUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(ID Login Password Host Type ValidID Trusted DispatchingBy QueueID UserID)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # check if dispatching is by From
+    if ( $Param{DispatchingBy} eq 'From' ) {
+        $Param{QueueID} = 0;
+    }
+    elsif ( $Param{DispatchingBy} eq 'Queue' && !$Param{QueueID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need QueueID for dispatching!"
+        );
+        return;
+    }
+
+    # only set IMAP folder on IMAP type accounts
+    # fallback to 'INBOX' if none given
+    if ( $Param{Type} =~ m{ IMAP .* }xmsi ) {
+        if ( !defined $Param{IMAPFolder} || !$Param{IMAPFolder} ) {
+            $Param{IMAPFolder} = 'INBOX';
+        }
+    }
+    else {
+        $Param{IMAPFolder} = '';
+    }
+
+    # sql
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => 'UPDATE mail_account SET login = ?, pw = ?, host = ?, account_type = ?, '
+            . ' comments = ?, imap_folder = ?, trusted = ?, valid_id = ?, change_time = current_timestamp, '
+            . ' change_by = ?, queue_id = ? WHERE id = ?',
+        Bind => [
+            \$Param{Login},   \$Param{Password},   \$Param{Host},    \$Param{Type},
+            \$Param{Comment}, \$Param{IMAPFolder}, \$Param{Trusted}, \$Param{ValidID},
+            \$Param{UserID},  \$Param{QueueID},    \$Param{ID},
+        ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>update a new mail account</p>
+
+<pre>    $MailAccount-&gt;MailAccountUpdate(
         ID            =&gt; 1,
         Login         =&gt; 'mail',
         Password      =&gt; 'SomePassword',
@@ -119,25 +361,155 @@
         UserID        =&gt; 123,
     );
 
-</pre></dd>	<dt>MailAccountDelete()</dt>
-		<dd><p>deletes a mail account</p></dd>
-<dd><pre>    $MailAccount-&gt;MailAccountDelete(
+</pre><h2 id="MailAccountDelete">MailAccountDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_MailAccountDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_MailAccountDelete">
+                                        <pre>
+
+sub MailAccountDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need ID!"
+        );
+        return;
+    }
+
+    # sql
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL  => 'DELETE FROM mail_account WHERE id = ?',
+        Bind => [ \$Param{ID} ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>deletes a mail account</p>
+
+<pre>    $MailAccount-&gt;MailAccountDelete(
         ID =&gt; 123,
     );
 
-</pre></dd>	<dt>MailAccountList()</dt>
-		<dd><p>returns a list (Key, Name) of all mail accounts</p></dd>
-<dd><pre>    my %List = $MailAccount-&gt;MailAccountList(
+</pre><h2 id="MailAccountList">MailAccountList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_MailAccountList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_MailAccountList">
+                                        <pre>
+
+sub MailAccountList {
+    my ( $Self, %Param ) = @_;
+
+    # get valid object
+    my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
+
+    my $Where = $Param{Valid}
+        ? 'WHERE valid_id IN ( ' . join ', ', $ValidObject->ValidIDsGet() . ' )'
+        : '';
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT id, host, login FROM mail_account $Where",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] } = "$Row[1] ($Row[2])";
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<p>returns a list (Key, Name) of all mail accounts</p>
+
+<pre>    my %List = $MailAccount-&gt;MailAccountList(
         Valid =&gt; 0, # just valid/all accounts
     );
 
-</pre></dd>	<dt>MailAccountBackendList()</dt>
-		<dd><p>returns a list of usable backends</p></dd>
-<dd><pre>    my %List = $MailAccount-&gt;MailAccountBackendList();
+</pre><h2 id="MailAccountBackendList">MailAccountBackendList()</h2>
 
-</pre></dd>	<dt>MailAccountFetch()</dt>
-		<dd><p>fetch emails by using backend</p></dd>
-<dd><pre>    my $Ok = $MailAccount-&gt;MailAccountFetch(
+<p><a href="#" onclick="toggleCode('method_MailAccountBackendList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_MailAccountBackendList">
+                                        <pre>
+
+sub MailAccountBackendList {
+    my ( $Self, %Param ) = @_;
+
+    my $Directory = $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/Kernel/System/MailAccount/';
+
+    my @List = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => $Directory,
+        Filter    => '*.pm',
+    );
+
+    my %Backends;
+    for my $File (@List) {
+
+        # remove .pm
+        $File =~ s/^.*\/(.+?)\.pm$/$1/;
+        my $GenericModule = "Kernel::System::MailAccount::$File";
+
+        # try to load module $GenericModule
+        if ( eval "require $GenericModule" ) {    ## no critic
+            if ( eval { $GenericModule->new() } ) {
+                $Backends{$File} = $File;
+            }
+        }
+    }
+
+    return %Backends;
+}
+</pre></div>
+
+<p>returns a list of usable backends</p>
+
+<pre>    my %List = $MailAccount-&gt;MailAccountBackendList();
+
+</pre><h2 id="MailAccountFetch">MailAccountFetch()</h2>
+
+<p><a href="#" onclick="toggleCode('method_MailAccountFetch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_MailAccountFetch">
+                                        <pre>
+
+sub MailAccountFetch {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Login Password Host Type Trusted DispatchingBy QueueID UserID)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # load backend
+    my $GenericModule = "Kernel::System::MailAccount::$Param{Type}";
+
+    # try to load module $GenericModule
+    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($GenericModule) ) {
+        return;
+    }
+
+    # fetch mails
+    my $Backend = $GenericModule->new();
+
+    return $Backend->Fetch(%Param);
+}
+</pre></div>
+
+<p>fetch emails by using backend</p>
+
+<pre>    my $Ok = $MailAccount-&gt;MailAccountFetch(
         Login         =&gt; 'mail',
         Password      =&gt; 'SomePassword',
         Host          =&gt; 'pop3.example.com',
@@ -148,9 +520,53 @@
         UserID        =&gt; 123,
     );
 
-</pre></dd>	<dt>MailAccountCheck()</dt>
-		<dd><p>Check inbound mail configuration</p></dd>
-<dd><pre>    my %Check = $MailAccount-&gt;MailAccountCheck(
+</pre><h2 id="MailAccountCheck">MailAccountCheck()</h2>
+
+<p><a href="#" onclick="toggleCode('method_MailAccountCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_MailAccountCheck">
+                                        <pre>
+
+sub MailAccountCheck {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Login Password Host Type Timeout Debug)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # load backend
+    my $GenericModule = "Kernel::System::MailAccount::$Param{Type}";
+
+    # try to load module $GenericModule
+    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($GenericModule) ) {
+        return;
+    }
+
+    # check if connect is successful
+    my $Backend = $GenericModule->new();
+    my %Check   = $Backend->Connect(%Param);
+
+    if ( $Check{Successful} ) {
+        return ( Successful => 1 )
+    }
+    else {
+        return (
+            Successful => 0,
+            Message    => $Check{Message}
+        );
+    }
+}
+</pre></div>
+
+<p>Check inbound mail configuration</p>
+
+<pre>    my %Check = $MailAccount-&gt;MailAccountCheck(
         Login         =&gt; 'mail',
         Password      =&gt; 'SomePassword',
         Host          =&gt; 'pop3.example.com',
@@ -159,8 +575,7 @@
         Debug         =&gt; '0',
     );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

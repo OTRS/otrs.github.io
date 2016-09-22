@@ -58,7 +58,13 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+	<li><a href="#CheckService">_CheckService()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,17 +80,228 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $TicketServiceSetObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::TransitionAction::TicketServiceSet');
 
-</pre></dd>	<dt>Run()</dt>
-<dd><pre>    Run Data
+</pre><h2 id="Run">Run()</h2>
 
-</pre></dd><dd><pre>    my $TicketServiceSetResult = $TicketServiceSetActionObject-&gt;Run(
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    # define a common message to output in case of any error
+    my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
+        . " Transition: $Param{TransitionEntityID}"
+        . " TransitionAction: $Param{TransitionActionEntityID} - ";
+
+    # check for missing or wrong params
+    my $Success = $Self->_CheckParams(
+        %Param,
+        CommonMessage => $CommonMessage,
+    );
+    return if !$Success;
+
+    # override UserID if specified as a parameter in the TA config
+    $Param{UserID} = $Self->_OverrideUserID(%Param);
+
+    # use ticket attributes if needed
+    $Self->_ReplaceTicketAttributes(%Param);
+
+    if ( !$Param{Config}->{ServiceID} && !$Param{Config}->{Service} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage . "No Service or ServiceID configured!",
+        );
+        return;
+    }
+
+    if ( !$Param{Ticket}->{CustomerUserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage . "To set a service the ticket requires a customer!",
+        );
+        return;
+    }
+
+    $Success = 0;
+
+    # If Ticket's ServiceID is already the same as the Value we
+    # should set it to, we got nothing to do and return success
+    if (
+        defined $Param{Config}->{ServiceID}
+        && defined $Param{Ticket}->{ServiceID}
+        && $Param{Config}->{ServiceID} eq $Param{Ticket}->{ServiceID}
+        )
+    {
+        return 1;
+    }
+
+    # If Ticket's ServiceID is not the same as the Value we
+    # should set it to, set the ServiceID
+    elsif (
+        (
+            defined $Param{Config}->{ServiceID}
+            && defined $Param{Ticket}->{ServiceID}
+            && $Param{Config}->{ServiceID} ne $Param{Ticket}->{ServiceID}
+        )
+        || !defined $Param{Ticket}->{ServiceID}
+        )
+    {
+
+        # check if serivce is assigned to Customer User otherwise return
+        $Success = $Self->_CheckService(
+            UserLogin => $Param{Ticket}->{CustomerUserID},
+            ServiceID => $Param{Config}->{ServiceID}
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . 'ServiceID '
+                    . $Param{Config}->{ServiceID}
+                    . ' is not assigned to Customer User '
+                    . $Param{Ticket}->{CustomerUserID}
+            );
+            return;
+        }
+
+        # set ticket service
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketServiceSet(
+            TicketID  => $Param{Ticket}->{TicketID},
+            ServiceID => $Param{Config}->{ServiceID},
+            UserID    => $Param{UserID},
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . 'Ticket ServiceID '
+                    . $Param{Config}->{ServiceID}
+                    . ' could not be updated for Ticket: '
+                    . $Param{Ticket}->{TicketID} . '!',
+            );
+        }
+    }
+
+    # If Ticket's Service is already the same as the Value we
+    # should set it to, we got nothing to do and return success
+    elsif (
+        defined $Param{Config}->{Service}
+        && defined $Param{Ticket}->{Service}
+        && $Param{Config}->{Service} eq $Param{Ticket}->{Service}
+        )
+    {
+        return 1;
+    }
+
+    # If Ticket's Service is not the same as the Value we
+    # should set it to, set the Service
+    elsif (
+        (
+            defined $Param{Config}->{Service}
+            && defined $Param{Ticket}->{Service}
+            && $Param{Config}->{Service} ne $Param{Ticket}->{Service}
+        )
+        || !defined $Param{Ticket}->{Service}
+
+        )
+    {
+
+        my $ServiceID = $Kernel::OM->Get('Kernel::System::Service')->ServiceLookup(
+            Name => $Param{Config}->{Service},
+        );
+
+        if ( !$ServiceID ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . 'Service '
+                    . $Param{Config}->{Service}
+                    . ' is invalid!'
+            );
+            return;
+        }
+
+        # check if service is assigned to Customer User, otherwise return
+        $Success = $Self->_CheckService(
+            UserLogin => $Param{Ticket}->{CustomerUserID},
+            ServiceID => $ServiceID,
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . 'Service '
+                    . $Param{Config}->{Service}
+                    . ' is not assigned to Customer User '
+                    . $Param{Ticket}->{CustomerUserID}
+            );
+            return;
+        }
+
+        # set ticket service
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketServiceSet(
+            TicketID => $Param{Ticket}->{TicketID},
+            Service  => $Param{Config}->{Service},
+            UserID   => $Param{UserID},
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . 'Ticket Service '
+                    . $Param{Config}->{Service}
+                    . ' could not be updated for Ticket: '
+                    . $Param{Ticket}->{TicketID} . '!',
+            );
+        }
+    }
+    else {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage
+                . "Couldn't update Ticket Service - can't find valid Service parameter!",
+        );
+        return;
+    }
+
+    return $Success;
+}
+</pre></div>
+
+<pre>    Run Data
+
+    my $TicketServiceSetResult = $TicketServiceSetActionObject-&gt;Run(
         UserID                   =&gt; 123,
         Ticket                   =&gt; \%Ticket,   # required
         ProcessEntityID          =&gt; 'P123',
@@ -102,42 +319,47 @@
     Config is the Config Hash stored in a Process::TransitionAction's  Config key
     Returns:
 
-</pre></dd><dd><pre>    $TicketServiceSetResult = 1; # 0
+    $TicketServiceSetResult = 1; # 0
 
-</pre></dd>	<dt>_CheckService()</dt>
-		<dd><p>checks if a service is assigned to a customer user</p></dd>
-<dd><pre>    my $Success = _CheckService(
+</pre><h2 id="CheckService">_CheckService()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CheckService');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CheckService">
+                                        <pre>
+
+sub _CheckService {
+    my ( $Self, %Param ) = @_;
+
+    # get a list of assigned services to the customer user
+    my %Services = $Kernel::OM->Get('Kernel::System::Service')->CustomerUserServiceMemberList(
+        CustomerUserLogin => $Param{UserLogin},
+        Result            => 'HASH',
+        DefaultServices   => 1,
+    );
+
+    # return failure if there are no assigned services for this customer user
+    return if !IsHashRefWithData( \%Services );
+
+    # return failure if the the service is not assigned to the customer
+    return if !$Services{ $Param{ServiceID} };
+
+    # otherwise return success
+    return 1;
+}
+</pre></div>
+
+<p>checks if a service is assigned to a customer user</p>
+
+<pre>    my $Success = _CheckService(
         UserLogin =&gt; 'some user',
         ServiceID =&gt; 123,
     );
 
-</pre></dd><dd><pre>    Returns:
+    Returns:
 
-</pre></dd><dd><pre>    $Success = 1;       # or undef
-=cut
+    $Success = 1;       # or undef
 
-</pre></dd>		<dd><p>sub _CheckService {
-    my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    # get a list of assigned services to the customer user
-    my %Services = $Kernel::OM-&gt;Get('Kernel::System::Service')-&gt;CustomerUserServiceMemberList(
-        CustomerUserLogin =&gt; $Param{UserLogin},
-        Result            =&gt; 'HASH',
-        DefaultServices   =&gt; 1,
-    );
-
-</pre></dd><dd><pre>    # return failure if there are no assigned services for this customer user
-    return if !IsHashRefWithData( \%Services );
-
-</pre></dd><dd><pre>    # return failure if the the service is not assigned to the customer
-    return if !$Services{ $Param{ServiceID} };
-
-</pre></dd><dd><pre>    # otherwise return success
-    return 1;
-}
-
-</pre></dd>		<dd><p>1;</p></dd>
-</dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

@@ -57,8 +57,12 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -68,25 +72,331 @@
 
 <p>Kernel::GenericInterface::Operation::Ticket::TicketGet - GenericInterface Ticket Get Operation backend</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
-
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>usually, you want to create an instance of this
-by using Kernel::GenericInterface::Operation-&gt;new();</p></dd>
-	<dt>Run()</dt>
-		<dd><p>perform TicketGet Operation. This function is able to return
-one or more ticket entries in one call.</p></dd>
-<dd><pre>    my $Result = $OperationObject-&gt;Run(
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # check needed objects
+    for my $Needed (qw(DebuggerObject WebserviceID)) {
+        if ( !$Param{$Needed} ) {
+            return {
+                Success      => 0,
+                ErrorMessage => "Got no $Needed!",
+            };
+        }
+
+        $Self->{$Needed} = $Param{$Needed};
+    }
+
+    return $Self;
+}
+</pre></div>
+
+<p>usually, you want to create an instance of this
+by using Kernel::GenericInterface::Operation-&gt;new();</p>
+
+<h2 id="Run">Run()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    my $Result = $Self->Init(
+        WebserviceID => $Self->{WebserviceID},
+    );
+
+    if ( !$Result->{Success} ) {
+        return $Self->ReturnError(
+            ErrorCode    => 'Webservice.InvalidConfiguration',
+            ErrorMessage => $Result->{ErrorMessage},
+        );
+    }
+
+    my ( $UserID, $UserType ) = $Self->Auth(
+        %Param,
+    );
+
+    return $Self->ReturnError(
+        ErrorCode    => 'TicketGet.AuthFail',
+        ErrorMessage => "TicketGet: Authorization failing!",
+    ) if !$UserID;
+
+    # check needed stuff
+    for my $Needed (qw(TicketID)) {
+        if ( !$Param{Data}->{$Needed} ) {
+            return $Self->ReturnError(
+                ErrorCode    => 'TicketGet.MissingParameter',
+                ErrorMessage => "TicketGet: $Needed parameter is missing!",
+            );
+        }
+    }
+    my $ErrorMessage = '';
+
+    # all needed variables
+    my @TicketIDs;
+    if ( IsStringWithData( $Param{Data}->{TicketID} ) ) {
+        @TicketIDs = split( /,/, $Param{Data}->{TicketID} );
+    }
+    elsif ( IsArrayRefWithData( $Param{Data}->{TicketID} ) ) {
+        @TicketIDs = @{ $Param{Data}->{TicketID} };
+    }
+    else {
+        return $Self->ReturnError(
+            ErrorCode    => 'TicketGet.WrongStructure',
+            ErrorMessage => "TicketGet: Structure for TicketID is not correct!",
+        );
+    }
+
+    # Get the list of dynamic fields for object article.
+    my $ArticleDynamicFieldList = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldList(
+        ObjectType => 'Article',
+        ResultType => 'HASH',
+    );
+
+    # Crate a lookup list for easy search
+    my %ArticleDynamicFieldLookup = reverse %{$ArticleDynamicFieldList};
+
+    TICKET:
+    for my $TicketID (@TicketIDs) {
+
+        my $Access = $Self->CheckAccessPermissions(
+            TicketID => $TicketID,
+            UserID   => $UserID,
+            UserType => $UserType,
+        );
+
+        next TICKET if $Access;
+
+        return $Self->ReturnError(
+            ErrorCode    => 'TicketGet.AccessDenied',
+            ErrorMessage => 'TicketGet: User does not have access to the ticket!',
+        );
+    }
+
+    my $DynamicFields = $Param{Data}->{DynamicFields} || 0;
+    my $Extended      = $Param{Data}->{Extended}      || 0;
+    my $AllArticles   = $Param{Data}->{AllArticles}   || 0;
+    my $ArticleOrder  = $Param{Data}->{ArticleOrder}  || 'ASC';
+    my $ArticleLimit  = $Param{Data}->{ArticleLimit}  || 0;
+    my $Attachments   = $Param{Data}->{Attachments}   || 0;
+    my $ReturnData    = {
+        Success => 1,
+    };
+    my @Item;
+
+    my $ArticleSenderType = '';
+    if ( IsArrayRefWithData( $Param{Data}->{ArticleSenderType} ) ) {
+        $ArticleSenderType = $Param{Data}->{ArticleSenderType};
+    }
+    elsif ( IsStringWithData( $Param{Data}->{ArticleSenderType} ) ) {
+        $ArticleSenderType = [ $Param{Data}->{ArticleSenderType} ]
+    }
+
+    # By default does not include HYML body as attachment (3) unless is explicitly requested (2).
+    my $StripPlainBodyAsAttachment = $Param{Data}->{HTMLBodyAsAttachment} ? 2 : 3;
+
+    # start ticket loop
+    TICKET:
+    for my $TicketID (@TicketIDs) {
+
+        # get ticket object
+        my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+        # get the Ticket entry
+        my %TicketEntryRaw = $TicketObject->TicketGet(
+            TicketID      => $TicketID,
+            DynamicFields => $DynamicFields,
+            Extended      => $Extended,
+            UserID        => $UserID,
+        );
+
+        if ( !IsHashRefWithData( \%TicketEntryRaw ) ) {
+
+            $ErrorMessage = 'Could not get Ticket data'
+                . ' in Kernel::GenericInterface::Operation::Ticket::TicketGet::Run()';
+
+            return $Self->ReturnError(
+                ErrorCode    => 'TicketGet.NotValidTicketID',
+                ErrorMessage => "TicketGet: $ErrorMessage",
+            );
+        }
+
+        my %TicketEntry;
+        my @DynamicFields;
+
+        # remove all dynamic fields form main ticket hash and set them into an array.
+        ATTRIBUTE:
+        for my $Attribute ( sort keys %TicketEntryRaw ) {
+
+            if ( $Attribute =~ m{\A DynamicField_(.*) \z}msx ) {
+                push @DynamicFields, {
+                    Name  => $1,
+                    Value => $TicketEntryRaw{$Attribute},
+                };
+                next ATTRIBUTE;
+            }
+
+            $TicketEntry{$Attribute} = $TicketEntryRaw{$Attribute};
+        }
+
+        # add dynamic fields array into 'DynamicField' hash key if any
+        if (@DynamicFields) {
+            $TicketEntry{DynamicField} = \@DynamicFields;
+        }
+
+        # set Ticket entry data
+        my $TicketBundle = {
+            %TicketEntry,
+        };
+
+        if ( !$AllArticles ) {
+            push @Item, $TicketBundle;
+            next TICKET;
+        }
+
+        my $ArticleTypes;
+        if ( $UserType eq 'Customer' ) {
+            $ArticleTypes = [ $TicketObject->ArticleTypeList( Type => 'Customer' ) ];
+        }
+
+        my @ArticleBoxRaw = $TicketObject->ArticleGet(
+            TicketID          => $TicketID,
+            ArticleSenderType => $ArticleSenderType,
+            ArticleType       => $ArticleTypes,
+            DynamicFields     => $DynamicFields,
+            Extended          => $Extended,
+            Order             => $ArticleOrder,
+            Limit             => $ArticleLimit,
+            UserID            => $UserID,
+        );
+
+        # start article loop
+        ARTICLE:
+        for my $Article (@ArticleBoxRaw) {
+
+            next ARTICLE if !$Attachments;
+
+            # get attachment index (without attachments)
+            my %AtmIndex = $TicketObject->ArticleAttachmentIndex(
+                ContentPath                => $Article->{ContentPath},
+                ArticleID                  => $Article->{ArticleID},
+                StripPlainBodyAsAttachment => $StripPlainBodyAsAttachment,
+                Article                    => $Article,
+                UserID                     => $UserID,
+            );
+
+            next ARTICLE if !IsHashRefWithData( \%AtmIndex );
+
+            my @Attachments;
+            ATTACHMENT:
+            for my $FileID ( sort keys %AtmIndex ) {
+                next ATTACHMENT if !$FileID;
+                my %Attachment = $TicketObject->ArticleAttachment(
+                    ArticleID => $Article->{ArticleID},
+                    FileID    => $FileID,                 # as returned by ArticleAttachmentIndex
+                    UserID    => $UserID,
+                );
+
+                next ATTACHMENT if !IsHashRefWithData( \%Attachment );
+
+                # convert content to base64
+                $Attachment{Content} = encode_base64( $Attachment{Content} );
+                push @Attachments, {%Attachment};
+            }
+
+            # set Attachments data
+            $Article->{Attachment} = \@Attachments;
+
+        }    # finish article loop
+
+        # set Ticket entry data
+        if (@ArticleBoxRaw) {
+
+            my @ArticleBox;
+
+            for my $ArticleRaw (@ArticleBoxRaw) {
+                my %Article;
+                my @ArticleDynamicFields;
+
+                # remove all dynamic fields form main article hash and set them into an array.
+                ATTRIBUTE:
+                for my $Attribute ( sort keys %{$ArticleRaw} ) {
+
+                    if ( $Attribute =~ m{\A DynamicField_(.*) \z}msx ) {
+
+                        # Skip dynamic fields that are not for article object
+                        next ATTRIBUTE if ( !$ArticleDynamicFieldLookup{$1} );
+
+                        push @ArticleDynamicFields, {
+                            Name  => $1,
+                            Value => $ArticleRaw->{$Attribute},
+                        };
+                        next ATTRIBUTE;
+                    }
+
+                    $Article{$Attribute} = $ArticleRaw->{$Attribute};
+                }
+
+                # add dynamic fields array into 'DynamicField' hash key if any
+                if (@ArticleDynamicFields) {
+                    $Article{DynamicField} = \@ArticleDynamicFields;
+                }
+
+                push @ArticleBox, \%Article;
+            }
+            $TicketBundle->{Article} = \@ArticleBox;
+        }
+
+        # add
+        push @Item, $TicketBundle;
+    }    # finish ticket loop
+
+    if ( !scalar @Item ) {
+        $ErrorMessage = 'Could not get Ticket data'
+            . ' in Kernel::GenericInterface::Operation::Ticket::TicketGet::Run()';
+
+        return $Self->ReturnError(
+            ErrorCode    => 'TicketGet.NotTicketData',
+            ErrorMessage => "TicketGet: $ErrorMessage",
+        );
+
+    }
+
+    # set ticket data into return structure
+    $ReturnData->{Data}->{Ticket} = \@Item;
+
+    # return result
+    return $ReturnData;
+}
+</pre></div>
+
+<p>perform TicketGet Operation. This function is able to return
+one or more ticket entries in one call.</p>
+
+<pre>    my $Result = $OperationObject-&gt;Run(
         Data =&gt; {
             UserLogin            =&gt; 'some agent login',                            # UserLogin or CustomerUserLogin or SessionID is
                                                                                    #   required
             CustomerUserLogin    =&gt; 'some customer login',
             SessionID            =&gt; 123,
 
-</pre></dd><dd><pre>            Password             =&gt; 'some password',                               # if UserLogin or customerUserLogin is sent then
+            Password             =&gt; 'some password',                               # if UserLogin or customerUserLogin is sent then
                                                                                    #   Password is required
             TicketID             =&gt; '32,33',                                       # required, could be coma separated IDs or an Array
             DynamicFields        =&gt; 0,                                             # Optional, 0 as default. Indicate if Dynamic Fields
@@ -104,7 +414,7 @@ one or more ticket entries in one call.</p></dd>
         },
     );
 
-</pre></dd><dd><pre>    $Result = {
+    $Result = {
         Success      =&gt; 1,                                # 0 or 1
         ErrorMessage =&gt; '',                               # In case of an error
         Data         =&gt; {
@@ -142,7 +452,7 @@ one or more ticket entries in one call.</p></dd>
                     ChangeBy           =&gt; 123,
                     ArchiveFlag        =&gt; 'y',
 
-</pre></dd><dd><pre>                    # If DynamicFields =&gt; 1 was passed, you'll get an entry like this for each dynamic field:
+                    # If DynamicFields =&gt; 1 was passed, you'll get an entry like this for each dynamic field:
                     DynamicField =&gt; [
                         {
                             Name  =&gt; 'some name',
@@ -150,19 +460,19 @@ one or more ticket entries in one call.</p></dd>
                         },
                     ],
 
-</pre></dd><dd><pre>                    # (time stamps of expected escalations)
+                    # (time stamps of expected escalations)
                     EscalationResponseTime           (unix time stamp of response time escalation)
                     EscalationUpdateTime             (unix time stamp of update time escalation)
                     EscalationSolutionTime           (unix time stamp of solution time escalation)
 
-</pre></dd><dd><pre>                    # (general escalation info of nearest escalation type)
+                    # (general escalation info of nearest escalation type)
                     EscalationDestinationIn          (escalation in e. g. 1h 4m)
                     EscalationDestinationTime        (date of escalation in unix time, e. g. 72193292)
                     EscalationDestinationDate        (date of escalation, e. g. &quot;2009-02-14 18:00:00&quot;)
                     EscalationTimeWorkingTime        (seconds of working/service time till escalation, e. g. &quot;1800&quot;)
                     EscalationTime                   (seconds total till escalation of nearest escalation time type - response, update or solution time, e. g. &quot;3600&quot;)
 
-</pre></dd><dd><pre>                    # (detailed escalation info about first response, update and solution time)
+                    # (detailed escalation info about first response, update and solution time)
                     FirstResponseTimeEscalation      (if true, ticket is escalated)
                     FirstResponseTimeNotification    (if true, notify - x% of escalation has reached)
                     FirstResponseTimeDestinationTime (date of escalation in unix time, e. g. 72193292)
@@ -170,31 +480,31 @@ one or more ticket entries in one call.</p></dd>
                     FirstResponseTimeWorkingTime     (seconds of working/service time till escalation, e. g. &quot;1800&quot;)
                     FirstResponseTime                (seconds total till escalation, e. g. &quot;3600&quot;)
 
-</pre></dd><dd><pre>                    UpdateTimeEscalation             (if true, ticket is escalated)
+                    UpdateTimeEscalation             (if true, ticket is escalated)
                     UpdateTimeNotification           (if true, notify - x% of escalation has reached)
                     UpdateTimeDestinationTime        (date of escalation in unix time, e. g. 72193292)
                     UpdateTimeDestinationDate        (date of escalation, e. g. &quot;2009-02-14 18:00:00&quot;)
                     UpdateTimeWorkingTime            (seconds of working/service time till escalation, e. g. &quot;1800&quot;)
                     UpdateTime                       (seconds total till escalation, e. g. &quot;3600&quot;)
 
-</pre></dd><dd><pre>                    SolutionTimeEscalation           (if true, ticket is escalated)
+                    SolutionTimeEscalation           (if true, ticket is escalated)
                     SolutionTimeNotification         (if true, notify - x% of escalation has reached)
                     SolutionTimeDestinationTime      (date of escalation in unix time, e. g. 72193292)
                     SolutionTimeDestinationDate      (date of escalation, e. g. &quot;2009-02-14 18:00:00&quot;)
                     SolutionTimeWorkingTime          (seconds of working/service time till escalation, e. g. &quot;1800&quot;)
                     SolutionTime                     (seconds total till escalation, e. g. &quot;3600&quot;)
 
-</pre></dd><dd><pre>                    # if you use param Extended to get extended ticket attributes
+                    # if you use param Extended to get extended ticket attributes
                     FirstResponse                   (timestamp of first response, first contact with customer)
                     FirstResponseInMin              (minutes till first response)
                     FirstResponseDiffInMin          (minutes till or over first response)
 
-</pre></dd><dd><pre>                    SolutionInMin                   (minutes till solution time)
+                    SolutionInMin                   (minutes till solution time)
                     SolutionDiffInMin               (minutes till or over solution time)
 
-</pre></dd><dd><pre>                    FirstLock                       (timestamp of first lock)
+                    FirstLock                       (timestamp of first lock)
 
-</pre></dd><dd><pre>                    Article =&gt; [
+                    Article =&gt; [
                         {
                             ArticleID
                             From
@@ -215,7 +525,7 @@ one or more ticket entries in one call.</p></dd>
                             MimeType
                             IncomingTime
 
-</pre></dd><dd><pre>                            # If DynamicFields =&gt; 1 was passed, you'll get an entry like this for each dynamic field:
+                            # If DynamicFields =&gt; 1 was passed, you'll get an entry like this for each dynamic field:
                             DynamicField =&gt; [
                                 {
                                     Name  =&gt; 'some name',
@@ -223,7 +533,7 @@ one or more ticket entries in one call.</p></dd>
                                 },
                             ],
 
-</pre></dd><dd><pre>                            Attachment =&gt; [
+                            Attachment =&gt; [
                                 {
                                     Content            =&gt; &quot;xxxx&quot;,     # actual attachment contents, base64 enconded
                                     ContentAlternative =&gt; &quot;&quot;,
@@ -250,8 +560,7 @@ one or more ticket entries in one call.</p></dd>
         },
     };
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

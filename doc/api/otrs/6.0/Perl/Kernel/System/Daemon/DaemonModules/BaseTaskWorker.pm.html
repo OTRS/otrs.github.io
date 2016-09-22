@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#HandleError">_HandleError()</a></li>
+	<li><a href="#CheckTaskParams">_CheckTaskParams()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,10 +79,51 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>_HandleError()</dt>
-		<dd><p>Creates a system error message and sends an email with the error messages form a task execution.</p></dd>
-<dd><pre>    my $Success = $TaskWorkerObject-&gt;_HandleError(
+
+
+
+<h2 id="HandleError">_HandleError()</h2>
+
+<p><a href="#" onclick="toggleCode('method__HandleError');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__HandleError">
+                                        <pre>
+
+sub _HandleError {
+    my ( $Self, %Param ) = @_;
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => $Param{LogMessage},
+    );
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my $From = $ConfigObject->Get('NotificationSenderName') . ' <'
+        . $ConfigObject->Get('NotificationSenderEmail') . '>';
+
+    my $To = $ConfigObject->Get('Daemon::SchedulerTaskWorker::NotificationRecipientEmail') || '';
+
+    if ( $From && $To ) {
+
+        my $Sent = $Kernel::OM->Get('Kernel::System::Email')->Send(
+            From     => $From,
+            To       => $To,
+            Subject  => "OTRS Scheduler Daemon $Param{TaskType}: $Param{TaskName}",
+            Charset  => 'utf-8',
+            MimeType => 'text/plain',
+            Body     => $Param{ErrorMessage},
+        );
+
+        return $Sent;
+    }
+
+    return;
+}
+</pre></div>
+
+<p>Creates a system error message and sends an email with the error messages form a task execution.</p>
+
+<pre>    my $Success = $TaskWorkerObject-&gt;_HandleError(
         TaskName     =&gt; 'some name',
         TaksTye      =&gt; 'some type',
         LogMessage   =&gt; 'some message',       # message to set in the OTRS error log
@@ -85,9 +131,71 @@
                                               #     all messages from STDERR including tracebacks
     );
 
-</pre></dd>	<dt>_CheckTaskParams()</dt>
-		<dd><p>Performs basic checks for common task parameters.</p></dd>
-<dd><pre>    my $Success = $TaskWorkerObject-&gt;_CheckTaskParams(
+</pre><h2 id="CheckTaskParams">_CheckTaskParams()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CheckTaskParams');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CheckTaskParams">
+                                        <pre>
+
+sub _CheckTaskParams {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(TaskID Data)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed! - Task: $Param{TaskName}",
+            );
+
+            return;
+        }
+    }
+
+    # Check data.
+    if ( ref $Param{Data} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Got no valid Data! - Task: $Param{TaskName}",
+        );
+
+        return;
+    }
+
+    # Check mandatory attributes in Data.
+    if ( $Param{NeededDataAttributes} && ref $Param{NeededDataAttributes} eq 'ARRAY' ) {
+
+        for my $Needed ( @{ $Param{NeededDataAttributes} } ) {
+            if ( !$Param{Data}->{$Needed} ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Need Data->$Needed! - Task: $Param{TaskName}",
+                );
+
+                return;
+            }
+        }
+    }
+
+    # Check the structure of Data params.
+    if ( $Param{DataParamsRef} ) {
+
+        if ( $Param{Data}->{Params} && ref $Param{Data}->{Params} ne uc $Param{DataParamsRef} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Data->Params is invalid, reference is not $Param{DataParamsRef}! - Task: $Param{TaskName}",
+            );
+
+            return;
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>Performs basic checks for common task parameters.</p>
+
+<pre>    my $Success = $TaskWorkerObject-&gt;_CheckTaskParams(
         TaskID               =&gt; 123,
         TaskName             =&gt; 'some name',                # optional
         Data                 =&gt; $TaskDataHasRef,
@@ -95,8 +203,7 @@
         DataParamsRef        =&gt; 'HASH',                     # optional, 'HASH' or 'ARRAY', kind of reference of Data-&gt;Params
     );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

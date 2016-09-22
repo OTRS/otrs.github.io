@@ -42,11 +42,8 @@ Process Management DB Process backend
 
 =head1 PUBLIC INTERFACE
 
-=over 4
 
-=cut
-
-=item new()
+=head2 new()
 
 create an object. Do not use it directly, instead use:
 
@@ -82,7 +79,7 @@ sub new {
     return $Self;
 }
 
-=item ProcessAdd()
+=head2 ProcessAdd()
 
 add new Process
 
@@ -205,7 +202,7 @@ sub ProcessAdd {
     return $ID;
 }
 
-=item ProcessDelete()
+=head2 ProcessDelete()
 
 delete a Process
 
@@ -253,7 +250,7 @@ sub ProcessDelete {
     return 1;
 }
 
-=item ProcessGet()
+=head2 ProcessGet()
 
 get Process attributes
 
@@ -566,7 +563,7 @@ sub ProcessGet {
     return \%Data;
 }
 
-=item ProcessUpdate()
+=head2 ProcessUpdate()
 
 update Process attributes
 
@@ -707,7 +704,7 @@ sub ProcessUpdate {
     return 1;
 }
 
-=item ProcessList()
+=head2 ProcessList()
 
 get a Process list
 
@@ -731,6 +728,7 @@ get a Process list
     $List = {
         'P1' => 'NameOfProcess',
     }
+
 =cut
 
 sub ProcessList {
@@ -807,7 +805,7 @@ sub ProcessList {
     return \%Data;
 }
 
-=item ProcessListGet()
+=head2 ProcessListGet()
 
 get a Process list with all process details
 
@@ -907,7 +905,7 @@ sub ProcessListGet {
     return \@Data;
 }
 
-=item ProcessDump()
+=head2 ProcessDump()
 
 gets a complete processes information dump from the DB including: Process State, Activities,
 ActivityDialogs, Transitions and TransitionActions
@@ -1387,7 +1385,7 @@ EOF
     }
 }
 
-=item ProcessImport()
+=head2 ProcessImport()
 
 import a process YAML file/content
 
@@ -2110,8 +2108,6 @@ sub _ProcessImportRollBack {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

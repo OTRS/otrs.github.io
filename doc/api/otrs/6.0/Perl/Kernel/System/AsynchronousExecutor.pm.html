@@ -58,7 +58,11 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#AsyncCall">AsyncCall()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -75,10 +79,103 @@ background using the separate process OTRS Scheduler Daemon.</p>
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>AsyncCall()</dt>
-		<dd><p>creates a scheduler daemon task to execute a function asynchronously.</p></dd>
-<dd><pre>    my $Success = $Object-&gt;AsyncCall(
+
+
+
+<h2 id="AsyncCall">AsyncCall()</h2>
+
+<p><a href="#" onclick="toggleCode('method_AsyncCall');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AsyncCall">
+                                        <pre>
+
+sub AsyncCall {
+    my ( $Self, %Param ) = @_;
+
+    my $FunctionName = $Param{FunctionName};
+
+    if ( !IsStringWithData($FunctionName) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Function needs to be a non empty string!",
+        );
+        return;
+    }
+
+    my $ObjectName = $Param{ObjectName} || ref $Self;
+
+    # create a new object
+    my $LocalObject;
+    eval {
+        $LocalObject = $Kernel::OM->Get($ObjectName);
+    };
+
+    # check if is possible to create the object
+    if ( !$LocalObject ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Could not create $ObjectName object!",
+        );
+
+        return;
+    }
+
+    # check if object reference is the same as expected
+    if ( ref $LocalObject ne $ObjectName ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$ObjectName object is not valid!",
+        );
+        return;
+    }
+
+    # check if the object can execute the function
+    if ( !$LocalObject->can($FunctionName) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$ObjectName can not execute $FunctionName()!",
+        );
+        return;
+    }
+
+    if ( $Param{FunctionParams} && !ref $Param{FunctionParams} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "FunctionParams needs to be a hash or list reference.",
+        );
+        return;
+    }
+
+    # define the task name with object name and concatenate the function name
+    my $TaskName = substr "$ObjectName-$FunctionName()", 0, 255;
+
+    # create a new task
+    my $TaskID = $Kernel::OM->Get('Kernel::System::Scheduler')->TaskAdd(
+        Type                     => 'AsynchronousExecutor',
+        Name                     => $TaskName,
+        Attempts                 => $Param{Attempts} || 1,
+        MaximumParallelInstances => $Param{MaximumParallelInstances} || 0,
+        Data                     => {
+            Object   => $ObjectName,
+            Function => $FunctionName,
+            Params   => $Param{FunctionParams} // {},
+        },
+    );
+
+    if ( !$TaskID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Could not create new AsynchronousExecutor: '$TaskName' task!",
+        );
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>creates a scheduler daemon task to execute a function asynchronously.</p>
+
+<pre>    my $Success = $Object-&gt;AsyncCall(
         ObjectName               =&gt; 'Kernel::System::Ticket',   # optional, if not given the object is used from where
                                                                 # this function was called
         FunctionName             =&gt; 'MyFunction',               # the name of the function to execute
@@ -90,11 +187,11 @@ background using the separate process OTRS Scheduler Daemon.</p>
                                                                 #   executed at the the same time
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $Success = 1;  # of false in case of an error
+</pre><p>Returns:</p>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<pre>    $Success = 1;  # of false in case of an error
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

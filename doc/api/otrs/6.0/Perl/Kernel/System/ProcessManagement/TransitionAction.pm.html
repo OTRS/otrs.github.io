@@ -58,7 +58,13 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#TransitionActionGet">TransitionActionGet()</a></li>
+	<li><a href="#TransitionActionList">TransitionActionList()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,23 +80,97 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $TransitionActionObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::TransitionAction');
 
-</pre></dd>	<dt>TransitionActionGet()</dt>
-<dd><pre>    Get transition action info
+</pre><h2 id="TransitionActionGet">TransitionActionGet()</h2>
 
-</pre></dd><dd><pre>    my $TransitionAction = $TransitionActionObject-&gt;TransitionActionGet(
+<p><a href="#" onclick="toggleCode('method_TransitionActionGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TransitionActionGet">
+                                        <pre>
+
+sub TransitionActionGet {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(TransitionActionEntityID)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my $TransitionAction = $Kernel::OM->Get('Kernel::Config')->Get('Process::TransitionAction');
+
+    if ( !IsHashRefWithData($TransitionAction) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need TransitionAction config!',
+        );
+        return;
+    }
+
+    if ( !IsHashRefWithData( $TransitionAction->{ $Param{TransitionActionEntityID} } ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No Data for TransitionAction '$Param{TransitionActionEntityID}' found!",
+        );
+        return;
+    }
+
+    if (
+        !$TransitionAction->{ $Param{TransitionActionEntityID} }->{Module}
+        || !$Kernel::OM->Get('Kernel::System::Main')->Require(
+            $TransitionAction->{ $Param{TransitionActionEntityID} }->{Module}
+        )
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Module for TransitionAction: $Param{TransitionActionEntityID} missing or"
+                . " not found!",
+        );
+        return;
+    }
+
+    return $TransitionAction->{ $Param{TransitionActionEntityID} };
+}
+</pre></div>
+
+<pre>    Get transition action info
+
+    my $TransitionAction = $TransitionActionObject-&gt;TransitionActionGet(
         TransitionActionEntityID =&gt; 'TA1',
     );
 
-</pre></dd><dd><pre>    Returns:
+    Returns:
 
-</pre></dd><dd><pre>    $TransitionAction = {
+    $TransitionAction = {
           'Name'       =&gt; 'TransitionAction 1'
           'CreateBy'   =&gt; '2',
           'CreateTime' =&gt; '07-02-2012 13:37:00',
@@ -103,16 +183,80 @@
           },
     };
 
-</pre></dd>	<dt>TransitionActionList()</dt>
-<dd><pre>    Get action config for dedicated TransitionActionEntityIDs
+</pre><h2 id="TransitionActionList">TransitionActionList()</h2>
 
-</pre></dd><dd><pre>    my $TransitionActionList = $TransitionActionObject-&gt;TransitionActionList(
+<p><a href="#" onclick="toggleCode('method_TransitionActionList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TransitionActionList">
+                                        <pre>
+
+sub TransitionActionList {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(TransitionActionEntityID)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    if ( !IsArrayRefWithData( $Param{TransitionActionEntityID} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'No TransitionActionEntityID Array submitted calling TransitionActionList!',
+        );
+        return;
+    }
+
+    my $TransitionAction = $Kernel::OM->Get('Kernel::Config')->Get('Process::TransitionAction');
+
+    my $TransitionActionConfigs;
+    for my $TransitionActionEntityID ( @{ $Param{TransitionActionEntityID} } ) {
+        if ( !IsHashRefWithData( $TransitionAction->{$TransitionActionEntityID} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "No Data for TransitionAction '$TransitionActionEntityID'"
+                    . " found!",
+            );
+            return;
+        }
+
+        if (
+            !$TransitionAction->{$TransitionActionEntityID}->{Module}
+            || !$Kernel::OM->Get('Kernel::System::Main')->Require(
+                $TransitionAction->{$TransitionActionEntityID}->{Module}
+            )
+            )
+        {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Module for TransitionAction: $TransitionActionEntityID"
+                    . " missing or not found!",
+            );
+            return;
+        }
+
+        push @{$TransitionActionConfigs}, {
+            TransitionActionEntityID => $TransitionActionEntityID,
+            %{ $TransitionAction->{$TransitionActionEntityID} },
+        };
+    }
+
+    return $TransitionActionConfigs;
+}
+</pre></div>
+
+<pre>    Get action config for dedicated TransitionActionEntityIDs
+
+    my $TransitionActionList = $TransitionActionObject-&gt;TransitionActionList(
         TransitionActionEntityID =&gt; ['TA1', 'TA2', 'TA3',],
     );
 
-</pre></dd><dd><pre>    Returns:
+    Returns:
 
-</pre></dd><dd><pre>    $TransitionActions = [
+    $TransitionActions = [
         {
           'TransitionActionEntityID' =&gt; 'TA1',
           'Name'                     =&gt; 'TransitionAction1'
@@ -154,8 +298,7 @@
         },
     ];
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

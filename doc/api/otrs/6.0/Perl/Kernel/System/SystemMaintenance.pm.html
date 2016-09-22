@@ -58,7 +58,19 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#SystemMaintenanceAdd">SystemMaintenanceAdd()</a></li>
+	<li><a href="#SystemMaintenanceDelete">SystemMaintenanceDelete()</a></li>
+	<li><a href="#SystemMaintenanceGet">SystemMaintenanceGet()</a></li>
+	<li><a href="#SystemMaintenanceUpdate">SystemMaintenanceUpdate()</a></li>
+	<li><a href="#SystemMaintenanceList">SystemMaintenanceList()</a></li>
+	<li><a href="#SystemMaintenanceListGet">SystemMaintenanceListGet()</a></li>
+	<li><a href="#SystemMaintenanceIsActive">SystemMaintenanceIsActive()</a></li>
+	<li><a href="#SystemMaintenanceIsComming">SystemMaintenanceIsComming()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,17 +86,98 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create a SystemMaintenance object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create a SystemMaintenance object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $SystemMaintenanceObject = $Kernel::OM-&gt;Get('Kernel::System::SystemMaintenance');
 
-</pre></dd>	<dt>SystemMaintenanceAdd()</dt>
-		<dd><p>add new SystemMaintenance</p></dd>
-		<dd><p>returns the id of the created SystemMaintenance if success or undef otherwise</p></dd>
-<dd><pre>    my $ID = $SystemMaintenance-&gt;SystemMaintenanceAdd(
+</pre><h2 id="SystemMaintenanceAdd">SystemMaintenanceAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemMaintenanceAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemMaintenanceAdd">
+                                        <pre>
+
+sub SystemMaintenanceAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(StartDate StopDate Comment ValidID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!",
+            );
+            return;
+        }
+    }
+
+    # date start shouldn't be higher than stop date
+    return if ( $Param{StartDate} > $Param{StopDate} );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # SQL
+    return if !$DBObject->Do(
+        SQL => '
+            INSERT INTO system_maintenance ( start_date, stop_date, comments, login_message,
+                show_login_message, notify_message, valid_id, create_time, create_by, change_time, change_by )
+            VALUES (?, ?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{StartDate}, \$Param{StopDate}, \$Param{Comment}, \$Param{LoginMessage},
+            \$Param{ShowLoginMessage}, \$Param{NotifyMessage}, \$Param{ValidID},
+            \$Param{UserID}, \$Param{UserID},
+        ],
+    );
+
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT id FROM system_maintenance
+            WHERE start_date = ? and stop_date = ? and comments = ?
+        ',
+        Bind => [
+            \$Param{StartDate}, \$Param{StopDate}, \$Param{Comment},
+        ],
+    );
+
+    my $ID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $ID = $Row[0];
+    }
+
+    # return undef if not correct result
+    return if !$ID;
+
+    return $ID;
+}
+</pre></div>
+
+<p>add new SystemMaintenance</p>
+
+<p>returns the id of the created SystemMaintenance if success or undef otherwise</p>
+
+<pre>    my $ID = $SystemMaintenance-&gt;SystemMaintenanceAdd(
         StartDate        =&gt; '2014-05-02 14:55:00'    # mandatory
         StopDate         =&gt; '2014-05-02 16:01:00'    # mandatory
         Comment          =&gt; 'Comment',               # mandatory
@@ -95,26 +188,133 @@
         UserID           =&gt; 123,                     # mandatory
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $ID = 567;
+</pre><p>Returns:</p>
 
-</pre></dd>	<dt>SystemMaintenanceDelete()</dt>
-		<dd><p>delete an SystemMaintenance</p></dd>
-		<dd><p>returns 1 if success or undef otherwise</p></dd>
-<dd><pre>    my $Success = $SystemMaintenanceObject-&gt;SystemMaintenanceDelete(
+<pre>    $ID = 567;
+
+</pre><h2 id="SystemMaintenanceDelete">SystemMaintenanceDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemMaintenanceDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemMaintenanceDelete">
+                                        <pre>
+
+sub SystemMaintenanceDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!",
+            );
+            return;
+        }
+    }
+
+    # check if exists
+    my $SystemMaintenance = $Self->SystemMaintenanceGet(
+        ID     => $Param{ID},
+        UserID => 1,
+    );
+
+    return if !IsHashRefWithData($SystemMaintenance);
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # delete SystemMaintenance
+    return if !$DBObject->Do(
+        SQL  => 'DELETE FROM system_maintenance WHERE id = ?',
+        Bind => [ \$Param{ID} ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>delete an SystemMaintenance</p>
+
+<p>returns 1 if success or undef otherwise</p>
+
+<pre>    my $Success = $SystemMaintenanceObject-&gt;SystemMaintenanceDelete(
         ID     =&gt; 123,
         UserID =&gt; 123,
     );
 
-</pre></dd>	<dt>SystemMaintenanceGet()</dt>
-		<dd><p>get SystemMaintenance attributes</p></dd>
-<dd><pre>    my $SystemMaintenance = $SystemMaintenanceObject-&gt;SystemMaintenanceGet(
+</pre><h2 id="SystemMaintenanceGet">SystemMaintenanceGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemMaintenanceGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemMaintenanceGet">
+                                        <pre>
+
+sub SystemMaintenanceGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(ID UserID)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # SQL
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT id, start_date, stop_date, comments, login_message,
+                show_login_message, notify_message, valid_id, create_time,
+                change_time, create_by, change_by
+            FROM system_maintenance
+            WHERE id = ?',
+        Bind  => [ \$Param{ID} ],
+        Limit => 1,
+    );
+
+    # get time object
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+
+        %Data = (
+            ID               => $Row[0],
+            StartDate        => $Row[1],
+            StopDate         => $Row[2],
+            Comment          => $Row[3],
+            LoginMessage     => $Row[4],
+            ShowLoginMessage => $Row[5],
+            NotifyMessage    => $Row[6],
+            ValidID          => $Row[7],
+            CreateTime       => $Row[8],
+            ChangeTime       => $Row[9],
+            CreateBy         => $Row[10],
+            ChangeBy         => $Row[11],
+        );
+    }
+
+    return if !$Data{ID};
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get SystemMaintenance attributes</p>
+
+<pre>    my $SystemMaintenance = $SystemMaintenanceObject-&gt;SystemMaintenanceGet(
         ID     =&gt; 123,          # ID or name is needed
         UserID =&gt; 123,          # mandatory
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $SystemMaintenance = {
+</pre><p>Returns:</p>
+
+<pre>    $SystemMaintenance = {
         ID             =&gt; 123,
         StartDate        =&gt; '2014-05-02 14:55:00',
         StopDate         =&gt; '2014-05-02 16:01:00',
@@ -129,10 +329,55 @@
         ChangeBy         =&gt; 'user_login',
     };
 
-</pre></dd>	<dt>SystemMaintenanceUpdate()</dt>
-		<dd><p>update SystemMaintenance attributes</p></dd>
-		<dd><p>returns 1 if success or undef otherwise</p></dd>
-<dd><pre>    my $Success = $SystemMaintenanceObject-&gt;SystemMaintenanceUpdate(
+</pre><h2 id="SystemMaintenanceUpdate">SystemMaintenanceUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemMaintenanceUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemMaintenanceUpdate">
+                                        <pre>
+
+sub SystemMaintenanceUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID StartDate StopDate Comment ValidID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!",
+            );
+            return;
+        }
+    }
+
+    # date start shouldn't be higher than stop date
+    return if ( $Param{StartDate} > $Param{StopDate} );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # SQL
+    return if !$DBObject->Do(
+        SQL => '
+            UPDATE system_maintenance
+            SET start_date = ?, stop_date = ?, comments = ?, login_message = ?, show_login_message = ?,
+                notify_message = ?, valid_id = ?, change_time = current_timestamp,  change_by = ?
+            WHERE id = ?',
+        Bind => [
+            \$Param{StartDate}, \$Param{StopDate}, \$Param{Comment}, \$Param{LoginMessage},
+            \$Param{ShowLoginMessage}, \$Param{NotifyMessage},
+            \$Param{ValidID}, \$Param{UserID}, \$Param{ID},
+        ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>update SystemMaintenance attributes</p>
+
+<p>returns 1 if success or undef otherwise</p>
+
+<pre>    my $Success = $SystemMaintenanceObject-&gt;SystemMaintenanceUpdate(
         ID               =&gt; 123,                        # mandatory
         StartData        =&gt; 'NameOfSystemMaintenance',  # mandatory
         StopDate         =&gt; 'NameOfSystemMaintenance',  # mandatory
@@ -144,28 +389,121 @@
         UserID           =&gt; 123,                        # mandatory
     );
 
-</pre></dd>	<dt>SystemMaintenanceList()</dt>
-		<dd><p>get an SystemMaintenance list</p></dd>
-<dd><pre>    my $List = $SystemMaintenanceObject-&gt;SystemMaintenanceList(
+</pre><h2 id="SystemMaintenanceList">SystemMaintenanceList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemMaintenanceList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemMaintenanceList">
+                                        <pre>
+
+sub SystemMaintenanceList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need UserID!"
+        );
+        return;
+    }
+
+    my $ValidIDsStrg;
+    if ( !IsArrayRefWithData( $Param{ValidIDs} ) ) {
+        $ValidIDsStrg = 'ALL';
+    }
+    else {
+        $ValidIDsStrg = join ',', @{ $Param{ValidIDs} };
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    my $SQL = '
+            SELECT id
+            FROM system_maintenance ';
+
+    if ( $ValidIDsStrg ne 'ALL' ) {
+
+        my $ValidIDsStrgDB = join ',', map { $DBObject->Quote( $_, 'Integer' ) }
+            @{ $Param{ValidIDs} };
+
+        $SQL .= "WHERE valid_id IN ($ValidIDsStrgDB)";
+    }
+
+    return if !$DBObject->Prepare( SQL => $SQL );
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] } = '1';
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get an SystemMaintenance list</p>
+
+<pre>    my $List = $SystemMaintenanceObject-&gt;SystemMaintenanceList(
         ValidIDs =&gt; ['1','2'],           # optional, to filter SystemMaintenances that match listed valid IDs
         UserID   =&gt; 1,
     );
 
-</pre></dd><dd><pre>    Returns:
+    Returns:
 
-</pre></dd><dd><pre>    $List = {
+    $List = {
         1 =&gt; 'NameOfSystemMaintenance',
     }
 
-</pre></dd>	<dt>SystemMaintenanceListGet()</dt>
-		<dd><p>get an SystemMaintenance list with all SystemMaintenance details</p></dd>
-<dd><pre>    my $List = $SystemMaintenanceObject-&gt;SystemMaintenanceListGet(
+</pre><h2 id="SystemMaintenanceListGet">SystemMaintenanceListGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemMaintenanceListGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemMaintenanceListGet">
+                                        <pre>
+
+sub SystemMaintenanceListGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+        return;
+    }
+
+    my $SystemMaintenanceData = $Self->SystemMaintenanceList(
+        %Param,
+    );
+
+    my @SystemMaintenanceIDs = sort keys %{$SystemMaintenanceData};
+
+    my @Data;
+    for my $ItemID (@SystemMaintenanceIDs) {
+
+        my $SystemMaintenanceData = $Self->SystemMaintenanceGet(
+            ID     => $ItemID,
+            UserID => 1,
+        );
+        push @Data, $SystemMaintenanceData;
+    }
+
+    return \@Data;
+}
+</pre></div>
+
+<p>get an SystemMaintenance list with all SystemMaintenance details</p>
+
+<pre>    my $List = $SystemMaintenanceObject-&gt;SystemMaintenanceListGet(
         UserID   =&gt; 1,
         ValidIDs =&gt; ['1','2'], # optional, to filter SystemMaintenances that match listed valid IDs
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $List = [
+</pre><p>Returns:</p>
+
+<pre>    $List = [
         {
             ID               =&gt; 123,
             StartDate        =&gt; '2013-07-04 15:08:00',
@@ -192,24 +530,115 @@
         },
     ];
 
-</pre></dd>	<dt>SystemMaintenanceIsActive()</dt>
-		<dd><p>get a SystemMaintenance active flag</p></dd>
-<dd><pre>    my $ActiveMaintenance = $SystemMaintenanceObject-&gt;SystemMaintenanceIsActive();
+</pre><h2 id="SystemMaintenanceIsActive">SystemMaintenanceIsActive()</h2>
 
-</pre></dd><dd><pre>    Returns:
+<p><a href="#" onclick="toggleCode('method_SystemMaintenanceIsActive');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemMaintenanceIsActive">
+                                        <pre>
 
-</pre></dd><dd><pre>    $ActiveMaintenance = 7 # a System Maintenance ID
+sub SystemMaintenanceIsActive {
+    my ( $Self, %Param ) = @_;
 
-</pre></dd>	<dt>SystemMaintenanceIsComming()</dt>
-		<dd><p>get a SystemMaintenance flag</p></dd>
-<dd><pre>    my $SystemMaintenanceIsComming = $SystemMaintenanceObject-&gt;SystemMaintenanceIsComming();
+    my $SystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
 
-</pre></dd><dd><pre>    Returns:
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
-</pre></dd><dd><pre>    $SystemMaintenanceIsComming = 1 # 1 or 0
+    my $SQL = "
+            SELECT id
+            FROM system_maintenance
+            WHERE start_date <= $SystemTime and stop_date >= $SystemTime
+    ";
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+    my @ValidList = $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet();
+    if ( scalar @ValidList ) {
+
+        my $ValidIDsStrgDB = join ',', map { $DBObject->Quote( $_, 'Integer' ) } @ValidList;
+
+        $SQL .= " AND valid_id IN ($ValidIDsStrgDB)";
+    }
+    $SQL .= ' ORDER BY id';
+
+    return if !$DBObject->Prepare( SQL => $SQL );
+
+    my $Result;
+    RESULT:
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Result = $Row[0];
+        last RESULT;
+    }
+
+    return if !$Result;
+
+    return $Result;
+}
+</pre></div>
+
+<p>get a SystemMaintenance active flag</p>
+
+<pre>    my $ActiveMaintenance = $SystemMaintenanceObject-&gt;SystemMaintenanceIsActive();
+
+    Returns:
+
+    $ActiveMaintenance = 7 # a System Maintenance ID
+
+</pre><h2 id="SystemMaintenanceIsComming">SystemMaintenanceIsComming()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SystemMaintenanceIsComming');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemMaintenanceIsComming">
+                                        <pre>
+
+sub SystemMaintenanceIsComming {
+    my ( $Self, %Param ) = @_;
+
+    my $SystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
+    my $NotifiBeforeTime =
+        $Kernel::OM->Get('Kernel::Config')->Get('SystemMaintenance::TimeNotifyUpcomingMaintenance')
+        || 30;
+    my $TargetTime = $SystemTime + ( $NotifiBeforeTime * 60 );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    my $SQL = "
+            SELECT start_date
+            FROM system_maintenance
+            WHERE start_date > $SystemTime and start_date <= $TargetTime
+    ";
+
+    my @ValidList = $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet();
+    if ( scalar @ValidList ) {
+
+        my $ValidIDsStrgDB = join ',', map { $DBObject->Quote( $_, 'Integer' ) } @ValidList;
+
+        $SQL .= " AND valid_id IN ($ValidIDsStrgDB)";
+    }
+    $SQL .= ' ORDER BY id';
+
+    return if !$DBObject->Prepare( SQL => $SQL );
+
+    my $Result;
+    RESULT:
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Result = $Row[0];
+        last RESULT;
+    }
+
+    return if !$Result;
+
+    return $Result;
+}
+</pre></div>
+
+<p>get a SystemMaintenance flag</p>
+
+<pre>    my $SystemMaintenanceIsComming = $SystemMaintenanceObject-&gt;SystemMaintenanceIsComming();
+
+    Returns:
+
+    $SystemMaintenanceIsComming = 1 # 1 or 0
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

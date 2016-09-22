@@ -58,7 +58,33 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#PossibleTypesList">PossibleTypesList()</a></li>
+	<li><a href="#PossibleObjectsList">PossibleObjectsList()</a></li>
+	<li><a href="#PossibleLinkList">PossibleLinkList()</a></li>
+	<li><a href="#LinkAdd">LinkAdd()</a></li>
+	<li><a href="#LinkCleanup">LinkCleanup()</a></li>
+	<li><a href="#LinkDelete">LinkDelete()</a></li>
+	<li><a href="#LinkDeleteAll">LinkDeleteAll()</a></li>
+	<li><a href="#LinkList">LinkList()</a></li>
+	<li><a href="#LinkListWithData">LinkListWithData()</a></li>
+	<li><a href="#LinkKeyList">LinkKeyList()</a></li>
+	<li><a href="#LinkKeyListWithData">LinkKeyListWithData()</a></li>
+	<li><a href="#ObjectLookup">ObjectLookup()</a></li>
+	<li><a href="#TypeLookup">TypeLookup()</a></li>
+	<li><a href="#TypeGet">TypeGet()</a></li>
+	<li><a href="#TypeList">TypeList()</a></li>
+	<li><a href="#TypeGroupList">TypeGroupList()</a></li>
+	<li><a href="#PossibleType">PossibleType()</a></li>
+	<li><a href="#StateLookup">StateLookup()</a></li>
+	<li><a href="#StateList">StateList()</a></li>
+	<li><a href="#ObjectPermission">ObjectPermission()</a></li>
+	<li><a href="#ObjectDescriptionGet">ObjectDescriptionGet()</a></li>
+	<li><a href="#ObjectSearch">ObjectSearch()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,39 +100,280 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self->{CacheType} = 'LinkObject';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $LinkObject = $Kernel::OM-&gt;Get('Kernel::System::LinkObject');
 
-</pre></dd>	<dt>PossibleTypesList()</dt>
-		<dd><p>return a hash of all possible types</p></dd>
-		<dd><p>Return
+</pre><h2 id="PossibleTypesList">PossibleTypesList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PossibleTypesList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PossibleTypesList">
+                                        <pre>
+
+sub PossibleTypesList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object1 Object2)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get possible link list
+    my %PossibleLinkList = $Self->PossibleLinkList();
+
+    # remove not needed entries
+    POSSIBLELINK:
+    for my $PossibleLink ( sort keys %PossibleLinkList ) {
+
+        # extract objects
+        my $Object1 = $PossibleLinkList{$PossibleLink}->{Object1};
+        my $Object2 = $PossibleLinkList{$PossibleLink}->{Object2};
+
+        next POSSIBLELINK
+            if ( $Object1 eq $Param{Object1} && $Object2 eq $Param{Object2} )
+            || ( $Object2 eq $Param{Object1} && $Object1 eq $Param{Object2} );
+
+        # remove entry from list if objects don't match
+        delete $PossibleLinkList{$PossibleLink};
+    }
+
+    # get type list
+    my %TypeList = $Self->TypeList();
+
+    # check types
+    POSSIBLELINK:
+    for my $PossibleLink ( sort keys %PossibleLinkList ) {
+
+        # extract type
+        my $Type = $PossibleLinkList{$PossibleLink}->{Type} || '';
+
+        next POSSIBLELINK if $TypeList{$Type};
+
+        # remove entry from list if type doesn't exist
+        delete $PossibleLinkList{$PossibleLink};
+    }
+
+    # extract the type list
+    my %PossibleTypesList;
+    for my $PossibleLink ( sort keys %PossibleLinkList ) {
+
+        # extract type
+        my $Type = $PossibleLinkList{$PossibleLink}->{Type};
+
+        $PossibleTypesList{$Type} = 1;
+    }
+
+    return %PossibleTypesList;
+}
+</pre></div>
+
+<p>return a hash of all possible types</p>
+
+<p>Return
     %PossibleTypesList = (
         'Normal'      =&gt; 1,
         'ParentChild' =&gt; 1,
-    );</p></dd>
-<dd><pre>    my %PossibleTypesList = $LinkObject-&gt;PossibleTypesList(
+    );</p>
+
+<pre>    my %PossibleTypesList = $LinkObject-&gt;PossibleTypesList(
         Object1 =&gt; 'Ticket',
         Object2 =&gt; 'FAQ',
     );
 
-</pre></dd>	<dt>PossibleObjectsList()</dt>
-		<dd><p>return a hash of all possible objects</p></dd>
-		<dd><p>Return
+</pre><h2 id="PossibleObjectsList">PossibleObjectsList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PossibleObjectsList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PossibleObjectsList">
+                                        <pre>
+
+sub PossibleObjectsList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get possible link list
+    my %PossibleLinkList = $Self->PossibleLinkList();
+
+    # investigate the possible object list
+    my %PossibleObjectsList;
+    POSSIBLELINK:
+    for my $PossibleLink ( sort keys %PossibleLinkList ) {
+
+        # extract objects
+        my $Object1 = $PossibleLinkList{$PossibleLink}->{Object1};
+        my $Object2 = $PossibleLinkList{$PossibleLink}->{Object2};
+
+        next POSSIBLELINK if $Param{Object} ne $Object1 && $Param{Object} ne $Object2;
+
+        # add object to list
+        if ( $Param{Object} eq $Object1 ) {
+            $PossibleObjectsList{$Object2} = 1;
+        }
+        else {
+            $PossibleObjectsList{$Object1} = 1;
+        }
+    }
+
+    return %PossibleObjectsList;
+}
+</pre></div>
+
+<p>return a hash of all possible objects</p>
+
+<p>Return
     %PossibleObjectsList = (
         'Ticket' =&gt; 1,
         'FAQ'    =&gt; 1,
-    );</p></dd>
-<dd><pre>    my %PossibleObjectsList = $LinkObject-&gt;PossibleObjectsList(
+    );</p>
+
+<pre>    my %PossibleObjectsList = $LinkObject-&gt;PossibleObjectsList(
         Object =&gt; 'Ticket',
     );
 
-</pre></dd>	<dt>PossibleLinkList()</dt>
-		<dd><p>return a 2d hash list of all possible links</p></dd>
-		<dd><p>Return
+</pre><h2 id="PossibleLinkList">PossibleLinkList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PossibleLinkList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PossibleLinkList">
+                                        <pre>
+
+sub PossibleLinkList {
+    my ( $Self, %Param ) = @_;
+
+    # get needed objects
+    my $ConfigObject    = $Kernel::OM->Get('Kernel::Config');
+    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
+    # get possible link list
+    my $PossibleLinkListRef = $ConfigObject->Get('LinkObject::PossibleLink') || {};
+    my %PossibleLinkList = %{$PossibleLinkListRef};
+
+    # prepare the possible link list
+    POSSIBLELINK:
+    for my $PossibleLink ( sort keys %PossibleLinkList ) {
+
+        # check the object1, object2 and type string
+        ARGUMENT:
+        for my $Argument (qw(Object1 Object2 Type)) {
+
+            # set empty string as default value
+            $PossibleLinkList{$PossibleLink}->{$Argument} ||= '';
+
+            # trim the argument
+            $CheckItemObject->StringClean(
+                StringRef => \$PossibleLinkList{$PossibleLink}->{$Argument},
+            );
+
+            # extract value
+            my $Value = $PossibleLinkList{$PossibleLink}->{$Argument} || '';
+
+            next ARGUMENT if $Value && $Value !~ m{ :: }xms && $Value !~ m{ \s }xms;
+
+            # log the error
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message =>
+                    "The $Argument '$Value' is invalid in SysConfig (LinkObject::PossibleLink)!",
+            );
+
+            # remove entry from list if it is invalid
+            delete $PossibleLinkList{$PossibleLink};
+
+            next POSSIBLELINK;
+        }
+    }
+
+    # get location of the backend modules
+    my $BackendLocation = $ConfigObject->Get('Home') . '/Kernel/System/LinkObject/';
+
+    # check the existing objects
+    POSSIBLELINK:
+    for my $PossibleLink ( sort keys %PossibleLinkList ) {
+
+        # check if object backends exist
+        ARGUMENT:
+        for my $Argument (qw(Object1 Object2)) {
+
+            # extract object
+            my $Object = $PossibleLinkList{$PossibleLink}->{$Argument};
+
+            next ARGUMENT if -e $BackendLocation . $Object . '.pm';
+
+            # remove entry from list if it is invalid
+            delete $PossibleLinkList{$PossibleLink};
+
+            next POSSIBLELINK;
+        }
+    }
+
+    # get type list
+    my %TypeList = $Self->TypeList();
+
+    # check types
+    POSSIBLELINK:
+    for my $PossibleLink ( sort keys %PossibleLinkList ) {
+
+        # extract type
+        my $Type = $PossibleLinkList{$PossibleLink}->{Type};
+
+        next POSSIBLELINK if $TypeList{$Type};
+
+        # log the error
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The LinkType '$Type' is invalid in SysConfig (LinkObject::PossibleLink)!",
+        );
+
+        # remove entry from list if type doesn't exist
+        delete $PossibleLinkList{$PossibleLink};
+    }
+
+    return %PossibleLinkList;
+}
+</pre></div>
+
+<p>return a 2d hash list of all possible links</p>
+
+<p>Return
     %PossibleLinkList = (
         001 =&gt; {
             Object1 =&gt; 'Ticket',
@@ -118,12 +385,262 @@
             Object2 =&gt; 'Ticket',
             Type    =&gt; 'ParentChild',
         },
-    );</p></dd>
-<dd><pre>    my %PossibleLinkList = $LinkObject-&gt;PossibleLinkList();
+    );</p>
 
-</pre></dd>	<dt>LinkAdd()</dt>
-		<dd><p>add a new link between two elements</p></dd>
-<dd><pre>    $True = $LinkObject-&gt;LinkAdd(
+<pre>    my %PossibleLinkList = $LinkObject-&gt;PossibleLinkList();
+
+</pre><h2 id="LinkAdd">LinkAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_LinkAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkAdd">
+                                        <pre>
+
+sub LinkAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(SourceObject SourceKey TargetObject TargetKey Type State UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # check if source and target are the same object
+    if ( $Param{SourceObject} eq $Param{TargetObject} && $Param{SourceKey} eq $Param{TargetKey} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Impossible to link object with itself!',
+        );
+        return;
+    }
+
+    # lookup the object ids
+    OBJECT:
+    for my $Object (qw(SourceObject TargetObject)) {
+
+        # lookup the object id
+        $Param{ $Object . 'ID' } = $Self->ObjectLookup(
+            Name => $Param{$Object},
+        );
+
+        next OBJECT if $Param{ $Object . 'ID' };
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Invalid $Object is given!",
+        );
+
+        return;
+    }
+
+    # get a list of possible link types for the two objects
+    my %PossibleTypesList = $Self->PossibleTypesList(
+        Object1 => $Param{SourceObject},
+        Object2 => $Param{TargetObject},
+    );
+
+    # check if wanted link type is possible
+    if ( !$PossibleTypesList{ $Param{Type} } ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message =>
+                "Not possible to create a '$Param{Type}' link between $Param{SourceObject} and $Param{TargetObject}!",
+        );
+        return;
+    }
+
+    # lookup state id
+    my $StateID = $Self->StateLookup(
+        Name => $Param{State},
+    );
+
+    # lookup type id
+    my $TypeID = $Self->TypeLookup(
+        Name   => $Param{Type},
+        UserID => $Param{UserID},
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # check if link already exists in database
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT source_object_id, source_key, state_id
+            FROM link_relation
+            WHERE (
+                    ( source_object_id = ? AND source_key = ?
+                    AND target_object_id = ? AND target_key = ? )
+                OR
+                    ( source_object_id = ? AND source_key = ?
+                    AND target_object_id = ? AND target_key = ? )
+                )
+                AND type_id = ?',
+        Bind => [
+            \$Param{SourceObjectID}, \$Param{SourceKey},
+            \$Param{TargetObjectID}, \$Param{TargetKey},
+            \$Param{TargetObjectID}, \$Param{TargetKey},
+            \$Param{SourceObjectID}, \$Param{SourceKey},
+            \$TypeID,
+        ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my %Existing;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Existing{SourceObjectID} = $Row[0];
+        $Existing{SourceKey}      = $Row[1];
+        $Existing{StateID}        = $Row[2];
+    }
+
+    # link exists already
+    if (%Existing) {
+
+        # existing link has a different StateID than the new link
+        if ( $Existing{StateID} ne $StateID ) {
+
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Link already exists between these two objects "
+                    . "with a different state id '$Existing{StateID}'!",
+            );
+            return;
+        }
+
+        # get type data
+        my %TypeData = $Self->TypeGet(
+            TypeID => $TypeID,
+        );
+
+        return 1 if !$TypeData{Pointed};
+        return 1 if $Existing{SourceObjectID} eq $Param{SourceObjectID}
+            && $Existing{SourceKey} eq $Param{SourceKey};
+
+        # log error
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Link already exists between these two objects in opposite direction!',
+        );
+        return;
+    }
+
+    # get all links that the source object already has
+    my $Links = $Self->LinkList(
+        Object => $Param{SourceObject},
+        Key    => $Param{SourceKey},
+        State  => $Param{State},
+        UserID => $Param{UserID},
+    );
+
+    # check type groups
+    OBJECT:
+    for my $Object ( sort keys %{$Links} ) {
+
+        next OBJECT if $Object ne $Param{TargetObject};
+
+        TYPE:
+        for my $Type ( sort keys %{ $Links->{$Object} } ) {
+
+            # extract source and target
+            my $Source = $Links->{$Object}->{$Type}->{Source} ||= {};
+            my $Target = $Links->{$Object}->{$Type}->{Target} ||= {};
+
+            # check if source and target object are already linked
+            next TYPE if !$Source->{ $Param{TargetKey} } && !$Target->{ $Param{TargetKey} };
+
+            # check the type groups
+            my $TypeGroupCheck = $Self->PossibleType(
+                Type1 => $Type,
+                Type2 => $Param{Type},
+            );
+
+            next TYPE if $TypeGroupCheck;
+
+            # existing link type is in a type group with the new link
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Another Link already exists within the same type group!',
+            );
+
+            return;
+        }
+    }
+
+    # get backend of source object
+    my $BackendSourceObject = $Kernel::OM->Get( 'Kernel::System::LinkObject::' . $Param{SourceObject} );
+
+    return if !$BackendSourceObject;
+
+    # get backend of target object
+    my $BackendTargetObject = $Kernel::OM->Get( 'Kernel::System::LinkObject::' . $Param{TargetObject} );
+
+    return if !$BackendTargetObject;
+
+    # run pre event module of source object
+    $BackendSourceObject->LinkAddPre(
+        Key          => $Param{SourceKey},
+        TargetObject => $Param{TargetObject},
+        TargetKey    => $Param{TargetKey},
+        Type         => $Param{Type},
+        State        => $Param{State},
+        UserID       => $Param{UserID},
+    );
+
+    # run pre event module of target object
+    $BackendTargetObject->LinkAddPre(
+        Key          => $Param{TargetKey},
+        SourceObject => $Param{SourceObject},
+        SourceKey    => $Param{SourceKey},
+        Type         => $Param{Type},
+        State        => $Param{State},
+        UserID       => $Param{UserID},
+    );
+
+    return if !$DBObject->Do(
+        SQL => '
+            INSERT INTO link_relation
+            (source_object_id, source_key, target_object_id, target_key,
+            type_id, state_id, create_time, create_by)
+            VALUES (?, ?, ?, ?, ?, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{SourceObjectID}, \$Param{SourceKey},
+            \$Param{TargetObjectID}, \$Param{TargetKey},
+            \$TypeID, \$StateID, \$Param{UserID},
+        ],
+    );
+
+    # run post event module of source object
+    $BackendSourceObject->LinkAddPost(
+        Key          => $Param{SourceKey},
+        TargetObject => $Param{TargetObject},
+        TargetKey    => $Param{TargetKey},
+        Type         => $Param{Type},
+        State        => $Param{State},
+        UserID       => $Param{UserID},
+    );
+
+    # run post event module of target object
+    $BackendTargetObject->LinkAddPost(
+        Key          => $Param{TargetKey},
+        SourceObject => $Param{SourceObject},
+        SourceKey    => $Param{SourceKey},
+        Type         => $Param{Type},
+        State        => $Param{State},
+        UserID       => $Param{UserID},
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>add a new link between two elements</p>
+
+<pre>    $True = $LinkObject-&gt;LinkAdd(
         SourceObject =&gt; 'Ticket',
         SourceKey    =&gt; '321',
         TargetObject =&gt; 'FAQ',
@@ -133,18 +650,256 @@
         UserID       =&gt; 1,
     );
 
-</pre></dd>	<dt>LinkCleanup()</dt>
-		<dd><p>deletes old links from database</p></dd>
-		<dd><p>return true</p></dd>
-<dd><pre>    $True = $LinkObject-&gt;LinkCleanup(
+</pre><h2 id="LinkCleanup">LinkCleanup()</h2>
+
+<p><a href="#" onclick="toggleCode('method_LinkCleanup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkCleanup">
+                                        <pre>
+
+sub LinkCleanup {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(State Age)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # lookup state id
+    my $StateID = $Self->StateLookup(
+        Name => $Param{State},
+    );
+
+    return if !$StateID;
+
+    # get time object
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+    # get current time
+    my $Now = $TimeObject->SystemTime();
+
+    # calculate delete time
+    my $DeleteTime = $TimeObject->SystemTime2TimeStamp(
+        SystemTime => ( $Now - $Param{Age} ),
+    );
+
+    # delete the link
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => '
+            DELETE FROM link_relation
+            WHERE state_id = ?
+            AND create_time < ?',
+        Bind => [
+            \$StateID, \$DeleteTime,
+        ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>deletes old links from database</p>
+
+<p>return true</p>
+
+<pre>    $True = $LinkObject-&gt;LinkCleanup(
         State  =&gt; 'Temporary',
         Age    =&gt; ( 60 * 60 * 24 ),
     );
 
-</pre></dd>	<dt>LinkDelete()</dt>
-		<dd><p>deletes a link</p></dd>
-		<dd><p>return true</p></dd>
-<dd><pre>    $True = $LinkObject-&gt;LinkDelete(
+</pre><h2 id="LinkDelete">LinkDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_LinkDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkDelete">
+                                        <pre>
+
+sub LinkDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object1 Key1 Object2 Key2 Type UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # lookup the object ids
+    OBJECT:
+    for my $Object (qw(Object1 Object2)) {
+
+        # lookup the object id
+        $Param{ $Object . 'ID' } = $Self->ObjectLookup(
+            Name => $Param{$Object},
+        );
+
+        next OBJECT if $Param{ $Object . 'ID' };
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Invalid $Object is given!",
+        );
+
+        return;
+    }
+
+    # lookup type id
+    my $TypeID = $Self->TypeLookup(
+        Name   => $Param{Type},
+        UserID => $Param{UserID},
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get the existing link
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT source_object_id, source_key, target_object_id, target_key, state_id
+            FROM link_relation
+            WHERE (
+                    (source_object_id = ? AND source_key = ?
+                    AND target_object_id = ? AND target_key = ? )
+                OR
+                    ( source_object_id = ? AND source_key = ?
+                    AND target_object_id = ? AND target_key = ? )
+                )
+                AND type_id = ?',
+        Bind => [
+            \$Param{Object1ID}, \$Param{Key1},
+            \$Param{Object2ID}, \$Param{Key2},
+            \$Param{Object2ID}, \$Param{Key2},
+            \$Param{Object1ID}, \$Param{Key1},
+            \$TypeID,
+        ],
+        Limit => 1,
+    );
+
+    # fetch results
+    my %Existing;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+
+        $Existing{SourceObjectID} = $Row[0];
+        $Existing{SourceKey}      = $Row[1];
+        $Existing{TargetObjectID} = $Row[2];
+        $Existing{TargetKey}      = $Row[3];
+        $Existing{StateID}        = $Row[4];
+    }
+
+    return 1 if !%Existing;
+
+    # lookup the object names
+    OBJECT:
+    for my $Object (qw(SourceObject TargetObject)) {
+
+        # lookup the object name
+        $Existing{$Object} = $Self->ObjectLookup(
+            ObjectID => $Existing{ $Object . 'ID' },
+        );
+
+        next OBJECT if $Existing{$Object};
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Invalid $Object is given!",
+        );
+
+        return;
+    }
+
+    # lookup state
+    $Existing{State} = $Self->StateLookup(
+        StateID => $Existing{StateID},
+    );
+
+    # get backend of source object
+    my $BackendSourceObject = $Kernel::OM->Get( 'Kernel::System::LinkObject::' . $Existing{SourceObject} );
+
+    return if !$BackendSourceObject;
+
+    # get backend of target object
+    my $BackendTargetObject = $Kernel::OM->Get( 'Kernel::System::LinkObject::' . $Existing{TargetObject} );
+
+    return if !$BackendTargetObject;
+
+    # run pre event module of source object
+    $BackendSourceObject->LinkDeletePre(
+        Key          => $Existing{SourceKey},
+        TargetObject => $Existing{TargetObject},
+        TargetKey    => $Existing{TargetKey},
+        Type         => $Param{Type},
+        State        => $Existing{State},
+        UserID       => $Param{UserID},
+    );
+
+    # run pre event module of target object
+    $BackendTargetObject->LinkDeletePre(
+        Key          => $Existing{TargetKey},
+        SourceObject => $Existing{SourceObject},
+        SourceKey    => $Existing{SourceKey},
+        Type         => $Param{Type},
+        State        => $Existing{State},
+        UserID       => $Param{UserID},
+    );
+
+    # delete the link
+    return if !$DBObject->Do(
+        SQL => '
+            DELETE FROM link_relation
+            WHERE (
+                    ( source_object_id = ? AND source_key = ?
+                    AND target_object_id = ? AND target_key = ? )
+                OR
+                    ( source_object_id = ? AND source_key = ?
+                    AND target_object_id = ? AND target_key = ? )
+                )
+                AND type_id = ?',
+        Bind => [
+            \$Param{Object1ID}, \$Param{Key1},
+            \$Param{Object2ID}, \$Param{Key2},
+            \$Param{Object2ID}, \$Param{Key2},
+            \$Param{Object1ID}, \$Param{Key1},
+            \$TypeID,
+        ],
+    );
+
+    # run post event module of source object
+    $BackendSourceObject->LinkDeletePost(
+        Key          => $Existing{SourceKey},
+        TargetObject => $Existing{TargetObject},
+        TargetKey    => $Existing{TargetKey},
+        Type         => $Param{Type},
+        State        => $Existing{State},
+        UserID       => $Param{UserID},
+    );
+
+    # run post event module of target object
+    $BackendTargetObject->LinkDeletePost(
+        Key          => $Existing{TargetKey},
+        SourceObject => $Existing{SourceObject},
+        SourceKey    => $Existing{SourceKey},
+        Type         => $Param{Type},
+        State        => $Existing{State},
+        UserID       => $Param{UserID},
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>deletes a link</p>
+
+<p>return true</p>
+
+<pre>    $True = $LinkObject-&gt;LinkDelete(
         Object1 =&gt; 'Ticket',
         Key1    =&gt; '321',
         Object2 =&gt; 'FAQ',
@@ -153,17 +908,283 @@
         UserID  =&gt; 1,
     );
 
-</pre></dd>	<dt>LinkDeleteAll()</dt>
-		<dd><p>delete all links of an object</p></dd>
-<dd><pre>    $True = $LinkObject-&gt;LinkDeleteAll(
+</pre><h2 id="LinkDeleteAll">LinkDeleteAll()</h2>
+
+<p><a href="#" onclick="toggleCode('method_LinkDeleteAll');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkDeleteAll">
+                                        <pre>
+
+sub LinkDeleteAll {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object Key UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get state list
+    my %StateList = $Self->StateList(
+        Valid => 0,
+    );
+
+    # delete all links
+    STATE:
+    for my $State ( values %StateList ) {
+
+        # get link list
+        my $LinkList = $Self->LinkList(
+            Object => $Param{Object},
+            Key    => $Param{Key},
+            State  => $State,
+            UserID => $Param{UserID},
+        );
+
+        next STATE if !$LinkList;
+        next STATE if !%{$LinkList};
+
+        for my $Object ( sort keys %{$LinkList} ) {
+
+            for my $LinkType ( sort keys %{ $LinkList->{$Object} } ) {
+
+                # extract link type List
+                my $LinkTypeList = $LinkList->{$Object}->{$LinkType};
+
+                for my $Direction ( sort keys %{$LinkTypeList} ) {
+
+                    # extract direction list
+                    my $DirectionList = $LinkList->{$Object}->{$LinkType}->{$Direction};
+
+                    for my $ObjectKey ( sort keys %{$DirectionList} ) {
+
+                        # delete the link
+                        $Self->LinkDelete(
+                            Object1 => $Param{Object},
+                            Key1    => $Param{Key},
+                            Object2 => $Object,
+                            Key2    => $ObjectKey,
+                            Type    => $LinkType,
+                            UserID  => $Param{UserID},
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>delete all links of an object</p>
+
+<pre>    $True = $LinkObject-&gt;LinkDeleteAll(
         Object =&gt; 'Ticket',
         Key    =&gt; '321',
         UserID =&gt; 1,
     );
 
-</pre></dd>	<dt>LinkList()</dt>
-		<dd><p>get all existing links for a given object</p></dd>
-		<dd><p>Return
+</pre><h2 id="LinkList">LinkList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_LinkList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkList">
+                                        <pre>
+
+sub LinkList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object Key State UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # lookup object id
+    my $ObjectID = $Self->ObjectLookup(
+        Name => $Param{Object},
+    );
+
+    return if !$ObjectID;
+
+    # lookup state id
+    my $StateID = $Self->StateLookup(
+        Name => $Param{State},
+    );
+
+    # prepare SQL statement
+    my $TypeSQL = '';
+    my @Bind = ( \$ObjectID, \$Param{Key}, \$StateID );
+
+    # add type id to SQL statement
+    if ( $Param{Type} ) {
+
+        # lookup type id
+        my $TypeID = $Self->TypeLookup(
+            Name   => $Param{Type},
+            UserID => $Param{UserID},
+        );
+
+        $TypeSQL = 'AND type_id = ? ';
+        push @Bind, \$TypeID;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get links where the given object is the source
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT target_object_id, target_key, type_id
+            FROM link_relation
+            WHERE source_object_id = ?
+                AND source_key = ?
+                AND state_id = ? '
+            . $TypeSQL,
+        Bind => \@Bind,
+    );
+
+    # fetch results
+    my @Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        my %LinkData;
+        $LinkData{TargetObjectID} = $Row[0];
+        $LinkData{TargetKey}      = $Row[1];
+        $LinkData{TypeID}         = $Row[2];
+        push @Data, \%LinkData;
+    }
+
+    # store results
+    my %Links;
+    my %TypePointedList;
+    for my $LinkData (@Data) {
+
+        # lookup object name
+        my $TargetObject = $Self->ObjectLookup(
+            ObjectID => $LinkData->{TargetObjectID},
+        );
+
+        # get type data
+        my %TypeData = $Self->TypeGet(
+            TypeID => $LinkData->{TypeID},
+        );
+
+        $TypePointedList{ $TypeData{Name} } = $TypeData{Pointed};
+
+        # store the result
+        $Links{$TargetObject}->{ $TypeData{Name} }->{Target}->{ $LinkData->{TargetKey} } = 1;
+    }
+
+    # get links where the given object is the target
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT source_object_id, source_key, type_id
+            FROM link_relation
+            WHERE target_object_id = ?
+                AND target_key = ?
+                AND state_id = ? '
+            . $TypeSQL,
+        Bind => \@Bind,
+    );
+
+    # fetch the result
+    @Data = ();
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        my %LinkData;
+        $LinkData{SourceObjectID} = $Row[0];
+        $LinkData{SourceKey}      = $Row[1];
+        $LinkData{TypeID}         = $Row[2];
+        push @Data, \%LinkData;
+    }
+
+    # store results
+    for my $LinkData (@Data) {
+
+        # lookup object name
+        my $SourceObject = $Self->ObjectLookup(
+            ObjectID => $LinkData->{SourceObjectID},
+        );
+
+        # get type data
+        my %TypeData = $Self->TypeGet(
+            TypeID => $LinkData->{TypeID},
+        );
+
+        $TypePointedList{ $TypeData{Name} } = $TypeData{Pointed};
+
+        # store the result
+        $Links{$SourceObject}->{ $TypeData{Name} }->{Source}->{ $LinkData->{SourceKey} } = 1;
+    }
+
+    # merge source target pairs into source for unpointed link types
+    for my $Object ( sort keys %Links ) {
+
+        TYPE:
+        for my $Type ( sort keys %{ $Links{$Object} } ) {
+
+            next TYPE if $TypePointedList{$Type};
+
+            # extract source target pair
+            my $SourceTarget = $Links{$Object}->{$Type};
+
+            next TYPE if !$SourceTarget->{Target};
+
+            # set empty hash reference as default
+            $SourceTarget->{Source} ||= {};
+
+            # merge the data
+            my %MergedIDs = ( %{ $SourceTarget->{Source} }, %{ $SourceTarget->{Target} } );
+            $SourceTarget->{Source} = \%MergedIDs;
+
+            # delete target hash
+            delete $SourceTarget->{Target};
+        }
+    }
+
+    return \%Links if !$Param{Object2} && !$Param{Direction};
+
+    # removed not needed elements
+    OBJECT:
+    for my $Object ( sort keys %Links ) {
+
+        # removed not needed object
+        if ( $Param{Object2} && $Param{Object2} ne $Object ) {
+            delete $Links{$Object};
+            next OBJECT;
+        }
+
+        next OBJECT if !$Param{Direction};
+
+        # removed not needed direction
+        for my $Type ( sort keys %{ $Links{$Object} } ) {
+
+            DIRECTION:
+            for my $Direction ( sort keys %{ $Links{$Object}->{$Type} } ) {
+
+                next DIRECTION if $Param{Direction} eq $Direction;
+                next DIRECTION if $Param{Direction} ne 'Source' && $Param{Direction} ne 'Target';
+
+                delete $Links{$Object}->{$Type}->{$Direction};
+            }
+        }
+    }
+
+    return \%Links;
+}
+</pre></div>
+
+<p>get all existing links for a given object</p>
+
+<p>Return
     $LinkList = {
         Ticket =&gt; {
             Normal =&gt; {
@@ -192,8 +1213,9 @@
                 },
             },
         },
-    };</p></dd>
-<dd><pre>    my $LinkList = $LinkObject-&gt;LinkList(
+    };</p>
+
+<pre>    my $LinkList = $LinkObject-&gt;LinkList(
         Object    =&gt; 'Ticket',
         Key       =&gt; '321',
         Object2   =&gt; 'FAQ',         # (optional)
@@ -203,9 +1225,108 @@
         UserID    =&gt; 1,
     );
 
-</pre></dd>	<dt>LinkListWithData()</dt>
-		<dd><p>get all existing links for a given object with data of the other objects</p></dd>
-		<dd><p>Return
+</pre><h2 id="LinkListWithData">LinkListWithData()</h2>
+
+<p><a href="#" onclick="toggleCode('method_LinkListWithData');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkListWithData">
+                                        <pre>
+
+sub LinkListWithData {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object Key State UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get the link list
+    my $LinkList = $Self->LinkList(%Param);
+
+    # check link list
+    return if !$LinkList;
+    return if ref $LinkList ne 'HASH';
+
+    # add data to hash
+    OBJECT:
+    for my $Object ( sort keys %{$LinkList} ) {
+
+        # check if backend object can be loaded
+        if (
+            !$Kernel::OM->Get('Kernel::System::Main')->Require( 'Kernel::System::LinkObject::' . $Object )
+            )
+        {
+            delete $LinkList->{$Object};
+            next OBJECT;
+        }
+
+        # get backend object
+        my $BackendObject = $Kernel::OM->Get( 'Kernel::System::LinkObject::' . $Object );
+
+        # check backend object
+        if ( !$BackendObject ) {
+            delete $LinkList->{$Object};
+            next OBJECT;
+        }
+
+        my %ObjectParameters = ();
+        if (
+            ref $Param{ObjectParameters} eq 'HASH'
+            && ref $Param{ObjectParameters}->{$Object} eq 'HASH'
+            )
+        {
+            %ObjectParameters = %{ $Param{ObjectParameters}->{$Object} };
+        }
+
+        # add backend data
+        my $Success = $BackendObject->LinkListWithData(
+            LinkList => $LinkList->{$Object},
+            UserID   => $Param{UserID},
+            %ObjectParameters,
+        );
+
+        next OBJECT if $Success;
+
+        delete $LinkList->{$Object};
+    }
+
+    # clean the hash
+    OBJECT:
+    for my $Object ( sort keys %{$LinkList} ) {
+
+        LINKTYPE:
+        for my $LinkType ( sort keys %{ $LinkList->{$Object} } ) {
+
+            DIRECTION:
+            for my $Direction ( sort keys %{ $LinkList->{$Object}->{$LinkType} } ) {
+
+                next DIRECTION if %{ $LinkList->{$Object}->{$LinkType}->{$Direction} };
+
+                delete $LinkList->{$Object}->{$LinkType}->{$Direction};
+            }
+
+            next LINKTYPE if %{ $LinkList->{$Object}->{$LinkType} };
+
+            delete $LinkList->{$Object}->{$LinkType};
+        }
+
+        next OBJECT if %{ $LinkList->{$Object} };
+
+        delete $LinkList->{$Object};
+    }
+
+    return $LinkList;
+}
+</pre></div>
+
+<p>get all existing links for a given object with data of the other objects</p>
+
+<p>Return
     $LinkList = {
         Ticket =&gt; {
             Normal =&gt; {
@@ -234,8 +1355,9 @@
                 },
             },
         },
-    };</p></dd>
-<dd><pre>    my $LinkList = $LinkObject-&gt;LinkListWithData(
+    };</p>
+
+<pre>    my $LinkList = $LinkObject-&gt;LinkListWithData(
         Object                          =&gt; 'Ticket',
         Key                             =&gt; '321',
         Object2                         =&gt; 'FAQ',         # (optional)
@@ -250,17 +1372,73 @@
         },
     );
 
-</pre></dd>	<dt>LinkKeyList()</dt>
-		<dd><p>return a hash with all existing links of a given object</p></dd>
-		<dd><p>Return
+</pre><h2 id="LinkKeyList">LinkKeyList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_LinkKeyList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkKeyList">
+                                        <pre>
+
+sub LinkKeyList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object1 Key1 Object2 State UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get the link list
+    my $LinkList = $Self->LinkList(
+        %Param,
+        Object => $Param{Object1},
+        Key    => $Param{Key1},
+    );
+
+    # check link list
+    return if !$LinkList;
+    return if ref $LinkList ne 'HASH';
+
+    # extract typelist
+    my $TypeList = $LinkList->{ $Param{Object2} };
+
+    # add data to hash
+    my %LinkKeyList;
+    for my $Type ( sort keys %{$TypeList} ) {
+
+        # extract direction list
+        my $DirectionList = $TypeList->{$Type};
+
+        for my $Direction ( sort keys %{$DirectionList} ) {
+
+            for my $Key ( sort keys %{ $DirectionList->{$Direction} } ) {
+
+                # add key to list
+                $LinkKeyList{$Key} = $DirectionList->{$Direction}->{$Key};
+            }
+        }
+    }
+
+    return %LinkKeyList;
+}
+</pre></div>
+
+<p>return a hash with all existing links of a given object</p>
+
+<p>Return
     %LinkKeyList = (
         5   =&gt; 1,
         9   =&gt; 1,
         12  =&gt; 1,
         212 =&gt; 1,
         332 =&gt; 1,
-    );</p></dd>
-<dd><pre>    my %LinkKeyList = $LinkObject-&gt;LinkKeyList(
+    );</p>
+
+<pre>    my %LinkKeyList = $LinkObject-&gt;LinkKeyList(
         Object1   =&gt; 'Ticket',
         Key1      =&gt; '321',
         Object2   =&gt; 'FAQ',
@@ -270,17 +1448,73 @@
         UserID    =&gt; 1,
     );
 
-</pre></dd>	<dt>LinkKeyListWithData()</dt>
-		<dd><p>return a hash with all existing links of a given object</p></dd>
-		<dd><p>Return
+</pre><h2 id="LinkKeyListWithData">LinkKeyListWithData()</h2>
+
+<p><a href="#" onclick="toggleCode('method_LinkKeyListWithData');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkKeyListWithData">
+                                        <pre>
+
+sub LinkKeyListWithData {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object1 Key1 Object2 State UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get the link list
+    my $LinkList = $Self->LinkListWithData(
+        %Param,
+        Object => $Param{Object1},
+        Key    => $Param{Key1},
+    );
+
+    # check link list
+    return if !$LinkList;
+    return if ref $LinkList ne 'HASH';
+
+    # extract typelist
+    my $TypeList = $LinkList->{ $Param{Object2} };
+
+    # add data to hash
+    my %LinkKeyList;
+    for my $Type ( sort keys %{$TypeList} ) {
+
+        # extract direction list
+        my $DirectionList = $TypeList->{$Type};
+
+        for my $Direction ( sort keys %{$DirectionList} ) {
+
+            for my $Key ( sort keys %{ $DirectionList->{$Direction} } ) {
+
+                # add key to list
+                $LinkKeyList{$Key} = $DirectionList->{$Direction}->{$Key};
+            }
+        }
+    }
+
+    return %LinkKeyList;
+}
+</pre></div>
+
+<p>return a hash with all existing links of a given object</p>
+
+<p>Return
     %LinkKeyList = (
         5   =&gt; $DataOfItem5,
         9   =&gt; $DataOfItem9,
         12  =&gt; $DataOfItem12,
         212 =&gt; $DataOfItem212,
         332 =&gt; $DataOfItem332,
-    );</p></dd>
-<dd><pre>    my %LinkKeyList = $LinkObject-&gt;LinkKeyListWithData(
+    );</p>
+
+<pre>    my %LinkKeyList = $LinkObject-&gt;LinkKeyListWithData(
         Object1   =&gt; 'Ticket',
         Key1      =&gt; '321',
         Object2   =&gt; 'FAQ',
@@ -290,35 +1524,431 @@
         UserID    =&gt; 1,
     );
 
-</pre></dd>	<dt>ObjectLookup()</dt>
-		<dd><p>lookup a link object</p></dd>
-<dd><pre>    $ObjectID = $LinkObject-&gt;ObjectLookup(
+</pre><h2 id="ObjectLookup">ObjectLookup()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ObjectLookup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ObjectLookup">
+                                        <pre>
+
+sub ObjectLookup {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ObjectID} && !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ObjectID or Name!',
+        );
+        return;
+    }
+
+    if ( $Param{ObjectID} ) {
+
+        # check cache
+        my $CacheKey = 'ObjectLookup::ObjectID::' . $Param{ObjectID};
+        my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+        return $Cache if $Cache;
+
+        # get database object
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+        # ask the database
+        return if !$DBObject->Prepare(
+            SQL => '
+                SELECT name
+                FROM link_object
+                WHERE id = ?',
+            Bind  => [ \$Param{ObjectID} ],
+            Limit => 1,
+        );
+
+        # fetch the result
+        my $Name;
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            $Name = $Row[0];
+        }
+
+        # check the name
+        if ( !$Name ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Link object id '$Param{ObjectID}' not found in the database!",
+            );
+            return;
+        }
+
+        # set cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => $Name,
+        );
+
+        return $Name;
+    }
+    else {
+
+        # check cache
+        my $CacheKey = 'ObjectLookup::Name::' . $Param{Name};
+        my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+        return $Cache if $Cache;
+
+        # get needed object
+        my $DBObject        = $Kernel::OM->Get('Kernel::System::DB');
+        my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
+        # investigate the object id
+        my $ObjectID;
+        TRY:
+        for my $Try ( 1 .. 3 ) {
+
+            # ask the database
+            return if !$DBObject->Prepare(
+                SQL => '
+                    SELECT id
+                    FROM link_object
+                    WHERE name = ?',
+                Bind  => [ \$Param{Name} ],
+                Limit => 1,
+            );
+
+            # fetch the result
+            while ( my @Row = $DBObject->FetchrowArray() ) {
+                $ObjectID = $Row[0];
+            }
+
+            last TRY if $ObjectID;
+
+            # cleanup the given name
+            $CheckItemObject->StringClean(
+                StringRef => \$Param{Name},
+            );
+
+            # check if name is valid
+            if ( !$Param{Name} || $Param{Name} =~ m{ :: }xms || $Param{Name} =~ m{ \s }xms ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Invalid object name '$Param{Name}' is given!",
+                );
+                return;
+            }
+
+            next TRY if $Try == 1;
+
+            # insert the new object
+            return if !$DBObject->Do(
+                SQL  => 'INSERT INTO link_object (name) VALUES (?)',
+                Bind => [ \$Param{Name} ],
+            );
+        }
+
+        # set cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => $ObjectID,
+        );
+
+        return $ObjectID;
+    }
+}
+</pre></div>
+
+<p>lookup a link object</p>
+
+<pre>    $ObjectID = $LinkObject-&gt;ObjectLookup(
         Name =&gt; 'Ticket',
     );
 
-</pre></dd><dd><pre>    or
+    or
 
-</pre></dd><dd><pre>    $Name = $LinkObject-&gt;ObjectLookup(
+    $Name = $LinkObject-&gt;ObjectLookup(
         ObjectID =&gt; 12,
     );
 
-</pre></dd>	<dt>TypeLookup()</dt>
-		<dd><p>lookup a link type</p></dd>
-<dd><pre>    $TypeID = $LinkObject-&gt;TypeLookup(
+</pre><h2 id="TypeLookup">TypeLookup()</h2>
+
+<p><a href="#" onclick="toggleCode('method_TypeLookup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TypeLookup">
+                                        <pre>
+
+sub TypeLookup {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TypeID} && !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need TypeID or Name!',
+        );
+        return;
+    }
+
+    # check needed stuff
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!'
+        );
+        return;
+    }
+
+    if ( $Param{TypeID} ) {
+
+        # check cache
+        my $CacheKey = 'TypeLookup::TypeID::' . $Param{TypeID};
+        my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+        return $Cache if $Cache;
+
+        # get database object
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+        # ask the database
+        return if !$DBObject->Prepare(
+            SQL   => 'SELECT name FROM link_type WHERE id = ?',
+            Bind  => [ \$Param{TypeID} ],
+            Limit => 1,
+        );
+
+        # fetch the result
+        my $Name;
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            $Name = $Row[0];
+        }
+
+        # check the name
+        if ( !$Name ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Link type id '$Param{TypeID}' not found in the database!",
+            );
+            return;
+        }
+
+        # set cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => $Name,
+        );
+
+        return $Name;
+    }
+    else {
+
+        # get check item object
+        my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
+        # cleanup the given name
+        $CheckItemObject->StringClean(
+            StringRef => \$Param{Name},
+        );
+
+        # check cache
+        my $CacheKey = 'TypeLookup::Name::' . $Param{Name};
+        my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+        return $Cache if $Cache;
+
+        # get database object
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+        # investigate the type id
+        my $TypeID;
+        TRY:
+        for my $Try ( 1 .. 2 ) {
+
+            # ask the database
+            return if !$DBObject->Prepare(
+                SQL   => 'SELECT id FROM link_type WHERE name = ?',
+                Bind  => [ \$Param{Name} ],
+                Limit => 1,
+            );
+
+            # fetch the result
+            while ( my @Row = $DBObject->FetchrowArray() ) {
+                $TypeID = $Row[0];
+            }
+
+            last TRY if $TypeID;
+
+            # check if name is valid
+            if ( !$Param{Name} || $Param{Name} =~ m{ :: }xms || $Param{Name} =~ m{ \s }xms ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Invalid type name '$Param{Name}' is given!",
+                );
+                return;
+            }
+
+            # insert the new type
+            return if !$DBObject->Do(
+                SQL => '
+                    INSERT INTO link_type
+                    (name, valid_id, create_time, create_by, change_time, change_by)
+                    VALUES (?, 1, current_timestamp, ?, current_timestamp, ?)',
+                Bind => [ \$Param{Name}, \$Param{UserID}, \$Param{UserID} ],
+            );
+        }
+
+        # check the type id
+        if ( !$TypeID ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Link type '$Param{Name}' not found in the database!",
+            );
+            return;
+        }
+
+        # set cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => $TypeID,
+        );
+
+        return $TypeID;
+    }
+}
+</pre></div>
+
+<p>lookup a link type</p>
+
+<pre>    $TypeID = $LinkObject-&gt;TypeLookup(
         Name   =&gt; 'Normal',
         UserID =&gt; 1,
     );
 
-</pre></dd><dd><pre>    or
+    or
 
-</pre></dd><dd><pre>    $Name = $LinkObject-&gt;TypeLookup(
+    $Name = $LinkObject-&gt;TypeLookup(
         TypeID =&gt; 56,
         UserID =&gt; 1,
     );
 
-</pre></dd>	<dt>TypeGet()</dt>
-		<dd><p>get a link type</p></dd>
-		<dd><p>Return
+</pre><h2 id="TypeGet">TypeGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_TypeGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TypeGet">
+                                        <pre>
+
+sub TypeGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(TypeID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # check cache
+    my $CacheKey = 'TypeGet::TypeID::' . $Param{TypeID};
+    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+    return %{$Cache} if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # ask the database
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT id, name, create_time, create_by, change_time, change_by
+            FROM link_type
+            WHERE id = ?',
+        Bind  => [ \$Param{TypeID} ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my %Type;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Type{TypeID}     = $Row[0];
+        $Type{Name}       = $Row[1];
+        $Type{CreateTime} = $Row[2];
+        $Type{CreateBy}   = $Row[3];
+        $Type{ChangeTime} = $Row[4];
+        $Type{ChangeBy}   = $Row[5];
+    }
+
+    # get config of all types
+    my $ConfiguredTypes = $Kernel::OM->Get('Kernel::Config')->Get('LinkObject::Type');
+
+    # check the config
+    if ( !$ConfiguredTypes->{ $Type{Name} } ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Linktype '$Type{Name}' does not exist!",
+        );
+        return;
+    }
+
+    # add source and target name
+    $Type{SourceName} = $ConfiguredTypes->{ $Type{Name} }->{SourceName} || '';
+    $Type{TargetName} = $ConfiguredTypes->{ $Type{Name} }->{TargetName} || '';
+
+    # get check item object
+    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
+    # clean the names
+    ARGUMENT:
+    for my $Argument (qw(SourceName TargetName)) {
+        $CheckItemObject->StringClean(
+            StringRef         => \$Type{$Argument},
+            RemoveAllNewlines => 1,
+            RemoveAllTabs     => 1,
+        );
+
+        next ARGUMENT if $Type{$Argument};
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message =>
+                "The $Argument '$Type{$Argument}' is invalid in SysConfig (LinkObject::Type)!",
+        );
+        return;
+    }
+
+    # add pointed value
+    $Type{Pointed} = $Type{SourceName} ne $Type{TargetName} ? 1 : 0;
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%Type,
+    );
+
+    return %Type;
+}
+</pre></div>
+
+<p>get a link type</p>
+
+<p>Return
     $TypeData{TypeID}
     $TypeData{Name}
     $TypeData{SourceName}
@@ -327,14 +1957,62 @@
     $TypeData{CreateTime}
     $TypeData{CreateBy}
     $TypeData{ChangeTime}
-    $TypeData{ChangeBy}</p></dd>
-<dd><pre>    %TypeData = $LinkObject-&gt;TypeGet(
+    $TypeData{ChangeBy}</p>
+
+<pre>    %TypeData = $LinkObject-&gt;TypeGet(
         TypeID =&gt; 444,
     );
 
-</pre></dd>	<dt>TypeList()</dt>
-		<dd><p>return a 2d hash list of all valid link types</p></dd>
-		<dd><p>Return
+</pre><h2 id="TypeList">TypeList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_TypeList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TypeList">
+                                        <pre>
+
+sub TypeList {
+    my ( $Self, %Param ) = @_;
+
+    # get type list
+    my $TypeListRef = $Kernel::OM->Get('Kernel::Config')->Get('LinkObject::Type') || {};
+    my %TypeList = %{$TypeListRef};
+
+    # get check item object
+    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
+    # prepare the type list
+    TYPE:
+    for my $Type ( sort keys %TypeList ) {
+
+        # check the source and target name
+        ARGUMENT:
+        for my $Argument (qw(SourceName TargetName)) {
+
+            # set empty string as default value
+            $TypeList{$Type}{$Argument} ||= '';
+
+            # clean the argument
+            $CheckItemObject->StringClean(
+                StringRef         => \$TypeList{$Type}{$Argument},
+                RemoveAllNewlines => 1,
+                RemoveAllTabs     => 1,
+            );
+
+            next ARGUMENT if $TypeList{$Type}{$Argument};
+
+            # remove invalid link type from list
+            delete $TypeList{$Type};
+
+            next TYPE;
+        }
+    }
+
+    return %TypeList;
+}
+</pre></div>
+
+<p>return a 2d hash list of all valid link types</p>
+
+<p>Return
     $TypeList{
         Normal =&gt; {
             SourceName =&gt; 'Normal',
@@ -344,12 +2022,95 @@
             SourceName =&gt; 'Parent',
             TargetName =&gt; 'Child',
         },
-    }</p></dd>
-<dd><pre>    my %TypeList = $LinkObject-&gt;TypeList();
+    }</p>
 
-</pre></dd>	<dt>TypeGroupList()</dt>
-		<dd><p>return a 2d hash list of all type groups</p></dd>
-		<dd><p>Return
+<pre>    my %TypeList = $LinkObject-&gt;TypeList();
+
+</pre><h2 id="TypeGroupList">TypeGroupList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_TypeGroupList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TypeGroupList">
+                                        <pre>
+
+sub TypeGroupList {
+    my ( $Self, %Param ) = @_;
+
+    # get possible type groups
+    my $TypeGroupListRef = $Kernel::OM->Get('Kernel::Config')->Get('LinkObject::TypeGroup') || {};
+    my %TypeGroupList = %{$TypeGroupListRef};
+
+    # get check item object
+    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
+    # prepare the possible link list
+    TYPEGROUP:
+    for my $TypeGroup ( sort keys %TypeGroupList ) {
+
+        # check the types
+        TYPE:
+        for my $Type ( @{ $TypeGroupList{$TypeGroup} } ) {
+
+            # set empty string as default value
+            $Type ||= '';
+
+            # trim the argument
+            $CheckItemObject->StringClean(
+                StringRef => \$Type,
+            );
+
+            next TYPE if $Type && $Type !~ m{ :: }xms && $Type !~ m{ \s }xms;
+
+            # log the error
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message =>
+                    "The Argument '$Type' is invalid in SysConfig (LinkObject::TypeGroup)!",
+            );
+
+            # remove entry from list if it is invalid
+            delete $TypeGroupList{$TypeGroup};
+
+            next TYPEGROUP;
+        }
+    }
+
+    # get type list
+    my %TypeList = $Self->TypeList();
+
+    # check types
+    TYPEGROUP:
+    for my $TypeGroup ( sort keys %TypeGroupList ) {
+
+        # check the types
+        TYPE:
+        for my $Type ( @{ $TypeGroupList{$TypeGroup} } ) {
+
+            # set empty string as default value
+            $Type ||= '';
+
+            next TYPE if $TypeList{$Type};
+
+            # log the error
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message =>
+                    "The LinkType '$Type' is invalid in SysConfig (LinkObject::TypeGroup)!",
+            );
+
+            # remove entry from list if type doesn't exist
+            delete $TypeGroupList{$TypeGroup};
+
+            next TYPEGROUP;
+        }
+    }
+
+    return %TypeGroupList;
+}
+</pre></div>
+
+<p>return a 2d hash list of all type groups</p>
+
+<p>Return
     %TypeGroupList = (
         001 =&gt; [
             'Normal',
@@ -363,63 +2124,365 @@
             'ParentChild',
             'RelevantTo',
         ],
-    );</p></dd>
-<dd><pre>    my %TypeGroupList = $LinkObject-&gt;TypeGroupList();
+    );</p>
 
-</pre></dd>	<dt>PossibleType()</dt>
-		<dd><p>return true if both types are NOT together in a type group</p></dd>
-<dd><pre>    my $True = $LinkObject-&gt;PossibleType(
+<pre>    my %TypeGroupList = $LinkObject-&gt;TypeGroupList();
+
+</pre><h2 id="PossibleType">PossibleType()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PossibleType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PossibleType">
+                                        <pre>
+
+sub PossibleType {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Type1 Type2)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get type group list
+    my %TypeGroupList = $Self->TypeGroupList();
+
+    # check all type groups
+    TYPEGROUP:
+    for my $TypeGroup ( sort keys %TypeGroupList ) {
+
+        my %TypeList = map { $_ => 1 } @{ $TypeGroupList{$TypeGroup} };
+
+        return if $TypeList{ $Param{Type1} } && $TypeList{ $Param{Type2} };
+
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>return true if both types are NOT together in a type group</p>
+
+<pre>    my $True = $LinkObject-&gt;PossibleType(
         Type1 =&gt; 'Normal',
         Type2 =&gt; 'ParentChild',
     );
 
-</pre></dd>	<dt>StateLookup()</dt>
-		<dd><p>lookup a link state</p></dd>
-<dd><pre>    $StateID = $LinkObject-&gt;StateLookup(
+</pre><h2 id="StateLookup">StateLookup()</h2>
+
+<p><a href="#" onclick="toggleCode('method_StateLookup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_StateLookup">
+                                        <pre>
+
+sub StateLookup {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{StateID} && !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need StateID or Name!',
+        );
+        return;
+    }
+
+    if ( $Param{StateID} ) {
+
+        # check cache
+        my $CacheKey = 'StateLookup::StateID::' . $Param{StateID};
+        my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+        return $Cache if $Cache;
+
+        # get database object
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+        # ask the database
+        return if !$DBObject->Prepare(
+            SQL => '
+                SELECT name
+                FROM link_state
+                WHERE id = ?',
+            Bind  => [ \$Param{StateID} ],
+            Limit => 1,
+        );
+
+        # fetch the result
+        my $Name;
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            $Name = $Row[0];
+        }
+
+        # check the name
+        if ( !$Name ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Link state id '$Param{StateID}' not found in the database!",
+            );
+            return;
+        }
+
+        # set cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => $Name,
+        );
+
+        return $Name;
+    }
+    else {
+
+        # check cache
+        my $CacheKey = 'StateLookup::Name::' . $Param{Name};
+        my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+        return $Cache if $Cache;
+
+        # get database object
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+        # ask the database
+        return if !$DBObject->Prepare(
+            SQL => '
+                SELECT id
+                FROM link_state
+                WHERE name = ?',
+            Bind  => [ \$Param{Name} ],
+            Limit => 1,
+        );
+
+        # fetch the result
+        my $StateID;
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            $StateID = $Row[0];
+        }
+
+        # check the state id
+        if ( !$StateID ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Link state '$Param{Name}' not found in the database!",
+            );
+            return;
+        }
+
+        # set cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => $StateID,
+        );
+
+        return $StateID;
+    }
+}
+</pre></div>
+
+<p>lookup a link state</p>
+
+<pre>    $StateID = $LinkObject-&gt;StateLookup(
         Name =&gt; 'Valid',
     );
 
-</pre></dd><dd><pre>    or
+    or
 
-</pre></dd><dd><pre>    $Name = $LinkObject-&gt;StateLookup(
+    $Name = $LinkObject-&gt;StateLookup(
         StateID =&gt; 56,
     );
 
-</pre></dd>	<dt>StateList()</dt>
-		<dd><p>return a hash list of all valid link states</p></dd>
-		<dd><p>Return
+</pre><h2 id="StateList">StateList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_StateList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_StateList">
+                                        <pre>
+
+sub StateList {
+    my ( $Self, %Param ) = @_;
+
+    # set valid param
+    if ( !defined $Param{Valid} ) {
+        $Param{Valid} = 1;
+    }
+
+    # add valid part
+    my $SQLWhere = '';
+    if ( $Param{Valid} ) {
+
+        # create the valid id string
+        my $ValidIDs = join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet();
+
+        $SQLWhere = "WHERE valid_id IN ( $ValidIDs )";
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # ask database
+    return if !$DBObject->Prepare(
+        SQL => "SELECT id, name FROM link_state $SQLWhere",
+    );
+
+    # fetch the result
+    my %StateList;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $StateList{ $Row[0] } = $Row[1];
+    }
+
+    return %StateList;
+}
+</pre></div>
+
+<p>return a hash list of all valid link states</p>
+
+<p>Return
     $StateList{
         4 =&gt; 'Valid',
         8 =&gt; 'Temporary',
-    }</p></dd>
-<dd><pre>    my %StateList = $LinkObject-&gt;StateList(
+    }</p>
+
+<pre>    my %StateList = $LinkObject-&gt;StateList(
         Valid =&gt; 0,   # (optional) default 1 (0|1)
     );
 
-</pre></dd>	<dt>ObjectPermission()</dt>
-		<dd><p>checks read permission for a given object and UserID.</p></dd>
-<dd><pre>    $Permission = $LinkObject-&gt;ObjectPermission(
+</pre><h2 id="ObjectPermission">ObjectPermission()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ObjectPermission');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ObjectPermission">
+                                        <pre>
+
+sub ObjectPermission {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object Key UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get backend object
+    my $BackendObject = $Kernel::OM->Get( 'Kernel::System::LinkObject::' . $Param{Object} );
+
+    return   if !$BackendObject;
+    return 1 if !$BackendObject->can('ObjectPermission');
+
+    return $BackendObject->ObjectPermission(
+        %Param,
+    );
+}
+</pre></div>
+
+<p>checks read permission for a given object and UserID.</p>
+
+<pre>    $Permission = $LinkObject-&gt;ObjectPermission(
         Object  =&gt; 'Ticket',
         Key     =&gt; 123,
         UserID  =&gt; 1,
     );
 
-</pre></dd>	<dt>ObjectDescriptionGet()</dt>
-		<dd><p>return a hash of object descriptions</p></dd>
-		<dd><p>Return
+</pre><h2 id="ObjectDescriptionGet">ObjectDescriptionGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ObjectDescriptionGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ObjectDescriptionGet">
+                                        <pre>
+
+sub ObjectDescriptionGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object Key UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get backend object
+    my $BackendObject = $Kernel::OM->Get( 'Kernel::System::LinkObject::' . $Param{Object} );
+
+    return if !$BackendObject;
+
+    # get object description
+    my %Description = $BackendObject->ObjectDescriptionGet(
+        %Param,
+    );
+
+    return %Description;
+}
+</pre></div>
+
+<p>return a hash of object descriptions</p>
+
+<p>Return
     %Description = (
         Normal =&gt; '',
         Long   =&gt; '',
-    );</p></dd>
-<dd><pre>    %Description = $LinkObject-&gt;ObjectDescriptionGet(
+    );</p>
+
+<pre>    %Description = $LinkObject-&gt;ObjectDescriptionGet(
         Object  =&gt; 'Ticket',
         Key     =&gt; 123,
         UserID  =&gt; 1,
     );
 
-</pre></dd>	<dt>ObjectSearch()</dt>
-		<dd><p>return a hash reference of the search results</p></dd>
-		<dd><p>Return
+</pre><h2 id="ObjectSearch">ObjectSearch()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ObjectSearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ObjectSearch">
+                                        <pre>
+
+sub ObjectSearch {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Object UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # get backend object
+    my $BackendObject = $Kernel::OM->Get( 'Kernel::System::LinkObject::' . $Param{Object} );
+
+    return if !$BackendObject;
+
+    # search objects
+    my $SearchList = $BackendObject->ObjectSearch(
+        %Param,
+    );
+
+    my %ObjectList;
+    $ObjectList{ $Param{Object} } = $SearchList;
+
+    return \%ObjectList;
+}
+</pre></div>
+
+<p>return a hash reference of the search results</p>
+
+<p>Return
     $ObjectList = {
         Ticket =&gt; {
             NOTLINKED =&gt; {
@@ -430,16 +2493,16 @@
                 },
             },
         },
-    };</p></dd>
-<dd><pre>    $ObjectList = $LinkObject-&gt;ObjectSearch(
+    };</p>
+
+<pre>    $ObjectList = $LinkObject-&gt;ObjectSearch(
         Object       =&gt; 'ITSMConfigItem',
         SubObject    =&gt; 'Computer'         # (optional)
         SearchParams =&gt; $HashRef,          # (optional)
         UserID       =&gt; 1,
     );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

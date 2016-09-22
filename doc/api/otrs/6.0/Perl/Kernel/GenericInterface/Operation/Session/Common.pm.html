@@ -57,8 +57,11 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#CreateSessionID">CreateSessionID()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -68,14 +71,109 @@
 
 <p>Kernel::GenericInterface::Operation::Session::Common - Base class for Session Operations</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
-
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>CreateSessionID()</dt>
-		<dd><p>performs user authentication and return a new SessionID value</p></dd>
-<dd><pre>    my $SessionID = $CommonObject-&gt;CreateSessionID(
+
+
+
+<h2 id="CreateSessionID">CreateSessionID()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CreateSessionID');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CreateSessionID">
+                                        <pre>
+
+sub CreateSessionID {
+    my ( $Self, %Param ) = @_;
+
+    my $User;
+    my %UserData;
+    my $UserType;
+
+    # get params
+    my $PostPw = $Param{Data}->{Password} || '';
+
+    if ( defined $Param{Data}->{UserLogin} && $Param{Data}->{UserLogin} ) {
+
+        # if UserLogin
+        my $PostUser = $Param{Data}->{UserLogin} || '';
+
+        # check submitted data
+        $User = $Kernel::OM->Get('Kernel::System::Auth')->Auth(
+            User => $PostUser,
+            Pw   => $PostPw,
+        );
+        %UserData = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
+            User  => $User,
+            Valid => 1,
+        );
+        $UserType = 'User';
+    }
+    elsif ( defined $Param{Data}->{CustomerUserLogin} && $Param{Data}->{CustomerUserLogin} ) {
+
+        # if UserCustomerLogin
+        my $PostUser = $Param{Data}->{CustomerUserLogin} || '';
+
+        # check submitted data
+        $User = $Kernel::OM->Get('Kernel::System::CustomerAuth')->Auth(
+            User => $PostUser,
+            Pw   => $PostPw,
+        );
+        %UserData = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
+            User  => $PostUser,
+            Valid => 1,
+        );
+        $UserType = 'Customer';
+    }
+
+    # login is invalid
+    return if !$User;
+
+    my $GroupObjectName = $UserType eq 'User' ? 'Kernel::System::Group' : 'Kernel::System::CustomerGroup';
+
+    # get groups rw/ro
+    for my $Type (qw(rw ro)) {
+
+        my %GroupData;
+        if ( $GroupObjectName eq 'Kernel::System::Group' ) {
+            %GroupData = $Kernel::OM->Get('Kernel::System::Group')->PermissionUserGet(
+                UserID => $UserData{UserID},
+                Type   => $Type,
+            );
+        }
+        else {
+            %GroupData = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupMemberList(
+                UserID => $UserData{UserID},
+                Type   => $Type,
+                Result => 'HASH',
+            );
+        }
+
+        for ( sort keys %GroupData ) {
+            if ( $Type eq 'rw' ) {
+                $UserData{"UserIsGroup[$GroupData{$_}]"} = 'Yes';
+            }
+            else {
+                $UserData{"UserIsGroupRo[$GroupData{$_}]"} = 'Yes';
+            }
+        }
+    }
+
+    # create new session id
+    my $NewSessionID = $Kernel::OM->Get('Kernel::System::AuthSession')->CreateSessionID(
+        %UserData,
+        UserLastRequest => $Kernel::OM->Get('Kernel::System::Time')->SystemTime(),
+        UserType        => $UserType,
+    );
+
+    return $NewSessionID if ($NewSessionID);
+
+    return;
+}
+</pre></div>
+
+<p>performs user authentication and return a new SessionID value</p>
+
+<pre>    my $SessionID = $CommonObject-&gt;CreateSessionID(
         Data {
             UserLogin         =&gt; 'Agent1',
             CustomerUserLogin =&gt; 'Customer1',       # optional, provide UserLogin or
@@ -84,11 +182,11 @@
         }
     );
 
-</pre></dd>		<dd><p>Returns undef on failure or</p></dd>
-<dd><pre>    $SessionID = 'AValidSessionIDValue';         # the new session id value
+</pre><p>Returns undef on failure or</p>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<pre>    $SessionID = 'AValidSessionIDValue';         # the new session id value
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

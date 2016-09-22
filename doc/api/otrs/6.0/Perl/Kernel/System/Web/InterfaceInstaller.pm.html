@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,20 +79,127 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create installer web interface object</p></dd>
-<dd><pre>    use Kernel::System::Web::InterfaceInstaller;
 
-</pre></dd><dd><pre>    my $Debug = 0;
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get debug level
+    $Self->{Debug} = $Param{Debug} || 0;
+
+    $Kernel::OM->ObjectParamAdd(
+        'Kernel::System::Log' => {
+            LogPrefix => $Kernel::OM->Get('Kernel::Config')->Get('CGILogPrefix') || 'Installer',
+        },
+        'Kernel::Output::HTML::Layout' => {
+            InstallerOnly => 1,
+        },
+        'Kernel::System::Web::Request' => {
+            WebRequest => $Param{WebRequest} || 0,
+        },
+    );
+
+    # debug info
+    if ( $Self->{Debug} ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'debug',
+            Message  => 'Global handle started...',
+        );
+    }
+
+    return $Self;
+}
+</pre></div>
+
+<p>create installer web interface object</p>
+
+<pre>    use Kernel::System::Web::InterfaceInstaller;
+
+    my $Debug = 0;
     my $Interface = Kernel::System::Web::InterfaceInstaller-&gt;new( Debug =&gt; $Debug );
 
-</pre></dd>	<dt>Run()</dt>
-		<dd><p>execute the object</p></dd>
-<dd><pre>    $Interface-&gt;Run();
+</pre><h2 id="Run">Run()</h2>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my $Self = shift;
+
+    # get common framework params
+    my %Param;
+
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    $Param{Action}     = $ParamObject->GetParam( Param => 'Action' )     || 'Installer';
+    $Param{Subaction}  = $ParamObject->GetParam( Param => 'Subaction' )  || '';
+    $Param{NextScreen} = $ParamObject->GetParam( Param => 'NextScreen' ) || '';
+
+    $Kernel::OM->ObjectParamAdd(
+        'Kernel::Output::HTML::Layout' => {
+            %Param,
+        },
+    );
+
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    # check secure mode
+    if ( $Kernel::OM->Get('Kernel::Config')->Get('SecureMode') ) {
+        print $LayoutObject->Header();
+        print $LayoutObject->Error(
+            Message => Translatable('SecureMode active!'),
+            Comment => Translatable(
+                'If you want to re-run the Installer, disable the SecureMode in the SysConfig.'
+            ),
+        );
+        print $LayoutObject->Footer();
+    }
+
+    # run modules if a version value exists
+    elsif ( $Kernel::OM->Get('Kernel::System::Main')->Require("Kernel::Modules::$Param{Action}") ) {
+
+        # proof of concept! - create $GenericObject
+        my $GenericObject = ( 'Kernel::Modules::' . $Param{Action} )->new(
+            %Param,
+            Debug => $Self->{Debug},
+        );
+
+        print $GenericObject->Run();
+    }
+
+    # else print an error screen
+    else {
+
+        # create new LayoutObject with '%Param'
+        print $LayoutObject->Header();
+        print $LayoutObject->Error(
+            Message => $LayoutObject->{LanguageObject}->Translate( 'Action "%s" not found!', $Param{Action} ),
+            Comment => Translatable('Please contact the administrator.'),
+        );
+        print $LayoutObject->Footer();
+    }
+
+}
+</pre></div>
+
+<p>execute the object</p>
+
+<pre>    $Interface-&gt;Run();
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

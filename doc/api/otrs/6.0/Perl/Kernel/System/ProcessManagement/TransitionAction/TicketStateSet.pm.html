@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,17 +79,192 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $TicketStateSetObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::TransitionAction::TicketStateSet');
 
-</pre></dd>	<dt>Run()</dt>
-<dd><pre>    Run Data
+</pre><h2 id="Run">Run()</h2>
 
-</pre></dd><dd><pre>    my $TicketStateSetResult = $TicketStateSetActionObject-&gt;Run(
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    # define a common message to output in case of any error
+    my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
+        . " Transition: $Param{TransitionEntityID}"
+        . " TransitionAction: $Param{TransitionActionEntityID} - ";
+
+    # check for missing or wrong params
+    my $Success = $Self->_CheckParams(
+        %Param,
+        CommonMessage => $CommonMessage,
+    );
+    return if !$Success;
+
+    # override UserID if specified as a parameter in the TA config
+    $Param{UserID} = $Self->_OverrideUserID(%Param);
+
+    # use ticket attributes if needed
+    $Self->_ReplaceTicketAttributes(%Param);
+
+    if ( !$Param{Config}->{StateID} && !$Param{Config}->{State} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage . "No State or StateID configured!",
+        );
+        return;
+    }
+
+    $Success = 0;
+    my %StateData;
+
+    # If Ticket's StateID is already the same as the Value we
+    # should set it to, we got nothing to do and return success
+    if (
+        defined $Param{Config}->{StateID}
+        && $Param{Config}->{StateID} eq $Param{Ticket}->{StateID}
+        )
+    {
+        return 1;
+    }
+
+    # If Ticket's StateID is not the same as the Value we
+    # should set it to, set the StateID
+    elsif (
+        defined $Param{Config}->{StateID}
+        && $Param{Config}->{StateID} ne $Param{Ticket}->{StateID}
+        )
+    {
+        %StateData = $Kernel::OM->Get('Kernel::System::State')->StateGet(
+            ID => $Param{Config}->{StateID},
+        );
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketStateSet(
+            TicketID => $Param{Ticket}->{TicketID},
+            StateID  => $Param{Config}->{StateID},
+            UserID   => $Param{UserID},
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . 'Ticket StateID '
+                    . $Param{Config}->{StateID}
+                    . ' could not be updated for Ticket: '
+                    . $Param{Ticket}->{TicketID} . '!',
+            );
+        }
+    }
+
+    # If Ticket's State is already the same as the Value we
+    # should set it to, we got nothing to do and return success
+    elsif (
+        defined $Param{Config}->{State}
+        && $Param{Config}->{State} eq $Param{Ticket}->{State}
+        )
+    {
+        return 1;
+    }
+
+    # If Ticket's State is not the same as the Value we
+    # should set it to, set the State
+    elsif (
+        defined $Param{Config}->{State}
+        && $Param{Config}->{State} ne $Param{Ticket}->{State}
+        )
+    {
+        %StateData = $Kernel::OM->Get('Kernel::System::State')->StateGet(
+            Name => $Param{Config}->{State},
+        );
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketStateSet(
+            TicketID => $Param{Ticket}->{TicketID},
+            State    => $Param{Config}->{State},
+            UserID   => $Param{UserID},
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . 'Ticket State '
+                    . $Param{Config}->{State}
+                    . ' could not be updated for Ticket: '
+                    . $Param{Ticket}->{TicketID} . '!',
+            );
+        }
+    }
+    else {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage
+                . "Couldn't update Ticket State - can't find valid State parameter!",
+        );
+        return;
+    }
+
+    # set pending time
+    if (
+        $Success
+        && IsHashRefWithData( \%StateData )
+        && $StateData{TypeName} =~ m{\A pending}msxi
+        && IsNumber( $Param{Config}->{PendingTimeDiff} )
+        )
+    {
+
+        # get time object
+        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+        # get current time
+        my $PendingTime = $TimeObject->SystemTime();
+
+        # add PendingTimeDiff
+        $PendingTime += $Param{Config}->{PendingTimeDiff};
+
+        # convert pending time to time stamp
+        my $PendingTimeString = $TimeObject->SystemTime2TimeStamp(
+            SystemTime => $PendingTime,
+        );
+
+        # set pending time
+        $Kernel::OM->Get('Kernel::System::Ticket')->TicketPendingTimeSet(
+            UserID   => $Param{UserID},
+            TicketID => $Param{Ticket}->{TicketID},
+            String   => $PendingTimeString,
+        );
+    }
+
+    return $Success;
+}
+</pre></div>
+
+<pre>    Run Data
+
+    my $TicketStateSetResult = $TicketStateSetActionObject-&gt;Run(
         UserID                   =&gt; 123,
         Ticket                   =&gt; \%Ticket,   # required
         ProcessEntityID          =&gt; 'P123',
@@ -96,7 +276,7 @@
             # or
             StateID =&gt; 3,
 
-</pre></dd><dd><pre>            PendingTimeDiff =&gt; 123,             # optional, used for pending states, difference in seconds from
+            PendingTimeDiff =&gt; 123,             # optional, used for pending states, difference in seconds from
                                                 #   current time to desired pending time (e.g. a value of 3600 means
                                                 #   that the pending time will be 1 hr after the Transition Action is
                                                 #   executed)
@@ -107,10 +287,9 @@
     Config is the Config Hash stored in a Process::TransitionAction's  Config key
     Returns:
 
-</pre></dd><dd><pre>    $TicketStateSetResult = 1; # 0
+    $TicketStateSetResult = 1; # 0
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

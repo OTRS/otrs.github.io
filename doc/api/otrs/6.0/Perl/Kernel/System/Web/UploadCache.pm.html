@@ -58,7 +58,18 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#FormIDCreate">FormIDCreate()</a></li>
+	<li><a href="#FormIDRemove">FormIDRemove()</a></li>
+	<li><a href="#FormIDAddFile">FormIDAddFile()</a></li>
+	<li><a href="#FormIDRemoveFile">FormIDRemoveFile()</a></li>
+	<li><a href="#FormIDGetAllFilesData">FormIDGetAllFilesData()</a></li>
+	<li><a href="#FormIDGetAllFilesMeta">FormIDGetAllFilesMeta()</a></li>
+	<li><a href="#FormIDCleanUp">FormIDCleanUp()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,24 +85,89 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    my $GenericModule = $Kernel::OM->Get('Kernel::Config')->Get('WebUploadCacheModule')
+        || 'Kernel::System::Web::UploadCache::DB';
+
+    # load generator auth module
+    $Self->{Backend} = $Kernel::OM->Get($GenericModule);
+
+    return $Self if $Self->{Backend};
+    return;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $WebUploadCacheObject = $Kernel::OM-&gt;Get('Kernel::System::Web::UploadCache');
 
-</pre></dd>	<dt>FormIDCreate()</dt>
-		<dd><p>create a new Form ID</p></dd>
-<dd><pre>    my $FormID = $UploadCacheObject-&gt;FormIDCreate();
+</pre><h2 id="FormIDCreate">FormIDCreate()</h2>
 
-</pre></dd>	<dt>FormIDRemove()</dt>
-		<dd><p>remove all data for a provided Form ID</p></dd>
-<dd><pre>    $UploadCacheObject-&gt;FormIDRemove( FormID =&gt; 123456 );
+<p><a href="#" onclick="toggleCode('method_FormIDCreate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FormIDCreate">
+                                        <pre>
 
-</pre></dd>	<dt>FormIDAddFile()</dt>
-		<dd><p>add a file to a Form ID</p></dd>
-<dd><pre>    $UploadCacheObject-&gt;FormIDAddFile(
+sub FormIDCreate {
+    my $Self = shift;
+
+    return $Self->{Backend}->FormIDCreate(@_);
+}
+</pre></div>
+
+<p>create a new Form ID</p>
+
+<pre>    my $FormID = $UploadCacheObject-&gt;FormIDCreate();
+
+</pre><h2 id="FormIDRemove">FormIDRemove()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FormIDRemove');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FormIDRemove">
+                                        <pre>
+
+sub FormIDRemove {
+    my $Self = shift;
+
+    return $Self->{Backend}->FormIDRemove(@_);
+}
+</pre></div>
+
+<p>remove all data for a provided Form ID</p>
+
+<pre>    $UploadCacheObject-&gt;FormIDRemove( FormID =&gt; 123456 );
+
+</pre><h2 id="FormIDAddFile">FormIDAddFile()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FormIDAddFile');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FormIDAddFile">
+                                        <pre>
+
+sub FormIDAddFile {
+    my $Self = shift;
+
+    return $Self->{Backend}->FormIDAddFile(@_);
+}
+</pre></div>
+
+<p>add a file to a Form ID</p>
+
+<pre>    $UploadCacheObject-&gt;FormIDAddFile(
         FormID      =&gt; 12345,
         Filename    =&gt; 'somefile.html',
         Content     =&gt; $FileInString,
@@ -99,8 +175,9 @@
         Disposition =&gt; 'inline', # optional
     );
 
-</pre></dd>		<dd><p>ContentID is optional (automatically generated if not given on disposition = inline)</p></dd>
-<dd><pre>    $UploadCacheObject-&gt;FormIDAddFile(
+</pre><p>ContentID is optional (automatically generated if not given on disposition = inline)</p>
+
+<pre>    $UploadCacheObject-&gt;FormIDAddFile(
         FormID      =&gt; 12345,
         Filename    =&gt; 'somefile.html',
         Content     =&gt; $FileInString,
@@ -109,37 +186,90 @@
         Disposition =&gt; 'inline', # optional
     );
 
-</pre></dd>	<dt>FormIDRemoveFile()</dt>
-		<dd><p>removes a file from a form id</p></dd>
-<dd><pre>    $UploadCacheObject-&gt;FormIDRemoveFile(
+</pre><h2 id="FormIDRemoveFile">FormIDRemoveFile()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FormIDRemoveFile');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FormIDRemoveFile">
+                                        <pre>
+
+sub FormIDRemoveFile {
+    my $Self = shift;
+
+    return $Self->{Backend}->FormIDRemoveFile(@_);
+}
+</pre></div>
+
+<p>removes a file from a form id</p>
+
+<pre>    $UploadCacheObject-&gt;FormIDRemoveFile(
         FormID =&gt; 12345,
         FileID =&gt; 1,
     );
 
-</pre></dd>	<dt>FormIDGetAllFilesData()</dt>
-		<dd><p>returns an array with a hash ref of all files for a Form ID</p></dd>
-<dd><pre>    my @Data = $UploadCacheObject-&gt;FormIDGetAllFilesData(
+</pre><h2 id="FormIDGetAllFilesData">FormIDGetAllFilesData()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FormIDGetAllFilesData');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FormIDGetAllFilesData">
+                                        <pre>
+
+sub FormIDGetAllFilesData {
+    my $Self = shift;
+
+    return @{ $Self->{Backend}->FormIDGetAllFilesData(@_) };
+}
+</pre></div>
+
+<p>returns an array with a hash ref of all files for a Form ID</p>
+
+<pre>    my @Data = $UploadCacheObject-&gt;FormIDGetAllFilesData(
         FormID =&gt; 12345,
     );
 
-</pre></dd><dd><pre>    Return data of on hash is Content, ContentType, ContentID, Filename, Filesize, FileID;
+    Return data of on hash is Content, ContentType, ContentID, Filename, Filesize, FileID;
 
-</pre></dd>	<dt>FormIDGetAllFilesMeta()</dt>
-		<dd><p>returns an array with a hash ref of all files for a Form ID</p></dd>
-		<dd><p>Note: returns no content, only meta data.</p></dd>
-<dd><pre>    my @Data = $UploadCacheObject-&gt;FormIDGetAllFilesMeta(
+</pre><h2 id="FormIDGetAllFilesMeta">FormIDGetAllFilesMeta()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FormIDGetAllFilesMeta');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FormIDGetAllFilesMeta">
+                                        <pre>
+
+sub FormIDGetAllFilesMeta {
+    my $Self = shift;
+
+    return @{ $Self->{Backend}->FormIDGetAllFilesMeta(@_) };
+}
+</pre></div>
+
+<p>returns an array with a hash ref of all files for a Form ID</p>
+
+<p>Note: returns no content, only meta data.</p>
+
+<pre>    my @Data = $UploadCacheObject-&gt;FormIDGetAllFilesMeta(
         FormID =&gt; 12345,
     );
 
-</pre></dd><dd><pre>    Return data of hash is ContentType, ContentID, Filename, Filesize, FileID;
+    Return data of hash is ContentType, ContentID, Filename, Filesize, FileID;
 
-</pre></dd>	<dt>FormIDCleanUp()</dt>
-		<dd><p>Removed no longer needed temporary files.</p></dd>
-		<dd><p>Each file older than 1 day will be removed.</p></dd>
-<dd><pre>    $UploadCacheObject-&gt;FormIDCleanUp();
+</pre><h2 id="FormIDCleanUp">FormIDCleanUp()</h2>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<p><a href="#" onclick="toggleCode('method_FormIDCleanUp');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FormIDCleanUp">
+                                        <pre>
+
+sub FormIDCleanUp {
+    my $Self = shift;
+
+    return $Self->{Backend}->FormIDCleanUp(@_);
+}
+</pre></div>
+
+<p>Removed no longer needed temporary files.</p>
+
+<p>Each file older than 1 day will be removed.</p>
+
+<pre>    $UploadCacheObject-&gt;FormIDCleanUp();
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,17 +79,380 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $TicketCreateObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::TransitionAction::TicketCreate');
 
-</pre></dd>	<dt>Run()</dt>
-<dd><pre>    Run Data
+</pre><h2 id="Run">Run()</h2>
 
-</pre></dd><dd><pre>    my $TicketArticleCreateResult = $TicketArticleCreateActionObject-&gt;Run(
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    # define a common message to output in case of any error
+    my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
+        . " Transition: $Param{TransitionEntityID}"
+        . " TransitionAction: $Param{TransitionActionEntityID} - ";
+
+    # check for missing or wrong params
+    my $Success = $Self->_CheckParams(
+        %Param,
+        CommonMessage => $CommonMessage,
+    );
+    return if !$Success;
+
+    # override UserID if specified as a parameter in the TA config
+    $Param{UserID} = $Self->_OverrideUserID(%Param);
+
+    # use ticket attributes if needed
+    $Self->_ReplaceTicketAttributes(%Param);
+
+    # convert scalar items into array references
+    for my $Attribute (
+        qw(ForceNotificationToUserID ExcludeNotificationToUserID
+        ExcludeMuteNotificationToUserID
+        )
+        )
+    {
+        if ( IsStringWithData( $Param{Config}->{$Attribute} ) ) {
+            $Param{Config}->{$Attribute} = $Self->_ConvertScalar2ArrayRef(
+                Data => $Param{Config}->{$Attribute},
+            );
+        }
+    }
+
+    # collect ticket params
+    my %TicketParam;
+    for my $Attribute (
+        qw( Title Queue QueueID Lock LockID Priority PriorityID State StateID
+        CustomerID CustomerUser Owner OwnerID TN Type TypeID Service ServiceID SLA SLAID
+        Responsible ResponsibleID ArchiveFlag
+        )
+        )
+    {
+        if ( defined $Param{Config}->{$Attribute} ) {
+            $TicketParam{$Attribute} = $Param{Config}->{$Attribute}
+        }
+    }
+
+    # get default values from system configuration
+    for my $Attribute (qw(Queue State Lock Priority)) {
+
+        if ( !$TicketParam{$Attribute} && !$TicketParam{ $Attribute . "ID" } ) {
+            $TicketParam{$Attribute} = $Kernel::OM->Get('Kernel::Config')->Get("Process::Default$Attribute") || '';
+        }
+    }
+
+    # Get OwnerID from Owner
+    if ( $TicketParam{Owner} && !$TicketParam{OwnerID} ) {
+        $TicketParam{OwnerID} = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
+            UserLogin => $TicketParam{Owner},
+        );
+    }
+
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    # create ticket
+    my $TicketID = $TicketObject->TicketCreate(
+        %TicketParam,
+        UserID => $Param{UserID},
+    );
+    if ( !$TicketID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage
+                . "Couldn't create New Ticket from Ticket: "
+                . $Param{Ticket}->{TicketID} . '!',
+        );
+        return;
+    }
+
+    # get state information
+    my %StateData;
+    if ( $TicketParam{StateID} ) {
+        %StateData = $Kernel::OM->Get('Kernel::System::State')->StateGet(
+            ID => $TicketParam{StateID},
+        );
+    }
+    else {
+        %StateData = $Kernel::OM->Get('Kernel::System::State')->StateGet(
+            Name => $TicketParam{State},
+        );
+    }
+
+    # closed tickets get unlocked
+    if ( $StateData{TypeName} =~ /^close/i ) {
+
+        # set lock
+        $TicketObject->TicketLockSet(
+            TicketID => $TicketID,
+            Lock     => 'unlock',
+            UserID   => $Param{UserID},
+        );
+    }
+
+    # set pending time
+    elsif ( $StateData{TypeName} =~ /^pending/i ) {
+
+        if ( $Param{Config}->{PendingTime} ) {
+
+            # get time object
+            my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+            # convert pending time to system time
+            my $SystemTime = $TimeObject->TimeStamp2SystemTime(
+                String => $Param{Config}->{PendingTime},
+            );
+
+            # convert it back again so we are sure the sting is correct
+            my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
+                SystemTime => $SystemTime,
+            );
+
+            # set pending time
+            $TicketObject->TicketPendingTimeSet(
+                UserID   => $Param{UserID},
+                TicketID => $TicketID,
+                String   => $TimeStamp,
+            );
+        }
+        elsif ( $Param{Config}->{PendingTimeDiff} ) {
+
+            # set pending time
+            $TicketObject->TicketPendingTimeSet(
+                UserID   => $Param{UserID},
+                TicketID => $TicketID,
+                Diff     => $Param{Config}->{PendingTimeDiff},
+            );
+        }
+    }
+
+    # extract the article params
+    my %ArticleParam;
+    for my $Attribute (
+        qw( ArticleType SenderType ContentType Subject Body HistoryType
+        HistoryComment From To Cc ReplyTo MessageID InReplyTo References NoAgentNotify
+        AutoResponseType ForceNotificationToUserID ExcludeNotificationToUserID
+        ExcludeMuteNotificationToUserID
+        )
+        )
+    {
+        if ( defined $Param{Config}->{$Attribute} ) {
+            $ArticleParam{$Attribute} = $Param{Config}->{$Attribute}
+        }
+    }
+
+    # check if article can be created
+    my $ArticleCreate = 1;
+    for my $Needed (qw(ArticleType SenderType ContentType Subject Body HistoryType HistoryComment)) {
+        if ( !$ArticleParam{$Needed} ) {
+            $ArticleCreate = 0;
+        }
+    }
+
+    my $ArticleID;
+
+    if ($ArticleCreate) {
+
+        my $ValidArticleType = 1;
+
+        # check ArticleType
+        if ( $ArticleParam{ArticleType} =~ m{\A email }msxi ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . "ArticleType $Param{Config}->{ArticleType} is not supported",
+            );
+            $ValidArticleType = 0;
+        }
+
+        if ($ValidArticleType) {
+
+            # create article for the new ticket
+            $ArticleID = $TicketObject->ArticleCreate(
+                %ArticleParam,
+                TicketID => $TicketID,
+                UserID   => $Param{UserID},
+            );
+
+            if ( !$ArticleID ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => $CommonMessage
+                        . "Couldn't create Article on Ticket: $TicketID from Ticket: "
+                        . $Param{Ticket}->{TicketID} . '!',
+                );
+            }
+            else {
+
+                # set time units
+                if ( $Param{Config}->{TimeUnit} ) {
+                    $TicketObject->TicketAccountTime(
+                        TicketID  => $TicketID,
+                        ArticleID => $ArticleID,
+                        TimeUnit  => $Param{Config}->{TimeUnit},
+                        UserID    => $Param{UserID},
+                    );
+                }
+            }
+        }
+    }
+
+    # set dynamic fields for ticket and article
+
+    # set a field filter (all valid dynamic fields have to have set to 1 like NameX => 1)
+    my %FieldFilter;
+    for my $Attribute ( sort keys %{ $Param{Config} } ) {
+        if ( $Attribute =~ m{\A DynamicField_ ( [a-zA-Z0-9]+ ) \z}msx ) {
+            $FieldFilter{$1} = 1;
+        }
+    }
+
+    # get dynamic field objects
+    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+
+    # get the dynamic fields for ticket
+    my $DynamicFieldList = $DynamicFieldObject->DynamicFieldListGet(
+        Valid       => 1,
+        ObjectType  => [ 'Ticket', 'Article' ],
+        FieldFilter => \%FieldFilter,
+    );
+
+    # cycle through the activated Dynamic Fields for this screen
+    DYNAMICFIELD:
+    for my $DynamicFieldConfig ( @{$DynamicFieldList} ) {
+        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+
+        my $ObjectID = $TicketID;
+        if ( $DynamicFieldConfig->{ObjectType} ne 'Ticket' ) {
+
+            # skip article dynamic fields if Article was not created
+            next DYNAMICFIELD if !$ArticleCreate || !$ArticleID;
+
+            $ObjectID = $ArticleID;
+        }
+
+        # set the value
+        my $Success = $DynamicFieldBackendObject->ValueSet(
+            DynamicFieldConfig => $DynamicFieldConfig,
+            ObjectID           => $ObjectID,
+            Value              => $Param{Config}->{ 'DynamicField_' . $DynamicFieldConfig->{Name} },
+            UserID             => $Param{UserID},
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . "Couldn't set DynamicField Value on $DynamicFieldConfig->{ObjectType}:"
+                    . " $ObjectID from Ticket: "
+                    . $Param{Ticket}->{TicketID} . '!',
+            );
+            return;
+        }
+    }
+
+    # link ticket
+    if ( $Param{Config}->{LinkAs} ) {
+
+        # get link object
+        my $LinkObject = $Kernel::OM->Get('Kernel::System::LinkObject');
+
+        # get config of all types
+        my %ConfiguredTypes = $LinkObject->TypeList(
+            UserID => 1,
+        );
+
+        my $SelectedType;
+        my $SelectedDirection;
+
+        TYPE:
+        for my $Type ( sort keys %ConfiguredTypes ) {
+            if (
+                $Param{Config}->{LinkAs} ne $ConfiguredTypes{$Type}->{SourceName}
+                && $Param{Config}->{LinkAs} ne $ConfiguredTypes{$Type}->{TargetName}
+                )
+            {
+                next TYPE;
+            }
+            $SelectedType      = $Type;
+            $SelectedDirection = 'Source';
+            if ( $Param{Config}->{LinkAs} eq $ConfiguredTypes{$Type}->{TargetName} ) {
+                $SelectedDirection = 'Target';
+            }
+            last TYPE;
+        }
+
+        if ( !$SelectedType ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . "LinkAs $Param{LinkAs} is invalid!"
+            );
+            return;
+        }
+
+        my $SourceObjectID = $TicketID;
+        my $TargetObjectID = $Param{Ticket}->{TicketID};
+        if ( $SelectedDirection eq 'Target' ) {
+            $SourceObjectID = $Param{Ticket}->{TicketID};
+            $TargetObjectID = $TicketID;
+        }
+
+        my $Success = $LinkObject->LinkAdd(
+            SourceObject => 'Ticket',
+            SourceKey    => $SourceObjectID,
+            TargetObject => 'Ticket',
+            TargetKey    => $TargetObjectID,
+            Type         => $SelectedType,
+            State        => 'Valid',
+            UserID       => $Param{UserID},
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => $CommonMessage
+                    . "Couldn't Link Tickets $SourceObjectID with $TargetObjectID as $Param{LinkAs}!",
+            );
+            return;
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<pre>    Run Data
+
+    my $TicketArticleCreateResult = $TicketArticleCreateActionObject-&gt;Run(
         UserID                   =&gt; 123,
         Ticket                   =&gt; \%Ticket,   # required
         ProcessEntityID          =&gt; 'P123',
@@ -102,7 +470,7 @@
             CustomerUser  =&gt; 'customer@example.com',
             Owner         =&gt; 'someuserlogin',    # or OwnerID =&gt; 123
 
-</pre></dd><dd><pre>            # ticket optional:
+            # ticket optional:
             TN              =&gt; $TicketObject-&gt;TicketCreateNumber(), # optional
             Type            =&gt; 'Incident',            # or TypeID =&gt; 1, not required
             Service         =&gt; 'Service A',           # or ServiceID =&gt; 1, not required
@@ -112,7 +480,7 @@
             PendingTime     =&gt; '2011-12-23 23:05:00', # optional (for pending states)
             PendingTimeDiff =&gt; 123 ,                  # optional (for pending states)
 
-</pre></dd><dd><pre>            # article required: (if one of them is not present, article will not be created without any error message)
+            # article required: (if one of them is not present, article will not be created without any error message)
             ArticleType      =&gt; 'note-internal',                        # note-external|phone|fax|sms|...
                                                                         #   excluding any email type
             SenderType       =&gt; 'agent',                                # agent|system|customer
@@ -122,7 +490,7 @@
             HistoryType      =&gt; 'OwnerUpdate',                          # EmailCustomer|Move|AddNote|PriorityUpdate|WebRequestCustomer|...
             HistoryComment   =&gt; 'Some free text!',
 
-</pre></dd><dd><pre>            # article optional:
+            # article optional:
             From             =&gt; 'Some Agent &lt;email@example.com&gt;',       # not required but useful
             To               =&gt; 'Some Customer A &lt;customer-a@example.com&gt;', # not required but useful
             Cc               =&gt; 'Some Customer B &lt;customer-b@example.com&gt;', # not required but useful
@@ -133,7 +501,7 @@
             NoAgentNotify    =&gt; 0,                                      # if you don't want to send agent notifications
             AutoResponseType =&gt; 'auto reply'                            # auto reject|auto follow up|auto reply/new ticket|auto remove
 
-</pre></dd><dd><pre>            ForceNotificationToUserID   =&gt; [ 1, 43, 56 ],               # if you want to force somebody
+            ForceNotificationToUserID   =&gt; [ 1, 43, 56 ],               # if you want to force somebody
             ExcludeNotificationToUserID =&gt; [ 43,56 ],                   # if you want full exclude somebody from notifications,
                                                                         # will also be removed in To: line of article,
                                                                         # higher prio as ForceNotificationToUserID
@@ -142,7 +510,7 @@
                                                                         # line of article
             TimeUnit                        =&gt; 123
 
-</pre></dd><dd><pre>            # other:
+            # other:
             DynamicField_NameX =&gt; $Value,
             LinkAs =&gt; $LinkType,                                        # Normal, Parent, Child, etc. (respective original ticket)
             UserID =&gt; 123,                                              # optional, to override the UserID from the logged user
@@ -152,12 +520,11 @@
     Config is the Config Hash stored in a Process::TransitionAction's  Config key
     Returns:
 
-</pre></dd><dd><pre>    $TicketCreateResult = 1; # 0
+    $TicketCreateResult = 1; # 0
 
-</pre></dd><dd><pre>    );
+    );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

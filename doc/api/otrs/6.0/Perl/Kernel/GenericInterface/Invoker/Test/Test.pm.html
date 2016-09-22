@@ -57,8 +57,13 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#PrepareRequest">PrepareRequest()</a></li>
+	<li><a href="#HandleResponse">HandleResponse()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -68,23 +73,85 @@
 
 <p>Kernel::GenericInterface::Invoker::Test::Test - GenericInterface test Invoker backend</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
-
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>usually, you want to create an instance of this
-by using Kernel::GenericInterface::Invoker-&gt;new();</p></dd>
-	<dt>PrepareRequest()</dt>
-		<dd><p>prepare the invocation of the configured remote webservice.</p></dd>
-<dd><pre>    my $Result = $InvokerObject-&gt;PrepareRequest(
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # check needed params
+    if ( !$Param{DebuggerObject} ) {
+        return {
+            Success      => 0,
+            ErrorMessage => "Got no DebuggerObject!"
+        };
+    }
+
+    $Self->{DebuggerObject} = $Param{DebuggerObject};
+
+    return $Self;
+}
+</pre></div>
+
+<p>usually, you want to create an instance of this
+by using Kernel::GenericInterface::Invoker-&gt;new();</p>
+
+<h2 id="PrepareRequest">PrepareRequest()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PrepareRequest');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PrepareRequest">
+                                        <pre>
+
+sub PrepareRequest {
+    my ( $Self, %Param ) = @_;
+
+    # we need a TicketNumber
+    if ( !IsStringWithData( $Param{Data}->{TicketNumber} ) ) {
+        return $Self->{DebuggerObject}->Error( Summary => 'Got no TicketNumber' );
+    }
+
+    my %ReturnData;
+
+    $ReturnData{TicketNumber} = $Param{Data}->{TicketNumber};
+
+    # check Action
+    if ( IsStringWithData( $Param{Data}->{Action} ) ) {
+        $ReturnData{Action} = $Param{Data}->{Action} . 'Test';
+    }
+
+    # check request for system time
+    if ( IsStringWithData( $Param{Data}->{GetSystemTime} ) && $Param{Data}->{GetSystemTime} ) {
+        $ReturnData{SystemTime} = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
+    }
+
+    return {
+        Success => 1,
+        Data    => \%ReturnData,
+    };
+}
+</pre></div>
+
+<p>prepare the invocation of the configured remote webservice.</p>
+
+<pre>    my $Result = $InvokerObject-&gt;PrepareRequest(
         Data =&gt; {                               # data payload
             ...
         },
     );
 
-</pre></dd><dd><pre>    $Result = {
+    $Result = {
         Success         =&gt; 1,                   # 0 or 1
         ErrorMessage    =&gt; '',                  # in case of error
         Data            =&gt; {                    # data payload after Invoker
@@ -92,9 +159,62 @@ by using Kernel::GenericInterface::Invoker-&gt;new();</p></dd>
         },
     };
 
-</pre></dd>	<dt>HandleResponse()</dt>
-		<dd><p>handle response data of the configured remote webservice.</p></dd>
-<dd><pre>    my $Result = $InvokerObject-&gt;HandleResponse(
+</pre><h2 id="HandleResponse">HandleResponse()</h2>
+
+<p><a href="#" onclick="toggleCode('method_HandleResponse');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_HandleResponse">
+                                        <pre>
+
+sub HandleResponse {
+    my ( $Self, %Param ) = @_;
+
+    # if there was an error in the response, forward it
+    if ( !$Param{ResponseSuccess} ) {
+        if ( !IsStringWithData( $Param{ResponseErrorMessage} ) ) {
+
+            return $Self->{DebuggerObject}->Error(
+                Summary => 'Got response error, but no response error message!',
+            );
+        }
+
+        return {
+            Success      => 0,
+            ErrorMessage => $Param{ResponseErrorMessage},
+        };
+    }
+
+    # we need a TicketNumber
+    if ( !IsStringWithData( $Param{Data}->{TicketNumber} ) ) {
+
+        return $Self->{DebuggerObject}->Error( Summary => 'Got no TicketNumber!' );
+    }
+
+    # prepare TicketNumber
+    my %ReturnData = (
+        TicketNumber => $Param{Data}->{TicketNumber},
+    );
+
+    # check Action
+    if ( IsStringWithData( $Param{Data}->{Action} ) ) {
+        if ( $Param{Data}->{Action} !~ m{ \A ( .*? ) Test \z }xms ) {
+
+            return $Self->{DebuggerObject}->Error(
+                Summary => 'Got Action but it is not in required format!',
+            );
+        }
+        $ReturnData{Action} = $1;
+    }
+
+    return {
+        Success => 1,
+        Data    => \%ReturnData,
+    };
+}
+</pre></div>
+
+<p>handle response data of the configured remote webservice.</p>
+
+<pre>    my $Result = $InvokerObject-&gt;HandleResponse(
         ResponseSuccess      =&gt; 1,              # success status of the remote webservice
         ResponseErrorMessage =&gt; '',             # in case of webservice error
         Data =&gt; {                               # data payload
@@ -102,7 +222,7 @@ by using Kernel::GenericInterface::Invoker-&gt;new();</p></dd>
         },
     );
 
-</pre></dd><dd><pre>    $Result = {
+    $Result = {
         Success         =&gt; 1,                   # 0 or 1
         ErrorMessage    =&gt; '',                  # in case of error
         Data            =&gt; {                    # data payload after Invoker
@@ -110,8 +230,7 @@ by using Kernel::GenericInterface::Invoker-&gt;new();</p></dd>
         },
     };
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

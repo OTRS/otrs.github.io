@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,17 +79,131 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $TicketArticleCreateObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::TransitionAction::TicketArticleCreate');
 
-</pre></dd>	<dt>Run()</dt>
-<dd><pre>    Run Data
+</pre><h2 id="Run">Run()</h2>
 
-</pre></dd><dd><pre>    my $TicketArticleCreateResult = $TicketArticleCreateActionObject-&gt;Run(
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    # define a common message to output in case of any error
+    my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
+        . " Transition: $Param{TransitionEntityID}"
+        . " TransitionAction: $Param{TransitionActionEntityID} - ";
+
+    # check for missing or wrong params
+    my $Success = $Self->_CheckParams(
+        %Param,
+        CommonMessage => $CommonMessage,
+    );
+    return if !$Success;
+
+    # override UserID if specified as a parameter in the TA config
+    $Param{UserID} = $Self->_OverrideUserID(%Param);
+
+    # use ticket attributes if needed
+    $Self->_ReplaceTicketAttributes(%Param);
+
+    # convert scalar items into array references
+    for my $Attribute (
+        qw(ForceNotificationToUserID ExcludeNotificationToUserID
+        ExcludeMuteNotificationToUserID
+        )
+        )
+    {
+        if ( IsStringWithData( $Param{Config}->{$Attribute} ) ) {
+            $Param{Config}->{$Attribute} = $Self->_ConvertScalar2ArrayRef(
+                Data => $Param{Config}->{$Attribute},
+            );
+        }
+    }
+
+    # check ArticleType
+    if ( $Param{Config}->{ArticleType} =~ m{\A email }msxi ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage
+                . "ArticleType $Param{Config}->{ArticleType} is not supported",
+        );
+        return;
+    }
+
+    # get ticket object
+    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+
+    # If "From" is not set
+    if ( !$Param{Config}->{From} ) {
+
+        # Get current user data
+        my %User = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
+            UserID => $Param{UserID},
+        );
+
+        # Set "From" field according to user - UserFullname <UserEmail>
+        $Param{Config}->{From} = $User{UserFullname} . ' <' . $User{UserEmail} . '>';
+    }
+
+    my $ArticleID = $TicketObject->ArticleCreate(
+        %{ $Param{Config} },
+        TicketID => $Param{Ticket}->{TicketID},
+        UserID   => $Param{UserID},
+    );
+
+    if ( !$ArticleID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage
+                . "Couldn't create article for Ticket: "
+                . $Param{Ticket}->{TicketID} . '!',
+        );
+        return;
+    }
+
+    # set time units
+    if ( $Param{Config}->{TimeUnit} ) {
+        $TicketObject->TicketAccountTime(
+            TicketID  => $Param{Ticket}->{TicketID},
+            ArticleID => $ArticleID,
+            TimeUnit  => $Param{Config}->{TimeUnit},
+            UserID    => $Param{UserID},
+        );
+    }
+
+    return 1;
+}
+</pre></div>
+
+<pre>    Run Data
+
+    my $TicketArticleCreateResult = $TicketArticleCreateActionObject-&gt;Run(
         UserID                   =&gt; 123,
         Ticket                   =&gt; \%Ticket,   # required
         ProcessEntityID          =&gt; 'P123',
@@ -102,7 +221,7 @@
             HistoryType      =&gt; 'OwnerUpdate',                          # EmailCustomer|Move|AddNote|PriorityUpdate|WebRequestCustomer|...
             HistoryComment   =&gt; 'Some free text!',
 
-</pre></dd><dd><pre>            # optional:
+            # optional:
             From             =&gt; 'Some Agent &lt;email@example.com&gt;',       # not required but useful
             To               =&gt; 'Some Customer A &lt;customer-a@example.com&gt;', # not required but useful
             Cc               =&gt; 'Some Customer B &lt;customer-b@example.com&gt;', # not required but useful
@@ -113,7 +232,7 @@
             NoAgentNotify    =&gt; 0,                                      # if you don't want to send agent notifications
             AutoResponseType =&gt; 'auto reply'                            # auto reject|auto follow up|auto reply/new ticket|auto remove
 
-</pre></dd><dd><pre>            ForceNotificationToUserID   =&gt; [ 1, 43, 56 ],               # if you want to force somebody
+            ForceNotificationToUserID   =&gt; [ 1, 43, 56 ],               # if you want to force somebody
             ExcludeNotificationToUserID =&gt; [ 43,56 ],                   # if you want full exclude somebody from notfications,
                                                                         # will also be removed in To: line of article,
                                                                         # higher prio as ForceNotificationToUserID
@@ -121,7 +240,7 @@
                                                                         # sending gets muted, agent will still shown in To:
                                                                         # line of article
 
-</pre></dd><dd><pre>            TimeUnit =&gt; 123                                             # optional, to set the acouting time
+            TimeUnit =&gt; 123                                             # optional, to set the acouting time
             UserID   =&gt; 123,                                            # optional, to override the UserID from the logged user
         }
     );
@@ -129,12 +248,11 @@
     Config is the Config Hash stored in a Process::TransitionAction's  Config key
     Returns:
 
-</pre></dd><dd><pre>    $TicketArticleCreateResult = 1; # 0
+    $TicketArticleCreateResult = 1; # 0
 
-</pre></dd><dd><pre>    );
+    );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

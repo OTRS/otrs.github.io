@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,15 +79,151 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self->{Debug}      = $Param{Debug};
+    $Self->{WorkerName} = 'Worker: GenericInterface';
+
+    return $Self;
+}
+</pre></div>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $TaskHandlerObject = $Kernel::OM-Get('Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericInterface');
 
-</pre></dd>	<dt>Run()</dt>
-		<dd><p>Performs the selected Task, causing an Invoker call via GenericInterface.</p></dd>
-<dd><pre>    my $Result = $TaskHandlerObject-&gt;Run(
+</pre><h2 id="Run">Run()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    # Check task params.
+    my $CheckResult = $Self->_CheckTaskParams(
+        NeededDataAttributes => [ 'WebserviceID', 'Invoker', 'Data' ],
+        %Param,
+    );
+
+    # Stop execution if an error in params is detected.
+    return if !$CheckResult;
+
+    # To store task data locally.
+    my %TaskData = %{ $Param{Data} };
+
+    if ( $Self->{Debug} ) {
+        print "    $Self->{WorkerName} executes task: $Param{TaskName}\n";
+    }
+
+    my $Result = $Kernel::OM->Get('Kernel::GenericInterface::Requester')->Run(
+        WebserviceID => $TaskData{WebserviceID},
+        Invoker      => $TaskData{Invoker},
+        Asynchronous => 1,
+        Data         => $TaskData{Data},
+    );
+
+    if ( !$Result->{Success} ) {
+
+        my $Webservice = $Kernel::OM->Get('Kernel::System::GenericInterface::Webservice')->WebserviceGet(
+            ID => $Param{Data}->{WebserviceID},
+        );
+
+        my $WebServiceName = $Webservice->{Name} // 'N/A';
+
+        my $ErrorMessage
+            = $Result->{ErrorMessage} || "$Param{Data}->{Invoker} execution failed without an error message";
+
+        $Self->_HandleError(
+            TaskName     => "$Param{Data}->{Invoker} WebService: $WebServiceName",
+            TaskType     => 'GenericInterface',
+            LogMessage   => "There was an error executing $Param{Data}->{Invoker}($WebServiceName): $ErrorMessage",
+            ErrorMessage => "$ErrorMessage",
+        );
+
+        # Check if task needs to be re-schedule in the future.
+        if ( $Result->{Data}->{ReSchedule} ) {
+
+            my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+            # Use the execution time from the return data (if nay).
+            my $ExecutionTime = $Result->{Data}->{ExecutionTime} || 0;
+
+            # Check if execution time is valid.
+            if ($ExecutionTime) {
+                my $SystemTime = $TimeObject->TimeStamp2SystemTime(
+                    String => $ExecutionTime,
+                );
+
+                if ( !$SystemTime ) {
+                    $Kernel::OM->Get('Kernel::System::Log')->Log(
+                        Priority => 'error',
+                        Message =>
+                            "Invoker $Param{Data}->{Invoker} WebService: $WebServiceName returned future execution time: $ExecutionTime is invalid! falling back to default",
+                    );
+
+                    $ExecutionTime = 0;
+                }
+            }
+
+            # Use another if condition as inside the first one, the Execution time could be reset to 0.
+            if ( !$ExecutionTime ) {
+
+                # Get default time difference from config.
+                my $FutureTaskTimeDiff = abs( $Kernel::OM->Get('Kernel::Config')
+                        ->Get('Daemon::SchedulerGenericInterfaceTaskManager::FutureTaskTimeDiff') || 300 );
+
+                # Calculate execution time in future.
+                $ExecutionTime = $TimeObject->SystemTime2TimeStamp(
+                    SystemTime => $TimeObject->SystemTime() + $FutureTaskTimeDiff,
+                );
+            }
+
+            if ( $Self->{Debug} ) {
+                print "    $Self->{WorkerName} re-schedule task: $Param{TaskName} for: $ExecutionTime\n";
+            }
+
+            # Create a new task (replica) that will be executed in the future.
+            my $TaskID = $Kernel::OM->Get('Kernel::System::Daemon::SchedulerDB')->FutureTaskAdd(
+                ExecutionTime => $ExecutionTime,
+                Type          => 'GenericInterface',
+                Name          => $Param{TaskName},
+                Attempts      => 10,
+                Data          => $Param{Data}
+            );
+
+            if ( !$TaskID ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Could not re-schedule a task in future for task $Param{TaskName}",
+                );
+            }
+        }
+
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>Performs the selected Task, causing an Invoker call via GenericInterface.</p>
+
+<pre>    my $Result = $TaskHandlerObject-&gt;Run(
         TaskID   =&gt; 123,
         TaskName =&gt; 'some name',                    # optional
         Data     =&gt; {
@@ -94,11 +235,11 @@
         },
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $Result =  1;       # or fail in case of an error
+</pre><p>Returns:</p>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
+<pre>    $Result =  1;       # or fail in case of an error
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

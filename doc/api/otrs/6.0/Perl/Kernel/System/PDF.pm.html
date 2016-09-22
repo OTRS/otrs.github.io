@@ -58,7 +58,43 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#DocumentNew">DocumentNew()</a></li>
+	<li><a href="#PageBlankNew">PageBlankNew()</a></li>
+	<li><a href="#PageNew">PageNew()</a></li>
+	<li><a href="#DocumentOutput">DocumentOutput()</a></li>
+	<li><a href="#Table">Table()</a></li>
+	<li><a href="#Text">Text()</a></li>
+	<li><a href="#Image">Image()</a></li>
+	<li><a href="#HLine">HLine()</a></li>
+	<li><a href="#PositionSet">PositionSet()</a></li>
+	<li><a href="#PositionGet">PositionGet()</a></li>
+	<li><a href="#DimSet">DimSet()</a></li>
+	<li><a href="#DimGet">DimGet()</a></li>
+	<li><a href="#TableCalculate">_TableCalculate()</a></li>
+	<li><a href="#TableBlockNextCalculate">_TableBlockNextCalculate()</a></li>
+	<li><a href="#TableRowCalculate">_TableRowCalculate()</a></li>
+	<li><a href="#TableCellOutput">_TableCellOutput()</a></li>
+	<li><a href="#TableCellOnCount">_TableCellOnCount()</a></li>
+	<li><a href="#TextCalculate">_TextCalculate()</a></li>
+	<li><a href="#StringWidth">_StringWidth()</a></li>
+	<li><a href="#PrepareText">_PrepareText()</a></li>
+	<li><a href="#CurPageNumberSet">_CurPageNumberSet()</a></li>
+	<li><a href="#CurPageDimSet">_CurPageDimSet()</a></li>
+	<li><a href="#CurPageDimGet">_CurPageDimGet()</a></li>
+	<li><a href="#CurPageDimCheck">_CurPageDimCheck()</a></li>
+	<li><a href="#CurPrintableDimSet">_CurPrintableDimSet()</a></li>
+	<li><a href="#CurPrintableDimGet">_CurPrintableDimGet()</a></li>
+	<li><a href="#CurPrintableDimCheck">_CurPrintableDimCheck()</a></li>
+	<li><a href="#CurContentDimSet">_CurContentDimSet()</a></li>
+	<li><a href="#CurContentDimGet">_CurContentDimGet()</a></li>
+	<li><a href="#CurContentDimCheck">_CurContentDimCheck()</a></li>
+	<li><a href="#CurPositionSet">_CurPositionSet()</a></li>
+	<li><a href="#CurPositionGet">_CurPositionGet()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,18 +110,159 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # read string width cache
+    $Self->{CacheStringWidth} = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => 'PDF',
+        Key  => 'CacheStringWidth',
+    ) || {};
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $PDFObject = $Kernel::OM-&gt;Get('Kernel::System::PDF');
 
-</pre></dd>		<dd><p>Please note that currently you should only create one PDF object per instance of
-this class.</p></dd>
-	<dt>DocumentNew()</dt>
-		<dd><p>Create a new PDF Document</p></dd>
-		<dd><p>These font aliases are available in all methods:
+</pre><p>Please note that currently you should only create one PDF object per instance of
+this class.</p>
+
+<h2 id="DocumentNew">DocumentNew()</h2>
+
+<p><a href="#" onclick="toggleCode('method_DocumentNew');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DocumentNew">
+                                        <pre>
+
+sub DocumentNew {
+    my ( $Self, %Param ) = @_;
+
+    # check pdf object
+    if ( $Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Can not create new Document!',
+        );
+        return;
+    }
+
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # get Product and Version
+    my $PDFCreator = '';    # set to empty value if Secure::DisableBanner is active
+    if ( !$Kernel::OM->Get('Kernel::Config')->Get('Secure::DisableBanner') ) {
+        $PDFCreator = $ConfigObject->Get('Product') . ' ' . $ConfigObject->Get('Version');
+    }
+
+    # set document title
+    $Self->{Document}->{Title} = $Param{Title} || $PDFCreator;
+
+    # set document encode
+    $Self->{Document}->{Encode} = $Param{Encode} || 'utf-8';
+
+    # set logo file
+    $Self->{Document}->{LogoFile} = $ConfigObject->Get('PDF::LogoFile');
+
+    # create a new document
+    $Self->{PDF} = PDF::API2->new();
+
+    # check pdf object
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Can not create new Document: $!',
+        );
+        return;
+    }
+
+    # get time object
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+    # today
+    my ( $NowSec, $NowMin, $NowHour, $NowDay, $NowMonth, $NowYear ) = $TimeObject->SystemTime2Date(
+        SystemTime => $TimeObject->SystemTime(),
+    );
+
+    # set document infos
+    $Self->{PDF}->info(
+        'Author'       => $PDFCreator,
+        'CreationDate' => "D:"
+            . $NowYear
+            . $NowMonth
+            . $NowDay
+            . $NowHour
+            . $NowMin
+            . $NowSec
+            . "+01'00'",
+        'Creator'  => $PDFCreator,
+        'Producer' => $PDFCreator,
+        'Title'    => $Self->{Document}->{Title},
+        'Subject'  => $Self->{Document}->{Title},
+    );
+
+    # add font directory
+    my $FontDir = $ConfigObject->Get('Home') . '/var/fonts';
+    $Self->{PDF}->addFontDirs($FontDir);
+
+    if ( !$Param{Testfonts} ) {
+
+        # get font config
+        my %FontFiles = %{ $ConfigObject->Get('PDF::TTFontFile') };
+
+        # set fonts
+        for my $FontType ( sort keys %FontFiles ) {
+            $Self->{Font}->{$FontType} = $Self->{PDF}->ttfont(
+                $FontFiles{$FontType},
+                -encode     => $Self->{Document}->{Encode},
+                -unicodemap => 1,
+            );
+        }
+    }
+    else {
+
+        # set testfont (only used in unitests)
+        $Self->{Font}->{Testfont1} = $Self->{PDF}->corefont(
+            'Helvetica',
+            -encode     => $Self->{Document}->{Encode},
+            -unicodemap => 1,
+        );
+        $Self->{Font}->{Testfont2} = $Self->{PDF}->ttfont(
+            'DejaVuSans.ttf',
+            -encode     => $Self->{Document}->{Encode},
+            -unicodemap => 1,
+        );
+
+        # get font config
+        my %FontFiles = %{ $ConfigObject->Get('PDF::TTFontFile') };
+
+        # set fonts
+        for my $FontType ( sort keys %FontFiles ) {
+            $Self->{Font}->{$FontType} = $Self->{Font}->{Testfont1};
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>Create a new PDF Document</p>
+
+<p>These font aliases are available in all methods:
         Proportional
         ProportionalBold
         ProportionalItalic
@@ -93,16 +270,94 @@ this class.</p></dd>
         Monospaced
         MonospacedBold
         MonospacedItalic
-        MonospacedBoldItalic</p></dd>
-<dd><pre>    $True = $PDFObject-&gt;DocumentNew(
+        MonospacedBoldItalic</p>
+
+<pre>    $True = $PDFObject-&gt;DocumentNew(
         Title     =&gt; 'The Document Title',  # Title of PDF Document
         Encode    =&gt; 'utf-8',               # Charset of Document
         Testfonts =&gt; 1,                     # (optional) default 0
     );
 
-</pre></dd>	<dt>PageBlankNew()</dt>
-		<dd><p>Create a new, blank Page</p></dd>
-<dd><pre>    $True = $PDFObject-&gt;PageBlankNew(
+</pre><h2 id="PageBlankNew">PageBlankNew()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PageBlankNew');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PageBlankNew">
+                                        <pre>
+
+sub PageBlankNew {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Object!"
+        );
+        return;
+    }
+
+    # set PageOrientation
+    if ( !defined( $Param{PageOrientation} ) ) {
+        $Param{PageOrientation} = 'normal';
+    }
+
+    # set margins
+    $Param{MarginTop}    = $Param{MarginTop}    || 0;
+    $Param{MarginRight}  = $Param{MarginRight}  || 0;
+    $Param{MarginBottom} = $Param{MarginBottom} || 0;
+    $Param{MarginLeft}   = $Param{MarginLeft}   || 0;
+
+    # create a new page
+    $Self->{Page} = $Self->{PDF}->page();
+
+    # if page was created
+    if ( $Self->{Page} ) {
+
+        # set new page width and height
+        $Self->_CurPageDimSet( %Param, );
+
+        # get current page dimension an set mediabox
+        my %Page = $Self->_CurPageDimGet();
+        $Self->{Page}->mediabox( $Page{Width}, $Page{Height}, );
+
+        # set default value of ShowPageNumber, if no value given
+        my $ShowPageNumber = 1;
+        if ( defined( $Param{ShowPageNumber} ) && $Param{ShowPageNumber} eq 0 ) {
+            $ShowPageNumber = 0;
+        }
+
+        # set the page numbers
+        $Self->_CurPageNumberSet(
+            ShowPageNumber => $ShowPageNumber,
+        );
+
+        # set printable dimension
+        $Self->_CurPrintableDimSet(
+            Top    => $Param{MarginTop},
+            Right  => $Param{MarginRight},
+            Bottom => $Param{MarginBottom},
+            Left   => $Param{MarginLeft},
+        );
+
+        # set activ dimension
+        $Self->DimSet(
+            Dim => 'content',
+        );
+
+        return 1;
+    }
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => "Can not create new blank Page!"
+    );
+
+    return;
+}
+</pre></div>
+
+<p>Create a new, blank Page</p>
+
+<pre>    $True = $PDFObject-&gt;PageBlankNew(
         Width           =&gt; 200,          # (optional) default 595 (Din A4) - _ both or nothing
         Height          =&gt; 300,          # (optional) default 842 (Din A4) -
         PageOrientation =&gt; 'landscape',  # (optional) default normal (normal|landscape)
@@ -113,9 +368,266 @@ this class.</p></dd>
         ShowPageNumber  =&gt; 0,            # (optional) default 1
     );
 
-</pre></dd>	<dt>PageNew()</dt>
-		<dd><p>Create a new Page</p></dd>
-<dd><pre>    $PDFObject-&gt;PageNew(
+</pre><h2 id="PageNew">PageNew()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PageNew');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PageNew">
+                                        <pre>
+
+sub PageNew {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Object!"
+        );
+        return;
+    }
+
+    my %Data = ();
+
+    # set new page width and height, if values are given
+    if ( $Param{Width} && $Param{Height} ) {
+        $Data{Width}  = $Param{Width};
+        $Data{Height} = $Param{Height};
+    }
+
+    # set new margin, if values are given
+    if ( $Param{MarginTop} && $Param{MarginRight} && $Param{MarginBottom} && $Param{MarginLeft} ) {
+        $Data{MarginTop}    = $Param{MarginTop};
+        $Data{MarginRight}  = $Param{MarginRight};
+        $Data{MarginBottom} = $Param{MarginBottom};
+        $Data{MarginLeft}   = $Param{MarginLeft};
+    }
+    if ( $Param{ShowPageNumber} ) {
+        $Data{ShowPageNumber} = $Param{ShowPageNumber};
+    }
+    if ( $Param{PageOrientation} ) {
+        $Data{PageOrientation} = $Param{PageOrientation};
+    }
+
+    # create a blank page
+    $Self->PageBlankNew(%Data);
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page Object!"
+        );
+        return;
+    }
+
+    # set activ dimension
+    $Self->DimSet(
+        Dim => 'printable',
+    );
+
+    # get current printable dimension
+    my %Printable = $Self->_CurPrintableDimGet();
+
+    # get logofile
+    my $LogoFile = $Self->{Document}->{LogoFile}
+        || $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/var/logo-otrs.png';
+
+    if (
+        defined( $Param{LogoFile} )
+        && -e $Param{LogoFile}
+        && (
+            $Param{LogoFile} =~ /^.*\.gif$/i
+            || $Param{LogoFile} =~ /^.*\.jpg$/i
+            || $Param{LogoFile} =~ /^.*\.png$/i
+        )
+        )
+    {
+        $LogoFile = $Param{LogoFile};
+    }
+
+    # output the logo image at header left
+    $Self->Image(
+        File   => $LogoFile,
+        Width  => 700,
+        Height => 100,
+    );
+
+    if ( $Param{HeaderRight} ) {
+
+        # set new position
+        $Self->PositionSet(
+            Move => 'relativ',
+            X    => 168,
+            Y    => 15,
+        );
+
+        # output page header right
+        $Self->Text(
+            Text     => $Param{HeaderRight},
+            Type     => 'Cut',
+            Color    => '#404040',
+            FontSize => 12,
+            Height   => 12,
+            Align    => 'right',
+        );
+    }
+
+    # set new position
+    $Self->PositionSet(
+        X => 'left',
+        Y => 'top',
+    );
+
+    # set new position
+    $Self->PositionSet(
+        Move => 'relativ',
+        Y    => -29,
+    );
+
+    # output the lines in top of the page
+    $Self->HLine(
+        Color     => '#505050',
+        LineWidth => 0.5,
+    );
+
+    if ( $Param{FooterLeft} ) {
+
+        # set new position
+        $Self->PositionSet(
+            X => 'left',
+            Y => 'bottom',
+        );
+
+        # set new position
+        $Self->PositionSet(
+            Move => 'relativ',
+            Y    => 8,
+        );
+
+        # output page footer left
+        $Self->Text(
+            Text     => $Param{FooterLeft},
+            Width    => ( $Printable{Width} / 4 * 3 ),
+            Type     => 'Cut',
+            Color    => '#404040',
+            FontSize => 8,
+            Height   => 8,
+            Align    => 'left',
+        );
+    }
+
+    if ( $Param{FooterRight} ) {
+
+        # set new position
+        $Self->PositionSet(
+            X => 'left',
+            Y => 'bottom',
+        );
+
+        # set new position
+        $Self->PositionSet(
+            Move => 'relativ',
+            X    => ( $Printable{Width} / 4 * 3 ),
+            Y    => 8,
+        );
+
+        # output page footer right
+        $Self->Text(
+            Text     => $Param{FooterRight},
+            Type     => 'Cut',
+            Color    => '#404040',
+            FontSize => 8,
+            Height   => 8,
+            Align    => 'right',
+        );
+    }
+
+    # set new position
+    $Self->PositionSet(
+        X => 'left',
+        Y => 'bottom',
+    );
+
+    # set new position
+    $Self->PositionSet(
+        Move => 'relativ',
+        Y    => 11,
+    );
+
+    # output the lines in bottom of the page
+    $Self->HLine(
+        Color     => '#505050',
+        LineWidth => 0.5,
+    );
+
+    if ( $Param{HeadlineLeft} && $Param{HeadlineRight} ) {
+
+        # set new position
+        $Self->PositionSet(
+            X => 'left',
+            Y => 'top',
+        );
+
+        # set new position
+        $Self->PositionSet(
+            Move => 'relativ',
+            Y    => -44,
+        );
+        $Self->Text(
+            Text     => $Param{HeadlineLeft},
+            Width    => ( $Printable{Width} / 2 ),
+            Height   => 12,
+            Type     => 'Cut',
+            Font     => 'ProportionalBold',
+            FontSize => 12,
+        );
+        $Self->PositionSet(
+            X => 'left',
+            Y => 'top',
+        );
+        $Self->PositionSet(
+            Move => 'relativ',
+            X    => ( $Printable{Width} / 2 ),
+            Y    => -48,
+        );
+        $Self->Text(
+            Text     => $Param{HeadlineRight},
+            Height   => 8,
+            Type     => 'Cut',
+            Font     => 'Proportional',
+            FontSize => 8,
+            Color    => '#404040',
+            Align    => 'right',
+        );
+
+        # set new content dimension
+        $Self->_CurContentDimSet(
+            Top    => $Printable{Top} + 64,
+            Right  => $Printable{Right},
+            Bottom => $Printable{Bottom} + 16,
+            Left   => $Printable{Left},
+        );
+    }
+    else {
+
+        # set new content dimension
+        $Self->_CurContentDimSet(
+            Top    => $Printable{Top} + 34,
+            Right  => $Printable{Right},
+            Bottom => $Printable{Bottom} + 16,
+            Left   => $Printable{Left},
+        );
+    }
+
+    # set activ dimension
+    $Self->DimSet(
+        Dim => 'content',
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>Create a new Page</p>
+
+<pre>    $PDFObject-&gt;PageNew(
         Width           =&gt; 200,                 # (optional) default 595 (Din A4)
         Height          =&gt; 300,                 # (optional) default 842 (Din A4)
         PageOrientation =&gt; 'landscape',         # (optional) default normal (normal|landscape)
@@ -132,22 +644,441 @@ this class.</p></dd>
         FooterRight     =&gt; 'Footer Right Text', # (optional)
     );
 
-</pre></dd>	<dt>DocumentOutput()</dt>
-		<dd><p>Return the PDF as string</p></dd>
-<dd><pre>    $DocumentString = $PDFObject-&gt;DocumentOutput();
+</pre><h2 id="DocumentOutput">DocumentOutput()</h2>
 
-</pre></dd>	<dt>Table()</dt>
-		<dd><p>Add a table.</p></dd>
-		<dd><p>In case of missing or misused parameters, <code>undef</code> is returned in scalar context
-and an empty list is returned in list context.</p></dd>
-<dd><pre>    Return
+<p><a href="#" onclick="toggleCode('method_DocumentOutput');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DocumentOutput">
+                                        <pre>
+
+sub DocumentOutput {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Object!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    # return the document as string
+    my $DocumentString = $Self->{PDF}->stringify();
+    $Self->{PDF}->end();
+
+    return $DocumentString;
+}
+</pre></div>
+
+<p>Return the PDF as string</p>
+
+<pre>    $DocumentString = $PDFObject-&gt;DocumentOutput();
+
+</pre><h2 id="Table">Table()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Table');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Table">
+                                        <pre>
+
+sub Table {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(CellData)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            $Param{State} = 1;
+            return;
+        }
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        $Param{State} = 1;
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        $Param{State} = 1;
+        return;
+    }
+
+    my %Dim;
+
+    # get dimension (printable or content)
+    if ( $Self->DimGet() eq 'printable' ) {
+        %Dim = $Self->_CurPrintableDimGet();
+    }
+    else {
+        %Dim = $Self->_CurContentDimGet();
+    }
+
+    # get current position
+    my %Position = $Self->_CurPositionGet();
+
+    # set default values
+    $Param{ColumnData} ||= [];
+    $Param{RowData}    ||= [];
+
+    if (
+        ref( $Param{CellData} ) eq 'ARRAY'
+        && ref( $Param{ColumnData} ) eq 'ARRAY'
+        && ref( $Param{RowData} ) eq 'ARRAY'
+        )
+    {
+        if ( !defined( $Param{OutputCount} ) ) {
+
+            # set default values
+            $Param{Type} ||= 'ReturnLeftOver';
+            $Param{Font} ||= 'Proportional';
+            if ( !defined( $Param{FontSize} ) || $Param{FontSize} <= 0 ) {
+                $Param{FontSize} = 10;
+            }
+            if ( !defined( $Param{Lead} ) || $Param{Lead} < -( $Param{FontSize} ) ) {
+                $Param{Lead} = int( $Param{FontSize} / 4 );
+                if ( $Param{Lead} < 1 ) {
+                    $Param{Lead} = 1;
+                }
+            }
+            $Param{FontColor}     ||= 'black';
+            $Param{FontColorOdd}  ||= $Param{FontColor};
+            $Param{FontColorEven} ||= $Param{FontColor};
+
+            $Param{BackgroundColor}     ||= 'NULL';
+            $Param{BackgroundColorOdd}  ||= $Param{BackgroundColor};
+            $Param{BackgroundColorEven} ||= $Param{BackgroundColor};
+
+            $Param{Align} = $Param{Align} || 'left';
+
+            if ( !defined( $Param{Border} ) || $Param{Border} < 0 ) {
+                $Param{Border} = 1;
+            }
+            $Param{BorderColor}   ||= 'black';
+            $Param{PaddingTop}    ||= $Param{Padding} || 3;
+            $Param{PaddingRight}  ||= $Param{Padding} || 3;
+            $Param{PaddingBottom} ||= $Param{Padding} || 3;
+            $Param{PaddingLeft}   ||= $Param{Padding} || 3;
+
+            # check given Width
+            my $DefaultWidth = $Dim{Left} + $Dim{Width} - $Position{X};
+            if (
+                !defined( $Param{Width} )
+                || (
+                    $Param{Width}
+                    - $Param{PaddingLeft}
+                    - $Param{PaddingRight}
+                    - ( 2 * $Param{Border} )
+                )
+                < 0
+                || $Param{Width} > $DefaultWidth
+                )
+            {
+                $Param{Width} = $DefaultWidth;
+            }
+
+            # set output count
+            $Param{OutputCount} = 0;
+
+            # set state
+            $Param{State} = 0;
+
+            # calculate required table attributes
+            $Self->_TableCalculate( %Param, );
+        }
+
+        # check given Height
+        my $DefaultHeight = $Position{Y} - $Dim{Bottom};
+        if (
+            !defined( $Param{Height} )
+            || (
+                $Param{Height}
+                - $Param{PaddingTop}
+                - $Param{PaddingBottom}
+                - ( 2 * $Param{Border} )
+            )
+            < 0
+            || $Param{Height} > $DefaultHeight
+            )
+        {
+            $Param{Height} = $DefaultHeight;
+        }
+
+        # get maximum number of pages
+        my $MaxPages = $Kernel::OM->Get('Kernel::Config')->Get('PDF::MaxPages');
+
+        if ( !$MaxPages || $MaxPages < 1 || $MaxPages > 1000 ) {
+            $MaxPages = 100;
+        }
+
+        # infinite loop protection
+        if ( $Param{OutputCount} < $MaxPages ) {
+            my %Block = $Self->_TableBlockNextCalculate(
+                CellData   => $Param{CellData},
+                ColumnData => $Param{ColumnData},
+            );
+
+            # if active cells found
+            if ( $Block{State} ) {
+
+                # start row output
+                my $Row        = $Block{ReturnRowStart};
+                my $RowCounter = 0;
+                my $RowLoop    = 1;
+                my $LastBlock  = $Param{ColumnData}->[ $#{ $Param{ColumnData} } ]->{Block};
+                my $LastRow    = $#{ $Param{RowData} };
+
+                while ($RowLoop) {
+
+                    # stop loop, if last row
+                    if ( $Row <= $LastRow ) {
+
+                        # calculate row height, if block is 0
+                        if ( !$Block{ReturnBlock} ) {
+                            $Self->_TableRowCalculate(
+                                Row => $Row,
+                                %Param,
+                            );
+                        }
+
+                        # save old position
+                        my %PositionOld = %Position;
+                        if (
+                            $Param{RowData}->[$Row]->{OutputHeight} <= $Position{Y} - $Dim{Bottom}
+                            )
+                        {
+                            for ( $Block{ReturnColumnStart} .. $Block{ReturnColumnStop} ) {
+                                my $Column = $_;
+                                $Self->_TableCellOutput(
+                                    Text          => $Param{CellData}->[$Row]->[$Column]->{Content},
+                                    Type          => $Param{CellData}->[$Row]->[$Column]->{Type},
+                                    Width         => $Param{ColumnData}->[$Column]->{OutputWidth},
+                                    Height        => $Param{RowData}->[$Row]->{OutputHeight},
+                                    Font          => $Param{CellData}->[$Row]->[$Column]->{Font},
+                                    FontSize      => $Param{CellData}->[$Row]->[$Column]->{FontSize},
+                                    FontColor     => $Param{CellData}->[$Row]->[$Column]->{FontColor},
+                                    Align         => $Param{CellData}->[$Row]->[$Column]->{Align},
+                                    Lead          => $Param{CellData}->[$Row]->[$Column]->{Lead},
+                                    PaddingTop    => $Param{PaddingTop},
+                                    PaddingRight  => $Param{PaddingRight},
+                                    PaddingBottom => $Param{PaddingBottom},
+                                    PaddingLeft   => $Param{PaddingLeft},
+                                    BackgroundColor =>
+                                        $Param{CellData}->[$Row]->[$Column]->{BackgroundColor},
+                                    Border      => $Param{Border},
+                                    BorderColor => $Param{BorderColor},
+                                );
+
+                                # deactivate cell and delete content
+                                $Param{CellData}->[$Row]->[$Column]->{Off}     = 1;
+                                $Param{CellData}->[$Row]->[$Column]->{Content} = ' ';
+
+                                # set new position
+                                $Self->_CurPositionSet(
+                                    X => $Position{X}
+                                        + $Param{ColumnData}->[$Column]->{OutputWidth}
+                                        - $Param{Border},
+                                    Y => $Position{Y},
+                                );
+
+                                # get current position
+                                %Position = $Self->_CurPositionGet();
+                            }
+
+                            # set new position
+                            $Self->_CurPositionSet(
+                                X => $PositionOld{X},
+                                Y => $PositionOld{Y}
+                                    - $Param{RowData}->[$Row]->{OutputHeight}
+                                    + $Param{Border},
+                            );
+
+                            # get current position
+                            %Position = $Self->_CurPositionGet();
+                        }
+                        else {
+                            my $NewOutputHeight = $Position{Y} - $Dim{Bottom};
+                            my $NewTextHeight   = $NewOutputHeight
+                                - $Param{PaddingTop}
+                                - $Param{PaddingBottom}
+                                - ( 2 * $Param{Border} );
+
+                            if ( $NewTextHeight > $Param{RowData}->[$Row]->{MinFontSize} ) {
+                                for ( $Block{ReturnColumnStart} .. $Block{ReturnColumnStop} ) {
+                                    my $Column = $_;
+                                    my $Type   = 'ReturnLeftOver';
+                                    if (
+                                        $Param{CellData}->[$Row]->[$Column]->{Type} eq
+                                        'ReturnLeftOverHard'
+                                        )
+                                    {
+                                        $Type = 'ReturnLeftOverHard';
+                                    }
+                                    my %Return = $Self->_TableCellOutput(
+                                        Text     => $Param{CellData}->[$Row]->[$Column]->{Content},
+                                        Type     => $Type,
+                                        Width    => $Param{ColumnData}->[$Column]->{OutputWidth},
+                                        Height   => $NewOutputHeight,
+                                        Font     => $Param{CellData}->[$Row]->[$Column]->{Font},
+                                        FontSize => $Param{CellData}->[$Row]->[$Column]->{FontSize},
+                                        FontColor =>
+                                            $Param{CellData}->[$Row]->[$Column]->{FontColor},
+                                        Align         => $Param{CellData}->[$Row]->[$Column]->{Align},
+                                        Lead          => $Param{CellData}->[$Row]->[$Column]->{Lead},
+                                        PaddingTop    => $Param{PaddingTop},
+                                        PaddingRight  => $Param{PaddingRight},
+                                        PaddingBottom => $Param{PaddingBottom},
+                                        PaddingLeft   => $Param{PaddingLeft},
+                                        BackgroundColor =>
+                                            $Param{CellData}->[$Row]->[$Column]->{BackgroundColor},
+                                        Border      => $Param{Border},
+                                        BorderColor => $Param{BorderColor},
+                                    );
+
+                                    # set new content
+                                    if ( !$Return{State} ) {
+                                        $Param{CellData}->[$Row]->[$Column]->{Content} = $Return{LeftOver};
+                                    }
+                                    else {
+                                        $Param{CellData}->[$Row]->[$Column]->{Content} = ' ';
+                                    }
+
+                                    # correcting content
+                                    if ( $Param{CellData}->[$Row]->[$Column]->{Content} eq '' ) {
+                                        $Param{CellData}->[$Row]->[$Column]->{Content} = ' ';
+                                    }
+                                    $Param{CellData}->[$Row]->[$Column]->{TmpOff} = 1;
+
+                                    # recalculate height
+                                    if (
+                                        $Block{ReturnBlock} eq $LastBlock
+                                        && $Column eq $Block{ReturnColumnStop}
+                                        )
+                                    {
+
+                                        # if Height was given
+                                        if ( $Param{RowData}->[$Row]->{Height} > 0 ) {
+                                            $Param{RowData}->[$Row]->{Height} -= $NewTextHeight;
+
+                                            # if rest too small, deactivate all cells of this row
+                                            if (
+                                                $Param{RowData}->[$Row]->{Height}
+                                                < $Param{RowData}->[$Row]->{MinFontSize}
+                                                )
+                                            {
+                                                for my $CellOff ( @{ $Param{CellData}->[$Row] } ) {
+                                                    $CellOff->{Content} = ' ';
+                                                    $CellOff->{Off}     = 1;
+                                                    $CellOff->{Tmp}     = 0;
+                                                }
+                                            }
+                                        }
+                                        $Self->_TableRowCalculate(
+                                            Row => $Row,
+                                            %Param,
+                                        );
+                                    }
+
+                                    # set new position
+                                    $Self->_CurPositionSet(
+                                        X => $Position{X}
+                                            + $Param{ColumnData}->[$Column]->{OutputWidth}
+                                            - $Param{Border},
+                                        Y => $Position{Y},
+                                    );
+
+                                    # get current position
+                                    %Position = $Self->_CurPositionGet();
+                                }
+                            }
+                            $RowLoop = 0;
+                        }
+                    }
+                    else {
+                        $RowLoop = 0;
+                    }
+
+                    if ( $RowCounter > 100 ) {
+                        $Kernel::OM->Get('Kernel::System::Log')->Log(
+                            Priority => 'error',
+                            Message =>
+                                "Too much row loops on page! Infinite Loop protection. Table Output aborted."
+                        );
+                        $RowLoop = 0;
+                    }
+
+                    # increment Row and RowCounter
+                    $Row++;
+                    $RowCounter++;
+                }
+            }
+            else {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "No active cells! Table Output aborted."
+                );
+                $Param{State} = 1;
+            }
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Too much loops! Infinite Loop protection. Table Output aborted."
+            );
+            $Param{State} = 1;
+        }
+    }
+    else {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message =>
+                "Need array references of CellData, ColumnData and RowData! Table Output aborted."
+        );
+        $Param{State} = 1;
+    }
+
+    # count remaining cells
+    my $RemainingCells = $Self->_TableCellOnCount(
+        CellData => $Param{CellData},
+    );
+
+    # set state
+    if ( !$RemainingCells ) {
+        $Param{State} = 1;
+    }
+
+    $Param{OutputCount}++;
+
+    return %Param;
+}
+</pre></div>
+
+<p>Add a table.</p>
+
+<p>In case of missing or misused parameters, <code>undef</code> is returned in scalar context
+and an empty list is returned in list context.</p>
+
+<pre>    Return
         $Return{State}
         $Return{RequiredWidth}
         $Return{RequiredHeight}
         $Return{CellData}                # (reference) complete calculated
         $Return{ColumnData}              # (reference) complete calculated
 
-</pre></dd><dd><pre>    %Return = $PDFObject-&gt;Table(
+    %Return = $PDFObject-&gt;Table(
         CellData            =&gt; $CellData,    # 2D arrayref (see example)
         ColumnData          =&gt; $ColumnData,  # arrayref (see example)
         RowData             =&gt; $RowData,     # arrayref (see example)
@@ -173,7 +1104,7 @@ and an empty list is returned in list context.</p></dd>
         BorderColor         =&gt; '#FF0000',    # (optional) default black
     );
 
-</pre></dd><dd><pre>    $CellData = [
+    $CellData = [
         [
             {
                 Content =&gt; &quot;Cell 1 (Row 1, Column 1)&quot;,  # (optional)
@@ -198,7 +1129,7 @@ and an empty list is returned in list context.</p></dd>
         ],
     ];
 
-</pre></dd><dd><pre>    $ColumData = [        # this array was automaticly generated, if not given
+    $ColumData = [        # this array was automaticly generated, if not given
         {
             Width =&gt; 11,  # (optional)
         },
@@ -207,7 +1138,7 @@ and an empty list is returned in list context.</p></dd>
         },
     ];
 
-</pre></dd><dd><pre>    $RowData = [           # this array was automaticly generated, if not given
+    $RowData = [           # this array was automaticly generated, if not given
         {
             Height =&gt; 11,  # (optional)
         },
@@ -216,15 +1147,181 @@ and an empty list is returned in list context.</p></dd>
         },
     ];
 
-</pre></dd>	<dt>Text()</dt>
-		<dd><p>Output a textline</p></dd>
-<dd><pre>    Return
+</pre><h2 id="Text">Text()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Text');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Text">
+                                        <pre>
+
+sub Text {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Text)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    my %Dim;
+
+    # get dimension (printable or content)
+    if ( $Self->DimGet() eq 'printable' ) {
+        %Dim = $Self->_CurPrintableDimGet();
+    }
+    else {
+        %Dim = $Self->_CurContentDimGet();
+    }
+
+    # get current position
+    my %Position = $Self->_CurPositionGet();
+
+    $Param{Type}  = $Param{Type}  || 'ReturnLeftOver';
+    $Param{Color} = $Param{Color} || 'black';
+    $Param{Font}  = $Param{Font}  || 'Proportional';
+    $Param{Align} = $Param{Align} || 'left';
+
+    if ( !defined( $Param{FontSize} ) || $Param{FontSize} <= 0 ) {
+        $Param{FontSize} = 10;
+    }
+    if ( !defined( $Param{Lead} ) || $Param{Lead} < -( $Param{FontSize} ) ) {
+        $Param{Lead} = int( $Param{FontSize} / 4 );
+        if ( $Param{Lead} < 1 ) {
+            $Param{Lead} = 1;
+        }
+    }
+
+    # check Width
+    if (
+        !defined( $Param{Width} )
+        || $Param{Width} < 0
+        || ( $Position{X} + $Param{Width} ) >= ( $Dim{Left} + $Dim{Width} )
+        )
+    {
+        $Param{Width} = $Dim{Left} + $Dim{Width} - $Position{X};
+    }
+
+    # check Height
+    if (
+        !defined( $Param{Height} )
+        || $Param{Height} < 0
+        || ( $Position{Y} - $Param{Height} ) < $Dim{Bottom}
+        )
+    {
+        $Param{Height} = $Position{Y} - $Dim{Bottom};
+    }
+
+    # calculate the given text
+    my %Return = $Self->_TextCalculate(
+        Text     => $Param{Text},
+        Type     => $Param{Type},
+        Width    => $Param{Width},
+        Height   => $Param{Height},
+        Font     => $Param{Font},
+        FontSize => $Param{FontSize},
+        Lead     => $Param{Lead},
+    );
+
+    if ( $Return{LeftOver} ne $Param{Text} ) {
+
+        # create a text object
+        my $Text = $Self->{Page}->text();
+
+        # set font and fontsize
+        $Text->font( $Self->{Font}->{ $Param{Font} }, $Param{FontSize} );
+
+        # set fontcolor
+        $Text->fillcolor( $Param{Color} );
+
+        # save original X position
+        my $PositionX = $Position{X};
+
+        my $Counter1 = 0;
+        for my $Row ( @{ $Return{PossibleRows} } ) {
+
+            # calculate width of row
+            my $RowWidth = $Self->_StringWidth(
+                Text     => $Row,
+                Font     => $Param{Font},
+                FontSize => $Param{FontSize},
+            );
+
+            if ( $Param{Align} eq 'right' ) {
+
+                # set new position
+                $Self->_CurPositionSet(
+                    X => $PositionX + $Param{Width} - $RowWidth,
+                );
+            }
+            elsif ( $Param{Align} eq 'center' ) {
+
+                # set new position
+                $Self->_CurPositionSet(
+                    X => $PositionX + ( ( $Param{Width} - $RowWidth ) / 2 ),
+                );
+            }
+
+            # set new position
+            if ( $Counter1 > 0 ) {
+                $Self->_CurPositionSet(
+                    Y => $Position{Y} - $Param{FontSize} - $Param{Lead},
+                );
+            }
+            else {
+                $Self->_CurPositionSet(
+                    Y => $Position{Y} - $Param{FontSize},
+                );
+            }
+
+            # get current position
+            %Position = $Self->_CurPositionGet();
+
+            # get to position
+            $Text->translate( $Position{X}, $Position{Y} );
+
+            # output text
+            $Text->text($Row);
+
+            $Counter1++;
+        }
+
+        # set new position
+        $Self->_CurPositionSet(
+            X => $PositionX,
+        );
+    }
+
+    return %Return;
+}
+</pre></div>
+
+<p>Output a textline</p>
+
+<pre>    Return
         $Return{State}
         $Return{RequiredWidth}
         $Return{RequiredHeight}
         $Return{LeftOver}
 
-</pre></dd><dd><pre>    %Return = $PDFObject-&gt;Text(
+    %Return = $PDFObject-&gt;Text(
         Text     =&gt; 'Text',              # Text
         Width    =&gt; 300,                 # (optional) available width of textblock
         Height   =&gt; 200,                 # (optional) available height of textblock
@@ -236,71 +1333,2292 @@ and an empty list is returned in list context.</p></dd>
         Lead     =&gt; 20,                  # (optional) default 1 distance between lines
     );
 
-</pre></dd>	<dt>Image()</dt>
-		<dd><p>Output a image</p></dd>
-<dd><pre>    $True = $PDFObject-&gt;Image(
+</pre><h2 id="Image">Image()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Image');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Image">
+                                        <pre>
+
+sub Image {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(File Width Height)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+    if ( !-e $Param{File} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "File $Param{File} not found!"
+        );
+        return;
+    }
+
+    my %Dim;
+
+    # get dimension (printable or content)
+    if ( $Self->DimGet() eq 'printable' ) {
+        %Dim = $Self->_CurPrintableDimGet();
+    }
+    else {
+        %Dim = $Self->_CurContentDimGet();
+    }
+
+    $Param{Width}  = $Param{Width} /  ( 300 / 72 );
+    $Param{Height} = $Param{Height} / ( 300 / 72 );
+
+    my $Image = $Self->{Page}->gfx();
+    my $ImageFile;
+
+    # if image already used, use the existing image object
+    if ( defined( $Self->{CacheImageObject}->{ $Param{File} } ) ) {
+        $ImageFile = $Self->{CacheImageObject}->{ $Param{File} };
+    }
+    else {
+        if ( $Param{File} =~ /^.*\.gif$/i ) {
+            $ImageFile = $Self->{PDF}->image_gif( $Param{File} );
+        }
+        elsif ( $Param{File} =~ /^.*\.jpg$/i ) {
+            $ImageFile = $Self->{PDF}->image_jpeg( $Param{File} );
+        }
+        elsif ( $Param{File} =~ /^.*\.png$/i ) {
+            $ImageFile = $Self->{PDF}->image_png( $Param{File} );
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Imagetype of File $Param{File} not supported",
+            );
+            return;
+        }
+
+        # cache image object
+        $Self->{CacheImageObject}->{ $Param{File} } = $ImageFile;
+    }
+
+    # get current position
+    my %Position = $Self->_CurPositionGet();
+
+    my $Reduce = 0;
+
+    # check values
+    if ( ( $Position{X} + $Param{Width} ) >= ( $Dim{Left} + $Dim{Width} ) ) {
+        $Param{Width} = $Dim{Left} + $Dim{Width} - $Position{X};
+        $Reduce = 1;
+    }
+    if ( $Param{Width} < 1 ) {
+        $Param{Width} = 1;
+    }
+
+    if ( ( $Position{Y} - $Param{Height} ) <= $Dim{Bottom} ) {
+        $Param{Height} = $Position{Y} - $Dim{Bottom};
+        $Reduce = 1;
+    }
+    if ( $Param{Height} < 1 ) {
+        $Param{Height} = 1;
+    }
+
+    my $Return = 1;
+
+    if ( defined( $Param{Type} ) && $Param{Type} eq 'ReturnFalse' && $Reduce ) {
+        $Return = 0;
+    }
+    else {
+
+        # output the image
+        $Image->image(
+            $ImageFile, $Position{X}, $Position{Y} - $Param{Height},
+            $Param{Width}, $Param{Height},
+        );
+
+        # set new position
+        $Self->_CurPositionSet(
+            Y => $Position{Y} - $Param{Height},
+        );
+    }
+
+    return $Return;
+}
+</pre></div>
+
+<p>Output a image</p>
+
+<pre>    $True = $PDFObject-&gt;Image(
         File   =&gt; '/path/image.gif',  # (gif|jpg|png)
         Type   =&gt; 'ReturnFalse'       # (optional) default Reduce (ReturnFalse|Reduce)
         Width  =&gt; 300,                # width of image
         Height =&gt; 150,                # height of image
     );
 
-</pre></dd>	<dt>HLine()</dt>
-		<dd><p>Output a horizontal line</p></dd>
-<dd><pre>    $True = $PDFObject-&gt;HLine(
+</pre><h2 id="HLine">HLine()</h2>
+
+<p><a href="#" onclick="toggleCode('method_HLine');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_HLine">
+                                        <pre>
+
+sub HLine {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!",
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!",
+        );
+        return;
+    }
+
+    my %Dim;
+
+    # get current position
+    my %Position = $Self->_CurPositionGet();
+
+    # get dimension (printable or content)
+    if ( $Self->DimGet() eq 'printable' ) {
+        %Dim = $Self->_CurPrintableDimGet();
+    }
+    else {
+        %Dim = $Self->_CurContentDimGet();
+    }
+
+    # set default color
+    $Param{Color} = $Param{Color} || 'black';
+
+    # check LineWidth
+    if ( !defined( $Param{LineWidth} ) || $Param{LineWidth} <= 0 || $Param{LineWidth} > 100 ) {
+        $Param{LineWidth} = 1;
+    }
+
+    my $Cut = 0;
+
+    if ( $Position{Y} - $Param{LineWidth} < $Dim{Bottom} ) {
+        $Param{LineWidth} = $Position{Y} - $Dim{Bottom};
+        if ( $Param{LineWidth} < 1 ) {
+            $Param{LineWidth} = 1;
+        }
+        $Cut = 1;
+    }
+    $Param{LineWidth} = 0 - $Param{LineWidth};
+
+    # check Width
+    if ( defined( $Param{Width} ) && $Param{Width} >= 1 ) {
+        if ( $Position{X} + $Param{Width} > $Dim{Left} + $Dim{Width} ) {
+            $Param{Width} = $Dim{Left} + $Dim{Width} - $Position{X};
+            $Cut = 1;
+        }
+    }
+    else {
+        $Param{Width} = $Param{Width} = $Dim{Left} + $Dim{Width} - $Position{X};
+    }
+
+    # output the lines in top and bottom of the page
+    my $Line = $Self->{Page}->gfx();
+    $Line->fillcolor( $Param{Color} );
+
+    # check values
+    my $Output = 0;
+    if (
+        $Self->DimGet() eq 'printable'
+        && $Self->_CurPrintableDimCheck(
+            X => $Position{X},
+            Y => $Position{Y}
+        )
+        && $Self->_CurPrintableDimCheck(
+            X => $Position{X} + $Param{Width},
+            Y => $Position{Y} - $Param{LineWidth}
+        )
+        )
+    {
+        $Output = 1;
+    }
+    elsif (
+        $Self->_CurContentDimCheck(
+            X => $Position{X},
+            Y => $Position{Y}
+        )
+        && $Self->_CurContentDimCheck(
+            X => $Position{X} + $Param{Width},
+            Y => $Position{Y} - $Param{LineWidth}
+        )
+        )
+    {
+        $Output = 1;
+    }
+
+    if ( defined( $Param{Type} ) && $Param{Type} eq 'ReturnFalse' && $Cut ) {
+        $Output = 1;
+    }
+
+    if ($Output) {
+
+        # output line
+        $Line->rect( $Position{X}, $Position{Y}, $Param{Width}, $Param{LineWidth} );
+        $Line->fill();
+
+        # set new position
+        $Self->_CurPositionSet(
+            Y => $Position{Y} - $Param{LineWidth},
+        );
+    }
+
+    return $Output;
+}
+</pre></div>
+
+<p>Output a horizontal line</p>
+
+<pre>    $True = $PDFObject-&gt;HLine(
         Width     =&gt; 300,           # (optional) default 'end of printable dimension'
         Type      =&gt; 'ReturnFalse'  # (optional) default Cut (ReturnFalse|Cut)
         Color     =&gt; '#101010',     # (optional) default black
         LineWidth =&gt; 1,             # (optional) default 1
     );
 
-</pre></dd>	<dt>PositionSet()</dt>
-		<dd><p>Set new position on current page</p></dd>
-<dd><pre>    $True = $PDFObject-&gt;PositionSet(
+</pre><h2 id="PositionSet">PositionSet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PositionSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PositionSet">
+                                        <pre>
+
+sub PositionSet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!",
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!",
+        );
+        return;
+    }
+
+    my %Data;
+    my %Dim;
+    my %Position = $Self->_CurPositionGet();
+
+    # get dimension (printable or content)
+    if ( $Self->DimGet() eq 'printable' ) {
+        $Data{Dim} = 'printable';
+        %Dim = $Self->_CurPrintableDimGet();
+    }
+    else {
+        $Data{Dim} = 'content';
+        %Dim = $Self->_CurContentDimGet();
+    }
+
+    if ( defined( $Param{X} ) ) {
+        if ( $Param{X} eq 'left' ) {
+            $Data{X} = $Dim{Left};
+        }
+        elsif ( $Param{X} eq 'center' ) {
+            $Data{X} = ( $Dim{Width} / 2 ) + $Dim{Left};
+        }
+        elsif ( $Param{X} eq 'right' ) {
+            $Data{X} = $Dim{Left} + $Dim{Width};
+        }
+        else {
+            if ( defined( $Param{Move} ) && $Param{Move} eq 'relativ' ) {
+                if (
+                    ( $Position{X} + $Param{X} )
+                    >= $Dim{Left}
+                    && ( $Position{X} + $Param{X} ) < ( $Dim{Left} + $Dim{Width} )
+                    )
+                {
+                    $Data{X} = $Position{X} + $Param{X};
+                }
+                elsif ( ( $Position{X} + $Param{X} ) >= ( $Dim{Left} + $Dim{Width} ) ) {
+                    $Data{X} = $Dim{Left} + $Dim{Width};
+                }
+                else {
+                    $Data{X} = $Dim{Left};
+                }
+            }
+            else {
+                if ( $Param{X} >= $Dim{Left} && $Param{X} < ( $Dim{Left} + $Dim{Width} ) ) {
+                    $Data{X} = $Param{X};
+                }
+                elsif ( $Param{X} >= ( $Dim{Left} + $Dim{Width} ) ) {
+                    $Data{X} = $Dim{Left} + $Dim{Width};
+                }
+                else {
+                    $Data{X} = $Dim{Left};
+                }
+            }
+        }
+    }
+
+    if ( defined( $Param{Y} ) ) {
+        if ( $Param{Y} eq 'top' ) {
+            $Data{Y} = $Dim{Bottom} + $Dim{Height};
+        }
+        elsif ( $Param{Y} eq 'middle' ) {
+            $Data{Y} = ( $Dim{Height} / 2 ) + $Dim{Bottom};
+        }
+        elsif ( $Param{Y} eq 'bottom' ) {
+            $Data{Y} = $Dim{Bottom};
+        }
+        else {
+            if ( defined( $Param{Move} ) && $Param{Move} eq 'relativ' ) {
+                if (
+                    ( $Position{Y} + $Param{Y} )
+                    <= ( $Dim{Bottom} + $Dim{Height} )
+                    && ( $Position{Y} + $Param{Y} ) > $Dim{Bottom}
+                    )
+                {
+                    $Data{Y} = $Position{Y} + $Param{Y};
+                }
+                elsif ( ( $Position{Y} + $Param{Y} ) <= $Dim{Bottom} ) {
+                    $Data{Y} = $Dim{Bottom};
+                }
+                else {
+                    $Data{Y} = $Dim{Bottom} + $Dim{Height};
+                }
+            }
+            else {
+                if ( $Param{Y} > $Dim{Bottom} && $Param{Y} <= ( $Dim{Bottom} + $Dim{Height} ) ) {
+                    $Data{Y} = $Param{Y};
+                }
+                elsif ( $Param{Y} <= $Dim{Bottom} ) {
+                    $Data{Y} = $Dim{Bottom};
+                }
+                else {
+                    $Data{Y} = $Dim{Bottom} + $Dim{Height};
+                }
+            }
+        }
+    }
+
+    $Self->_CurPositionSet( %Data, );
+
+    return 1;
+}
+</pre></div>
+
+<p>Set new position on current page</p>
+
+<pre>    $True = $PDFObject-&gt;PositionSet(
         Move =&gt; 'absolut',  # (optional) default absolut (absolut|relativ)
         X    =&gt; 10,         # (optional) (&lt;integer&gt;|left|center|right)
         Y    =&gt; 20,         # (optional) (&lt;integer&gt;|top|middle|bottom)
     );
 
-</pre></dd>	<dt>PositionGet()</dt>
-		<dd><p>Get position on current page</p></dd>
-<dd><pre>    Return
+</pre><h2 id="PositionGet">PositionGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PositionGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PositionGet">
+                                        <pre>
+
+sub PositionGet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!",
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!",
+        );
+        return;
+    }
+
+    my %Position = $Self->_CurPositionGet();
+
+    return %Position;
+}
+</pre></div>
+
+<p>Get position on current page</p>
+
+<pre>    Return
         $Position{X}
         $Position{Y}
 
-</pre></dd><dd><pre>    %Position = $PDFObject-&gt;PositionGet();
+    %Position = $PDFObject-&gt;PositionGet();
 
-</pre></dd>	<dt>DimSet()</dt>
-		<dd><p>Set active dimension</p></dd>
-<dd><pre>    $Dim = $PDFObject-&gt;DimSet(
+</pre><h2 id="DimSet">DimSet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_DimSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DimSet">
+                                        <pre>
+
+sub DimSet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!",
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!",
+        );
+        return;
+    }
+
+    if ( defined( $Param{Dim} ) && $Param{Dim} eq 'printable' ) {
+        $Self->{Current}->{Dim} = 'printable';
+    }
+    else {
+        $Self->{Current}->{Dim} = 'content';
+    }
+
+    return $Self->{Current}->{Dim};
+}
+</pre></div>
+
+<p>Set active dimension</p>
+
+<pre>    $Dim = $PDFObject-&gt;DimSet(
         Dim =&gt; 'printable',  # (optional) default content (content|printable)
     );
 
-</pre></dd>	<dt>DimGet()</dt>
-		<dd><p>Get active dimension (printable or content)</p></dd>
-<dd><pre>    $Dim = $PDFObject-&gt;DimGet();
+</pre><h2 id="DimGet">DimGet()</h2>
 
-</pre></dd>	<dt>_TableCalculate()</dt>
-	<dt>_TableBlockNextCalculate()</dt>
-	<dt>_TableRowCalculate()</dt>
-	<dt>_TableCellOutput()</dt>
-	<dt>_TableCellOnCount()</dt>
-	<dt>_TextCalculate()</dt>
-	<dt>_StringWidth()</dt>
-	<dt>_PrepareText()</dt>
-	<dt>_CurPageNumberSet()</dt>
-	<dt>_CurPageDimSet()</dt>
-	<dt>_CurPageDimGet()</dt>
-	<dt>_CurPageDimCheck()</dt>
-	<dt>_CurPrintableDimSet()</dt>
-	<dt>_CurPrintableDimGet()</dt>
-	<dt>_CurPrintableDimCheck()</dt>
-	<dt>_CurContentDimSet()</dt>
-	<dt>_CurContentDimGet()</dt>
-	<dt>_CurContentDimCheck()</dt>
-	<dt>_CurPositionSet()</dt>
-	<dt>_CurPositionGet()</dt>
-</dl>
+<p><a href="#" onclick="toggleCode('method_DimGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DimGet">
+                                        <pre>
+
+sub DimGet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    if ( $Self->{Current}->{Dim} eq 'printable' || $Self->{Current}->{Dim} eq 'content' ) {
+        $Self->{Current}->{Dim} = 'content';
+    }
+
+    return $Self->{Current}->{Dim};
+}
+</pre></div>
+
+<p>Get active dimension (printable or content)</p>
+
+<pre>    $Dim = $PDFObject-&gt;DimGet();
+
+</pre><h2 id="TableCalculate">_TableCalculate()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TableCalculate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TableCalculate">
+                                        <pre>
+
+sub _TableCalculate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (
+        qw(
+        CellData ColumnData RowData
+        Type Font FontSize Lead FontColor Align BackgroundColor Width Border BorderColor
+        PaddingTop PaddingRight PaddingBottom PaddingLeft
+        )
+        )
+    {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if (
+        ref( $Param{CellData} ) ne 'ARRAY'
+        || ref( $Param{ColumnData} ) ne 'ARRAY'
+        || ref( $Param{RowData} ) ne 'ARRAY'
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need array references of CellData, ColumnData and RowData!"
+        );
+        return;
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    # analyse, if table is corrupt
+    my $ColumnMax = 0;
+    my $RowMax    = 0;
+    for my $Row ( @{ $Param{CellData} } ) {
+        if ( scalar(@$Row) > $ColumnMax ) {
+            $ColumnMax = scalar(@$Row);
+        }
+        $RowMax++;
+    }
+
+    # repair, if table is corrupt
+    if ( $RowMax eq 0 ) {
+        ${ $Param{CellData} }[0] = [];
+        $RowMax = 1;
+    }
+    if ( $ColumnMax eq 0 ) {
+        $ColumnMax = 1;
+    }
+
+    # cut ColumnData, if to much values
+    if ( defined( ${ $Param{ColumnData} }[$ColumnMax] ) ) {
+        splice( @{ $Param{ColumnData} }, $ColumnMax );
+    }
+
+    # cut RowData, if to much values
+    if ( defined( ${ $Param{RowData} }[$RowMax] ) ) {
+        splice( @{ $Param{RowData} }, $RowMax );
+    }
+
+    my $RowCounter = 0;
+    for my $Row ( @{ $Param{CellData} } ) {
+        my $MinFontSize = 999;
+        for ( my $ColumnCounter = 0; $ColumnCounter < $ColumnMax; $ColumnCounter++ ) {
+
+            # repair, if row is corrupt
+            if ( !defined( $Row->[$ColumnCounter] ) ) {
+                $Row->[$ColumnCounter] = {};
+            }
+
+            # reference of current cell
+            my $Cell = $Row->[$ColumnCounter];
+
+            # if row is odd
+            if ( $RowCounter & 1 ) {
+
+                # set FontColor, if row is odd
+                if (
+                    !defined( $Cell->{FontColor} )
+                    && defined( $Param{FontColorOdd} )
+                    )
+                {
+                    $Cell->{FontColor} = $Param{FontColorOdd};
+                }
+
+                # set BackgroundColor, if row is odd
+                if (
+                    !defined( $Cell->{BackgroundColor} )
+                    && defined( $Param{BackgroundColorOdd} )
+                    )
+                {
+                    $Cell->{BackgroundColor} = $Param{BackgroundColorOdd};
+                }
+            }
+
+            # if row is even
+            else {
+
+                # set FontColor, if row is even
+                if (
+                    !defined( $Cell->{FontColor} )
+                    && defined( $Param{FontColorEven} )
+                    )
+                {
+                    $Cell->{FontColor} = $Param{FontColorEven};
+                }
+
+                # set BackgroundColor, if row is even
+                if (
+                    !defined( $Cell->{BackgroundColor} )
+                    && defined( $Param{BackgroundColorEven} )
+                    )
+                {
+                    $Cell->{BackgroundColor} = $Param{BackgroundColorEven};
+                }
+            }
+
+            # set cell state
+            if ( !defined( $Cell->{Off} ) ) {
+                $Cell->{Off} = 0;
+            }
+
+            # set temp cell state
+            if ( !defined( $Cell->{TmpOff} ) ) {
+                $Cell->{TmpOff} = 0;
+            }
+
+            # prepare text
+            if ( defined( $Cell->{Content} ) ) {
+                $Cell->{Content} = $Self->_PrepareText(
+                    Text => $Cell->{Content},
+                );
+            }
+
+            # set content blank, if not defined
+            if (
+                !defined( $Cell->{Content} )
+                || $Cell->{Content} eq ''
+                )
+            {
+                $Cell->{Content} = ' ';
+            }
+
+            # set default values
+            for (qw(Type Font FontSize FontColor Align Lead BackgroundColor)) {
+                if ( !defined( $Cell->{$_} ) ) {
+                    $Cell->{$_} = $Param{$_};
+                }
+            }
+
+            # calculate width of complete column content
+            if ( !defined( $Param{ColumnData}->[$ColumnCounter]->{MaxColWidth} ) ) {
+                $Param{ColumnData}->[$ColumnCounter]->{MaxColWidth} = 0;
+            }
+            my $CompleteContentWidth = $Self->_StringWidth(
+                Text     => $Cell->{Content},
+                Font     => $Cell->{Font},
+                FontSize => $Cell->{FontSize},
+            );
+            if ( $CompleteContentWidth > $Param{ColumnData}->[$ColumnCounter]->{MaxColWidth} ) {
+                $Param{ColumnData}->[$ColumnCounter]->{MaxColWidth} = $CompleteContentWidth;
+            }
+
+            # calculate with of the greaterst word
+            if ( !defined( $Param{ColumnData}->[$ColumnCounter]->{MinColWidth} ) ) {
+                $Param{ColumnData}->[$ColumnCounter]->{MinColWidth} = 0;
+            }
+            my @Words = split( /\s+/, $Cell->{Content} );
+            my $WordMaxLength = 0;
+            for (@Words) {
+                my $WordLength = length($_);
+                if ( $WordMaxLength <= $WordLength + 2 ) {
+                    $WordMaxLength = $WordLength;
+
+                    # calculate width of word
+                    my $WordWidth = $Self->_StringWidth(
+                        Text     => $_,
+                        Font     => $Cell->{Font},
+                        FontSize => $Cell->{FontSize},
+                    );
+                    if ( $WordWidth > $Param{ColumnData}->[$ColumnCounter]->{MinColWidth} ) {
+                        $Param{ColumnData}->[$ColumnCounter]->{MinColWidth} = $WordWidth;
+                    }
+                }
+            }
+
+            # find the smallerst fontsize
+            if ( $Cell->{FontSize} < $MinFontSize ) {
+                $MinFontSize = $Cell->{FontSize};
+            }
+        }
+
+        # set MinFontSize
+        $Param{RowData}->[$RowCounter]->{MinFontSize} = $MinFontSize;
+        $RowCounter++;
+    }
+
+    # estimate width of columns (without padding and border)
+    for my $Column ( @{ $Param{ColumnData} } ) {
+        if ( !defined( $Column->{Width} ) ) {
+            $Column->{Width} = 0;
+        }
+        if ( $Column->{Width} > 0 ) {
+            $Column->{EstimateWidth} = $Column->{Width};
+        }
+        else {
+
+            # estimate width of column
+            $Column->{EstimateWidth} = ( $Column->{MaxColWidth} + $Column->{MinColWidth} ) / 2;
+        }
+
+        # reduce calculated width and width, if calculated width is greater than table width
+        my $MaxWidth = $Param{Width} - $Param{PaddingLeft} - $Param{PaddingRight} - ( 2 * $Param{Border} );
+        if ( $Column->{EstimateWidth} > $MaxWidth ) {
+            $Column->{EstimateWidth} = $MaxWidth;
+            if ( $Column->{Width} > 0 ) {
+                $Column->{Width} = $MaxWidth;
+            }
+        }
+
+        # set width to 1, if width is too small
+        if ( $Column->{EstimateWidth} < 1 ) {
+            $Column->{EstimateWidth} = 1;
+        }
+    }
+
+    # calculate exactly width of columns
+    my $ColumnBlocks = [];
+    $ColumnBlocks->[0]->{Width}       = 0;
+    $ColumnBlocks->[0]->{ColumnStart} = 0;
+    $ColumnBlocks->[0]->{ColumnStop}  = 0;
+    $ColumnBlocks->[0]->{ColumnFix}   = 0;
+    $ColumnBlocks->[0]->{ColumnDyn}   = 0;
+
+    my $Block   = 0;
+    my $Counter = 0;
+    for my $Column ( @{ $Param{ColumnData} } ) {
+        my $ColumnWidth = $Column->{EstimateWidth}
+            + $Param{PaddingLeft}
+            + $Param{PaddingRight}
+            + ( 2 * $Param{Border} );
+
+        if ( !$ColumnBlocks->[$Block]->{Width} ) {
+            $ColumnBlocks->[$Block]->{Width} = $ColumnWidth;
+        }
+        else {
+            if (
+                ( $ColumnBlocks->[$Block]->{Width} + $ColumnWidth - $Param{Border} )
+                > $Param{Width}
+                )
+            {
+                $ColumnBlocks->[$Block]->{ColumnStop} = $Counter - 1;
+                $Block++;
+                $ColumnBlocks->[$Block]->{Width}       = $ColumnWidth;
+                $ColumnBlocks->[$Block]->{ColumnStart} = $Counter;
+                $ColumnBlocks->[$Block]->{ColumnFix}   = 0;
+                $ColumnBlocks->[$Block]->{ColumnDyn}   = 0;
+            }
+            else {
+                $ColumnBlocks->[$Block]->{Width} += $ColumnWidth - $Param{Border};
+            }
+            $ColumnBlocks->[$Block]->{ColumnStop} = $Counter;
+        }
+
+        if ( $Column->{Width} > 0 ) {
+            $ColumnBlocks->[$Block]->{ColumnFix}++;
+        }
+        else {
+            $ColumnBlocks->[$Block]->{ColumnDyn}++;
+        }
+
+        $Counter++;
+    }
+    my $LastBlock = $#{$ColumnBlocks};
+    my $Counter2  = 0;
+    for my $CurBlock ( @{$ColumnBlocks} ) {
+        my $ExtraSpaceComplete;
+
+        # no extra space for laast block
+        if ( $Counter2 && $Counter2 eq $LastBlock ) {
+            $ExtraSpaceComplete = 0;
+        }
+        else {
+            $ExtraSpaceComplete = $Param{Width} - $CurBlock->{Width};
+        }
+
+        my $ExtraSpaceDyn = 0;
+        my $ExtraSpaceFix = 0;
+
+        if ( $CurBlock->{ColumnDyn} > 0 ) {
+            $ExtraSpaceDyn = $ExtraSpaceComplete / $CurBlock->{ColumnDyn};
+        }
+        else {
+            $ExtraSpaceFix = $ExtraSpaceComplete / $CurBlock->{ColumnFix};
+        }
+
+        for ( $CurBlock->{ColumnStart} .. $CurBlock->{ColumnStop} ) {
+            my $Column     = $Param{ColumnData}->[$_];
+            my $ExtraSpace = 0;
+            if ( $Column->{Width} > 0 ) {
+                $ExtraSpace = $ExtraSpaceFix;
+            }
+            else {
+                $ExtraSpace = $ExtraSpaceDyn;
+            }
+
+            $Column->{OutputWidth} = $Column->{EstimateWidth}
+                + $ExtraSpace
+                + $Param{PaddingLeft}
+                + $Param{PaddingRight}
+                + ( 2 * $Param{Border} );
+            $Column->{TextWidth} = $Column->{EstimateWidth} + $ExtraSpace;
+
+            if ( $Column->{OutputWidth} < 1 ) {
+                $Column->{OutputWidth} = 1;
+            }
+            if ( $Column->{TextWidth} < 1 ) {
+                $Column->{TextWidth} = 1;
+            }
+            $Column->{Block} = $Counter2;
+        }
+        $Counter2++;
+    }
+
+    return %Param;
+}
+</pre></div>
+
+<h2 id="TableBlockNextCalculate">_TableBlockNextCalculate()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TableBlockNextCalculate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TableBlockNextCalculate">
+                                        <pre>
+
+sub _TableBlockNextCalculate {
+    my ( $Self, %Param ) = @_;
+
+    my %Return = (
+        State             => 0,
+        ReturnBlock       => 0,
+        ReturnRowStart    => 0,
+        ReturnColumnStart => 0,
+        ReturnColumnStop  => 0,
+    );
+
+    # check needed stuff
+    for (qw(CellData ColumnData)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( ref $Param{CellData} ne 'ARRAY' || ref $Param{ColumnData} ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need array references of CellData and ColumnData!"
+        );
+        return;
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    my $RowStart    = 'NULL';
+    my $ColumnStart = 'NULL';
+    my $ColumnStop  = 0;
+
+    # calculate, what cells can output (what cells are active)
+    my $RowCounter = 0;
+    for my $Row ( @{ $Param{CellData} } ) {
+
+        # if last block was temporary off, reactivate the row
+        if ( $Param{CellData}->[$RowCounter]->[ $#{ $Param{CellData}->[$RowCounter] } ]->{TmpOff} )
+        {
+            for ( my $ColumnCounter = 0; $ColumnCounter < scalar(@$Row); $ColumnCounter++ ) {
+                $Row->[$ColumnCounter]->{TmpOff} = 0;
+            }
+        }
+
+        # now calculate, what cells can output (what cells are active)
+        COLUMN_COUNTER:
+        for ( my $ColumnCounter = 0; $ColumnCounter < scalar @$Row; $ColumnCounter++ ) {
+
+            # calculate RowStart and ColumnStart
+            if (
+                $Row->[$ColumnCounter]->{Off} ne 1
+                && $Row->[$ColumnCounter]->{TmpOff} ne 1
+                && $RowStart eq 'NULL'
+                && $ColumnStart eq 'NULL'
+                )
+            {
+                $RowStart    = $RowCounter;
+                $ColumnStart = $ColumnCounter;
+                $ColumnStop  = $ColumnStart;
+                last COLUMN_COUNTER;
+            }
+        }
+        $RowCounter++;
+    }
+
+    if ( $RowStart ne 'NULL' && $ColumnStart ne 'NULL' ) {
+
+        # find last column of block
+        my $Block         = $Param{ColumnData}->[$ColumnStart]->{Block};
+        my $ColumnCounter = 0;
+        for my $Column ( @{ $Param{ColumnData} } ) {
+            if (
+                $ColumnCounter > $ColumnStop
+                && $Column->{Block} eq $Block
+                )
+            {
+                $ColumnStop = $ColumnCounter;
+            }
+            $ColumnCounter++;
+        }
+
+        $Return{State}             = 1;
+        $Return{ReturnBlock}       = $Block;
+        $Return{ReturnRowStart}    = $RowStart;
+        $Return{ReturnColumnStart} = $ColumnStart;
+        $Return{ReturnColumnStop}  = $ColumnStop;
+    }
+
+    return %Return;
+}
+</pre></div>
+
+<h2 id="TableRowCalculate">_TableRowCalculate()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TableRowCalculate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TableRowCalculate">
+                                        <pre>
+
+sub _TableRowCalculate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(CellData RowData ColumnData Row)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if (
+        ref( $Param{CellData} ) ne 'ARRAY'
+        || ref( $Param{ColumnData} ) ne 'ARRAY'
+        || ref( $Param{RowData} ) ne 'ARRAY'
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need array references of CellData, ColumnData and RowData!"
+        );
+        return;
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    if ( $Param{RowData}->[ $Param{Row} ]->{Height} ) {
+        $Param{RowData}->[ $Param{Row} ]->{TextHeight} = $Param{RowData}->[ $Param{Row} ]->{Height};
+    }
+    else {
+
+        # calculate height of row
+        $Param{RowData}->[ $Param{Row} ]->{Height}     = 0;
+        $Param{RowData}->[ $Param{Row} ]->{TextHeight} = 0;
+        my $BiggerstFontSize = 0;
+        my $ColumnCounter    = 0;
+        for my $Column ( @{ $Param{ColumnData} } ) {
+            my $Cell      = $Param{CellData}->[ $Param{Row} ]->[$ColumnCounter];
+            my %Calculate = $Self->_TextCalculate(
+                Text     => $Cell->{Content},
+                Type     => 'ReturnLeftOver',
+                Width    => $Column->{TextWidth},
+                Height   => 1000000,
+                Font     => $Cell->{Font},
+                FontSize => $Cell->{FontSize},
+                Lead     => $Cell->{Lead},
+            );
+            if ( $Calculate{RequiredHeight} > $Param{RowData}->[ $Param{Row} ]->{TextHeight} ) {
+                $Param{RowData}->[ $Param{Row} ]->{TextHeight} = $Calculate{RequiredHeight};
+            }
+            if ( $Cell->{FontSize} > $BiggerstFontSize ) {
+                $BiggerstFontSize = $Cell->{FontSize};
+            }
+            $ColumnCounter++;
+        }
+        if ( !$Param{RowData}->[ $Param{Row} ]->{TextHeight} ) {
+            $Param{RowData}->[ $Param{Row} ]->{TextHeight} = $BiggerstFontSize;
+        }
+    }
+    $Param{RowData}->[ $Param{Row} ]->{OutputHeight} = $Param{RowData}->[ $Param{Row} ]->{TextHeight}
+        + $Param{PaddingTop}
+        + $Param{PaddingBottom}
+        + ( 2 * $Param{Border} );
+
+    return %Param;
+}
+</pre></div>
+
+<h2 id="TableCellOutput">_TableCellOutput()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TableCellOutput');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TableCellOutput">
+                                        <pre>
+
+sub _TableCellOutput {
+    my ( $Self, %Param ) = @_;
+
+    my %Return = (
+        State          => 0,
+        RequiredWidth  => 0,
+        RequiredHeight => 0,
+        LeftOver       => '',
+    );
+
+    # check needed stuff
+    for (
+        qw(Width Height Text Type Font FontSize FontColor Align Lead
+        PaddingTop PaddingRight PaddingBottom PaddingLeft BackgroundColor Border BorderColor)
+        )
+    {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+    my %Dim;
+
+    # get dimension (printable or content)
+    if ( $Self->DimGet() eq 'printable' ) {
+        %Dim = $Self->_CurPrintableDimGet();
+    }
+    else {
+        %Dim = $Self->_CurContentDimGet();
+    }
+
+    # get current position
+    my %Position = $Self->_CurPositionGet();
+
+    # output background
+    if ( $Param{BackgroundColor} ne 'NULL' ) {
+        my $Background = $Self->{Page}->gfx();
+        $Background->fillcolor( $Param{BackgroundColor} );
+        $Background->rect( $Position{X}, $Position{Y}, $Param{Width}, -( $Param{Height} ) );
+        $Background->fill();
+    }
+
+    # output top border
+    if ( $Param{Border} > 0 ) {
+        my $BorderTop = $Self->{Page}->gfx();
+        $BorderTop->fillcolor( $Param{BorderColor} );
+        $BorderTop->rect( $Position{X}, $Position{Y}, $Param{Width}, -( $Param{Border} ) );
+        $BorderTop->fill();
+    }
+
+    # output right border
+    if ( $Param{Border} > 0 ) {
+        my $BorderRight = $Self->{Page}->gfx();
+        $BorderRight->fillcolor( $Param{BorderColor} );
+        $BorderRight->rect(
+            ( $Position{X} + $Param{Width} - $Param{Border} ),
+            $Position{Y}, $Param{Border}, -( $Param{Height} )
+        );
+        $BorderRight->fill();
+    }
+
+    # output bottom border
+    if ( $Param{Border} > 0 ) {
+        my $BorderBottom = $Self->{Page}->gfx();
+        $BorderBottom->fillcolor( $Param{BorderColor} );
+        $BorderBottom->rect(
+            $Position{X}, ( $Position{Y} - $Param{Height} + $Param{Border} ),
+            $Param{Width}, -( $Param{Border} )
+        );
+        $BorderBottom->fill();
+    }
+
+    # output left border
+    if ( $Param{Border} > 0 ) {
+        my $BorderLeft = $Self->{Page}->gfx();
+        $BorderLeft->fillcolor( $Param{BorderColor} );
+        $BorderLeft->rect( $Position{X}, $Position{Y}, $Param{Border}, -( $Param{Height} ) );
+        $BorderLeft->fill();
+    }
+
+    # calculate text start position
+    my $TextX = $Position{X} + $Param{Border} + $Param{PaddingLeft};
+    my $TextY = $Position{Y} - $Param{Border} - $Param{PaddingTop} + 1;
+
+    # calculate width and height of text
+    my $TextWidth  = $Param{Width} - $Param{PaddingLeft} - $Param{PaddingRight} -  ( 2 * $Param{Border} );
+    my $TextHeight = $Param{Height} - $Param{PaddingTop} - $Param{PaddingBottom} - ( 2 * $Param{Border} );
+
+    # set new position
+    $Self->PositionSet(
+        X => $TextX,
+        Y => $TextY,
+    );
+
+    %Return = $Self->Text(
+        Text     => $Param{Text},
+        Type     => $Param{Type},
+        Width    => $TextWidth,
+        Height   => $TextHeight,
+        Font     => $Param{Font},
+        FontSize => $Param{FontSize},
+        Color    => $Param{FontColor},
+        Align    => $Param{Align},
+        Lead     => $Param{Lead},
+    );
+
+    return %Return;
+}
+</pre></div>
+
+<h2 id="TableCellOnCount">_TableCellOnCount()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TableCellOnCount');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TableCellOnCount">
+                                        <pre>
+
+sub _TableCellOnCount {
+    my ( $Self, %Param ) = @_;
+
+    my $Return = 0;
+
+    # check needed stuff
+    for (qw(CellData)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( ref( $Param{CellData} ) ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need array references of CellData!"
+        );
+        return;
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+    for my $Row ( @{ $Param{CellData} } ) {
+        for ( my $ColumnCounter = 0; $ColumnCounter < scalar(@$Row); $ColumnCounter++ ) {
+            if ( $Row->[$ColumnCounter]->{Off} ne 1 ) {
+                $Return++;
+            }
+        }
+    }
+
+    return $Return;
+}
+</pre></div>
+
+<h2 id="TextCalculate">_TextCalculate()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TextCalculate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TextCalculate">
+                                        <pre>
+
+sub _TextCalculate {
+    my ( $Self, %Param ) = @_;
+
+    my %Return = (
+        State          => 0,
+        RequiredWidth  => 0,
+        RequiredHeight => 0,
+        LeftOver       => '',
+    );
+    my @PossibleRows;
+
+    # check needed stuff
+    for (qw(Text Type Width Height Font FontSize Lead)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+    my $TextLength = 0;
+
+    if ( $Param{Width} <= 0 || $Param{Height} <= 0 ) {
+        $Return{LeftOver} = $Param{Text};
+        $Param{Text}      = undef;
+    }
+    else {
+        $Param{Text} = $Self->_PrepareText(
+            Text => $Param{Text},
+        );
+        $TextLength = length( $Param{Text} );
+    }
+    my $Counter1 = 0;
+    while ( defined( $Param{Text} ) ) {
+        my $Row;
+        my $DelPreSpace = 0;
+
+        # get next row of given text
+        if ( $Param{Text} =~ s/^(.*?)\n(.*)/$2/s ) {
+            $Row = $1;
+        }
+        else {
+            $Row = $Param{Text};
+            $Param{Text} = undef;
+        }
+
+        # delete one space at begin of row, if exists
+        $Row =~ s/^\s//;
+
+        # calculate width of the row
+        my $RowWidth = $Self->_StringWidth(
+            Text     => $Row,
+            Font     => $Param{Font},
+            FontSize => $Param{FontSize},
+        );
+
+        # calculate height of the row
+        my $RowHeight = $Param{FontSize};
+        if ( $Counter1 > 0 ) {
+            $RowHeight += $Param{Lead};
+        }
+
+        if ( $Return{RequiredHeight} + $RowHeight <= $Param{Height} ) {
+
+            # if row is greater then $Param{Width}
+            if ( $RowWidth > $Param{Width} ) {
+
+                # estimate point of cut
+                my $Factor = $RowWidth / $Param{Width};
+                my $Cut    = int( length($Row) / $Factor );
+
+                # cut the row
+                my $RowFore = substr( $Row, 0, $Cut );
+                my $RowRear = substr( $Row, $Cut );
+
+                # calculate width of fore row
+                my $RowForeWidth = $Self->_StringWidth(
+                    Text     => $RowFore,
+                    Font     => $Param{Font},
+                    FontSize => $Param{FontSize},
+                );
+
+                # caculate exactly point of cut
+                while ( $RowForeWidth < $Param{Width} ) {
+                    $RowFore .= substr( $RowRear, 0, 1 );
+                    $RowRear = substr( $RowRear, 1 );
+                    $RowForeWidth = $Self->_StringWidth(
+                        Text     => $RowFore,
+                        Font     => $Param{Font},
+                        FontSize => $Param{FontSize},
+                    );
+                }
+                while ( $RowForeWidth > $Param{Width} ) {
+                    $RowRear      = chop($RowFore) . $RowRear;
+                    $RowForeWidth = $Self->_StringWidth(
+                        Text     => $RowFore,
+                        Font     => $Param{Font},
+                        FontSize => $Param{FontSize},
+                    );
+                }
+
+                if ( $Param{Type} eq 'ReturnLeftOver' || $Param{Type} eq 'Cut' ) {
+                    if ( $RowFore =~ /[^\s]$/ && $RowRear =~ /^[^\s]/ ) {
+                        $RowFore =~ s/^(.*)(\s+.+?)$/$1/;
+                        if ($2) {
+                            $RowRear = $2 . $RowRear;
+                        }
+                    }
+                }
+
+                $Row = $RowFore;
+                if ( $Param{Text} ) {
+                    $Param{Text} = $RowRear . "\n" . $Param{Text};
+                }
+                else {
+                    $Param{Text} = $RowRear;
+                }
+            }
+
+            # delete spaces at end of row, if spaces exists
+            $Row =~ s/^(.*)\s$/$1/;
+
+            # add Row to PossibleRows array
+            push( @PossibleRows, $Row );
+            $Return{RequiredHeight} += $RowHeight;
+
+            # check, if min one character can count (protection of infinite loop)
+            if ( defined( $Param{Text} ) ) {
+                if ( length( $Param{Text} ) >= $TextLength ) {
+                    $Return{RequiredWidth}  = 0;
+                    $Return{RequiredHeight} = 0;
+                    $Return{LeftOver}       = $Param{Text};
+                    $Param{Text}            = undef;
+                    @PossibleRows           = ();
+                }
+                else {
+                    $TextLength = length( $Param{Text} );
+                }
+            }
+        }
+        else {
+            $Return{LeftOver} = $Row;
+            if ( $Param{Text} ) {
+                $Return{LeftOver} .= "\n" . $Param{Text};
+                $Param{Text} = undef;
+            }
+        }
+        $Counter1++;
+    }
+
+    # cut text if type is Cut
+    if ( $Param{Type} eq 'Cut' && $Return{LeftOver} ) {
+        my $LastRow = $PossibleRows[-1];
+        if ($LastRow) {
+
+            # calculate width [..]
+            my $PPWidth = $Self->_StringWidth(
+                Text     => '[..]',
+                Font     => $Param{Font},
+                FontSize => $Param{FontSize},
+            );
+            if ( $PPWidth <= $Param{Width} ) {
+
+                # calculate width of LastRow and [..]
+                my $TextCutWidth = $Self->_StringWidth(
+                    Text     => $LastRow,
+                    Font     => $Param{Font},
+                    FontSize => $Param{FontSize},
+                );
+
+                # calculate last line
+                while ( $TextCutWidth + $PPWidth > $Param{Width} ) {
+                    chop($LastRow);
+
+                    # calculate width of shorted LastRow and [..]
+                    $TextCutWidth = $Self->_StringWidth(
+                        Text     => $LastRow,
+                        Font     => $Param{Font},
+                        FontSize => $Param{FontSize},
+                    );
+                }
+                $PossibleRows[-1] = $LastRow . '[..]';
+
+            }
+            $Return{LeftOver} = '';
+        }
+    }
+
+    # calculate RequiredWidth
+    my $Counter2 = 0;
+    for (@PossibleRows) {
+        my $RowWidth = $Self->_StringWidth(
+            Text     => $_,
+            Font     => $Param{Font},
+            FontSize => $Param{FontSize},
+        );
+
+        # set new RequiredWidth
+        if ( $RowWidth > $Return{RequiredWidth} ) {
+            $Return{RequiredWidth} = $RowWidth;
+        }
+
+        $Counter2++;
+    }
+
+    # correct RequiredHeight
+    if ( $Return{RequiredWidth} eq 0 ) {
+        $Return{RequiredHeight} = 0;
+    }
+
+    # set state
+    if ( !$Return{LeftOver} ) {
+        $Return{State} = 1;
+    }
+
+    $Return{PossibleRows} = \@PossibleRows;
+
+    return %Return;
+}
+</pre></div>
+
+<h2 id="StringWidth">_StringWidth()</h2>
+
+<p><a href="#" onclick="toggleCode('method__StringWidth');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__StringWidth">
+                                        <pre>
+
+sub _StringWidth {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Text Font FontSize)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # check document
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+
+    # check page
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    return $Self->{CacheStringWidth}->{ $Param{Font} }->{ $Param{FontSize} }->{ $Param{Text} }
+        if $Self->{CacheStringWidth}->{ $Param{Font} }->{ $Param{FontSize} }->{ $Param{Text} };
+
+    # create a text object
+    $Self->{TextWidthObject} ||= $Self->{Page}->text();
+
+    # set font and fontsize
+    $Self->{TextWidthObject}->font( $Self->{Font}->{ $Param{Font} }, $Param{FontSize} );
+
+    # calculate width of given text
+    my $StringWidth = $Self->{TextWidthObject}->advancewidth( $Param{Text} );
+
+    return $StringWidth if length $Param{Text} > 20;
+
+    # write width cache if length is not more than 20 chars
+    $Self->{CacheStringWidth}->{ $Param{Font} }->{ $Param{FontSize} }->{ $Param{Text} } = $StringWidth;
+
+    return $StringWidth;
+}
+</pre></div>
+
+<h2 id="PrepareText">_PrepareText()</h2>
+
+<p><a href="#" onclick="toggleCode('method__PrepareText');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__PrepareText">
+                                        <pre>
+
+sub _PrepareText {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Text)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    # prepare new line
+    $Param{Text} =~ s/(\n\r|\r\r\n|\r\n)/\n/g;
+    $Param{Text} =~ s/\r/\n/g;
+
+    # convert page brake to new lines
+    $Param{Text} =~ s/\f/\n\n/g;
+
+    # convert tabs to spaces
+    $Param{Text} =~ s/\t/  /g;
+
+    return $Param{Text};
+}
+</pre></div>
+
+<h2 id="CurPageNumberSet">_CurPageNumberSet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurPageNumberSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurPageNumberSet">
+                                        <pre>
+
+sub _CurPageNumberSet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    # set number of all over pages to 0, if first page
+    if ( !defined( $Self->{Current}->{Page} ) ) {
+        $Self->{Current}->{Page} = 0;
+    }
+
+    # set number of displayed pages to 0, if first page
+    if ( !defined( $Self->{Current}->{PageNumber} ) ) {
+        $Self->{Current}->{PageNumber} = 0;
+    }
+
+    # increment all over pages
+    $Self->{Current}->{Page}++;
+
+    # set page number of current page
+    if ( $Param{ShowPageNumber} eq 0 ) {
+        $Self->{PageData}->{ $Self->{Current}->{Page} }->{PageNumber} = '';
+    }
+    else {
+        $Self->{Current}->{PageNumber}++;
+        $Self->{PageData}->{ $Self->{Current}->{Page} }->{PageNumber} = $Self->{Current}->{PageNumber};
+    }
+
+    return 1;
+}
+</pre></div>
+
+<h2 id="CurPageDimSet">_CurPageDimSet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurPageDimSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurPageDimSet">
+                                        <pre>
+
+sub _CurPageDimSet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    my $NewValue;
+
+    # set CurPageWidth
+    if ( defined( $Param{Width} ) && $Param{Width} >= 100 && $Param{Width} <= 10000 ) {
+        $Self->{Current}->{PageWidth} = int( $Param{Width} );
+        $NewValue = 1;
+    }
+
+    # set CurPageHeight
+    if ( defined( $Param{Height} ) && $Param{Height} >= 100 && $Param{Height} <= 10000 ) {
+        $Self->{Current}->{PageHeight} = int( $Param{Height} );
+        $NewValue = 1;
+    }
+
+    # get default pagesize
+    my $DefaultWidth  = 595;    # DIN A4
+    my $DefaultHeight = 842;    # DIN A4
+    if ( $Kernel::OM->Get('Kernel::Config')->Get('PDF::PageSize') eq 'letter' ) {
+        $DefaultWidth  = 612;
+        $DefaultHeight = 792;
+    }
+
+    # set page orientation
+    if ( defined( $Param{PageOrientation} ) && $Param{PageOrientation} eq 'landscape' ) {
+        my $TmpWidth = $DefaultWidth;
+        $DefaultWidth  = $DefaultHeight;
+        $DefaultHeight = $TmpWidth;
+    }
+
+    # set default values
+    if ( !defined( $Self->{Current}->{PageWidth} ) ) {
+        $Self->{Current}->{PageWidth} = $DefaultWidth;
+        $NewValue = 1;
+    }
+    if ( !defined( $Self->{Current}->{PageHeight} ) ) {
+        $Self->{Current}->{PageHeight} = $DefaultHeight;
+        $NewValue = 1;
+    }
+
+    if ($NewValue) {
+
+        # set new printable dimension
+        $Self->{Current}->{PrintableTop}    = 0;
+        $Self->{Current}->{PrintableRight}  = 0;
+        $Self->{Current}->{PrintableBottom} = 0;
+        $Self->{Current}->{PrintableLeft}   = 0;
+        $Self->{Current}->{PrintableWidth}  = $Self->{Current}->{PageWidth};
+        $Self->{Current}->{PrintableHeight} = $Self->{Current}->{PageHeight};
+
+        # set new content dimension
+        $Self->{Current}->{ContentTop}    = $Self->{Current}->{PrintableTop};
+        $Self->{Current}->{ContentRight}  = $Self->{Current}->{PrintableRight};
+        $Self->{Current}->{ContentBottom} = $Self->{Current}->{PrintableBottom};
+        $Self->{Current}->{ContentLeft}   = $Self->{Current}->{PrintableLeft};
+        $Self->{Current}->{ContentWidth}  = $Self->{Current}->{PrintableWidth};
+        $Self->{Current}->{ContentHeight} = $Self->{Current}->{PrintableHeight};
+
+        # set new current position
+        $Self->{Current}->{PositionX} = $Self->{Current}->{ContentLeft};
+        $Self->{Current}->{PositionY} = $Self->{Current}->{PageHeight} - $Self->{Current}->{ContentTop};
+    }
+
+    return 1;
+}
+</pre></div>
+
+<h2 id="CurPageDimGet">_CurPageDimGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurPageDimGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurPageDimGet">
+                                        <pre>
+
+sub _CurPageDimGet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    if ( !$Self->{Current}->{PageWidth} || !$Self->{Current}->{PageHeight} ) {
+        $Self->_CurPageDimSet();
+    }
+
+    my %Data;
+    if ( $Self->{Current}->{PageWidth} && $Self->{Current}->{PageHeight} ) {
+        $Data{Width}  = $Self->{Current}->{PageWidth};
+        $Data{Height} = $Self->{Current}->{PageHeight};
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<h2 id="CurPageDimCheck">_CurPageDimCheck()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurPageDimCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurPageDimCheck">
+                                        <pre>
+
+sub _CurPageDimCheck {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    my $Return = 0;
+    my %Page   = $Self->_CurPageDimGet();
+
+    if ( defined( $Param{X} ) ) {
+        if ( $Param{X} >= 0 && $Param{X} <= $Page{Width} ) {
+            $Return = 1;
+        }
+    }
+
+    if ( defined( $Param{Y} ) ) {
+        if ( $Param{Y} >= 0 && $Param{Y} <= $Page{Height} ) {
+            $Return = 1;
+        }
+    }
+
+    return $Return;
+}
+</pre></div>
+
+<h2 id="CurPrintableDimSet">_CurPrintableDimSet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurPrintableDimSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurPrintableDimSet">
+                                        <pre>
+
+sub _CurPrintableDimSet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    if ( $Self->{Current}->{PageWidth} && $Self->{Current}->{PageHeight} ) {
+        my $NewValue;
+
+        # set CurPrintableTop
+        if (
+            defined( $Param{Top} )
+            && $Param{Top} > 0
+            && $Param{Top} < $Self->{Current}->{PageHeight} / 2
+            )
+        {
+            $Self->{Current}->{PrintableTop} = $Param{Top};
+            $NewValue = 1;
+        }
+
+        # set CurPrintableRight
+        if (
+            defined( $Param{Right} )
+            && $Param{Right} > 0
+            && $Param{Right} < $Self->{Current}->{PageWidth} / 2
+            )
+        {
+            $Self->{Current}->{PrintableRight} = $Param{Right};
+            $NewValue = 1;
+        }
+
+        # set CurPrintableBottom
+        if (
+            defined( $Param{Bottom} )
+            && $Param{Bottom} > 0
+            && $Param{Bottom} < $Self->{Current}->{PageHeight} / 2
+            )
+        {
+            $Self->{Current}->{PrintableBottom} = $Param{Bottom};
+            $NewValue = 1;
+        }
+
+        # set CurPrintableLeft
+        if (
+            defined( $Param{Left} )
+            && $Param{Left} > 0
+            && $Param{Left} < $Self->{Current}->{PageWidth} / 2
+            )
+        {
+            $Self->{Current}->{PrintableLeft} = $Param{Left};
+            $NewValue = 1;
+        }
+
+        if ($NewValue) {
+
+            # calculate new printable width and height
+            $Self->{Current}->{PrintableWidth} = $Self->{Current}->{PageWidth}
+                - $Self->{Current}->{PrintableLeft}
+                - $Self->{Current}->{PrintableRight};
+            $Self->{Current}->{PrintableHeight} = $Self->{Current}->{PageHeight}
+                - $Self->{Current}->{PrintableTop}
+                - $Self->{Current}->{PrintableBottom};
+
+            # set new content dimension
+            $Self->{Current}->{ContentTop}    = $Self->{Current}->{PrintableTop};
+            $Self->{Current}->{ContentRight}  = $Self->{Current}->{PrintableRight};
+            $Self->{Current}->{ContentBottom} = $Self->{Current}->{PrintableBottom};
+            $Self->{Current}->{ContentLeft}   = $Self->{Current}->{PrintableLeft};
+            $Self->{Current}->{ContentWidth}  = $Self->{Current}->{PrintableWidth};
+            $Self->{Current}->{ContentHeight} = $Self->{Current}->{PrintableHeight};
+
+            # set new current position
+            $Self->{Current}->{PositionX} = $Self->{Current}->{ContentLeft};
+            $Self->{Current}->{PositionY} = $Self->{Current}->{PageHeight} - $Self->{Current}->{ContentTop};
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<h2 id="CurPrintableDimGet">_CurPrintableDimGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurPrintableDimGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurPrintableDimGet">
+                                        <pre>
+
+sub _CurPrintableDimGet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    my %Data;
+    if ( $Self->{Current}->{PageWidth} && $Self->{Current}->{PageHeight} ) {
+        $Data{Top}    = $Self->{Current}->{PrintableTop};
+        $Data{Right}  = $Self->{Current}->{PrintableRight};
+        $Data{Bottom} = $Self->{Current}->{PrintableBottom};
+        $Data{Left}   = $Self->{Current}->{PrintableLeft};
+        $Data{Width}  = $Self->{Current}->{PrintableWidth};
+        $Data{Height} = $Self->{Current}->{PrintableHeight};
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<h2 id="CurPrintableDimCheck">_CurPrintableDimCheck()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurPrintableDimCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurPrintableDimCheck">
+                                        <pre>
+
+sub _CurPrintableDimCheck {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    my $Return    = 0;
+    my %Printable = $Self->_CurPrintableDimGet();
+
+    if ( defined( $Param{X} ) ) {
+        if (
+            $Param{X} >= $Printable{Left}
+            && $Param{X} <= ( $Printable{Left} + $Printable{Width} )
+            )
+        {
+            $Return = 1;
+        }
+    }
+
+    if ( defined( $Param{Y} ) ) {
+        if (
+            $Param{Y} >= $Printable{Bottom}
+            && $Param{Y} <= ( $Printable{Bottom} + $Printable{Height} )
+            )
+        {
+            $Return = 1;
+        }
+    }
+
+    return $Return;
+}
+</pre></div>
+
+<h2 id="CurContentDimSet">_CurContentDimSet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurContentDimSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurContentDimSet">
+                                        <pre>
+
+sub _CurContentDimSet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    if ( $Self->{Current}->{PageWidth} && $Self->{Current}->{PageHeight} ) {
+        my $NewValue;
+
+        # set CurContentTop
+        if (
+            defined( $Param{Top} )
+            && $Param{Top} >= $Self->{Current}->{PrintableTop}
+            && $Param{Top} < $Self->{Current}->{PageHeight} / 2
+            )
+        {
+            $Self->{Current}->{ContentTop} = $Param{Top};
+            $NewValue = 1;
+        }
+
+        # set CurContentRight
+        if (
+            defined( $Param{Right} )
+            && $Param{Right} >= $Self->{Current}->{PrintableRight}
+            && $Param{Right} < $Self->{Current}->{PageWidth} / 2
+            )
+        {
+            $Self->{Current}->{ContentRight} = $Param{Right};
+            $NewValue = 1;
+        }
+
+        # set CurContentBottom
+        if (
+            defined( $Param{Bottom} )
+            && $Param{Bottom} >= $Self->{Current}->{PrintableBottom}
+            && $Param{Bottom} < $Self->{Current}->{PageHeight} / 2
+            )
+        {
+            $Self->{Current}->{ContentBottom} = $Param{Bottom};
+            $NewValue = 1;
+        }
+
+        # set CurContentLeft
+        if (
+            defined( $Param{Left} )
+            && $Param{Left} >= $Self->{Current}->{PrintableLeft}
+            && $Param{Left} < $Self->{Current}->{PageWidth} / 2
+            )
+        {
+            $Self->{Current}->{ContentLeft} = $Param{Left};
+            $NewValue = 1;
+        }
+
+        if ($NewValue) {
+
+            # calculate new content width and height
+            $Self->{Current}->{ContentWidth} = $Self->{Current}->{PageWidth}
+                - $Self->{Current}->{ContentLeft}
+                - $Self->{Current}->{ContentRight};
+            $Self->{Current}->{ContentHeight} = $Self->{Current}->{PageHeight}
+                - $Self->{Current}->{ContentTop}
+                - $Self->{Current}->{ContentBottom};
+
+            # set new current position
+            $Self->{Current}->{PositionX} = $Self->{Current}->{ContentLeft};
+            $Self->{Current}->{PositionY} = $Self->{Current}->{PageHeight} - $Self->{Current}->{ContentTop};
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<h2 id="CurContentDimGet">_CurContentDimGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurContentDimGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurContentDimGet">
+                                        <pre>
+
+sub _CurContentDimGet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    my %Data;
+    if ( $Self->{Current}->{PageWidth} && $Self->{Current}->{PageHeight} ) {
+        $Data{Top}    = $Self->{Current}->{ContentTop};
+        $Data{Right}  = $Self->{Current}->{ContentRight};
+        $Data{Bottom} = $Self->{Current}->{ContentBottom};
+        $Data{Left}   = $Self->{Current}->{ContentLeft};
+        $Data{Width}  = $Self->{Current}->{ContentWidth};
+        $Data{Height} = $Self->{Current}->{ContentHeight};
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<h2 id="CurContentDimCheck">_CurContentDimCheck()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurContentDimCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurContentDimCheck">
+                                        <pre>
+
+sub _CurContentDimCheck {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    my $Return  = 0;
+    my %Content = $Self->_CurContentDimGet();
+
+    if ( defined( $Param{X} ) ) {
+        if ( $Param{X} >= $Content{Left} && $Param{X} <= ( $Content{Left} + $Content{Width} ) ) {
+            $Return = 1;
+        }
+    }
+
+    if ( defined( $Param{Y} ) ) {
+        if ( $Param{Y} >= $Content{Bottom} && $Param{Y} <= ( $Content{Bottom} + $Content{Height} ) )
+        {
+            $Return = 1;
+        }
+    }
+
+    return $Return;
+}
+</pre></div>
+
+<h2 id="CurPositionSet">_CurPositionSet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurPositionSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurPositionSet">
+                                        <pre>
+
+sub _CurPositionSet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    if ( $Self->{Current}->{PageWidth} && $Self->{Current}->{PageHeight} ) {
+        if ( $Self->DimGet() eq 'printable' ) {
+            if (
+                defined( $Param{X} )
+                && $Param{X} >= $Self->{Current}->{PrintableLeft}
+                && $Param{X} <= $Self->{Current}->{PageWidth} - $Self->{Current}->{PrintableRight}
+                )
+            {
+                $Self->{Current}->{PositionX} = $Param{X};
+            }
+            if (
+                defined( $Param{Y} )
+                && $Param{Y} <= $Self->{Current}->{PageHeight} - $Self->{Current}->{PrintableTop}
+                && $Param{Y} >= $Self->{Current}->{PrintableBottom}
+                )
+            {
+                $Self->{Current}->{PositionY} = $Param{Y};
+            }
+        }
+        else {
+            if (
+                defined( $Param{X} )
+                && $Param{X} >= $Self->{Current}->{ContentLeft}
+                && $Param{X} <= $Self->{Current}->{PageWidth} - $Self->{Current}->{ContentRight}
+                )
+            {
+                $Self->{Current}->{PositionX} = $Param{X};
+            }
+            if (
+                defined( $Param{Y} )
+                && $Param{Y} <= $Self->{Current}->{PageHeight} - $Self->{Current}->{ContentTop}
+                && $Param{Y} >= $Self->{Current}->{ContentBottom}
+                )
+            {
+                $Self->{Current}->{PositionY} = $Param{Y};
+            }
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<h2 id="CurPositionGet">_CurPositionGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CurPositionGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CurPositionGet">
+                                        <pre>
+
+sub _CurPositionGet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{PDF} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a PDF Document!"
+        );
+        return;
+    }
+    if ( !$Self->{Page} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need a Page!"
+        );
+        return;
+    }
+
+    my %Data;
+    if ( $Self->{Current}->{PageWidth} && $Self->{Current}->{PageHeight} ) {
+        $Data{X} = $Self->{Current}->{PositionX};
+        $Data{Y} = $Self->{Current}->{PositionY};
+    }
+
+    return %Data;
+}
+</pre></div>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

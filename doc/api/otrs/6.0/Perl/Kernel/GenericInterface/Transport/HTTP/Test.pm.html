@@ -57,8 +57,14 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#ProviderProcessRequest">ProviderProcessRequest()</a></li>
+	<li><a href="#ProviderGenerateResponse">ProviderGenerateResponse()</a></li>
+	<li><a href="#RequesterPerformRequest">RequesterPerformRequest()</a></li>
+</ul>
+</li>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -70,19 +76,29 @@
 
 <p>Kernel::GenericInterface::Transport::Test - GenericInterface network transport interface for testing purposes</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
-
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>usually, you want to create an instance of this
-by using Kernel::GenericInterface::Transport-&gt;new();</p></dd>
-<dd><pre>    use Kernel::GenericInterface::Transport;
+<h2 id="new">new()</h2>
 
-</pre></dd><dd><pre>    my $TransportObject = Kernel::GenericInterface::Transport-&gt;new(
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-</pre></dd><dd><pre>        TransportConfig =&gt; {
+sub new {
+    my $Class = shift;
+
+    return $Class->SUPER::new(@_);
+}
+</pre></div>
+
+<p>usually, you want to create an instance of this
+by using Kernel::GenericInterface::Transport-&gt;new();</p>
+
+<pre>    use Kernel::GenericInterface::Transport;
+
+    my $TransportObject = Kernel::GenericInterface::Transport-&gt;new(
+
+        TransportConfig =&gt; {
             Type =&gt; 'HTTP::Test',
             Config =&gt; {
                 Fail =&gt; 0,  # 0 or 1
@@ -90,38 +106,169 @@ by using Kernel::GenericInterface::Transport-&gt;new();</p></dd>
         },
     );
 
-</pre></dd>		<dd><p>In the config parameter 'Fail' you can tell the transport to simulate
+</pre><p>In the config parameter 'Fail' you can tell the transport to simulate
 failed network requests. If 'Fail' is set to 0, the transport will return
 the query string of the requests as return data (see <a href="http://search.cpan.org/perldoc?RequesterPerformRequest">RequesterPerformRequest</a>
-for an example);</p></dd>
-	<dt>ProviderProcessRequest()</dt>
-		<dd><p>this will read the incoming HTTP request via CGI and
-return the HTTP parameters in the data hash.</p></dd>
-	<dt>ProviderGenerateResponse()</dt>
-		<dd><p>this will generate a query string from the passed data hash
+for an example);</p>
+
+<h2 id="ProviderProcessRequest">ProviderProcessRequest()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ProviderProcessRequest');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ProviderProcessRequest">
+                                        <pre>
+
+sub ProviderProcessRequest {
+    my ( $Self, %Param ) = @_;
+
+    if ( $Self->{TransportConfig}->{Config}->{Fail} ) {
+
+        return {
+            Success      => 0,
+            ErrorMessage => "HTTP status code: 500",
+            Data         => {},
+        };
+    }
+
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my %Result;
+    for my $ParamName ( $ParamObject->GetParamNames() ) {
+        $Result{$ParamName} = $ParamObject->GetParam( Param => $ParamName );
+    }
+
+    # special handling for empty post request
+    if ( scalar keys %Result == 1 && exists $Result{POSTDATA} && !$Result{POSTDATA} ) {
+        %Result = ();
+    }
+
+    if ( !%Result ) {
+
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'No request data found.',
+        );
+    }
+
+    return {
+        Success   => 1,
+        Data      => \%Result,
+        Operation => 'test_operation',
+    };
+}
+</pre></div>
+
+<p>this will read the incoming HTTP request via CGI and
+return the HTTP parameters in the data hash.</p>
+
+<h2 id="ProviderGenerateResponse">ProviderGenerateResponse()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ProviderGenerateResponse');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ProviderGenerateResponse">
+                                        <pre>
+
+sub ProviderGenerateResponse {
+    my ( $Self, %Param ) = @_;
+
+    if ( $Self->{TransportConfig}->{Config}->{Fail} ) {
+
+        return {
+            Success      => 0,
+            ErrorMessage => 'Test response generation failed',
+        };
+    }
+
+    my $Response;
+
+    if ( !$Param{Success} ) {
+        $Response = HTTP::Response->new( 500 => ( $Param{ErrorMessage} || 'Internal Server Error' ) );
+        $Response->protocol('HTTP/1.0');
+        $Response->content_type("text/plain; charset=UTF-8");
+        $Response->date(time);
+    }
+    else {
+
+        # generate a request string from the data
+        my $Request = HTTP::Request::Common::POST( 'http://testhost.local/', Content => $Param{Data} );
+
+        $Response = HTTP::Response->new( 200 => "OK" );
+        $Response->protocol('HTTP/1.0');
+        $Response->content_type("text/plain; charset=UTF-8");
+        $Response->add_content_utf8( $Request->content() );
+        $Response->date(time);
+    }
+
+    $Self->{DebuggerObject}->Debug(
+        Summary => 'Sending HTTP response',
+        Data    => $Response->as_string(),
+    );
+
+    # now send response to client
+    print STDOUT $Response->as_string();
+
+    return {
+        Success => 1,
+    };
+}
+</pre></div>
+
+<p>this will generate a query string from the passed data hash
 and generate an HTTP response with this string as the body.
 This response will be printed so that the web server will
-send it to the client.</p></dd>
-	<dt>RequesterPerformRequest()</dt>
-		<dd><p>in Fail mode, returns error status. Otherwise, returns the
-query string generated out of the data for the HTTP response.</p></dd>
-<dd><pre>    my $Result = $TransportObject-&gt;RequesterPerformRequest(
+send it to the client.</p>
+
+<h2 id="RequesterPerformRequest">RequesterPerformRequest()</h2>
+
+<p><a href="#" onclick="toggleCode('method_RequesterPerformRequest');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_RequesterPerformRequest">
+                                        <pre>
+
+sub RequesterPerformRequest {
+    my ( $Self, %Param ) = @_;
+
+    if ( $Self->{TransportConfig}->{Config}->{Fail} ) {
+
+        return {
+            Success      => 0,
+            ErrorMessage => "HTTP status code: 500",
+            Data         => {},
+        };
+    }
+
+    # use custom protocol handler to avoid sending out real network requests
+    LWP::Protocol::implementor(
+        testhttp => 'Kernel::GenericInterface::Transport::HTTP::Test::CustomHTTPProtocol'
+    );
+    my $UserAgent = LWP::UserAgent->new();
+    my $Response = $UserAgent->post( 'testhttp://localhost.local/', Content => $Param{Data} );
+
+    return {
+        Success => 1,
+        Data    => {
+            ResponseContent => $Response->content(),
+        },
+    };
+}
+</pre></div>
+
+<p>in Fail mode, returns error status. Otherwise, returns the
+query string generated out of the data for the HTTP response.</p>
+
+<pre>    my $Result = $TransportObject-&gt;RequesterPerformRequest(
         Data =&gt; {
             A =&gt; 'A',
             b =&gt; 'b',
         },
     );
 
-</pre></dd>		<dd><p>Returns</p></dd>
-<dd><pre>    $Result = {
+</pre><p>Returns</p>
+
+<pre>    $Result = {
         Success =&gt; 1,
         Data =&gt; {
             ResponseData =&gt; 'A=A&amp;b=b',
         },
     };
 
-</pre></dd></dl>
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 

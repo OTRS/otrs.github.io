@@ -58,7 +58,24 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#XMLHashAdd">XMLHashAdd()</a></li>
+	<li><a href="#XMLHashUpdate">XMLHashUpdate()</a></li>
+	<li><a href="#XMLHashGet">XMLHashGet()</a></li>
+	<li><a href="#XMLHashDelete">XMLHashDelete()</a></li>
+	<li><a href="#XMLHashMove">XMLHashMove()</a></li>
+	<li><a href="#XMLHashSearch">XMLHashSearch()</a></li>
+	<li><a href="#XMLHashList">XMLHashList()</a></li>
+	<li><a href="#XMLHash2XML">XMLHash2XML()</a></li>
+	<li><a href="#XMLParse2XMLHash">XMLParse2XMLHash()</a></li>
+	<li><a href="#XMLHash2D">XMLHash2D()</a></li>
+	<li><a href="#XMLStructure2XMLHash">XMLStructure2XMLHash()</a></li>
+	<li><a href="#XMLParse">XMLParse()</a></li>
+	<li><a href="#XMLHashAddAutoIncrement">_XMLHashAddAutoIncrement()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,69 +91,455 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $XMLObject = $Kernel::OM-&gt;Get('Kernel::System::XML');
 
-</pre></dd>	<dt>XMLHashAdd()</dt>
-		<dd><p>add an XMLHash to storage</p></dd>
-<dd><pre>    my $Key = $XMLObject-&gt;XMLHashAdd(
+</pre><h2 id="XMLHashAdd">XMLHashAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_XMLHashAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLHashAdd">
+                                        <pre>
+
+sub XMLHashAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Type XMLHash)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    if ( !$Param{Key} && !$Param{KeyAutoIncrement} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Key or KeyAutoIncrement param!',
+        );
+        return;
+    }
+
+    my %ValueHASH = $Self->XMLHash2D( XMLHash => $Param{XMLHash} );
+    if (%ValueHASH) {
+        if ( !$Param{Key} ) {
+            $Param{Key} = $Self->_XMLHashAddAutoIncrement(%Param);
+        }
+        if ( !$Param{Key} ) {
+            return;
+        }
+        $Self->XMLHashDelete(%Param);
+
+        # get database object
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+        # create rand number
+        my $Rand   = int( rand(1000000) );
+        my $TmpKey = "TMP-$Rand-$Param{Type}";
+        for my $Key ( sort keys %ValueHASH ) {
+            $DBObject->Do(
+                SQL =>
+                    'INSERT INTO xml_storage (xml_type, xml_key, xml_content_key, xml_content_value) VALUES (?, ?, ?, ?)',
+                Bind => [ \$TmpKey, \$Param{Key}, \$Key, \$ValueHASH{$Key}, ],
+            );
+        }
+
+        # move new hash if insert is complete
+        $Self->XMLHashMove(
+            OldType => $TmpKey,
+            OldKey  => $Param{Key},
+            NewType => $Param{Type},
+            NewKey  => $Param{Key},
+        );
+        return $Param{Key};
+    }
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => 'Got no %ValueHASH from XMLHash2D()',
+    );
+
+    return;
+}
+</pre></div>
+
+<p>add an XMLHash to storage</p>
+
+<pre>    my $Key = $XMLObject-&gt;XMLHashAdd(
         Type    =&gt; 'SomeType',
         Key     =&gt; '123',
         XMLHash =&gt; \@XMLHash,
     );
 
-</pre></dd><dd><pre>    my $AutoKey = $XMLObject-&gt;XMLHashAdd(
+    my $AutoKey = $XMLObject-&gt;XMLHashAdd(
         Type             =&gt; 'SomeType',
         KeyAutoIncrement =&gt; 1,
         XMLHash          =&gt; \@XMLHash,
     );
 
-</pre></dd>	<dt>XMLHashUpdate()</dt>
-		<dd><p>update an XMLHash to storage</p></dd>
-<dd><pre>    $XMLHash[1]-&gt;{Name}-&gt;[1]-&gt;{Content} = 'Some Name';
+</pre><h2 id="XMLHashUpdate">XMLHashUpdate()</h2>
 
-</pre></dd><dd><pre>    $XMLObject-&gt;XMLHashUpdate(
+<p><a href="#" onclick="toggleCode('method_XMLHashUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLHashUpdate">
+                                        <pre>
+
+sub XMLHashUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Type Key XMLHash)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    return $Self->XMLHashAdd(%Param);
+}
+</pre></div>
+
+<p>update an XMLHash to storage</p>
+
+<pre>    $XMLHash[1]-&gt;{Name}-&gt;[1]-&gt;{Content} = 'Some Name';
+
+    $XMLObject-&gt;XMLHashUpdate(
         Type    =&gt; 'SomeType',
         Key     =&gt; '123',
         XMLHash =&gt; \@XMLHash,
     );
 
-</pre></dd>	<dt>XMLHashGet()</dt>
-		<dd><p>get an XMLHash from the database</p></dd>
-<dd><pre>    my @XMLHash = $XMLObject-&gt;XMLHashGet(
+</pre><h2 id="XMLHashGet">XMLHashGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_XMLHashGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLHashGet">
+                                        <pre>
+
+sub XMLHashGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Content = '';
+    my @XMLHash;
+
+    # check needed stuff
+    for (qw(Type Key)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    if ( !defined $Param{Cache} ) {
+        $Param{Cache} = 1;
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # check cache
+    if ( $Param{Cache} ) {
+        my $Cache = $CacheObject->Get(
+            Type => 'XML',
+            Key  => "$Param{Type}-$Param{Key}",
+
+            # Don't store complex structure in memory as it will be modified later.
+            CacheInMemory => 0,
+        );
+        return @{$Cache} if $Cache;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    return if !$DBObject->Prepare(
+        SQL => 'SELECT xml_content_key, xml_content_value '
+            . ' FROM xml_storage WHERE xml_type = ? AND xml_key = ?',
+        Bind => [ \$Param{Type}, \$Param{Key} ],
+
+    );
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        if ( defined $Data[1] ) {
+            $Data[1] =~ s/\\/\\\\/g;
+            $Data[1] =~ s/'/\\'/g;
+        }
+        else {
+            $Data[1] = '';
+        }
+        $Content .= '$XMLHash' . $Data[0] . " = '$Data[1]';\n 1;\n";
+    }
+    if ( $Content && !eval $Content ) {    ## no critic
+        print STDERR "ERROR: XML.pm $@\n";
+    }
+
+    # set cache
+    if ( $Param{Cache} && $Content ) {
+        $CacheObject->Set(
+            Type  => 'XML',
+            Key   => "$Param{Type}-$Param{Key}",
+            Value => \@XMLHash,
+            TTL   => 24 * 60 * 60,
+
+            # Don't store complex structure in memory as it will be modified later.
+            CacheInMemory => 0,
+        );
+    }
+
+    return @XMLHash;
+}
+</pre></div>
+
+<p>get an XMLHash from the database</p>
+
+<pre>    my @XMLHash = $XMLObject-&gt;XMLHashGet(
         Type =&gt; 'SomeType',
         Key  =&gt; '123',
     );
 
-</pre></dd><dd><pre>    my @XMLHash = $XMLObject-&gt;XMLHashGet(
+    my @XMLHash = $XMLObject-&gt;XMLHashGet(
         Type  =&gt; 'SomeType',
         Key   =&gt; '123',
         Cache =&gt; 0,   # (optional) do not use cached data
     );
 
-</pre></dd>	<dt>XMLHashDelete()</dt>
-		<dd><p>delete an XMLHash from the database</p></dd>
-<dd><pre>    $XMLObject-&gt;XMLHashDelete(
+</pre><h2 id="XMLHashDelete">XMLHashDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_XMLHashDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLHashDelete">
+                                        <pre>
+
+sub XMLHashDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Type Key)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # remove cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => 'XML',
+        Key  => "$Param{Type}-$Param{Key}",
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Do(
+        SQL  => 'DELETE FROM xml_storage WHERE xml_type = ? AND xml_key = ?',
+        Bind => [ \$Param{Type}, \$Param{Key} ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>delete an XMLHash from the database</p>
+
+<pre>    $XMLObject-&gt;XMLHashDelete(
         Type =&gt; 'SomeType',
         Key  =&gt; '123',
     );
 
-</pre></dd>	<dt>XMLHashMove()</dt>
-		<dd><p>move an XMLHash from one type or/and key to another</p></dd>
-<dd><pre>    $XMLObject-&gt;XMLHashMove(
+</pre><h2 id="XMLHashMove">XMLHashMove()</h2>
+
+<p><a href="#" onclick="toggleCode('method_XMLHashMove');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLHashMove">
+                                        <pre>
+
+sub XMLHashMove {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(OldType OldKey NewType NewKey)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # remove cache
+    $CacheObject->Delete(
+        Type => 'XML',
+        Key  => "$Param{OldType}-$Param{OldKey}",
+    );
+    $CacheObject->Delete(
+        Type => 'XML',
+        Key  => "$Param{NewType}-$Param{NewKey}",
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # delete existing xml hash
+    $DBObject->Do(
+        SQL  => 'DELETE FROM xml_storage WHERE xml_type = ? AND xml_key = ?',
+        Bind => [ \$Param{NewType}, \$Param{NewKey} ],
+    );
+
+    # update xml hash
+    return if !$DBObject->Do(
+        SQL => 'UPDATE xml_storage SET xml_type = ?, xml_key = ? '
+            . 'WHERE xml_type = ? AND xml_key = ?',
+        Bind => [ \$Param{NewType}, \$Param{NewKey}, \$Param{OldType}, \$Param{OldKey} ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>move an XMLHash from one type or/and key to another</p>
+
+<pre>    $XMLObject-&gt;XMLHashMove(
         OldType =&gt; 'SomeType',
         OldKey  =&gt; '123',
         NewType =&gt; 'NewType',
         NewKey  =&gt; '321',
     );
 
-</pre></dd>	<dt>XMLHashSearch()</dt>
-		<dd><p>Search an XMLHash in the database.</p></dd>
-<dd><pre>    my @Keys = $XMLObject-&gt;XMLHashSearch(
+</pre><h2 id="XMLHashSearch">XMLHashSearch()</h2>
+
+<p><a href="#" onclick="toggleCode('method_XMLHashSearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLHashSearch">
+                                        <pre>
+
+sub XMLHashSearch {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Type} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Type!'
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL  => 'SELECT DISTINCT(xml_key) FROM xml_storage WHERE xml_type = ?',
+        Bind => [ \$Param{Type} ],
+    );
+
+    # the keys of this hash will be returned
+    my %Hash;
+
+    # initially all keys with the correct type are possible
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $Hash{ $Data[0] } = 1;
+    }
+
+    if ( $Param{What} && ref $Param{What} eq 'ARRAY' ) {
+
+        # get like escape string needed for some databases (e.g. oracle)
+        my $LikeEscapeString = $DBObject->GetDatabaseFunction('LikeEscapeString');
+
+        # the array elements are 'and' combined
+        for my $And ( @{ $Param{What} } ) {
+
+            # the key/value pairs are 'or' combined
+            my @OrConditions;
+            for my $Key ( sort keys %{$And} ) {
+                my $Value = $DBObject->Quote( $And->{$Key} );
+                $Key = $DBObject->Quote( $Key, 'Like' );
+                if ( $Value && ref $Value eq 'ARRAY' ) {
+
+                    # when an array of possible values is given,
+                    # we use 'LIKE'-conditions and combine them with 'OR'
+                    for my $Element ( @{$Value} ) {
+                        $Element = $DBObject->Quote( $Element, 'Like' );
+                        push @OrConditions,
+                            " (xml_content_key LIKE '$Key' $LikeEscapeString "
+                            . "AND xml_content_value LIKE '$Element' $LikeEscapeString)";
+                    }
+                }
+                else {
+
+                    # when a single  possible value is given,
+                    # we use a 'LIKE'-condition
+                    $Value = $DBObject->Quote( $Value, 'Like' );
+                    push @OrConditions,
+                        " (xml_content_key LIKE '$Key' $LikeEscapeString "
+                        . "AND xml_content_value LIKE '$Value' $LikeEscapeString )";
+                }
+            }
+
+            # assemble the SQL
+            my $SQL = 'SELECT DISTINCT(xml_key) FROM xml_storage WHERE xml_type = ? ';
+            if (@OrConditions) {
+                $SQL .= 'AND ( ' . join( ' OR ', @OrConditions ) . ' ) ';
+            }
+
+            # execute
+            $DBObject->Prepare(
+                SQL  => $SQL,
+                Bind => [ \$Param{Type} ],
+            );
+
+            # intersection between the current key set, and the keys from the last 'SELECT'
+            # only the keys which are in all results survive
+            my %HashNew;
+            while ( my @Data = $DBObject->FetchrowArray() ) {
+                if ( $Hash{ $Data[0] } ) {
+                    $HashNew{ $Data[0] } = 1;
+                }
+            }
+            %Hash = %HashNew;
+        }
+    }
+
+    my @Keys = keys %Hash;
+
+    return @Keys;
+}
+</pre></div>
+
+<p>Search an XMLHash in the database.</p>
+
+<pre>    my @Keys = $XMLObject-&gt;XMLHashSearch(
         Type =&gt; 'SomeType',
         What =&gt; [
             # each array element is a and condition
@@ -157,21 +560,94 @@
         ],
     );
 
-</pre></dd>	<dt>XMLHashList()</dt>
-		<dd><p>generate a list of XMLHashes in the database</p></dd>
-<dd><pre>    my @Keys = $XMLObject-&gt;XMLHashList(
+</pre><h2 id="XMLHashList">XMLHashList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_XMLHashList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLHashList">
+                                        <pre>
+
+sub XMLHashList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Type} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Type!'
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL  => 'SELECT distinct(xml_key) FROM xml_storage WHERE xml_type = ?',
+        Bind => [ \$Param{Type} ],
+    );
+
+    my @Keys;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        push @Keys, $Data[0];
+    }
+
+    return @Keys;
+}
+</pre></div>
+
+<p>generate a list of XMLHashes in the database</p>
+
+<pre>    my @Keys = $XMLObject-&gt;XMLHashList(
         Type =&gt; 'SomeType',
     );
 
-</pre></dd>	<dt>XMLHash2XML()</dt>
-		<dd><p>generate an XML string from an XMLHash</p></dd>
-<dd><pre>    my $XMLString = $XMLObject-&gt;XMLHash2XML(@XMLHash);
+</pre><h2 id="XMLHash2XML">XMLHash2XML()</h2>
 
-</pre></dd>	<dt>XMLParse2XMLHash()</dt>
-		<dd><p>parse an XML file and return an XMLHash structure</p></dd>
-<dd><pre>    my @XMLHash = $XMLObject-&gt;XMLParse2XMLHash( String =&gt; $FileString );
+<p><a href="#" onclick="toggleCode('method_XMLHash2XML');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLHash2XML">
+                                        <pre>
 
-</pre></dd><dd><pre>    XML:
+sub XMLHash2XML {
+    my ( $Self, @XMLHash ) = @_;
+
+    my $Output = '<?xml version="1.0" encoding="utf-8"?>' . "\n";
+
+    $Self->{XMLHash2XMLLayer} = 0;
+    for my $Key (@XMLHash) {
+        $Output .= $Self->_ElementBuild( %{$Key} );
+    }
+
+    return $Output;
+}
+</pre></div>
+
+<p>generate an XML string from an XMLHash</p>
+
+<pre>    my $XMLString = $XMLObject-&gt;XMLHash2XML(@XMLHash);
+
+</pre><h2 id="XMLParse2XMLHash">XMLParse2XMLHash()</h2>
+
+<p><a href="#" onclick="toggleCode('method_XMLParse2XMLHash');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLParse2XMLHash">
+                                        <pre>
+
+sub XMLParse2XMLHash {
+    my ( $Self, %Param ) = @_;
+
+    my @XMLStructure = $Self->XMLParse(%Param);
+    return () if !@XMLStructure;
+
+    my @XMLHash = ( undef, $Self->XMLStructure2XMLHash( XMLStructure => \@XMLStructure ) );
+    return @XMLHash;
+
+}
+</pre></div>
+
+<p>parse an XML file and return an XMLHash structure</p>
+
+<pre>    my @XMLHash = $XMLObject-&gt;XMLParse2XMLHash( String =&gt; $FileString );
+
+    XML:
     ====
     &lt;Contact role=&quot;admin&quot; type=&quot;organization&quot;&gt;
         &lt;Name type=&quot;long&quot;&gt;Example Inc.&lt;/Name&gt;
@@ -180,7 +656,7 @@
         &lt;Telephone country=&quot;germany&quot;&gt;+49-999-99999&lt;/Telephone&gt;
     &lt;/Contact&gt;
 
-</pre></dd><dd><pre>    ARRAY:
+    ARRAY:
     ======
     @XMLHash = (
         undef,
@@ -226,7 +702,7 @@
         }
     );
 
-</pre></dd><dd><pre>    $XMLHash[1]{Contact}[1]{TagKey} = &quot;[1]{'Contact'}[1]&quot;;
+    $XMLHash[1]{Contact}[1]{TagKey} = &quot;[1]{'Contact'}[1]&quot;;
     $XMLHash[1]{Contact}[1]{role} = &quot;admin&quot;;
     $XMLHash[1]{Contact}[1]{type} = &quot;organization&quot;;
     $XMLHash[1]{Contact}[1]{Name}[1]{TagKey} = &quot;[1]{'Contact'}[1]{'Name'}[1]&quot;;
@@ -240,26 +716,300 @@
     $XMLHash[1]{Contact}[1]{Email}[2]{type} = &quot;secondary&quot;;
     $XMLHash[1]{Contact}[1]{Email}[2]{Content} = &quot;sales\@exampe.com&quot;;
 
-</pre></dd>	<dt>XMLHash2D()</dt>
-		<dd><p>returns a simple hash with tag keys as keys and the values of <code>XMLHash</code> as values.
-As a side effect the data structure <code>XMLHash</code> is enriched with tag keys.</p></dd>
-<dd><pre>    my %Hash = $XMLObject-&gt;XMLHash2D( XMLHash =&gt; \@XMLHash );
+</pre><h2 id="XMLHash2D">XMLHash2D()</h2>
 
-</pre></dd>		<dd><p>For example:</p></dd>
-<dd><pre>    $Hash{&quot;[1]{'Planet'}[1]{'Content'}&quot;'} = 'Sun';
+<p><a href="#" onclick="toggleCode('method_XMLHash2D');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLHash2D">
+                                        <pre>
 
-</pre></dd>	<dt>XMLStructure2XMLHash()</dt>
-		<dd><p>get an @XMLHash from a @XMLStructure with current TagKey param</p></dd>
-<dd><pre>    my @XMLHash = $XMLObject-&gt;XMLStructure2XMLHash( XMLStructure =&gt; \@XMLStructure );
+sub XMLHash2D {
+    my ( $Self, %Param ) = @_;
 
-</pre></dd>	<dt>XMLParse()</dt>
-		<dd><p>parse an XML file</p></dd>
-<dd><pre>    my @XMLStructure = $XMLObject-&gt;XMLParse( String =&gt; $FileString );
+    # check needed stuff
+    if ( !defined $Param{XMLHash} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'XMLHash not defined!',
+        );
+        return;
+    }
 
-</pre></dd><dd><pre>    my @XMLStructure = $XMLObject-&gt;XMLParse( String =&gt; \$FileStringScalar );
+    $Self->{XMLLevel}      = 0;
+    $Self->{XMLTagCount}   = 0;
+    $Self->{XMLHash}       = {};
+    $Self->{XMLHashReturn} = 1;
+    undef $Self->{XMLLevelTag};
+    undef $Self->{XMLLevelCount};
 
-</pre></dd>	<dt>_XMLHashAddAutoIncrement()</dt>
-</dl>
+    my $Count = 0;
+    for my $Item ( @{ $Param{XMLHash} } ) {
+        if ( ref $Item eq 'HASH' ) {
+            for ( sort keys %{$Item} ) {
+                $Self->_XMLHash2D(
+                    Key     => $Item->{Tag},
+                    Item    => $Item,
+                    Counter => $Count
+                );
+            }
+        }
+        $Count++;
+    }
+    $Self->{XMLHashReturn} = 0;
+
+    return %{ $Self->{XMLHash} };
+}
+</pre></div>
+
+<p>returns a simple hash with tag keys as keys and the values of <code>XMLHash</code> as values.
+As a side effect the data structure <code>XMLHash</code> is enriched with tag keys.</p>
+
+<pre>    my %Hash = $XMLObject-&gt;XMLHash2D( XMLHash =&gt; \@XMLHash );
+
+</pre><p>For example:</p>
+
+<pre>    $Hash{&quot;[1]{'Planet'}[1]{'Content'}&quot;'} = 'Sun';
+
+</pre><h2 id="XMLStructure2XMLHash">XMLStructure2XMLHash()</h2>
+
+<p><a href="#" onclick="toggleCode('method_XMLStructure2XMLHash');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLStructure2XMLHash">
+                                        <pre>
+
+sub XMLStructure2XMLHash {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !defined $Param{XMLStructure} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'XMLStructure not defined!'
+        );
+        return;
+    }
+
+    $Self->{Tll}           = 0;
+    $Self->{XMLTagCount}   = 0;
+    $Self->{XMLHash2}      = {};
+    $Self->{XMLHashReturn} = 1;
+    undef $Self->{XMLLevelTag};
+    undef $Self->{XMLLevelCount};
+
+    for my $Item ( @{ $Param{XMLStructure} } ) {
+        if ( ref $Item eq 'HASH' ) {
+            $Self->_XMLStructure2XMLHash(
+                Key  => $Item->{Tag},
+                Item => $Item,
+                Type => 'ARRAY'
+            );
+        }
+    }
+    $Self->{XMLHashReturn} = 0;
+
+    return ( \%{ $Self->{XMLHash2} } );
+}
+</pre></div>
+
+<p>get an @XMLHash from a @XMLStructure with current TagKey param</p>
+
+<pre>    my @XMLHash = $XMLObject-&gt;XMLStructure2XMLHash( XMLStructure =&gt; \@XMLStructure );
+
+</pre><h2 id="XMLParse">XMLParse()</h2>
+
+<p><a href="#" onclick="toggleCode('method_XMLParse');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLParse">
+                                        <pre>
+
+sub XMLParse {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !defined $Param{String} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'String not defined!'
+        );
+        return;
+    }
+
+    # check input type
+    if ( ref $Param{String} ) {
+        $Param{String} = ${ $Param{String} };
+    }
+
+    # get encode object
+    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
+
+    # create checksum
+    my $CookedString = $Param{String};
+    $EncodeObject->EncodeOutput( \$CookedString );
+    my $MD5Object = Digest::MD5->new();
+    $MD5Object->add($CookedString);
+    my $Checksum = $MD5Object->hexdigest();
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # check cache
+    if ($Checksum) {
+        my $Cache = $CacheObject->Get(
+            Type => 'XMLParse',
+            Key  => $Checksum,
+        );
+        return @{$Cache} if $Cache;
+    }
+
+    # cleanup global vars
+    undef $Self->{XMLARRAY};
+    $Self->{XMLLevel}    = 0;
+    $Self->{XMLTagCount} = 0;
+    undef $Self->{XMLLevelTag};
+    undef $Self->{XMLLevelCount};
+
+    # convert string
+    if ( $Param{String} =~ /(<.+?>)/ ) {
+        if ( $1 !~ /(utf-8|utf8)/i && $1 =~ /encoding=('|")(.+?)('|")/i ) {
+            my $SourceCharset = $2;
+            $Param{String} =~ s/$SourceCharset/utf-8/i;
+            $Param{String} = $EncodeObject->Convert(
+                Text  => $Param{String},
+                From  => $SourceCharset,
+                To    => 'utf-8',
+                Force => 1,
+            );
+        }
+    }
+
+    # load parse package and parse
+    my $UseFallback = 1;
+
+    if ( eval 'require XML::Parser' ) {    ## no critic
+        my $Parser = XML::Parser->new(
+            Handlers => {
+                Start => sub { $Self->_HS(@_); },
+                End   => sub { $Self->_ES(@_); },
+                Char  => sub { $Self->_CS(@_); },
+            },
+        );
+
+        # get sourcename now to avoid a possible race condition where
+        # $@ could get altered after a failing eval!
+        my $Sourcename = $Param{Sourcename} ? "\n\n($Param{Sourcename})" : '';
+
+        if ( eval { $Parser->parse( $Param{String} ) } ) {
+            $UseFallback = 0;
+
+            # remember, XML::Parser is managing e. g. &amp; by it self
+            $Self->{XMLQuote} = 0;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "C-Parser: $@!$Sourcename"
+            );
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message =>
+                    "XML::Parser had errors, falling back to XML::Parser::Lite. Offending XML was: $Param{String}",
+            );
+        }
+    }
+
+    if ($UseFallback) {
+        require XML::Parser::Lite;    ## no critic
+
+        my $Parser = XML::Parser::Lite->new(
+            Handlers => {
+                Start => sub { $Self->_HS(@_); },
+                End   => sub { $Self->_ES(@_); },
+                Char  => sub { $Self->_CS(@_); },
+            },
+        );
+        $Parser->parse( $Param{String} );
+
+        # remember, XML::Parser::Lite is managing e. g. &amp; NOT by it self
+        $Self->{XMLQuote} = 1;
+    }
+
+    # quote
+    for my $XMLElement ( @{ $Self->{XMLARRAY} } ) {
+        $Self->_Decode($XMLElement);
+    }
+
+    # set cache
+    if ($Checksum) {
+        $CacheObject->Set(
+            Type  => 'XMLParse',
+            Key   => $Checksum,
+            Value => $Self->{XMLARRAY},
+            TTL   => 30 * 24 * 60 * 60,
+        );
+    }
+
+    return @{ $Self->{XMLARRAY} };
+}
+</pre></div>
+
+<p>parse an XML file</p>
+
+<pre>    my @XMLStructure = $XMLObject-&gt;XMLParse( String =&gt; $FileString );
+
+    my @XMLStructure = $XMLObject-&gt;XMLParse( String =&gt; \$FileStringScalar );
+
+</pre><h2 id="XMLHashAddAutoIncrement">_XMLHashAddAutoIncrement()</h2>
+
+<p><a href="#" onclick="toggleCode('method__XMLHashAddAutoIncrement');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__XMLHashAddAutoIncrement">
+                                        <pre>
+
+sub _XMLHashAddAutoIncrement {
+    my ( $Self, %Param ) = @_;
+
+    my $KeyAutoIncrement = 0;
+    my @KeysExists;
+
+    # check needed stuff
+    for (qw(Type KeyAutoIncrement)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL  => 'SELECT DISTINCT(xml_key) FROM xml_storage WHERE xml_type = ?',
+        Bind => [ \$Param{Type} ],
+    );
+
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        if ( $Data[0] ) {
+            push @KeysExists, $Data[0];
+        }
+    }
+
+    for my $Key (@KeysExists) {
+        if ( $Key !~ /^\d{1,99}$/ ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "No KeyAutoIncrement possible, no int key exists ($Key)!",
+            );
+            return;
+        }
+        if ( $Key > $KeyAutoIncrement ) {
+            $KeyAutoIncrement = $Key;
+        }
+    }
+
+    $KeyAutoIncrement++;
+    return $KeyAutoIncrement;
+}
+</pre></div>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Request">Request()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,48 +79,194 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object</p></dd>
-<dd><pre>    use Kernel::System::WebUserAgent;
 
-</pre></dd><dd><pre>    my $WebUserAgentObject = Kernel::System::WebUserAgent-&gt;new(
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get database object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    $Self->{Timeout} = $Param{Timeout} || $ConfigObject->Get('WebUserAgent::Timeout') || 15;
+    $Self->{Proxy}   = $Param{Proxy}   || $ConfigObject->Get('WebUserAgent::Proxy')   || '';
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object</p>
+
+<pre>    use Kernel::System::WebUserAgent;
+
+    my $WebUserAgentObject = Kernel::System::WebUserAgent-&gt;new(
         Timeout =&gt; 15,                  # optional, timeout
         Proxy   =&gt; 'proxy.example.com', # optional, proxy
     );
 
-</pre></dd>	<dt>Request()</dt>
-		<dd><p>return the content of requested URL.</p></dd>
-		<dd><p>Simple GET request:</p></dd>
-<dd><pre>    my %Response = $WebUserAgentObject-&gt;Request(
+</pre><h2 id="Request">Request()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Request');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Request">
+                                        <pre>
+
+sub Request {
+    my ( $Self, %Param ) = @_;
+
+    # define method - default to GET
+    $Param{Type} ||= 'GET';
+
+    my $Response;
+
+    # init agent
+    my $UserAgent = LWP::UserAgent->new();
+
+    # In some scenarios like transparent HTTPS proxies, it can be neccessary to turn off
+    #   SSL certificate validation.
+    if (
+        $Param{SkipSSLVerification}
+        || $Kernel::OM->Get('Kernel::Config')->Get('WebUserAgent::DisableSSLVerification')
+        )
+    {
+        $UserAgent->ssl_opts(
+            verify_hostname => 0,
+        );
+    }
+
+    # set credentials
+    if ( $Param{Credentials} ) {
+        my %CredentialParams    = %{ $Param{Credentials} || {} };
+        my @Keys                = qw(Location Realm User Password);
+        my $AllCredentialParams = !first { !defined $_ } @CredentialParams{@Keys};
+
+        if ($AllCredentialParams) {
+            $UserAgent->credentials(
+                @CredentialParams{@Keys},
+            );
+        }
+    }
+
+    # set headers
+    if ( $Param{Header} ) {
+        $UserAgent->default_headers(
+            HTTP::Headers->new( %{ $Param{Header} } ),
+        );
+    }
+
+    # set timeout
+    $UserAgent->timeout( $Self->{Timeout} );
+
+    # get database object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # set user agent
+    $UserAgent->agent(
+        $ConfigObject->Get('Product') . ' ' . $ConfigObject->Get('Version')
+    );
+
+    # set proxy
+    if ( $Self->{Proxy} ) {
+        $UserAgent->proxy( [ 'http', 'https', 'ftp' ], $Self->{Proxy} );
+    }
+
+    if ( $Param{Type} eq 'GET' ) {
+
+        # perform get request on URL
+        $Response = $UserAgent->get( $Param{URL} );
+    }
+
+    else {
+
+        # check for Data param
+        if ( !IsArrayRefWithData( $Param{Data} ) && !IsHashRefWithData( $Param{Data} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message =>
+                    'WebUserAgent POST: Need Data param containing a hashref or arrayref with data.',
+            );
+            return ( Status => 0 );
+        }
+
+        # perform post request plus data
+        $Response = $UserAgent->post( $Param{URL}, $Param{Data} );
+    }
+
+    if ( !$Response->is_success() ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't perform $Param{Type} on $Param{URL}: " . $Response->status_line(),
+        );
+        return (
+            Status => $Response->status_line(),
+        );
+    }
+
+    # get the content to convert internal used charset
+    my $ResponseContent = $Response->decoded_content();
+    $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$ResponseContent );
+
+    if ( $Param{Return} && $Param{Return} eq 'REQUEST' ) {
+        return (
+            Status  => $Response->status_line(),
+            Content => \$Response->request()->as_string(),
+        );
+    }
+
+    # return request
+    return (
+        Status  => $Response->status_line(),
+        Content => \$ResponseContent,
+    );
+}
+</pre></div>
+
+<p>return the content of requested URL.</p>
+
+<p>Simple GET request:</p>
+
+<pre>    my %Response = $WebUserAgentObject-&gt;Request(
         URL =&gt; 'http://example.com/somedata.xml',
         SkipSSLVerification =&gt; 1, # (optional)
     );
 
-</pre></dd>		<dd><p>Or a POST request; attributes can be a hashref like this:</p></dd>
-<dd><pre>    my %Response = $WebUserAgentObject-&gt;Request(
+</pre><p>Or a POST request; attributes can be a hashref like this:</p>
+
+<pre>    my %Response = $WebUserAgentObject-&gt;Request(
         URL  =&gt; 'http://example.com/someurl',
         Type =&gt; 'POST',
         Data =&gt; { Attribute1 =&gt; 'Value', Attribute2 =&gt; 'Value2' },
         SkipSSLVerification =&gt; 1, # (optional)
     );
 
-</pre></dd>		<dd><p>alternatively, you can use an arrayref like this:</p></dd>
-<dd><pre>    my %Response = $WebUserAgentObject-&gt;Request(
+</pre><p>alternatively, you can use an arrayref like this:</p>
+
+<pre>    my %Response = $WebUserAgentObject-&gt;Request(
         URL  =&gt; 'http://example.com/someurl',
         Type =&gt; 'POST',
         Data =&gt; [ Attribute =&gt; 'Value', Attribute =&gt; 'OtherValue' ],
         SkipSSLVerification =&gt; 1, # (optional)
     );
 
-</pre></dd>		<dd><p>returns</p></dd>
-<dd><pre>    %Response = (
+</pre><p>returns</p>
+
+<pre>    %Response = (
         Status  =&gt; '200 OK',    # http status
         Content =&gt; $ContentRef, # content of requested URL
     );
 
-</pre></dd>		<dd><p>You can even pass some headers</p></dd>
-<dd><pre>    my %Response = $WebUserAgentObject-&gt;Request(
+</pre><p>You can even pass some headers</p>
+
+<pre>    my %Response = $WebUserAgentObject-&gt;Request(
         URL    =&gt; 'http://example.com/someurl',
         Type   =&gt; 'POST',
         Data   =&gt; [ Attribute =&gt; 'Value', Attribute =&gt; 'OtherValue' ],
@@ -126,8 +277,9 @@
         SkipSSLVerification =&gt; 1, # (optional)
     );
 
-</pre></dd>		<dd><p>If you need to set credentials</p></dd>
-<dd><pre>    my %Response = $WebUserAgentObject-&gt;Request(
+</pre><p>If you need to set credentials</p>
+
+<pre>    my %Response = $WebUserAgentObject-&gt;Request(
         URL          =&gt; 'http://example.com/someurl',
         Type         =&gt; 'POST',
         Data         =&gt; [ Attribute =&gt; 'Value', Attribute =&gt; 'OtherValue' ],
@@ -140,8 +292,7 @@
         SkipSSLVerification =&gt; 1, # (optional)
     );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

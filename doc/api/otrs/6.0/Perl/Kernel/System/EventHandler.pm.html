@@ -58,7 +58,14 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#EventHandlerInit">EventHandlerInit()</a></li>
+	<li><a href="#EventHandler">EventHandler()</a></li>
+	<li><a href="#EventHandlerTransaction">EventHandlerTransaction()</a></li>
+	<li><a href="#EventHandlerHasQueuedTransactions">EventHandlerHasQueuedTransactions()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -87,22 +94,42 @@ This is only neccessary if you use 'Transaction' events in your class.</p>
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>EventHandlerInit()</dt>
-		<dd><p>Call this to initialize the event handling mechanisms to work
-correctly with your object.</p></dd>
-<dd><pre>    $Self-&gt;EventHandlerInit(
+
+
+
+<h2 id="EventHandlerInit">EventHandlerInit()</h2>
+
+<p><a href="#" onclick="toggleCode('method_EventHandlerInit');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_EventHandlerInit">
+                                        <pre>
+
+sub EventHandlerInit {
+    my ( $Self, %Param ) = @_;
+
+    $Self->{EventHandlerInit} = \%Param;
+    $Kernel::OM->ObjectRegisterEventHandler( EventHandler => $Self );
+
+    return 1;
+}
+</pre></div>
+
+<p>Call this to initialize the event handling mechanisms to work
+correctly with your object.</p>
+
+<pre>    $Self-&gt;EventHandlerInit(
         # name of configured event modules
         Config     =&gt; 'Example::EventModule',
     );
 
-</pre></dd>		<dd><p>Example 1:</p></dd>
-<dd><pre>    $Self-&gt;EventHandlerInit(
+</pre><p>Example 1:</p>
+
+<pre>    $Self-&gt;EventHandlerInit(
         Config     =&gt; 'Ticket::EventModulePost',
     );
 
-</pre></dd>		<dd><p>Example 1 XML config:</p></dd>
-<dd><pre>    &lt;ConfigItem Name=&quot;Example::EventModule###99-EscalationIndex&quot; Required=&quot;0&quot; Valid=&quot;1&quot;&gt;
+</pre><p>Example 1 XML config:</p>
+
+<pre>    &lt;ConfigItem Name=&quot;Example::EventModule###99-EscalationIndex&quot; Required=&quot;0&quot; Valid=&quot;1&quot;&gt;
         &lt;Description Translatable=&quot;1&quot;&gt;Example event module updates the example escalation index.&lt;/Description&gt;
         &lt;Group&gt;Example&lt;/Group&gt;
         &lt;SubGroup&gt;Core::Example&lt;/SubGroup&gt;
@@ -116,13 +143,15 @@ correctly with your object.</p></dd>
         &lt;/Setting&gt;
     &lt;/ConfigItem&gt;
 
-</pre></dd>		<dd><p>Example 2:</p></dd>
-<dd><pre>    $Self-&gt;EventHandlerInit(
+</pre><p>Example 2:</p>
+
+<pre>    $Self-&gt;EventHandlerInit(
         Config     =&gt; 'ITSM::EventModule',
     );
 
-</pre></dd>		<dd><p>Example 2 XML config:</p></dd>
-<dd><pre>    &lt;ConfigItem Name=&quot;ITSM::EventModule###01-HistoryAdd&quot; Required=&quot;0&quot; Valid=&quot;1&quot;&gt;
+</pre><p>Example 2 XML config:</p>
+
+<pre>    &lt;ConfigItem Name=&quot;ITSM::EventModule###01-HistoryAdd&quot; Required=&quot;0&quot; Valid=&quot;1&quot;&gt;
         &lt;Description Translatable=&quot;1&quot;&gt;ITSM event module updates the history for Change and WorkOrder objects..&lt;/Description&gt;
         &lt;Group&gt;ITSM Change Management&lt;/Group&gt;
         &lt;SubGroup&gt;Core::ITSMEvent&lt;/SubGroup&gt;
@@ -149,10 +178,99 @@ correctly with your object.</p></dd>
         &lt;/Setting&gt;
     &lt;/ConfigItem&gt;
 
-</pre></dd>	<dt>EventHandler()</dt>
-		<dd><p>call event handler, returns true if it was executed successfully.</p></dd>
-		<dd><p>Example 1:</p></dd>
-<dd><pre>    my $Success = $EventHandler-&gt;EventHandler(
+</pre><h2 id="EventHandler">EventHandler()</h2>
+
+<p><a href="#" onclick="toggleCode('method_EventHandler');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_EventHandler">
+                                        <pre>
+
+sub EventHandler {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Data Event UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # get configured modules
+    my $Modules = $Kernel::OM->Get('Kernel::Config')->Get( $Self->{EventHandlerInit}->{Config} );
+
+    # return if there is no one
+    return 1 if !$Modules;
+
+    # remember events only on normal mode
+    if ( !$Self->{EventHandlerTransaction} ) {
+        push @{ $Self->{EventHandlerPipe} }, \%Param;
+    }
+
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
+    # load modules and execute
+    MODULE:
+    for my $Module ( sort keys %{$Modules} ) {
+
+        # If the module has an event configuration, determine if it should be executed for this event,
+        #   and store the result in a small cache to avoid repetition on jobs involving many tickets.
+        if ( !defined $Self->{ExecuteModuleOnEvent}->{$Module}->{ $Param{Event} } ) {
+            if ( !$Modules->{$Module}->{Event} ) {
+                $Self->{ExecuteModuleOnEvent}->{$Module}->{ $Param{Event} } = 1;
+            }
+            else {
+                $Self->{ExecuteModuleOnEvent}->{$Module}->{ $Param{Event} } =
+                    $Param{Event} =~ /$Modules->{$Module}->{Event}/;
+            }
+        }
+
+        if ( $Self->{ExecuteModuleOnEvent}->{$Module}->{ $Param{Event} } ) {
+
+            if ( $Self->{EventHandlerTransaction} && !$Param{Transaction} ) {
+
+                # This is a special case. A new event was fired during processing of
+                #   the queued events in transaction mode. This event must be immediately
+                #   processed.
+            }
+            else {
+
+                # This is the regular case. A new event was fired in regular mode, or
+                #   we are processing a queued event in transaction mode. Only execute
+                #   this if the transaction settings of event and listener are the same.
+
+                # skip if we are not in transaction mode, but module is in transaction
+                next MODULE if !$Param{Transaction} && $Modules->{$Module}->{Transaction};
+
+                # skip if we are in transaction mode, but module is not in transaction
+                next MODULE if $Param{Transaction} && !$Modules->{$Module}->{Transaction};
+            }
+
+            # load event module
+            next MODULE if !$MainObject->Require( $Modules->{$Module}->{Module} );
+
+            # execute event backend
+            my $Generic = $Modules->{$Module}->{Module}->new();
+
+            $Generic->Run(
+                %Param,
+                Config => $Modules->{$Module},
+            );
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>call event handler, returns true if it was executed successfully.</p>
+
+<p>Example 1:</p>
+
+<pre>    my $Success = $EventHandler-&gt;EventHandler(
         Event =&gt; 'TicketStateUpdate',   # event classification, passed to the configured event handlers
         Data  =&gt; {                      # data payload for the event, passed to the configured event handlers
             TicketID =&gt; 123,
@@ -161,10 +279,12 @@ correctly with your object.</p></dd>
         Transaction =&gt; 1,               # optional, 0 or 1
     );
 
-</pre></dd>		<dd><p>In 'Transaction' mode, all events will be collected and executed together,
-usually in the destructor of your object.</p></dd>
-		<dd><p>Example 2:</p></dd>
-<dd><pre>    my $Success = $EventHandler-&gt;EventHandler(
+</pre><p>In 'Transaction' mode, all events will be collected and executed together,
+usually in the destructor of your object.</p>
+
+<p>Example 2:</p>
+
+<pre>    my $Success = $EventHandler-&gt;EventHandler(
         Event =&gt; 'ChangeUpdate',
         Data  =&gt; {
             ChangeID =&gt; 123,
@@ -172,25 +292,40 @@ usually in the destructor of your object.</p></dd>
         UserID =&gt; 123,
     );
 
-</pre></dd>	<dt>EventHandlerTransaction()</dt>
-		<dd><p>handle all queued 'Transaction' events which were collected up to this point.</p></dd>
-<dd><pre>    $EventHandler-&gt;EventHandlerTransaction();
+</pre><h2 id="EventHandlerTransaction">EventHandlerTransaction()</h2>
 
-</pre></dd>		<dd><p>Call this method in the destructor of your object which inherits from
-Kernel::System::EventHandler, like this:</p></dd>
-<dd><pre>    sub DESTROY {
+<p>handle all queued 'Transaction' events which were collected up to this point.</p>
+
+<pre>    $EventHandler-&gt;EventHandlerTransaction();
+
+</pre><p>Call this method in the destructor of your object which inherits from
+Kernel::System::EventHandler, like this:</p>
+
+<pre>    sub DESTROY {
         my $Self = shift;
 
-</pre></dd><dd><pre>        # execute all transaction events
+        # execute all transaction events
         $Self-&gt;EventHandlerTransaction();
 
-</pre></dd><dd><pre>        return 1;
+        return 1;
     }
 
-</pre></dd>	<dt>EventHandlerHasQueuedTransactions()</dt>
-		<dd><p>Return a true value if there are queued transactions, which
-<code>EventHandlerTransaction</code> handles, when called.</p></dd>
-</dl>
+</pre><h2 id="EventHandlerHasQueuedTransactions">EventHandlerHasQueuedTransactions()</h2>
+
+<p><a href="#" onclick="toggleCode('method_EventHandlerHasQueuedTransactions');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_EventHandlerHasQueuedTransactions">
+                                        <pre>
+
+sub EventHandlerHasQueuedTransactions {
+    my ( $Self, %Param ) = @_;
+
+    return IsArrayRefWithData( $Self->{EventHandlerPipe} );
+}
+</pre></div>
+
+<p>Return a true value if there are queued transactions, which
+<code>EventHandlerTransaction</code> handles, when called.</p>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

@@ -57,8 +57,12 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Map">Map()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -68,32 +72,228 @@
 
 <p>Kernel::GenericInterface::Mapping::XSLT - GenericInterface XSLT data mapping backend</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
-
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>usually, you want to create an instance of this
-by using Kernel::GenericInterface::Mapping-&gt;new();</p></dd>
-	<dt>Map()</dt>
-		<dd><p>provides mapping based on XSLT stylesheets</p></dd>
-<dd><pre>    my $ReturnData = $MappingObject-&gt;Map(
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # check needed params
+    for my $Needed (qw(DebuggerObject MappingConfig)) {
+        if ( !$Param{$Needed} ) {
+            return {
+                Success      => 0,
+                ErrorMessage => "Got no $Needed!"
+            };
+        }
+        $Self->{$Needed} = $Param{$Needed};
+    }
+
+    # check mapping config
+    if ( !IsHashRefWithData( $Param{MappingConfig} ) ) {
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'Got no MappingConfig as hash ref with content!',
+        );
+    }
+
+    # check config - if we have a map config, it has to be a non-empty hash ref
+    if (
+        defined $Param{MappingConfig}->{Config}
+        && !IsHashRefWithData( $Param{MappingConfig}->{Config} )
+        )
+    {
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'Got MappingConfig with Data, but Data is no hash ref with content!',
+        );
+    }
+
+    return $Self;
+}
+</pre></div>
+
+<p>usually, you want to create an instance of this
+by using Kernel::GenericInterface::Mapping-&gt;new();</p>
+
+<h2 id="Map">Map()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Map');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Map">
+                                        <pre>
+
+sub Map {
+    my ( $Self, %Param ) = @_;
+
+    # check data - only accept undef or hash ref
+    if ( defined $Param{Data} && ref $Param{Data} ne 'HASH' ) {
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'Got Data but it is not a hash ref in Mapping XSLT backend!'
+        );
+    }
+
+    # return if data is empty
+    if ( !defined $Param{Data} || !%{ $Param{Data} } ) {
+        return {
+            Success => 1,
+            Data    => {},
+        };
+    }
+
+    # prepare short config variable
+    my $Config = $Self->{MappingConfig}->{Config};
+
+    # no config means we just return input data
+    if ( !$Config || !$Config->{Template} ) {
+        return {
+            Success => 1,
+            Data    => $Param{Data},
+        };
+    }
+
+    # load required libraries (XML::LibXML and XML::LibXSLT)
+    LIBREQUIRED:
+    for my $LibRequired (qw(XML::LibXML XML::LibXSLT)) {
+        my $LibFound = $Kernel::OM->Get('Kernel::System::Main')->Require($LibRequired);
+        next LIBREQUIRED if $LibFound;
+
+        return $Self->{DebuggerObject}->Error(
+            Summary => "Could not find required library $LibRequired",
+        );
+    }
+
+    # prepare stylesheet
+    my $LibXML  = XML::LibXML->new();
+    my $LibXSLT = XML::LibXSLT->new();
+    my ( $StyleDoc, $StyleSheet );
+    eval {
+        $StyleDoc = $LibXML->load_xml(
+            string   => $Config->{Template},
+            no_cdata => 1,
+        );
+    };
+    if ( !$StyleDoc ) {
+        return $Self->{DebuggerObject}->Error(
+            Summary => "Could not load configured XSLT template: '$Config->{Template}'",
+        );
+    }
+    eval {
+        $StyleSheet = $LibXSLT->parse_stylesheet($StyleDoc);
+    };
+    if ( !$StyleSheet ) {
+        return $Self->{DebuggerObject}->Error(
+            Summary => "Could not parse configured XSLT template: '$@'",
+        );
+    }
+
+    # Note: XML::Simple was chosen over alternatives like XML::LibXML and XML::Dumper
+    # due to its simplicity and because we just require a straightforward conversion.
+    # Other modules provide more possibilities but don't allow directly exporting a complete
+    # and clean structure.
+    # Reference:
+    #  http://www.perlmonks.org/?node_id=490846
+    #  http://stackoverflow.com/questions/12182129/convert-string-to-hash-using-libxml-in-perl
+
+    # convert data to xml structure
+    $Kernel::OM->Get('Kernel::System::Main')->Require('XML::Simple');
+    my $XMLSimple = XML::Simple->new();
+    my $XMLPre;
+    eval {
+        $XMLPre = $XMLSimple->XMLout(
+            $Param{Data},
+            AttrIndent => 1,
+            ContentKey => '-content',
+            NoAttr     => 1,
+            KeyAttr    => [],
+            RootName   => 'RootElement',
+        );
+    };
+    if ( !$XMLPre ) {
+        return $Self->{DebuggerObject}->Error(
+            Summary =>
+                "Could not convert data from Perl to XML before mapping: '$@'",
+        );
+    }
+
+    # transform xml data
+    my ( $XMLSource, $Result );
+    eval {
+        $XMLSource = $LibXML->load_xml(
+            string   => $XMLPre,
+            no_cdata => 1,
+        );
+    };
+    if ( !$XMLSource ) {
+        return $Self->{DebuggerObject}->Error(
+            Summary => "Could not load data after conversion from Perl to XML: '$XMLPre'",
+        );
+    }
+    eval {
+        $Result = $StyleSheet->transform($XMLSource);
+    };
+    if ( !$Result ) {
+        return $Self->{DebuggerObject}->Error(
+            Summary => "Could not map data: '$@'",
+        );
+    }
+    my $XMLPost = $StyleSheet->output_as_bytes($Result);
+    if ( !$XMLPost ) {
+        return $Self->{DebuggerObject}->Error(
+            Summary => "Could not write mapped data",
+        );
+    }
+
+    # convert data back to perl structure
+    my $ReturnData;
+    eval {
+        $ReturnData = $XMLSimple->XMLin(
+            $XMLPost,
+            ForceArray => 0,
+            ContentKey => '-content',
+            NoAttr     => 1,
+            KeyAttr    => [],
+        );
+    };
+    if ( !$ReturnData ) {
+        return $Self->{DebuggerObject}->Error(
+            Summary => "Could not convert data from XML to Perl after mapping: '$@' / '$XMLPost'",
+        );
+    }
+
+    return {
+        Success => 1,
+        Data    => $ReturnData,
+    };
+}
+</pre></div>
+
+<p>provides mapping based on XSLT stylesheets</p>
+
+<pre>    my $ReturnData = $MappingObject-&gt;Map(
         Data =&gt; {
             'original_key' =&gt; 'original_value',
             'another_key'  =&gt; 'next_value',
         },
     );
 
-</pre></dd><dd><pre>    my $ReturnData = {
+    my $ReturnData = {
         'changed_key'          =&gt; 'changed_value',
         'original_key'         =&gt; 'another_changed_value',
         'another_original_key' =&gt; 'default_value',
         'default_key'          =&gt; 'changed_value',
     };
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

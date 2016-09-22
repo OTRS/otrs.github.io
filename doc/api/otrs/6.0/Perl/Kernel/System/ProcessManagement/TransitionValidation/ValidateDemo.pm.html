@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Validate">Validate()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,31 +79,84 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $ValidateDemoObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::TransitionValidation::ValidateDemo');
 
-</pre></dd>	<dt>Validate()</dt>
-<dd><pre>    Validate Data
+</pre><h2 id="Validate">Validate()</h2>
 
-</pre></dd><dd><pre>    my $ValidateResult = $ValidateModuleObject-&gt;Validate(
+<p><a href="#" onclick="toggleCode('method_Validate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Validate">
+                                        <pre>
+
+sub Validate {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(Data)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # Check if we have Data to check against transitions conditions
+    if ( !IsHashRefWithData( $Param{Data} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Data has no values!",
+        );
+        return;
+    }
+
+    if ( $Param{Data}->{Queue} && $Param{Data}->{Queue} eq 'Raw' ) {
+        return 1;
+    }
+
+    return;
+}
+</pre></div>
+
+<pre>    Validate Data
+
+    my $ValidateResult = $ValidateModuleObject-&gt;Validate(
         Data       =&gt; {
             Queue =&gt; 'Raw',
             # ...
         },
     );
 
-</pre></dd><dd><pre>    Returns:
+    Returns:
 
-</pre></dd><dd><pre>    $ValidateResult = 1;        # or undef, only returns 1 if Queue is 'Raw'
+    $ValidateResult = 1;        # or undef, only returns 1 if Queue is 'Raw'
 
-</pre></dd><dd><pre>    );
+    );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

@@ -58,7 +58,11 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#PopupClose">PopupClose()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,24 +78,76 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>PopupClose()</dt>
-		<dd><p>Generate a small HTML page which closes the popup window and
-executes an action in the main window.</p></dd>
-<dd><pre>    # load specific URL in main window
+
+
+
+<h2 id="PopupClose">PopupClose()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PopupClose');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PopupClose">
+                                        <pre>
+
+sub PopupClose {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Param{URL} && !$Param{Reload} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need URL or Reload!'
+        );
+        return;
+    }
+
+    # Generate the call Header() and Footer(
+    my $Output = $Self->Header( Type => 'Small' );
+
+    if ( $Param{URL} ) {
+
+        # add session if no cookies are enabled
+        if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
+            $Param{URL} .= ';' . $Self->{SessionName} . '=' . $Self->{SessionID};
+        }
+
+        # send data to JS
+        $Self->AddJSData(
+            Key   => 'PopupClose',
+            Value => 'LoadParentURLAndClose',
+        );
+        $Self->AddJSData(
+            Key   => 'PopupURL',
+            Value => $Param{URL},
+        );
+    }
+    else {
+
+        # send data to JS
+        $Self->AddJSData(
+            Key   => 'PopupClose',
+            Value => 'ReloadParentAndClose',
+        );
+    }
+
+    $Output .= $Self->Footer( Type => 'Small' );
+    return $Output;
+}
+</pre></div>
+
+<p>Generate a small HTML page which closes the popup window and
+executes an action in the main window.</p>
+
+<pre>    # load specific URL in main window
     $LayoutObject-&gt;PopupClose(
         URL =&gt; &quot;Action=AgentTicketZoom;TicketID=$TicketID&quot;
     );
 
-</pre></dd><dd><pre>    or
+    or
 
-</pre></dd><dd><pre>    # reload main window
+    # reload main window
     $Self-&gt;{LayoutObject}-&gt;PopupClose(
         Reload =&gt; 1,
     );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

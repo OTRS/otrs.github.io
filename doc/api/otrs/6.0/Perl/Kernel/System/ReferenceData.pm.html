@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#CountryList">CountryList()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -75,23 +80,94 @@ codes.</p>
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $ReferenceDataObject = $Kernel::OM-&gt;Get('Kernel::System::ReferenceData');
 
-</pre></dd>	<dt>CountryList()</dt>
-		<dd><p>return a list of countries as a hash reference. The countries are based on ISO
+</pre><h2 id="CountryList">CountryList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CountryList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CountryList">
+                                        <pre>
+
+sub CountryList {
+    my ( $Self, %Param ) = @_;
+
+    if ( !defined $Param{Result} || $Param{Result} ne 'CODE' ) {
+        $Param{Result} = undef;
+    }
+
+    my $Countries = $Kernel::OM->Get('Kernel::Config')->Get('ReferenceData::OwnCountryList');
+
+    if ( $Param{Result} && $Countries ) {
+
+        # return Code => Country pairs from SysConfig
+        return $Countries;
+    }
+    elsif ($Countries) {
+
+        # return Country => Country pairs from SysConfig
+        my %CountryJustNames = map { $_ => $_ } values %$Countries;
+        return \%CountryJustNames;
+    }
+
+    my @CountryNames = all_country_names();
+
+    if ( !@CountryNames ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Country name list is empty!',
+        );
+    }
+
+    if ( $Param{Result} ) {
+
+        # return Code => Country pairs from ISO list
+        my %Countries;
+        for my $Country (@CountryNames) {
+            $Countries{$Country} = country2code( $Country, 1 );
+        }
+        return \%Countries;
+    }
+
+    # return Country => Country pairs from ISO list
+    my %CountryNames = map { $_ => $_ } @CountryNames;
+
+    return \%CountryNames;
+}
+</pre></div>
+
+<p>return a list of countries as a hash reference. The countries are based on ISO
 3166-2 and are provided by the Perl module Locale::Code::Country, or optionally
-from the SysConfig setting ReferenceData::OwnCountryList.</p></dd>
-<dd><pre>    my $CountryList = $ReferenceDataObject-&gt;CountryList(
+from the SysConfig setting ReferenceData::OwnCountryList.</p>
+
+<pre>    my $CountryList = $ReferenceDataObject-&gt;CountryList(
        Result =&gt; 'CODE', # optional: returns CODE =&gt; Country pairs conform ISO 3166-2.
     );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

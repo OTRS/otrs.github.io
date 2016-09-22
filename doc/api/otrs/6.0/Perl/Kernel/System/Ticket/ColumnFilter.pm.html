@@ -58,7 +58,24 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#StateFilterValuesGet">StateFilterValuesGet()</a></li>
+	<li><a href="#QueueFilterValuesGet">QueueFilterValuesGet()</a></li>
+	<li><a href="#PriorityFilterValuesGet">PriorityFilterValuesGet()</a></li>
+	<li><a href="#TypeFilterValuesGet">TypeFilterValuesGet()</a></li>
+	<li><a href="#LockFilterValuesGet">LockFilterValuesGet()</a></li>
+	<li><a href="#ServiceFilterValuesGet">ServiceFilterValuesGet()</a></li>
+	<li><a href="#SLAFilterValuesGet">SLAFilterValuesGet()</a></li>
+	<li><a href="#CustomerFilterValuesGet">CustomerFilterValuesGet()</a></li>
+	<li><a href="#CustomerUserIDFilterValuesGet">CustomerUserIDFilterValuesGet()</a></li>
+	<li><a href="#OwnerFilterValuesGet">OwnerFilterValuesGet()</a></li>
+	<li><a href="#ResponsibleFilterValuesGet">ResponsibleFilterValuesGet()</a></li>
+	<li><a href="#DynamicFieldFilterValuesGet">DynamicFieldFilterValuesGet()</a></li>
+	<li><a href="#GeneralDataGet">_GeneralDataGet()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,166 +91,1001 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $TicketColumnFilterObject = $Kernel::OM-&gt;Get('Kernel::System::Ticket::ColumnFilter');
 
-</pre></dd>	<dt>StateFilterValuesGet()</dt>
-		<dd><p>get a list of states within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;StateFilterValuesGet(
+</pre><h2 id="StateFilterValuesGet">StateFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_StateFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_StateFilterValuesGet">
+                                        <pre>
+
+sub StateFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+        return if !$Param{UserID};
+
+        # get state list
+        return $Self->_GeneralDataGet(
+            ModuleName   => 'Kernel::System::State',
+            FunctionName => 'StateList',
+            UserID       => $Param{UserID},
+        );
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs => $Param{TicketIDs},
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.ticket_state_id), ts.name"
+            . " FROM ticket t, ticket_state ts"
+            . " WHERE t.ticket_state_id = ts.id"
+            . $TicketIDString
+            . " ORDER BY t.ticket_state_id DESC",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Data{ $Row[0] } = $Row[1];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of states within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;StateFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         1 =&gt; 'New',
         4 =&gt; 'Open',
     };
 
-</pre></dd>	<dt>QueueFilterValuesGet()</dt>
-		<dd><p>get a list of queues within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;QueueFilterValuesGet(
+</pre><h2 id="QueueFilterValuesGet">QueueFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_QueueFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_QueueFilterValuesGet">
+                                        <pre>
+
+sub QueueFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+
+        # check needed param
+        return if !$Param{UserID};
+
+        # get queue list
+        return $Self->_GeneralDataGet(
+            ModuleName   => 'Kernel::System::Queue',
+            FunctionName => 'QueueList',
+            UserID       => $Param{UserID},
+        );
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs => $Param{TicketIDs},
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.queue_id), q.name"
+            . " FROM ticket t, queue q"
+            . " WHERE t.queue_id = q.id"
+            . $TicketIDString
+            . " ORDER BY t.queue_id DESC",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Data{ $Row[0] } = $Row[1];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of queues within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;QueueFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         2 =&gt; 'raw',
         3 =&gt; 'Junk',
     };
 
-</pre></dd>	<dt>PriorityFilterValuesGet()</dt>
-		<dd><p>get a list of priorities within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;PriorityFilterValuesGet(
+</pre><h2 id="PriorityFilterValuesGet">PriorityFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PriorityFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PriorityFilterValuesGet">
+                                        <pre>
+
+sub PriorityFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+
+        return if !$Param{UserID};
+
+        # get priority list
+        return $Self->_GeneralDataGet(
+            ModuleName   => 'Kernel::System::Priority',
+            FunctionName => 'PriorityList',
+            UserID       => $Param{UserID},
+        );
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs => $Param{TicketIDs},
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.ticket_priority_id), tp.name"
+            . " FROM ticket t, ticket_priority tp"
+            . " WHERE t.ticket_priority_id = tp.id"
+            . $TicketIDString
+            . " ORDER BY t.ticket_priority_id DESC",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Data{ $Row[0] } = $Row[1];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of priorities within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;PriorityFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         3 =&gt; '3 Normal',
     };
 
-</pre></dd>	<dt>TypeFilterValuesGet()</dt>
-		<dd><p>get a list of ticket types within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;TypeFilterValuesGet(
+</pre><h2 id="TypeFilterValuesGet">TypeFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_TypeFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TypeFilterValuesGet">
+                                        <pre>
+
+sub TypeFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+
+        return if !$Param{UserID};
+
+        # get type list
+        return $Self->_GeneralDataGet(
+            ModuleName   => 'Kernel::System::Type',
+            FunctionName => 'TypeList',
+            UserID       => $Param{UserID},
+        );
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs => $Param{TicketIDs},
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.type_id), tt.name"
+            . " FROM ticket t, ticket_type tt"
+            . " WHERE t.type_id = tt.id"
+            . $TicketIDString
+            . " ORDER BY t.type_id DESC",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Data{ $Row[0] } = $Row[1];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of ticket types within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;TypeFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         1 =&gt; 'Default',
     };
 
-</pre></dd>	<dt>LockFilterValuesGet()</dt>
-		<dd><p>get a list of ticket lock values within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;LockFilterValuesGet(
+</pre><h2 id="LockFilterValuesGet">LockFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_LockFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LockFilterValuesGet">
+                                        <pre>
+
+sub LockFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+
+        return if !$Param{UserID};
+
+        # get lock list
+        return $Self->_GeneralDataGet(
+            ModuleName   => 'Kernel::System::Lock',
+            FunctionName => 'LockList',
+            UserID       => $Param{UserID},
+        );
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs => $Param{TicketIDs},
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.ticket_lock_id), tlt.name"
+            . " FROM ticket t, ticket_lock_type tlt"
+            . " WHERE ticket_lock_id = tlt.id"
+            . $TicketIDString
+            . " ORDER BY t.ticket_lock_id DESC",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Data{ $Row[0] } = $Row[1];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of ticket lock values within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;LockFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         1 =&gt; 'unlock',
         4 =&gt; 'lock',
     };
 
-</pre></dd>	<dt>ServiceFilterValuesGet()</dt>
-		<dd><p>get a list of services within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;ServiceFilterValuesGet(
+</pre><h2 id="ServiceFilterValuesGet">ServiceFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ServiceFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ServiceFilterValuesGet">
+                                        <pre>
+
+sub ServiceFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+
+        return if !$Param{UserID};
+
+        # get service list
+        return $Self->_GeneralDataGet(
+            ModuleName   => 'Kernel::System::Service',
+            FunctionName => 'ServiceList',
+            UserID       => $Param{UserID},
+        );
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs => $Param{TicketIDs},
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.service_id), s.name"
+            . " FROM ticket t, service s"
+            . " WHERE t.service_id = s.id"
+            . $TicketIDString
+            . " ORDER BY t.service_id DESC",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Data{ $Row[0] } = $Row[1];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of services within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;ServiceFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         1 =&gt; 'My Service',
     };
 
-</pre></dd>	<dt>SLAFilterValuesGet()</dt>
-		<dd><p>get a list of service level agreements within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;SLAFilterValuesGet(
+</pre><h2 id="SLAFilterValuesGet">SLAFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SLAFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SLAFilterValuesGet">
+                                        <pre>
+
+sub SLAFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+
+        return if !$Param{UserID};
+
+        # get sla list
+        return $Self->_GeneralDataGet(
+            ModuleName   => 'Kernel::System::SLA',
+            FunctionName => 'SLAList',
+            UserID       => $Param{UserID},
+        );
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs => $Param{TicketIDs},
+    );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.sla_id), s.name"
+            . " FROM ticket t, sla s"
+            . " WHERE t.sla_id = s.id"
+            . $TicketIDString
+            . " ORDER BY t.sla_id DESC",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Data{ $Row[0] } = $Row[1];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of service level agreements within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;SLAFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         1 =&gt; 'MySLA',
     };
 
-</pre></dd>	<dt>CustomerFilterValuesGet()</dt>
-		<dd><p>get a list of customer ids within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;CustomerFilterValuesGet(
+</pre><h2 id="CustomerFilterValuesGet">CustomerFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CustomerFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomerFilterValuesGet">
+                                        <pre>
+
+sub CustomerFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need TicketIDs!',
+        );
+        return;
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs  => $Param{TicketIDs},
+        IncludeAdd => 0,
+    );
+
+    if ( !$TicketIDString ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs condition string is empty!',
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.customer_id)"
+            . " FROM ticket t"
+            . " WHERE $TicketIDString"
+            . " ORDER BY t.customer_id DESC",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Data{ $Row[0] } = $Row[0];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of customer ids within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;CustomerFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         'CompanyA' =&gt; 'CompanyA',
     };
 
-</pre></dd>	<dt>CustomerUserIDFilterValuesGet()</dt>
-		<dd><p>get a list of customer users within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;CustomerUserIDFilterValuesGet(
+</pre><h2 id="CustomerUserIDFilterValuesGet">CustomerUserIDFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CustomerUserIDFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomerUserIDFilterValuesGet">
+                                        <pre>
+
+sub CustomerUserIDFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need TicketIDs!',
+        );
+        return;
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs  => $Param{TicketIDs},
+        IncludeAdd => 0,
+    );
+
+    if ( !$TicketIDString ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs condition string is empty!',
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.customer_user_id)"
+            . " FROM ticket t"
+            . " WHERE $TicketIDString"
+            . " ORDER BY t.customer_user_id DESC",
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            $Data{ $Row[0] } = $Row[0];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of customer users within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;CustomerUserIDFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         'MyCustomer' =&gt; 'MyCustomer',
     };
 
-</pre></dd>	<dt>OwnerFilterValuesGet()</dt>
-		<dd><p>get a list of ticket owners within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;OwnerFilterValuesGet(
+</pre><h2 id="OwnerFilterValuesGet">OwnerFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_OwnerFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_OwnerFilterValuesGet">
+                                        <pre>
+
+sub OwnerFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+
+        return if !$Param{UserID};
+
+        # get user list
+        return $Self->_GeneralDataGet(
+            ModuleName   => 'Kernel::System::User',
+            FunctionName => 'UserList',
+            UserID       => $Param{UserID},
+        );
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs  => $Param{TicketIDs},
+        IncludeAdd => 0,
+    );
+
+    if ( !$TicketIDString ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs condition string is empty!',
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.user_id)"
+            . " FROM ticket t"
+            . " WHERE $TicketIDString"
+            . " ORDER BY t.user_id DESC",
+    );
+
+    my @UserList;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            push @UserList, $Row[0];
+        }
+    }
+
+    # get user object
+    my $UserObject = $Kernel::OM->Get('Kernel::System::User');
+
+    my %Data;
+    if ( scalar @UserList > 0 ) {
+        for my $UserID (@UserList) {
+            my %User = $UserObject->GetUserData(
+                UserID => $UserID,
+            );
+            if (%User) {
+                $Data{$UserID} = $User{UserFirstname} . ' ' . $User{UserLastname};
+            }
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of ticket owners within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;OwnerFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         1 =&gt; 'Admin OTRS',
     };
 
-</pre></dd>	<dt>ResponsibleFilterValuesGet()</dt>
-		<dd><p>get a list of ticket responsibles within the given ticket is list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;ResponsibleFilterValuesGet(
+</pre><h2 id="ResponsibleFilterValuesGet">ResponsibleFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ResponsibleFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ResponsibleFilterValuesGet">
+                                        <pre>
+
+sub ResponsibleFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{TicketIDs} ) {
+
+        return if !$Param{UserID};
+
+        # get user list
+        return $Self->_GeneralDataGet(
+            ModuleName   => 'Kernel::System::User',
+            FunctionName => 'UserList',
+            UserID       => $Param{UserID},
+        );
+    }
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs  => $Param{TicketIDs},
+        IncludeAdd => 0,
+    );
+
+    if ( !$TicketIDString ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs condition string is empty!',
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "SELECT DISTINCT(t.responsible_user_id)"
+            . " FROM ticket t"
+            . " WHERE $TicketIDString"
+            . " ORDER BY t.responsible_user_id DESC",
+    );
+
+    my @UserList;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] ) {
+            push @UserList, $Row[0];
+        }
+    }
+
+    # get user object
+    my $UserObject = $Kernel::OM->Get('Kernel::System::User');
+
+    my %Data;
+    if ( scalar @UserList > 0 ) {
+        for my $UserID (@UserList) {
+            my %User = $UserObject->GetUserData(
+                UserID => $UserID,
+            );
+            if (%User) {
+                $Data{$UserID} = $User{UserFirstname} . ' ' . $User{UserLastname};
+            }
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of ticket responsibles within the given ticket is list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;ResponsibleFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],                    # array ref list of ticket IDs
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         1 =&gt; 'Admin OTRS',
     };
 
-</pre></dd>	<dt>DynamicFieldFilterValuesGet()</dt>
-		<dd><p>get a list of a specific ticket dynamic field values within the given tickets list</p></dd>
-<dd><pre>    my $Values = $ColumnFilterObject-&gt;DynamicFieldFilterValuesGet(
+</pre><h2 id="DynamicFieldFilterValuesGet">DynamicFieldFilterValuesGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_DynamicFieldFilterValuesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DynamicFieldFilterValuesGet">
+                                        <pre>
+
+sub DynamicFieldFilterValuesGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(TicketIDs ValueType FieldID)) {
+
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my $TicketIDString = $Self->_TicketIDStringGet(
+        TicketIDs  => $Param{TicketIDs},
+        ColumnName => 'object_id',
+    );
+
+    if ( !IsArrayRefWithData( $Param{TicketIDs} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'TicketIDs must be an array ref!',
+        );
+        return;
+    }
+
+    my $ValueType = 'value_text';
+    if ( $Param{ValueType} && $Param{ValueType} eq 'DateTime' ) {
+        $ValueType = 'value_date';
+    }
+    elsif ( $Param{ValueType} && $Param{ValueType} eq 'Integer' ) {
+        $ValueType = 'value_int';
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL =>
+            "SELECT DISTINCT($ValueType)"
+            . ' FROM dynamic_field_value'
+            . ' WHERE field_id = ?'
+            . $TicketIDString
+            . " ORDER BY $ValueType DESC",
+        Bind => [ \$Param{FieldID} ],
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+
+        # check if the value is already stored
+        if (
+            defined $Row[0]
+            && $Row[0] ne ''
+            && !$Data{ $Row[0] }
+            )
+        {
+
+            if ( $ValueType eq 'Date' ) {
+
+                # cleanup time stamps (some databases are using e. g. 2008-02-25 22:03:00.000000
+                # and 0000-00-00 00:00:00 time stamps)
+                if ( $Row[0] eq '0000-00-00 00:00:00' ) {
+                    $Row[0] = undef;
+                }
+                $Row[0] =~ s/^(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d)\..+?$/$1/;
+            }
+
+            # store the results
+            $Data{ $Row[0] } = $Row[0];
+        }
+    }
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get a list of a specific ticket dynamic field values within the given tickets list</p>
+
+<pre>    my $Values = $ColumnFilterObject-&gt;DynamicFieldFilterValuesGet(
         TicketIDs =&gt; [23, 1, 56, 74],    # array ref list of ticket IDs
         ValueType =&gt; 'Text',             # Text | Integer | Date
         FieldID   =&gt; $FieldID,           # ID of the dynamic field
     );
 
-</pre></dd><dd><pre>    returns
+    returns
 
-</pre></dd><dd><pre>    $Values = {
+    $Values = {
         ValueA =&gt; 'ValueA',
         ValueB =&gt; 'ValueB',
         ValueC =&gt; 'ValueC'
     };
 
-</pre></dd>	<dt>_GeneralDataGet()</dt>
-</dl>
+</pre><h2 id="GeneralDataGet">_GeneralDataGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method__GeneralDataGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__GeneralDataGet">
+                                        <pre>
+
+sub _GeneralDataGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(ModuleName FunctionName UserID)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my $FuctionName = $Param{FunctionName};
+
+    # set the backend file
+    my $BackendModule = $Param{ModuleName};
+
+    # check if backend field exists
+    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($BackendModule) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't load backend module $BackendModule!",
+        );
+        return;
+    }
+
+    # create a backend object
+    my $BackendObject = $BackendModule->new( %{$Self} );
+
+    if ( !$BackendObject ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Couldn't create a backend object for $BackendModule!",
+        );
+        return;
+    }
+
+    if ( ref $BackendObject ne $BackendModule ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Backend object for $BackendModule was not created successfuly!",
+        );
+        return;
+    }
+
+    # get data list
+    my %DataList = $BackendObject->$FuctionName(
+        Valid  => 1,
+        UserID => $Param{UserID},
+    );
+
+    return \%DataList;
+}
+</pre></div>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

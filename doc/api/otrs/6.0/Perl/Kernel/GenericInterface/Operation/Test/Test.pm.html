@@ -57,8 +57,12 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -68,25 +72,99 @@
 
 <p>Kernel::GenericInterface::Operation::Test - GenericInterface Operation Test backend</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
-
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>usually, you want to create an instance of this
-by using Kernel::GenericInterface::Operation-&gt;new();</p></dd>
-	<dt>Run()</dt>
-		<dd><p>perform the selected test Operation. This will return the data that
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # check needed objects
+    for my $Needed (qw(DebuggerObject)) {
+        if ( !$Param{$Needed} ) {
+            return {
+                Success      => 0,
+                ErrorMessage => "Got no $Needed!"
+            };
+        }
+
+        $Self->{$Needed} = $Param{$Needed};
+    }
+
+    return $Self;
+}
+</pre></div>
+
+<p>usually, you want to create an instance of this
+by using Kernel::GenericInterface::Operation-&gt;new();</p>
+
+<h2 id="Run">Run()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    # check data - only accept undef or hash ref
+    if ( defined $Param{Data} && ref $Param{Data} ne 'HASH' ) {
+
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'Got Data but it is not a hash ref in Operation Test backend)!'
+        );
+    }
+
+    if ( defined $Param{Data} && $Param{Data}->{TestError} ) {
+
+        return {
+            Success      => 0,
+            ErrorMessage => "Error message for error code: $Param{Data}->{TestError}",
+            Data         => {
+                ErrorData => $Param{Data}->{ErrorData},
+            },
+        };
+    }
+
+    # copy data
+    my $ReturnData;
+
+    if ( ref $Param{Data} eq 'HASH' ) {
+        $ReturnData = \%{ $Param{Data} };
+    }
+    else {
+        $ReturnData = undef;
+    }
+
+    # return result
+    return {
+        Success => 1,
+        Data    => $ReturnData,
+    };
+}
+</pre></div>
+
+<p>perform the selected test Operation. This will return the data that
 was handed to the function or return a variable data if 'TestError' and
-'ErrorData' params are sent.</p></dd>
-<dd><pre>    my $Result = $OperationObject-&gt;Run(
+'ErrorData' params are sent.</p>
+
+<pre>    my $Result = $OperationObject-&gt;Run(
         Data =&gt; {                               # data payload before Operation
             ...
         },
     );
 
-</pre></dd><dd><pre>    $Result = {
+    $Result = {
         Success         =&gt; 1,                   # 0 or 1
         ErrorMessage    =&gt; '',                  # in case of error
         Data            =&gt; {                    # result data payload after Operation
@@ -94,7 +172,7 @@ was handed to the function or return a variable data if 'TestError' and
         },
     };
 
-</pre></dd><dd><pre>    my $Result = $OperationObject-&gt;Run(
+    my $Result = $OperationObject-&gt;Run(
         Data =&gt; {                               # data payload before Operation
             TestError   =&gt; 1,
             ErrorData   =&gt; {
@@ -103,20 +181,19 @@ was handed to the function or return a variable data if 'TestError' and
         },
     );
 
-</pre></dd><dd><pre>    $Result = {
+    $Result = {
         Success         =&gt; 0,                                   # it always return 0
         ErrorMessage    =&gt; 'Error message for error code: 1',   # including the 'TestError' param
         Data            =&gt; {
             ErrorData   =&gt; {                                    # same data was sent as
                                                                 # 'ErrorData' param
 
-</pre></dd><dd><pre>            },
+            },
             ...
         },
     };
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

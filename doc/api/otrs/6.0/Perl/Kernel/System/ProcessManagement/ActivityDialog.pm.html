@@ -58,7 +58,13 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#ActivityDialogGet">ActivityDialogGet()</a></li>
+	<li><a href="#ActivityDialogCompletedCheck">ActivityDialogCompletedCheck()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,25 +80,129 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $ActivityDialogObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::ActivityDialog');
 
-</pre></dd>	<dt>ActivityDialogGet()</dt>
-<dd><pre>    Get activity dialog info
+</pre><h2 id="ActivityDialogGet">ActivityDialogGet()</h2>
 
-</pre></dd><dd><pre>    my $ActivityDialog = $ActivityDialogObject-&gt;ActivityDialogGet(
+<p><a href="#" onclick="toggleCode('method_ActivityDialogGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityDialogGet">
+                                        <pre>
+
+sub ActivityDialogGet {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(ActivityDialogEntityID Interface)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    if ( $Param{Interface} ne 'all' && ref $Param{Interface} ne 'ARRAY' ) {
+        $Param{Interface} = [ $Param{Interface} ];
+    }
+
+    my $ActivityDialog = $Kernel::OM->Get('Kernel::Config')->Get('Process::ActivityDialog');
+
+    if ( !IsHashRefWithData($ActivityDialog) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ActivityDialog config!'
+        );
+        return;
+    }
+
+    if ( !IsHashRefWithData( $ActivityDialog->{ $Param{ActivityDialogEntityID} } ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No Data for ActivityDialog '$Param{ActivityDialogEntityID}' found!"
+        );
+        return;
+    }
+
+    if (
+        $Param{Interface} ne 'all'
+        && !IsArrayRefWithData(
+            $ActivityDialog->{ $Param{ActivityDialogEntityID} }->{Interface}
+        )
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No Interface for ActivityDialog '$Param{ActivityDialogEntityID}' found!"
+        );
+    }
+
+    if ( $Param{Interface} ne 'all' ) {
+        my $Success;
+        INTERFACE:
+        for my $CurrentInterface ( @{ $Param{Interface} } ) {
+            if (
+                grep { $CurrentInterface eq $_ }
+                @{ $ActivityDialog->{ $Param{ActivityDialogEntityID} }->{Interface} }
+                )
+            {
+                $Success = 1;
+                last INTERFACE;
+            }
+        }
+
+        if ( !$Success ) {
+            if ( !$Param{Silent} ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message =>
+                        "Not permitted Interface(s) '"
+                        . join( '\', \'', @{ $Param{Interface} } )
+                        . "' for ActivityDialog '$Param{ActivityDialogEntityID}'!"
+                );
+            }
+            return;
+        }
+    }
+
+    return $ActivityDialog->{ $Param{ActivityDialogEntityID} };
+}
+</pre></div>
+
+<pre>    Get activity dialog info
+
+    my $ActivityDialog = $ActivityDialogObject-&gt;ActivityDialogGet(
         ActivityDialogEntityID =&gt; 'AD1',
         Interface              =&gt; ['AgentInterface'],   # ['AgentInterface'] or ['CustomerInterface'] or ['AgentInterface', 'CustomerInterface'] or 'all'
         Silent                 =&gt; 1,    # 1 or 0, default 0, if set to 1, will not log errors about not matching interfaces
     );
 
-</pre></dd><dd><pre>    Returns:
+    Returns:
 
-</pre></dd><dd><pre>    $ActivityDialog = {
+    $ActivityDialog = {
         Name             =&gt; 'UnitTestActivity',
         Interface        =&gt; 'CustomerInterface',   # 'AgentInterface', 'CustomerInterface', ['AgentInterface'] or ['CustomerInterface'] or ['AgentInterface', 'CustomerInterface']
         DescriptionShort =&gt; 'AD1 Process Short',
@@ -133,10 +243,74 @@
         SubmitButtonText =&gt; 'Make an inquiry',
     };
 
-</pre></dd>	<dt>ActivityDialogCompletedCheck()</dt>
-<dd><pre>    Checks if an activity dialog is completed
+</pre><h2 id="ActivityDialogCompletedCheck">ActivityDialogCompletedCheck()</h2>
 
-</pre></dd><dd><pre>    my $Completed = $ActivityDialogObject-&gt;ActivityDialogCompletedCheck(
+<p><a href="#" onclick="toggleCode('method_ActivityDialogCompletedCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityDialogCompletedCheck">
+                                        <pre>
+
+sub ActivityDialogCompletedCheck {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(ActivityDialogEntityID Data)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    if ( !IsHashRefWithData( $Param{Data} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Data has no values!",
+        );
+        return;
+    }
+
+    my $ActivityDialog = $Self->ActivityDialogGet(
+        ActivityDialogEntityID => $Param{ActivityDialogEntityID},
+        Interface              => 'all',
+    );
+    if ( !$ActivityDialog ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't get ActivtyDialog '$Param{ActivityDialogEntityID}'!",
+        );
+        return;
+    }
+
+    if ( !$ActivityDialog->{Fields} || ref $ActivityDialog->{Fields} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't get fields for ActivtyDialog '$Param{ActivityDialogEntityID}'!",
+        );
+        return;
+    }
+
+    # loop over the fields of the config activity dialog to check if the required fields are filled
+    FIELDLOOP:
+    for my $Field ( sort keys %{ $ActivityDialog->{Fields} } ) {
+
+        # Checks if Field was invisible
+        next FIELDLOOP if ( !$ActivityDialog->{Fields}->{$Field}->{Display} );
+
+        # Checks if Field was visible but not required
+        next FIELDLOOP if ( $ActivityDialog->{Fields}->{$Field}->{Display} == 1 );
+
+        # checks if $Data->{Field} is defined and not an empty string
+        return if ( !IsStringWithData( $Param{Data}->{$Field} ) );
+    }
+
+    return 1;
+}
+</pre></div>
+
+<pre>    Checks if an activity dialog is completed
+
+    my $Completed = $ActivityDialogObject-&gt;ActivityDialogCompletedCheck(
         ActivityDialogEntityID =&gt; 'AD1',
         Data                   =&gt; {
             Queue         =&gt; 'Raw',
@@ -146,12 +320,11 @@
         },
     );
 
-</pre></dd><dd><pre>    Returns:
+    Returns:
 
-</pre></dd><dd><pre>    $Completed = 1; # 0
+    $Completed = 1; # 0
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

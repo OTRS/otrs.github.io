@@ -58,7 +58,23 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#ACLAdd">ACLAdd()</a></li>
+	<li><a href="#ACLDelete">ACLDelete()</a></li>
+	<li><a href="#ACLGet">ACLGet()</a></li>
+	<li><a href="#ACLUpdate">ACLUpdate()</a></li>
+	<li><a href="#ACLList">ACLList()</a></li>
+	<li><a href="#ACLListGet">ACLListGet()</a></li>
+	<li><a href="#ACLsNeedSync">ACLsNeedSync()</a></li>
+	<li><a href="#ACLsNeedSyncReset">ACLsNeedSyncReset()</a></li>
+	<li><a href="#ACLDump">ACLDump()</a></li>
+	<li><a href="#ACLImport">ACLImport()</a></li>
+	<li><a href="#ACLItemOutput">_ACLItemOutput()</a></li>
+	<li><a href="#ACLMigrateFrom33">_ACLMigrateFrom33()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,17 +90,170 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create a ACL object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get the cache TTL (in seconds)
+    $Self->{CacheTTL} = int( $Kernel::OM->Get('Kernel::Config')->Get('ACL::CacheTTL') || 3600 );
+
+    # set lower if database is case sensitive
+    $Self->{Lower} = '';
+    if ( $Kernel::OM->Get('Kernel::System::DB')->GetDatabaseFunction('CaseSensitive') ) {
+        $Self->{Lower} = 'LOWER';
+    }
+
+    return $Self;
+}
+</pre></div>
+
+<p>create a ACL object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $ACLObject = $Kernel::OM-&gt;Get('Kernel::System::ACL::DB::ACL');
 
-</pre></dd>	<dt>ACLAdd()</dt>
-		<dd><p>add new ACL</p></dd>
-		<dd><p>returns the id of the created ACL if success or undef otherwise</p></dd>
-<dd><pre>    my $ID = $ACL-&gt;ACLAdd(
+</pre><h2 id="ACLAdd">ACLAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ACLAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLAdd">
+                                        <pre>
+
+sub ACLAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(Name ValidID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!",
+            );
+            return;
+        }
+    }
+
+    # get yaml object
+    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
+
+    # define Description field if not present
+    $Param{Description} //= '';
+
+    my $ConfigMatch  = '';
+    my $ConfigChange = '';
+
+    if ( $Param{ConfigMatch} ) {
+
+        if ( !IsHashRefWithData( $Param{ConfigMatch} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "ConfigMatch needs to be a valid hash with data!",
+            );
+            return;
+        }
+
+        $ConfigMatch = $YAMLObject->Dump( Data => $Param{ConfigMatch} );
+        utf8::upgrade($ConfigMatch);
+    }
+
+    if ( $Param{ConfigChange} ) {
+
+        if ( !IsHashRefWithData( $Param{ConfigChange} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "ConfigChange needs to be a valid hash with data!",
+            );
+            return;
+        }
+
+        $ConfigChange = $YAMLObject->Dump( Data => $Param{ConfigChange} );
+        utf8::upgrade($ConfigChange);
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # check if ACL with this name already exists
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT id
+            FROM acl
+            WHERE $Self->{Lower}(name) = $Self->{Lower}(?)",
+        Bind  => [ \$Param{Name} ],
+        Limit => 1,
+    );
+
+    my $ACLExists;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $ACLExists = 1;
+    }
+
+    if ($ACLExists) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The Name:$Param{Name} already exists for an ACL!"
+        );
+        return;
+    }
+
+    # SQL
+    return if !$DBObject->Do(
+        SQL => '
+            INSERT INTO acl ( name, comments, description, stop_after_match, config_match,
+                config_change, valid_id, create_time, create_by, change_time, change_by )
+            VALUES (?, ?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{Name}, \$Param{Comment}, \$Param{Description}, \$Param{StopAfterMatch},
+            \$ConfigMatch, \$ConfigChange, \$Param{ValidID},
+            \$Param{UserID}, \$Param{UserID},
+        ],
+    );
+
+    return if !$DBObject->Prepare(
+        SQL  => 'SELECT id FROM acl WHERE name = ?',
+        Bind => [ \$Param{Name} ],
+    );
+
+    my $ID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $ID = $Row[0];
+    }
+
+    return if !$ID;
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ACLEditor_ACL',
+    );
+
+    return if !$DBObject->Do(
+        SQL => '
+            INSERT INTO acl_sync ( acl_id, sync_state, create_time, change_time )
+            VALUES (?, ?, current_timestamp, current_timestamp)',
+        Bind => [ \$ID, \'not_sync' ],
+    );
+
+    return $ID;
+}
+</pre></div>
+
+<p>add new ACL</p>
+
+<p>returns the id of the created ACL if success or undef otherwise</p>
+
+<pre>    my $ID = $ACL-&gt;ACLAdd(
         Name           =&gt; 'NameOfACL'           # mandatory
         Comment        =&gt; 'Comment',            # optional
         Description    =&gt; 'Description',        # optional
@@ -95,27 +264,209 @@
         UserID         =&gt; 123,                  # mandatory
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $ID = 567;
+</pre><p>Returns:</p>
 
-</pre></dd>	<dt>ACLDelete()</dt>
-		<dd><p>delete an ACL</p></dd>
-		<dd><p>returns 1 if success or undef otherwise</p></dd>
-<dd><pre>    my $Success = $ACLObject-&gt;ACLDelete(
+<pre>    $ID = 567;
+
+</pre><h2 id="ACLDelete">ACLDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ACLDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLDelete">
+                                        <pre>
+
+sub ACLDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!"
+            );
+            return;
+        }
+    }
+
+    # check if exists
+    my $ACL = $Self->ACLGet(
+        ID     => $Param{ID},
+        UserID => 1,
+    );
+
+    return if !IsHashRefWithData($ACL);
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # delete ACL
+    return if !$DBObject->Do(
+        SQL  => 'DELETE FROM acl WHERE id = ?',
+        Bind => [ \$Param{ID} ],
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ACLEditor_ACL',
+    );
+
+    return if !$DBObject->Do(
+        SQL => '
+            INSERT INTO acl_sync ( acl_id, sync_state, create_time, change_time )
+            VALUES (?, ?, current_timestamp, current_timestamp)',
+        Bind => [ \$Param{ID}, \'deleted' ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>delete an ACL</p>
+
+<p>returns 1 if success or undef otherwise</p>
+
+<pre>    my $Success = $ACLObject-&gt;ACLDelete(
         ID      =&gt; 123,
         UserID  =&gt; 123,
     );
 
-</pre></dd>	<dt>ACLGet()</dt>
-		<dd><p>get ACL attributes</p></dd>
-<dd><pre>    my $ACL = $ACLObject-&gt;ACLGet(
+</pre><h2 id="ACLGet">ACLGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ACLGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLGet">
+                                        <pre>
+
+sub ACLGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} && !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ID or Name!'
+        );
+        return;
+    }
+
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+        return;
+    }
+
+    # check cache
+    my $CacheKey;
+    if ( $Param{ID} ) {
+        $CacheKey = 'ACLGet::ID::' . $Param{ID};
+    }
+    else {
+        $CacheKey = 'ACLGet::Name::' . $Param{Name};
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    my $Cache = $CacheObject->Get(
+        Type => 'ACLEditor_ACL',
+        Key  => $CacheKey,
+    );
+    return $Cache if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # SQL
+    if ( $Param{ID} ) {
+        return if !$DBObject->Prepare(
+            SQL => '
+                SELECT id, name, comments, description, stop_after_match, valid_id, config_match,
+                    config_change, create_time, change_time, create_by, change_by
+                FROM acl
+                WHERE id = ?',
+            Bind  => [ \$Param{ID} ],
+            Limit => 1,
+        );
+    }
+    else {
+        return if !$DBObject->Prepare(
+            SQL => '
+                SELECT id, name, comments, description, stop_after_match, valid_id, config_match,
+                    config_change, create_time, change_time, create_by, change_by
+                FROM acl
+                WHERE name = ?',
+            Bind  => [ \$Param{Name} ],
+            Limit => 1,
+        );
+    }
+
+    # get yaml object
+    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
+
+    my %Data;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+
+        my $ConfigMatch = '';
+        if ( $Data[6] ) {
+            $ConfigMatch = $YAMLObject->Load( Data => $Data[6] );
+        }
+
+        my $ConfigChange = '';
+        if ( $Data[7] ) {
+            $ConfigChange = $YAMLObject->Load( Data => $Data[7] );
+        }
+
+        %Data = (
+            ID             => $Data[0],
+            Name           => $Data[1],
+            Comment        => $Data[2],
+            Description    => $Data[3] || '',
+            StopAfterMatch => $Data[4] || 0,
+            ValidID        => $Data[5],
+            ConfigMatch    => $ConfigMatch,
+            ConfigChange   => $ConfigChange,
+            CreateTime     => $Data[8],
+            ChangeTime     => $Data[9],
+            CreateBy       => $Data[10],
+            ChangeBy       => $Data[11],
+        );
+    }
+
+    return if !$Data{ID};
+
+    # get user object
+    my $UserObject = $Kernel::OM->Get('Kernel::System::User');
+
+    # convert UserIDs outside of fetchrowArray, otherwise UserLooukup will rise some warnings
+    my $CreateUser = $UserObject->UserLookup( UserID => $Data{CreateBy} );
+    my $ChangeUser = $UserObject->UserLookup( UserID => $Data{ChangeBy} );
+    $Data{CreateBy} = $CreateUser;
+    $Data{ChangeBy} = $ChangeUser;
+
+    # set cache
+    $CacheObject->Set(
+        Type  => 'ACLEditor_ACL',
+        Key   => $CacheKey,
+        Value => \%Data,
+        TTL   => $Self->{CacheTTL},
+    );
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get ACL attributes</p>
+
+<pre>    my $ACL = $ACLObject-&gt;ACLGet(
         ID              =&gt; 123,          # ID or name is needed
         Name            =&gt; 'ACL1',
         UserID          =&gt; 123,          # mandatory
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $ACL = {
+</pre><p>Returns:</p>
+
+<pre>    $ACL = {
         ID             =&gt; 123,
         Name           =&gt; 'some name',
         Comment        =&gt; 'Comment',
@@ -130,10 +481,159 @@
         ChangeBy       =&gt; 'user_login',
     };
 
-</pre></dd>	<dt>ACLUpdate()</dt>
-		<dd><p>update ACL attributes</p></dd>
-		<dd><p>returns 1 if success or undef otherwise</p></dd>
-<dd><pre>    my $Success = $ACLObject-&gt;ACLUpdate(
+</pre><h2 id="ACLUpdate">ACLUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ACLUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLUpdate">
+                                        <pre>
+
+sub ACLUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID Name ValidID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!"
+            );
+            return;
+        }
+    }
+
+    # define Description field if not present
+    $Param{Description} //= '';
+
+    my $ConfigMatch  = '';
+    my $ConfigChange = '';
+
+    for my $Key (qw(ConfigMatch ConfigChange)) {
+
+        if ( $Param{$Key} && !IsHashRefWithData( $Param{$Key} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "$Key needs to be a valid hash with data!",
+            );
+            return;
+        }
+    }
+
+    # get yaml object
+    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
+
+    if ( $Param{ConfigMatch} && IsHashRefWithData( $Param{ConfigMatch} ) ) {
+        $ConfigMatch = $YAMLObject->Dump( Data => $Param{ConfigMatch} );
+        utf8::upgrade($ConfigMatch);
+    }
+
+    if ( $Param{ConfigChange} && IsHashRefWithData( $Param{ConfigChange} ) ) {
+        $ConfigChange = $YAMLObject->Dump( Data => $Param{ConfigChange} );
+        utf8::upgrade($ConfigChange);
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # check if Name already exists
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT id FROM acl
+            WHERE $Self->{Lower}(name) = $Self->{Lower}(?)
+            AND id != ?",
+        Bind  => [ \$Param{Name}, \$Param{ID} ],
+        LIMIT => 1,
+    );
+
+    my $ACLExists;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $ACLExists = 1;
+    }
+
+    if ($ACLExists) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The Name:$Param{Name} already exists for a different ACL!",
+        );
+        return;
+    }
+
+    # check if need to update db
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT name, comments, description, stop_after_match, valid_id, config_match,
+                config_change
+            FROM acl
+            WHERE id = ?',
+        Bind  => [ \$Param{ID} ],
+        Limit => 1,
+    );
+
+    my $CurrentName;
+    my $CurrentComment;
+    my $CurrentDescription;
+    my $CurrentStopAfterMatch;
+    my $CurrentValidID;
+    my $CurrentConfigMatch;
+    my $CurrentConfigChange;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $CurrentName           = $Data[0];
+        $CurrentComment        = $Data[1];
+        $CurrentDescription    = $Data[2] || '';
+        $CurrentStopAfterMatch = $Data[3] || 0;
+        $CurrentValidID        = $Data[4];
+        $CurrentConfigMatch    = $Data[5];
+        $CurrentConfigChange   = $Data[6];
+    }
+
+    if (
+        $CurrentName
+        && $CurrentName eq $Param{Name}
+        && $CurrentComment eq $Param{Comment}
+        && $CurrentDescription eq $Param{Description}
+        && $CurrentStopAfterMatch eq $Param{StopAfterMatch}
+        && $CurrentValidID eq $Param{ValidID}
+        && $CurrentConfigMatch eq $Param{ConfigMatch}
+        && $CurrentConfigChange eq $Param{ConfigChange}
+        )
+    {
+        return 1;
+    }
+
+    # SQL
+    return if !$DBObject->Do(
+        SQL => '
+            UPDATE acl
+            SET name = ?, comments = ?, description = ?, stop_after_match = ?, valid_id = ?,
+                config_match = ?, config_change = ?, change_time = current_timestamp,  change_by = ?
+            WHERE id = ?',
+        Bind => [
+            \$Param{Name}, \$Param{Comment}, \$Param{Description}, \$Param{StopAfterMatch},
+            \$Param{ValidID}, \$ConfigMatch, \$ConfigChange,
+            \$Param{UserID}, \$Param{ID},
+        ],
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ACLEditor_ACL',
+    );
+
+    return if !$DBObject->Do(
+        SQL => '
+            INSERT INTO acl_sync ( acl_id, sync_state, create_time, change_time )
+            VALUES (?, ?, current_timestamp, current_timestamp)',
+        Bind => [ \$Param{ID}, \'not_sync' ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>update ACL attributes</p>
+
+<p>returns 1 if success or undef otherwise</p>
+
+<pre>    my $Success = $ACLObject-&gt;ACLUpdate(
         ID             =&gt; 123,                  # mandatory
         Name           =&gt; 'NameOfACL',          # mandatory
         Comment        =&gt; 'Comment',            # optional
@@ -145,32 +645,25 @@
         UserID         =&gt; 123,                  # mandatory
     );
 
-</pre></dd>	<dt>ACLList()</dt>
-		<dd><p>get an ACL list</p></dd>
-<dd><pre>    my $List = $ACLObject-&gt;ACLList(
-        ValidIDs        =&gt; ['1','2'],           # optional, to filter ACLs that match listed valid IDs
-        UserID          =&gt; 1,
-    );
+</pre><h2 id="ACLList">ACLList()</h2>
 
-</pre></dd><dd><pre>    Returns:
+<p><a href="#" onclick="toggleCode('method_ACLList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLList">
+                                        <pre>
 
-</pre></dd><dd><pre>    $List = {
-        1 =&gt; 'NameOfACL',
-    }
-=cut
+sub ACLList {
+    my ( $Self, %Param ) = @_;
 
-</pre></dd>		<dd><p>sub ACLList {
-    my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    # check needed
+    # check needed
     if ( !$Param{UserID} ) {
-        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
-            Priority =&gt; 'error',
-            Message  =&gt; &quot;Need UserID!&quot;
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need UserID!"
         );
         return;
     }
 
-</pre></dd><dd><pre>    my $ValidIDsStrg;
+    my $ValidIDsStrg;
     if ( !IsArrayRefWithData( $Param{ValidIDs} ) ) {
         $ValidIDsStrg = 'ALL';
     }
@@ -178,58 +671,157 @@
         $ValidIDsStrg = join ',', @{ $Param{ValidIDs} };
     }
 
-</pre></dd><dd><pre>    # get cache object
-    my $CacheObject = $Kernel::OM-&gt;Get('Kernel::System::Cache');
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
-</pre></dd><dd><pre>    # check cache
+    # check cache
     my $CacheKey = 'ACLList::ValidIDs::' . $ValidIDsStrg;
-    my $Cache    = $CacheObject-&gt;Get(
-        Type =&gt; 'ACLEditor_ACL',
-        Key  =&gt; $CacheKey,
+    my $Cache    = $CacheObject->Get(
+        Type => 'ACLEditor_ACL',
+        Key  => $CacheKey,
     );
     return $Cache if ref $Cache;
 
-</pre></dd><dd><pre>    # get database object
-    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
-</pre></dd><dd><pre>    my $SQL = '
+    my $SQL = '
             SELECT id, name
             FROM acl ';
 
-</pre></dd><dd><pre>    if ( $ValidIDsStrg ne 'ALL' ) {
+    if ( $ValidIDsStrg ne 'ALL' ) {
 
-</pre></dd><dd><pre>        my $ValidIDsStrgDB = join ',', map { $DBObject-&gt;Quote( $_, 'Integer' ) }
+        my $ValidIDsStrgDB = join ',', map { $DBObject->Quote( $_, 'Integer' ) }
             @{ $Param{ValidIDs} };
 
-</pre></dd><dd><pre>        $SQL .= &quot;WHERE valid_id IN ($ValidIDsStrgDB)&quot;;
+        $SQL .= "WHERE valid_id IN ($ValidIDsStrgDB)";
     }
 
-</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare( SQL =&gt; $SQL );
+    return if !$DBObject->Prepare( SQL => $SQL );
     my %Data;
-    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $Data{ $Row[0] } = $Row[1];
     }
 
-</pre></dd><dd><pre>    # set cache
-    $CacheObject-&gt;Set(
-        Type  =&gt; 'ACLEditor_ACL',
-        Key   =&gt; $CacheKey,
-        Value =&gt; \%Data,
-        TTL   =&gt; $Self-&gt;{CacheTTL},
+    # set cache
+    $CacheObject->Set(
+        Type  => 'ACLEditor_ACL',
+        Key   => $CacheKey,
+        Value => \%Data,
+        TTL   => $Self->{CacheTTL},
     );
 
-</pre></dd><dd><pre>    return \%Data;
+    return \%Data;
 }
+</pre></div>
 
-</pre></dd>	<dt>ACLListGet()</dt>
-		<dd><p>get an ACL list with all ACL details</p></dd>
-<dd><pre>    my $List = $ACLObject-&gt;ACLListGet(
+<p>get an ACL list</p>
+
+<pre>    my $List = $ACLObject-&gt;ACLList(
+        ValidIDs        =&gt; ['1','2'],           # optional, to filter ACLs that match listed valid IDs
+        UserID          =&gt; 1,
+    );
+
+    Returns:
+
+    $List = {
+        1 =&gt; 'NameOfACL',
+    }
+
+</pre><h2 id="ACLListGet">ACLListGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ACLListGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLListGet">
+                                        <pre>
+
+sub ACLListGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+        return;
+    }
+
+    my $ValidIDsStrg;
+    if ( !IsArrayRefWithData( $Param{ValidIDs} ) ) {
+        $ValidIDsStrg = 'ALL';
+    }
+    else {
+        $ValidIDsStrg = join ',', @{ $Param{ValidIDs} };
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # check cache
+    my $CacheKey = 'ACLListGet::ValidIDs::' . $ValidIDsStrg;
+    my $Cache    = $CacheObject->Get(
+        Type => 'ACLEditor_ACL',
+        Key  => $CacheKey,
+    );
+    return $Cache if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    my $SQL = '
+            SELECT id
+            FROM acl ';
+
+    if ( $ValidIDsStrg ne 'ALL' ) {
+
+        my $ValidIDsStrgDB = join ',', map { $DBObject->Quote( $_, 'Integer' ) } @{ $Param{ValidIDs} };
+
+        $SQL .= "WHERE valid_id IN ($ValidIDsStrgDB)";
+    }
+    $SQL .= 'ORDER BY id';
+
+    # SQL
+    return if !$DBObject->Prepare(
+        SQL => $SQL,
+    );
+
+    my @ACLIDs;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        push @ACLIDs, $Row[0];
+    }
+
+    my @Data;
+    for my $ItemID (@ACLIDs) {
+
+        my $ACLData = $Self->ACLGet(
+            ID     => $ItemID,
+            UserID => 1,
+        );
+        push @Data, $ACLData;
+    }
+
+    # set cache
+    $CacheObject->Set(
+        Type  => 'ACLEditor_ACL',
+        Key   => $CacheKey,
+        Value => \@Data,
+        TTL   => $Self->{CacheTTL},
+    );
+
+    return \@Data;
+}
+</pre></div>
+
+<p>get an ACL list with all ACL details</p>
+
+<pre>    my $List = $ACLObject-&gt;ACLListGet(
         UserID   =&gt; 1,
         ValidIDs =&gt; ['1','2'], # optional, to filter ACLs that match listed valid IDs
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $List = [
+</pre><p>Returns:</p>
+
+<pre>    $List = [
         {
             ID            =&gt; 123,
             Name          =&gt; 'some name',
@@ -254,56 +846,314 @@
         },
     ];
 
-</pre></dd>	<dt>ACLsNeedSync()</dt>
-		<dd><p>Check if there are unsynchronized ACLs</p></dd>
-<dd><pre>    my $SyncCount = $ACLObject-&gt;ACLsNeedSync();
+</pre><h2 id="ACLsNeedSync">ACLsNeedSync()</h2>
 
-</pre></dd><dd><pre>    Returns:
+<p><a href="#" onclick="toggleCode('method_ACLsNeedSync');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLsNeedSync">
+                                        <pre>
 
-</pre></dd><dd><pre>    $SyncCount = 0 || Number of ALCs that need to be synced
-=cut
+sub ACLsNeedSync {
+    my ( $Self, %Param ) = @_;
 
-</pre></dd>		<dd><p>sub ACLsNeedSync {
-    my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    # get database object
-    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
-</pre></dd><dd><pre>    my $SQL = '
+    my $SQL = '
         SELECT COUNT(*)
         FROM acl_sync';
 
-</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare( SQL =&gt; $SQL );
+    return if !$DBObject->Prepare( SQL => $SQL );
 
-</pre></dd><dd><pre>    my $NeedSync = 0;
-    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
+    my $NeedSync = 0;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $NeedSync = $Row[0];
     }
 
-</pre></dd><dd><pre>    return $NeedSync;
+    return $NeedSync;
 }
+</pre></div>
 
-</pre></dd>	<dt>ACLsNeedSyncReset()</dt>
-		<dd><p>Reset synchronization information for ACLs.</p></dd>
-	<dt>ACLDump()</dt>
-		<dd><p>gets a complete ACL information dump from the DB</p></dd>
-<dd><pre>    my $ACLDump = $ACLObject-&gt;ACLDump(
+<p>Check if there are unsynchronized ACLs</p>
+
+<pre>    my $SyncCount = $ACLObject-&gt;ACLsNeedSync();
+
+    Returns:
+
+    $SyncCount = 0 || Number of ALCs that need to be synced
+
+</pre><h2 id="ACLsNeedSyncReset">ACLsNeedSyncReset()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ACLsNeedSyncReset');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLsNeedSyncReset">
+                                        <pre>
+
+sub ACLsNeedSyncReset {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do( SQL => 'DELETE FROM acl_sync' );
+
+    return 1;
+}
+</pre></div>
+
+<p>Reset synchronization information for ACLs.</p>
+
+<h2 id="ACLDump">ACLDump()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ACLDump');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLDump">
+                                        <pre>
+
+sub ACLDump {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+        return;
+    }
+
+    if ( !defined $Param{ResultType} ) {
+        $Param{ResultType} = 'FILE';
+    }
+
+    if ( $Param{ResultType} eq 'FILE' ) {
+        if ( !$Param{Location} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Need Location for ResultType \'FILE\'!',
+            );
+
+        }
+    }
+
+    # get valid ACLs
+    my $ACLList = $Self->ACLListGet(
+        UserID   => 1,
+        ValidIDs => [1],
+    );
+
+    my %ACLDump;
+
+    ACL:
+    for my $ACLData ( @{$ACLList} ) {
+
+        next ACL if !IsHashRefWithData($ACLData);
+
+        my $Properties;
+        my $PropertiesDatabase;
+        if ( IsHashRefWithData( $ACLData->{ConfigMatch} ) ) {
+            $Properties         = $ACLData->{ConfigMatch}->{Properties};
+            $PropertiesDatabase = $ACLData->{ConfigMatch}->{PropertiesDatabase};
+        }
+
+        my $Possible;
+        my $PossibleAdd;
+        my $PossibleNot;
+        if ( IsHashRefWithData( $ACLData->{ConfigChange} ) ) {
+            $Possible    = $ACLData->{ConfigChange}->{Possible};
+            $PossibleAdd = $ACLData->{ConfigChange}->{PossibleAdd};
+            $PossibleNot = $ACLData->{ConfigChange}->{PossibleNot};
+        }
+
+        $ACLDump{ $ACLData->{Name} } = {
+            CreateTime => $ACLData->{CreateTime},
+            ChangeTime => $ACLData->{ChangeTime},
+            CreateBy   => $ACLData->{CreateBy},
+            ChangeBy   => $ACLData->{ChangeBy},
+            Comment    => $ACLData->{Comment},
+            Values     => {
+                StopAfterMatch     => $ACLData->{StopAfterMatch} || 0,
+                Properties         => $Properties                || {},
+                PropertiesDatabase => $PropertiesDatabase        || {},
+                Possible           => $Possible                  || {},
+                PossibleAdd        => $PossibleAdd               || {},
+                PossibleNot        => $PossibleNot               || {},
+            },
+        };
+    }
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ACLEditor_ACL',
+    );
+
+    my $Output = '';
+    for my $ACLName ( sort keys %ACLDump ) {
+
+        # create output
+        $Output .= $Self->_ACLItemOutput(
+            Key        => $ACLName,
+            Value      => $ACLDump{$ACLName}{Values},
+            Comment    => $ACLDump{$ACLName}{Comment},
+            CreateTime => $ACLDump{$ACLName}{CreateTime},
+            ChangeTime => $ACLDump{$ACLName}{ChangeTime},
+            CreateBy   => $ACLDump{$ACLName}{CreateBy},
+            ChangeBy   => $ACLDump{$ACLName}{ChangeBy},
+        );
+    }
+
+    # get current time for the file comment
+    my $CurrentTime = $Kernel::OM->Get('Kernel::System::Time')->CurrentTimestamp();
+
+    # get user data of the current user to use for the file comment
+    my %User = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
+        UserID => $Param{UserID},
+    );
+
+    # remove home from location path to show in file comment
+    my $Home     = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+    my $Location = $Param{Location};
+    $Location =~ s{$Home\/}{}xmsg;
+
+    # build comment (therefore we need to trick out the filter)
+    my $FileStart = <<'EOF';
+# OTRS config file (automatically generated)
+# VERSION:1.1
+package Kernel::Config::Files::ZZZACL;
+use strict;
+use warnings;
+no warnings 'redefine';
+use utf8;
+sub Load {
+    my ($File, $Self) = @_;
+
+EOF
+
+    my $FileEnd = <<'EOF';
+}
+</pre></div>
+
+<p>gets a complete ACL information dump from the DB</p>
+
+<pre>    my $ACLDump = $ACLObject-&gt;ACLDump(
         ResultType  =&gt; 'SCALAR'                     # 'SCALAR' || 'HASH' || 'FILE'
         Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatory for ResultType = 'FILE'
         UserID      =&gt; 1,
     );
 
-</pre></dd>		<dd><p>Returns:
-    $ACLDump = '/opt/otrs/var/myfile.txt';          # or undef if can't write the file</p></dd>
-	<dt>ACLImport()</dt>
-		<dd><p>import an ACL YAML file/content</p></dd>
-<dd><pre>    my $ACLImport = $ACLObject-&gt;ACLImport(
+</pre><p>Returns:
+    $ACLDump = '/opt/otrs/var/myfile.txt';          # or undef if can't write the file</p>
+
+<h2 id="ACLImport">ACLImport()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ACLImport');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ACLImport">
+                                        <pre>
+
+sub ACLImport {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(Content UserID)) {
+
+        # check needed stuff
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return {
+                Success => 0,
+                Message => "$Needed is missing can not continue.",
+                }
+        }
+    }
+
+    my $ACLData = $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Param{Content} );
+
+    if ( ref $ACLData ne 'ARRAY' ) {
+        return {
+            Success => 0,
+            Message =>
+                "Couldn't read ACL configuration file. Please make sure the file is valid.",
+        };
+    }
+
+    my @UpdatedACLs;
+    my @AddedACLs;
+    my @ACLErrors;
+
+    ACL:
+    for my $ACL ( @{$ACLData} ) {
+
+        next ACL if !$ACL;
+        next ACL if ref $ACL ne 'HASH';
+
+        $ACL = $Self->_ACLMigrateFrom33(
+            ACL    => $ACL,
+            UserID => $Param{UserID},
+        );
+
+        my @ExistingACLs = @{ $Self->ACLListGet( UserID => $Param{UserID} ) || [] };
+        @ExistingACLs = grep { $_->{Name} eq $ACL->{Name} } @ExistingACLs;
+
+        if ( $Param{OverwriteExistingEntities} && $ExistingACLs[0] ) {
+            my $Success = $Self->ACLUpdate(
+                %{ $ExistingACLs[0] },
+                Name           => $ACL->{Name},
+                Comment        => $ACL->{Comment},
+                Description    => $ACL->{Description} || '',
+                StopAfterMatch => $ACL->{StopAfterMatch} || 0,
+                ConfigMatch    => $ACL->{ConfigMatch} || undef,
+                ConfigChange   => $ACL->{ConfigChange} || undef,
+                ValidID        => $ACL->{ValidID} || 1,
+                UserID         => $Param{UserID},
+            );
+
+            if ($Success) {
+                push @UpdatedACLs, $ACL->{Name};
+            }
+            else {
+                push @ACLErrors, $ACL->{Name};
+            }
+
+        }
+        else {
+
+            # now add the ACL
+            my $Success = $Self->ACLAdd(
+                Name           => $ACL->{Name},
+                Comment        => $ACL->{Comment},
+                Description    => $ACL->{Description} || '',
+                ConfigMatch    => $ACL->{ConfigMatch} || undef,
+                ConfigChange   => $ACL->{ConfigChange} || undef,
+                StopAfterMatch => $ACL->{StopAfterMatch},
+                ValidID        => $ACL->{ValidID} || 1,
+                UserID         => $Param{UserID},
+            );
+
+            if ($Success) {
+                push @AddedACLs, $ACL->{Name};
+            }
+            else {
+                push @ACLErrors, $ACL->{Name};
+            }
+        }
+    }
+
+    return {
+        Success     => 1,
+        AddedACLs   => join( ', ', @AddedACLs ) || '',
+        UpdatedACLs => join( ', ', @UpdatedACLs ) || '',
+        ACLErrors   => join( ', ', @ACLErrors ) || '',
+        }
+}
+</pre></div>
+
+<p>import an ACL YAML file/content</p>
+
+<pre>    my $ACLImport = $ACLObject-&gt;ACLImport(
         Content                   =&gt; $YAMLContent, # mandatory, YAML format
         OverwriteExistingEntities =&gt; 0,            # 0 || 1
         UserID                    =&gt; 1,            # mandatory
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $ACLImport = {
+</pre><p>Returns:</p>
+
+<pre>    $ACLImport = {
         Success      =&gt; 1,                         # 1 if success or undef if operation could not
                                                    #    be performed
         Message     =&gt; 'The Message to show.',     # error message
@@ -312,9 +1162,66 @@
         ACLErrors   =&gt; 'ACL5',                     # list of ACLs that could not be added or updated
     };
 
-</pre></dd>	<dt>_ACLItemOutput()</dt>
-	<dt>_ACLMigrateFrom33()</dt>
-</dl>
+</pre><h2 id="ACLItemOutput">_ACLItemOutput()</h2>
+
+<p><a href="#" onclick="toggleCode('method__ACLItemOutput');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__ACLItemOutput">
+                                        <pre>
+
+sub _ACLItemOutput {
+    my ( $Self, %Param ) = @_;
+
+    my $Output = "# Created: $Param{CreateTime} ($Param{CreateBy})\n";
+    $Output .= "# Changed: $Param{ChangeTime} ($Param{ChangeBy})\n";
+
+    if ( $Param{Comment} ) {
+        $Output .= "# Comment: $Param{Comment}\n";
+    }
+
+    $Output .= $Kernel::OM->Get('Kernel::System::Main')->Dump(
+        $Param{Value},
+    );
+
+    # replace "[empty]" by ''
+    $Output =~ s{\[empty\]}{}xmsg;
+
+    my $Name = $Param{Key};
+    $Name =~ s{\'}{\\'}xmsg;
+    my $Key = '$Self->{TicketAcl}->{\'' . $Name . '\'}';
+
+    $Output =~ s{\$VAR1}{$Key}mxs;
+
+    return $Output . "\n";
+}
+</pre></div>
+
+<h2 id="ACLMigrateFrom33">_ACLMigrateFrom33()</h2>
+
+<p><a href="#" onclick="toggleCode('method__ACLMigrateFrom33');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__ACLMigrateFrom33">
+                                        <pre>
+
+sub _ACLMigrateFrom33 {
+    my ( $Self, %Param ) = @_;
+
+    my $ACL = $Param{ACL};
+
+    return $ACL if !ref $ACL->{ConfigChange};
+    return $ACL if !$ACL->{ConfigChange}->{Possible}->{Action};
+    return $ACL if ref $ACL->{ConfigChange}->{Possible}->{Action} ne 'HASH';
+
+    # convert old hash into an array using only the keys set to 0, and skip those that are set
+    # to 1, set them as PossibleNot and delete the Possible->Action section from the ACL.
+    my @NewAction = grep { $ACL->{ConfigChange}->{Possible}->{Action}->{$_} == 0 }
+        sort keys %{ $ACL->{ConfigChange}->{Possible}->{Action} };
+
+    delete $ACL->{ConfigChange}->{Possible}->{Action};
+    $ACL->{ConfigChange}->{PossibleNot}->{Action} = \@NewAction;
+
+    return $ACL;
+}
+</pre></div>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

@@ -58,7 +58,11 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,10 +78,75 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>Create scheduler task worker object.</p></dd>
-</dl>
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # Allocate new hash for object.
+    my $Self = {};
+    bless $Self, $Type;
+
+    # Get objects in constructor to save performance.
+    $Self->{ConfigObject}      = $Kernel::OM->Get('Kernel::Config');
+    $Self->{CacheObject}       = $Kernel::OM->Get('Kernel::System::Cache');
+    $Self->{TimeObject}        = $Kernel::OM->Get('Kernel::System::Time');
+    $Self->{MainObject}        = $Kernel::OM->Get('Kernel::System::Main');
+    $Self->{DBObject}          = $Kernel::OM->Get('Kernel::System::DB');
+    $Self->{StorableObject}    = $Kernel::OM->Get('Kernel::System::Storable');
+    $Self->{SchedulerDBObject} = $Kernel::OM->Get('Kernel::System::Daemon::SchedulerDB');
+
+    # Disable in memory cache to be clusterable.
+    $Self->{CacheObject}->Configure(
+        CacheInMemory  => 0,
+        CacheInBackend => 1,
+    );
+
+    # Get the NodeID from the SysConfig settings, this is used on High Availability systems.
+    $Self->{NodeID} = $Self->{ConfigObject}->Get('NodeID') || 1;
+
+    # Check NodeID, if does not match is impossible to continue.
+    if ( $Self->{NodeID} !~ m{ \A \d+ \z }xms && $Self->{NodeID} > 0 && $Self->{NodeID} < 1000 ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "NodeID '$Self->{NodeID}' is invalid!",
+        );
+        return;
+    }
+
+    # Get pid directory.
+    $Self->{PIDDir}  = $Self->{ConfigObject}->Get('Home') . '/var/run/Daemon/Scheduler/';
+    $Self->{PIDFile} = $Self->{PIDDir} . "Worker-NodeID-$Self->{NodeID}.pid";
+
+    # Check pid hash and pid file.
+    return if !$Self->_WorkerPIDsCheck();
+
+    # Get the maximum number of workers (forks to execute the tasks).
+    $Self->{MaximumWorkers} = $Self->{ConfigObject}->Get('Daemon::SchedulerTaskWorker::MaximumWorkers') || 5;
+
+    # Do not change the following values!
+    # Modulo in PreRun() can be damaged after a change.
+    $Self->{SleepPost} = 0.25;       # sleep 60 seconds after each loop
+    $Self->{Discard}   = 60 * 60;    # discard every hour
+
+    $Self->{DiscardCount} = $Self->{Discard} / $Self->{SleepPost};
+
+    $Self->{Debug}      = $Param{Debug};
+    $Self->{DaemonName} = 'Daemon: SchedulerTaskWorker';
+
+    return $Self;
+}
+</pre></div>
+
+<p>Create scheduler task worker object.</p>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

@@ -58,7 +58,15 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#PIDCreate">PIDCreate()</a></li>
+	<li><a href="#PIDGet">PIDGet()</a></li>
+	<li><a href="#PIDDelete">PIDDelete()</a></li>
+	<li><a href="#PIDUpdate">PIDUpdate()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,61 +82,275 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get fqdn
+    $Self->{Host} = $Kernel::OM->Get('Kernel::Config')->Get('FQDN');
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $PIDObject = $Kernel::OM-&gt;Get('Kernel::System::PID');
 
-</pre></dd>	<dt>PIDCreate()</dt>
-		<dd><p>create a new process id lock</p></dd>
-<dd><pre>    $PIDObject-&gt;PIDCreate(
+</pre><h2 id="PIDCreate">PIDCreate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PIDCreate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PIDCreate">
+                                        <pre>
+
+sub PIDCreate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Name'
+        );
+        return;
+    }
+
+    # check if already exists
+    my %ProcessID = $Self->PIDGet(%Param);
+
+    if ( %ProcessID && !$Param{Force} ) {
+
+        my $TTL = $Param{TTL} || 3600;
+        if ( $ProcessID{Created} > ( time() - $TTL ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'notice',
+                Message  => "Can't create PID $ProcessID{Name}, because it's already running "
+                    . "($ProcessID{Host}/$ProcessID{PID})!",
+            );
+            return;
+        }
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "Removed PID ($ProcessID{Name}/$ProcessID{Host}/$ProcessID{PID}, "
+                . "because 1 hour old!",
+        );
+    }
+
+    # do nothing if PID is the same
+    my $PIDCurrent = $$;
+    return 1 if $ProcessID{PID} && $PIDCurrent eq $ProcessID{PID};
+
+    # delete if exists
+    $Self->PIDDelete(%Param);
+
+    # add new entry
+    my $Time = time();
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => '
+            INSERT INTO process_id
+            (process_name, process_id, process_host, process_create, process_change)
+            VALUES (?, ?, ?, ?, ?)',
+        Bind => [ \$Param{Name}, \$PIDCurrent, \$Self->{Host}, \$Time, \$Time ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>create a new process id lock</p>
+
+<pre>    $PIDObject-&gt;PIDCreate(
         Name =&gt; 'PostMasterPOP3',
     );
 
-</pre></dd><dd><pre>    or to create a new PID forced, without check if already exists (this will delete any process
+    or to create a new PID forced, without check if already exists (this will delete any process
     with the same name from any other host)
 
-</pre></dd><dd><pre>    $PIDObject-&gt;PIDCreate(
+    $PIDObject-&gt;PIDCreate(
         Name  =&gt; 'PostMasterPOP3',
         Force =&gt; 1,
     );
 
-</pre></dd><dd><pre>    or to create a new PID with extra TTL time
+    or to create a new PID with extra TTL time
 
-</pre></dd><dd><pre>    $PIDObject-&gt;PIDCreate(
+    $PIDObject-&gt;PIDCreate(
         Name  =&gt; 'PostMasterPOP3',
         TTL   =&gt; 60 * 60 * 24 * 3, # for 3 days, per default 1h is used
     );
 
-</pre></dd>	<dt>PIDGet()</dt>
-		<dd><p>get process id lock info</p></dd>
-<dd><pre>    my %PID = $PIDObject-&gt;PIDGet(
+</pre><h2 id="PIDGet">PIDGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PIDGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PIDGet">
+                                        <pre>
+
+sub PIDGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Name'
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT process_name, process_id, process_host, process_create, process_change
+            FROM process_id
+            WHERE process_name = ?',
+        Bind  => [ \$Param{Name} ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        %Data = (
+            PID     => $Row[1],
+            Name    => $Row[0],
+            Host    => $Row[2],
+            Created => $Row[3],
+            Changed => $Row[4],
+        );
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<p>get process id lock info</p>
+
+<pre>    my %PID = $PIDObject-&gt;PIDGet(
         Name =&gt; 'PostMasterPOP3',
     );
 
-</pre></dd>	<dt>PIDDelete()</dt>
-		<dd><p>delete the process id lock</p></dd>
-<dd><pre>    my $Success = $PIDObject-&gt;PIDDelete(
+</pre><h2 id="PIDDelete">PIDDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PIDDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PIDDelete">
+                                        <pre>
+
+sub PIDDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Name'
+        );
+        return;
+    }
+
+    # set basic SQL statement
+    my $SQL = '
+        DELETE FROM process_id
+        WHERE process_name = ?';
+
+    my @Bind = ( \$Param{Name} );
+
+    # delete only processes from this host if Force option was not set
+    if ( !$Param{Force} ) {
+        $SQL .= '
+        AND process_host = ?';
+
+        push @Bind, \$Self->{Host}
+    }
+
+    # sql
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL  => $SQL,
+        Bind => \@Bind,
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>delete the process id lock</p>
+
+<pre>    my $Success = $PIDObject-&gt;PIDDelete(
         Name  =&gt; 'PostMasterPOP3',
     );
 
-</pre></dd><dd><pre>    or to force delete even if the PID is registered by another host
+    or to force delete even if the PID is registered by another host
     my $Success = $PIDObject-&gt;PIDDelete(
         Name  =&gt; 'PostMasterPOP3',
         Force =&gt; 1,
     );
 
-</pre></dd>	<dt>PIDUpdate()</dt>
-		<dd><p>update the process id change time.
-this might be useful as a keep alive signal.</p></dd>
-<dd><pre>    my $Success = $PIDObject-&gt;PIDUpdate(
+</pre><h2 id="PIDUpdate">PIDUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PIDUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PIDUpdate">
+                                        <pre>
+
+sub PIDUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Name'
+        );
+        return;
+    }
+
+    my %PID = $Self->PIDGet( Name => $Param{Name} );
+
+    if ( !%PID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Can not get PID'
+        );
+        return;
+    }
+
+    # sql
+    my $Time = time();
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => '
+            UPDATE process_id
+            SET process_change = ?
+            WHERE process_name = ?',
+        Bind => [ \$Time, \$Param{Name} ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>update the process id change time.
+this might be useful as a keep alive signal.</p>
+
+<pre>    my $Success = $PIDObject-&gt;PIDUpdate(
         Name    =&gt; 'PostMasterPOP3',
     );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

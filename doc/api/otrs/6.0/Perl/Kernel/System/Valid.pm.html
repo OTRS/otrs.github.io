@@ -58,7 +58,14 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#ValidList">ValidList()</a></li>
+	<li><a href="#ValidLookup">ValidLookup()</a></li>
+	<li><a href="#ValidIDsGet">ValidIDsGet()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,33 +81,162 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self->{CacheType} = 'Valid';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $ValidObject = $Kernel::OM-&gt;Get('Kernel::System::Valid');
 
-</pre></dd>	<dt>ValidList()</dt>
-		<dd><p>return a valid list as hash</p></dd>
-<dd><pre>    my %List = $ValidObject-&gt;ValidList();
+</pre><h2 id="ValidList">ValidList()</h2>
 
-</pre></dd>	<dt>ValidLookup()</dt>
-		<dd><p>returns the id or the name of a valid</p></dd>
-<dd><pre>    my $ValidID = $ValidObject-&gt;ValidLookup(
+<p><a href="#" onclick="toggleCode('method_ValidList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidList">
+                                        <pre>
+
+sub ValidList {
+    my ( $Self, %Param ) = @_;
+
+    # read cache
+    my $CacheKey = 'ValidList';
+    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+    return %{$Cache} if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get list from database
+    return if !$DBObject->Prepare( SQL => 'SELECT id, name FROM valid' );
+
+    # fetch the result
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[1];
+    }
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%Data
+    );
+
+    return %Data;
+}
+</pre></div>
+
+<p>return a valid list as hash</p>
+
+<pre>    my %List = $ValidObject-&gt;ValidList();
+
+</pre><h2 id="ValidLookup">ValidLookup()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ValidLookup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidLookup">
+                                        <pre>
+
+sub ValidLookup {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Valid} && !$Param{ValidID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Valid or ValidID!',
+        );
+        return;
+    }
+
+    # get (already cached) valid list
+    my %ValidList = $Self->ValidList();
+
+    my $Key;
+    my $Value;
+    my $ReturnData;
+    if ( $Param{ValidID} ) {
+        $Key        = 'ValidID';
+        $Value      = $Param{ValidID};
+        $ReturnData = $ValidList{ $Param{ValidID} };
+    }
+    else {
+        $Key   = 'Valid';
+        $Value = $Param{Valid};
+        my %ValidListReverse = reverse %ValidList;
+        $ReturnData = $ValidListReverse{ $Param{Valid} };
+    }
+
+    # check if data exists
+    if ( !defined $ReturnData ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No $Key for $Value found!",
+        );
+        return;
+    }
+
+    return $ReturnData;
+}
+</pre></div>
+
+<p>returns the id or the name of a valid</p>
+
+<pre>    my $ValidID = $ValidObject-&gt;ValidLookup(
         Valid =&gt; 'valid',
     );
 
-</pre></dd><dd><pre>    my $Valid = $ValidObject-&gt;ValidLookup(
+    my $Valid = $ValidObject-&gt;ValidLookup(
         ValidID =&gt; 1,
     );
 
-</pre></dd>	<dt>ValidIDsGet()</dt>
-		<dd><p>return all valid ids as array</p></dd>
-<dd><pre>    my @List = $ValidObject-&gt;ValidIDsGet();
+</pre><h2 id="ValidIDsGet">ValidIDsGet()</h2>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<p><a href="#" onclick="toggleCode('method_ValidIDsGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValidIDsGet">
+                                        <pre>
+
+sub ValidIDsGet {
+    my ( $Self, %Param ) = @_;
+
+    my $ValidID = $Self->ValidLookup(
+        Valid => 'valid',
+    );
+
+    return if !$ValidID;
+    return ($ValidID);
+}
+</pre></div>
+
+<p>return all valid ids as array</p>
+
+<pre>    my @List = $ValidObject-&gt;ValidIDsGet();
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

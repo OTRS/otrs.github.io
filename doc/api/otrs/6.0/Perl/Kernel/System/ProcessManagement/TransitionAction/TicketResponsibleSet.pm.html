@@ -58,7 +58,12 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -75,17 +80,122 @@ responsible</p>
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $TicketResponsibleSetObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::TransitionAction::TicketResponsibleSet');
 
-</pre></dd>	<dt>Run()</dt>
-<dd><pre>    Run Data
+</pre><h2 id="Run">Run()</h2>
 
-</pre></dd><dd><pre>    my $TicketResponsibleSetResult = $TicketResponsibleSetActionObject-&gt;Run(
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    # define a common message to output in case of any error
+    my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
+        . " Transition: $Param{TransitionEntityID}"
+        . " TransitionAction: $Param{TransitionActionEntityID} - ";
+
+    # check for missing or wrong params
+    my $Success = $Self->_CheckParams(
+        %Param,
+        CommonMessage => $CommonMessage,
+    );
+    return if !$Success;
+
+    # override UserID if specified as a parameter in the TA config
+    $Param{UserID} = $Self->_OverrideUserID(%Param);
+
+    # use ticket attributes if needed
+    $Self->_ReplaceTicketAttributes(%Param);
+
+    if ( !$Param{Config}->{ResponsibleID} && !$Param{Config}->{Responsible} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage . "No Responsible or ResponsibleID configured!",
+        );
+        return;
+    }
+
+    $Success = 0;
+
+    if (
+        defined $Param{Config}->{Responsible}
+        && $Param{Config}->{Responsible} ne $Param{Ticket}->{Responsible}
+        )
+    {
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketResponsibleSet(
+            TicketID => $Param{Ticket}->{TicketID},
+            NewUser  => $Param{Config}->{Responsible},
+            UserID   => $Param{UserID},
+        );
+    }
+    elsif (
+        defined $Param{Config}->{ResponsibleID}
+        && $Param{Config}->{ResponsibleID} ne $Param{Ticket}->{ResponsibleID}
+        )
+    {
+        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketResponsibleSet(
+            TicketID  => $Param{Ticket}->{TicketID},
+            NewUserID => $Param{Config}->{ResponsibleID},
+            UserID    => $Param{UserID},
+        );
+    }
+    else {
+
+        # data is the same as in ticket nothing to do
+        $Success = 1;
+    }
+
+    if ( !$Success ) {
+        my $CustomMessage;
+        if ( defined $Param{Config}->{Responsible} ) {
+            $CustomMessage = "Responsible: $Param{Config}->{Responsible},";
+        }
+        else {
+            $CustomMessage = "ResponsibleID: $Param{Config}->{ResponsibleID},";
+        }
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $CommonMessage
+                . 'Ticket responsible could not be updated to '
+                . $CustomMessage
+                . ' for Ticket: '
+                . $Param{Ticket}->{TicketID} . '!',
+        );
+        return;
+    }
+    return 1;
+}
+</pre></div>
+
+<pre>    Run Data
+
+    my $TicketResponsibleSetResult = $TicketResponsibleSetActionObject-&gt;Run(
         UserID                   =&gt; 123,
         Ticket                   =&gt; \%Ticket,   # required
         ProcessEntityID          =&gt; 'P123',
@@ -103,12 +213,11 @@ responsible</p>
     Config is the Config Hash stored in a Process::TransitionAction's  Config key
     Returns:
 
-</pre></dd><dd><pre>    $TicketResponsibleSetResult = 1; # 0
+    $TicketResponsibleSetResult = 1; # 0
 
-</pre></dd><dd><pre>    );
+    );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

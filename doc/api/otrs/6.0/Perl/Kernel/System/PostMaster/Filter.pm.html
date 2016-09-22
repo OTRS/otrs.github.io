@@ -58,7 +58,15 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#FilterList">FilterList()</a></li>
+	<li><a href="#FilterAdd">FilterAdd()</a></li>
+	<li><a href="#FilterDelete">FilterDelete()</a></li>
+	<li><a href="#FilterGet">FilterGet()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,20 +82,111 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $FilterObject = $Kernel::OM-&gt;Get('Kernel::System::PostMaster::Filter');
 
-</pre></dd>	<dt>FilterList()</dt>
-		<dd><p>get all filter</p></dd>
-<dd><pre>    my %FilterList = $PMFilterObject-&gt;FilterList();
+</pre><h2 id="FilterList">FilterList()</h2>
 
-</pre></dd>	<dt>FilterAdd()</dt>
-		<dd><p>add a filter</p></dd>
-<dd><pre>    $PMFilterObject-&gt;FilterAdd(
+<p><a href="#" onclick="toggleCode('method_FilterList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FilterList">
+                                        <pre>
+
+sub FilterList {
+    my ( $Self, %Param ) = @_;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => 'SELECT f_name FROM postmaster_filter',
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[0];
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<p>get all filter</p>
+
+<pre>    my %FilterList = $PMFilterObject-&gt;FilterList();
+
+</pre><h2 id="FilterAdd">FilterAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FilterAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FilterAdd">
+                                        <pre>
+
+sub FilterAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name StopAfterMatch Match Set)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    my %Not = %{ $Param{Not} || {} };
+
+    for my $Type (qw(Match Set)) {
+
+        my %Data = %{ $Param{$Type} };
+
+        for my $Key ( sort keys %Data ) {
+
+            return if !$DBObject->Do(
+                SQL =>
+                    'INSERT INTO postmaster_filter (f_name, f_stop, f_type, f_key, f_value, f_not)'
+                    . ' VALUES (?, ?, ?, ?, ?, ?)',
+                Bind => [
+                    \$Param{Name}, \$Param{StopAfterMatch}, \$Type,
+                    \$Key, \$Data{$Key}, \$Not{$Key}
+                ],
+            );
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>add a filter</p>
+
+<pre>    $PMFilterObject-&gt;FilterAdd(
         Name           =&gt; 'some name',
         StopAfterMatch =&gt; 0,
         Match = {
@@ -99,20 +198,95 @@
         },
     );
 
-</pre></dd>	<dt>FilterDelete()</dt>
-		<dd><p>delete a filter</p></dd>
-<dd><pre>    $PMFilterObject-&gt;FilterDelete(
+</pre><h2 id="FilterDelete">FilterDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FilterDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FilterDelete">
+                                        <pre>
+
+sub FilterDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Do(
+        SQL  => 'DELETE FROM postmaster_filter WHERE f_name = ?',
+        Bind => [ \$Param{Name} ],
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>delete a filter</p>
+
+<pre>    $PMFilterObject-&gt;FilterDelete(
         Name =&gt; '123',
     );
 
-</pre></dd>	<dt>FilterGet()</dt>
-		<dd><p>get filter properties, returns HASH ref Match and Set</p></dd>
-<dd><pre>    my %Data = $PMFilterObject-&gt;FilterGet(
+</pre><h2 id="FilterGet">FilterGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FilterGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FilterGet">
+                                        <pre>
+
+sub FilterGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL =>
+            'SELECT f_type, f_key, f_value, f_name, f_stop, f_not FROM postmaster_filter WHERE f_name = ?',
+        Bind => [ \$Param{Name} ],
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] }->{ $Row[1] } = $Row[2];
+        $Data{Name}                   = $Row[3];
+        $Data{StopAfterMatch}         = $Row[4];
+
+        if ( $Row[0] eq 'Match' ) {
+            $Data{Not}->{ $Row[1] } = $Row[5];
+        }
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<p>get filter properties, returns HASH ref Match and Set</p>
+
+<pre>    my %Data = $PMFilterObject-&gt;FilterGet(
         Name =&gt; '132',
     );
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

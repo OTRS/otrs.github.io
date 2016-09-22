@@ -58,7 +58,14 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Collect">Collect()</a></li>
+	<li><a href="#CollectAsynchronous">CollectAsynchronous()</a></li>
+	<li><a href="#CleanupAsynchronous">CleanupAsynchronous()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,34 +81,143 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash ref to object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $SupportDataCollectorObject = $Kernel::OM-&gt;Get('Kernel::System::SupportDataCollector');
 
-</pre></dd><dd>
 
 
-</dd>	<dt>Collect()</dt>
-		<dd><p>collect system data</p></dd>
-<dd><pre>    my %Result = $SupportDataCollectorObject-&gt;Collect(
+
+</pre><h2 id="Collect">Collect()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Collect');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Collect">
+                                        <pre>
+
+sub Collect {
+    my ( $Self, %Param ) = @_;
+
+    # check cache
+    my $CacheKey = 'DataCollect';
+
+    if ( $Param{UseCache} ) {
+        my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => 'SupportDataCollector',
+            Key  => $CacheKey,
+        );
+        return %{$Cache} if ref $Cache eq 'HASH';
+    }
+
+    # Data must be collected in a web request context to be able to collect web server data.
+    #   If called from CLI, make a web request to collect the data.
+    if ( !$ENV{GATEWAY_INTERFACE} ) {
+        return $Self->CollectByWebRequest(%Param);
+    }
+
+    # Look for all plug-ins in the FS
+    my @PluginFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => dirname(__FILE__) . "/SupportDataCollector/Plugin",
+        Filter    => "*.pm",
+        Recursive => 1,
+    );
+
+    # Look for all asynchronous plug-ins in the FS
+    my @PluginAsynchronousFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => dirname(__FILE__) . "/SupportDataCollector/PluginAsynchronous",
+        Filter    => "*.pm",
+        Recursive => 1,
+    );
+
+    # merge the both plug-ins types together
+    my @PluginFilesAll = ( @PluginFiles, @PluginAsynchronousFiles );
+
+    my @Result;
+
+    # Execute all plug-ins
+    for my $PluginFile (@PluginFilesAll) {
+
+        # Convert file name => package name
+        $PluginFile =~ s{^.*(Kernel/System.*)[.]pm$}{$1}xmsg;
+        $PluginFile =~ s{/+}{::}xmsg;
+
+        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($PluginFile) ) {
+            return (
+                Success      => 0,
+                ErrorMessage => "Could not load $PluginFile!",
+            );
+        }
+        my $PluginObject = $PluginFile->new( %{$Self} );
+
+        my %PluginResult = $PluginObject->Run();
+
+        if ( !%PluginResult || !$PluginResult{Success} ) {
+            return (
+                Success => 0,
+                ErrorMessage =>
+                    "Error during execution of $PluginFile: $PluginResult{ErrorMessage}",
+            );
+        }
+
+        push @Result, @{ $PluginResult{Result} // [] };
+    }
+
+    # sort the results from the plug-ins by the short identifier
+    @Result = sort { $a->{ShortIdentifier} cmp $b->{ShortIdentifier} } @Result;
+
+    my %ReturnData = (
+        Success => 1,
+        Result  => \@Result,
+    );
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => 'SupportDataCollector',
+        Key   => $CacheKey,
+        Value => \%ReturnData,
+        TTL   => 60 * 10,
+    );
+
+    return %ReturnData;
+}
+</pre></div>
+
+<p>collect system data</p>
+
+<pre>    my %Result = $SupportDataCollectorObject-&gt;Collect(
         UseCache   =&gt; 1,    # (optional) to get data from cache if any
         WebTimeout =&gt; 60,   # (optional)
         Hostname   =&gt; 'my.test.host:8080' # (optional, for testing purposes)
     );
 
-</pre></dd><dd><pre>    returns in case of error
+    returns in case of error
 
-</pre></dd><dd><pre>    (
+    (
         Success      =&gt; 0,
         ErrorMessage =&gt; '...',
     )
 
-</pre></dd><dd><pre>    otherwise
+    otherwise
 
-</pre></dd><dd><pre>    (
+    (
         Success =&gt; 1,
         Result  =&gt; [
             {
@@ -123,23 +239,112 @@
         ],
     )
 
-</pre></dd>	<dt>CollectAsynchronous()</dt>
-		<dd><p>collect asynchronous data (the asynchronous plug-in decide at which place the data will be saved)</p></dd>
-<dd><pre>    my %Result = $SupportDataCollectorObject-&gt;CollectAsynchronous();
+</pre><h2 id="CollectAsynchronous">CollectAsynchronous()</h2>
 
-</pre></dd>		<dd><p>returns:</p></dd>
-<dd><pre>    %Result = (
+<p><a href="#" onclick="toggleCode('method_CollectAsynchronous');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CollectAsynchronous">
+                                        <pre>
+
+sub CollectAsynchronous {
+    my ( $Self, %Param ) = @_;
+
+    # Look for all plug-ins in the FS
+    my @PluginFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => dirname(__FILE__) . "/SupportDataCollector/PluginAsynchronous",
+        Filter    => "*.pm",
+        Recursive => 1,
+    );
+
+    # Execute all plug-ins
+    for my $PluginFile (@PluginFiles) {
+
+        # Convert file name => package name
+        $PluginFile =~ s{^.*(Kernel/System.*)[.]pm$}{$1}xmsg;
+        $PluginFile =~ s{/+}{::}xmsg;
+
+        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($PluginFile) ) {
+            return (
+                Success      => 0,
+                ErrorMessage => "Could not load $PluginFile!",
+            );
+        }
+        my $PluginObject = $PluginFile->new( %{$Self} );
+
+        my $Success = $PluginObject->RunAsynchronous();
+
+        if ( !$Success ) {
+            return (
+                Success      => 0,
+                ErrorMessage => "Error during asynchronous execution of $PluginFile.",
+            );
+        }
+    }
+
+    return (
+        Success => 1,
+    );
+}
+</pre></div>
+
+<p>collect asynchronous data (the asynchronous plug-in decide at which place the data will be saved)</p>
+
+<pre>    my %Result = $SupportDataCollectorObject-&gt;CollectAsynchronous();
+
+</pre><p>returns:</p>
+
+<pre>    %Result = (
         Success      =&gt; 1,                  # or 0 in case of an error
         ErrorMessage =&gt; 'some message'      # optional (only in case of an error)
     );
 
-</pre></dd>		<dd><p>return</p></dd>
-	<dt>CleanupAsynchronous()</dt>
-		<dd><p>cleanup asynchronous data (the asynchronous plug-in decide for themselves)</p></dd>
-<dd><pre>    my $Success = $SupportDataCollectorObject-&gt;CleanupAsynchronous();
+</pre><p>return</p>
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h2 id="CleanupAsynchronous">CleanupAsynchronous()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CleanupAsynchronous');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CleanupAsynchronous">
+                                        <pre>
+
+sub CleanupAsynchronous {
+    my ( $Self, %Param ) = @_;
+
+    # Look for all plug-ins in the FS
+    my @PluginFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => dirname(__FILE__) . "/SupportDataCollector/PluginAsynchronous",
+        Filter    => "*.pm",
+        Recursive => 1,
+    );
+
+    # Execute all Plug-ins
+    PLUGINFILE:
+    for my $PluginFile (@PluginFiles) {
+
+        # Convert file name => package name
+        $PluginFile =~ s{^.*(Kernel/System.*)[.]pm$}{$1}xmsg;
+        $PluginFile =~ s{/+}{::}xmsg;
+
+        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($PluginFile) ) {
+            return (
+                Success      => 0,
+                ErrorMessage => "Could not load $PluginFile!",
+            );
+        }
+        my $PluginObject = $PluginFile->new( %{$Self} );
+
+        next PLUGINFILE if !$PluginFile->can('CleanupAsynchronous');
+
+        $PluginObject->CleanupAsynchronous();
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>cleanup asynchronous data (the asynchronous plug-in decide for themselves)</p>
+
+<pre>    my $Success = $SupportDataCollectorObject-&gt;CleanupAsynchronous();
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

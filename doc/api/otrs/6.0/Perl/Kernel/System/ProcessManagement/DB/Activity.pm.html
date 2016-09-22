@@ -58,7 +58,17 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#ActivityAdd">ActivityAdd()</a></li>
+	<li><a href="#ActivityDelete">ActivityDelete()</a></li>
+	<li><a href="#ActivityGet">ActivityGet()</a></li>
+	<li><a href="#ActivityUpdate">ActivityUpdate()</a></li>
+	<li><a href="#ActivityList">ActivityList()</a></li>
+	<li><a href="#ActivityListGet">ActivityListGet()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,17 +84,140 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get the cache TTL (in seconds)
+    $Self->{CacheTTL} = int( $Kernel::OM->Get('Kernel::Config')->Get('Process::CacheTTL') || 3600 );
+
+    # set lower if database is case sensitive
+    $Self->{Lower} = '';
+    if ( $Kernel::OM->Get('Kernel::System::DB')->GetDatabaseFunction('CaseSensitive') ) {
+        $Self->{Lower} = 'LOWER';
+    }
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $ActivityObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::DB::Activity');
 
-</pre></dd>	<dt>ActivityAdd()</dt>
-		<dd><p>add new Activity</p></dd>
-		<dd><p>returns the id of the created activity if success or undef otherwise</p></dd>
-<dd><pre>    my $ID = $ActivityObject-&gt;ActivityAdd(
+</pre><h2 id="ActivityAdd">ActivityAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityAdd">
+                                        <pre>
+
+sub ActivityAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(EntityID Name Config UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!",
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # check if EntityID already exists
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT id
+            FROM pm_activity
+            WHERE $Self->{Lower}(entity_id) = $Self->{Lower}(?)",
+        Bind  => [ \$Param{EntityID} ],
+        Limit => 1,
+    );
+
+    my $EntityExists;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $EntityExists = 1;
+    }
+
+    if ($EntityExists) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The EntityID:$Param{EntityID} already exists for an activity!"
+        );
+        return;
+    }
+
+    # check config valid format
+    if ( ref $Param{Config} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Config needs to be a valid Hash reference!",
+        );
+        return;
+    }
+
+    # dump config as string
+    my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
+
+    # Make sure the resulting string has the UTF-8 flag. YAML only sets it if
+    #   part of the data already had it.
+    utf8::upgrade($Config);
+
+    # sql
+    return if !$DBObject->Do(
+        SQL => '
+            INSERT INTO pm_activity (entity_id, name, config, create_time, create_by, change_time,
+                change_by)
+            VALUES (?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{EntityID}, \$Param{Name}, \$Config, \$Param{UserID}, \$Param{UserID},
+        ],
+    );
+
+    return if !$DBObject->Prepare(
+        SQL  => 'SELECT id FROM pm_activity WHERE entity_id = ?',
+        Bind => [ \$Param{EntityID} ],
+    );
+
+    my $ID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $ID = $Row[0];
+    }
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ProcessManagement_Activity',
+    );
+
+    return if !$ID;
+
+    return $ID;
+}
+</pre></div>
+
+<p>add new Activity</p>
+
+<p>returns the id of the created activity if success or undef otherwise</p>
+
+<pre>    my $ID = $ActivityObject-&gt;ActivityAdd(
         EntityID    =&gt; 'A1'              # mandatory, exportable unique identifier
         Name        =&gt; 'NameOfActivity', # mandatory
         Config      =&gt; $ConfigHashRef,   # mandatory, activity configuration to be stored in YAML
@@ -92,20 +225,203 @@
         UserID      =&gt; 123,              # mandatory
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $ID = 567;
+</pre><p>Returns:</p>
 
-</pre></dd>	<dt>ActivityDelete()</dt>
-		<dd><p>delete an Activity</p></dd>
-		<dd><p>returns 1 if success or undef otherwise</p></dd>
-<dd><pre>    my $Success = $ActivityObject-&gt;ActivityDelete(
+<pre>    $ID = 567;
+
+</pre><h2 id="ActivityDelete">ActivityDelete()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityDelete">
+                                        <pre>
+
+sub ActivityDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!"
+            );
+            return;
+        }
+    }
+
+    # check if exists
+    my $Activity = $Self->ActivityGet(
+        ID     => $Param{ID},
+        UserID => 1,
+    );
+    return if !IsHashRefWithData($Activity);
+
+    # delete activity
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL  => 'DELETE FROM pm_activity WHERE id = ?',
+        Bind => [ \$Param{ID} ],
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ProcessManagement_Activity',
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>delete an Activity</p>
+
+<p>returns 1 if success or undef otherwise</p>
+
+<pre>    my $Success = $ActivityObject-&gt;ActivityDelete(
         ID      =&gt; 123,
         UserID  =&gt; 123,
     );
 
-</pre></dd>	<dt>ActivityGet()</dt>
-		<dd><p>get Activity attributes</p></dd>
-<dd><pre>    my $Activity = $ActivityObject-&gt;ActivityGet(
+</pre><h2 id="ActivityGet">ActivityGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityGet">
+                                        <pre>
+
+sub ActivityGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} && !$Param{EntityID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ID or EntityID!'
+        );
+        return;
+    }
+
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+        return;
+    }
+
+    my $ActivityDialogNames = 0;
+    if ( defined $Param{ActivityDialogNames} && $Param{ActivityDialogNames} == 1 ) {
+        $ActivityDialogNames = 1;
+    }
+
+    # check cache
+    my $CacheKey;
+    if ( $Param{ID} ) {
+        $CacheKey = 'ActivityGet::ID::' . $Param{ID} . '::ActivityDialogNames::'
+            . $ActivityDialogNames;
+    }
+    else {
+        $CacheKey = 'ActivityGet::EntityID::' . $Param{EntityID} . '::ActivityDialogNames::'
+            . $ActivityDialogNames;
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    my $Cache = $CacheObject->Get(
+        Type => 'ProcessManagement_Activity',
+        Key  => $CacheKey,
+    );
+    return $Cache if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    if ( $Param{ID} ) {
+        return if !$DBObject->Prepare(
+            SQL => '
+                SELECT id, entity_id, name, config, create_time, change_time
+                FROM pm_activity
+                WHERE id = ?',
+            Bind  => [ \$Param{ID} ],
+            Limit => 1,
+        );
+    }
+    else {
+        return if !$DBObject->Prepare(
+            SQL => '
+                SELECT id, entity_id, name, config, create_time, change_time
+                FROM pm_activity
+                WHERE entity_id = ?',
+            Bind  => [ \$Param{EntityID} ],
+            Limit => 1,
+        );
+    }
+
+    # get yaml object
+    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
+
+    my %Data;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+
+        my $Config = $YAMLObject->Load( Data => $Data[3] );
+
+        %Data = (
+            ID         => $Data[0],
+            EntityID   => $Data[1],
+            Name       => $Data[2],
+            Config     => $Config,
+            CreateTime => $Data[4],
+            ChangeTime => $Data[5],
+        );
+    }
+
+    return if !$Data{ID};
+
+    # create the ActivityDialogsList
+    if ($ActivityDialogNames) {
+
+        my %ActivityDialogs;
+        if ( IsHashRefWithData( $Data{Config}->{ActivityDialog} ) ) {
+
+            # get activity dialog object
+            my $ActivityDialogObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::ActivityDialog');
+
+            my $ActivityDialogList = $ActivityDialogObject->ActivityDialogList(
+                UseEntities => 1,
+                UserID      => 1,
+            );
+
+            for my $ActivityOrder ( sort { $a <=> $b } keys %{ $Data{Config}->{ActivityDialog} } ) {
+                $ActivityDialogs{ $Data{Config}->{ActivityDialog}->{$ActivityOrder} }
+                    = $ActivityDialogList->{ $Data{Config}->{ActivityDialog}->{$ActivityOrder} };
+            }
+        }
+        $Data{ActivityDialogs} = \%ActivityDialogs;
+    }
+    else {
+        my @ActivityDialogList;
+
+        if ( IsHashRefWithData( $Data{Config}->{ActivityDialog} ) ) {
+            @ActivityDialogList = map { $Data{Config}->{ActivityDialog}->{$_} }
+                sort { $a <=> $b } keys %{ $Data{Config}->{ActivityDialog} };
+        }
+        $Data{ActivityDialogs} = \@ActivityDialogList;
+    }
+
+    # set cache
+    $CacheObject->Set(
+        Type  => 'ProcessManagement_Activity',
+        Key   => $CacheKey,
+        Value => \%Data,
+        TTL   => $Self->{CacheTTL},
+    );
+
+    return \%Data;
+}
+</pre></div>
+
+<p>get Activity attributes</p>
+
+<pre>    my $Activity = $ActivityObject-&gt;ActivityGet(
         ID                  =&gt; 123,      # ID or EntityID is needed
         EntityID            =&gt; 'A1',
         ActivityDialogNames =&gt; 1,        # default 0, 1 || 0, if 0 returns an ActivityDialogs array
@@ -115,8 +431,9 @@
         UserID        =&gt; 123,            # mandatory
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $Activity = {
+</pre><p>Returns:</p>
+
+<pre>    $Activity = {
         ID             =&gt; 123,
         EntityID       =&gt; 'A1',
         Name           =&gt; 'some name',
@@ -126,7 +443,7 @@
         ChangeTime     =&gt; '2012-07-04 15:08:00',
     };
 
-</pre></dd><dd><pre>    $Activity = {
+    $Activity = {
         ID           =&gt; 123,
         EntityID     =&gt; 'P1',
         Name         =&gt; 'some name',
@@ -140,10 +457,120 @@
         ChangeTime   =&gt; '2012-07-04 15:08:00',
     };
 
-</pre></dd>	<dt>ActivityUpdate()</dt>
-		<dd><p>update Activity attributes</p></dd>
-		<dd><p>returns 1 if success or undef otherwise</p></dd>
-<dd><pre>    my $Success = $ActivityObject-&gt;ActivityUpdate(
+</pre><h2 id="ActivityUpdate">ActivityUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityUpdate">
+                                        <pre>
+
+sub ActivityUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID EntityID Name Config UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!"
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # check if EntityID already exists
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT id FROM pm_activity
+            WHERE $Self->{Lower}(entity_id) = $Self->{Lower}(?)
+            AND id != ?",
+        Bind  => [ \$Param{EntityID}, \$Param{ID} ],
+        LIMIT => 1,
+    );
+
+    my $EntityExists;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $EntityExists = 1;
+    }
+
+    if ($EntityExists) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The EntityID:$Param{Name} already exists for a activity!",
+        );
+        return;
+    }
+
+    # check config valid format
+    if ( ref $Param{Config} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Config needs to be a valid Hash reference!",
+        );
+        return;
+    }
+
+    # dump config as string
+    my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
+
+    # Make sure the resulting string has the UTF-8 flag. YAML only sets it if
+    #   part of the data already had it.
+    utf8::upgrade($Config);
+
+    # check if need to update db
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT entity_id, name, config
+            FROM pm_activity
+            WHERE id = ?',
+        Bind  => [ \$Param{ID} ],
+        Limit => 1,
+    );
+
+    my $CurrentEntityID;
+    my $CurrentName;
+    my $CurrentConfig;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $CurrentEntityID = $Data[0];
+        $CurrentName     = $Data[1];
+        $CurrentConfig   = $Data[2];
+    }
+
+    if ($CurrentEntityID) {
+
+        return 1 if $CurrentEntityID eq $Param{EntityID}
+            && $CurrentName eq $Param{Name}
+            && $CurrentConfig eq $Config;
+    }
+
+    # sql
+    return if !$DBObject->Do(
+        SQL => '
+            UPDATE pm_activity
+            SET entity_id = ?, name = ?,  config = ?, change_time = current_timestamp, change_by = ?
+            WHERE id = ?',
+        Bind => [
+            \$Param{EntityID}, \$Param{Name}, \$Config, \$Param{UserID},
+            \$Param{ID},
+        ],
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'ProcessManagement_Activity',
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>update Activity attributes</p>
+
+<p>returns 1 if success or undef otherwise</p>
+
+<pre>    my $Success = $ActivityObject-&gt;ActivityUpdate(
         ID          =&gt; 123,             # mandatory
         EntityID    =&gt; 'A1'             # mandatory, exportable unique identifier
         Name        =&gt; 'NameOfProcess', # mandatory
@@ -152,65 +579,50 @@
         UserID      =&gt; 123,             # mandatory
     );
 
-</pre></dd>	<dt>ActivityList()</dt>
-		<dd><p>get an Activity list</p></dd>
-<dd><pre>    my $List = $ActivityObject-&gt;ActivityList(
-        UseEntities =&gt; 0,                       # default 0, 1 || 0. if 0 the return hash keys are
-                                                #    the activity IDs otherwise keys are the
-                                                #    activity entity IDs
-        UserID      =&gt; 1,
-    );
+</pre><h2 id="ActivityList">ActivityList()</h2>
 
-</pre></dd><dd><pre>    Returns:
+<p><a href="#" onclick="toggleCode('method_ActivityList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityList">
+                                        <pre>
 
-</pre></dd><dd><pre>    $List = {
-        1 =&gt; 'Activity1',
-    }
+sub ActivityList {
+    my ( $Self, %Param ) = @_;
 
-</pre></dd><dd><pre>    or
-
-</pre></dd><dd><pre>    $List = {
-        'A1' =&gt; 'Activity1',
-    }
-=cut
-
-</pre></dd>		<dd><p>sub ActivityList {
-    my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    # check needed
+    # check needed
     if ( !$Param{UserID} ) {
-        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
-            Priority =&gt; 'error',
-            Message  =&gt; &quot;Need UserID!&quot;
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need UserID!"
         );
         return;
     }
 
-</pre></dd><dd><pre>    # get cache object
-    my $CacheObject = $Kernel::OM-&gt;Get('Kernel::System::Cache');
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
-</pre></dd><dd><pre>    # check cache
+    # check cache
     my $UseEntities = 0;
-    if ( defined $Param{UseEntities} &amp;&amp; $Param{UseEntities} ) {
+    if ( defined $Param{UseEntities} && $Param{UseEntities} ) {
         $UseEntities = 1;
     }
     my $CacheKey = 'ActivityList::UseEntities::' . $UseEntities;
-    my $Cache    = $CacheObject-&gt;Get(
-        Type =&gt; 'ProcessManagement_Activity',
-        Key  =&gt; $CacheKey,
+    my $Cache    = $CacheObject->Get(
+        Type => 'ProcessManagement_Activity',
+        Key  => $CacheKey,
     );
     return $Cache if ref $Cache;
 
-</pre></dd><dd><pre>    # get database object
-    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
-</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare(
-        SQL =&gt; '
+    return if !$DBObject->Prepare(
+        SQL => '
             SELECT id, entity_id, name
             FROM pm_activity',
     );
 
-</pre></dd><dd><pre>    my %Data;
-    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         if ( !$UseEntities ) {
             $Data{ $Row[0] } = $Row[2];
         }
@@ -219,25 +631,116 @@
         }
     }
 
-</pre></dd><dd><pre>    # set cache
-    $CacheObject-&gt;Set(
-        Type  =&gt; 'ProcessManagement_Activity',
-        Key   =&gt; $CacheKey,
-        Value =&gt; \%Data,
-        TTL   =&gt; $Self-&gt;{CacheTTL},
+    # set cache
+    $CacheObject->Set(
+        Type  => 'ProcessManagement_Activity',
+        Key   => $CacheKey,
+        Value => \%Data,
+        TTL   => $Self->{CacheTTL},
     );
 
-</pre></dd><dd><pre>    return \%Data;
+    return \%Data;
 }
+</pre></div>
 
-</pre></dd>	<dt>ActivityListGet()</dt>
-		<dd><p>get an Activity list with all activity details</p></dd>
-<dd><pre>    my $List = $ActivityObject-&gt;ActivityListGet(
+<p>get an Activity list</p>
+
+<pre>    my $List = $ActivityObject-&gt;ActivityList(
+        UseEntities =&gt; 0,                       # default 0, 1 || 0. if 0 the return hash keys are
+                                                #    the activity IDs otherwise keys are the
+                                                #    activity entity IDs
         UserID      =&gt; 1,
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    $List = [
+    Returns:
+
+    $List = {
+        1 =&gt; 'Activity1',
+    }
+
+    or
+
+    $List = {
+        'A1' =&gt; 'Activity1',
+    }
+
+</pre><h2 id="ActivityListGet">ActivityListGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ActivityListGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ActivityListGet">
+                                        <pre>
+
+sub ActivityListGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!',
+        );
+        return;
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # check cache
+    my $CacheKey = 'ActivityListGet';
+
+    my $Cache = $CacheObject->Get(
+        Type => 'ProcessManagement_Activity',
+        Key  => $CacheKey,
+    );
+    return $Cache if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    return if !$DBObject->Prepare(
+        SQL => '
+            SELECT id, entity_id
+            FROM pm_activity
+            ORDER BY id',
+    );
+
+    my @ActivityIDs;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        push @ActivityIDs, $Row[0];
+    }
+
+    my @Data;
+    for my $ItemID (@ActivityIDs) {
+
+        my $ActivityData = $Self->ActivityGet(
+            ID     => $ItemID,
+            UserID => 1,
+        );
+        push @Data, $ActivityData;
+    }
+
+    # set cache
+    $CacheObject->Set(
+        Type  => 'ProcessManagement_Activity',
+        Key   => $CacheKey,
+        Value => \@Data,
+        TTL   => $Self->{CacheTTL},
+    );
+
+    return \@Data;
+}
+</pre></div>
+
+<p>get an Activity list with all activity details</p>
+
+<pre>    my $List = $ActivityObject-&gt;ActivityListGet(
+        UserID      =&gt; 1,
+    );
+
+</pre><p>Returns:</p>
+
+<pre>    $List = [
         {
             ID             =&gt; 123,
             EntityID       =&gt; 'A1',
@@ -258,8 +761,7 @@
         }
     ];
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

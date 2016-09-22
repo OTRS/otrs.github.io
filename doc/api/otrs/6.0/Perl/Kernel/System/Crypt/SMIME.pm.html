@@ -58,7 +58,36 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#Check">Check()</a></li>
+	<li><a href="#Crypt">Crypt()</a></li>
+	<li><a href="#Decrypt">Decrypt()</a></li>
+	<li><a href="#Sign">Sign()</a></li>
+	<li><a href="#Verify">Verify()</a></li>
+	<li><a href="#Search">Search()</a></li>
+	<li><a href="#CertificateSearch">CertificateSearch()</a></li>
+	<li><a href="#FetchFromCustomer">FetchFromCustomer()</a></li>
+	<li><a href="#ConvertCertFormat">ConvertCertFormat()</a></li>
+	<li><a href="#CertificateAdd">CertificateAdd()</a></li>
+	<li><a href="#CertificateGet">CertificateGet()</a></li>
+	<li><a href="#CertificateRemove">CertificateRemove()</a></li>
+	<li><a href="#CertificateList">CertificateList()</a></li>
+	<li><a href="#CertificateAttributes">CertificateAttributes()</a></li>
+	<li><a href="#CertificateRead">CertificateRead()</a></li>
+	<li><a href="#PrivateSearch">PrivateSearch()</a></li>
+	<li><a href="#PrivateAdd">PrivateAdd()</a></li>
+	<li><a href="#PrivateGet">PrivateGet()</a></li>
+	<li><a href="#PrivateRemove">PrivateRemove()</a></li>
+	<li><a href="#PrivateList">PrivateList()</a></li>
+	<li><a href="#PrivateAttributes">PrivateAttributes()</a></li>
+	<li><a href="#SignerCertRelationAdd">SignerCertRelationAdd ()</a></li>
+	<li><a href="#SignerCertRelationGet">SignerCertRelationGet ()</a></li>
+	<li><a href="#SignerCertRelationExists">SignerCertRelationExists ()</a></li>
+	<li><a href="#SignerCertRelationDelete">SignerCertRelationDelete ()</a></li>
+	<li><a href="#CheckCertPath">CheckCertPath()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,14 +103,205 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>Check()</dt>
-		<dd><p>check if environment is working</p></dd>
-<dd><pre>    my $Message = $CryptObject-&gt;Check();
 
-</pre></dd>	<dt>Crypt()</dt>
-		<dd><p>crypt a message</p></dd>
-<dd><pre>    my $Message = $CryptObject-&gt;Crypt(
+
+
+<p>sub new {
+    my ( $Type, %Param ) = @_;</p>
+
+<pre>    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self-&gt;{Debug} = $Param{Debug} || 0;
+
+    # check if module is enabled
+    return 0 if !$Kernel::OM-&gt;Get('Kernel::Config')-&gt;Get('SMIME');
+
+    # call init()
+    $Self-&gt;_Init();
+
+    # check working ENV
+    return 0 if $Self-&gt;Check();
+
+    return $Self;
+}
+
+</pre><h2 id="Check">Check()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Check');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Check">
+                                        <pre>
+
+sub Check {
+    my ( $Self, %Param ) = @_;
+
+    if ( !-e $Self->{Bin} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No such $Self->{Bin}!",
+        );
+        return "No such $Self->{Bin}!";
+    }
+    elsif ( !-x $Self->{Bin} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$Self->{Bin} not executable!",
+        );
+        return "$Self->{Bin} not executable!";
+    }
+    elsif ( !-e $Self->{CertPath} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No such $Self->{CertPath}!",
+        );
+        return "No such $Self->{CertPath}!";
+    }
+    elsif ( !-d $Self->{CertPath} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No such $Self->{CertPath} directory!",
+        );
+        return "No such $Self->{CertPath} directory!";
+    }
+    elsif ( !-w $Self->{CertPath} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$Self->{CertPath} not writable!",
+        );
+        return "$Self->{CertPath} not writable!";
+    }
+    elsif ( !-e $Self->{PrivatePath} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No such $Self->{PrivatePath}!",
+        );
+        return "No such $Self->{PrivatePath}!";
+    }
+    elsif ( !-d $Self->{PrivatePath} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No such $Self->{PrivatePath} directory!",
+        );
+        return "No such $Self->{PrivatePath} directory!";
+    }
+    elsif ( !-w $Self->{PrivatePath} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$Self->{PrivatePath} not writable!",
+        );
+        return "$Self->{PrivatePath} not writable!";
+    }
+
+    return;
+}
+</pre></div>
+
+<p>check if environment is working</p>
+
+<pre>    my $Message = $CryptObject-&gt;Check();
+
+</pre><h2 id="Crypt">Crypt()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Crypt');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Crypt">
+                                        <pre>
+
+sub Crypt {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(Message)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    if ( $Param{Certificates} && ref $Param{Certificates} ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Certificates Param: Must be an array reference!",
+        );
+    }
+
+    if ( !$Param{Certificates} && !$Param{Filename} && !( $Param{Hash} || $Param{Fingerprint} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Message  => "Need Param: Filename or Hash and Fingerprint!",
+            Priority => 'error',
+        );
+        return;
+    }
+
+    # backwards compatibility
+    my @CertificateSearchParams;
+    if ( $Param{Certificates} ) {
+        @CertificateSearchParams = @{ $Param{Certificates} };
+    }
+    else {
+        my %SearchParam = %Param;
+        delete $SearchParam{Message};
+        push @CertificateSearchParams, \%SearchParam;
+    }
+
+    # get temp file object
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    my @CertFiles;
+
+    SEARCHPARAM:
+    for my $SearchParam (@CertificateSearchParams) {
+
+        next SEARCHPARAM if !IsHashRefWithData($SearchParam);
+
+        my $Certificate = $Self->CertificateGet( %{$SearchParam} );
+        my ( $FHCertificate, $CertFile ) = $FileTempObject->TempFile();
+        print $FHCertificate $Certificate;
+        close $FHCertificate;
+
+        push @CertFiles, $CertFile;
+    }
+
+    if ( !@CertFiles ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No certificates found!",
+        );
+        return;
+    }
+
+    my $CertFileStrg = join ' ', @CertFiles;
+
+    my ( $FH, $PlainFile ) = $FileTempObject->TempFile();
+    print $FH $Param{Message};
+    close $FH;
+
+    my ( $FHCrypted, $CryptedFile ) = $FileTempObject->TempFile();
+    close $FHCrypted;
+
+    my $Options    = "smime -encrypt -binary -des3 -in $PlainFile -out $CryptedFile $CertFileStrg";
+    my $LogMessage = $Self->_CleanOutput(qx{$Self->{Cmd} $Options 2>&1});
+    if ($LogMessage) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't encrypt: $LogMessage!"
+        );
+        return;
+    }
+
+    my $CryptedRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead( Location => $CryptedFile );
+
+    return if !$CryptedRef;
+    return $$CryptedRef;
+}
+</pre></div>
+
+<p>crypt a message</p>
+
+<pre>    my $Message = $CryptObject-&gt;Crypt(
         Message      =&gt; $Message,
         Certificates =&gt; [
             {
@@ -95,33 +315,232 @@
         ]
     );
 
-</pre></dd><dd><pre>    my $Message = $CryptObject-&gt;Crypt(
+    my $Message = $CryptObject-&gt;Crypt(
         Message  =&gt; $Message,
         Filename =&gt; $CertificateFilename,
     );
 
-</pre></dd><dd><pre>    my $Message = $CryptObject-&gt;Crypt(
+    my $Message = $CryptObject-&gt;Crypt(
         Message     =&gt; $Message,
         Hash        =&gt; $CertificateHash,
         Fingerprint =&gt; $CertificateFingerprint,
     );
 
-</pre></dd>	<dt>Decrypt()</dt>
-		<dd><p>decrypt a message and returns a hash (Successful, Message, Data)</p></dd>
-<dd><pre>    my %Message = $CryptObject-&gt;Decrypt(
+</pre><h2 id="Decrypt">Decrypt()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Decrypt');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Decrypt">
+                                        <pre>
+
+sub Decrypt {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Message)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    if ( !$Param{Filename} && !( $Param{Hash} || $Param{Fingerprint} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Message  => "Need Param: Filename or Hash and Fingerprint!",
+            Priority => 'error',
+        );
+        return;
+    }
+
+    my $Filename    = $Param{Filename} || '';
+    my $Certificate = $Self->CertificateGet(%Param);
+    my %Attributes  = $Self->CertificateAttributes(
+        Certificate => $Certificate,
+        Filename    => $Filename,
+    );
+    my ( $Private, $Secret ) = $Self->PrivateGet(%Attributes);
+
+    # get temp file object
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    my ( $FHPrivate, $PrivateKeyFile ) = $FileTempObject->TempFile();
+    print $FHPrivate $Private;
+    close $FHPrivate;
+    my ( $FHCertificate, $CertFile ) = $FileTempObject->TempFile();
+    print $FHCertificate $Certificate;
+    close $FHCertificate;
+    my ( $FH, $CryptedFile ) = $FileTempObject->TempFile();
+    print $FH $Param{Message};
+    close $FH;
+    my ( $FHDecrypted, $PlainFile ) = $FileTempObject->TempFile();
+    close $FHDecrypted;
+    my ( $FHSecret, $SecretFile ) = $FileTempObject->TempFile();
+    print $FHSecret $Secret;
+    close $FHSecret;
+
+    my $Options = "smime -decrypt -in $CryptedFile -out $PlainFile -recip $CertFile -inkey $PrivateKeyFile"
+        . " -passin file:$SecretFile";
+    my $LogMessage = qx{$Self->{Cmd} $Options 2>&1};
+    unlink $SecretFile;
+
+    if (
+        $Param{SearchingNeededKey}
+        && $LogMessage =~ m{PKCS7_dataDecode:no recipient matches certificate}
+        && $LogMessage =~ m{PKCS7_decrypt:decrypt error}
+        )
+    {
+        return (
+            Successful => 0,
+            Message    => 'Impossible to decrypt with installed private keys!',
+        );
+    }
+
+    if ($LogMessage) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't decrypt: $LogMessage!"
+        );
+        return (
+            Successful => 0,
+            Message    => $LogMessage,
+        );
+    }
+
+    my $DecryptedRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead( Location => $PlainFile );
+    if ( !$DecryptedRef ) {
+        return (
+            Successful => 0,
+            Message    => "OpenSSL: Can't read $PlainFile!",
+            Data       => undef,
+        );
+
+    }
+    return (
+        Successful => 1,
+        Message    => "OpenSSL: OK",
+        Data       => $$DecryptedRef,
+    );
+}
+</pre></div>
+
+<p>decrypt a message and returns a hash (Successful, Message, Data)</p>
+
+<pre>    my %Message = $CryptObject-&gt;Decrypt(
         Message  =&gt; $CryptedMessage,
         Filename =&gt; $Filename,
     );
 
-</pre></dd><dd><pre>    my %Message = $CryptObject-&gt;Decrypt(
+    my %Message = $CryptObject-&gt;Decrypt(
         Message     =&gt; $CryptedMessage,
         Hash        =&gt; $Hash,
         Fingerprint =&gt; $Fingerprint,
     );
 
-</pre></dd>	<dt>Sign()</dt>
-		<dd><p>sign a message</p></dd>
-<dd><pre>    my $Sign = $CryptObject-&gt;Sign(
+</pre><h2 id="Sign">Sign()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Sign');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Sign">
+                                        <pre>
+
+sub Sign {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Message)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    if ( !$Param{Filename} && !( $Param{Hash} || $Param{Fingerprint} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Message  => "Need Param: Filename or Hash and Fingerprint!",
+            Priority => 'error',
+        );
+        return;
+    }
+
+    my $Certificate = $Self->CertificateGet(%Param);
+    my %Attributes  = $Self->CertificateAttributes(
+        Certificate => $Certificate,
+        Filename    => $Param{Filename}
+    );
+    my ( $Private, $Secret ) = $Self->PrivateGet(%Attributes);
+
+    # get the related certificates
+    my @RelatedCertificates = $Self->SignerCertRelationGet( CertFingerprint => $Attributes{Fingerprint} );
+
+    # get temp file object
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    my $FHCACertFileActive;
+    my ( $FHCACertFile, $CAFileName ) = $FileTempObject->TempFile();
+
+    my $CertFileCommand = '';
+
+    # get every related cert
+    for my $Cert (@RelatedCertificates) {
+        my $CAFilename = $Self->_CertificateFilename(
+            Hash        => $Cert->{CAHash},
+            Fingerprint => $Cert->{CAFingerprint},
+        );
+        print $FHCACertFile $Self->CertificateGet( Filename => $CAFilename ) . "\n";
+        $FHCACertFileActive = 1;
+    }
+
+    if ($FHCACertFileActive) {
+        $CertFileCommand = " -certfile $CAFileName ";
+    }
+    close $FHCACertFile;
+
+    my ( $FH, $PlainFile ) = $FileTempObject->TempFile();
+    print $FH $Param{Message};
+    close $FH;
+    my ( $FHPrivate, $PrivateKeyFile ) = $FileTempObject->TempFile();
+    print $FHPrivate $Private;
+    close $FHPrivate;
+    my ( $FHCertificate, $CertFile ) = $FileTempObject->TempFile();
+    print $FHCertificate $Certificate;
+    close $FHCertificate;
+    my ( $FHSign, $SignFile ) = $FileTempObject->TempFile();
+    close $FHSign;
+    my ( $FHSecret, $SecretFile ) = $FileTempObject->TempFile();
+    print $FHSecret $Secret;
+    close $FHSecret;
+
+    my $Options = "smime -sign -in $PlainFile -out $SignFile -signer $CertFile -inkey $PrivateKeyFile"
+        . " -text -binary -passin file:$SecretFile";
+
+    # add the certfile parameter
+    $Options .= $CertFileCommand;
+
+    my $LogMessage = $Self->_CleanOutput(qx{$Self->{Cmd} $Options 2>&1});
+    unlink $SecretFile;
+    if ($LogMessage) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't sign: $LogMessage! (Command: $Options)"
+        );
+        return;
+    }
+
+    my $SignedRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead( Location => $SignFile );
+
+    return if !$SignedRef;
+    return $$SignedRef;
+
+}
+</pre></div>
+
+<p>sign a message</p>
+
+<pre>    my $Sign = $CryptObject-&gt;Sign(
         Message  =&gt; $Message,
         Filename =&gt; $PrivateFilename,
     );
@@ -131,16 +550,140 @@
         Fingerprint =&gt; $Fingerprint,
     );
 
-</pre></dd>	<dt>Verify()</dt>
-		<dd><p>verify a message with signature and returns a hash (Successful, Message, Signers, SignerCertificate)</p></dd>
-<dd><pre>    my %Data = $CryptObject-&gt;Verify(
+</pre><h2 id="Verify">Verify()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Verify');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Verify">
+                                        <pre>
+
+sub Verify {
+    my ( $Self, %Param ) = @_;
+
+    my %Return;
+    my $Message     = '';
+    my $MessageLong = '';
+    my $UsedKey     = '';
+
+    # check needed stuff
+    if ( !$Param{Message} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Message!"
+        );
+        return;
+    }
+
+    # get temp file object
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    my ( $FH, $SignedFile ) = $FileTempObject->TempFile();
+    print $FH $Param{Message};
+    close $FH;
+    my ( $FHOutput, $VerifiedFile ) = $FileTempObject->TempFile();
+    close $FHOutput;
+    my ( $FHSigner, $SignerFile ) = $FileTempObject->TempFile();
+    close $FHSigner;
+
+    # path to the cert, when self signed certs
+    # specially for openssl 1.0
+    my $CertificateOption = '';
+    if ( $Param{CACert} ) {
+        $CertificateOption = "-CAfile $Param{CACert}";
+    }
+
+    my $Options = "smime -verify -in $SignedFile -out $VerifiedFile -signer $SignerFile "
+        . "-CApath $Self->{CertPath} $CertificateOption $SignedFile";
+
+    my @LogLines = qx{$Self->{Cmd} $Options 2>&1};
+
+    for my $LogLine (@LogLines) {
+        $MessageLong .= $LogLine;
+        if ( $LogLine =~ /^\d.*:(.+?):.+?:.+?:$/ || $LogLine =~ /^\d.*:(.+?)$/ ) {
+            $Message .= ";$1";
+        }
+        else {
+            $Message .= $LogLine;
+        }
+    }
+
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
+    # TODO: maybe use _FetchAttributesFromCert() to determine the cert-hash and return that instead?
+    # determine hash of signer certificate
+    my $SignerCertRef    = $MainObject->FileRead( Location => $SignerFile );
+    my $SignedContentRef = $MainObject->FileRead( Location => $VerifiedFile );
+
+    # return message
+    if ( $Message =~ /Verification successful/i ) {
+
+        # get email address(es) from certificate
+        $Options = "x509 -in $SignerFile -email -noout";
+        my @SignersArray = qx{$Self->{Cmd} $Options 2>&1};
+
+        chomp(@SignersArray);
+
+        %Return = (
+            SignatureFound    => 1,
+            Successful        => 1,
+            Message           => 'OpenSSL: ' . $Message,
+            MessageLong       => 'OpenSSL: ' . $MessageLong,
+            Signers           => [@SignersArray],
+            SignerCertificate => $$SignerCertRef,
+            Content           => $$SignedContentRef,
+        );
+    }
+    elsif ( $Message =~ /self signed certificate/i ) {
+        %Return = (
+            SignatureFound => 1,
+            Successful     => 0,
+            Message =>
+                'OpenSSL: self signed certificate, to use it send the \'Certificate\' parameter : '
+                . $Message,
+            MessageLong =>
+                'OpenSSL: self signed certificate, to use it send the \'Certificate\' parameter : '
+                . $MessageLong,
+            SignerCertificate => $$SignerCertRef,
+            Content           => $$SignedContentRef,
+        );
+    }
+
+    # digest failure means that the content of the email does not match witht he signature
+    elsif ( $Message =~ m{digest failure}i ) {
+        %Return = (
+            SignatureFound => 1,
+            Successful     => 0,
+            Message =>
+                'OpenSSL: The signature does not match the message content : ' . $Message,
+            MessageLong =>
+                'OpenSSL: The signature does not match the message content : ' . $MessageLong,
+            SignerCertificate => $$SignerCertRef,
+            Content           => $$SignedContentRef,
+        );
+    }
+    else {
+        %Return = (
+            SignatureFound => 0,
+            Successful     => 0,
+            Message        => 'OpenSSL: ' . $Message,
+            MessageLong    => 'OpenSSL: ' . $MessageLong,
+        );
+    }
+    return %Return;
+}
+</pre></div>
+
+<p>verify a message with signature and returns a hash (Successful, Message, Signers, SignerCertificate)</p>
+
+<pre>    my %Data = $CryptObject-&gt;Verify(
         Message =&gt; $Message,
         CACert  =&gt; $PathtoCACert,                   # the certificates autority that endorse a self
                                                     # signed certificate
     );
 
-</pre></dd>		<dd><p>returns:</p></dd>
-<dd><pre>    %Data = (
+</pre><p>returns:</p>
+
+<pre>    %Data = (
         SignatureFound    =&gt; 1,                     # or 0 if no signature was found
         Successful        =&gt; 1,                     # or 0 if the verification process failed
         Message           =&gt; $Message,              # short version of the verification output
@@ -151,325 +694,1616 @@
         SignerCertificate =&gt; $SignerCertificate,    # the certificate that signs the message
         Content           =&gt; $Content,              # the message content
     );
-=cut
 
-</pre></dd>		<dd><p>sub Verify {
-    my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    my %Return;
-    my $Message     = '';
-    my $MessageLong = '';
-    my $UsedKey     = '';
+</pre><h2 id="Search">Search()</h2>
 
-</pre></dd><dd><pre>    # check needed stuff
-    if ( !$Param{Message} ) {
-        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
-            Priority =&gt; 'error',
-            Message  =&gt; &quot;Need Message!&quot;
+<p><a href="#" onclick="toggleCode('method_Search');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Search">
+                                        <pre>
+
+sub Search {
+    my ( $Self, %Param ) = @_;
+
+    my @Result = $Self->CertificateSearch(%Param);
+    @Result = ( @Result, $Self->PrivateSearch(%Param) );
+    return @Result;
+}
+</pre></div>
+
+<p>search a certifcate or an private key</p>
+
+<pre>    my @Result = $CryptObject-&gt;Search(
+        Search =&gt; 'some text to search',
+    );
+
+</pre><h2 id="CertificateSearch">CertificateSearch()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CertificateSearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CertificateSearch">
+                                        <pre>
+
+sub CertificateSearch {
+    my ( $Self, %Param ) = @_;
+
+    my $Search = $Param{Search} || '';
+
+    # 1 - Get certificate list
+    my @CertList = $Self->CertificateList();
+
+    my @Result;
+    if (@CertList) {
+
+        # 2 - For the certs in list get its attributes and add them to @Results
+        @Result = $Self->_CheckCertificateList(
+            CertificateList => \@CertList,
+            Search          => $Search
+        );
+    }
+
+    # 3 - If there are no results already in the system, then check for the certificate in customer data
+    if ( !@Result && $Kernel::OM->Get('Kernel::Config')->Get('SMIME::FetchFromCustomer') ) {
+
+        # Search and add certificates from Customer data if Result from CertList is empty
+        if (
+            $Search &&
+            $Self->FetchFromCustomer(
+                Search => $Search,
+            )
+            )
+        {
+            # 4 - if found, get its details and add them to the @Results
+            @CertList = $Self->CertificateList();
+            if (@CertList) {
+                @Result = $Self->_CheckCertificateList(
+                    CertificateList => \@CertList,
+                    Search          => $Search
+                );
+            }
+        }
+    }
+
+    return @Result;
+}
+</pre></div>
+
+<p>search a local certifcate</p>
+
+<pre>    my @Result = $CryptObject-&gt;CertificateSearch(
+        Search =&gt; 'some text to search',
+    );
+
+</pre><h2 id="FetchFromCustomer">FetchFromCustomer()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FetchFromCustomer');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FetchFromCustomer">
+                                        <pre>
+
+sub FetchFromCustomer {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Search} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Search!"
         );
         return;
     }
 
-</pre></dd><dd><pre>    # get temp file object
-    my $FileTempObject = $Kernel::OM-&gt;Get('Kernel::System::FileTemp');
+    # Check LDAP-Users for userSMIMECertificate
+    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
+    my %CustomerUsers;
+    if ( $Param{Search} ) {
 
-</pre></dd><dd><pre>    my ( $FH, $SignedFile ) = $FileTempObject-&gt;TempFile();
-    print $FH $Param{Message};
-    close $FH;
-    my ( $FHOutput, $VerifiedFile ) = $FileTempObject-&gt;TempFile();
-    close $FHOutput;
-    my ( $FHSigner, $SignerFile ) = $FileTempObject-&gt;TempFile();
-    close $FHSigner;
+        my $ValidEmail = $Kernel::OM->Get('Kernel::System::CheckItem')->CheckEmail(
+            Address => $Param{Search},
+        );
 
-</pre></dd><dd><pre>    # path to the cert, when self signed certs
-    # specially for openssl 1.0
-    my $CertificateOption = '';
-    if ( $Param{CACert} ) {
-        $CertificateOption = &quot;-CAfile $Param{CACert}&quot;;
-    }
-
-</pre></dd><dd><pre>    my $Options = &quot;smime -verify -in $SignedFile -out $VerifiedFile -signer $SignerFile &quot;
-        . &quot;-CApath $Self-&gt;{CertPath} $CertificateOption $SignedFile&quot;;
-
-</pre></dd><dd><pre>    my @LogLines = qx{$Self-&gt;{Cmd} $Options 2&gt;&amp;1};
-
-</pre></dd><dd><pre>    for my $LogLine (@LogLines) {
-        $MessageLong .= $LogLine;
-        if ( $LogLine =~ /^\d.*:(.+?):.+?:.+?:$/ || $LogLine =~ /^\d.*:(.+?)$/ ) {
-            $Message .= &quot;;$1&quot;;
-        }
-        else {
-            $Message .= $LogLine;
+        # If valid email address, only do a PostMasterSearch
+        if ($ValidEmail) {
+            %CustomerUsers = $CustomerUserObject->CustomerSearch(
+                PostMasterSearch => $Param{Search},
+            );
         }
     }
 
-</pre></dd><dd><pre>    # get main object
-    my $MainObject = $Kernel::OM-&gt;Get('Kernel::System::Main');
+    my @CertFileList;
 
-</pre></dd><dd><pre>    # TODO: maybe use _FetchAttributesFromCert() to determine the cert-hash and return that instead?
-    # determine hash of signer certificate
-    my $SignerCertRef    = $MainObject-&gt;FileRead( Location =&gt; $SignerFile );
-    my $SignedContentRef = $MainObject-&gt;FileRead( Location =&gt; $VerifiedFile );
-
-</pre></dd><dd><pre>    # return message
-    if ( $Message =~ /Verification successful/i ) {
-
-</pre></dd><dd><pre>        # get email address(es) from certificate
-        $Options = &quot;x509 -in $SignerFile -email -noout&quot;;
-        my @SignersArray = qx{$Self-&gt;{Cmd} $Options 2&gt;&amp;1};
-
-</pre></dd><dd><pre>        chomp(@SignersArray);
-
-</pre></dd><dd><pre>        %Return = (
-            SignatureFound    =&gt; 1,
-            Successful        =&gt; 1,
-            Message           =&gt; 'OpenSSL: ' . $Message,
-            MessageLong       =&gt; 'OpenSSL: ' . $MessageLong,
-            Signers           =&gt; [@SignersArray],
-            SignerCertificate =&gt; $$SignerCertRef,
-            Content           =&gt; $$SignedContentRef,
+    # Check found CustomerUsers
+    for my $Login ( sort keys %CustomerUsers ) {
+        my %CustomerUser = $CustomerUserObject->CustomerUserDataGet(
+            User => $Login,
         );
-    }
-    elsif ( $Message =~ /self signed certificate/i ) {
-        %Return = (
-            SignatureFound =&gt; 1,
-            Successful     =&gt; 0,
-            Message =&gt;
-                'OpenSSL: self signed certificate, to use it send the \'Certificate\' parameter : '
-                . $Message,
-            MessageLong =&gt;
-                'OpenSSL: self signed certificate, to use it send the \'Certificate\' parameter : '
-                . $MessageLong,
-            SignerCertificate =&gt; $$SignerCertRef,
-            Content           =&gt; $$SignedContentRef,
-        );
+
+        # Add Certificate if available
+        if ( $CustomerUser{SMIMECertificate} ) {
+
+            # if don't add, maybe in UnitTests
+            return @CertFileList if $Param{DontAdd};
+
+            # Convert certificate to the correct format (pk7, pk12, pem, der)
+            my $Cert = $Self->ConvertCertFormat(
+                String => $CustomerUser{SMIMECertificate},
+            );
+            my %Result = $Self->CertificateAdd(
+                Certificate => $Cert,
+            );
+            if ( $Result{Successful} && $Result{Successful} == 1 ) {
+                push @CertFileList, $Result{Filename};
+            }
+        }
     }
 
-</pre></dd><dd><pre>    # digest failure means that the content of the email does not match witht he signature
-    elsif ( $Message =~ m{digest failure}i ) {
-        %Return = (
-            SignatureFound =&gt; 1,
-            Successful     =&gt; 0,
-            Message =&gt;
-                'OpenSSL: The signature does not match the message content : ' . $Message,
-            MessageLong =&gt;
-                'OpenSSL: The signature does not match the message content : ' . $MessageLong,
-            SignerCertificate =&gt; $$SignerCertRef,
-            Content           =&gt; $$SignedContentRef,
-        );
-    }
-    else {
-        %Return = (
-            SignatureFound =&gt; 0,
-            Successful     =&gt; 0,
-            Message        =&gt; 'OpenSSL: ' . $Message,
-            MessageLong    =&gt; 'OpenSSL: ' . $MessageLong,
-        );
-    }
-    return %Return;
+    return @CertFileList;
 }
+</pre></div>
 
-</pre></dd>	<dt>Search()</dt>
-		<dd><p>search a certifcate or an private key</p></dd>
-<dd><pre>    my @Result = $CryptObject-&gt;Search(
-        Search =&gt; 'some text to search',
-    );
+<p>add certificates from CustomerUserAttributes to local certificates
+returns an array of filenames of added certificates</p>
 
-</pre></dd>	<dt>CertificateSearch()</dt>
-		<dd><p>search a local certifcate</p></dd>
-<dd><pre>    my @Result = $CryptObject-&gt;CertificateSearch(
-        Search =&gt; 'some text to search',
-    );
-
-</pre></dd>	<dt>FetchFromCustomer()</dt>
-		<dd><p>add certificates from CustomerUserAttributes to local certificates
-returns an array of filenames of added certificates</p></dd>
-<dd><pre>    my @Result = $CryptObject-&gt;FetchFromCustomer(
+<pre>    my @Result = $CryptObject-&gt;FetchFromCustomer(
         Search =&gt; $SearchEmailAddress,
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    @Result = ( '6e620dcc.0', '8096d0a9.0', 'c01cdfa2.0' );
+</pre><p>Returns:</p>
 
-</pre></dd>	<dt>ConvertCertFormat()</dt>
-		<dd><p>convert certificate strings into importable PEM format
-returns count of added certificates</p></dd>
-<dd><pre>    my $Result = $CryptObject-&gt;ConvertCertFormat(
+<pre>    @Result = ( '6e620dcc.0', '8096d0a9.0', 'c01cdfa2.0' );
+
+</pre><h2 id="ConvertCertFormat">ConvertCertFormat()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConvertCertFormat');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConvertCertFormat">
+                                        <pre>
+
+sub ConvertCertFormat {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{String} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need String!"
+        );
+        return;
+    }
+    my $String     = $Param{String};
+    my $PassPhrase = $Param{Passphrase};
+
+    # PEM (can be read directly)
+    if ( index( $String, "-----BEGIN CERTIFICATE-----" ) != -1 ) {
+        return $String;
+    }
+
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    # create Original CertFile
+    my ( $FileHandle, $TmpCertificate ) = $FileTempObject->TempFile();
+    print $FileHandle $String;
+    close $FileHandle;
+
+    # create empty CertFile
+    my ( $FH, $CertFile ) = $FileTempObject->TempFile(
+        Suffix => '.pem',
+    );
+    close $FH;
+
+    my $LogMessage;
+    my $Options;
+    my $FormatedCert;
+
+    # needs only Filename without path
+    my @FileName = split( '/', $CertFile );
+
+    # P7B
+    if ( index( $String, "-----BEGIN PKCS7-----" ) != -1 ) {
+
+        # Specify the options to convert from p7b to pem.
+        # openssl pkcs7 -print_certs -in certificate.p7b -out certificate.cer
+        $Options = "pkcs7 -in $TmpCertificate -print_certs -out $CertFile";
+
+        # Do the conversion.
+        $LogMessage = $Self->_CleanOutput(qx{$Self->{Cmd} $Options 2>&1});
+
+        # Check if P7B is not converted
+        if ($LogMessage) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Can't convert (P7B): $LogMessage"
+            );
+            return;
+        }
+
+        # Read converted certificate.
+        my $CertFilePEM = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+            Directory => $Kernel::OM->Get('Kernel::Config')->Get('Home') . "/var/tmp",
+            Filename  => $FileName[-1],
+        );
+
+        # only need what is between ---- (Not the first lines with subject and issuer)
+        # it has one \n to many
+        return substr( ${$CertFilePEM}, index( ${$CertFilePEM}, '-----BEGIN' ), -1 );
+
+    }
+
+    # DER or PFX
+    else {
+
+        # Since there is no easy way to distinguish between DER or PFX we need to try both.
+        # First try DER.
+        # openssl x509 -inform der -in certificate.cer -out certificate.pem
+        $Options = "x509 -inform der -in $TmpCertificate -out $CertFile";
+        my $LogMessage1 = $Self->_CleanOutput(qx{$Self->{Cmd} $Options 2>&1});
+
+        # Check if DER is not converted
+        if ($LogMessage1) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'info',
+                Message  => "try (PFX) because can't convert (DER): $LogMessage1"
+            );
+
+            # Try PFX.
+            # openssl pkcs12 -in certificate.pfx -out certificate.cer -nodes
+            $Options = "pkcs12 -in $TmpCertificate -out $CertFile -nodes";
+
+            if ( defined $PassPhrase ) {
+                $Options .= " -passin pass:'" . $PassPhrase . "'";
+            }
+            $LogMessage = $Self->_CleanOutput(qx{$Self->{Cmd} $Options 2>&1});
+
+            # Check if PFX if not converted.
+            if ( $LogMessage && index( $LogMessage, "MAC verified OK" ) == -1 ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Can't convert (PFX): -" . $LogMessage . " or (DER): " . $LogMessage1 . "."
+                );
+                return;
+            }
+
+            # PFX was converted.
+            my $CertFilePFX = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+                Directory => $Kernel::OM->Get('Kernel::Config')->Get('Home') . "/var/tmp",
+                Filename  => $FileName[-1],
+            );
+            my $CertificateString = ${$CertFilePFX};
+
+            # TODO: It might be helpful in future to also handle private keys
+            # only need Certificate (don't check PrivateKey)
+            my $Start = index( $CertificateString, '-----BEGIN CERTIFICATE-----' );
+            $CertificateString = substr( $CertificateString, $Start );
+            my $End = index( $CertificateString, '-----END CERTIFICATE-----' );
+
+            return substr( $CertificateString, 0, $End + 25 ) . "\n";
+        }
+
+        # DER was converted.
+        my $CertFileDER = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+            Directory => $Kernel::OM->Get('Kernel::Config')->Get('Home') . "/var/tmp",
+            Filename  => $FileName[-1],
+        );
+
+        return ${$CertFileDER};
+    }
+
+}
+</pre></div>
+
+<p>convert certificate strings into importable PEM format
+returns count of added certificates</p>
+
+<pre>    my $Result = $CryptObject-&gt;ConvertCertFormat(
         String     =&gt; $CertificationString,
         Passphrase =&gt; Password for PFX (optional)
     );
 
-</pre></dd>		<dd><p>Returns:
+</pre><p>Returns:
     $Result =
     &quot;-----BEGIN CERTIFICATE-----
     MIIEXjCCA0agAwIBAgIJAPIBQyBe/HbpMA0GCSqGSIb3DQEBBQUAMHwxCzAJBgNV
     ...
     nj2wbQO4KjM12YLUuvahk5se
     -----END CERTIFICATE-----
-    &quot;;</p></dd>
-	<dt>CertificateAdd()</dt>
-		<dd><p>add a certificate to local certificates
-returns result message and new certificate filename</p></dd>
-<dd><pre>    my %Result = $CryptObject-&gt;CertificateAdd(
+    &quot;;</p>
+
+<h2 id="CertificateAdd">CertificateAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CertificateAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CertificateAdd">
+                                        <pre>
+
+sub CertificateAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Certificate} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Certificate!'
+        );
+        return;
+    }
+    my %Attributes = $Self->CertificateAttributes(
+        Certificate => $Param{Certificate},
+    );
+    my %Result;
+
+    if ( !$Attributes{Hash} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Can\'t add invalid certificate!'
+        );
+        %Result = (
+            Successful => 0,
+            Message    => 'Can\'t add invalid certificate!',
+        );
+        return %Result;
+    }
+
+    # search for certs with same hash
+    my @Result = $Self->CertificateSearch(
+        Search => $Attributes{Hash},
+    );
+
+    # does the cert already exists?
+    for my $CertResult (@Result) {
+        if ( $Attributes{Fingerprint} eq $CertResult->{Fingerprint} ) {
+            %Result = (
+                Successful => 0,
+                Message    => 'Certificate already installed!',
+            );
+            return %Result;
+        }
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # look for an available filename
+    FILENAME:
+    for my $Count ( 0 .. 9 ) {
+        if ( -e "$Self->{CertPath}/$Attributes{Hash}.$Count" ) {
+            next FILENAME;
+        }
+
+        my $File = "$Self->{CertPath}/$Attributes{Hash}.$Count";
+        ## no critic
+        if ( open( my $OUT, '>', $File ) ) {
+            ## use critic
+            print $OUT $Param{Certificate};
+            close($OUT);
+            %Result = (
+                Successful => 1,
+                Message    => 'Certificate uploaded',
+                Filename   => "$Attributes{Hash}.$Count",
+            );
+
+            # delete cache
+            $CacheObject->CleanUp(
+                Type => 'SMIME_Cert',
+            );
+            $CacheObject->CleanUp(
+                Type => 'SMIME_Private',
+            );
+
+            return %Result;
+        }
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't write $File: $!!"
+        );
+        %Result = (
+            Successful => 0,
+            Message    => "Can't write $File: $!!",
+        );
+        return %Result;
+    }
+
+    %Result = (
+        Successful => 0,
+        Message    => "No more available filenames for certificate hash:$Attributes{Hash}!",
+    );
+    return %Result;
+}
+</pre></div>
+
+<p>add a certificate to local certificates
+returns result message and new certificate filename</p>
+
+<pre>    my %Result = $CryptObject-&gt;CertificateAdd(
         Certificate =&gt; $CertificateString,
     );
 
-</pre></dd>	<dt>CertificateGet()</dt>
-		<dd><p>get a local certificate</p></dd>
-<dd><pre>    my $Certificate = $CryptObject-&gt;CertificateGet(
+</pre><h2 id="CertificateGet">CertificateGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CertificateGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CertificateGet">
+                                        <pre>
+
+sub CertificateGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Filename} && !( $Param{Fingerprint} && $Param{Hash} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Filename or Fingerprint and Hash!'
+        );
+        return;
+    }
+
+    if ( !$Param{Filename} && ( $Param{Fingerprint} && $Param{Hash} ) ) {
+        $Param{Filename} = $Self->_CertificateFilename(%Param);
+        return if !$Param{Filename};
+    }
+
+    my $File = "$Self->{CertPath}/$Param{Filename}";
+    my $CertificateRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead( Location => $File );
+
+    return if !$CertificateRef;
+    return $$CertificateRef;
+}
+</pre></div>
+
+<p>get a local certificate</p>
+
+<pre>    my $Certificate = $CryptObject-&gt;CertificateGet(
         Filename =&gt; $CertificateFilename,
     );
 
-</pre></dd><dd><pre>    my $Certificate = $CryptObject-&gt;CertificateGet(
+    my $Certificate = $CryptObject-&gt;CertificateGet(
         Fingerprint =&gt; $Fingerprint,
         Hash        =&gt; $Hash,
     );
 
-</pre></dd>	<dt>CertificateRemove()</dt>
-		<dd><p>remove a local certificate</p></dd>
-<dd><pre>    $CryptObject-&gt;CertificateRemove(
+</pre><h2 id="CertificateRemove">CertificateRemove()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CertificateRemove');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CertificateRemove">
+                                        <pre>
+
+sub CertificateRemove {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Filename} && !( $Param{Hash} && $Param{Fingerprint} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Filename or Hash and Fingerprint!'
+        );
+        return;
+    }
+
+    if ( !$Param{Filename} && $Param{Hash} && $Param{Fingerprint} ) {
+        $Param{Filename} = $Self->_CertificateFilename(%Param);
+        return if !$Param{Filename};
+    }
+
+    my %Result;
+
+    # private certificate shouldn't exists if certificate is deleted
+    # therefor if exists, first remove private certificate
+    # if private delete fails abort certificate removing
+
+    my ($PrivateExists) = $Self->PrivateGet(
+        Filename => $Param{Filename},
+    );
+
+    if ($PrivateExists) {
+        my %PrivateResults = $Self->PrivateRemove(
+            Filename => $Param{Filename},
+        );
+        if ( !$PrivateResults{Successful} ) {
+            %Result = (
+                Successful => 0,
+                Message    => "Delete certificate aborted, $PrivateResults{Message}: $!!",
+            );
+            return %Result;
+        }
+    }
+
+    my $Message = "Certificate successfully removed";
+    my $Success = 1;
+
+    # remove certificate
+    my $Cert = unlink "$Self->{CertPath}/$Param{Filename}";
+    if ( !$Cert ) {
+        $Message = "Impossible to remove certificate: $Self->{CertPath}/$Param{Filename}: $!!";
+        $Success = 0;
+    }
+
+    if ($PrivateExists) {
+        $Message .= ". Private certificate successfully deleted";
+    }
+
+    if ($Success) {
+
+        # get cache object
+        my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+        # delete cache
+        $CacheObject->CleanUp(
+            Type => 'SMIME_Cert',
+        );
+        $CacheObject->CleanUp(
+            Type => 'SMIME_Private',
+        );
+    }
+
+    %Result = (
+        Successful => $Success,
+        Message    => $Message,
+    );
+
+    return %Result;
+}
+</pre></div>
+
+<p>remove a local certificate</p>
+
+<pre>    $CryptObject-&gt;CertificateRemove(
         Filename =&gt; $CertificateHash,
     );
 
-</pre></dd><dd><pre>    $CryptObject-&gt;CertificateRemove(
+    $CryptObject-&gt;CertificateRemove(
         Hash        =&gt; $CertificateHash,
         Fingerprint =&gt; $CertificateHash,
     );
 
-</pre></dd>	<dt>CertificateList()</dt>
-		<dd><p>get list of local certificates filenames</p></dd>
-<dd><pre>    my @CertList = $CryptObject-&gt;CertificateList();
+</pre><h2 id="CertificateList">CertificateList()</h2>
 
-</pre></dd>	<dt>CertificateAttributes()</dt>
-		<dd><p>get certificate attributes</p></dd>
-<dd><pre>    my %CertificateAttributes = $CryptObject-&gt;CertificateAttributes(
+<p><a href="#" onclick="toggleCode('method_CertificateList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CertificateList">
+                                        <pre>
+
+sub CertificateList {
+    my ( $Self, %Param ) = @_;
+
+    my @CertList;
+    my @Filters;
+    for my $Number ( 0 .. 9 ) {
+        push @Filters, "*.$Number";
+    }
+
+    my @List = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => "$Self->{CertPath}",
+        Filter    => \@Filters,
+    );
+
+    for my $File (@List) {
+        $File =~ s{^.*/}{}xms;
+        push @CertList, $File;
+    }
+
+    return @CertList;
+}
+</pre></div>
+
+<p>get list of local certificates filenames</p>
+
+<pre>    my @CertList = $CryptObject-&gt;CertificateList();
+
+</pre><h2 id="CertificateAttributes">CertificateAttributes()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CertificateAttributes');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CertificateAttributes">
+                                        <pre>
+
+sub CertificateAttributes {
+    my ( $Self, %Param ) = @_;
+
+    my %Attributes;
+    if ( !$Param{Certificate} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Certificate!'
+        );
+        return;
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    my $CacheKey;
+    if ( defined $Param{Filename} && $Param{Filename} ) {
+
+        $CacheKey = 'CertAttributes::Filename::' . $Param{Filename};
+
+        # check cache
+        my $Cache = $CacheObject->Get(
+            Type => 'SMIME_Cert',
+            Key  => $CacheKey,
+        );
+
+        # return if cache found,
+        return %{$Cache} if ref $Cache eq 'HASH';
+    }
+
+    # get temp file object
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    my ( $FH, $Filename ) = $FileTempObject->TempFile();
+    print $FH $Param{Certificate};
+    close $FH;
+    $Self->_FetchAttributesFromCert( $Filename, \%Attributes );
+    if ( $Attributes{Hash} ) {
+        my ($Private) = $Self->PrivateGet(%Attributes);
+        if ($Private) {
+            $Attributes{Private} = 'Yes';
+        }
+        else {
+            $Attributes{Private} = 'No';
+        }
+        $Attributes{Type} = 'cert';
+    }
+
+    if ($CacheKey) {
+
+        # set cache
+        $CacheObject->Set(
+            Type  => 'SMIME_Cert',
+            Key   => $CacheKey,
+            Value => \%Attributes,
+            TTL   => $Self->{CacheTTL},
+        );
+    }
+
+    return %Attributes;
+}
+</pre></div>
+
+<p>get certificate attributes</p>
+
+<pre>    my %CertificateAttributes = $CryptObject-&gt;CertificateAttributes(
         Certificate =&gt; $CertificateString,
         Filename    =&gt; '12345.1',              # optional (useful to use cache)
     );
 
-</pre></dd>	<dt>CertificateRead()</dt>
-		<dd><p>show a local certificate in plain text</p></dd>
-<dd><pre>    my $CertificateText = $CryptObject-&gt;CertificateRead(
+</pre><h2 id="CertificateRead">CertificateRead()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CertificateRead');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CertificateRead">
+                                        <pre>
+
+sub CertificateRead {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Filename} && !( $Param{Fingerprint} && $Param{Hash} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Filename or Fingerprint and Hash!'
+        );
+        return;
+    }
+
+    if ( !$Param{Filename} && ( $Param{Fingerprint} && $Param{Hash} ) ) {
+        $Param{Filename} = $Self->_CertificateFilename(%Param);
+        return if !$Param{Filename};
+    }
+
+    my $File = "$Self->{CertPath}/$Param{Filename}";
+
+    # check if file exists and can be readed
+    if ( !-e $File ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Certificate $File does not exist!"
+        );
+        return;
+    }
+    if ( !-r $File ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can not read certificate $File!"
+        );
+        return;
+    }
+
+    # set options to retrieve certiciate contents
+    my $Options = "x509 -in $File -noout -text";
+
+    # get the output string
+    my $Output = qx{$Self->{Cmd} $Options 2>&1};
+
+    return $Output;
+}
+</pre></div>
+
+<p>show a local certificate in plain text</p>
+
+<pre>    my $CertificateText = $CryptObject-&gt;CertificateRead(
         Filename =&gt; $CertificateFilename,
     );
 
-</pre></dd><dd><pre>    my $CertificateText = $CryptObject-&gt;CertificateRead(
+    my $CertificateText = $CryptObject-&gt;CertificateRead(
         Fingerprint =&gt; $Fingerprint,
         Hash        =&gt; $Hash,
     );
 
-</pre></dd>	<dt>PrivateSearch()</dt>
-		<dd><p>returns private keys</p></dd>
-<dd><pre>    my @Result = $CryptObject-&gt;PrivateSearch(
+</pre><h2 id="PrivateSearch">PrivateSearch()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PrivateSearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PrivateSearch">
+                                        <pre>
+
+sub PrivateSearch {
+    my ( $Self, %Param ) = @_;
+
+    my $Search = $Param{Search} || '';
+    my @Result;
+    my @Certificates = $Self->CertificateList();
+
+    for my $File (@Certificates) {
+        my $Certificate = $Self->CertificateGet( Filename => $File );
+        my %Attributes = $Self->CertificateAttributes(
+            Certificate => $Certificate,
+            Filename    => $File,
+        );
+
+        my $Hit = 0;
+        if ($Search) {
+            ATTRIBUTE:
+            for my $Attribute ( sort keys %Attributes ) {
+                if ( $Attributes{$Attribute} =~ m{\Q$Search\E}ixms ) {
+                    $Hit = 1;
+                    last ATTRIBUTE;
+                }
+            }
+        }
+        else {
+            $Hit = 1;
+        }
+        if ( $Hit && $Attributes{Private} && $Attributes{Private} eq 'Yes' ) {
+            $Attributes{Type}     = 'key';
+            $Attributes{Filename} = $File;
+            push @Result, \%Attributes;
+        }
+    }
+    return @Result;
+}
+</pre></div>
+
+<p>returns private keys</p>
+
+<pre>    my @Result = $CryptObject-&gt;PrivateSearch(
         Search =&gt; 'some text to search',
     );
 
-</pre></dd>	<dt>PrivateAdd()</dt>
-		<dd><p>add private key</p></dd>
-<dd><pre>    my %Result = $CryptObject-&gt;PrivateAdd(
+</pre><h2 id="PrivateAdd">PrivateAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PrivateAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PrivateAdd">
+                                        <pre>
+
+sub PrivateAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(Private Secret)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    my %Result;
+
+    # get private attributes
+    my %Attributes = $Self->PrivateAttributes(%Param);
+    if ( !$Attributes{Modulus} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'No Private Key!'
+        );
+        %Result = (
+            Successful => 0,
+            Message    => 'No private key',
+        );
+        return;
+    }
+
+    # get certificate
+    my @Certificates = $Self->CertificateSearch( Search => $Attributes{Modulus} );
+    if ( !@Certificates ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Certificate of Private Key first -$Attributes{Modulus})!",
+        );
+        %Result = (
+            Successful => 0,
+            Message    => "Need Certificate of Private Key first -$Attributes{Modulus})!",
+        );
+        return %Result;
+    }
+    elsif ( $#Certificates > 0 ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Multiple Certificates with the same Modulus, can\'t add Private Key!',
+        );
+        %Result = (
+            Successful => 0,
+            Message    => 'Multiple Certificates with the same Modulus, can\'t add Private Key!',
+        );
+        return %Result;
+    }
+    my %CertificateAttributes = $Self->CertificateAttributes(
+        Certificate => $Self->CertificateGet( Filename => $Certificates[0]->{Filename} ),
+        Filename    => $Certificates[0]->{Filename},
+    );
+    if ( $CertificateAttributes{Hash} ) {
+        my $File = "$Self->{PrivatePath}/$Certificates[0]->{Filename}";
+        ## no critic
+        if ( open( my $PrivKeyFH, '>', "$File" ) ) {
+            ## use critic
+            print $PrivKeyFH $Param{Private};
+            close $PrivKeyFH;
+            open( my $PassFH, '>', "$File.P" );    ## no critic
+            print $PassFH $Param{Secret};
+            close $PassFH;
+            %Result = (
+                Successful => 1,
+                Message    => 'Private Key uploaded!',
+                Filename   => $Certificates[0]->{Filename},
+            );
+
+            # get cache object
+            my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+            # delete cache
+            $CacheObject->CleanUp(
+                Type => 'SMIME_Cert',
+            );
+            $CacheObject->CleanUp(
+                Type => 'SMIME_Private',
+            );
+
+            return %Result;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Can't write $File: $!!"
+            );
+            %Result = (
+                Successful => 0,
+                Message    => "Can't write $File: $!!",
+            );
+            return %Result;
+        }
+    }
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => 'Can\'t add invalid private key!'
+    );
+    %Result = (
+        Successful => 0,
+        Message    => 'Can\'t add invalid private key!',
+    );
+
+    return %Result;
+}
+</pre></div>
+
+<p>add private key</p>
+
+<pre>    my %Result = $CryptObject-&gt;PrivateAdd(
         Private =&gt; $PrivateKeyString,
         Secret  =&gt; 'Password',
     );
 
-</pre></dd>	<dt>PrivateGet()</dt>
-		<dd><p>get private key</p></dd>
-<dd><pre>    my ($PrivateKey, $Secret) = $CryptObject-&gt;PrivateGet(
+</pre><h2 id="PrivateGet">PrivateGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PrivateGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PrivateGet">
+                                        <pre>
+
+sub PrivateGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Filename} && !( $Param{Hash} && $Param{Modulus} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Filename or Hash and Modulus!'
+        );
+        return;
+    }
+
+    if ( !$Param{Filename} && ( $Param{Hash} && $Param{Modulus} ) ) {
+        $Param{Filename} = $Self->_PrivateFilename(
+            Hash    => $Param{Hash},
+            Modulus => $Param{Modulus},
+        );
+        return if !$Param{Filename};
+    }
+
+    my $File = "$Self->{PrivatePath}/$Param{Filename}";
+
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
+    my $Private;
+    if ( -e $File ) {
+        $Private = $MainObject->FileRead( Location => $File );
+    }
+
+    return if !$Private;
+
+    # read secret
+    $File = "$Self->{PrivatePath}/$Param{Filename}.P";
+    my $Secret = $MainObject->FileRead( Location => $File );
+
+    return ( $$Private, $$Secret ) if ( $Private && $Secret );
+
+    return;
+}
+</pre></div>
+
+<p>get private key</p>
+
+<pre>    my ($PrivateKey, $Secret) = $CryptObject-&gt;PrivateGet(
         Filename =&gt; $PrivateFilename,
     );
 
-</pre></dd><dd><pre>    my ($PrivateKey, $Secret) = $CryptObject-&gt;PrivateGet(
+    my ($PrivateKey, $Secret) = $CryptObject-&gt;PrivateGet(
         Hash    =&gt; $Hash,
         Modulus =&gt; $Modulus,
     );
 
-</pre></dd>	<dt>PrivateRemove()</dt>
-		<dd><p>remove private key</p></dd>
-<dd><pre>    $CryptObject-&gt;PrivateRemove(
+</pre><h2 id="PrivateRemove">PrivateRemove()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PrivateRemove');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PrivateRemove">
+                                        <pre>
+
+sub PrivateRemove {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Filename} && !( $Param{Hash} && $Param{Modulus} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Filename or Hash and Modulus!'
+        );
+        return;
+    }
+
+    my %Return;
+    if ( !$Param{Filename} && ( $Param{Hash} && $Param{Modulus} ) ) {
+        $Param{Filename} = $Self->_PrivateFilename(
+            Hash    => $Param{Hash},
+            Modulus => $Param{Modulus},
+        );
+        %Return = (
+            Successful => 0,
+            Message    => "Filename not found for hash: $Param{Hash} in: $Self->{PrivatePath}, $!!",
+        );
+        return %Return if !$Param{Filename};
+    }
+
+    my $SecretDelete = unlink "$Self->{PrivatePath}/$Param{Filename}.P";
+
+    # abort if secret is not deleted
+    if ( !$SecretDelete ) {
+        %Return = (
+            Successful => 0,
+            Message =>
+                "Delete private aborted, not possible to delete Secret: $Self->{PrivatePath}/$Param{Filename}.P, $!!",
+        );
+        return %Return;
+    }
+
+    my $PrivateDelete = unlink "$Self->{PrivatePath}/$Param{Filename}";
+    if ($PrivateDelete) {
+
+        my $Certificate = $Self->CertificateGet(
+            Filename => $Param{Filename},
+        );
+
+        # get cert attributes
+        my %CertificateAttributes = $Self->CertificateAttributes(
+            Certificate => $Certificate,
+            Filename    => $Param{Filename},
+        );
+
+        $Self->SignerCertRelationDelete(
+            CertFingerprint => $CertificateAttributes{Fingerprint},
+        );
+
+        %Return = (
+            Successful => 1,
+            Message    => 'Private key deleted!'
+        );
+
+        # get cache object
+        my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+        # delete cache
+        $CacheObject->CleanUp(
+            Type => 'SMIME_Cert',
+        );
+        $CacheObject->CleanUp(
+            Type => 'SMIME_Private',
+        );
+
+        return %Return;
+    }
+
+    %Return = (
+        Successful => 0,
+        Message    => "Impossible to delete key $Param{Filename} $!!"
+    );
+
+    return %Return;
+}
+</pre></div>
+
+<p>remove private key</p>
+
+<pre>    $CryptObject-&gt;PrivateRemove(
         Filename =&gt; $Filename,
     );
 
-</pre></dd><dd><pre>    $CryptObject-&gt;PrivateRemove(
+    $CryptObject-&gt;PrivateRemove(
         Hash    =&gt; $Hash,
         Modulus =&gt; $Modulus,
     );
 
-</pre></dd>	<dt>PrivateList()</dt>
-		<dd><p>returns a list of private key hashs</p></dd>
-<dd><pre>    my @PrivateList = $CryptObject-&gt;PrivateList();
+</pre><h2 id="PrivateList">PrivateList()</h2>
 
-</pre></dd>	<dt>PrivateAttributes()</dt>
-		<dd><p>returns attributes of private key</p></dd>
-<dd><pre>    my %Hash = $CryptObject-&gt;PrivateAttributes(
+<p><a href="#" onclick="toggleCode('method_PrivateList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PrivateList">
+                                        <pre>
+
+sub PrivateList {
+    my ( $Self, %Param ) = @_;
+
+    my @CertList;
+    my @Filters;
+    for my $Number ( 0 .. 9 ) {
+        push @Filters, "*.$Number";
+    }
+
+    my @List = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => "$Self->{PrivatePath}",
+        Filter    => \@Filters,
+    );
+
+    for my $File (@List) {
+        $File =~ s{^.*/}{}xms;
+        push @CertList, $File;
+    }
+
+    return @CertList;
+
+}
+</pre></div>
+
+<p>returns a list of private key hashs</p>
+
+<pre>    my @PrivateList = $CryptObject-&gt;PrivateList();
+
+</pre><h2 id="PrivateAttributes">PrivateAttributes()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PrivateAttributes');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PrivateAttributes">
+                                        <pre>
+
+sub PrivateAttributes {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(Private Secret)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    my $CacheKey;
+    if ( defined $Param{Filename} && $Param{Filename} ) {
+
+        $CacheKey = 'PrivateAttributes::Filename::' . $Param{Filename};
+
+        # check cache
+        my $Cache = $CacheObject->Get(
+            Type => 'SMIME_Private',
+            Key  => $CacheKey,
+        );
+
+        # return if cache found,
+        return %{$Cache} if ref $Cache eq 'HASH';
+    }
+
+    # get temp file object
+    my $FileTempObject = $Kernel::OM->Get('Kernel::System::FileTemp');
+
+    my %Attributes;
+    my %Option = (
+        Modulus => '-modulus',
+    );
+    my ( $FH, $Filename ) = $FileTempObject->TempFile();
+    print $FH $Param{Private};
+    close $FH;
+    my ( $FHSecret, $SecretFile ) = $FileTempObject->TempFile();
+    print $FHSecret $Param{Secret};
+    close $FHSecret;
+    my $Options    = "rsa -in $Filename -noout -modulus -passin file:$SecretFile";
+    my $LogMessage = qx{$Self->{Cmd} $Options 2>&1};
+    unlink $SecretFile;
+    $LogMessage =~ tr{\r\n}{}d;
+    $LogMessage =~ s/Modulus=//;
+    $Attributes{Modulus} = $LogMessage;
+    $Attributes{Type}    = 'P';
+
+    if ($CacheKey) {
+
+        # set cache
+        $CacheObject->Set(
+            Type  => 'SMIME_Private',
+            Key   => $CacheKey,
+            Value => \%Attributes,
+            TTL   => $Self->{CacheTTL},
+        );
+    }
+
+    return %Attributes;
+}
+</pre></div>
+
+<p>returns attributes of private key</p>
+
+<pre>    my %Hash = $CryptObject-&gt;PrivateAttributes(
         Private  =&gt; $PrivateKeyString,
         Secret   =&gt; 'Password',
         Filename =&gt; '12345.1',              # optional (useful for cache)
     );
 
-</pre></dd>	<dt>SignerCertRelationAdd ()</dt>
-		<dd><p>add a relation between signer certificate and CA certificate to attach to the signature
-returns 1 if success</p></dd>
-<dd><pre>    my $RelationID = $CryptObject-&gt;SignerCertRelationAdd(
+</pre><h2 id="SignerCertRelationAdd">SignerCertRelationAdd ()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SignerCertRelationAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SignerCertRelationAdd">
+                                        <pre>
+
+sub SignerCertRelationAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw( CertFingerprint CAFingerprint UserID )) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    if ( $Param{CertFingerprint} eq $Param{CAFingerprint} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'CertFingerprint must be different to the CAFingerprint param',
+        );
+        return;
+    }
+
+    # searh certificates by fingerprint
+    my @CertResult = $Self->PrivateSearch(
+        Search => $Param{CertFingerprint},
+    );
+
+    # results?
+    if ( !scalar @CertResult ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Message  => "Wrong CertFingerprint, certificate not found!",
+            Priority => 'error',
+        );
+        return 0;
+    }
+
+    # searh certificates by fingerprint
+    my @CAResult = $Self->CertificateSearch(
+        Search => $Param{CAFingerprint},
+    );
+
+    # results?
+    if ( !scalar @CAResult ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Message  => "Wrong CAFingerprint, certificate not found!",
+            Priority => 'error',
+        );
+        return 0;
+    }
+
+    my $Success = $Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => 'INSERT INTO smime_signer_cert_relations'
+            . ' ( cert_hash, cert_fingerprint, ca_hash, ca_fingerprint, create_time, create_by, change_time, change_by)'
+            . ' VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$CertResult[0]->{Hash}, \$CertResult[0]->{Fingerprint}, \$CAResult[0]->{Hash},
+            \$CAResult[0]->{Fingerprint},
+            \$Param{UserID}, \$Param{UserID},
+        ],
+    );
+
+    return $Success;
+}
+</pre></div>
+
+<p>add a relation between signer certificate and CA certificate to attach to the signature
+returns 1 if success</p>
+
+<pre>    my $RelationID = $CryptObject-&gt;SignerCertRelationAdd(
         CertFingerprint =&gt; $CertFingerprint,
         CAFingerprint =&gt; $CAFingerprint,
         UserID =&gt; 1,
     );
 
-</pre></dd>	<dt>SignerCertRelationGet ()</dt>
-		<dd><p>get relation data by ID or by Certificate finger print
-returns data Hash if ID given or Array of all relations if CertFingerprint given</p></dd>
-<dd><pre>    my %Data = $CryptObject-&gt;SignerCertRelationGet(
+</pre><h2 id="SignerCertRelationGet">SignerCertRelationGet ()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SignerCertRelationGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SignerCertRelationGet">
+                                        <pre>
+
+sub SignerCertRelationGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} && !$Param{CertFingerprint} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Needed ID or CertFingerprint!'
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # ID
+    my %Data;
+    my @Data;
+    if ( $Param{ID} ) {
+        my $Success = $DBObject->Prepare(
+            SQL =>
+                'SELECT id, cert_hash, cert_fingerprint, ca_hash, ca_fingerprint, create_time, create_by, change_time, change_by'
+                . ' FROM smime_signer_cert_relations'
+                . ' WHERE id = ? ORDER BY create_time DESC',
+            Bind  => [ \$Param{ID} ],
+            Limit => 1,
+        );
+
+        if ($Success) {
+            while ( my @ResultData = $DBObject->FetchrowArray() ) {
+
+                # format date
+                %Data = (
+                    ID              => $ResultData[0],
+                    CertHash        => $ResultData[1],
+                    CertFingerprint => $ResultData[2],
+                    CAHash          => $ResultData[3],
+                    CAFingerprint   => $ResultData[4],
+                    Changed         => $ResultData[5],
+                    ChangedBy       => $ResultData[6],
+                    Created         => $ResultData[7],
+                    CreatedBy       => $ResultData[8],
+                );
+            }
+            return %Data || '';
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Message  => 'DB error: not possible to get relation!',
+                Priority => 'error',
+            );
+            return;
+        }
+    }
+    else {
+        my $Success = $DBObject->Prepare(
+            SQL =>
+                'SELECT id, cert_hash, cert_fingerprint, ca_hash, ca_fingerprint, create_time, create_by, change_time, change_by'
+                . ' FROM smime_signer_cert_relations'
+                . ' WHERE cert_fingerprint = ? ORDER BY id DESC',
+            Bind => [ \$Param{CertFingerprint} ],
+        );
+
+        if ($Success) {
+            while ( my @ResultData = $DBObject->FetchrowArray() ) {
+                my %ResultData = (
+                    ID              => $ResultData[0],
+                    CertHash        => $ResultData[1],
+                    CertFingerprint => $ResultData[2],
+                    CAHash          => $ResultData[3],
+                    CAFingerprint   => $ResultData[4],
+                    Changed         => $ResultData[5],
+                    ChangedBy       => $ResultData[6],
+                    Created         => $ResultData[7],
+                    CreatedBy       => $ResultData[8],
+                );
+                push @Data, \%ResultData;
+            }
+            return @Data;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Message  => 'DB error: not possible to get relations!',
+                Priority => 'error',
+            );
+            return;
+        }
+    }
+    return;
+}
+</pre></div>
+
+<p>get relation data by ID or by Certificate finger print
+returns data Hash if ID given or Array of all relations if CertFingerprint given</p>
+
+<pre>    my %Data = $CryptObject-&gt;SignerCertRelationGet(
         ID =&gt; $RelationID,
     );
 
-</pre></dd><dd><pre>    my @Data = $CryptObject-&gt;SignerCertRelationGet(
+    my @Data = $CryptObject-&gt;SignerCertRelationGet(
         CertFingerprint =&gt; $CertificateFingerprint,
     );
 
-</pre></dd>	<dt>SignerCertRelationExists ()</dt>
-		<dd><p>returns the ID if the relation exists</p></dd>
-<dd><pre>    my $Result = $CryptObject-&gt;SignerCertRelationExists(
+</pre><h2 id="SignerCertRelationExists">SignerCertRelationExists ()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SignerCertRelationExists');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SignerCertRelationExists">
+                                        <pre>
+
+sub SignerCertRelationExists {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} && !( $Param{CertFingerprint} && $Param{CAFingerprint} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need ID or CertFingerprint & CAFingerprint!"
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $Param{CertFingerprint} && $Param{CAFingerprint} ) {
+        my $Data;
+        my $Success = $DBObject->Prepare(
+            SQL => 'SELECT id FROM smime_signer_cert_relations '
+                . 'WHERE cert_fingerprint = ? AND ca_fingerprint = ?',
+            Bind  => [ \$Param{CertFingerprint}, \$Param{CAFingerprint} ],
+            Limit => 1,
+        );
+
+        if ($Success) {
+            while ( my @ResultData = $DBObject->FetchrowArray() ) {
+                $Data = $ResultData[0];
+            }
+            return $Data || '';
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Message  => 'DB error: not possible to check relation!',
+                Priority => 'error',
+            );
+            return;
+        }
+    }
+    elsif ( $Param{ID} ) {
+        my $Data;
+        my $Success = $DBObject->Prepare(
+            SQL => 'SELECT id FROM smime_signer_cert_relations '
+                . 'WHERE id = ?',
+            Bind  => [ \$Param{ID}, ],
+            Limit => 1,
+        );
+
+        if ($Success) {
+            while ( my @ResultData = $DBObject->FetchrowArray() ) {
+                $Data = $ResultData[0];
+            }
+            return $Data || '';
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Message  => 'DB error: not possible to check relation!',
+                Priority => 'error',
+            );
+            return;
+        }
+    }
+
+    return;
+}
+</pre></div>
+
+<p>returns the ID if the relation exists</p>
+
+<pre>    my $Result = $CryptObject-&gt;SignerCertRelationExists(
         CertFingerprint =&gt; $CertificateFingerprint,
         CAFingerprint =&gt; $CAFingerprint,
     );
 
-</pre></dd><dd><pre>    my $Result = $CryptObject-&gt;SignerCertRelationExists(
+    my $Result = $CryptObject-&gt;SignerCertRelationExists(
         ID =&gt; $RelationID,
     );
 
-</pre></dd>	<dt>SignerCertRelationDelete ()</dt>
-		<dd><p>returns 1 if success</p></dd>
-<dd><pre>    # delete all relations for a cert
+</pre><h2 id="SignerCertRelationDelete">SignerCertRelationDelete ()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SignerCertRelationDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SignerCertRelationDelete">
+                                        <pre>
+
+sub SignerCertRelationDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{CertFingerprint} && !$Param{ID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ID or CertFingerprint!'
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $Param{ID} ) {
+
+        # delete row
+        my $Success = $DBObject->Do(
+            SQL => 'DELETE FROM smime_signer_cert_relations '
+                . 'WHERE id = ?',
+            Bind => [ \$Param{ID} ],
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Message  => "DB Error, Not possible to delete relation ID:$Param{ID}!",
+                Priority => 'error',
+            );
+        }
+        return $Success;
+    }
+    elsif ( $Param{CertFingerprint} && $Param{CAFingerprint} ) {
+
+        # delete one row
+        my $Success = $DBObject->Do(
+            SQL => 'DELETE FROM smime_signer_cert_relations '
+                . 'WHERE cert_fingerprint = ? AND ca_fingerprint = ?',
+            Bind => [ \$Param{CertFingerprint}, \$Param{CAFingerprint} ],
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Message =>
+                    "DB Error, Not possible to delete relation for "
+                    . "CertFingerprint:$Param{CertFingerprint} and CAFingerprint:$Param{CAFingerprint}!",
+                Priority => 'error',
+            );
+        }
+        return $Success;
+    }
+    else {
+
+        # delete all rows
+        my $Success = $DBObject->Do(
+            SQL => 'DELETE FROM smime_signer_cert_relations '
+                . 'WHERE cert_fingerprint = ?',
+            Bind => [ \$Param{CertFingerprint} ],
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Message =>
+                    "DB Error, Not possible to delete relations for CertFingerprint:$Param{CertFingerprint}!",
+                Priority => 'error',
+            );
+        }
+        return $Success;
+    }
+    return;
+}
+</pre></div>
+
+<p>returns 1 if success</p>
+
+<pre>    # delete all relations for a cert
     my $Success = $CryptObject-&gt;SignerCertRelationDelete (
         CertFingerprint =&gt; $CertFingerprint,
         UserID =&gt; 1,
     );
 
-</pre></dd><dd><pre>    # delete one relation by ID
+    # delete one relation by ID
     $Success = $CryptObject-&gt;SignerCertRelationDelete (
         ID =&gt; '45',
     );
 
-</pre></dd><dd><pre>    # delete one relation by CertFingerprint &amp; CAFingerprint
+    # delete one relation by CertFingerprint &amp; CAFingerprint
     $Success = $CryptObject-&gt;SignerCertRelationDelete (
         CertFingerprint =&gt; $CertFingerprint,
         CAFingerprint   =&gt; $CAFingerprint,
     );
 
-</pre></dd>	<dt>CheckCertPath()</dt>
-		<dd><p>Checks and fixes the private secret files that do not have an index. (Needed because this
-changed during the migration from OTRS 3.0 to 3.1.)</p></dd>
-		<dd><p>Checks and fixed certificates, private keys and secrets files to have a correct name
-depending on the current OpenSSL hash algorithm.</p></dd>
-<dd><pre>    my $Result = $CryptObject-&gt;CheckCertPath ();
+</pre><h2 id="CheckCertPath">CheckCertPath()</h2>
 
-</pre></dd><dd><pre>    a result could be:
+<p><a href="#" onclick="toggleCode('method_CheckCertPath');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CheckCertPath">
+                                        <pre>
 
-</pre></dd><dd><pre>    $Result = {
+sub CheckCertPath {
+    my ( $Self, %Param ) = @_;
+
+    # normalize private secret file names
+    #
+    # in otrs 3.0 private secret files are stored in format like 12345678.p, from otrs 3.1 this
+    # files must be in a format like 12345678.0.p where .0 could be from 0 to 9 depending on the
+    # private key file name.
+
+    my $NormalizeResult = $Self->_NormalizePrivateSecretFiles();
+
+    if ( !$NormalizeResult->{Success} ) {
+        return {
+            Success => 0,
+            Details => $NormalizeResult->{Details}
+                . "\n<red>Error in Normalize Private Secret Files.</red>\n\n",
+            ShortDetails => "<red>Error in Normalize Private Secret Files.</red>\n\n",
+        };
+    }
+
+    # re-calculate certificates hashes using current openssl
+    #
+    # from openssl 1.0.0 a new hash algorithm has been implemented, this new hash is not compatible
+    # with the old hash all stored certificates names must match current hash
+    # all affected certificates, private keys and private secrets has to be renamed
+    # all affected relations has to be updated
+    my $ReHashSuccess = $Self->_ReHashCertificates();
+
+    if ( !$ReHashSuccess->{Success} ) {
+        return {
+            Success => 0,
+            Details => $NormalizeResult->{Details} . $ReHashSuccess->{Details}
+                . "\n<red>Error in Re-Hash Certificate Files.</red>\n\n",
+            ShortDetails => "<red>Error in Re-Hash Certificate Files.</red>\n\n",
+        };
+    }
+
+    return {
+        Success => 1,
+        Details => $NormalizeResult->{Details} . $ReHashSuccess->{Details},
+    };
+}
+</pre></div>
+
+<p>Checks and fixes the private secret files that do not have an index. (Needed because this
+changed during the migration from OTRS 3.0 to 3.1.)</p>
+
+<p>Checks and fixed certificates, private keys and secrets files to have a correct name
+depending on the current OpenSSL hash algorithm.</p>
+
+<pre>    my $Result = $CryptObject-&gt;CheckCertPath ();
+
+    a result could be:
+
+    $Result = {
         Success =&gt; 1                # or 0 if fails
         Details =&gt; $Details         # a readable string log of all activities and errors found
     };
 
-</pre></dd></dl>
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 

@@ -57,7 +57,15 @@
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
+	<li><a href="#GetParams">_GetParams()</a></li>
+	<li><a href="#GetDynamicFields">_GetDynamicFields()</a></li>
+	<li><a href="#CreateTimeSettings">_CreateTimeSettings()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -69,70 +77,187 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>usually, you want to create an instance of this
-by using Kernel::GenericInterface::Operation-&gt;new();</p></dd>
-	<dt>Run()</dt>
-		<dd><p>perform TicketSearch Operation. This will return a Ticket ID list.</p></dd>
-<dd><pre>    my $Result = $OperationObject-&gt;Run(
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # check needed objects
+    for my $Needed (qw(DebuggerObject WebserviceID)) {
+        if ( !$Param{$Needed} ) {
+            return {
+                Success      => 0,
+                ErrorMessage => "Got no $Needed!",
+            };
+        }
+
+        $Self->{$Needed} = $Param{$Needed};
+    }
+
+    # get config for this screen
+    $Self->{Config} = $Kernel::OM->Get('Kernel::Config')->Get('GenericInterface::Operation::TicketSearch');
+
+    return $Self;
+}
+</pre></div>
+
+<p>usually, you want to create an instance of this
+by using Kernel::GenericInterface::Operation-&gt;new();</p>
+
+<h2 id="Run">Run()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    my $Result = $Self->Init(
+        WebserviceID => $Self->{WebserviceID},
+    );
+
+    if ( !$Result->{Success} ) {
+        $Self->ReturnError(
+            ErrorCode    => 'Webservice.InvalidConfiguration',
+            ErrorMessage => $Result->{ErrorMessage},
+        );
+    }
+
+    my ( $UserID, $UserType ) = $Self->Auth(
+        %Param,
+    );
+
+    return $Self->ReturnError(
+        ErrorCode    => 'TicketSearch.AuthFail',
+        ErrorMessage => "TicketSearch: Authorization failing!",
+    ) if !$UserID;
+
+    # all needed variables
+    $Self->{SearchLimit} = $Param{Data}->{Limit}
+        || $Self->{Config}->{SearchLimit}
+        || 500;
+    $Self->{SortBy} = $Param{Data}->{SortBy}
+        || $Self->{Config}->{'SortBy::Default'}
+        || 'Age';
+    $Self->{OrderBy} = $Param{Data}->{OrderBy}
+        || $Self->{Config}->{'Order::Default'}
+        || 'Down';
+    $Self->{FullTextIndex} = $Param{Data}->{FullTextIndex} || 0;
+
+    # get parameter from data
+    my %GetParam = $Self->_GetParams( %{ $Param{Data} } );
+
+    # create time settings
+    %GetParam = $Self->_CreateTimeSettings(%GetParam);
+
+    # get dynamic fields
+    my %DynamicFieldSearchParameters = $Self->_GetDynamicFields( %{ $Param{Data} } );
+
+    # perform ticket search
+    $UserType = ( $UserType eq 'Customer' ) ? 'CustomerUserID' : 'UserID';
+    my @TicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
+        %GetParam,
+        %DynamicFieldSearchParameters,
+        Result              => 'ARRAY',
+        SortBy              => $Self->{SortBy},
+        OrderBy             => $Self->{OrderBy},
+        Limit               => $Self->{SearchLimit},
+        $UserType           => $UserID,
+        ConditionInline     => $Self->{Config}->{ExtendedSearchCondition},
+        ContentSearchPrefix => '*',
+        ContentSearchSuffix => '*',
+        FullTextIndex       => $Self->{FullTextIndex},
+    );
+
+    if (@TicketIDs) {
+
+        return {
+            Success => 1,
+            Data    => {
+                TicketID => \@TicketIDs,
+            },
+        };
+    }
+
+    # return result
+    return {
+        Success => 1,
+        Data    => {},
+    };
+}
+</pre></div>
+
+<p>perform TicketSearch Operation. This will return a Ticket ID list.</p>
+
+<pre>    my $Result = $OperationObject-&gt;Run(
         # ticket number (optional) as STRING or as ARRAYREF
         TicketNumber =&gt; '%123546%',
         TicketNumber =&gt; ['%123546%', '%123666%'],
 
-</pre></dd><dd><pre>        # ticket title (optional) as STRING or as ARRAYREF
+        # ticket title (optional) as STRING or as ARRAYREF
         Title =&gt; '%SomeText%',
         Title =&gt; ['%SomeTest1%', '%SomeTest2%'],
 
-</pre></dd><dd><pre>        Queues   =&gt; ['system queue', 'other queue'],
+        Queues   =&gt; ['system queue', 'other queue'],
         QueueIDs =&gt; [1, 42, 512],
 
-</pre></dd><dd><pre>        # use also sub queues of Queue|Queues in search
+        # use also sub queues of Queue|Queues in search
         UseSubQueues =&gt; 0,
 
-</pre></dd><dd><pre>        # You can use types like normal, ...
+        # You can use types like normal, ...
         Types   =&gt; ['normal', 'change', 'incident'],
         TypeIDs =&gt; [3, 4],
 
-</pre></dd><dd><pre>        # You can use states like new, open, pending reminder, ...
+        # You can use states like new, open, pending reminder, ...
         States   =&gt; ['new', 'open'],
         StateIDs =&gt; [3, 4],
 
-</pre></dd><dd><pre>        # (Open|Closed) tickets for all closed or open tickets.
+        # (Open|Closed) tickets for all closed or open tickets.
         StateType =&gt; 'Open',
 
-</pre></dd><dd><pre>        # You also can use real state types like new, open, closed,
+        # You also can use real state types like new, open, closed,
         # pending reminder, pending auto, removed and merged.
         StateType    =&gt; ['open', 'new'],
         StateTypeIDs =&gt; [1, 2, 3],
 
-</pre></dd><dd><pre>        Priorities  =&gt; ['1 very low', '2 low', '3 normal'],
+        Priorities  =&gt; ['1 very low', '2 low', '3 normal'],
         PriorityIDs =&gt; [1, 2, 3],
 
-</pre></dd><dd><pre>        Services   =&gt; ['Service A', 'Service B'],
+        Services   =&gt; ['Service A', 'Service B'],
         ServiceIDs =&gt; [1, 2, 3],
 
-</pre></dd><dd><pre>        SLAs   =&gt; ['SLA A', 'SLA B'],
+        SLAs   =&gt; ['SLA A', 'SLA B'],
         SLAIDs =&gt; [1, 2, 3],
 
-</pre></dd><dd><pre>        Locks   =&gt; ['unlock'],
+        Locks   =&gt; ['unlock'],
         LockIDs =&gt; [1, 2, 3],
 
-</pre></dd><dd><pre>        OwnerIDs =&gt; [1, 12, 455, 32]
+        OwnerIDs =&gt; [1, 12, 455, 32]
 
-</pre></dd><dd><pre>        ResponsibleIDs =&gt; [1, 12, 455, 32]
+        ResponsibleIDs =&gt; [1, 12, 455, 32]
 
-</pre></dd><dd><pre>        WatchUserIDs =&gt; [1, 12, 455, 32]
+        WatchUserIDs =&gt; [1, 12, 455, 32]
 
-</pre></dd><dd><pre>        # CustomerID (optional) as STRING or as ARRAYREF
+        # CustomerID (optional) as STRING or as ARRAYREF
         CustomerID =&gt; '123',
         CustomerID =&gt; ['123', 'ABC'],
 
-</pre></dd><dd><pre>        # CustomerUserLogin (optional) as STRING as ARRAYREF
+        # CustomerUserLogin (optional) as STRING as ARRAYREF
         CustomerUserLogin =&gt; 'uid123',
         CustomerUserLogin =&gt; ['uid123', 'uid777'],
 
-</pre></dd><dd><pre>        # create ticket properties (optional)
+        # create ticket properties (optional)
         CreatedUserIDs     =&gt; [1, 12, 455, 32]
         CreatedTypes       =&gt; ['normal', 'change', 'incident'],
         CreatedTypeIDs     =&gt; [1, 2, 3],
@@ -143,7 +268,7 @@ by using Kernel::GenericInterface::Operation-&gt;new();</p></dd>
         CreatedQueues      =&gt; ['system queue', 'other queue'],
         CreatedQueueIDs    =&gt; [1, 42, 512],
 
-</pre></dd><dd><pre>        # DynamicFields
+        # DynamicFields
         #   At least one operator must be specified. Operators will be connected with AND,
         #       values in an operator with OR.
         #   You can also pass more than one argument to an operator: ['value1', 'value2']
@@ -156,106 +281,106 @@ by using Kernel::GenericInterface::Operation-&gt;new();</p></dd>
             SmallerThanEquals =&gt; '2002-02-02 02:02:02',
         }
 
-</pre></dd><dd><pre>        # article stuff (optional)
+        # article stuff (optional)
         From    =&gt; '%spam@example.com%',
         To      =&gt; '%service@example.com%',
         Cc      =&gt; '%client@example.com%',
         Subject =&gt; '%VIRUS 32%',
         Body    =&gt; '%VIRUS 32%',
 
-</pre></dd><dd><pre>        # attachment stuff (optional, applies only for ArticleStorageDB)
+        # attachment stuff (optional, applies only for ArticleStorageDB)
         AttachmentName =&gt; '%anyfile.txt%',
 
-</pre></dd><dd><pre>        # use full article text index if configured (optional, default off)
+        # use full article text index if configured (optional, default off)
         FullTextIndex =&gt; 1,
 
-</pre></dd><dd><pre>        # article content search (AND or OR for From, To, Cc, Subject and Body) (optional)
+        # article content search (AND or OR for From, To, Cc, Subject and Body) (optional)
         ContentSearch =&gt; 'AND',
 
-</pre></dd><dd><pre>        # content conditions for From,To,Cc,Subject,Body
+        # content conditions for From,To,Cc,Subject,Body
         # Title,CustomerID and CustomerUserLogin (all optional)
         ConditionInline =&gt; 1,
 
-</pre></dd><dd><pre>        # articles created more than 60 minutes ago (article older than 60 minutes) (optional)
+        # articles created more than 60 minutes ago (article older than 60 minutes) (optional)
         ArticleCreateTimeOlderMinutes =&gt; 60,
         # articles created less than 120 minutes ago (article newer than 60 minutes) (optional)
         ArticleCreateTimeNewerMinutes =&gt; 120,
 
-</pre></dd><dd><pre>        # articles with create time after ... (article newer than this date) (optional)
+        # articles with create time after ... (article newer than this date) (optional)
         ArticleCreateTimeNewerDate =&gt; '2006-01-09 00:00:01',
         # articles with created time before ... (article older than this date) (optional)
         ArticleCreateTimeOlderDate =&gt; '2006-01-19 23:59:59',
 
-</pre></dd><dd><pre>        # tickets created more than 60 minutes ago (ticket older than 60 minutes)  (optional)
+        # tickets created more than 60 minutes ago (ticket older than 60 minutes)  (optional)
         TicketCreateTimeOlderMinutes =&gt; 60,
         # tickets created less than 120 minutes ago (ticket newer than 120 minutes) (optional)
         TicketCreateTimeNewerMinutes =&gt; 120,
 
-</pre></dd><dd><pre>        # tickets with create time after ... (ticket newer than this date) (optional)
+        # tickets with create time after ... (ticket newer than this date) (optional)
         TicketCreateTimeNewerDate =&gt; '2006-01-09 00:00:01',
         # tickets with created time before ... (ticket older than this date) (optional)
         TicketCreateTimeOlderDate =&gt; '2006-01-19 23:59:59',
 
-</pre></dd><dd><pre>        # ticket history entries that created more than 60 minutes ago (optional)
+        # ticket history entries that created more than 60 minutes ago (optional)
         TicketChangeTimeOlderMinutes =&gt; 60,
         # ticket history entries that created less than 120 minutes ago (optional)
         TicketChangeTimeNewerMinutes =&gt; 120,
 
-</pre></dd><dd><pre>        # tickets changed more than 60 minutes ago (optional)
+        # tickets changed more than 60 minutes ago (optional)
         TicketLastChangeTimeOlderMinutes =&gt; 60,
         # tickets changed less than 120 minutes ago (optional)
         TicketLastChangeTimeNewerMinutes =&gt; 120,
 
-</pre></dd><dd><pre>        # tickets with changed time after ... (ticket changed newer than this date) (optional)
+        # tickets with changed time after ... (ticket changed newer than this date) (optional)
         TicketLastChangeTimeNewerDate =&gt; '2006-01-09 00:00:01',
         # tickets with changed time before ... (ticket changed older than this date) (optional)
         TicketLastChangeTimeOlderDate =&gt; '2006-01-19 23:59:59',
 
-</pre></dd><dd><pre>        # ticket history entry create time after ... (ticket history entries newer than this date) (optional)
+        # ticket history entry create time after ... (ticket history entries newer than this date) (optional)
         TicketChangeTimeNewerDate =&gt; '2006-01-09 00:00:01',
         # ticket history entry create time before ... (ticket history entries older than this date) (optional)
         TicketChangeTimeOlderDate =&gt; '2006-01-19 23:59:59',
 
-</pre></dd><dd><pre>        # tickets closed more than 60 minutes ago (optional)
+        # tickets closed more than 60 minutes ago (optional)
         TicketCloseTimeOlderMinutes =&gt; 60,
         # tickets closed less than 120 minutes ago (optional)
         TicketCloseTimeNewerMinutes =&gt; 120,
 
-</pre></dd><dd><pre>        # tickets with closed time after ... (ticket closed newer than this date) (optional)
+        # tickets with closed time after ... (ticket closed newer than this date) (optional)
         TicketCloseTimeNewerDate =&gt; '2006-01-09 00:00:01',
         # tickets with closed time before ... (ticket closed older than this date) (optional)
         TicketCloseTimeOlderDate =&gt; '2006-01-19 23:59:59',
 
-</pre></dd><dd><pre>        # tickets with pending time of more than 60 minutes ago (optional)
+        # tickets with pending time of more than 60 minutes ago (optional)
         TicketPendingTimeOlderMinutes =&gt; 60,
         # tickets with pending time of less than 120 minutes ago (optional)
         TicketPendingTimeNewerMinutes =&gt; 120,
 
-</pre></dd><dd><pre>        # tickets with pending time after ... (optional)
+        # tickets with pending time after ... (optional)
         TicketPendingTimeNewerDate =&gt; '2006-01-09 00:00:01',
         # tickets with pending time before ... (optional)
         TicketPendingTimeOlderDate =&gt; '2006-01-19 23:59:59',
 
-</pre></dd><dd><pre>        # you can use all following escalation options with this four different ways of escalations
+        # you can use all following escalation options with this four different ways of escalations
         # TicketEscalationTime...
         # TicketEscalationUpdateTime...
         # TicketEscalationResponseTime...
         # TicketEscalationSolutionTime...
 
-</pre></dd><dd><pre>        # ticket escalation time of more than 60 minutes ago (optional)
+        # ticket escalation time of more than 60 minutes ago (optional)
         TicketEscalationTimeOlderMinutes =&gt; -60,
         # ticket escalation time of less than 120 minutes ago (optional)
         TicketEscalationTimeNewerMinutes =&gt; -120,
 
-</pre></dd><dd><pre>        # tickets with escalation time after ... (optional)
+        # tickets with escalation time after ... (optional)
         TicketEscalationTimeNewerDate =&gt; '2006-01-09 00:00:01',
         # tickets with escalation time before ... (optional)
         TicketEscalationTimeOlderDate =&gt; '2006-01-09 23:59:59',
 
-</pre></dd><dd><pre>        # search in archive (optional)
+        # search in archive (optional)
         ArchiveFlags =&gt; ['y', 'n'],
 
-</pre></dd><dd><pre>        # OrderBy and SortBy (optional)
+        # OrderBy and SortBy (optional)
         OrderBy =&gt; 'Down',  # Down|Up
         SortBy  =&gt; 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age|Type|Lock
                             # Changed|Title|Service|SLA|PendingTime|EscalationTime
@@ -263,13 +388,13 @@ by using Kernel::GenericInterface::Operation-&gt;new();</p></dd>
                             # DynamicField_FieldNameX
                             # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
 
-</pre></dd><dd><pre>        # OrderBy and SortBy as ARRAY for sub sorting (optional)
+        # OrderBy and SortBy as ARRAY for sub sorting (optional)
         OrderBy =&gt; ['Down', 'Up'],
         SortBy  =&gt; ['Priority', 'Age'],
         },
     );
 
-</pre></dd><dd><pre>    $Result = {
+    $Result = {
         Success      =&gt; 1,                                # 0 or 1
         ErrorMessage =&gt; '',                               # In case of an error
         Data         =&gt; {
@@ -277,10 +402,442 @@ by using Kernel::GenericInterface::Operation-&gt;new();</p></dd>
         },
     };
 
-</pre></dd>	<dt>_GetParams()</dt>
-	<dt>_GetDynamicFields()</dt>
-	<dt>_CreateTimeSettings()</dt>
-</dl>
+</pre><h2 id="GetParams">_GetParams()</h2>
+
+<p><a href="#" onclick="toggleCode('method__GetParams');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__GetParams">
+                                        <pre>
+
+sub _GetParams {
+    my ( $Self, %Param ) = @_;
+
+    # get single params
+    my %GetParam;
+
+    for my $Item (
+        qw(From To Cc Subject Body
+        Agent ResultForm TimeSearchType ChangeTimeSearchType LastChangeTimeSearchType CloseTimeSearchType UseSubQueues
+        ArticleTimeSearchType SearchInArchive
+        Fulltext ContentSearch ShownAttributes AttachmentName
+        )
+        )
+    {
+
+        # get search string params (get submitted params)
+        if ( IsStringWithData( $Param{$Item} ) ) {
+
+            $GetParam{$Item} = $Param{$Item};
+
+            # remove white space on the start and end
+            $GetParam{$Item} =~ s/\s+$//g;
+            $GetParam{$Item} =~ s/^\s+//g;
+        }
+    }
+
+    # get array params
+    for my $Item (
+        qw(TicketNumber Title
+        StateIDs StateTypeIDs QueueIDs PriorityIDs OwnerIDs
+        CreatedUserIDs WatchUserIDs ResponsibleIDs
+        TypeIDs ServiceIDs SLAIDs LockIDs Queues Types States
+        Priorities Services SLAs Locks
+        CreatedTypes CreatedTypeIDs CreatedPriorities
+        CreatedPriorityIDs CreatedStates CreatedStateIDs
+        CreatedQueues CreatedQueueIDs StateType CustomerID
+        CustomerUserLogin )
+        )
+    {
+
+        # get search array params
+        my @Values;
+        if ( IsArrayRefWithData( $Param{$Item} ) ) {
+            @Values = @{ $Param{$Item} };
+        }
+        elsif ( IsStringWithData( $Param{$Item} ) ) {
+            @Values = ( $Param{$Item} );
+        }
+        $GetParam{$Item} = \@Values if scalar @Values;
+    }
+
+    # get escalation times
+    my %EscalationTimes = (
+        1 => '',
+        2 => 'Update',
+        3 => 'Response',
+        4 => 'Solution',
+    );
+
+    for my $Index ( sort keys %EscalationTimes ) {
+        for my $PostFix (qw( OlderMinutes NewerMinutes NewerDate OlderDate )) {
+            my $Item = 'TicketEscalation' . $EscalationTimes{$Index} . 'Time' . $PostFix;
+
+            # get search string params (get submitted params)
+            if ( IsStringWithData( $Param{$Item} ) ) {
+                $GetParam{$Item} = $Param{$Item};
+
+                # remove white space on the start and end
+                $GetParam{$Item} =~ s/\s+$//g;
+                $GetParam{$Item} =~ s/^\s+//g;
+            }
+        }
+    }
+
+    my @Prefixes = (
+        'TicketCreateTime',
+        'TicketChangeTime',
+        'TicketLastChangeTime',
+        'TicketCloseTime',
+        'TicketPendingTime',
+        'ArticleCreateTime',
+    );
+
+    my @Postfixes = (
+        'Point',
+        'PointFormat',
+        'PointStart',
+        'Start',
+        'StartDay',
+        'StartMonth',
+        'StartYear',
+        'Stop',
+        'StopDay',
+        'StopMonth',
+        'StopYear',
+        'OlderMinutes',
+        'NewerMinutes',
+        'OlderDate',
+        'NewerDate',
+    );
+
+    for my $Prefix (@Prefixes) {
+
+        # get search string params (get submitted params)
+        if ( IsStringWithData( $Param{$Prefix} ) ) {
+            $GetParam{$Prefix} = $Param{$Prefix};
+
+            # remove white space on the start and end
+            $GetParam{$Prefix} =~ s/\s+$//g;
+            $GetParam{$Prefix} =~ s/^\s+//g;
+        }
+
+        for my $Postfix (@Postfixes) {
+            my $Item = $Prefix . $Postfix;
+
+            # get search string params (get submitted params)
+            if ( IsStringWithData( $Param{$Item} ) ) {
+                $GetParam{$Item} = $Param{$Item};
+
+                # remove white space on the start and end
+                $GetParam{$Item} =~ s/\s+$//g;
+                $GetParam{$Item} =~ s/^\s+//g;
+            }
+        }
+    }
+
+    return %GetParam;
+
+}
+</pre></div>
+
+<h2 id="GetDynamicFields">_GetDynamicFields()</h2>
+
+<p><a href="#" onclick="toggleCode('method__GetDynamicFields');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__GetDynamicFields">
+                                        <pre>
+
+sub _GetDynamicFields {
+    my ( $Self, %Param ) = @_;
+
+    # dynamic fields search parameters for ticket search
+    my %DynamicFieldSearchParameters;
+
+    # get single params
+    my %AttributeLookup;
+
+    # get the dynamic fields for ticket object
+    $Self->{DynamicField} = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
+        Valid      => 1,
+        ObjectType => ['Ticket'],
+    );
+
+    for my $ParameterName ( sort keys %Param ) {
+        if ( $ParameterName =~ m{\A DynamicField_ ( [a-zA-Z\d]+ ) \z}xms ) {
+
+            # loop over the dynamic fields configured
+            DYNAMICFIELD:
+            for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
+                next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+                next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+
+                # skip all fields that does not match with current field name ($1)
+                # without the 'DynamicField_' prefix
+                next DYNAMICFIELD if $DynamicFieldConfig->{Name} ne $1;
+
+                # set search parameter
+                $DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} }
+                    = $Param{ 'DynamicField_' . $DynamicFieldConfig->{Name} };
+
+                last DYNAMICFIELD;
+            }
+        }
+    }
+
+    # allow free fields
+
+    return %DynamicFieldSearchParameters;
+
+}
+</pre></div>
+
+<h2 id="CreateTimeSettings">_CreateTimeSettings()</h2>
+
+<p><a href="#" onclick="toggleCode('method__CreateTimeSettings');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__CreateTimeSettings">
+                                        <pre>
+
+sub _CreateTimeSettings {
+    my ( $Self, %Param ) = @_;
+
+    # get single params
+    my %GetParam = %Param;
+
+    # get change time settings
+    if ( !$GetParam{ChangeTimeSearchType} ) {
+
+        # do nothing on time stuff
+    }
+    elsif ( $GetParam{ChangeTimeSearchType} eq 'TimeSlot' ) {
+        for (qw(Month Day)) {
+            $GetParam{"TicketChangeTimeStart$_"} = sprintf( "%02d", $GetParam{"TicketChangeTimeStart$_"} );
+        }
+        for (qw(Month Day)) {
+            $GetParam{"TicketChangeTimeStop$_"} = sprintf( "%02d", $GetParam{"TicketChangeTimeStop$_"} );
+        }
+        if (
+            $GetParam{TicketChangeTimeStartDay}
+            && $GetParam{TicketChangeTimeStartMonth}
+            && $GetParam{TicketChangeTimeStartYear}
+            )
+        {
+            $GetParam{TicketChangeTimeNewerDate} = $GetParam{TicketChangeTimeStartYear} . '-'
+                . $GetParam{TicketChangeTimeStartMonth} . '-'
+                . $GetParam{TicketChangeTimeStartDay}
+                . ' 00:00:00';
+        }
+        if (
+            $GetParam{TicketChangeTimeStopDay}
+            && $GetParam{TicketChangeTimeStopMonth}
+            && $GetParam{TicketChangeTimeStopYear}
+            )
+        {
+            $GetParam{TicketChangeTimeOlderDate} = $GetParam{TicketChangeTimeStopYear} . '-'
+                . $GetParam{TicketChangeTimeStopMonth} . '-'
+                . $GetParam{TicketChangeTimeStopDay}
+                . ' 23:59:59';
+        }
+    }
+    elsif ( $GetParam{ChangeTimeSearchType} eq 'TimePoint' ) {
+        if (
+            $GetParam{TicketChangeTimePoint}
+            && $GetParam{TicketChangeTimePointStart}
+            && $GetParam{TicketChangeTimePointFormat}
+            )
+        {
+            my $Time = 0;
+            if ( $GetParam{TicketChangeTimePointFormat} eq 'minute' ) {
+                $Time = $GetParam{TicketChangeTimePoint};
+            }
+            elsif ( $GetParam{TicketChangeTimePointFormat} eq 'hour' ) {
+                $Time = $GetParam{TicketChangeTimePoint} * 60;
+            }
+            elsif ( $GetParam{TicketChangeTimePointFormat} eq 'day' ) {
+                $Time = $GetParam{TicketChangeTimePoint} * 60 * 24;
+            }
+            elsif ( $GetParam{TicketChangeTimePointFormat} eq 'week' ) {
+                $Time = $GetParam{TicketChangeTimePoint} * 60 * 24 * 7;
+            }
+            elsif ( $GetParam{TicketChangeTimePointFormat} eq 'month' ) {
+                $Time = $GetParam{TicketChangeTimePoint} * 60 * 24 * 30;
+            }
+            elsif ( $GetParam{TicketChangeTimePointFormat} eq 'year' ) {
+                $Time = $GetParam{TicketChangeTimePoint} * 60 * 24 * 365;
+            }
+            if ( $GetParam{TicketChangeTimePointStart} eq 'Before' ) {
+                $GetParam{TicketChangeTimeOlderMinutes} = $Time;
+            }
+            else {
+                $GetParam{TicketChangeTimeNewerMinutes} = $Time;
+            }
+        }
+    }
+
+    # get last change time settings
+    if ( !$GetParam{LastChangeTimeSearchType} ) {
+
+        # do nothing on time stuff
+    }
+    elsif ( $GetParam{LastChangeTimeSearchType} eq 'TimeSlot' ) {
+        for (qw(Month Day)) {
+            $GetParam{"TicketLastChangeTimeStart$_"} = sprintf( "%02d", $GetParam{"TicketLastChangeTimeStart$_"} );
+        }
+        for (qw(Month Day)) {
+            $GetParam{"TicketLastChangeTimeStop$_"} = sprintf( "%02d", $GetParam{"TicketLastChangeTimeStop$_"} );
+        }
+        if (
+            $GetParam{TicketLastChangeTimeStartDay}
+            && $GetParam{TicketLastChangeTimeStartMonth}
+            && $GetParam{TicketLastChangeTimeStartYear}
+            )
+        {
+            $GetParam{TicketLastChangeTimeNewerDate} = $GetParam{TicketLastChangeTimeStartYear} . '-'
+                . $GetParam{TicketLastChangeTimeStartMonth} . '-'
+                . $GetParam{TicketLastChangeTimeStartDay}
+                . ' 00:00:00';
+        }
+        if (
+            $GetParam{TicketLastChangeTimeStopDay}
+            && $GetParam{TicketLastChangeTimeStopMonth}
+            && $GetParam{TicketLastChangeTimeStopYear}
+            )
+        {
+            $GetParam{TicketLastChangeTimeOlderDate} = $GetParam{TicketLastChangeTimeStopYear} . '-'
+                . $GetParam{TicketLastChangeTimeStopMonth} . '-'
+                . $GetParam{TicketLastChangeTimeStopDay}
+                . ' 23:59:59';
+        }
+    }
+    elsif ( $GetParam{LastChangeTimeSearchType} eq 'TimePoint' ) {
+        if (
+            $GetParam{TicketLastChangeTimePoint}
+            && $GetParam{TicketLastChangeTimePointStart}
+            && $GetParam{TicketLastChangeTimePointFormat}
+            )
+        {
+            my $Time = 0;
+            if ( $GetParam{TicketLastChangeTimePointFormat} eq 'minute' ) {
+                $Time = $GetParam{TicketLastChangeTimePoint};
+            }
+            elsif ( $GetParam{TicketLastChangeTimePointFormat} eq 'hour' ) {
+                $Time = $GetParam{TicketLastChangeTimePoint} * 60;
+            }
+            elsif ( $GetParam{TicketLastChangeTimePointFormat} eq 'day' ) {
+                $Time = $GetParam{TicketLastChangeTimePoint} * 60 * 24;
+            }
+            elsif ( $GetParam{TicketLastChangeTimePointFormat} eq 'week' ) {
+                $Time = $GetParam{TicketLastChangeTimePoint} * 60 * 24 * 7;
+            }
+            elsif ( $GetParam{TicketLastChangeTimePointFormat} eq 'month' ) {
+                $Time = $GetParam{TicketLastChangeTimePoint} * 60 * 24 * 30;
+            }
+            elsif ( $GetParam{TicketLastChangeTimePointFormat} eq 'year' ) {
+                $Time = $GetParam{TicketLastChangeTimePoint} * 60 * 24 * 365;
+            }
+            if ( $GetParam{TicketLastChangeTimePointStart} eq 'Before' ) {
+                $GetParam{TicketLastChangeTimeOlderMinutes} = $Time;
+            }
+            else {
+                $GetParam{TicketLastChangeTimeNewerMinutes} = $Time;
+            }
+        }
+    }
+
+    # get close time settings
+    if ( !$GetParam{CloseTimeSearchType} ) {
+
+        # do nothing on time stuff
+    }
+    elsif ( $GetParam{CloseTimeSearchType} eq 'TimeSlot' ) {
+        for (qw(Month Day)) {
+            $GetParam{"TicketCloseTimeStart$_"} = sprintf( "%02d", $GetParam{"TicketCloseTimeStart$_"} );
+        }
+        for (qw(Month Day)) {
+            $GetParam{"TicketCloseTimeStop$_"} = sprintf( "%02d", $GetParam{"TicketCloseTimeStop$_"} );
+        }
+        if (
+            $GetParam{TicketCloseTimeStartDay}
+            && $GetParam{TicketCloseTimeStartMonth}
+            && $GetParam{TicketCloseTimeStartYear}
+            )
+        {
+            $GetParam{TicketCloseTimeNewerDate} = $GetParam{TicketCloseTimeStartYear} . '-'
+                . $GetParam{TicketCloseTimeStartMonth} . '-'
+                . $GetParam{TicketCloseTimeStartDay}
+                . ' 00:00:00';
+        }
+        if (
+            $GetParam{TicketCloseTimeStopDay}
+            && $GetParam{TicketCloseTimeStopMonth}
+            && $GetParam{TicketCloseTimeStopYear}
+            )
+        {
+            $GetParam{TicketCloseTimeOlderDate} = $GetParam{TicketCloseTimeStopYear} . '-'
+                . $GetParam{TicketCloseTimeStopMonth} . '-'
+                . $GetParam{TicketCloseTimeStopDay}
+                . ' 23:59:59';
+        }
+    }
+    elsif ( $GetParam{CloseTimeSearchType} eq 'TimePoint' ) {
+        if (
+            $GetParam{TicketCloseTimePoint}
+            && $GetParam{TicketCloseTimePointStart}
+            && $GetParam{TicketCloseTimePointFormat}
+            )
+        {
+            my $Time = 0;
+            if ( $GetParam{TicketCloseTimePointFormat} eq 'minute' ) {
+                $Time = $GetParam{TicketCloseTimePoint};
+            }
+            elsif ( $GetParam{TicketCloseTimePointFormat} eq 'hour' ) {
+                $Time = $GetParam{TicketCloseTimePoint} * 60;
+            }
+            elsif ( $GetParam{TicketCloseTimePointFormat} eq 'day' ) {
+                $Time = $GetParam{TicketCloseTimePoint} * 60 * 24;
+            }
+            elsif ( $GetParam{TicketCloseTimePointFormat} eq 'week' ) {
+                $Time = $GetParam{TicketCloseTimePoint} * 60 * 24 * 7;
+            }
+            elsif ( $GetParam{TicketCloseTimePointFormat} eq 'month' ) {
+                $Time = $GetParam{TicketCloseTimePoint} * 60 * 24 * 30;
+            }
+            elsif ( $GetParam{TicketCloseTimePointFormat} eq 'year' ) {
+                $Time = $GetParam{TicketCloseTimePoint} * 60 * 24 * 365;
+            }
+            if ( $GetParam{TicketCloseTimePointStart} eq 'Before' ) {
+                $GetParam{TicketCloseTimeOlderMinutes} = $Time;
+            }
+            else {
+                $GetParam{TicketCloseTimeNewerMinutes} = $Time;
+            }
+        }
+    }
+
+    # prepare full text search
+    if ( $GetParam{Fulltext} ) {
+        $GetParam{ContentSearch} = 'OR';
+        for (qw(From To Cc Subject Body)) {
+            $GetParam{$_} = $GetParam{Fulltext};
+        }
+    }
+
+    # prepare archive flag
+    if ( $Kernel::OM->Get('Kernel::Config')->Get('Ticket::ArchiveSystem') ) {
+
+        $GetParam{SearchInArchive} ||= '';
+        if ( $GetParam{SearchInArchive} eq 'AllTickets' ) {
+            $GetParam{ArchiveFlags} = [ 'y', 'n' ];
+        }
+        elsif ( $GetParam{SearchInArchive} eq 'ArchivedTickets' ) {
+            $GetParam{ArchiveFlags} = ['y'];
+        }
+        else {
+            $GetParam{ArchiveFlags} = ['n'];
+        }
+    }
+
+    return %GetParam;
+}
+</pre></div>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

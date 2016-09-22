@@ -58,7 +58,16 @@
 <ul>
 	<li><a href="#NAME">NAME</a></li>
 	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#CustomerCompanyAdd">CustomerCompanyAdd()</a></li>
+	<li><a href="#CustomerCompanyGet">CustomerCompanyGet()</a></li>
+	<li><a href="#CustomerCompanyUpdate">CustomerCompanyUpdate()</a></li>
+	<li><a href="#CustomerCompanySourceList">CustomerCompanySourceList()</a></li>
+	<li><a href="#CustomerCompanyList">CustomerCompanyList()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -74,16 +83,104 @@
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<dl>
-	<dt>new()</dt>
-		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
-<dd><pre>    use Kernel::System::ObjectManager;
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get needed objects
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $MainObject   = $Kernel::OM->Get('Kernel::System::Main');
+
+    # load customer company backend modules
+    SOURCE:
+    for my $Count ( '', 1 .. 10 ) {
+
+        next SOURCE if !$ConfigObject->Get("CustomerCompany$Count");
+
+        my $GenericModule = $ConfigObject->Get("CustomerCompany$Count")->{Module}
+            || 'Kernel::System::CustomerCompany::DB';
+        if ( !$MainObject->Require($GenericModule) ) {
+            $MainObject->Die("Can't load backend module $GenericModule! $@");
+        }
+        $Self->{"CustomerCompany$Count"} = $GenericModule->new(
+            Count              => $Count,
+            CustomerCompanyMap => $ConfigObject->Get("CustomerCompany$Count"),
+        );
+    }
+
+    # init of event handler
+    $Self->EventHandlerInit(
+        Config => 'CustomerCompany::EventModulePost',
+    );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $CustomerCompanyObject = $Kernel::OM-&gt;Get('Kernel::System::CustomerCompany');
 
-</pre></dd>	<dt>CustomerCompanyAdd()</dt>
-		<dd><p>add a new customer company</p></dd>
-<dd><pre>    my $ID = $CustomerCompanyObject-&gt;CustomerCompanyAdd(
+</pre><h2 id="CustomerCompanyAdd">CustomerCompanyAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CustomerCompanyAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomerCompanyAdd">
+                                        <pre>
+
+sub CustomerCompanyAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check data source
+    if ( !$Param{Source} ) {
+        $Param{Source} = 'CustomerCompany';
+    }
+
+    # check needed stuff
+    for (qw(CustomerID UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # store customer company data
+    my $Result = $Self->{ $Param{Source} }->CustomerCompanyAdd(%Param);
+    return if !$Result;
+
+    # trigger event
+    $Self->EventHandler(
+        Event => 'CustomerCompanyAdd',
+        Data  => {
+            CustomerID => $Param{CustomerID},
+            NewData    => \%Param,
+        },
+        UserID => $Param{UserID},
+    );
+
+    return $Result;
+}
+</pre></div>
+
+<p>add a new customer company</p>
+
+<pre>    my $ID = $CustomerCompanyObject-&gt;CustomerCompanyAdd(
         CustomerID              =&gt; 'example.com',
         CustomerCompanyName     =&gt; 'New Customer Inc.',
         CustomerCompanyStreet   =&gt; '5201 Blue Lagoon Drive',
@@ -96,16 +193,84 @@
         UserID                  =&gt; 123,
     );
 
-</pre></dd>		<dd><p>NOTE: Actual fields accepted by this API call may differ based on
-CustomerCompany mapping in your system configuration.</p></dd>
-	<dt>CustomerCompanyGet()</dt>
-		<dd><p>get customer company attributes</p></dd>
-<dd><pre>    my %CustomerCompany = $CustomerCompanyObject-&gt;CustomerCompanyGet(
+</pre><p>NOTE: Actual fields accepted by this API call may differ based on
+CustomerCompany mapping in your system configuration.</p>
+
+<h2 id="CustomerCompanyGet">CustomerCompanyGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CustomerCompanyGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomerCompanyGet">
+                                        <pre>
+
+sub CustomerCompanyGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{CustomerID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need CustomerID!"
+        );
+        return;
+    }
+
+    # Fetch dynamic field configurations for CustomerCompany.
+    my $DynamicFieldConfigs = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
+        ObjectType => 'CustomerCompany',
+        Valid      => 1,
+    );
+
+    my %DynamicFieldLookup = map { $_->{Name} => $_ } @{$DynamicFieldConfigs};
+
+    # get needed objects
+    my $ConfigObject              = $Kernel::OM->Get('Kernel::Config');
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+
+    SOURCE:
+    for my $Count ( '', 1 .. 10 ) {
+
+        next SOURCE if !$Self->{"CustomerCompany$Count"};
+
+        my %Company = $Self->{"CustomerCompany$Count"}->CustomerCompanyGet( %Param, );
+        next SOURCE if !%Company;
+
+        # fetch dynamic field values
+        if ( IsArrayRefWithData( $Self->{"CustomerCompany$Count"}->{CustomerCompanyMap}->{Map} ) ) {
+            CUSTOMERCOMPANYFIELD:
+            for my $CustomerCompanyField ( @{ $Self->{"CustomerCompany$Count"}->{CustomerCompanyMap}->{Map} } ) {
+                next CUSTOMERCOMPANYFIELD if $CustomerCompanyField->[5] ne 'dynamic_field';
+                next CUSTOMERCOMPANYFIELD if !$DynamicFieldLookup{ $CustomerCompanyField->[2] };
+
+                my $Value = $DynamicFieldBackendObject->ValueGet(
+                    DynamicFieldConfig => $DynamicFieldLookup{ $CustomerCompanyField->[2] },
+                    ObjectName         => $Company{CustomerID},
+                );
+
+                $Company{ $CustomerCompanyField->[0] } = $Value;
+            }
+        }
+
+        # return company data
+        return (
+            %Company,
+            Source => "CustomerCompany$Count",
+            Config => $ConfigObject->Get("CustomerCompany$Count"),
+        );
+    }
+
+    return;
+}
+</pre></div>
+
+<p>get customer company attributes</p>
+
+<pre>    my %CustomerCompany = $CustomerCompanyObject-&gt;CustomerCompanyGet(
         CustomerID =&gt; 123,
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-<dd><pre>    %CustomerCompany = (
+</pre><p>Returns:</p>
+
+<pre>    %CustomerCompany = (
         'CustomerCompanyName'    =&gt; 'Customer Inc.',
         'CustomerID'             =&gt; 'example.com',
         'CustomerCompanyStreet'  =&gt; '5201 Blue Lagoon Drive',
@@ -119,11 +284,60 @@ CustomerCompany mapping in your system configuration.</p></dd>
         'ChangeTime'             =&gt; '2010-10-04 16:36:12',
     );
 
-</pre></dd>		<dd><p>NOTE: Actual fields returned by this API call may differ based on
-CustomerCompany mapping in your system configuration.</p></dd>
-	<dt>CustomerCompanyUpdate()</dt>
-		<dd><p>update customer company attributes</p></dd>
-<dd><pre>    $CustomerCompanyObject-&gt;CustomerCompanyUpdate(
+</pre><p>NOTE: Actual fields returned by this API call may differ based on
+CustomerCompany mapping in your system configuration.</p>
+
+<h2 id="CustomerCompanyUpdate">CustomerCompanyUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CustomerCompanyUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomerCompanyUpdate">
+                                        <pre>
+
+sub CustomerCompanyUpdate {
+    my ( $Self, %Param ) = @_;
+
+    $Param{CustomerCompanyID} ||= $Param{CustomerID};
+
+    # check needed stuff
+    if ( !$Param{CustomerCompanyID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need CustomerCompanyID or CustomerID!"
+        );
+        return;
+    }
+
+    # check if company exists
+    my %Company = $Self->CustomerCompanyGet( CustomerID => $Param{CustomerCompanyID} );
+    if ( !%Company ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No such company '$Param{CustomerCompanyID}'!",
+        );
+        return;
+    }
+
+    my $Result = $Self->{ $Company{Source} }->CustomerCompanyUpdate(%Param);
+    return if !$Result;
+
+    # trigger event
+    $Self->EventHandler(
+        Event => 'CustomerCompanyUpdate',
+        Data  => {
+            CustomerID    => $Param{CustomerID},
+            OldCustomerID => $Param{CustomerCompanyID},
+            NewData       => \%Param,
+            OldData       => \%Company,
+        },
+        UserID => $Param{UserID},
+    );
+    return $Result;
+}
+</pre></div>
+
+<p>update customer company attributes</p>
+
+<pre>    $CustomerCompanyObject-&gt;CustomerCompanyUpdate(
         CustomerCompanyID       =&gt; 'oldexample.com', # required for CustomerCompanyID-update
         CustomerID              =&gt; 'example.com',
         CustomerCompanyName     =&gt; 'New Customer Inc.',
@@ -137,31 +351,183 @@ CustomerCompany mapping in your system configuration.</p></dd>
         UserID                  =&gt; 123,
     );
 
-</pre></dd>	<dt>CustomerCompanySourceList()</dt>
-		<dd><p>return customer company source list</p></dd>
-<dd><pre>    my %List = $CustomerCompanyObject-&gt;CustomerCompanySourceList(
+</pre><h2 id="CustomerCompanySourceList">CustomerCompanySourceList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CustomerCompanySourceList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomerCompanySourceList">
+                                        <pre>
+
+sub CustomerCompanySourceList {
+    my ( $Self, %Param ) = @_;
+
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my %Data;
+    SOURCE:
+    for my $Count ( '', 1 .. 10 ) {
+
+        next SOURCE if !$ConfigObject->Get("CustomerCompany$Count");
+
+        if ( defined $Param{ReadOnly} ) {
+            my $BackendConfig = $ConfigObject->Get("CustomerCompany$Count");
+            if ( $Param{ReadOnly} ) {
+                next SOURCE if !$BackendConfig->{ReadOnly};
+            }
+            else {
+                next SOURCE if $BackendConfig->{ReadOnly};
+            }
+        }
+
+        $Data{"CustomerCompany$Count"} = $ConfigObject->Get("CustomerCompany$Count")->{Name}
+            || "No Name $Count";
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<p>return customer company source list</p>
+
+<pre>    my %List = $CustomerCompanyObject-&gt;CustomerCompanySourceList(
         ReadOnly =&gt; 0 # optional, 1 returns only RO backends, 0 returns writable, if not passed returns all backends
     );
 
-</pre></dd>	<dt>CustomerCompanyList()</dt>
-		<dd><p>get list of customer companies.</p></dd>
-<dd><pre>    my %List = $CustomerCompanyObject-&gt;CustomerCompanyList();
+</pre><h2 id="CustomerCompanyList">CustomerCompanyList()</h2>
 
-</pre></dd><dd><pre>    my %List = $CustomerCompanyObject-&gt;CustomerCompanyList(
+<p><a href="#" onclick="toggleCode('method_CustomerCompanyList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomerCompanyList">
+                                        <pre>
+
+sub CustomerCompanyList {
+    my ( $Self, %Param ) = @_;
+
+    # Get dynamic field object.
+    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
+
+    my $DynamicFieldConfigs = $DynamicFieldObject->DynamicFieldListGet(
+        ObjectType => 'CustomerCompany',
+        Valid      => 1,
+    );
+
+    my %DynamicFieldLookup = map { $_->{Name} => $_ } @{$DynamicFieldConfigs};
+
+    # Get dynamic field backend object.
+    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+
+    my %Data;
+    SOURCE:
+    for my $Count ( '', 1 .. 10 ) {
+
+        next SOURCE if !$Self->{"CustomerCompany$Count"};
+
+        # search dynamic field values, if configured
+        my $Map = $Self->{"CustomerCompany$Count"}->{CustomerCompanyMap}->{Map};
+        if ( IsArrayRefWithData($Map) ) {
+
+            # fetch dynamic field names that are configured in Map
+            # only these will be considered for any other search config
+            # [ 'DynamicField_Name_Y', undef, 'Name_Y', 0, 0, 'dynamic_field', undef, 0,],
+            my %DynamicFieldNames = map { $_->[2] => 1 } grep { $_->[5] eq 'dynamic_field' } @{$Map};
+
+            if (%DynamicFieldNames) {
+                my $FoundDynamicFieldObjectIDs;
+                my $SearchFields;
+                my $SearchParam;
+
+                # check which of the dynamic fields configured in Map are also
+                # configured in SearchFields
+
+                # param Search
+                if ( defined $Param{Search} && length $Param{Search} ) {
+                    $SearchFields
+                        = $Self->{"CustomerCompany$Count"}->{CustomerCompanyMap}->{CustomerCompanySearchFields};
+                    $SearchParam = $Param{Search};
+                }
+
+                # search dynamic field values
+                if ( IsArrayRefWithData($SearchFields) ) {
+                    my @SearchDynamicFieldNames = grep { exists $DynamicFieldNames{$_} } @{$SearchFields};
+
+                    my %FoundDynamicFieldObjectIDs;
+                    FIELDNAME:
+                    for my $FieldName (@SearchDynamicFieldNames) {
+
+                        my $DynamicFieldConfig = $DynamicFieldLookup{$FieldName};
+
+                        next FIELDNAME if !IsHashRefWithData($DynamicFieldConfig);
+
+                        my $DynamicFieldValues = $DynamicFieldBackendObject->ValueSearch(
+                            DynamicFieldConfig => $DynamicFieldConfig,
+                            Search             => $SearchParam,
+                        );
+
+                        if ( IsArrayRefWithData($DynamicFieldValues) ) {
+                            for my $DynamicFieldValue ( @{$DynamicFieldValues} ) {
+                                $FoundDynamicFieldObjectIDs{ $DynamicFieldValue->{ObjectID} } = 1;
+                            }
+                        }
+                    }
+
+                    $FoundDynamicFieldObjectIDs = [ keys %FoundDynamicFieldObjectIDs ];
+                }
+
+                # execute backend search for found object IDs
+                # this data is being merged with the following CustomerCompanyList call
+                if ( IsArrayRefWithData($FoundDynamicFieldObjectIDs) ) {
+
+                    my $ObjectNames = $DynamicFieldObject->ObjectMappingGet(
+                        ObjectID   => $FoundDynamicFieldObjectIDs,
+                        ObjectType => 'CustomerCompany',
+                    );
+
+                    my %SearchParam = %Param;
+                    delete $SearchParam{Search};
+                    my %CompanyList = $Self->{"CustomerCompany$Count"}->CustomerCompanyList(%SearchParam);
+
+                    OBJECTNAME:
+                    for my $ObjectName ( values %{$ObjectNames} ) {
+                        next OBJECTNAME if exists $Data{$ObjectName};
+
+                        if ( IsHashRefWithData( \%CompanyList ) && exists $CompanyList{$ObjectName} ) {
+                            %Data = (
+                                $ObjectName => $CompanyList{$ObjectName},
+                                %Data
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        # get company list result of backend and merge it
+        my %SubData = $Self->{"CustomerCompany$Count"}->CustomerCompanyList(%Param);
+        %Data = ( %Data, %SubData );
+    }
+    return %Data;
+}
+</pre></div>
+
+<p>get list of customer companies.</p>
+
+<pre>    my %List = $CustomerCompanyObject-&gt;CustomerCompanyList();
+
+    my %List = $CustomerCompanyObject-&gt;CustomerCompanyList(
         Valid =&gt; 0,
         Limit =&gt; 0,     # optional, override configured search result limit (0 means unlimited)
     );
 
-</pre></dd><dd><pre>    my %List = $CustomerCompanyObject-&gt;CustomerCompanyList(
+    my %List = $CustomerCompanyObject-&gt;CustomerCompanyList(
         Search =&gt; 'somecompany',
     );
 
-</pre></dd>		<dd><p>Returns:</p></dd>
-		<dd><p>%List = {
+</pre><p>Returns:</p>
+
+<p>%List = {
           'example.com' =&gt; 'example.com Customer Inc.',
           'acme.com'    =&gt; 'acme.com Acme, Inc.'
-        };</p></dd>
-</dl>
+        };</p>
+
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
