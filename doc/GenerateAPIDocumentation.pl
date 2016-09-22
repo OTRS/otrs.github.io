@@ -82,7 +82,7 @@ sub _find_files {
 use IO::File;
 my $FileHandle = IO::File->new( $File::Find::name, 'r' );
 my $Content = join('', $FileHandle->getlines());
-return if $Content !~ m{^(?:=head|=item|=back|=over)};
+return if $Content !~ m{^(?:=head|=item|=back|=over)}smxg;
 # ---
 
                     push @{ $self->docs },
