@@ -4,6 +4,7 @@ use strict;
 use Getopt::Long;
 use Pod::Usage;
 use Pod::ProjectDocs;
+use Pod::ProjectDocs::Parser;
 
 my($out, $lib, $title, $lang, $desc, $charset, $index, $verbose, $forcegen, $except);
 my $help = @ARGV == 0;
@@ -25,6 +26,20 @@ my %opt = (
 GetOptions(%opt);
 
 pod2usage(1) if $help;
+
+# Fix for Pod::ProjectDocs::Parser: ignore sections within =begin ... =end as required
+#   by the specification.
+{
+    no warnings 'redefine';
+    my $AddCommandOriginal = \&Pod::ProjectDocs::Parser::_addCommand;
+    *Pod::ProjectDocs::Parser::_addCommand = sub {
+        my $self = shift;
+        my ($command, $paragraph, $raw_para, $line) = @_;
+        # Skip if we are actually in a "dataSection".
+        return if @{$self->{dataSections}} && ($command ne 'begin' && $command ne 'end');
+        return $AddCommandOriginal->($self, @_);
+    };
+}
 
 my $p = Pod::ProjectDocs->new(
     outroot  => $out,
