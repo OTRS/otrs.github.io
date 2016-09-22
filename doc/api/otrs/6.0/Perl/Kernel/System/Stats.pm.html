@@ -1,0 +1,316 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::Stats</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 6.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::Stats
+</div>
+<div>
+<a href="../../src/Kernel/System/Stats.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a><br />
+<ul>
+	<li><a href="#Explanation_for_the_time_zone_parame">Explanation for the time zone parameter</a></li>
+</ul>
+</li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::Stats - stats lib</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>All stats functions.</p>
+
+<h2 id="Explanation_for_the_time_zone_parame">Explanation for the time zone parameter</h2>
+
+<p>The time zone parameter is available, if the statistic is a dynamic statistic. The selected periods in the frontend are time zone neutral and for the
+search parameters, the selection will be converted to the OTRS time zone, because the times
+are stored within this time zone in the database.</p>
+
+<p>This means e.g. if an absolute period of time from 2015-08-01 00:00:00 to 2015-09-10 23:59:59 and a time zone with an offset of +6 hours has been selected,
+the period will be converted from the +6 time zone to the OTRS time zone for the search parameter,
+so that the right time will be used for searching the database. Given that the OTRS time zone is set to UTC, this
+would result in a period of 2015-07-31 18:00:00 to 2015-09-10 17:59:59 UTC.</p>
+
+<p>For a relative time period, e. g. the last 10 full days, and a time zone with an offset of +10 hours, a DateTime object with the +10 time zone will be created
+for the current time. For the period end date, this date will be taken and extended to the end of the day. Then, 10 full days will be subtracted from this.
+This is the start of the period, which will be extended to 00:00:00. Start and end date will be converted to the time zone of OTRS to search the database.</p>
+
+<p>Example for relative time period 'last 10 full days' with selected time zone offset +10 hours, current date/time within this time zone 2015-09-10 16:00:00, OTRS time zone is UTC:
+End date: 2015-09-10 16:00:00 -&gt; extended to 2015-09-10 23:59:59 -&gt; 2015-09-10 13:59:59 OTRS time zone (UTC)
+Start date: 2015-09-10 16:00:00 - 10 days -&gt; 2015-08-31 16:00:00 -&gt; extended to 00:00:00: 2015-09-01 00:00:00 -&gt; 2015-08-31 14:00:00 OTRS time zone (UTC)</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $StatsObject = $Kernel::OM-&gt;Get('Kernel::System::Stats');
+
+</pre></dd>	<dt>StatsAdd()</dt>
+		<dd><p>add new empty stats</p></dd>
+<dd><pre>    my $StatID = $StatsObject-&gt;StatsAdd(
+        UserID =&gt; $UserID,
+    );
+
+</pre></dd>	<dt>StatsGet()</dt>
+		<dd><p>get a hash ref of the stats you need</p></dd>
+<dd><pre>    my $HashRef = $StatsObject-&gt;StatsGet(
+        StatID             =&gt; '123',
+        NoObjectAttributes =&gt; 1,       # optional
+    );
+
+</pre></dd>	<dt>StatsUpdate()</dt>
+		<dd><p>update a stat</p></dd>
+<dd><pre>    $StatsObject-&gt;StatsUpdate(
+        StatID =&gt; '123',
+        Hash   =&gt; \%Hash,
+        UserID =&gt; $UserID,
+    );
+
+</pre></dd>	<dt>StatsDelete()</dt>
+		<dd><p>delete a stats</p></dd>
+<dd><pre>    $StatsObject-&gt;StatsDelete( StatID =&gt; '123' );
+
+</pre></dd>	<dt>StatsListGet()</dt>
+		<dd><p>fetches all statistics that the current user may see</p></dd>
+<dd><pre>    my $StatsRef = $StatsObject-&gt;StatsListGet(
+        AccessRw =&gt; 1, # Optional, indicates that user may see all statistics
+        UserID   =&gt; $UserID,
+    );
+
+</pre></dd><dd><pre>    Returns
+
+</pre></dd><dd><pre>    {
+        6 =&gt; {
+            Title =&gt; &quot;Title of stat&quot;,
+            ...
+        }
+    }
+
+</pre></dd>	<dt>GetStatsList()</dt>
+		<dd><p>lists all stats id's</p></dd>
+<dd><pre>    my $ArrayRef = $StatsObject-&gt;GetStatsList(
+        AccessRw  =&gt; 1, # Optional, indicates that user may see all statistics
+        OrderBy   =&gt; 'ID' || 'Title' || 'Object', # optional
+        Direction =&gt; 'ASC' || 'DESC',             # optional
+        UserID    =&gt; $UserID,
+    );
+
+</pre></dd>	<dt>SumBuild()</dt>
+		<dd><p>build sum in x or/and y axis</p></dd>
+<dd><pre>    $StatArray = $StatsObject-&gt;SumBuild(
+        Array  =&gt; \@Result,
+        SumRow =&gt; 1,
+        SumCol =&gt; 0,
+    );
+
+</pre></dd>	<dt>GetStatsObjectAttributes()</dt>
+		<dd><p>Get all attributes from the object in dependence of the use</p></dd>
+<dd><pre>    my %ObjectAttributes = $StatsObject-&gt;GetStatsObjectAttributes(
+        ObjectModule =&gt; 'Ticket',
+        Use          =&gt; 'UseAsXvalue' || 'UseAsValueSeries' || 'UseAsRestriction',
+    );
+
+</pre></dd>	<dt>GetStaticFiles()</dt>
+		<dd><p>Get all static files</p></dd>
+<dd><pre>    my $FileHash = $StatsObject-&gt;GetStaticFiles(
+        OnlyUnusedFiles =&gt; 1 | 0, # optional default 0
+        UserID =&gt; $UserID,
+    );
+
+</pre></dd>	<dt>GetDynamicFiles()</dt>
+		<dd><p>Get all static objects</p></dd>
+<dd><pre>    my $FileHash = $StatsObject-&gt;GetDynamicFiles();
+
+</pre></dd>	<dt>GetObjectName()</dt>
+		<dd><p>Get the name of a dynamic object</p></dd>
+<dd><pre>    my $ObjectName = $StatsObject-&gt;GetObjectName(
+        ObjectModule =&gt; 'Kernel::System::Stats::Dynamic::TicketList',
+    );
+
+</pre></dd>	<dt>GetObjectBehaviours()</dt>
+		<dd><p>get behaviours that a statistic supports</p></dd>
+<dd><pre>    my $Behaviours = $StatsObject-&gt;GetObjectBehaviours(
+        ObjectModule =&gt; 'Kernel::System::Stats::Dynamic::TicketList',
+    );
+
+</pre></dd><dd><pre>    returns
+
+</pre></dd><dd><pre>    {
+        ProvidesDashboardWidget =&gt; 1,
+        ...
+    }
+
+</pre></dd>	<dt>ObjectFileCheck()</dt>
+		<dd><p>check readable object file</p></dd>
+<dd><pre>    my $ObjectFileCheck = $StatsObject-&gt;ObjectFileCheck(
+        Type =&gt; 'static',
+        Name =&gt; 'NewTickets',
+    );
+
+</pre></dd>	<dt>Export()</dt>
+		<dd><p>get content from stats for export</p></dd>
+<dd><pre>    my $ExportFile = $StatsObject-&gt;Export(
+        StatID =&gt; '123',
+        ExportStatNumber =&gt; 1 || 0, # optional, only useful move statistics from the test system to the productive system
+    );
+
+</pre></dd>	<dt>Import()</dt>
+		<dd><p>import a stats from xml file</p></dd>
+<dd><pre>    my $StatID = $StatsObject-&gt;Import(
+        UserID  =&gt; $UserID,
+        Content =&gt; $UploadStuff{Content},
+    );
+
+</pre></dd>	<dt>GetParams()</dt>
+<dd><pre>    get all edit params from stats for view
+
+</pre></dd><dd><pre>    my $Params = $StatsObject-&gt;GetParams( StatID =&gt; '123' );
+
+</pre></dd>	<dt>StatsRun()</dt>
+		<dd><p>run a statistic.</p></dd>
+<dd><pre>    my $StatArray = $StatsObject-&gt;StatsRun(
+        StatID     =&gt; '123',
+        GetParam   =&gt; \%GetParam,
+        Preview    =&gt; 1,        # optional, return fake data for preview (only for dynamic stats)
+        UserID     =&gt; $UserID,
+    );
+
+</pre></dd>	<dt>StatsResultCacheCompute()</dt>
+		<dd><p>computes stats results and adds them to the cache.
+This can be used to precompute stats data e. g. for dashboard widgets in a cron job.</p></dd>
+<dd><pre>    my $StatArray = $StatsObject-&gt;StatsResultCacheCompute(
+        StatID       =&gt; '123',
+        UserID       =&gt; $UserID,        # target UserID
+        UserGetParam =&gt; \%UserGetParam, # user settings of non-fixed fields
+    );
+
+</pre></dd>	<dt>StatsResultCacheGet()</dt>
+		<dd><p>gets cached statistic results. Will never run the statistic.
+This can be used to fetch cached stats data e. g. for stats widgets in the dashboard.</p></dd>
+<dd><pre>    my $StatArray = $StatsObject-&gt;StatsResultCacheGet(
+        StatID       =&gt; '123',
+        UserID       =&gt; $UserID,    # target UserID
+        UserGetParam =&gt; \%GetParam,
+    );
+
+</pre></dd>	<dt>StringAndTimestamp2Filename()</dt>
+		<dd><p>builds a filename with a string and a timestamp.
+(space will be replaced with _ and - e.g. Title-of-File_2006-12-31_11-59)</p></dd>
+<dd><pre>    my $Filename = $StatsObject-&gt;StringAndTimestamp2Filename(
+        String   =&gt; 'Title',
+        TimeZone =&gt; 'Europe/Berlin',  # optional
+    );
+
+</pre></dd>	<dt>StatNumber2StatID()</dt>
+		<dd><p>insert the stat number get the stat id</p></dd>
+<dd><pre>    my $StatID = $StatsObject-&gt;StatNumber2StatID(
+        StatNumber =&gt; 11212,
+    );
+
+</pre></dd>	<dt>StatsInstall()</dt>
+		<dd><p>installs stats</p></dd>
+<dd><pre>    my $Result = $StatsObject-&gt;StatsInstall(
+        FilePrefix =&gt; 'FAQ',  # (optional)
+        UserID     =&gt; $UserID,
+    );
+
+</pre></dd>	<dt>StatsUninstall()</dt>
+		<dd><p>uninstalls stats</p></dd>
+<dd><pre>    my $Result = $StatsObject-&gt;StatsUninstall(
+        FilePrefix =&gt; 'FAQ',  # (optional)
+        UserID     =&gt; $UserID,
+    );
+
+</pre></dd>	<dt>StatsCleanUp()</dt>
+		<dd><p>removed stats with not existing backend file</p></dd>
+<dd><pre>    my $Result = $StatsObject-&gt;StatsCleanUp();
+
+</pre></dd>	<dt>_GenerateStaticStats()</dt>
+	<dt>_GenerateDynamicStats()</dt>
+	<dt>_CreateStaticResultCacheFilename()</dt>
+	<dt>_SetResultCache()</dt>
+	<dt>_GetResultCache()</dt>
+	<dt>_DeleteCache()</dt>
+	<dt>_FromOTRSTimeZone()</dt>
+	<dt>_ToOTRSTimeZone()</dt>
+	<dt>_GetCacheString()</dt>
+	<dt>_AddDeltaYMD()</dt>
+	<dt>_AddDeltaDHMS()</dt>
+	<dt>_AddDeltaDays()</dt>
+	<dt>_DaysInMonth()</dt>
+	<dt>_DayOfWeek()</dt>
+	<dt>_DayOfWeekAbbreviation()</dt>
+	<dt>_DayOfWeekToText()</dt>
+	<dt>_MondayOfWeek()</dt>
+	<dt>_WeekOfYear()</dt>
+</dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
