@@ -157,69 +157,6 @@
 </pre></dd><dd><pre>    $List = {
         1 =&gt; 'NameOfACL',
     }
-=cut
-
-</pre></dd>		<dd><p>sub ACLList {
-    my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    # check needed
-    if ( !$Param{UserID} ) {
-        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
-            Priority =&gt; 'error',
-            Message  =&gt; &quot;Need UserID!&quot;
-        );
-        return;
-    }
-
-</pre></dd><dd><pre>    my $ValidIDsStrg;
-    if ( !IsArrayRefWithData( $Param{ValidIDs} ) ) {
-        $ValidIDsStrg = 'ALL';
-    }
-    else {
-        $ValidIDsStrg = join ',', @{ $Param{ValidIDs} };
-    }
-
-</pre></dd><dd><pre>    # get cache object
-    my $CacheObject = $Kernel::OM-&gt;Get('Kernel::System::Cache');
-
-</pre></dd><dd><pre>    # check cache
-    my $CacheKey = 'ACLList::ValidIDs::' . $ValidIDsStrg;
-    my $Cache    = $CacheObject-&gt;Get(
-        Type =&gt; 'ACLEditor_ACL',
-        Key  =&gt; $CacheKey,
-    );
-    return $Cache if ref $Cache;
-
-</pre></dd><dd><pre>    # get database object
-    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
-
-</pre></dd><dd><pre>    my $SQL = '
-            SELECT id, name
-            FROM acl ';
-
-</pre></dd><dd><pre>    if ( $ValidIDsStrg ne 'ALL' ) {
-
-</pre></dd><dd><pre>        my $ValidIDsStrgDB = join ',', map { $DBObject-&gt;Quote( $_, 'Integer' ) }
-            @{ $Param{ValidIDs} };
-
-</pre></dd><dd><pre>        $SQL .= &quot;WHERE valid_id IN ($ValidIDsStrgDB)&quot;;
-    }
-
-</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare( SQL =&gt; $SQL );
-    my %Data;
-    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
-        $Data{ $Row[0] } = $Row[1];
-    }
-
-</pre></dd><dd><pre>    # set cache
-    $CacheObject-&gt;Set(
-        Type  =&gt; 'ACLEditor_ACL',
-        Key   =&gt; $CacheKey,
-        Value =&gt; \%Data,
-        TTL   =&gt; $Self-&gt;{CacheTTL},
-    );
-
-</pre></dd><dd><pre>    return \%Data;
-}
 
 </pre></dd>	<dt>ACLListGet()</dt>
 		<dd><p>get an ACL list with all ACL details</p></dd>
@@ -261,26 +198,6 @@
 </pre></dd><dd><pre>    Returns:
 
 </pre></dd><dd><pre>    $SyncCount = 0 || Number of ALCs that need to be synced
-=cut
-
-</pre></dd>		<dd><p>sub ACLsNeedSync {
-    my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    # get database object
-    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
-
-</pre></dd><dd><pre>    my $SQL = '
-        SELECT COUNT(*)
-        FROM acl_sync';
-
-</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare( SQL =&gt; $SQL );
-
-</pre></dd><dd><pre>    my $NeedSync = 0;
-    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
-        $NeedSync = $Row[0];
-    }
-
-</pre></dd><dd><pre>    return $NeedSync;
-}
 
 </pre></dd>	<dt>ACLsNeedSyncReset()</dt>
 		<dd><p>Reset synchronization information for ACLs.</p></dd>
@@ -312,9 +229,7 @@
         ACLErrors   =&gt; 'ACL5',                     # list of ACLs that could not be added or updated
     };
 
-</pre></dd>	<dt>_ACLItemOutput()</dt>
-	<dt>_ACLMigrateFrom33()</dt>
-</dl>
+</pre></dd></dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

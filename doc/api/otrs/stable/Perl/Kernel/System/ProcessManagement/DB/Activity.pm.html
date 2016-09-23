@@ -172,63 +172,6 @@
 </pre></dd><dd><pre>    $List = {
         'A1' =&gt; 'Activity1',
     }
-=cut
-
-</pre></dd>		<dd><p>sub ActivityList {
-    my ( $Self, %Param ) = @_;</p></dd>
-<dd><pre>    # check needed
-    if ( !$Param{UserID} ) {
-        $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
-            Priority =&gt; 'error',
-            Message  =&gt; &quot;Need UserID!&quot;
-        );
-        return;
-    }
-
-</pre></dd><dd><pre>    # get cache object
-    my $CacheObject = $Kernel::OM-&gt;Get('Kernel::System::Cache');
-
-</pre></dd><dd><pre>    # check cache
-    my $UseEntities = 0;
-    if ( defined $Param{UseEntities} &amp;&amp; $Param{UseEntities} ) {
-        $UseEntities = 1;
-    }
-    my $CacheKey = 'ActivityList::UseEntities::' . $UseEntities;
-    my $Cache    = $CacheObject-&gt;Get(
-        Type =&gt; 'ProcessManagement_Activity',
-        Key  =&gt; $CacheKey,
-    );
-    return $Cache if ref $Cache;
-
-</pre></dd><dd><pre>    # get database object
-    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
-
-</pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare(
-        SQL =&gt; '
-            SELECT id, entity_id, name
-            FROM pm_activity',
-    );
-
-</pre></dd><dd><pre>    my %Data;
-    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
-        if ( !$UseEntities ) {
-            $Data{ $Row[0] } = $Row[2];
-        }
-        else {
-            $Data{ $Row[1] } = $Row[2];
-        }
-    }
-
-</pre></dd><dd><pre>    # set cache
-    $CacheObject-&gt;Set(
-        Type  =&gt; 'ProcessManagement_Activity',
-        Key   =&gt; $CacheKey,
-        Value =&gt; \%Data,
-        TTL   =&gt; $Self-&gt;{CacheTTL},
-    );
-
-</pre></dd><dd><pre>    return \%Data;
-}
 
 </pre></dd>	<dt>ActivityListGet()</dt>
 		<dd><p>get an Activity list with all activity details</p></dd>
