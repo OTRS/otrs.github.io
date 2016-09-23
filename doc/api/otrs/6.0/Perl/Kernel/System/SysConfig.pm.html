@@ -1,0 +1,1746 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::SysConfig</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 6.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::SysConfig
+</div>
+<div>
+<a href="../../src/Kernel/System/SysConfig.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#WriteDefault">WriteDefault()</a></li>
+	<li><a href="#Download">Download()</a></li>
+	<li><a href="#Upload">Upload()</a></li>
+	<li><a href="#CreateConfig">CreateConfig()</a></li>
+	<li><a href="#ConfigItemUpdate">ConfigItemUpdate()</a></li>
+	<li><a href="#ConfigItemGet">ConfigItemGet()</a></li>
+	<li><a href="#ConfigItemReset">ConfigItemReset()</a></li>
+	<li><a href="#ConfigItemValidityUpdate">ConfigItemValidityUpdate()</a></li>
+	<li><a href="#ConfigGroupList">ConfigGroupList()</a></li>
+	<li><a href="#ConfigSubGroupList">ConfigSubGroupList()</a></li>
+	<li><a href="#ConfigSubGroupConfigItemList">ConfigSubGroupConfigItemList()</a></li>
+	<li><a href="#ConfigItemSearch">ConfigItemSearch()</a></li>
+	<li><a href="#ConfigItemTranslatableStrings">ConfigItemTranslatableStrings()</a></li>
+	<li><a href="#ConfigItemValidate">ConfigItemValidate()</a></li>
+	<li><a href="#ConfigItemCheckAll">ConfigItemCheckAll()</a></li>
+</ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::SysConfig - to manage sys config settings</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>All functions to manage sys config settings.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get database object
+    $Self->{ConfigObject} = $Kernel::OM->Get('Kernel::Config');
+
+    # get home directory
+    $Self->{Home} = $Self->{ConfigObject}->Get('Home');
+
+    # set utf8 if used
+    $Self->{utf8}     = 1;
+    $Self->{FileMode} = ':utf8';
+
+    $Self->{ConfigDefaultObject} = Kernel::Config->new( Level => 'Default' );
+    $Self->{ConfigObject}        = Kernel::Config->new( Level => 'First' );
+    $Self->{ConfigClearObject}   = Kernel::Config->new( Level => 'Clear' );
+    $Self->{ConfigCounter}       = $Self->_Init();
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $SysConfigObject = $Kernel::OM-&gt;Get('Kernel::System::SysConfig');
+
+</pre><h2 id="WriteDefault">WriteDefault()</h2>
+
+<p><a href="#" onclick="toggleCode('method_WriteDefault');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_WriteDefault">
+                                        <pre>
+
+sub WriteDefault {
+    my ( $Self, %Param ) = @_;
+
+    my $File = '';
+    my %UsedKeys;
+
+    # read all config files
+    for my $ConfigItem ( @{ $Self->{XMLConfig} } ) {
+        if ( $ConfigItem->{Name} && !$UsedKeys{ $ConfigItem->{Name} } ) {
+
+            $UsedKeys{ $ConfigItem->{Name} } = 1;
+
+            my %Config = $Self->ConfigItemGet(
+                Name    => $ConfigItem->{Name},
+                Default => 1,
+            );
+
+            my $Name = $Config{Name};
+            $Name =~ s/\\/\\\\/g;
+            $Name =~ s/'/\'/g;
+            $Name =~ s/###/'}->{'/g;
+
+            if ( $Config{Valid} ) {
+                $File .= "\$Self->{'$Name'} = " . $Self->_XML2Perl( Data => \%Config );
+            }
+            elsif ( eval( '$Self->{ConfigDefaultObject}->{\'' . $Name . '\'}' ) ) {
+                $File .= "delete \$Self->{'$Name'};\n";
+            }
+        }
+    }
+
+    # write default config file
+    my $Out;
+    $Out .= "# OTRS config file (automatically generated)\n";
+    $Out .= "# VERSION:1.1\n";
+    $Out .= "package Kernel::Config::Files::ZZZAAuto;\n";
+    $Out .= "use strict;\n";
+    $Out .= "use warnings;\n";
+    $Out .= "no warnings 'redefine';\n";
+    if ( $Self->{utf8} ) {
+        $Out .= "use utf8;\n";
+    }
+    $Out .= "sub Load {\n";
+    $Out .= "    my (\$File, \$Self) = \@_;\n";
+    $Out .= $File;
+    $Out .= "}\n";
+    $Out .= "1;\n";
+
+    return $Self->_FileWriteAtomic(
+        Filename => "$Self->{Home}/Kernel/Config/Files/ZZZAAuto.pm",
+        Content  => \$Out,
+    );
+}
+</pre></div>
+
+<p>writes the default configuration file perl cache
+(Kernel/Config/Files/ZZZAAuto.pm). It is the Perl representation
+of the default XML configuration data (Kernel/Config/Files/*.xml).</p>
+
+<h2 id="Download">Download()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Download');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Download">
+                                        <pre>
+
+sub Download {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Self->{Home};
+
+    my $In;
+    if ( !-e "$Home/Kernel/Config/Files/ZZZAuto.pm" ) {
+        return '';
+    }
+    ## no critic
+    elsif ( !open( $In, "<$Self->{FileMode}", "$Home/Kernel/Config/Files/ZZZAuto.pm" ) ) {
+        ## use critic
+        return if $Param{Type};
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't open $Home/Kernel/Config/Files/ZZZAuto.pm: $!"
+        );
+        return '';
+    }
+
+    # read file
+    my $File = '';
+    while (<$In>) {
+        $File .= $_;
+    }
+    close($In);
+
+    # return true/false on check
+    if ( $Param{Type} ) {
+        my $Length = length($File);
+        if ( $Length > 25 ) {
+            return 1;
+        }
+        return;
+    }
+
+    return $File;
+}
+</pre></div>
+
+<p>download config changes. This will return the content of
+Kernel/Config/Files/ZZZAuto.pm, the file which contains all
+configuration changes that the users made via AdminSysConfig.</p>
+
+<pre>    my $ConfigurationData = $SysConfigObject-&gt;Download();
+
+</pre><p>If you want to check if it exists (returns true or false),
+call it like this:</p>
+
+<pre>    my $ConfigurationExists = $SysConfigObject-&gt;Download(
+        Type =&gt; 'Check',
+    );
+
+</pre><h2 id="Upload">Upload()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Upload');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Upload">
+                                        <pre>
+
+sub Upload {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Self->{Home};
+
+    # check needed stuff
+    for (qw(Content)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    my $FileLocation = $Kernel::OM->Get('Kernel::System::Main')->FileWrite(
+        Location => "$Home/Kernel/Config/Files/ZZZAuto.pm",
+        Content  => \$Param{Content},
+        Mode     => 'binmode',
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>upload of config changes. Pass the contents of
+the file Kernel/Config/Files/ZZZAuto.pm here, as
+read by <a href="#Download">Download()</a>.</p>
+
+<p>Warning: this will replace the existing user
+configuration changes.</p>
+
+<pre>    $SysConfigObject-&gt;Upload(
+        Content =&gt; $Content,
+    );
+
+</pre><h2 id="CreateConfig">CreateConfig()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CreateConfig');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CreateConfig">
+                                        <pre>
+
+sub CreateConfig {
+    my ( $Self, %Param ) = @_;
+
+    my $File = '';
+    my %UsedKeys;
+    my $Home = $Self->{Home};
+
+    # remember to update ZZZAAuto.pm and ZZZAuto.pm
+    $Self->{Update} = 1;
+
+    # read all config files and only save the changed config options
+    if ( !$Param{EmptyFile} ) {
+
+        for my $ConfigItem ( @{ $Self->{XMLConfig} } ) {
+
+            if ( $ConfigItem->{Name} && !$UsedKeys{ $ConfigItem->{Name} } ) {
+
+                my %Config = $Self->ConfigItemGet(
+                    Name => $ConfigItem->{Name}
+                );
+
+                my %ConfigDefault = $Self->ConfigItemGet(
+                    Name    => $ConfigItem->{Name},
+                    Default => 1,
+                );
+                $UsedKeys{ $ConfigItem->{Name} } = 1;
+
+                my $Name = $Config{Name};
+                $Name =~ s/\\/\\\\/g;
+                $Name =~ s/'/\'/g;
+                $Name =~ s/###/'}->{'/g;
+
+                if (
+                    $Config{Valid}
+                    || ( $Config{ReadOnly} && $ConfigDefault{Valid} && $ConfigDefault{Required} )
+                    )
+                {
+
+                    my $C = $Self->_XML2Perl( Data => \%Config );
+                    my $D = $Self->_XML2Perl( Data => \%ConfigDefault );
+                    my ( $A1, $A2 );
+                    eval "\$A1 = $C";
+                    eval "\$A2 = $D";
+
+                    if ( !defined $A1 && !defined $A2 ) {
+
+                        # do nothing
+                    }
+                    elsif ( $Config{ReadOnly} ) {
+
+                        # do nothing (= reset to readonly value)
+                    }
+                    elsif (
+                        ( defined $A1 && !defined $A2 )
+                        || ( !defined $A1 && defined $A2 )
+                        || $Self->_DataDiff(
+                            Data1 => \$A1,
+                            Data2 => \$A2
+                        )
+                        || ( $Config{Valid} && !$ConfigDefault{Valid} )
+                        )
+                    {
+                        $File .= "\$Self->{'$Name'} = $C";
+                    }
+                    else {
+
+                        # do nothing
+                    }
+                }
+                elsif (
+                    !$Config{Valid}
+                    && (
+                        $ConfigDefault{Valid}
+                        || eval( '$Self->{ConfigDefaultObject}->{\'' . $Name . '\'}' )
+                    )
+                    )
+                {
+                    $File .= "delete \$Self->{'$Name'};\n";
+                }
+            }
+        }
+    }
+
+    # write new config file
+    my $Out;
+    $Out .= "# OTRS config file (automatically generated)\n";
+    $Out .= "# VERSION:1.1\n";
+    $Out .= "package Kernel::Config::Files::ZZZAuto;\n";
+    $Out .= "use strict;\n";
+    $Out .= "use warnings;\n";
+    $Out .= "no warnings 'redefine';\n";
+    if ( $Self->{utf8} ) {
+        $Out .= "use utf8;\n";
+    }
+    $Out .= "sub Load {\n";
+    $Out .= "    my (\$File, \$Self) = \@_;\n";
+    $Out .= $File;
+    $Out .= "}\n";
+    $Out .= "1;\n";
+
+    return $Self->_FileWriteAtomic(
+        Filename => "$Self->{Home}/Kernel/Config/Files/ZZZAuto.pm",
+        Content  => \$Out,
+    );
+}
+</pre></div>
+
+<p>Submit config settings to application. This function will write
+the internal state of the current SysConfig object to disk, saving
+all changes that were made by the users to Kernel/Config/Files/ZZZAuto.pm.
+Only values which differ from the default configuration are stored in this file.</p>
+
+<pre>    $SysConfigObject-&gt;CreateConfig();
+
+</pre><p>if you want to create an empty file, for example on initial creation, you can
+use the EmptyFile param.</p>
+
+<pre>    $SysConfigObject-&gt;CreateConfig( EmptyFile =&gt; 1 );
+
+</pre><h2 id="ConfigItemUpdate">ConfigItemUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigItemUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigItemUpdate">
+                                        <pre>
+
+sub ConfigItemUpdate {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Self->{Home};
+
+    # remember to update ZZZAAuto.pm and ZZZAuto.pm
+    $Self->{Update} = 1;
+
+    # check needed stuff
+    for (qw(Valid Key Value)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # check if we need to create config file
+    if ( !-e "$Home/Kernel/Config/Files/ZZZAuto.pm" && !$Self->CreateConfig( EmptyFile => 1 ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't create empty $Home/Kernel/Config/Files/ZZZAuto.pm!",
+        );
+        return;
+    }
+
+    # check if config file is writable
+    my $Out;
+    ## no critic
+    if ( !open( $Out, ">>$Self->{FileMode}", "$Home/Kernel/Config/Files/ZZZAuto.pm" ) ) {
+        ## use critic
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't write $Home/Kernel/Config/Files/ZZZAuto.pm: $!",
+        );
+        return;
+    }
+    close($Out);
+
+    # only validate and auto correct if param NoValidation is undefined or false
+    if ( !$Param{NoValidation} ) {
+
+        # validate the value, and auto-correct it if neccessary
+        my $ValidateOk = $Self->ConfigItemValidate(
+            Key   => $Param{Key},
+            Value => $Param{Value},
+        );
+
+        # auto correct the value if the validation failed
+        if ( !$ValidateOk ) {
+
+            my $Result = $Self->ConfigItemValidate(
+                Key         => $Param{Key},
+                Value       => $Param{Value},
+                Valid       => $Param{Valid},
+                AutoCorrect => 1,
+            );
+
+            # no need to go further as the update of the config item
+            # is done from within ConfigItemValidate() during auto-correction
+            return 1;
+        }
+    }
+
+    $Param{Key} =~ s/\\/\\\\/g;
+    $Param{Key} =~ s/'/\'/g;
+    $Param{Key} =~ s/###/'}->{'/g;
+
+    # get option to store it
+    my $Option = '';
+    if ( !$Param{Valid} ) {
+        $Option = "delete \$Self->{'$Param{Key}'};\n";
+    }
+    else {
+        $Option = $Kernel::OM->Get('Kernel::System::Main')->Dump( $Param{Value} );
+        $Option =~ s/\$VAR1/\$Self->{'$Param{Key}'}/;
+    }
+
+    # set option in runtime
+    my $OptionRuntime = $Option;
+    $OptionRuntime =~ s/Self->/Self->\{ConfigObject\}->/;
+    eval $OptionRuntime;
+
+    # get config file and insert it
+    my $In;
+    ## no critic
+    if ( !open( $In, "<$Self->{FileMode}", "$Home/Kernel/Config/Files/ZZZAuto.pm" ) ) {
+        ## use critic
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't read $Home/Kernel/Config/Files/ZZZAuto.pm: $!",
+        );
+        return;
+    }
+
+    # update content
+    my @FileOld = <$In>;
+    my @FileNew;
+    my $Insert = 0;
+    for my $Line ( reverse @FileOld ) {
+        push( @FileNew, $Line );
+        if ( !$Insert && ( $Line =~ /^}/ || $Line =~ /^\$Self->\{'1'\} = 1;/ ) ) {
+            push( @FileNew, $Option );
+            $Insert = 1;
+        }
+    }
+    close($In);
+
+    my $Content;
+    for my $Line ( reverse @FileNew ) {
+        $Content .= $Line;
+    }
+
+    return $Self->_FileWriteAtomic(
+        Filename => "$Self->{Home}/Kernel/Config/Files/ZZZAuto.pm",
+        Content  => \$Content,
+    );
+}
+</pre></div>
+
+<p>submit config settings and save it.</p>
+
+<pre>    $SysConfigObject-&gt;ConfigItemUpdate(
+        Valid        =&gt; 1,
+        Key          =&gt; 'WebUploadCacheModule',
+        Value        =&gt; 'Kernel::System::Web::UploadCache::DB',
+        NoValidation =&gt; 1,    # (optional) no validation or auto-correction will be done, to prevent loops.
+    );
+
+</pre><h2 id="ConfigItemGet">ConfigItemGet()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigItemGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigItemGet">
+                                        <pre>
+
+sub ConfigItemGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    my $Level = '';
+    if ( $Param{Default} ) {
+        $Level = 'Default';
+    }
+
+    # return on invalid config item
+    return if !$Self->{Config}->{ $Param{Name} };
+
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
+    # copy config and store it as default
+    my $Dump = $MainObject->Dump( $Self->{Config}->{ $Param{Name} } );
+    $Dump =~ s/\$VAR1 =/\$ConfigItem =/;
+
+    # rh as 8 bug fix
+    $Dump =~ s/\$\{\\\$VAR1->\{'.+?'}\[0\]}/\{\}/g;
+    my $ConfigItem;
+    if ( !eval $Dump ) {
+        die "ERROR: $!: $@ in $Dump";
+    }
+
+    # add current valid state
+    if ( !$Param{Default} && !defined $Self->_ModGet( ConfigName => $ConfigItem->{Name} ) ) {
+        $ConfigItem->{Valid} = 0;
+    }
+    elsif ( !$Param{Default} ) {
+        $ConfigItem->{Valid} = 1;
+    }
+
+    # update xml with current config setting
+    if ( $ConfigItem->{Setting}->[1]->{String} ) {
+
+        # fill default
+        $ConfigItem->{Setting}->[1]->{String}->[1]->{Default} = $ConfigItem->{Setting}->[1]->{String}->[1]->{Content};
+        my $String = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($String) ) {
+            $ConfigItem->{Setting}->[1]->{String}->[1]->{Content} = $String;
+        }
+    }
+    if ( $ConfigItem->{Setting}->[1]->{TextArea} ) {
+
+        # fill default
+        $ConfigItem->{Setting}->[1]->{TextArea}->[1]->{Default}
+            = $ConfigItem->{Setting}->[1]->{TextArea}->[1]->{Content};
+        my $TextArea = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($TextArea) ) {
+            $ConfigItem->{Setting}->[1]->{TextArea}->[1]->{Content} = $TextArea;
+        }
+    }
+    if ( $ConfigItem->{Setting}->[1]->{Option} ) {
+
+        # fill default
+        $ConfigItem->{Setting}->[1]->{Option}->[1]->{Default}
+            = $ConfigItem->{Setting}->[1]->{Option}->[1]->{SelectedID};
+        my $Option = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($Option) ) {
+            $ConfigItem->{Setting}->[1]->{Option}->[1]->{SelectedID} = $Option;
+        }
+    }
+    if ( $ConfigItem->{Setting}->[1]->{Hash} ) {
+        my $HashRef = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($HashRef) ) {
+            my @Array;
+            if ( ref $ConfigItem->{Setting}->[1]->{Hash}->[1]->{Item} eq 'ARRAY' ) {
+                @Array = @{ $ConfigItem->{Setting}->[1]->{Hash}->[1]->{Item} };
+            }
+            @{ $ConfigItem->{Setting}->[1]->{Hash}->[1]->{Item} } = (undef);
+            my %Hash;
+            if ( ref $HashRef eq 'HASH' ) {
+                %Hash = %{$HashRef};
+            }
+            for my $Key ( sort keys %Hash ) {
+                if ( ref $Hash{$Key} eq 'ARRAY' ) {
+                    my @Array = (
+                        undef,
+                        {
+                            Content => '',
+                        }
+                    );
+                    @{ $Array[1]{Item} } = (undef);
+                    for my $Content ( @{ $Hash{$Key} } ) {
+                        push( @{ $Array[1]{Item} }, { Content => $Content } );
+                    }
+                    push(
+                        @{ $ConfigItem->{Setting}->[1]->{Hash}->[1]->{Item} },
+                        {
+                            Key     => $Key,
+                            Content => '',
+                            Array   => \@Array,
+                        },
+                    );
+                }
+                elsif ( ref $Hash{$Key} eq 'HASH' ) {
+                    my @Array = (
+                        undef,
+                        {
+                            Content => '',
+                        }
+                    );
+                    @{ $Array[1]{Item} } = (undef);
+                    for my $Key2 ( sort keys %{ $Hash{$Key} } ) {
+                        push(
+                            @{ $Array[1]{Item} },
+                            {
+                                Content => $Hash{$Key}{$Key2},
+                                Key     => $Key2
+                            }
+                        );
+                    }
+                    push(
+                        @{ $ConfigItem->{Setting}->[1]->{Hash}->[1]->{Item} },
+                        {
+                            Key     => $Key,
+                            Content => '',
+                            Hash    => \@Array,
+                        },
+                    );
+                }
+                else {
+                    my $Option = 0;
+                    for my $Index ( 1 .. $#Array ) {
+                        if (
+                            defined( $Array[$Index]{Key} )
+                            && $Array[$Index]{Key} eq $Key
+                            && defined( $Array[$Index]{Option} )
+                            )
+                        {
+                            $Option = 1;
+                            $Array[$Index]{Option}[1]{SelectedID} = $Hash{$Key};
+                            push(
+                                @{ $ConfigItem->{Setting}->[1]->{Hash}->[1]->{Item} },
+                                {
+                                    Key     => $Key,
+                                    Content => '',
+                                    Option  => $Array[$Index]{Option},
+                                },
+                            );
+                        }
+                    }
+                    if ( $Option == 0 ) {
+                        push(
+                            @{ $ConfigItem->{Setting}->[1]->{Hash}->[1]->{Item} },
+                            {
+                                Key     => $Key,
+                                Content => $Hash{$Key},
+                            },
+                        );
+                    }
+                }
+            }
+        }
+    }
+    if ( $ConfigItem->{Setting}->[1]->{Array} ) {
+        my $ArrayRef = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($ArrayRef) ) {
+            @{ $ConfigItem->{Setting}->[1]->{Array}->[1]->{Item} } = (undef);
+            my @Array;
+            if ( ref $ArrayRef eq 'ARRAY' ) {
+                @Array = @{$ArrayRef};
+            }
+            for my $Key (@Array) {
+                push(
+                    @{ $ConfigItem->{Setting}->[1]->{Array}->[1]->{Item} },
+                    {
+                        Content => $Key,
+                    },
+                );
+            }
+        }
+    }
+    if ( $ConfigItem->{Setting}->[1]->{FrontendModuleReg} ) {
+        my $HashRef = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($HashRef) ) {
+            @{ $ConfigItem->{Setting}->[1]->{FrontendModuleReg} } = (undef);
+            my %Hash;
+            if ( ref $HashRef eq 'HASH' ) {
+                %Hash = %{$HashRef};
+            }
+            for my $Key ( sort keys %Hash ) {
+                @{ $ConfigItem->{Setting}->[1]->{FrontendModuleReg}->[1]->{$Key} } = (undef);
+                if ( $Key eq 'Group' || $Key eq 'GroupRo' ) {
+                    my @Array = (undef);
+                    for my $Content ( @{ $Hash{$Key} } ) {
+                        push(
+                            @{ $ConfigItem->{Setting}->[1]->{FrontendModuleReg}->[1]->{$Key} },
+                            { Content => $Content }
+                        );
+                    }
+                }
+                elsif ( $Key eq 'Loader' ) {
+                    my %LoaderFiles;
+                    for my $Key2 ( %{ $Hash{$Key} } ) {
+                        if (
+                            $Key2 eq 'CSS'
+                            || $Key2 eq 'JavaScript'
+                            )
+                        {
+                            if ( ref $Key2 ne 'ARRAY' ) {
+                                my @Files = (undef);
+                                for my $Index ( 0 .. $#{ $Hash{$Key}->{$Key2} } ) {
+                                    my $LoaderFile = $Hash{$Key}->{$Key2}[$Index];
+                                    push(
+                                        @Files,
+                                        { Content => $LoaderFile },
+                                    );
+                                }
+                                $LoaderFiles{$Key2} = \@Files;
+                            }
+                        }
+                    }
+                    push(
+                        @{ $ConfigItem->{Setting}->[1]->{FrontendModuleReg}->[1]->{$Key} },
+                        \%LoaderFiles,
+                    );
+                }
+                elsif ( $Key eq 'NavBar' || $Key eq 'NavBarModule' ) {
+                    if ( ref $Hash{$Key} eq 'ARRAY' ) {
+                        for my $Content ( @{ $Hash{$Key} } ) {
+                            my %NavBar;
+                            for ( sort keys %{$Content} ) {
+                                if ( $_ eq 'Group' || $_ eq 'GroupRo' ) {
+                                    @{ $NavBar{$_} } = (undef);
+                                    for my $Group ( @{ $Content->{$_} } ) {
+                                        push( @{ $NavBar{$_} }, { Content => $Group } );
+                                    }
+                                }
+                                else {
+                                    push(
+                                        @{ $NavBar{$_} },
+                                        ( undef, { Content => $Content->{$_} } )
+                                    );
+                                }
+                            }
+                            push(
+                                @{
+                                    $ConfigItem->{Setting}->[1]->{FrontendModuleReg}->[1]->{$Key}
+                                },
+                                \%NavBar
+                            );
+                        }
+                    }
+                    else {
+                        my %NavBar;
+                        my $Content = $Hash{$Key};
+                        for ( sort keys %{$Content} ) {
+                            if ( $_ eq 'Group' || $_ eq 'GroupRo' ) {
+                                @{ $NavBar{$_} } = (undef);
+                                for my $Group ( @{ $Content->{$_} } ) {
+                                    push( @{ $NavBar{$_} }, { Content => $Group } );
+                                }
+                            }
+                            else {
+                                push(
+                                    @{ $NavBar{$_} },
+                                    ( undef, { Content => $Content->{$_} } )
+                                );
+                            }
+                        }
+                        $ConfigItem->{Setting}->[1]->{FrontendModuleReg}->[1]->{$Key} = \%NavBar;
+                    }
+                }
+                else {
+                    push(
+                        @{ $ConfigItem->{Setting}->[1]->{FrontendModuleReg}->[1]->{$Key} },
+                        { Content => $Hash{$Key} }
+                    );
+                }
+            }
+        }
+    }
+    if ( $ConfigItem->{Setting}->[1]->{TimeWorkingHours} ) {
+        my $DaysRef = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($DaysRef) ) {
+            @{ $ConfigItem->{Setting}->[1]->{TimeWorkingHours}->[1]->{Day} } = (undef);
+            my %Days;
+            if ( ref $DaysRef eq 'HASH' ) {
+                %Days = %{$DaysRef};
+            }
+            for my $Day ( sort keys %Days ) {
+                my @Array = (undef);
+                for my $Hour ( @{ $Days{$Day} } ) {
+                    push(
+                        @Array,
+                        {
+                            Content => $Hour,
+                        }
+                    );
+                }
+                push(
+                    @{ $ConfigItem->{Setting}->[1]->{TimeWorkingHours}->[1]->{Day} },
+                    {
+                        Name => $Day,
+                        Hour => \@Array,
+                    },
+                );
+            }
+        }
+    }
+    if ( $ConfigItem->{Setting}->[1]->{TimeVacationDays} ) {
+        my $HashRef = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($HashRef) ) {
+            @{ $ConfigItem->{Setting}->[1]->{TimeVacationDays}->[1]->{Item} } = (undef);
+            my %Hash;
+            if ( ref $HashRef eq 'HASH' ) {
+                %Hash = %{$HashRef};
+            }
+            for my $Month ( sort { $a <=> $b } keys %Hash ) {
+
+                if ( $Hash{$Month} ) {
+                    my %Days = %{ $Hash{$Month} };
+                    for my $Day ( sort { $a <=> $b } keys %Days ) {
+                        push(
+                            @{ $ConfigItem->{Setting}->[1]->{TimeVacationDays}->[1]->{Item} },
+                            {
+                                Month   => $Month,
+                                Day     => $Day,
+                                Content => $Hash{$Month}->{$Day},
+                            },
+                        );
+                    }
+                }
+            }
+        }
+    }
+    if ( $ConfigItem->{Setting}->[1]->{TimeVacationDaysOneTime} ) {
+        my $HashRef = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($HashRef) ) {
+            @{ $ConfigItem->{Setting}->[1]->{TimeVacationDaysOneTime}->[1]->{Item} } = (undef);
+            my %Hash;
+            if ( ref $HashRef eq 'HASH' ) {
+                %Hash = %{$HashRef};
+            }
+            for my $Year ( sort { $a <=> $b } keys %Hash ) {
+                my %Months = %{ $Hash{$Year} };
+                if (%Months) {
+                    for my $Month ( sort { $a <=> $b } keys %Months ) {
+                        for my $Day ( sort { $a <=> $b } keys %{ $Hash{$Year}->{$Month} } ) {
+                            push(
+                                @{
+                                    $ConfigItem->{Setting}->[1]->{TimeVacationDaysOneTime}->[1]
+                                        ->{Item}
+                                },
+                                {
+                                    Year    => $Year,
+                                    Month   => $Month,
+                                    Day     => $Day,
+                                    Content => $Hash{$Year}->{$Month}->{$Day},
+                                },
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if ( $ConfigItem->{Setting}->[1]->{DateTime} ) {
+
+        # get data into a perl Hash
+        my $HashRef = $Self->_ModGet(
+            ConfigName => $ConfigItem->{Name},
+            Level      => $Level
+        );
+        if ( !$Param{Default} && defined($HashRef) ) {
+
+            # set perl hash into the correct XML structure for a DateTime setting
+            # Setting => [
+            #    undef,
+            #    {
+            #        Year => [
+            #            undef,
+            #            {
+            #                Content => '2012',
+            #            },
+            #        ],
+            #        ...
+            #    },
+            # ],
+            for my $Part (qw(Year Month Day Hour Minute)) {
+                $ConfigItem->{Setting}->[1]->{DateTime}->[1]->{$Part}->[1]->{Content} = $HashRef->{$Part};
+            }
+        }
+    }
+
+    if ( !$Param{Default} ) {
+        my %ConfigItemDefault = $Self->ConfigItemGet(
+            Name    => $Param{Name},
+            Default => 1,
+        );
+        my $C = $Self->_XML2Perl( Data => $ConfigItem );
+        my $D = $Self->_XML2Perl( Data => \%ConfigItemDefault );
+        my ( $A1, $A2 );
+        eval "\$A1 = $C";
+        eval "\$A2 = $D";
+        if ( $ConfigItemDefault{Valid} ne $ConfigItem->{Valid} ) {
+            $ConfigItem->{Diff} = 1;
+        }
+        elsif ( !defined $A1 && !defined $A2 ) {
+            $ConfigItem->{Diff} = 0;
+        }
+        elsif (
+            ( defined $A1 && !defined $A2 )
+            || ( !defined $A1 && defined $A2 )
+            || $Self->_DataDiff(
+                Data1 => \$A1,
+                Data2 => \$A2
+            )
+            )
+        {
+            $ConfigItem->{Diff} = 1;
+        }
+    }
+    if (
+        $ConfigItem->{Setting}->[1]->{Option}
+        && $ConfigItem->{Setting}->[1]->{Option}->[1]->{Location}
+        )
+    {
+        my $Home = $Self->{Home};
+        my @List = $MainObject->DirectoryRead(
+            Directory => $Home,
+            Filter    => "$ConfigItem->{Setting}->[1]->{Option}->[1]->{Location}",
+        );
+
+        for my $Item (@List) {
+            $Item =~ s/\Q$Home\E//g;
+            $Item =~ s/^[A-z]://g;
+            $Item =~ s/\\/\//g;
+            $Item =~ s/\/\//\//g;
+            $Item =~ s/^\///g;
+            $Item =~ s/^(.*)\.pm/$1/g;
+            $Item =~ s/\//::/g;
+            $Item =~ s/\//::/g;
+            my $Value = $Item;
+            my $Key   = $Item;
+            $Value =~ s/^.*::(.+?)$/$1/g;
+
+            if ( !$ConfigItem->{Setting}->[1]->{Option}->[1]->{Item} ) {
+                push( @{ $ConfigItem->{Setting}->[1]->{Option}->[1]->{Item} }, undef );
+            }
+            push(
+                @{ $ConfigItem->{Setting}->[1]->{Option}->[1]->{Item} },
+                {
+                    Key     => $Key,
+                    Content => $Value,
+                },
+            );
+        }
+    }
+    return %{$ConfigItem};
+}
+</pre></div>
+
+<p>get a current configuration setting, including changes
+that the users made:</p>
+
+<pre>    my %Config = $SysConfigObject-&gt;ConfigItemGet(
+        Name =&gt; 'Ticket::NumberGenerator',
+    );
+
+</pre><p>To get the default value of a configuration setting, pass
+the Default flag:</p>
+
+<pre>    my %Config = $SysConfigObject-&gt;ConfigItemGet(
+        Name    =&gt; 'Ticket::NumberGenerator',
+        Default =&gt; 1,
+    );
+
+</pre><h2 id="ConfigItemReset">ConfigItemReset()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigItemReset');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigItemReset">
+                                        <pre>
+
+sub ConfigItemReset {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    my %ConfigItemDefault = $Self->ConfigItemGet(
+        Name    => $Param{Name},
+        Default => 1,
+    );
+    my $A = $Self->_XML2Perl( Data => \%ConfigItemDefault );
+    my ($B);
+    eval "\$B = $A";
+
+    $Self->ConfigItemUpdate(
+        Key   => $Param{Name},
+        Value => $B,
+        Valid => $ConfigItemDefault{Valid}
+    );
+    return 1;
+}
+</pre></div>
+
+<p>reset a configuration setting to its default value.</p>
+
+<pre>    $SysConfigObject-&gt;ConfigItemReset(
+        Name =&gt; 'Ticket::NumberGenerator',
+    );
+
+</pre><h2 id="ConfigItemValidityUpdate">ConfigItemValidityUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigItemValidityUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigItemValidityUpdate">
+                                        <pre>
+
+sub ConfigItemValidityUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(Name Valid)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+    my %ConfigItemDefault = $Self->ConfigItemGet(
+        Name    => $Param{Name},
+        Default => 1,
+    );
+
+    return 1 if $Param{Valid} == $ConfigItemDefault{Valid};
+
+    my $A = $Self->_XML2Perl( Data => \%ConfigItemDefault );
+    my ($B);
+    eval "\$B = $A";
+
+    $Self->ConfigItemUpdate(
+        Key   => $Param{Name},
+        Value => $B,
+        Valid => $Param{Valid}
+    );
+    return 1;
+}
+</pre></div>
+
+<p>updates the validity of a configuration setting.</p>
+
+<pre>    $SysConfigObject-&gt;ConfigItemValidityUpdate(
+        Name  =&gt; 'Ticket::NumberGenerator',
+        Valid =&gt; 1,                             # or 0
+    );
+
+</pre><h2 id="ConfigGroupList">ConfigGroupList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigGroupList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigGroupList">
+                                        <pre>
+
+sub ConfigGroupList {
+    my ( $Self, %Param ) = @_;
+
+    my %List;
+    my %Count;
+    for my $ConfigItem ( @{ $Self->{XMLConfig} } ) {
+        if ( $ConfigItem->{Group} && ref $ConfigItem->{Group} eq 'ARRAY' ) {
+            for my $Group ( @{ $ConfigItem->{Group} } ) {
+                if ( $Group->{Content} ) {
+                    $Count{ $Group->{Content} }++;
+                    $List{ $Group->{Content} } = "$Group->{Content} ($Count{$Group->{Content}})";
+                }
+            }
+        }
+    }
+    return %List;
+}
+</pre></div>
+
+<p>get the list of all available config groups.</p>
+
+<pre>    my %ConfigGroupList = $SysConfigObject-&gt;ConfigGroupList();
+
+</pre><h2 id="ConfigSubGroupList">ConfigSubGroupList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigSubGroupList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigSubGroupList">
+                                        <pre>
+
+sub ConfigSubGroupList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    my %List;
+    for my $ConfigItem ( @{ $Self->{XMLConfig} } ) {
+        if ( $ConfigItem->{Group} && ref $ConfigItem->{Group} eq 'ARRAY' ) {
+            my $Hit = 0;
+            for my $Group ( @{ $ConfigItem->{Group} } ) {
+                if ( $Group->{Content} && $Group->{Content} eq $Param{Name} ) {
+                    $Hit = 1;
+                }
+            }
+            if ($Hit) {
+                for my $SubGroup ( @{ $ConfigItem->{SubGroup} } ) {
+                    if ( $SubGroup->{Content} ) {
+
+                        # get sub count
+                        my @List = $Self->ConfigSubGroupConfigItemList(
+                            Group    => $Param{Name},
+                            SubGroup => $SubGroup->{Content},
+                        );
+                        $List{ $SubGroup->{Content} } = ( $#List + 1 );
+                    }
+                }
+            }
+        }
+    }
+    return %List;
+}
+</pre></div>
+
+<p>get the list of all config sub groups of a given group.</p>
+
+<pre>    my %ConfigGroupList = $SysConfigObject-&gt;ConfigSubGroupList(
+        Name =&gt; 'Framework',
+    );
+
+</pre><h2 id="ConfigSubGroupConfigItemList">ConfigSubGroupConfigItemList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigSubGroupConfigItemList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigSubGroupConfigItemList">
+                                        <pre>
+
+sub ConfigSubGroupConfigItemList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Group SubGroup)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+    my %Data;
+    if ( $Self->{'Cache::ConfigSubGroupConfigItemList'} ) {
+        %Data = %{ $Self->{'Cache::ConfigSubGroupConfigItemList'} };
+    }
+    else {
+        my %Used;
+        for my $ConfigItem ( @{ $Self->{XMLConfig} } ) {
+            my $Name = $ConfigItem->{Name};
+            if ( $ConfigItem->{Group} && ref $ConfigItem->{Group} eq 'ARRAY' ) {
+                for my $Group ( @{ $ConfigItem->{Group} } ) {
+                    if (
+                        $Group
+                        && $ConfigItem->{SubGroup}
+                        && ref $ConfigItem->{SubGroup} eq 'ARRAY'
+                        )
+                    {
+                        for my $SubGroup ( @{ $ConfigItem->{SubGroup} } ) {
+                            if (
+                                !$Used{ $ConfigItem->{Name} }
+                                && $SubGroup->{Content}
+                                && $Group->{Content}
+                                )
+                            {
+                                $Used{ $ConfigItem->{Name} } = 1;
+                                push(
+                                    @{
+                                        $Data{ $Group->{Content} . '::' . $SubGroup->{Content} }
+                                    },
+                                    $ConfigItem->{Name}
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        $Self->{'Cache::ConfigSubGroupConfigItemList'} = \%Data;
+    }
+    if ( $Data{ $Param{Group} . '::' . $Param{SubGroup} } ) {
+        return reverse @{ $Data{ $Param{Group} . '::' . $Param{SubGroup} } };
+    }
+    return ();
+}
+</pre></div>
+
+<p>get the list of config items of a config sub group</p>
+
+<pre>    my @ConfigItemList = $SysConfigObject-&gt;ConfigSubGroupConfigItemList(
+        Group    =&gt; 'Framework',
+        SubGroup =&gt; 'Web',
+    );
+
+</pre><h2 id="ConfigItemSearch">ConfigItemSearch()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigItemSearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigItemSearch">
+                                        <pre>
+
+sub ConfigItemSearch {
+    my ( $Self, %Param ) = @_;
+
+    my @List;
+    my %Used;
+
+    # check needed stuff
+    for (qw(Search)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # get language object
+    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
+
+    $Param{Search} =~ s/\*//;
+    my %Groups = $Self->ConfigGroupList();
+    for my $Group ( sort keys(%Groups) ) {
+        my %SubGroups = $Self->ConfigSubGroupList( Name => $Group );
+        for my $SubGroup ( sort keys %SubGroups ) {
+            my @Items = $Self->ConfigSubGroupConfigItemList(
+                Group    => $Group,
+                SubGroup => $SubGroup,
+            );
+            for my $Item (@Items) {
+                my $Config = $Self->_ModGet( ConfigName => $Item );
+                if ( $Config && !$Used{ $Group . '::' . $SubGroup } ) {
+                    if ( ref $Config eq 'ARRAY' ) {
+                        for ( @{$Config} ) {
+                            if ( !$Used{ $Group . '::' . $SubGroup } ) {
+                                if ( $_ && $_ =~ /\Q$Param{Search}\E/i ) {
+                                    push(
+                                        @List,
+                                        {
+                                            SubGroup      => $SubGroup,
+                                            SubGroupCount => $SubGroups{$SubGroup},
+                                            Group         => $Group,
+                                        },
+                                    );
+                                    $Used{ $Group . '::' . $SubGroup } = 1;
+                                }
+                            }
+                        }
+                    }
+                    elsif ( ref $Config eq 'HASH' ) {
+                        for my $Key ( sort keys %{$Config} ) {
+                            if ( !$Used{ $Group . '::' . $SubGroup } ) {
+                                if ( $Config->{$Key} && $Config->{$Key} =~ /\Q$Param{Search}\E/i ) {
+                                    push(
+                                        @List,
+                                        {
+                                            SubGroup      => $SubGroup,
+                                            SubGroupCount => $SubGroups{$SubGroup},
+                                            Group         => $Group,
+                                        },
+                                    );
+                                    $Used{ $Group . '::' . $SubGroup } = 1;
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        if ( $Config =~ /\Q$Param{Search}\E/i ) {
+                            push(
+                                @List,
+                                {
+                                    SubGroup      => $SubGroup,
+                                    SubGroupCount => $SubGroups{$SubGroup},
+                                    Group         => $Group,
+                                },
+                            );
+                            $Used{ $Group . '::' . $SubGroup } = 1;
+                        }
+                    }
+                }
+                if ( $Item =~ /\Q$Param{Search}\E/i ) {
+                    if ( !$Used{ $Group . '::' . $SubGroup } ) {
+                        push(
+                            @List,
+                            {
+                                SubGroup      => $SubGroup,
+                                SubGroupCount => $SubGroups{$SubGroup},
+                                Group         => $Group,
+                            },
+                        );
+                        $Used{ $Group . '::' . $SubGroup } = 1;
+                    }
+                }
+                else {
+                    my %ItemHash = $Self->ConfigItemGet( Name => $Item );
+                    for my $Index ( 1 .. $#{ $ItemHash{Description} } ) {
+                        if ( !$Used{ $Group . '::' . $SubGroup } ) {
+                            my $Description = $ItemHash{Description}[$Index]{Content};
+
+                            # compare with the English description and also with the translated sentence
+                            if (
+                                ( $Description =~ /\Q$Param{Search}\E/i )
+                                || (
+                                    $LanguageObject->Translate($Description)
+                                    =~ /\Q$Param{Search}\E/i
+                                )
+                                )
+                            {
+                                push(
+                                    @List,
+                                    {
+                                        SubGroup      => $SubGroup,
+                                        SubGroupCount => $SubGroups{$SubGroup},
+                                        Group         => $Group,
+                                    },
+                                );
+                                $Used{ $Group . '::' . $SubGroup } = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return @List;
+}
+</pre></div>
+
+<p>search for sub groups of config items. It will return all subgroups
+with settings which contain the search term.</p>
+
+<pre>    my @List = $SysConfigObject-&gt;ConfigItemSearch(
+        Search =&gt; 'some topic',
+    );
+
+</pre><h2 id="ConfigItemTranslatableStrings">ConfigItemTranslatableStrings()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigItemTranslatableStrings');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigItemTranslatableStrings">
+                                        <pre>
+
+sub ConfigItemTranslatableStrings {
+    my ( $Self, %Param ) = @_;
+
+    # empty translation list
+    $Self->{ConfigItemTranslatableStrings} = {};
+
+    # get all groups
+    my %ConfigGroupList = $Self->ConfigGroupList();
+    for my $Group ( sort keys %ConfigGroupList ) {
+
+        # get all sub groups
+        my %ConfigSubGroupList = $Self->ConfigSubGroupList(
+            Name => $Group,
+        );
+        for my $SubGroup ( sort keys %ConfigSubGroupList ) {
+
+            # get items
+            my @ConfigItemList = $Self->ConfigSubGroupConfigItemList(
+                Group    => $Group,
+                SubGroup => $SubGroup,
+            );
+
+            CONFIGITEM:
+            for my $ConfigItem (@ConfigItemList) {
+
+                # get attributes of each config item
+                my %Config = $Self->ConfigItemGet(
+                    Name    => $ConfigItem,
+                    Default => 1,
+                );
+                next CONFIGITEM if !%Config;
+
+                # get translatable strings
+                $Self->_ConfigItemTranslatableStrings( Data => \%Config );
+            }
+        }
+    }
+
+    my @Strings;
+    for my $Key ( sort keys %{ $Self->{ConfigItemTranslatableStrings} } ) {
+        push @Strings, $Key;
+    }
+    return @Strings;
+}
+</pre></div>
+
+<p>returns a unique list of all translatable strings in the
+XML configuration.</p>
+
+<h2 id="ConfigItemValidate">ConfigItemValidate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigItemValidate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigItemValidate">
+                                        <pre>
+
+sub ConfigItemValidate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Key} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Key!",
+        );
+        return;
+    }
+
+    # get the current config item
+    my %ConfigItem = $Self->ConfigItemGet(
+        Name => $Param{Key},
+    );
+
+    # check if a validate module is defined for this config option
+    return 1 if !$ConfigItem{ValidateModule};
+    return 1 if ref $ConfigItem{ValidateModule} ne 'ARRAY';
+    return 1 if !$ConfigItem{ValidateModule}->[1]->{Content};
+
+    # load the validate module
+    my $ValidateObject = $Kernel::OM->Get( $ConfigItem{ValidateModule}->[1]->{Content} );
+
+    # module could not be loaded
+    return if !$ValidateObject;
+
+    # take the given value
+    my $Value = $Param{Value};
+
+    # if no value is given, take the already stored value
+    if ( !defined $Param{Value} ) {
+
+        # string
+        if ( $ConfigItem{Setting}->[1]->{String}->[1]->{Content} ) {
+            $Value = $ConfigItem{Setting}->[1]->{String}->[1]->{Content};
+        }
+
+        # textarea
+        elsif ( $ConfigItem{Setting}->[1]->{TextArea}->[1]->{Content} ) {
+            $Value = $ConfigItem{Setting}->[1]->{TextArea}->[1]->{Content};
+        }
+
+        # option
+        # (more complex, so give the complete data structure)
+        elsif ( $ConfigItem{Setting}->[1]->{Option}->[1] ) {
+            $Value = $ConfigItem{Setting}->[1]->{Option}->[1];
+        }
+
+        # hash
+        elsif ( $ConfigItem{Setting}->[1]->{Hash}->[1]->{Item} ) {
+            $Value = $ConfigItem{Setting}->[1]->{Hash}->[1]->{Item};
+        }
+
+        # array
+        elsif ( $ConfigItem{Setting}->[1]->{Array}->[1]->{Item} ) {
+            $Value = $ConfigItem{Setting}->[1]->{Array}->[1]->{Item};
+        }
+
+        # FrontendModuleReg
+        # (more complex, so give the complete data structure)
+        elsif ( $ConfigItem{Setting}->[1]->{FrontendModuleReg}->[1] ) {
+            $Value = $ConfigItem{Setting}->[1]->{FrontendModuleReg}->[1];
+        }
+
+        # TimeWorkingHours
+        elsif ( $ConfigItem{Setting}->[1]->{TimeWorkingHours}->[1]->{Day} ) {
+            $Value = $ConfigItem{Setting}->[1]->{TimeWorkingHours}->[1]->{Day};
+        }
+
+        # TimeVacationDays
+        elsif ( $ConfigItem{Setting}->[1]->{TimeVacationDays}->[1]->{Item} ) {
+            $Value = $ConfigItem{Setting}->[1]->{TimeVacationDays}->[1]->{Item};
+        }
+
+        # TimeVacationDaysOneTime
+        elsif ( $ConfigItem{Setting}->[1]->{TimeVacationDaysOneTime}->[1]->{Item} ) {
+            $Value = $ConfigItem{Setting}->[1]->{TimeVacationDaysOneTime}->[1]->{Item};
+        }
+
+        # DateTime
+        elsif ( $ConfigItem{Setting}->[1]->{DateTime}->[1] ) {
+            $Value = $ConfigItem{Setting}->[1]->{DateTime}->[1];
+        }
+
+        # unknown config item can not be validated, so return true
+        else {
+            return 1;
+        }
+    }
+
+    # if auto-correction is requested
+    if ( $Param{AutoCorrect} ) {
+
+        # get the auto-correct value
+        $Value = $ValidateObject->GetAutoCorrectValue(
+            Data => $Value,
+        );
+
+        # if the valid param is given, use it, otherwise take valid setting from config item
+        my $Valid = defined $Param{Valid} ? $Param{Valid} : $ConfigItem{Valid};
+
+        # skip validation of invalid items
+        return 1 if !$Valid;
+
+        # update the config item with the new value
+        my $UpdateSuccess = $Self->ConfigItemUpdate(
+            Valid        => $Valid,
+            Key          => $Param{Key},
+            Value        => $Value,
+            NoValidation => 1,
+        );
+
+        # return the update result
+        return $UpdateSuccess;
+    }
+
+    # only validation is needed
+    else {
+
+        # validate the value
+        my $ValidateOk = $ValidateObject->Validate(
+            Data => $Value,
+        );
+
+        # return the validation result
+        return $ValidateOk;
+    }
+}
+</pre></div>
+
+<p>Validates if the given value for this config item is correct.
+If no value is given, the current value of the config item will be validated.
+Returns true if it is valid, false otherwise.</p>
+
+<pre>    my $Result = $SysConfigObject-&gt;ConfigItemValidate(
+        Key         =&gt; 'Ticket::Frontend::AgentTicketOwner###PriorityDefault',
+        Value       =&gt; '3 normal',  # (optional)
+        Valid       =&gt; 1,           # (optional) only used if AutoCorrect is set
+        AutoCorrect =&gt; 1,           # (optional) auto-correct the config item
+    );
+
+</pre><h2 id="ConfigItemCheckAll">ConfigItemCheckAll()</h2>
+
+<p><a href="#" onclick="toggleCode('method_ConfigItemCheckAll');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigItemCheckAll">
+                                        <pre>
+
+sub ConfigItemCheckAll {
+    my ( $Self, %Param ) = @_;
+
+    # get all config groups
+    my %Groups = $Self->ConfigGroupList();
+
+    for my $Group ( sort keys(%Groups) ) {
+
+        # get all subgroups for this group
+        my %SubGroups = $Self->ConfigSubGroupList( Name => $Group );
+
+        for my $SubGroup ( sort keys %SubGroups ) {
+
+            # get all items for this subgroup
+            my @Items = $Self->ConfigSubGroupConfigItemList(
+                Group    => $Group,
+                SubGroup => $SubGroup,
+            );
+
+            # check each item
+            ITEM:
+            for my $Item (@Items) {
+
+                # validate the value of this item
+                my $ValidateOk = $Self->ConfigItemValidate(
+                    Key => $Item,
+                );
+
+                # validation is ok
+                next ITEM if $ValidateOk;
+
+                # validation is not ok, auto-correct the value
+                my $AutoCorrectOk = $Self->ConfigItemValidate(
+                    Key         => $Item,
+                    AutoCorrect => 1,
+                );
+            }
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>Validates all config items which have a validation module.
+Automatically corrects wrong values.</p>
+
+<pre>    my $Result = $SysConfigObject-&gt;ConfigItemCheckAll();
+
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
