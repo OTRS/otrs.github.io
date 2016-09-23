@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::SysConfig</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 4.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 4.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::SysConfig
+</div>
+<div>
+<a href="../../src/Kernel/System/SysConfig.pm">Source</a>
+</div>
+
+
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a></li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Kernel::System::SysConfig - to manage sys config settings</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>All functions to manage sys config settings.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<dl>
+	<dt>new()</dt>
+		<dd><p>create an object. Do not use it directly, instead use:</p></dd>
+<dd><pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $SysConfigObject = $Kernel::OM-&gt;Get('Kernel::System::SysConfig');
+
+</pre></dd>	<dt>WriteDefault()</dt>
+		<dd><p>writes the default configuration file perl cache
+(Kernel/Config/Files/ZZZAAuto.pm). It is the Perl representation
+of the default XML configuration data (Kernel/Config/Files/*.xml).</p></dd>
+	<dt>Download()</dt>
+		<dd><p>download config changes. This will return the content of
+Kernel/Config/Files/ZZZAuto.pm, the file which contains all
+configuration changes that the users made via AdminSysConfig.</p></dd>
+<dd><pre>    my $ConfigurationData = $SysConfigObject-&gt;Download();
+
+</pre></dd>		<dd><p>If you want to check if it exists (returns true or false),
+call it like this:</p></dd>
+<dd><pre>    my $ConfigurationExists = $SysConfigObject-&gt;Download(
+        Type =&gt; 'Check',
+    );
+
+</pre></dd>	<dt>Upload()</dt>
+		<dd><p>upload of config changes. Pass the contents of
+the file Kernel/Config/Files/ZZZAuto.pm here, as
+read by <a href="#Download">Download()</a>.</p></dd>
+		<dd><p>Warning: this will replace the existing user
+configuration changes.</p></dd>
+<dd><pre>    $SysConfigObject-&gt;Upload(
+        Content =&gt; $Content,
+    );
+
+</pre></dd>	<dt>CreateConfig()</dt>
+		<dd><p>Submit config settings to application. This function will write
+the internal state of the current SysConfig object to disk, saving
+all changes that were made by the users to Kernel/Config/Files/ZZZAuto.pm.
+Only values which differ from the default configuration are stored in this file.</p></dd>
+<dd><pre>    $SysConfigObject-&gt;CreateConfig();
+
+</pre></dd>		<dd><p>if you want to create an empty file, for example on initial creation, you can
+use the EmptyFile param.</p></dd>
+<dd><pre>    $SysConfigObject-&gt;CreateConfig( EmptyFile =&gt; 1 );
+
+</pre></dd>	<dt>ConfigItemUpdate()</dt>
+		<dd><p>submit config settings and save it.</p></dd>
+<dd><pre>    $SysConfigObject-&gt;ConfigItemUpdate(
+        Valid        =&gt; 1,
+        Key          =&gt; 'WebUploadCacheModule',
+        Value        =&gt; 'Kernel::System::Web::UploadCache::DB',
+        NoValidation =&gt; 1,    # (optional) no validation or auto-correction will be done, to prevent loops.
+    );
+
+</pre></dd>	<dt>ConfigItemGet()</dt>
+		<dd><p>get a current configuration setting, including changes
+that the users made:</p></dd>
+<dd><pre>    my %Config = $SysConfigObject-&gt;ConfigItemGet(
+        Name =&gt; 'Ticket::NumberGenerator',
+    );
+
+</pre></dd>		<dd><p>To get the default value of a configuration setting, pass
+the Default flag:</p></dd>
+<dd><pre>    my %Config = $SysConfigObject-&gt;ConfigItemGet(
+        Name    =&gt; 'Ticket::NumberGenerator',
+        Default =&gt; 1,
+    );
+
+</pre></dd>	<dt>ConfigItemReset()</dt>
+		<dd><p>reset a configuration setting to its default value.</p></dd>
+<dd><pre>    $SysConfigObject-&gt;ConfigItemReset(
+        Name =&gt; 'Ticket::NumberGenerator',
+    );
+
+</pre></dd>	<dt>ConfigGroupList()</dt>
+		<dd><p>get the list of all available config groups.</p></dd>
+<dd><pre>    my %ConfigGroupList = $SysConfigObject-&gt;ConfigGroupList();
+
+</pre></dd>	<dt>ConfigSubGroupList()</dt>
+		<dd><p>get the list of all config sub groups of a given group.</p></dd>
+<dd><pre>    my %ConfigGroupList = $SysConfigObject-&gt;ConfigSubGroupList(
+        Name =&gt; 'Framework',
+    );
+
+</pre></dd>	<dt>ConfigSubGroupConfigItemList()</dt>
+		<dd><p>get the list of config items of a config sub group</p></dd>
+<dd><pre>    my @ConfigItemList = $SysConfigObject-&gt;ConfigSubGroupConfigItemList(
+        Group    =&gt; 'Framework',
+        SubGroup =&gt; 'Web',
+    );
+
+</pre></dd>	<dt>ConfigItemSearch()</dt>
+		<dd><p>search for sub groups of config items. It will return all subgroups
+with settings which contain the search term.</p></dd>
+<dd><pre>    my @List = $SysConfigObject-&gt;ConfigItemSearch(
+        Search =&gt; 'some topic',
+    );
+
+</pre></dd>	<dt>ConfigItemTranslatableStrings()</dt>
+		<dd><p>returns a unique list of all translatable strings in the
+XML configuration.</p></dd>
+	<dt>ConfigItemValidate()</dt>
+		<dd><p>Validates if the given value for this config item is correct.
+If no value is given, the current value of the config item will be validated.
+Returns true if it is valid, false otherwise.</p></dd>
+<dd><pre>    my $Result = $SysConfigObject-&gt;ConfigItemValidate(
+        Key         =&gt; 'Ticket::Frontend::AgentTicketOwner###PriorityDefault',
+        Value       =&gt; '3 normal',  # (optional)
+        Valid       =&gt; 1,           # (optional) only used if AutoCorrect is set
+        AutoCorrect =&gt; 1,           # (optional) auto-correct the config item
+    );
+
+</pre></dd>	<dt>ConfigItemCheckAll()</dt>
+		<dd><p>Validates all config items which have a validation module.
+Automatically corrects wrong values.</p></dd>
+<dd><pre>    my $Result = $SysConfigObject-&gt;ConfigItemCheckAll();
+
+</pre></dd></dl>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
