@@ -86,6 +86,20 @@ sub ProcessHTMLFile {
 <link rel="stylesheet" href="$PathToJS/documentation.css">
 <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="$PathToJS/documentation.js"></script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in api docs
+    $('.pod > pre, .pod > .method-source-code > pre').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
 <!-- otrs.github.io -->
 EOF
 
