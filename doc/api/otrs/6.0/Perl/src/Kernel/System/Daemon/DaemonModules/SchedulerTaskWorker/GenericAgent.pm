@@ -31,11 +31,8 @@ This task handler executes generic agent jobs
 
 =head1 PUBLIC INTERFACE
 
-
 =head2 new()
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $TaskHandlerObject = $Kernel::OM-Get('Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericAgent');
 
 =cut

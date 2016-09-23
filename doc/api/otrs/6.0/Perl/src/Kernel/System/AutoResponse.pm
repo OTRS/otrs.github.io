@@ -28,13 +28,10 @@ All auto response functions. E. g. to add auto response or other functions.
 
 =head1 PUBLIC INTERFACE
 
-
 =head2 new()
 
 create an object
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $AutoResponseObject = $Kernel::OM->Get('Kernel::System::AutoResponse');
 
 =cut

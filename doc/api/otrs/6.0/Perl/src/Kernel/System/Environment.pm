@@ -31,13 +31,10 @@ Functions to collect environment info
 
 =head1 PUBLIC INTERFACE
 
-
 =head2 new()
 
 create environment object. Do not use it directly, instead use:
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $EnvironmentObject = $Kernel::OM->Get('Kernel::System::Environment');
 
 =cut

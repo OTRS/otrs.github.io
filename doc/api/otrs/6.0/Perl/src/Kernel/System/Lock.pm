@@ -32,13 +32,10 @@ Usually you will not modify those lock states, because there is not usecase for 
 
 =head1 PUBLIC INTERFACE
 
-
 =head2 new()
 
 create an object
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $LockObject = $Kernel::OM->Get('Kernel::System::Lock');
 
 =cut

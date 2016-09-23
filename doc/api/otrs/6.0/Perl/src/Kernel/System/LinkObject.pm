@@ -32,13 +32,10 @@ All functions to link objects like tickets, faqs, ...
 
 =head1 PUBLIC INTERFACE
 
-
 =head2 new()
 
-create an object. Do not use it directly, instead use:
+Don't use the constructor directly, use the ObjectManager instead:
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $LinkObject = $Kernel::OM->Get('Kernel::System::LinkObject');
 
 =cut

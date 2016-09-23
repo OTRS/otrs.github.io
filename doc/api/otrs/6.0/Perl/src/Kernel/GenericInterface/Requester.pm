@@ -28,13 +28,10 @@ Kernel::GenericInterface::Requester - GenericInterface handler for sending web s
 
 =head1 PUBLIC INTERFACE
 
-
 =head2 new()
 
 create an object. Do not create it directly, instead use:
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $RequesterObject = $Kernel::OM->Get('Kernel::GenericInterface::Requester');
 
 =cut

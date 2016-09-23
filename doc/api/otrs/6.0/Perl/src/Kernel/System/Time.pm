@@ -30,13 +30,10 @@ This module is managing time functions.
 
 =head1 PUBLIC INTERFACE
 
-
 =head2 new()
 
 create a time object. Do not use it directly, instead use:
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
 
 =cut

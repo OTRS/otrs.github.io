@@ -34,13 +34,10 @@ DynamicFields backend
 
 =head1 PUBLIC INTERFACE
 
-
 =head2 new()
 
 create a DynamicField object. Do not use it directly, instead use:
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
 
 =cut
