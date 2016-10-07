@@ -1,0 +1,43 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>ウェブサーバ</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS 5 - 管理 マニュアル"><link rel="up" href="performance-tuning.html" title="第6章 パフォーマンス・チューニング"><link rel="prev" href="performance-tuning-database.html" title="データベース"><link rel="next" href="additional-resources.html" title="付録A 追加の資料"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">ウェブサーバ</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="performance-tuning-database.html">戻る</a> </td><th width="60%" align="center">第6章 パフォーマンス・チューニング</th><td width="20%" align="right"> <a accesskey="n" href="additional-resources.html">次へ</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-webserver"></a>ウェブサーバ</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">事前に確立しているデータベース接続</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">プレインストールされたモジュール - startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">ディスク上で更新された時パール・モジュールをリロードします。</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">正しい戦略の選択</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></div><p>
+        mod_perl 2.0( <a class="ulink" href="http://perl.apache.org/" target="_top"><em class="citetitle">http://perl.apache.org/</em></a>
+)を使用するべきです。それは純粋なcgiよりはるかに速い(~ * 100)。しかし、それはより多くのRAMを必要とします。
+        </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-db"></a>事前に確立しているデータベース接続</h3></div></div></div><p>
+            ウェブサーバのスタートアップに先んじてあらかじめデータベース接続を確立することができます。時間の節約になります(README.webserverを参照)。
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-startup"></a>プレインストールされたモジュール - startup.pl</h3></div></div></div><p>
+            スタートアップ・スクリプト・スクリプト<code class="filename">scripts/apache2-perl-startup.pl</code>を使用して下さい。それはmod_perlウェブサーバ上の事前ロードされ、コンパイルされたPerlをより早くします。しかもより小さいメモリで。(README.webserverを参照)。
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-reload"></a>ディスク上で更新された時パール・モジュールをリロードします。</h3></div></div></div><p>
+            By default Apache::Reload is used in
+<code class="filename">scripts/apache2-httpd.include.conf</code>. Disable it and you
+will get 8% more speed. But remember to restart the web server if you
+install any modules via the OTRS Package Manager, or any values in your
+SysConfig or in <code class="filename">Kernel/Config.pm</code>. Important: this would
+also mean you can't use the OTRS Package Manager via the web interface, you
+need to use the command line variant -
+<code class="filename">bin/otrs.PackageManager.pl</code>.
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-strategy"></a>正しい戦略の選択</h3></div></div></div><p>
+            より大きな装置(例えば40人以上担当者または1,000枚/day以上の新しいチケット)を持っているなら、mod_perlユーザ・ガイド( <a class="ulink" href="http://perl.apache.org/docs/2.0/user/index.html" target="_top"><em class="citetitle">http://perl.apache.org/docs/2.0/user/index.html</em></a>
+)の性能についての章を読むと良いでしょう。
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-gzip"></a>mod_gzip/mod_deflate</h3></div></div></div><p>
+            帯域幅が小さい場合は、Apache2用のmod_deflateをご利用ください。45000のHTMLページを持っているなら、mod_gzip/mod_deflate　は約7000にそれを圧縮します。欠点は、これがサーバー側のロードを増加させるということです。
+            </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tuning-database.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tuning.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="additional-resources.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">データベース </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 付録A 追加の資料</td></tr></table></div></body></html>
