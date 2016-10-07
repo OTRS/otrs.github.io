@@ -1,0 +1,53 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Веб-сервер</title><meta name="generator" content="DocBook XSL Stylesheets V1.78.1"><link rel="home" href="index.html" title="OTRS v.4 - Руководство Администратора"><link rel="up" href="performance-tuning.html" title="Chapter 6. Настройка Производительности"><link rel="prev" href="performance-tuning-database.html" title="База данных"><link rel="next" href="additional-resources.html" title="Appendix A. Дополнительные ресурсы"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Веб-сервер</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="performance-tuning-database.html">Prev</a> </td><th width="60%" align="center">Chapter 6. Настройка Производительности</th><td width="20%" align="right"> <a accesskey="n" href="additional-resources.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-webserver"></a>Веб-сервер</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">Предустановленное соединение с базой данных</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">Предварительно загруженные модули  - startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">Перезагрузка Perl-модулей во время обновления с диска</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">Выбор Правильной Стратегии</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></div><p>
+        Конечно же нужно использовать mod_perl 2.0 ( <a class="ulink" href="http://perl.apache.org/" target="_top"><em class="citetitle">http://perl.apache.org/</em></a>
+). Он быстрее (~ * 100) чем "чистый" cgi. Но он требует больше оперативной
+памяти (RAM).
+        </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-db"></a>Предустановленное соединение с базой данных</h3></div></div></div><p>
+            При запуске веб-сервера можно иметь заранее установленное соединение с базой
+данных. Такой подход существенно сэкономит время (см. README.webserver).
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-startup"></a>Предварительно загруженные модули  - startup.pl</h3></div></div></div><p>
+            Чтобы все работало быстрее и занимало меньше памяти используйте сценарий
+запуска <code class="filename">scripts/apache2-perl-startup.pl</code> для
+предварительной загрузки/компиляции Perl модулей на сервере с mod_perl
+(см. README.webserver).
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-reload"></a>Перезагрузка Perl-модулей во время обновления с диска</h3></div></div></div><p>
+            По умолчанию Apachee::Reload используется в
+scripts/apache2-httpd.include.conf. Отключив его вы получите больше 8%
+прироста скорости. Не забудьте перезапустить веб-сервер, если устанавливаете
+модули через OTRS Package Manager, или устанавливаете любые значения в
+SysConfig или в Kernel/Config.pm. Важно: это также будет означать, что у вас
+не будет возможности использовать OTRS Package Manager через
+пользовательский веб-интерфейс. В таком случае необходимо воспользоваться
+командной строкой - <code class="filename">bin/otrs.PackageManager.pl</code>.
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-strategy"></a>Выбор Правильной Стратегии</h3></div></div></div><p>
+            Если у вас действительно большая система, более 1 000 новых заявок в день и
+больше 40 агентов, то советуем почитать статью "Производительность"  в
+Руковдстве пользователя по mod_perl  (<a class="ulink" href="http://perl.apache.org/docs/2.0/user/index.html" target="_top"><em class="citetitle">http://perl.apache.org/docs/2.0/user/index.html</em></a>
+).
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-gzip"></a>mod_gzip/mod_deflate</h3></div></div></div><p>
+            Используйте mod_deflate для Apache2, если у вас "слабая" полоса пропускания
+. При загрузке html-страницы размером в 45к, mod_gzip/mod_deflate сожмет ее
+и страница будет занимать около 7к. Недостатком такого подхода является
+дополнительная нагрузка на сервер.
+            </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tuning-database.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tuning.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="additional-resources.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">База данных </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Appendix A. Дополнительные ресурсы</td></tr></table></div></body></html>
