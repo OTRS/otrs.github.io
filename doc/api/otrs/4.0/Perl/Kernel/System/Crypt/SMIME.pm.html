@@ -204,25 +204,31 @@ $(document).ready(function() {
 </pre></dd><dd><pre>    # get main object
     my $MainObject = $Kernel::OM-&gt;Get('Kernel::System::Main');
 
-</pre></dd><dd><pre>    # TODO: maybe use _FetchAttributesFromCert() to determine the cert-hash and return that instead?
-    # determine hash of signer certificate
-    my $SignerCertRef    = $MainObject-&gt;FileRead( Location =&gt; $SignerFile );
+</pre></dd><dd><pre>    my $SignerCertRef    = $MainObject-&gt;FileRead( Location =&gt; $SignerFile );
     my $SignedContentRef = $MainObject-&gt;FileRead( Location =&gt; $VerifiedFile );
 
 </pre></dd><dd><pre>    # return message
     if ( $Message =~ /Verification successful/i ) {
 
-</pre></dd><dd><pre>        # get email address(es) from certificate
-        $Options = &quot;x509 -in $SignerFile -email -noout&quot;;
-        my @SignersArray = qx{$Self-&gt;{Cmd} $Options 2&gt;&amp;1};
+</pre></dd><dd><pre>        # Determine email address(es) from attributes of signer certificate.
+        my %SignerCertAttributes;
+        $Self-&gt;_FetchAttributesFromCert( $SignerFile, \%SignerCertAttributes );
+        my @SignersArray = split( ', ', $SignerCertAttributes{Email} );
 
-</pre></dd><dd><pre>        chomp(@SignersArray);
+</pre></dd><dd><pre>        # Include additional certificate attributes in the message:
+        #   - signer(s) email address(es)
+        #   - certificate hash
+        #   - certificate fingerprint
+        #   Please see bug#12284 for more information.
+        my $MessageSigner = join( ', ', @SignersArray ) . ' : '
+            . $SignerCertAttributes{Hash} . ' : '
+            . $SignerCertAttributes{Fingerprint};
 
 </pre></dd><dd><pre>        %Return = (
             SignatureFound    =&gt; 1,
             Successful        =&gt; 1,
-            Message           =&gt; 'OpenSSL: ' . $Message,
-            MessageLong       =&gt; 'OpenSSL: ' . $MessageLong,
+            Message           =&gt; 'OpenSSL: ' . $Message . ' (' . $MessageSigner . ')',
+            MessageLong       =&gt; 'OpenSSL: ' . $MessageLong . ' (' . $MessageSigner . ')',
             Signers           =&gt; [@SignersArray],
             SignerCertificate =&gt; $$SignerCertRef,
             Content           =&gt; $$SignedContentRef,
