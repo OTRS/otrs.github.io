@@ -129,8 +129,7 @@ shell&gt; cd /opt/otrs/
 shell&gt; cat scripts/DBUpdate-to-5.postgresql.sql | psql --set ON_ERROR_STOP=on --single-transaction otrs otrs
                 </pre><p>
                 </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.7.12.3"></a>步骤6.2：数据库迁移脚本</h4></div></div></div><p>
-            Run the migration script (as user <code class="literal">otrs</code>, NOT as
-<code class="literal">root</code>):
+            运行迁移脚本（用<code class="literal">otrs</code>用户，而不是<code class="literal">root</code>用户）：
             </p><p>
             </p><pre class="screen">
 shell&gt; scripts/DBUpdate-to-5.pl
@@ -138,8 +137,7 @@ shell&gt; scripts/DBUpdate-to-5.pl
             </p><p>
             如果这个脚本运行不正常，请不要继续升级，否则可能丢失数据。
             </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.13"></a>步骤7：刷新配置缓存并删除缓存</h3></div></div></div><p>
-        Please run (as user <code class="literal">otrs</code>, <span class="emphasis"><em>not</em></span> as
-<code class="literal">root</code>):
+        请运行（用<code class="literal">otrs</code>用户，而<span class="emphasis"><em>不是</em></span><code class="literal">root</code>用户）：
         </p><p>
         </p><pre class="screen">
 shell&gt; cd /opt/otrs/
@@ -165,20 +163,15 @@ shell&gt; /etc/init.d/cron start
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.16"></a>步骤10：配置NodeID（仅适用于多前端的群集安装）</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
                 这一步仅在你有多台前端主机的群集安装时才需要。
             </p></div><p>
-            From OTRS 5 on, every frontend server needs to have its own unique
-<code class="literal">NodeID</code>.  This defaults to <code class="literal">1</code> and thus
-does not need to be configured for single-frontend setups. If you have more
-than one machine, each machine needs to have this value set to a unique
-value between <code class="literal">1</code> and <code class="literal">999</code>. This
-configuration needs to be done in the file
-<code class="filename">Kernel/Config.pm</code>:
+            从OTRS
+5开始，每个前端服务器需要有它自己唯一的<code class="literal">NodeID</code>（节点编号）。对单前端安装来说默认就是<code class="literal">1</code>，不需要配置。如果有多台主机，每台主机都需要设置这个唯一值，可为从<code class="literal">1</code>到<code class="literal">999</code>的任一值。这个配置在文件<code class="filename">Kernel/Config.pm</code>中。
         </p><p>
             </p><pre class="screen">
 $Self-&gt;{'NodeID'} =  '2';   # 为每个前端服务器分配一个唯一的值
             </pre><p>
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.17"></a>步骤11：检查跟进检测配置</h3></div></div></div><p>
-            跟进检测设置被重新组织了。现在OTRS默认在邮件主题和引用内容中搜索来检测是否为跟进邮件。如果你想修改跟进检测设置（比如在正文、附件或所有邮件内容中搜索），请在系统管理的系统配置
-<code class="literal">Ticket</code> -&gt; <code class="literal">Core::PostMaster</code>
+            跟进检测设置被重新组织了。现在OTRS默认在邮件主题和引用内容中搜索来检测是否为跟进邮件。如果你想修改跟进检测设置（比如在正文、附件或原始邮件内容中搜索），请在系统管理的系统配置
+<code class="literal">Ticket</code> -&gt; <code class="literal">Core::PostMaster</code>中检查设置。
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.18"></a>步骤12：启动OTRS守护进程</h3></div></div></div><p>
             新的OTRS守护进程负责处理OTRS中的所有异步和循环任务。之前在cron文件中定义的自动任务现在都由OTRS守护进程处理。这个守护进程还处理所有的‘GenericAgent自动任务’任务，它必须以<code class="literal">otrs</code>用户运行。
         </p><p>
@@ -202,10 +195,7 @@ shell&gt; /opt/otrs/bin/Cron.sh start
             请注意：如果你有定制的cron任务，应该考虑将它们移到系统配置<code class="literal">Daemon</code> -&gt;
 <code class="literal">Daemon::SchedulerCronTaskManager::Task</code>中，以便由OTRS守护进程来统一执行。你可能还需要修改你的定制脚本，因为现在大部分OTRS命令都通过<code class="filename">bin/otrs.Console.pl</code>统一管理，而不是单个的脚本。
         </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
-                The console command <code class="literal">Dev::Code::Generate::ConsoleCommand</code>
-can help to create new console commands for your custom scripts. This
-command creates a template where the script logic and its parameters can be
-adapted.
+                控制台命令<code class="literal">Dev::Code::Generate::ConsoleCommand</code>可以帮助创建新的控制台命令用来定制脚本。这个命令会创建一个模板，可以调整其中的脚本逻辑和相关参数。
             </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.20"></a>步骤14：回顾你的工单通知</h3></div></div></div><p>
             在OTRS
 5中工单通知配置与之前的版本不一样。它们现在是“事件通知”（以前的版本也有）的一部分（现在被称为“工单通知”）。你原有的工单通知已经迁移到工单通知列表中，但没有激活。你还会接收到新的默认工单通知（默认激活的）。
