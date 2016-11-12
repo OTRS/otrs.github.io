@@ -489,15 +489,12 @@ sub SetEnv {
 
 =item Block()
 
-use a dtl block
+call a block and pass data to it (optional) to generate the block's output.
 
     $LayoutObject->Block(
         Name => 'Row',
         Data => {
-            Time     => $Row[0],
-            Priority => $Row[1],
-            Facility => $Row[2],
-            Message  => $Row[3],
+            Time => ...,
         },
     );
 
@@ -1683,7 +1680,7 @@ sub Ascii2Html {
     else {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'Invalid ref "' . ref $Param{Text} . '" of Text param!',
+            Message  => 'Invalid ref "' . ref( $Param{Text} ) . '" of Text param!',
         );
         return '';
     }
@@ -4360,6 +4357,7 @@ sub RichTextDocumentServe {
             Text => $Param{Data}->{Content},
             From => $Charset,
             To   => 'utf-8',
+            Check => 1,
         );
 
         # replace charset in content
