@@ -63,8 +63,6 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/ObjectManager.pm">Source</a>
 </div>
-
-
 <div class="pod">
 <!-- INDEX START -->
 <h3 id="TOP">Index</h3>
@@ -103,15 +101,12 @@ $(document).ready(function() {
 
 <pre>    # In toplevel scripts only!
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-
     # Everywhere: get a singleton instance (and create it, if needed).
     my $ConfigObject = $Kernel::OM-&gt;Get('Kernel::Config');
-
     # Remove singleton objects and all their dependencies.
     $Kernel::OM-&gt;ObjectsDiscard(
         Objects            =&gt; ['Kernel::System::Ticket', 'Kernel::System::Queue'],
     );
-
 </pre><h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>The ObjectManager is the central place to create and access singleton OTRS objects (via <code><a href="#Get">Get()</a></code>)
@@ -133,27 +128,22 @@ are destroyed in the correct order, based on their dependencies (see below).</p>
             LogPrefix =&gt; 'OTRS-MyTestScript',
         },
     );
-
 </pre><p>Then in the code any singleton object can be retrieved that the ObjectManager can handle,
 like Kernel::System::DB:</p>
 
 <pre>    return if !$Kernel::OM-&gt;Get('Kernel::System::DB')-&gt;Prepare('SELECT 1');
-
 </pre><h2 id="Which_objects_can_be_loaded">Which objects can be loaded?</h2>
 
 <p>The ObjectManager can load every object that declares its dependencies like this in the Perl package:</p>
 
 <pre>    package Kernel::System::Valid;
-
     use strict;
     use warnings;
-
     our @ObjectDependencies = (
         'Kernel::System::Cache',
         'Kernel::System::DB',
         'Kernel::System::Log',
     );
-
 </pre><p>The <code>@ObjectDependencies</code> is the list of objects that the current object will depend on. They will
 be destroyed only after this object is destroyed (only for singletons).</p>
 
@@ -161,12 +151,9 @@ be destroyed only after this object is destroyed (only for singletons).</p>
 <code>$ObjectManagerDisabled</code> flag:</p>
 
 <pre>    package Kernel::System::MyBaseClass;
-
     use strict;
     use warnings;
-
     our $ObjectManagerDisabled = 1;
-
 </pre><p>There are a few flags available to convey meta data about the packages to the object manager.</p>
 
 <p>To indicate that a certain package can <strong>only</strong> be loaded as a singleton, you can use the
@@ -177,16 +164,13 @@ To suppress this in the <code><a href="#Create">Create()</a></code> method, you 
 flag (this will not work with <code><a href="#Get">Get()</a></code>).</p>
 
 <pre>    package Kernel::System::MyPackage;
-
     use strict;
     use warnings;
-
     our %ObjectManagerFlags = (
         IsSingleton             =&gt; 1,  # default 0
         NonSingleton            =&gt; 0,  # default 0
         AllowConstructorFailure =&gt; 0,  # default 0
     );
-
 </pre><h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
@@ -228,7 +212,6 @@ The hash reference will be flattened and passed to the constructor of the object
             LogPrefix =&gt; 'OTRS-MyTestScript',
         },
     );
-
 </pre><p>Alternatively, <code><a href="#ObjectParamAdd">ObjectParamAdd()</a></code> can be used to set these parameters at runtime (but this
 must happen before the object was created).</p>
 
@@ -262,10 +245,8 @@ sub Get {
 <p>Retrieves a singleton object, and if it not yet exists, implicitly creates one for you.</p>
 
 <pre>    my $ConfigObject = $Kernel::OM-&gt;Get('Kernel::Config');
-
     # On the second call, this returns the same ConfigObject as above.
     my $ConfigObject2 = $Kernel::OM-&gt;Get('Kernel::Config');
-
 </pre><h2 id="Create">Create()</h2>
 
 <p><a href="#" onclick="toggleCode('method_Create');return false;">[Source]</a></p>
@@ -292,10 +273,8 @@ sub Create {
 <p>Creates a new object instance. This instance will not be managed by the object manager later on.</p>
 
 <pre>    my $DateTimeObject = $Kernel::OM-&gt;Create('Kernel::System::DateTime');
-
     # On the second call, this creates a new independent instance.
     my $DateTimeObject2 = $Kernel::OM-&gt;Create('Kernel::System::DateTime');
-
 </pre><p>It is also possible to pass in constructor parameters:</p>
 
 <pre>    my $DateTimeObject = $Kernel::OM-&gt;Create(
@@ -304,7 +283,6 @@ sub Create {
             Param1 =&gt; 'Value1',
         },
     );
-
 </pre><p>By default, this method will <code>die</code>, if the package cannot be instantiated or the constructor returns undef.
 You can suppress this with <code>Silent =&gt; 1</code>, for example to not cause exceptions when trying
 to load modules based on user configuration.</p>
@@ -313,7 +291,6 @@ to load modules based on user configuration.</p>
         'Kernel::System::CustomObject',
         Silent =&gt; 1,
     );
-
 </pre><h2 id="ObjectInstanceRegister">ObjectInstanceRegister()</h2>
 
 <p><a href="#" onclick="toggleCode('method_ObjectInstanceRegister');return false;">[Source]</a></p>
@@ -348,7 +325,6 @@ ObjectManager so that it is also available from there as 'Kernel::System::UnitTe
         Object       =&gt; $UnitTestObject,
         Dependencies =&gt; [],         # optional, specify OM-managed packages that the object might depend on
     );
-
 </pre><h2 id="ObjectParamAdd">ObjectParamAdd()</h2>
 
 <p><a href="#" onclick="toggleCode('method_ObjectParamAdd');return false;">[Source]</a></p>
@@ -386,7 +362,6 @@ receives them.</p>
             Key =&gt; 'Value',
         },
     );
-
 </pre><p>To remove a key again, send undef as a value:</p>
 
 <pre>    $Kernel::OM-&gt;ObjectParamAdd(
@@ -394,7 +369,6 @@ receives them.</p>
             Key =&gt; undef,               # this will remove the key from the hash
         },
     );
-
 </pre><h2 id="ObjectEventsHandle">ObjectEventsHandle()</h2>
 
 <p><a href="#" onclick="toggleCode('method_ObjectEventsHandle');return false;">[Source]</a></p>
@@ -437,7 +411,6 @@ that the ObjectManager created before. This can be used to flush the event queue
 before destruction, for example.</p>
 
 <pre>    $Kernel::OM-&gt;ObjectEventsHandle();
-
 </pre><h2 id="ObjectsDiscard">ObjectsDiscard()</h2>
 
 <p><a href="#" onclick="toggleCode('method_ObjectsDiscard');return false;">[Source]</a></p>
@@ -582,10 +555,8 @@ the supplied objects and their recursive dependencies are destroyed.
 If no list of object names is passed, all stored objects are destroyed.</p>
 
 <pre>    $Kernel::OM-&gt;ObjectsDiscard();
-
     $Kernel::OM-&gt;ObjectsDiscard(
         Objects            =&gt; ['Kernel::System::Ticket', 'Kernel::System::Queue'],
-
         # optional
         # forces the packages to be reloaded from the file system
         # sometimes necessary with mod_perl when running CodeUpgrade during a package upgrade
@@ -593,7 +564,6 @@ If no list of object names is passed, all stored objects are destroyed.</p>
         # and forced to be reloaded
         ForcePackageReload =&gt; 1,
     );
-
 </pre><p>Mostly used for tests that rely on fresh objects, or to avoid large
 memory consumption in long-running processes.</p>
 
@@ -623,7 +593,6 @@ sub ObjectRegisterEventHandler {
 <pre>    $Kernel::OM-&gt;ObjectRegisterEventHandler(
         EventHandler =&gt; $EventHandlerObject,
     );
-
 </pre><p>The <code>EventHandler</code> object should inherit from <a href="EventHandler.pm.html">Kernel::System::EventHandler</a>.
 The object manager will call that object's <code>EventHandlerHasQueuedTransactions</code>
 method, and if that returns a true value, calls its <code>EventHandlerTransaction</code> method.</p>
