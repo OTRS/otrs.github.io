@@ -63,8 +63,6 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/ProcessManagement/DB/Process.pm">Source</a>
 </div>
-
-
 <div class="pod">
 <!-- INDEX START -->
 <h3 id="TOP">Index</h3>
@@ -93,7 +91,6 @@ $(document).ready(function() {
 <dd><pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $ProcessObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::DB::Process');
-
 </pre></dd>	<dt>ProcessAdd()</dt>
 		<dd><p>add new Process</p></dd>
 		<dd><p>returns the id of the created process if success or undef otherwise</p></dd>
@@ -107,10 +104,8 @@ $(document).ready(function() {
                                            #   format
         UserID         =&gt; 123,             # mandatory
     );
-
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    $ID = 567;
-
 </pre></dd>	<dt>ProcessDelete()</dt>
 		<dd><p>delete a Process</p></dd>
 		<dd><p>returns 1 if success or undef otherwise</p></dd>
@@ -118,7 +113,6 @@ $(document).ready(function() {
         ID      =&gt; 123,
         UserID  =&gt; 123,
     );
-
 </pre></dd>	<dt>ProcessGet()</dt>
 		<dd><p>get Process attributes</p></dd>
 <dd><pre>    my $Process = $ProcessObject-&gt;ProcessGet(
@@ -138,7 +132,6 @@ $(document).ready(function() {
                                          #     keys and TransitionAction Names as values
         UserID          =&gt; 123,          # mandatory
     );
-
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    $Process = {
         ID            =&gt; 123,
@@ -153,7 +146,6 @@ $(document).ready(function() {
         CreateTime    =&gt; '2012-07-04 15:08:00',
         ChangeTime    =&gt; '2012-07-04 15:08:00',
     };
-
 </pre></dd><dd><pre>    $Process = {
         ID            =&gt; 123,
         EntityID      =&gt; 'P1',
@@ -180,7 +172,6 @@ $(document).ready(function() {
         CreateTime =&gt; '2012-07-04 15:08:00',
         ChangeTime =&gt; '2012-07-04 15:08:00',
     };
-
 </pre></dd>	<dt>ProcessUpdate()</dt>
 		<dd><p>update Process attributes</p></dd>
 		<dd><p>returns 1 if success or undef otherwise</p></dd>
@@ -195,7 +186,6 @@ $(document).ready(function() {
                                           #   format
         UserID        =&gt; 123,             # mandatory
     );
-
 </pre></dd>	<dt>ProcessList()</dt>
 		<dd><p>get a Process list</p></dd>
 <dd><pre>    my $List = $ProcessObject-&gt;ProcessList(
@@ -206,20 +196,15 @@ $(document).ready(function() {
                                                 #    state entity IDs
         UserID          =&gt; 1,
     );
-
 </pre></dd><dd><pre>    Returns:
-
 </pre></dd><dd><pre>    $List = {
         1 =&gt; 'NameOfProcess',
     }
-
 </pre></dd><dd><pre>    or
-
 </pre></dd><dd><pre>    $List = {
         'P1' =&gt; 'NameOfProcess',
     }
 =cut
-
 </pre></dd>		<dd><p>sub ProcessList {
     my ( $Self, %Param ) = @_;</p></dd>
 <dd><pre>    # check needed
@@ -230,7 +215,6 @@ $(document).ready(function() {
         );
         return;
     }
-
 </pre></dd><dd><pre>    my $StateEntityIDsStrg;
     if ( !IsArrayRefWithData( $Param{StateEntityIDs} ) ) {
         $StateEntityIDsStrg = 'ALL';
@@ -238,16 +222,13 @@ $(document).ready(function() {
     else {
         $StateEntityIDsStrg = join ',', @{ $Param{StateEntityIDs} };
     }
-
 </pre></dd><dd><pre>    # check cache
     my $UseEntities = 0;
     if ( defined $Param{UseEntities} &amp;&amp; $Param{UseEntities} ) {
         $UseEntities = 1;
     }
-
 </pre></dd><dd><pre>    # get cache object
     my $CacheObject = $Kernel::OM-&gt;Get('Kernel::System::Cache');
-
 </pre></dd><dd><pre>    my $CacheKey = 'ProcessList::UseEntities::' . $UseEntities . '::StateEntityIDs::'
         . $StateEntityIDsStrg;
     my $Cache = $CacheObject-&gt;Get(
@@ -255,23 +236,17 @@ $(document).ready(function() {
         Key  =&gt; $CacheKey,
     );
     return $Cache if ref $Cache;
-
 </pre></dd><dd><pre>    # get database object
     my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
-
 </pre></dd><dd><pre>    my $SQL = '
             SELECT id, entity_id, name
             FROM pm_process ';
     if ( $StateEntityIDsStrg ne 'ALL' ) {
-
 </pre></dd><dd><pre>        my $StateEntityIDsStrgDB =
             join ',', map &quot;'&quot; . $DBObject-&gt;Quote($_) . &quot;'&quot;, @{ $Param{StateEntityIDs} };
-
 </pre></dd><dd><pre>        $SQL .= &quot;WHERE state_entity_id IN ($StateEntityIDsStrgDB)&quot;;
     }
-
 </pre></dd><dd><pre>    return if !$DBObject-&gt;Prepare( SQL =&gt; $SQL );
-
 </pre></dd><dd><pre>    my %Data;
     while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
         if ( !$UseEntities ) {
@@ -281,7 +256,6 @@ $(document).ready(function() {
             $Data{ $Row[1] } = $Row[2];
         }
     }
-
 </pre></dd><dd><pre>    # set cache
     $CacheObject-&gt;Set(
         Type  =&gt; 'ProcessManagement_Process',
@@ -289,16 +263,13 @@ $(document).ready(function() {
         Value =&gt; \%Data,
         TTL   =&gt; $Self-&gt;{CacheTTL},
     );
-
 </pre></dd><dd><pre>    return \%Data;
 }
-
 </pre></dd>	<dt>ProcessListGet()</dt>
 		<dd><p>get a Process list with all process details</p></dd>
 <dd><pre>    my $List = $ProcessObject-&gt;ProcessListGet(
         UserID      =&gt; 1,
     );
-
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    $List = [
         {
@@ -326,7 +297,6 @@ $(document).ready(function() {
             ChangeTime    =&gt; '2012-07-04 15:10:00',
         },
     ];
-
 </pre></dd>	<dt>ProcessDump()</dt>
 		<dd><p>gets a complete processes information dump from the DB including: Process State, Activities,
 ActivityDialogs, Transitions and TransitionActions</p></dd>
@@ -335,7 +305,6 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
         Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatory for ResultType = 'FILE'
         UserID      =&gt; 1,
     );
-
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    $ProcessDump = '
         $Self-&gt;{'Process'} = {
@@ -357,13 +326,11 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
           },
           # ...
         };
-
 </pre></dd><dd><pre>        $Self-&gt;{'Process::State'} = {
           'S1' =&gt; 'Active',
           'S2' =&gt; 'Inactive',
           'S3' =&gt; 'FadeAway'
         };
-
 </pre></dd><dd><pre>        $Self-&gt;{'Process::Activity'} = {
           'A1' =&gt; {
             'Name' =&gt; 'Activity 1'
@@ -376,7 +343,6 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
           },
           # ...
         };
-
 </pre></dd><dd><pre>        $Self-&gt;{'Process::ActivityDialog'} = {
           'AD1' =&gt; {
             'Name' =&gt; 'Activity Dialog 1',
@@ -403,7 +369,6 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
             },
             #...
         };
-
 </pre></dd><dd><pre>        $Self-&gt;{'Process::Transition'} = {
           'T1' =&gt; {
             'Name' =&gt; 'Transition 1'
@@ -424,7 +389,6 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
           },
           # ...
         };
-
 </pre></dd><dd><pre>        $Self-&gt;{'Process::Action'} = {
           'TA1' =&gt; {
             'Name' =&gt; 'Queue Move',
@@ -439,13 +403,11 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
           # ...
         };
      ';
-
 </pre></dd><dd><pre>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
         ResultType  =&gt; 'HASH'                       # 'SCALAR' || 'HASH' || 'FILE'
         Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatory for ResultType = 'FILE'
         UserID      =&gt; 1,
     );
-
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    $ProcessDump = {
         Process =&gt; {
@@ -467,13 +429,11 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
           },
           # ...
         };
-
 </pre></dd><dd><pre>        State =&gt; {
           'S1' =&gt; 'Active',
           'S2' =&gt; 'Inactive',
           'S3' =&gt; 'FadeAway'
         };
-
 </pre></dd><dd><pre>        Activity =&gt; {
           'A1' =&gt; {
             'Name' =&gt; 'Activity 1'
@@ -486,7 +446,6 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
           },
           # ...
         };
-
 </pre></dd><dd><pre>        ActivityDialog =&gt; {
           'AD1' =&gt; {
             'Name' =&gt; 'Activity Dialog 1',
@@ -513,7 +472,6 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
             },
             #...
         };
-
 </pre></dd><dd><pre>        Transition =&gt; {
           'T1' =&gt; {
             'Name' =&gt; 'Transition 1'
@@ -534,7 +492,6 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
           },
           # ...
         };
-
 </pre></dd><dd><pre>        TransitionAction =&gt; {
           'TA1' =&gt; {
             'Name' =&gt; 'Queue Move',
@@ -549,13 +506,11 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
           # ...
         };
     }
-
 </pre></dd><dd><pre>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
         ResultType  =&gt; 'Location'                     # 'SCALAR' || 'HASH' || 'FILE'
         Location    =&gt; '/opt/otrs/var/myfile.txt'     # mandatory for ResultType = 'FILE'
         UserID      =&gt; 1,
     );
-
 </pre></dd>		<dd><p>Returns:
     $ProcessDump = '/opt/otrs/var/myfile.txt';      # or undef if can't write the file</p></dd>
 	<dt>ProcessImport()</dt>
@@ -565,14 +520,12 @@ ActivityDialogs, Transitions and TransitionActions</p></dd>
         OverwriteExistingEntities =&gt; 0,            # 0 || 1
         UserID                    =&gt; 1,            # mandatory
     );
-
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    %ProcessImport = (
         Message =&gt; 'The Message to show.', # error or success message
         Comment =&gt; 'Any comment',          # optional
         Success =&gt; 1,                      # 1 if success or undef otherwise
     );
-
 </pre></dd></dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 

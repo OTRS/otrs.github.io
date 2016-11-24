@@ -63,8 +63,6 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/Crypt/SMIME.pm">Source</a>
 </div>
-
-
 <div class="pod">
 <!-- INDEX START -->
 <h3 id="TOP">Index</h3>
@@ -91,33 +89,28 @@ $(document).ready(function() {
 	<dt>Check()</dt>
 		<dd><p>check if environment is working</p></dd>
 <dd><pre>    my $Message = $CryptObject-&gt;Check();
-
 </pre></dd>	<dt>Crypt()</dt>
 		<dd><p>crypt a message</p></dd>
 <dd><pre>    my $Message = $CryptObject-&gt;Crypt(
         Message  =&gt; $Message,
         Filename =&gt; $CertificateFilename,
     );
-
 </pre></dd><dd><pre>    my $Message = $CryptObject-&gt;Crypt(
         Message     =&gt; $Message,
         Hash        =&gt; $CertificateHash,
         Fingerprint =&gt; $CertificateFingerprint,
     );
-
 </pre></dd>	<dt>Decrypt()</dt>
 		<dd><p>decrypt a message and returns a hash (Successful, Message, Data)</p></dd>
 <dd><pre>    my %Message = $CryptObject-&gt;Decrypt(
         Message  =&gt; $CryptedMessage,
         Filename =&gt; $Filename,
     );
-
 </pre></dd><dd><pre>    my %Message = $CryptObject-&gt;Decrypt(
         Message     =&gt; $CryptedMessage,
         Hash        =&gt; $Hash,
         Fingerprint =&gt; $Fingerprint,
     );
-
 </pre></dd>	<dt>Sign()</dt>
 		<dd><p>sign a message</p></dd>
 <dd><pre>    my $Sign = $CryptObject-&gt;Sign(
@@ -129,7 +122,6 @@ $(document).ready(function() {
         Hash        =&gt; $Hash,
         Fingerprint =&gt; $Fingerprint,
     );
-
 </pre></dd>	<dt>Verify()</dt>
 		<dd><p>verify a message with signature and returns a hash (Successful, Message, Signers, SignerCertificate)</p></dd>
 <dd><pre>    my %Data = $CryptObject-&gt;Verify(
@@ -137,7 +129,6 @@ $(document).ready(function() {
         CACert  =&gt; $PathtoCACert,                   # the certificates autority that endorse a self
                                                     # signed certificate
     );
-
 </pre></dd>		<dd><p>returns:</p></dd>
 <dd><pre>    %Data = (
         SignatureFound    =&gt; 1,                     # or 0 if no signature was found
@@ -151,14 +142,12 @@ $(document).ready(function() {
         Content           =&gt; $Content,              # the message content
     );
 =cut
-
 </pre></dd>		<dd><p>sub Verify {
     my ( $Self, %Param ) = @_;</p></dd>
 <dd><pre>    my %Return;
     my $Message     = '';
     my $MessageLong = '';
     my $UsedKey     = '';
-
 </pre></dd><dd><pre>    # check needed stuff
     if ( !$Param{Message} ) {
         $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
@@ -167,10 +156,8 @@ $(document).ready(function() {
         );
         return;
     }
-
 </pre></dd><dd><pre>    # get temp file object
     my $FileTempObject = $Kernel::OM-&gt;Get('Kernel::System::FileTemp');
-
 </pre></dd><dd><pre>    my ( $FH, $SignedFile ) = $FileTempObject-&gt;TempFile();
     print $FH $Param{Message};
     close $FH;
@@ -178,19 +165,15 @@ $(document).ready(function() {
     close $FHOutput;
     my ( $FHSigner, $SignerFile ) = $FileTempObject-&gt;TempFile();
     close $FHSigner;
-
 </pre></dd><dd><pre>    # path to the cert, when self signed certs
     # specially for openssl 1.0
     my $CertificateOption = '';
     if ( $Param{CACert} ) {
         $CertificateOption = &quot;-CAfile $Param{CACert}&quot;;
     }
-
 </pre></dd><dd><pre>    my $Options = &quot;smime -verify -in $SignedFile -out $VerifiedFile -signer $SignerFile &quot;
         . &quot;-CApath $Self-&gt;{CertPath} $CertificateOption $SignedFile&quot;;
-
 </pre></dd><dd><pre>    my @LogLines = qx{$Self-&gt;{Cmd} $Options 2&gt;&amp;1};
-
 </pre></dd><dd><pre>    for my $LogLine (@LogLines) {
         $MessageLong .= $LogLine;
         if ( $LogLine =~ /^\d.*:(.+?):.+?:.+?:$/ || $LogLine =~ /^\d.*:(.+?)$/ ) {
@@ -200,21 +183,16 @@ $(document).ready(function() {
             $Message .= $LogLine;
         }
     }
-
 </pre></dd><dd><pre>    # get main object
     my $MainObject = $Kernel::OM-&gt;Get('Kernel::System::Main');
-
 </pre></dd><dd><pre>    my $SignerCertRef    = $MainObject-&gt;FileRead( Location =&gt; $SignerFile );
     my $SignedContentRef = $MainObject-&gt;FileRead( Location =&gt; $VerifiedFile );
-
 </pre></dd><dd><pre>    # return message
     if ( $Message =~ /Verification successful/i ) {
-
 </pre></dd><dd><pre>        # Determine email address(es) from attributes of signer certificate.
         my %SignerCertAttributes;
         $Self-&gt;_FetchAttributesFromCert( $SignerFile, \%SignerCertAttributes );
         my @SignersArray = split( ', ', $SignerCertAttributes{Email} );
-
 </pre></dd><dd><pre>        # Include additional certificate attributes in the message:
         #   - signer(s) email address(es)
         #   - certificate hash
@@ -223,7 +201,6 @@ $(document).ready(function() {
         my $MessageSigner = join( ', ', @SignersArray ) . ' : '
             . $SignerCertAttributes{Hash} . ' : '
             . $SignerCertAttributes{Fingerprint};
-
 </pre></dd><dd><pre>        %Return = (
             SignatureFound    =&gt; 1,
             Successful        =&gt; 1,
@@ -248,7 +225,6 @@ $(document).ready(function() {
             Content           =&gt; $$SignedContentRef,
         );
     }
-
 </pre></dd><dd><pre>    # digest failure means that the content of the email does not match witht he signature
     elsif ( $Message =~ m{digest failure}i ) {
         %Return = (
@@ -272,109 +248,90 @@ $(document).ready(function() {
     }
     return %Return;
 }
-
 </pre></dd>	<dt>Search()</dt>
 		<dd><p>search a certifcate or an private key</p></dd>
 <dd><pre>    my @Result = $CryptObject-&gt;Search(
         Search =&gt; 'some text to search',
     );
-
 </pre></dd>	<dt>CertificateSearch()</dt>
 		<dd><p>search a local certifcate</p></dd>
 <dd><pre>    my @Result = $CryptObject-&gt;CertificateSearch(
         Search =&gt; 'some text to search',
     );
-
 </pre></dd>	<dt>CertificateAdd()</dt>
 		<dd><p>add a certificate to local certificates
 returns result message and new certificate filename</p></dd>
 <dd><pre>    my %Result = $CryptObject-&gt;CertificateAdd(
         Certificate =&gt; $CertificateString,
     );
-
 </pre></dd>	<dt>CertificateGet()</dt>
 		<dd><p>get a local certificate</p></dd>
 <dd><pre>    my $Certificate = $CryptObject-&gt;CertificateGet(
         Filename =&gt; $CertificateFilename,
     );
-
 </pre></dd><dd><pre>    my $Certificate = $CryptObject-&gt;CertificateGet(
         Fingerprint =&gt; $Fingerprint,
         Hash        =&gt; $Hash,
     );
-
 </pre></dd>	<dt>CertificateRemove()</dt>
 		<dd><p>remove a local certificate</p></dd>
 <dd><pre>    $CryptObject-&gt;CertificateRemove(
         Filename =&gt; $CertificateHash,
     );
-
 </pre></dd><dd><pre>    $CryptObject-&gt;CertificateRemove(
         Hash        =&gt; $CertificateHash,
         Fingerprint =&gt; $CertificateHash,
     );
-
 </pre></dd>	<dt>CertificateList()</dt>
 		<dd><p>get list of local certificates filenames</p></dd>
 <dd><pre>    my @CertList = $CryptObject-&gt;CertificateList();
-
 </pre></dd>	<dt>CertificateAttributes()</dt>
 		<dd><p>get certificate attributes</p></dd>
 <dd><pre>    my %CertificateAttributes = $CryptObject-&gt;CertificateAttributes(
         Certificate =&gt; $CertificateString,
         Filename    =&gt; '12345.1',              # optional (useful to use cache)
     );
-
 </pre></dd>	<dt>CertificateRead()</dt>
 		<dd><p>show a local certificate in plain text</p></dd>
 <dd><pre>    my $CertificateText = $CryptObject-&gt;CertificateRead(
         Filename =&gt; $CertificateFilename,
     );
-
 </pre></dd><dd><pre>    my $CertificateText = $CryptObject-&gt;CertificateRead(
         Fingerprint =&gt; $Fingerprint,
         Hash        =&gt; $Hash,
     );
-
 </pre></dd>	<dt>PrivateSearch()</dt>
 		<dd><p>returns private keys</p></dd>
 <dd><pre>    my @Result = $CryptObject-&gt;PrivateSearch(
         Search =&gt; 'some text to search',
     );
-
 </pre></dd>	<dt>PrivateAdd()</dt>
 		<dd><p>add private key</p></dd>
 <dd><pre>    my %Result = $CryptObject-&gt;PrivateAdd(
         Private =&gt; $PrivateKeyString,
         Secret  =&gt; 'Password',
     );
-
 </pre></dd>	<dt>PrivateGet()</dt>
 		<dd><p>get private key</p></dd>
 <dd><pre>    my ($PrivateKey, $Secret) = $CryptObject-&gt;PrivateGet(
         Filename =&gt; $PrivateFilename,
     );
-
 </pre></dd><dd><pre>    my ($PrivateKey, $Secret) = $CryptObject-&gt;PrivateGet(
         Hash    =&gt; $Hash,
         Modulus =&gt; $Modulus,
     );
-
 </pre></dd>	<dt>PrivateRemove()</dt>
 		<dd><p>remove private key</p></dd>
 <dd><pre>    $CryptObject-&gt;PrivateRemove(
         Filename =&gt; $Filename,
     );
-
 </pre></dd><dd><pre>    $CryptObject-&gt;PrivateRemove(
         Hash    =&gt; $Hash,
         Modulus =&gt; $Modulus,
     );
-
 </pre></dd>	<dt>PrivateList()</dt>
 		<dd><p>returns a list of private key hashs</p></dd>
 <dd><pre>    my @PrivateList = $CryptObject-&gt;PrivateList();
-
 </pre></dd>	<dt>PrivateAttributes()</dt>
 		<dd><p>returns attributes of private key</p></dd>
 <dd><pre>    my %Hash = $CryptObject-&gt;PrivateAttributes(
@@ -382,7 +339,6 @@ returns result message and new certificate filename</p></dd>
         Secret   =&gt; 'Password',
         Filename =&gt; '12345.1',              # optional (useful for cache)
     );
-
 </pre></dd>	<dt>SignerCertRelationAdd ()</dt>
 		<dd><p>add a relation between signer certificate and CA certificate to attach to the signature
 returns 1 if success</p></dd>
@@ -391,29 +347,24 @@ returns 1 if success</p></dd>
         CAFingerprint =&gt; $CAFingerprint,
         UserID =&gt; 1,
     );
-
 </pre></dd>	<dt>SignerCertRelationGet ()</dt>
 		<dd><p>get relation data by ID or by Certificate finger print
 returns data Hash if ID given or Array of all relations if CertFingerprint given</p></dd>
 <dd><pre>    my %Data = $CryptObject-&gt;SignerCertRelationGet(
         ID =&gt; $RelationID,
     );
-
 </pre></dd><dd><pre>    my @Data = $CryptObject-&gt;SignerCertRelationGet(
         CertFingerprint =&gt; $CertificateFingerprint,
     );
-
 </pre></dd>	<dt>SignerCertRelationExists ()</dt>
 		<dd><p>returns the ID if the relation exists</p></dd>
 <dd><pre>    my $Result = $CryptObject-&gt;SignerCertRelationExists(
         CertFingerprint =&gt; $CertificateFingerprint,
         CAFingerprint =&gt; $CAFingerprint,
     );
-
 </pre></dd><dd><pre>    my $Result = $CryptObject-&gt;SignerCertRelationExists(
         ID =&gt; $RelationID,
     );
-
 </pre></dd>	<dt>SignerCertRelationDelete ()</dt>
 		<dd><p>returns 1 if success</p></dd>
 <dd><pre>    # delete all relations for a cert
@@ -421,32 +372,26 @@ returns data Hash if ID given or Array of all relations if CertFingerprint given
         CertFingerprint =&gt; $CertFingerprint,
         UserID =&gt; 1,
     );
-
 </pre></dd><dd><pre>    # delete one relation by ID
     $Success = $CryptObject-&gt;SignerCertRelationDelete (
         ID =&gt; '45',
     );
-
 </pre></dd><dd><pre>    # delete one relation by CertFingerprint &amp; CAFingerprint
     $Success = $CryptObject-&gt;SignerCertRelationDelete (
         CertFingerprint =&gt; $CertFingerprint,
         CAFingerprint   =&gt; $CAFingerprint,
     );
-
 </pre></dd>	<dt>CheckCertPath()</dt>
 		<dd><p>Checks and fixes the private secret files that do not have an index. (Needed because this
 changed during the migration from OTRS 3.0 to 3.1.)</p></dd>
 		<dd><p>Checks and fixed certificates, private keys and secrets files to have a correct name
 depending on the current OpenSSL hash algorithm.</p></dd>
 <dd><pre>    my $Result = $CryptObject-&gt;CheckCertPath ();
-
 </pre></dd><dd><pre>    a result could be:
-
 </pre></dd><dd><pre>    $Result = {
         Success =&gt; 1                # or 0 if fails
         Details =&gt; $Details         # a readable string log of all activities and errors found
     };
-
 </pre></dd></dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
