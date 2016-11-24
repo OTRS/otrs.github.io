@@ -23,7 +23,7 @@ $(document).ready(function() {
 <!-- otrs.github.io -->
 
     <meta charset="utf-8">
-    <title>OTRS API Reference JavaScript: Namespace: Core.Agent.Admin.SysConfig</title>
+    <title>OTRS API Reference JavaScript: Source: Core.Agent.Admin.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -39,192 +39,160 @@ $(document).ready(function() {
 <div id="main">
 
     <h1 class="page-title">OTRS API Reference JavaScript</h1>
-    <h2 class="page-title">Namespace: Core.Agent.Admin.SysConfig</h2>
+    <h2 class="page-title">Source: Core.Agent.Admin.js</h2>
 
     
 
 
 
-
-<section>
-
-<header>
     
-        <h2>
-            <span class="ancestors"><a href="Core.html">Core</a><a href="Core.Agent.html">.Agent</a><a href="Core.Agent.Admin.html">.Admin</a>.</span>
-        
-        SysConfig
-        </h2>
-        
-    
-</header>
-
-<article>
-    <div class="container-overview">
-    
-        
-            <div class="description">This namespace contains the special module functions for the SysConfig module.</div>
-        
-
-        
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-author">Author:</dt>
-    <dd class="tag-author">
-        <ul>
-            <li>OTRS AG</li>
-        </ul>
-    </dd>
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Core.Agent.Admin.SysConfig.js.html">Core.Agent.Admin.SysConfig.js</a>, <a href="Core.Agent.Admin.SysConfig.js.html#line15">line 15</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-        
-    
-    </div>
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        <dl>
-            
-<dt>
-    
-        <h4 class="name" id=".Init"><span class="type-signature">(static) </span>Init<span class="signature">()</span><span class="type-signature"></span></h4>
-
-        
-    
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Initializes SysConfig screen.
-    </div>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="Core.Agent.Admin.SysConfig.js.html">Core.Agent.Admin.SysConfig.js</a>, <a href="Core.Agent.Admin.SysConfig.js.html#line23">line 23</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        </dl>
-    
-
-    
-
-    
-</article>
-
-</section>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// --
+// Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+// --
+// This software comes with ABSOLUTELY NO WARRANTY. For details, see
+// the enclosed file COPYING for license information (AGPL). If you
+// did not receive this file, see http://www.gnu.org/licenses/agpl.txt.
+// --
+
+"use strict";
+
+var Core = Core || {};
+Core.Agent = Core.Agent || {};
+Core.Agent.Admin = Core.Agent.Admin || {};
+
+/**
+ * @namespace Core.Agent.Admin
+ * @memberof Core.Agent.Admin
+ * @author OTRS AG
+ * @description
+ *      This namespace contains the special module functions for the admin overview module.
+ */
+Core.Agent.Admin = (function (TargetNS) {
+    /**
+     * @name Init
+     * @memberof Core.Agent.Admin
+     * @function
+     * @description
+     *      Initializes Overview screen.
+     */
+    TargetNS.Init = function () {
+
+        var Favourites = Core.Config.Get('Favourites');
+
+        $('.AddAsFavourite').on('click', function(Event) {
+            var $TriggerObj = $(this),
+                Module = $(this).data('module');
+
+            Event.stopPropagation();
+            $(this).addClass('Clicked');
+            Favourites.push(Module);
+            Core.Agent.PreferencesUpdate('AdminNavigationBarFavourites', JSON.stringify(Favourites), function() {
+
+                var FavouriteHTML = '';
+
+                if ($('#ToggleView').hasClass('Grid')) {
+
+                    // also add the entry to the sidebar favourites list dynamically
+                    FavouriteHTML = Core.Template.Render('Agent/Admin/Favourite', {
+                        'Link'  : $TriggerObj.closest('a').attr('href'),
+                        'Name'  : $TriggerObj.closest('a').find('span.Title').text(),
+                        'Module': Module
+                    });
+
+                    // Fade the original icon out and display a success icon
+                    $TriggerObj.find('i').fadeOut(function() {
+                        $(this).closest('li').find('.AddAsFavourite').append('&lt;i class="fa fa-check" style="display: none;">&lt;/i>').find('i').fadeIn().delay(1000).fadeOut(function() {
+                            $(this)
+                                .closest('.AddAsFavourite')
+                                .remove();
+                            $('.GridView, .ListView').find('[data-module="' + Module + '"]').addClass('IsFavourite');
+                        });
+                        $(this).remove();
+                    });
+                }
+                else {
+
+                    // also add the entry to the sidebar favourites list dynamically
+                    FavouriteHTML = Core.Template.Render('Agent/Admin/Favourite', {
+                        'Link'  : $TriggerObj.closest('tr').find('a.ModuleLink').attr('href'),
+                        'Name'  : $TriggerObj.closest('tr').find('a.ModuleLink').text(),
+                        'Module': Module
+                    });
+
+                    // Fade the original icon out and display a success icon
+                    $('.GridView, .ListView').find('[data-module="' + Module + '"]').addClass('IsFavourite');
+                }
+
+                $('.DataTable.Favourites').append($(FavouriteHTML));
+                $('.DataTable.Favourites').show();
+
+            });
+            return false;
+        });
+
+        $('.DataTable.Favourites').on('click', '.RemoveFromFavourites', function() {
+            var Module = $(this).data('module'),
+                Index = Favourites.indexOf(Module),
+                $TriggerObj = $(this);
+
+            if (Index > -1) {
+                Favourites.splice(Index, 1);
+                Core.Agent.PreferencesUpdate('AdminNavigationBarFavourites', JSON.stringify(Favourites), function() {
+                    $TriggerObj.closest('tr').fadeOut(function() {
+                        var $TableObj = $(this).closest('table');
+                        $(this).remove();
+                        if (!$TableObj.find('tr').length) {
+                            $TableObj.hide();
+                        }
+
+                        // also remove the corresponding class from the entry in the grid
+                        $('.GridView, .ListView').find('[data-module="' + Module + '"]').removeClass('IsFavourite');
+                    });
+                });
+            }
+
+            return false;
+        });
+
+        $('#ToggleView').on('click', function() {
+            if ($(this).hasClass('Grid')) {
+                Core.Agent.PreferencesUpdate('AdminNavigationBarView', 'List');
+                $('.GridView').fadeOut();
+                $('.ListView').fadeIn(function() {
+
+                    // check if the "no matches found" message is the only visible entry
+                    if ($('.ListView .DataTable tbody tr:visible').length == 1 &amp;&amp; $('.ListView .DataTable tbody tr:visible').hasClass('FilterMessage')) {
+                        $('.ListView .DataTable tr.FilterMessage').removeClass('Hidden');
+                    }
+                    else {
+                        $('.ListView .DataTable tr.FilterMessage').hide();
+                    }
+                    $('#ToggleView').removeClass('Grid').addClass('List');
+                });
+            }
+            else {
+                Core.Agent.PreferencesUpdate('AdminNavigationBarView', 'Grid');
+                $('.ListView').fadeOut();
+                $('.GridView').fadeIn(function() {
+                    $('#ToggleView').removeClass('List').addClass('Grid');
+                });
+            }
+        });
+
+        Core.UI.Table.InitTableFilter($('#Filter'), $('.Filterable'));
+
+
+    };
+
+    Core.Init.RegisterNamespace(TargetNS, 'APP_MODULE');
+
+    return TargetNS;
+}(Core.Agent.Admin || {}));
+</code></pre>
+        </article>
+    </section>
 
 
 
