@@ -31,7 +31,7 @@ $(document).ready(function() {
                     Version:  '4.0',
                     HTMLPath: '4.0',
                     Name:     'OTRS 4',
-                    Languages: ['en', 'de', 'ja', 'ru', 'sw']
+                    Languages: ['en', 'de', 'hu', 'ja', 'ru', 'sw']
                 },
                 {
                     Version:  '3.3',
