@@ -1,0 +1,187 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>OTRS ütemező</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 4 - Adminisztrátori kézikönyv"><link rel="up" href="administration.html" title="4. fejezet - Adminisztráció"><link rel="prev" href="genericinterface.html" title="Általános felület"><link rel="next" href="customization.html" title="5. fejezet - Személyre szabás"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">OTRS ütemező</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="genericinterface.html">Vissza</a> </td><th width="60%" align="center">4. fejezet - Adminisztráció</th><td width="20%" align="right"> <a accesskey="n" href="customization.html">Előre</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="scheduler"></a>OTRS ütemező</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="scheduler.html#scheduler-gui">Az ütemező grafikus felülete</a></span></dt><dd><dl><dt><span class="section"><a href="scheduler.html#scheduler-gui-notify">Az ütemező nem fut értesítés</a></span></dt><dt><span class="section"><a href="scheduler.html#scheduler-gui-start">Ütemező indítása</a></span></dt></dl></dd><dt><span class="section"><a href="scheduler.html#scheduler-cli">Az ütemező parancssori felülete</a></span></dt><dd><dl><dt><span class="section"><a href="scheduler.html#scheduler-cli-linux-init">Az ütemező init.d fájljai</a></span></dt><dt><span class="section"><a href="scheduler.html#scheduler-cli-linux-daemon">Az ütemező démon fájlja</a></span></dt></dl></dd></dl></div><p>
+        Az OTRS ütemező egy független rendszerfolyamat, amely feladatokat hajt végre
+a háttérben. Az ilyen jellegű folyamatok <span class="emphasis"><em>démonokként</em></span>
+ismertek a Unix / Linux rendszereken. Független ugyan, de ez nem azt
+jelenti, hogy az ütemező mindent egyedül csinál. Teljesen integrálva van az
+OTRS keretrendszerbe, és szükség szerint bármely OTRS modult használhatja az
+egyes feladatok befejezéséhez.
+    </p><p>
+        Ésszerű okokból az ütemező folyamatot időről időre újra kell indítani. Ezt
+maga az ütemező folyamat automatikusan megteszi naponta egyszer, de szükség
+szerint ez beállítható a rendszerbeállítás használatával a
+„Scheduler::RestartAfterSeconds” beállítás szerkesztésével.
+    </p><p>
+        Az OTRS ütemező egy teljesen automatizált folyamat. Az egyetlen szükséges
+emberi beavatkozás az állapotának időszakos ellenőrzése, és szükség szerint
+az indítása és leállítása.
+    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+            Ha az ütemező bármilyen okból leállna, akkor az összes függőben lévő feladat
+és az ütemező leállása alatt regisztrált új feladatok akkor lesznek
+végrehajtva, amint az ütemező ismét elindul (hacsak a feladatok nem a
+jövőben történő végrehajtásra vannak beállítva).
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="scheduler-gui"></a>Az ütemező grafikus felülete</h3></div></div></div><p>
+            Az ütemező nem látható az OTRS grafikus felhasználói felületén, hacsak le
+nem áll a futása.
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="scheduler-gui-notify"></a>Az ütemező nem fut értesítés</h4></div></div></div><p>
+                Két különböző típusú értesítés létezik, ha a rendszer azt észleli, hogy az
+ütemező nem fut. Ez az észlelés az ütemező folyamat frissítési gyakoriságán
+alapul. Ha a jelenlegi idő és a legutóbbi folyamat frissítési ideje közötti
+különbség kétszerese a folyamat frissítési gyakoriságának, akkor egy
+figyelmeztető üzenet kerül megjelenítésre az OTRS értesítési területén. Ha
+ez több mint négyszerese a folyamat gyakoriságának, akkor egy riasztás lesz
+megjelenítve helyette.
+            </p><p>
+                Az ütemező folyamat frissítési ideje beállítható a rendszerbeállításokon
+keresztül a „Scheduler::PIDUpdateTime” beállításban.
+            </p><p>
+                Ha figyelmeztető üzenetet lát, akkor nem szükséges mindig cselekedni, de
+erősen ajánlott annak ellenőrzése, hogy az ütemező folyamat fut-e. Ha
+riasztást lát, akkor nagy az esélye annak, hogy az ütemező valójában nem fut
+és el kell indítani.
+            </p><p>
+                Alapértelmezetten az ütemező nem fut értesítés engedélyezve van, ha egy
+érvényes webszolgáltatás van regisztrálva az adatbázisban, és csak az
+„admin” csoportban lévő felhasználóknak van megjelenítve.
+            </p><p>
+                Az értesítés letiltásához (nem ajánlott) vagy az értesítési csoportok
+megváltoztatásához vagy hozzáadásához szerkessze a
+„Frontend::NotifyModule###800-Scheduler-Check” beállítást a
+rendszerbeállításokban.
+            </p><p>
+                </p><div class="screenshot"><div><img src="screenshots/scheduler-notify.png"></div></div><p>
+            </p><p>
+                <span class="emphasis"><em>Ábra: Ütemező értesítése.</em></span>
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="scheduler-gui-start"></a>Ütemező indítása</h4></div></div></div><p>
+                Az ütemező nem fut értesítés (vagy figyelmeztetés vagy riasztás)
+hivatkozására kattintva egy párbeszédablak doboz fog megnyílni, hogy
+lehetővé tegye az ütemező folyamat ismételt elindítását. Az ütemező
+indítható normálisan, vagy kényszeríthető az indítás a megfelelő
+jelölőnégyzetre kattintva a párbeszédablakon.
+            </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                    Egy kényszerített ütemező indítás csak akkor szükséges, ha az előző ütemező
+folyamat rendellenesen szakadt meg, és a folyamatazonosító még mindig
+regisztrálva van az adatbázisban.
+                </p><p>
+                    Ahhoz, hogy teljes ellenőrzése legyen az ütemező folyamaton, és ellenőrizze
+a valódi állapotát, használja az alább ismertetett parancssori eszközöket.
+                </p></div><p>
+                </p><div class="screenshot"><div><img src="screenshots/scheduler-start.png"></div></div><p>
+            </p><p>
+                <span class="emphasis"><em>Ábra: Ütemező indítása.</em></span>
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="scheduler-cli"></a>Az ütemező parancssori felülete</h3></div></div></div><p>
+            Az ütemező parancssori eszközei lehetővé teszik az ütemező folyamat
+vezérlését (indítását és leállítását), vagy az állapotának
+lekérdezését. Léteznek eszközök a folyamat regisztrálásához is, hogy az
+operációs rendszer vezérelhesse.
+        </p><p>
+            Az OTRS tartalmaz parancssori felületű (CLI) eszközöket az ütemezőhöz.
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="scheduler-cli-linux-init"></a>Az ütemező init.d fájljai</h4></div></div></div><p>
+                Az init.d fájlok olyan speciális parancsfájlok, amelyeket az operációs
+rendszer hív meg az indításkor és a leállításkor.
+            </p><p>
+                Az OTRS init.d parancsfájlokat biztosít, hogy az operációs rendszer
+automatikusan elindítsa vagy leállítsa az OTRS ütemező folyamatot. Ezek a
+parancsfájlok az OTRS_HOME/scripts alatt találhatók.
+            </p><p>
+                Az init.d parancsfájlokat át kell másolni az operációs rendszerénél a
+megfelelő helyre. Megfelelő jogosultságokkal kell rendelkezniük, és néhány
+belső változót be kell állítani a megfelelő működéshez. Ha az OTRS RPM-eket
+használta a rendszer beállításához, akkor ez automatikusan el van intézve.
+            </p><div class="itemizedlist"><p class="title"><b>Az init.d parancsfájl belső változói</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        <span class="command"><strong>OTRS_HOME</strong></span> - az OTRS telepítésének útvonala.
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>User</strong></span> - az apache folyamat felhasználóneve.
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>Group</strong></span> - az apache folyamat felhasználójának csoportneve.
+                    </p></li></ul></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                    Jelenleg az OTRS csak Linux platformokhoz biztosít init.d parancsfájlokat.
+                </p></div><div class="table"><a name="id-1.6.13.7.4.7"></a><p class="title"><b>4.7. táblázat - Az init parancsfájlok és a támogatott operációs rendszerek listája</b></p><div class="table-contents"><table class="table" summary="Az init parancsfájlok és a támogatott operációs rendszerek listája" border="1"><colgroup><col><col></colgroup><thead><tr><th>Init parancsfájl</th><th>Támogatott operációs rendszer</th></tr></thead><tbody><tr><td>otrs-scheduler-linux</td><td>Red Hat, Fedora, CentOS, SUSE, openSUSE, Debian, Ubuntu</td></tr><tr><td>otrs-scheduler-gentoo-init.d, otrs-scheduler-gentoo-conf.d</td><td>Gentoo</td></tr></tbody></table></div></div><br class="table-break"><div class="example"><a name="id-1.6.13.7.4.8"></a><p class="title"><b>4.29. példa - Példa az OTRS ütemező indítására Linuxon</b></p><div class="example-contents"><p>
+                    </p><pre class="screen">
+                        shell&gt; /etc/init.d/otrs-scheduler-linux start
+                    </pre><p>
+                </p></div></div><br class="example-break"><div class="itemizedlist"><p class="title"><b>Elérhető műveletek</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        <span class="command"><strong>start</strong></span> az OTRS ütemező folyamat indításához.
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>stop</strong></span> az OTRS ütemező folyamat leállításához.
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>restart</strong></span> az OTRS ütemező folyamat újraindításához.
+                    </p></li><li class="listitem"><p>
+                        <span class="command"><strong>status</strong></span> az OTRS ütemező folyamat állapotának
+lekérdezéséhez.
+                    </p></li></ul></div><p>
+                Az ütemezőnek szüksége van a folyamatazonosítója regisztrálásához arra, hogy
+az adatbázis elérhető legyen. Emiatt a következők szükségesek:
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                            Az ütemező init.d parancsfájl végrehajtása az ütemező folyamat
+<span class="emphasis"><em>indításához</em></span>, miután az adatbázis folyamat elindult és
+fut.
+                        </p></li><li class="listitem"><p>
+                            Az ütemező init.d parancsfájl végrehajtása az ütemező
+<span class="emphasis"><em>leállításához</em></span>, mielőtt az adatbázis folyamat leáll.
+                        </p></li></ul></div><p>
+            </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                    Ha azt szeretné, hogy az ütemező a rendszer indításakor fusson, akkor
+olvassa el az operációs rendszere dokumentációját, hogy megtalálja a
+megfelelő helyet az init.d parancsfájlok elhelyezéséhez, hogy hogyan állítsa
+be azokat az automatikus futtatáshoz, és hogy hogyan kell beállítani a
+futási sorrendet.
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="scheduler-cli-linux-daemon"></a>Az ütemező démon fájlja</h4></div></div></div><p>
+                Ez az ütemező azon része, amely futva marad a háttérben a végrehajtandó
+feladatokat ellenőrizve. Ez biztosítja a fő függvényeket is a folyamat
+vezérléséhez.
+            </p><p>
+                Az összes Unix / Linux az <span class="command"><strong>OTRS_HOME/bin/otrs.Scheduler.pl</strong></span>
+fájlt használja.
+            </p><div class="example"><a name="id-1.6.13.7.5.4"></a><p class="title"><b>4.30. példa - Példa az OTRS ütemező indítására</b></p><div class="example-contents"><p>
+                    </p><pre class="screen">
+                        shell&gt; OTRS_HOME/bin/otrs.Scheduler.pl -a start
+                    </pre><p>
+                </p></div></div><br class="example-break"><div class="itemizedlist"><p class="title"><b>Elérhető kapcsolók</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                        <span class="command"><strong>-a </strong></span> művelet.
+                    </p><div class="itemizedlist"><p class="title"><b>Lehetséges értékek</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                <span class="command"><strong>start</strong></span> - az ütemező folyamat indításához.
+                            </p></li><li class="listitem"><p>
+                                <span class="command"><strong>stop</strong></span> - az ütemező folyamat leállításához.
+                            </p></li><li class="listitem"><p>
+                                <span class="command"><strong>status</strong></span> - az ütemező folyamat állapotának lekérdezéséhez.
+                            </p></li></ul></div></li><li class="listitem"><p>
+                        <span class="command"><strong>-f </strong></span> az ütemező folyamat elindításának vagy leállításának
+kényszerítéséhez.
+                    </p></li></ul></div><div class="example"><a name="id-1.6.13.7.5.6"></a><p class="title"><b>4.31. példa - Példa az OTRS ütemező kényszerített leállítására</b></p><div class="example-contents"><p>
+                    </p><pre class="screen">
+                        shell&gt; OTRS_HOME/bin/otrs.Scheduler.pl -a stop -f 1
+                    </pre><p>
+                </p></div></div><br class="example-break"><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                    Az ütemező kényszerített leállítása a folyamatazonosító eltávolítására
+használható az adatbázisból, amikor az ütemező nem fut és a folyamat még
+regisztrálva van.
+                </p><p>
+                    Az ütemező kényszerített indítása az ütemező folyamat indítására
+használható, ha az ütemező nem fut és a folyamat regisztrálva van.
+                </p><p>
+                    A kényszerített indítás vagy leállítás csak akkor szükséges, ha a folyamat
+indításának azelőtt kell befejeződnie, mielőtt a folyamat frissítési ideje
+lejár. Egyébként az adatbázisban egy lejárt bejegyzést eldob a normál
+indítás.
+                </p></div></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="genericinterface.html">Vissza</a> </td><td width="20%" align="center"><a accesskey="u" href="administration.html">Fel</a></td><td width="40%" align="right"> <a accesskey="n" href="customization.html">Előre</a></td></tr><tr><td width="40%" align="left" valign="top">Általános felület </td><td width="20%" align="center"><a accesskey="h" href="index.html">Főoldal</a></td><td width="40%" align="right" valign="top"> 5. fejezet - Személyre szabás</td></tr></table></div></body></html>
