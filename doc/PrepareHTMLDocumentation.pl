@@ -32,7 +32,7 @@ use IO::File();
 sub PrintUsage {
     print <<"EOF";
 otrs.PrepareHTMLDocumentation.pl - update translation files
-Copyright (C) 2001-2014 OTRS AG, http://otrs.org/
+Copyright (C) 2001-2017 OTRS AG, http://otrs.org/
 EOF
 }
 
@@ -89,10 +89,16 @@ sub ProcessHTMLFile {
 EOF
 
     $HTMLInject .=<<'EOF';
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/default.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
 <script>
 $(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml', 'bash']
+    });
+
     // programlistings in manuals
     $('pre.programlisting').each(function(i, block) {
         hljs.highlightBlock(block);
