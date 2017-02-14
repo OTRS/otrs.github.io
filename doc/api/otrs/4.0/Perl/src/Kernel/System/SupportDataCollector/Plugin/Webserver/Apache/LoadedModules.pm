@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -24,9 +24,10 @@ sub Run {
 
     my %Environment = %ENV;
 
-    # No apache webserver with mod_perl, skip this check
+    # No web request or no apache webserver with mod_perl, skip this check.
     if (
-        !$ENV{SERVER_SOFTWARE}
+        !$ENV{GATEWAY_INTERFACE}
+        || !$ENV{SERVER_SOFTWARE}
         || $ENV{SERVER_SOFTWARE} !~ m{apache}i
         || !$ENV{MOD_PERL}
         || !eval { require Apache2::Module; }

@@ -73,7 +73,13 @@ $(document).ready(function() {
 <!-- INDEX START -->
 <h3 id="TOP">Index</h3>
 <ul>
-	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#NAME">NAME</a><br />
+	<ul>
+	<li><a href="#DEMOLISH">DEMOLISH()</a></li>
+	</ul>
+</li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -104,6 +110,9 @@ a failing test result and generate a screenshot for analysis.</p>
         platform            =&gt; 'ANY',
         window_height       =&gt; 1200,    # optional, default 1000
         window_width        =&gt; 1600,    # optional, default 1200
+        extra_capabilities =&gt; {
+            marionette     =&gt; \0,   # Required to run FF 47 or older on Selenium 3+.
+        },
     };
 </pre></dd>		<dd><p>Then you can use the full API of Selenium::Remote::Driver on this object.</p></dd>
 	<dt>RunTest()</dt>
@@ -148,9 +157,41 @@ Exactly one condition (JavaScript or WindowCount) must be specified.</p></dd>
 		<dd><p>use this method to handle any Selenium exceptions.</p></dd>
 <dd><pre>    $SeleniumObject-&gt;HandleError($@);
 </pre></dd>		<dd><p>It will create a failing test result and store a screenshot of the page
-for analysis (in folder /var/otrs-unittest if it exists, in /tmp otherwise).</p></dd>
-	<dt>DESTROY()</dt>
-		<dd><p>cleanup. Adds a unit test result to indicate the shutdown.</p></dd>
+for analysis (in folder /var/otrs-unittest if it exists, in $Home/var/httpd/htdocs otherwise).</p></dd>
+<h2 id="DEMOLISH">DEMOLISH()</h2>
+
+<p><a href="#" onclick="toggleCode('method_DEMOLISH');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DEMOLISH">
+                                        <pre>
+
+sub DEMOLISH {
+    my $Self = shift;
+
+    # Could be missing on early die.
+    if ( $Self->{UnitTestObject} ) {
+        $Self->{UnitTestObject}->True( 1, "Shutting down Selenium scenario." );
+    }
+
+    if ( $Self->{SeleniumTestsActive} ) {
+        $Self->SUPER::DEMOLISH(@_);
+    }
+
+    # Cleanup possibly leftover zombie firefox profiles.
+    my @LeftoverFirefoxProfiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => '/tmp/',
+        Filter    => 'anonymous*webdriver-profile',
+    );
+
+    for my $LeftoverFirefoxProfile (@LeftoverFirefoxProfiles) {
+        if ( -d $LeftoverFirefoxProfile ) {
+            File::Path::remove_tree($LeftoverFirefoxProfile);
+        }
+    }
+}
+</pre></div>
+
+		<dd><p>override DEMOLISH from <a href="http://search.cpan.org/perldoc?Selenium%3A%3ARemote%3A%3ADriver">Selenium::Remote::Driver</a> (required because this class is managed by <a href="http://search.cpan.org/perldoc?Moo">Moo</a>).
+Adds a unit test result to indicate the shutdown, and performs some cleanups.</p></dd>
 </dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
