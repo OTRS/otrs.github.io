@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -973,12 +973,11 @@ sub LoadDefaults {
     $Self->{'Loader::Customer::CommonJS'}->{'000-Framework'} = [
         'thirdparty/jquery-3.1.1/jquery.js',
         'thirdparty/jquery-browser-detection/jquery-browser-detection.js',
-        'thirdparty/jquery-validate-1.14.0/jquery.validate.js',
+        'thirdparty/jquery-validate-1.15.0/jquery.validate.js',
         'thirdparty/jquery-ui-1.12.1/jquery-ui.js',
-        'thirdparty/stacktrace-0.6.4/stacktrace.js',
         'thirdparty/jquery-pubsub/pubsub.js',
-        'thirdparty/jquery-jstree-3.1.1/jquery.jstree.js',
-        'thirdparty/nunjucks-2.4.2/nunjucks.js',
+        'thirdparty/jquery-jstree-3.3.3/jquery.jstree.js',
+        'thirdparty/nunjucks-3.0.0/nunjucks.js',
         'Core.Init.js',
         'Core.Debug.js',
         'Core.Exception.js',
@@ -1013,11 +1012,10 @@ sub LoadDefaults {
         'thirdparty/jquery-browser-detection/jquery-browser-detection.js',
         'thirdparty/jquery-ui-1.12.1/jquery-ui.js',
         'thirdparty/jquery-ui-touch-punch-0.2.3/jquery.ui.touch-punch.js',
-        'thirdparty/jquery-validate-1.14.0/jquery.validate.js',
-        'thirdparty/stacktrace-0.6.4/stacktrace.js',
+        'thirdparty/jquery-validate-1.15.0/jquery.validate.js',
         'thirdparty/jquery-pubsub/pubsub.js',
-        'thirdparty/jquery-jstree-3.1.1/jquery.jstree.js',
-        'thirdparty/nunjucks-2.4.2/nunjucks.js',
+        'thirdparty/jquery-jstree-3.3.3/jquery.jstree.js',
+        'thirdparty/nunjucks-3.0.0/nunjucks.js',
         'Core.Init.js',
         'Core.JavaScriptEnhancements.js',
         'Core.Debug.js',

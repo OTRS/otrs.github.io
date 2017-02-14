@@ -85,7 +85,7 @@ $(document).ready(function() {
 	<li><a href="#SystemMaintenanceList">SystemMaintenanceList()</a></li>
 	<li><a href="#SystemMaintenanceListGet">SystemMaintenanceListGet()</a></li>
 	<li><a href="#SystemMaintenanceIsActive">SystemMaintenanceIsActive()</a></li>
-	<li><a href="#SystemMaintenanceIsComming">SystemMaintenanceIsComming()</a></li>
+	<li><a href="#SystemMaintenanceIsComing">SystemMaintenanceIsComing()</a></li>
 </ul>
 </li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -189,8 +189,8 @@ sub SystemMaintenanceAdd {
 <p>returns the id of the created SystemMaintenance if success or undef otherwise</p>
 
 <pre>    my $ID = $SystemMaintenance-&gt;SystemMaintenanceAdd(
-        StartDate        =&gt; '2014-05-02 14:55:00'    # mandatory
-        StopDate         =&gt; '2014-05-02 16:01:00'    # mandatory
+        StartDate        =&gt; 1485346000               # mandatory
+        StopDate         =&gt; 1485349600               # mandatory
         Comment          =&gt; 'Comment',               # mandatory
         LoginMessage     =&gt; 'A login message.',      # optional
         ShowLoginMessage =&gt; 1,                       # optional
@@ -242,7 +242,7 @@ sub SystemMaintenanceDelete {
 }
 </pre></div>
 
-<p>delete an SystemMaintenance</p>
+<p>delete a SystemMaintenance</p>
 
 <p>returns 1 if success or undef otherwise</p>
 
@@ -285,9 +285,6 @@ sub SystemMaintenanceGet {
         Limit => 1,
     );
 
-    # get time object
-    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-
     my %Data;
     while ( my @Row = $DBObject->FetchrowArray() ) {
 
@@ -316,22 +313,22 @@ sub SystemMaintenanceGet {
 <p>get SystemMaintenance attributes</p>
 
 <pre>    my $SystemMaintenance = $SystemMaintenanceObject-&gt;SystemMaintenanceGet(
-        ID     =&gt; 123,          # ID or name is needed
+        ID     =&gt; 123,          # mandatory
         UserID =&gt; 123,          # mandatory
     );
 </pre><p>Returns:</p>
 
 <pre>    $SystemMaintenance = {
         ID             =&gt; 123,
-        StartDate        =&gt; '2014-05-02 14:55:00',
-        StopDate         =&gt; '2014-05-02 16:01:00',
+        StartDate        =&gt; 1485346000,
+        StopDate         =&gt; 1485349600,
         Comment          =&gt; 'Comment',
         LoginMessage     =&gt; 'A login message.',
         ShowLoginMessage =&gt; 1,
         NotifyMessage    =&gt; 'Notification message.',
         ValidID          =&gt; 1,
-        CreateTime       =&gt; '2012-07-04 15:08:00',
-        ChangeTime       =&gt; '2012-07-04 15:08:00',
+        CreateTime       =&gt; 1485346000,
+        ChangeTime       =&gt; 1485347300,
         CreateBy         =&gt; 'user_login',
         ChangeBy         =&gt; 'user_login',
     };
@@ -385,8 +382,8 @@ sub SystemMaintenanceUpdate {
 
 <pre>    my $Success = $SystemMaintenanceObject-&gt;SystemMaintenanceUpdate(
         ID               =&gt; 123,                        # mandatory
-        StartData        =&gt; 'NameOfSystemMaintenance',  # mandatory
-        StopDate         =&gt; 'NameOfSystemMaintenance',  # mandatory
+        StartDate        =&gt; 1485346000,                 # mandatory
+        StopDate         =&gt; 1485349600,                 # mandatory
         Comment          =&gt; 'Comment',                  # mandatory
         LoginMessage     =&gt; 'Description',              # optional
         ShowLoginMessage =&gt; 1,                          # optional
@@ -454,11 +451,11 @@ sub SystemMaintenanceList {
         ValidIDs =&gt; ['1','2'],           # optional, to filter SystemMaintenances that match listed valid IDs
         UserID   =&gt; 1,
     );
+</pre><p>Returns a hash with the SystemMaintenance IDs as keys:</p>
 
-    Returns:
-
-    $List = {
-        1 =&gt; 'NameOfSystemMaintenance',
+<pre>    $List = {
+        42 =&gt; 1,
+        24 =&gt; 1,
     }
 </pre><h2 id="SystemMaintenanceListGet">SystemMaintenanceListGet()</h2>
 
@@ -494,6 +491,9 @@ sub SystemMaintenanceListGet {
         push @Data, $SystemMaintenanceData;
     }
 
+    # sort list by start date
+    @Data = sort { $a->{StartDate} <=> $b->{StartDate} } @Data;
+
     return \@Data;
 }
 </pre></div>
@@ -509,27 +509,27 @@ sub SystemMaintenanceListGet {
 <pre>    $List = [
         {
             ID               =&gt; 123,
-            StartDate        =&gt; '2013-07-04 15:08:00',
-            StopDate         =&gt; '2013-07-06 16:08:00',
+            StartDate        =&gt; 1485346000,
+            StopDate         =&gt; 1485349600,
             Comment          =&gt; 'Comment',
             LoginMessage     =&gt; 'The message',
             ShowLoginMessage =&gt; 1,
             NotifyMessage    =&gt; 'The notification',
             ValidID          =&gt; 1,
-            CreateTime       =&gt; '2012-07-04 15:08:00',
-            ChangeTime       =&gt; '2012-07-04 15:08:00',
+            CreateTime       =&gt; 1485342400,
+            ChangeTime       =&gt; 1485343700,
         },
         {
             ID               =&gt; 123,
-            StartDate        =&gt; '2013-07-04 15:08:00',
-            StopDate         =&gt; '2013-07-06 16:08:00',
+            StartDate        =&gt; 1485346000,
+            StopDate         =&gt; 1485349600,
             Comment          =&gt; 'Other Comment',
             LoginMessage     =&gt; 'To be shown on the login screen.',
             ShowLoginMessage =&gt; 0,
             NotifyMessage    =&gt; 'A different notification',
             ValidID          =&gt; 1,
-            CreateTime       =&gt; '2012-07-04 15:08:00',
-            ChangeTime       =&gt; '2012-07-04 15:08:00',
+            CreateTime       =&gt; 1485342400,
+            ChangeTime       =&gt; 1485343700,
         },
     ];
 </pre><h2 id="SystemMaintenanceIsActive">SystemMaintenanceIsActive()</h2>
@@ -579,17 +579,16 @@ sub SystemMaintenanceIsActive {
 <p>get a SystemMaintenance active flag</p>
 
 <pre>    my $ActiveMaintenance = $SystemMaintenanceObject-&gt;SystemMaintenanceIsActive();
+</pre><p>Returns:</p>
 
-    Returns:
+<pre>    $ActiveMaintenance = 7 # a System Maintenance ID
+</pre><h2 id="SystemMaintenanceIsComing">SystemMaintenanceIsComing()</h2>
 
-    $ActiveMaintenance = 7 # a System Maintenance ID
-</pre><h2 id="SystemMaintenanceIsComming">SystemMaintenanceIsComming()</h2>
-
-<p><a href="#" onclick="toggleCode('method_SystemMaintenanceIsComming');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemMaintenanceIsComming">
+<p><a href="#" onclick="toggleCode('method_SystemMaintenanceIsComing');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SystemMaintenanceIsComing">
                                         <pre>
 
-sub SystemMaintenanceIsComming {
+sub SystemMaintenanceIsComing {
     my ( $Self, %Param ) = @_;
 
     my $SystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
@@ -633,11 +632,10 @@ sub SystemMaintenanceIsComming {
 
 <p>get a SystemMaintenance flag</p>
 
-<pre>    my $SystemMaintenanceIsComming = $SystemMaintenanceObject-&gt;SystemMaintenanceIsComming();
+<pre>    my $SystemMaintenanceIsComing = $SystemMaintenanceObject-&gt;SystemMaintenanceIsComing();
+</pre><p>Returns:</p>
 
-    Returns:
-
-    $SystemMaintenanceIsComming = 1 # 1 or 0
+<pre>    $SystemMaintenanceIsComing = 1 # 1 or 0
 </pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

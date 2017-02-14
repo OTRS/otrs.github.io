@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -1343,6 +1343,24 @@ sub RandomValueSet {
         Success => 1,
         Value   => $Value,
     };
+}
+
+sub ValueLookup {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = defined $Param{Key} ? $Param{Key} : '';
+
+    # check if a translation is possible
+    if ( defined $Param{LanguageObject} ) {
+
+        # translate value
+        $Value = $Param{LanguageObject}->FormatTimeString(
+            $Value,
+            'DateFormatShort',
+        );
+    }
+
+    return $Value;
 }
 
 1;

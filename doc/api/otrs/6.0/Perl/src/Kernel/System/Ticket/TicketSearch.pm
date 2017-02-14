@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -444,7 +444,8 @@ sub TicketSearch {
     }
 
     # check sort/order by options
-    my @SortByArray  = ( ref $SortBy eq 'ARRAY'  ? @{$SortBy}  : ($SortBy) );
+    my @SortByArray = ( ref $SortBy eq 'ARRAY' ? @{$SortBy} : ($SortBy) );
+    my %LookupSortByArray = map { $_ => 1 } @SortByArray;
     my @OrderByArray = ( ref $OrderBy eq 'ARRAY' ? @{$OrderBy} : ($OrderBy) );
 
     for my $Count ( 0 .. $#SortByArray ) {
@@ -477,7 +478,7 @@ sub TicketSearch {
         $SQLSelect = 'SELECT DISTINCT st.id, st.tn';
     }
 
-    my $SQLFrom = ' FROM ticket st INNER JOIN queue sq ON sq.id = st.queue_id ';
+    my $SQLFrom = ' FROM ticket st ';
 
     my $ArticleJoinSQL = $Self->_ArticleIndexQuerySQL( Data => \%Param ) || '';
 
@@ -2083,9 +2084,6 @@ sub TicketSearch {
             return;
         }
 
-        # don't execute queries if newer date is after current date
-        return if $TimeStamp > $CurrentSystemTime;
-
         # don't execute queries if older/newer date restriction show now valid timeframe
         return
             if $ComparePendingTimeOlderNewerDate && $TimeStamp > $ComparePendingTimeOlderNewerDate;
@@ -2215,6 +2213,11 @@ sub TicketSearch {
                 $SQLExt .= ' DESC';
             }
         }
+    }
+
+    # Add only the sql join for the queue table, if columns from the queue table exists in the sql statement.
+    if ( %GroupList || $LookupSortByArray{Queue} ) {
+        $SQLFrom .= ' INNER JOIN queue sq ON sq.id = st.queue_id ';
     }
 
     # check cache

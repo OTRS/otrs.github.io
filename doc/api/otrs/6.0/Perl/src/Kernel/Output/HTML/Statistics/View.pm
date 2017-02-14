@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -628,15 +628,40 @@ sub GeneralSpecificationsWidget {
         $Stat->{Valid}      = 1;
     }
 
+    # Check if a time field is selected in the current statistic configuration, because
+    #   only in this case the caching can be activated in the general statistic settings.
+    my $TimeFieldSelected;
+
+    USE:
+    for my $Use (qw(UseAsXvalue UseAsValueSeries UseAsRestriction)) {
+
+        for my $ObjectAttribute ( @{ $Stat->{$Use} } ) {
+
+            if ( $ObjectAttribute->{Selected} && $ObjectAttribute->{Block} eq 'Time' ) {
+                $TimeFieldSelected = 1;
+                last USE;
+            }
+        }
+    }
+
     my %Frontend;
 
-    # create selectboxes 'Cache', 'SumRow', 'SumCol', and 'Valid'
+    my %YesNo = (
+        0 => Translatable('No'),
+        1 => Translatable('Yes')
+    );
+
+    # Create selectboxes for 'Cache', 'SumRow', 'SumCol', and 'Valid'.
     for my $Key (qw(Cache ShowAsDashboardWidget SumRow SumCol)) {
+
+        my %SelectionData = %YesNo;
+
+        if ( $Key eq 'Cache' && !$TimeFieldSelected ) {
+            delete $SelectionData{1};
+        }
+
         $Frontend{ 'Select' . $Key } = $LayoutObject->BuildSelection(
-            Data => {
-                0 => Translatable('No'),
-                1 => Translatable('Yes')
-            },
+            Data       => \%SelectionData,
             SelectedID => $GetParam{$Key} // $Stat->{$Key} || 0,
             Name       => $Key,
             Class      => 'Modernize',

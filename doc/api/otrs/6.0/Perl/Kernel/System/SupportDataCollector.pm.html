@@ -141,9 +141,13 @@ sub Collect {
     }
 
     # Data must be collected in a web request context to be able to collect web server data.
-    #   If called from CLI, make a web request to collect the data.
+    #   If called from CLI, make a web request to collect the data, but if the data couldn't
+    #   be collected the function runs normal.
     if ( !$ENV{GATEWAY_INTERFACE} ) {
-        return $Self->CollectByWebRequest(%Param);
+
+        my %ResultWebRequest = $Self->CollectByWebRequest(%Param);
+
+        return %ResultWebRequest if $ResultWebRequest{Success};
     }
 
     # Get the disabled plugins from the config to generate a lookup hash, which can be used to skip these plugins.
@@ -156,26 +160,26 @@ sub Collect {
         = $Kernel::OM->Get('Kernel::Config')->Get('SupportDataCollector::IdentifierFilterBlacklist') || [];
     my %LookupIdentifierFilterBlacklist = map { $_ => 1 } @{$IdentifierFilterBlacklist};
 
-    # Look for all plug-ins in the FS
+    # Look for all plug-ins in the FS.
     my @PluginFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
         Directory => dirname(__FILE__) . "/SupportDataCollector/Plugin",
         Filter    => "*.pm",
         Recursive => 1,
     );
 
-    # Look for all asynchronous plug-ins in the FS
+    # Look for all asynchronous plug-ins in the FS.
     my @PluginAsynchronousFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
         Directory => dirname(__FILE__) . "/SupportDataCollector/PluginAsynchronous",
         Filter    => "*.pm",
         Recursive => 1,
     );
 
-    # merge the both plug-ins types together
+    # Merge the both plug-in types together.
     my @PluginFilesAll = ( @PluginFiles, @PluginAsynchronousFiles );
 
     my @Result;
 
-    # Execute all plug-ins
+    # Execute all plug-ins.
     PLUGINFILE:
     for my $PluginFile (@PluginFilesAll) {
 
@@ -197,9 +201,8 @@ sub Collect {
 
         if ( !%PluginResult || !$PluginResult{Success} ) {
             return (
-                Success => 0,
-                ErrorMessage =>
-                    "Error during execution of $PluginFile: $PluginResult{ErrorMessage}",
+                Success      => 0,
+                ErrorMessage => "Error during execution of $PluginFile: $PluginResult{ErrorMessage}",
             );
         }
 
@@ -210,7 +213,7 @@ sub Collect {
     #   more information with a own identifier.
     @Result = grep { !$LookupIdentifierFilterBlacklist{ $_->{Identifier} } } @Result;
 
-    # sort the results from the plug-ins by the short identifier
+    # Sort the results from the plug-ins by the short identifier.
     @Result = sort { $a->{ShortIdentifier} cmp $b->{ShortIdentifier} } @Result;
 
     my %ReturnData = (
@@ -218,12 +221,17 @@ sub Collect {
         Result  => \@Result,
     );
 
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => 'SupportDataCollector',
-        Key   => $CacheKey,
-        Value => \%ReturnData,
-        TTL   => 60 * 10,
-    );
+    # Cache the result only, if the support data were collected in a web request,
+    #   to have all support data in the admin view.
+    if ( $ENV{GATEWAY_INTERFACE} ) {
+
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => 'SupportDataCollector',
+            Key   => $CacheKey,
+            Value => \%ReturnData,
+            TTL   => 60 * 10,
+        );
+    }
 
     return %ReturnData;
 }

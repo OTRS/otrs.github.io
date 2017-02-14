@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -115,7 +115,13 @@ sub SearchSQLGet {
             return " $Param{TableAlias}.value_text IS NULL OR $Param{TableAlias}.value_text = '' ";
         }
         else {
-            return " $Param{TableAlias}.value_text <> '' ";
+            my $DatabaseType = $Kernel::OM->Get('Kernel::System::DB')->{'DB::Type'};
+            if ( $DatabaseType eq 'oracle' ) {
+                return " $Param{TableAlias}.value_text IS NOT NULL ";
+            }
+            else {
+                return " $Param{TableAlias}.value_text <> '' ";
+            }
         }
     }
     elsif ( !$Operators{ $Param{Operator} } ) {

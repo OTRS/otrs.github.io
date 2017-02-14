@@ -74,6 +74,7 @@ $(document).ready(function() {
 <h3 id="TOP">Index</h3>
 <ul>
 	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#SYNOPSIS">SYNOPSIS</a></li>
 	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
 	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
 <ul>
@@ -144,6 +145,15 @@ $(document).ready(function() {
 	<li><a href="#SearchUnknownTicketCustomers">SearchUnknownTicketCustomers()</a></li>
 </ul>
 </li>
+	<li><a href="#PRIVATE_FUNCTIONS">PRIVATE FUNCTIONS</a><br />
+<ul>
+	<li><a href="#TicketCacheClear">_TicketCacheClear()</a></li>
+	<li><a href="#TicketGetExtended">_TicketGetExtended()</a></li>
+	<li><a href="#TicketGetFirstResponse">_TicketGetFirstResponse()</a></li>
+	<li><a href="#TicketGetClosed">_TicketGetClosed()</a></li>
+	<li><a href="#TicketGetFirstLock">_TicketGetFirstLock()</a></li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -151,9 +161,129 @@ $(document).ready(function() {
 
 <h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<p>Kernel::System::Ticket - ticket lib</p>
+<p>Kernel::System::Ticket - Functions to create, modify and delete tickets as well as related helper functions</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="SYNOPSIS">SYNOPSIS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<p>Create ticket object</p>
+
+<pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $TicketObject = $Kernel::OM-&gt;Get('Kernel::System::Ticket');
+</pre><p>Create a new ticket</p>
+
+<pre>    my $TicketID = $TicketObject-&gt;TicketCreate(
+        Title        =&gt; 'Some Ticket Title',
+        Queue        =&gt; 'Raw',
+        Lock         =&gt; 'unlock',
+        Priority     =&gt; '3 normal',
+        State        =&gt; 'new',
+        CustomerID   =&gt; '12345',
+        CustomerUser =&gt; 'customer@example.com',
+        OwnerID      =&gt; 1,
+        UserID       =&gt; 1,
+    );
+</pre><p>Lock the ticket</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketLockSet(
+        Lock     =&gt; 'lock',
+        TicketID =&gt; $TicketID,
+        UserID   =&gt; 1,
+    );
+
+
+
+</pre><p>Update the title</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketTitleUpdate(
+        Title    =&gt; 'Some Title',
+        TicketID =&gt; $TicketID,
+        UserID   =&gt; 1,
+    );
+</pre><p>Move ticket to another queue</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketQueueSet(
+        Queue    =&gt; 'Some Queue Name',
+        TicketID =&gt; $TicketID,
+        UserID   =&gt; 1,
+    );
+</pre><p>Set a ticket type</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketTypeSet(
+        Type     =&gt; 'Incident',
+        TicketID =&gt; $TicketID,
+        UserID   =&gt; 1,
+    );
+</pre><p>Assign another customer</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketCustomerSet(
+        No       =&gt; '12345',
+        User     =&gt; 'customer@company.org',
+        TicketID =&gt; $TicketID,
+        UserID   =&gt; 1,
+    );
+</pre><p>Update the state</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketStateSet(
+        State     =&gt; 'pending reminder',
+        TicketID =&gt; $TicketID,
+        UserID   =&gt; 1,
+    );
+</pre><p>Update pending time (only for pending states)</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketPendingTimeSet(
+        String   =&gt; '2019-08-14 22:05:00',
+        TicketID =&gt; $TicketID,
+        UserID   =&gt; 1,
+    );
+</pre><p>Set a new priority</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketPrioritySet(
+        TicketID =&gt; $TicketID,
+        Priority =&gt; 'low',
+        UserID   =&gt; 1,
+    );
+</pre><p>Assign to another agent</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketOwnerSet(
+        TicketID  =&gt; $TicketID,
+        NewUserID =&gt; 2,
+        UserID    =&gt; 1,
+    );
+</pre><p>Set a responsible</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketResponsibleSet(
+        TicketID  =&gt; $TicketID,
+        NewUserID =&gt; 3,
+        UserID    =&gt; 1,
+    );
+</pre><p>Add something to the history</p>
+
+<pre>    my $Success = $TicketObject-&gt;HistoryAdd(
+        Name         =&gt; 'Some Comment',
+        HistoryType  =&gt; 'Move',
+        TicketID     =&gt; $TicketID,
+        CreateUserID =&gt; 1,
+    );
+</pre><p>Get the complete ticket history</p>
+
+<pre>    my @HistoryLines = $TicketObject-&gt;HistoryGet(
+        TicketID =&gt; $TicketID,
+        UserID   =&gt; 1,
+    );
+</pre><p>Get current ticket attributes</p>
+
+<pre>    my %Ticket = $TicketObject-&gt;TicketGet(
+        TicketID      =&gt; $TicketID,
+        UserID        =&gt; 1,
+    );
+</pre><p>Delete the ticket</p>
+
+<pre>    my $Success = $TicketObject-&gt;TicketDelete(
+        TicketID =&gt; $TicketID,
+        UserID   =&gt; 1,
+    );
+</pre><h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>All ticket functions.</p>
 
@@ -1619,6 +1749,7 @@ sub TicketQueueID {
         TicketID      => $Param{TicketID},
         DynamicFields => 0,
         UserID        => 1,
+        Silent        => 1,
     );
 
     return if !%Ticket;
@@ -7231,6 +7362,352 @@ sub SearchUnknownTicketCustomers {
             CustomerID    =&gt; 'SomeCustomerID',
             CustomerUser  =&gt; 'SomeCustomerUser',
         },
+    );
+</pre><h1 id="PRIVATE_FUNCTIONS">PRIVATE FUNCTIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+<h2 id="TicketCacheClear">_TicketCacheClear()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TicketCacheClear');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TicketCacheClear">
+                                        <pre>
+
+sub _TicketCacheClear {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(TicketID)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # TicketGet()
+    my $CacheKey = 'Cache::GetTicket' . $Param{TicketID};
+    $CacheObject->Delete(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+
+    # delete extended cache for TicketGet()
+    for my $Extended ( 0 .. 1 ) {
+        for my $FetchDynamicFields ( 0 .. 1 ) {
+            my $CacheKeyDynamicFields = $CacheKey . '::' . $Extended . '::' . $FetchDynamicFields;
+
+            $CacheObject->Delete(
+                Type => $Self->{CacheType},
+                Key  => $CacheKeyDynamicFields,
+            );
+        }
+    }
+
+    # ArticleIndex()
+    $CacheObject->Delete(
+        Type => $Self->{CacheType},
+        Key  => 'ArticleIndex::' . $Param{TicketID} . '::agent'
+    );
+    $CacheObject->Delete(
+        Type => $Self->{CacheType},
+        Key  => 'ArticleIndex::' . $Param{TicketID} . '::customer'
+    );
+    $CacheObject->Delete(
+        Type => $Self->{CacheType},
+        Key  => 'ArticleIndex::' . $Param{TicketID} . '::system'
+    );
+    $CacheObject->Delete(
+        Type => $Self->{CacheType},
+        Key  => 'ArticleIndex::' . $Param{TicketID} . '::ALL'
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>Remove all caches related to specified ticket.</p>
+
+<pre>    my $Success = $TicketObject-&gt;_TicketCacheClear(
+        TicketID =&gt; 123,
+    );
+</pre><h2 id="TicketGetExtended">_TicketGetExtended()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TicketGetExtended');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TicketGetExtended">
+                                        <pre>
+
+sub _TicketGetExtended {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(TicketID Ticket)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # get extended attributes
+    my %FirstResponse   = $Self->_TicketGetFirstResponse(%Param);
+    my %FirstLock       = $Self->_TicketGetFirstLock(%Param);
+    my %TicketGetClosed = $Self->_TicketGetClosed(%Param);
+
+    # return all as hash
+    return ( %TicketGetClosed, %FirstResponse, %FirstLock );
+}
+</pre></div>
+
+<p>Collect extended attributes for given ticket,
+namely first response, first lock and close data.</p>
+
+<pre>    my %TicketExtended = $TicketObject-&gt;_TicketGetExtended(
+        TicketID =&gt; $Param{TicketID},
+        Ticket   =&gt; \%Ticket,
+    );
+</pre><h2 id="TicketGetFirstResponse">_TicketGetFirstResponse()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TicketGetFirstResponse');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TicketGetFirstResponse">
+                                        <pre>
+
+sub _TicketGetFirstResponse {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(TicketID Ticket)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # check if first response is already done
+    return if !$DBObject->Prepare(
+        SQL => 'SELECT a.create_time,a.id FROM article a, article_sender_type ast, article_type art'
+            . ' WHERE a.article_sender_type_id = ast.id AND a.article_type_id = art.id AND'
+            . ' a.ticket_id = ? AND ast.name = \'agent\' AND'
+            . ' (art.name LIKE \'email-ext%\' OR art.name LIKE \'note-ext%\' OR art.name = \'phone\' OR art.name = \'fax\' OR art.name = \'sms\')'
+            . ' ORDER BY a.create_time',
+        Bind  => [ \$Param{TicketID} ],
+        Limit => 1,
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{FirstResponse} = $Row[0];
+
+        # cleanup time stamps (some databases are using e. g. 2008-02-25 22:03:00.000000
+        # and 0000-00-00 00:00:00 time stamps)
+        $Data{FirstResponse} =~ s/^(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d)\..+?$/$1/;
+    }
+
+    return if !$Data{FirstResponse};
+
+    # get escalation properties
+    my %Escalation = $Self->TicketEscalationPreferences(
+        Ticket => $Param{Ticket},
+        UserID => $Param{UserID} || 1,
+    );
+
+    if ( $Escalation{FirstResponseTime} ) {
+
+        # get time object
+        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+        # get unix time stamps
+        my $CreateTime = $TimeObject->TimeStamp2SystemTime(
+            String => $Param{Ticket}->{Created},
+        );
+        my $FirstResponseTime = $TimeObject->TimeStamp2SystemTime(
+            String => $Data{FirstResponse},
+        );
+
+        # get time between creation and first response
+        my $WorkingTime = $TimeObject->WorkingTime(
+            StartTime => $CreateTime,
+            StopTime  => $FirstResponseTime,
+            Calendar  => $Escalation{Calendar},
+        );
+
+        $Data{FirstResponseInMin} = int( $WorkingTime / 60 );
+        my $EscalationFirstResponseTime = $Escalation{FirstResponseTime} * 60;
+        $Data{FirstResponseDiffInMin} = int( ( $EscalationFirstResponseTime - $WorkingTime ) / 60 );
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<p>Collect attributes of first response for given ticket.</p>
+
+<pre>    my %FirstResponse = $TicketObject-&gt;_TicketGetFirstResponse(
+        TicketID =&gt; $Param{TicketID},
+        Ticket   =&gt; \%Ticket,
+    );
+</pre><h2 id="TicketGetClosed">_TicketGetClosed()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TicketGetClosed');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TicketGetClosed">
+                                        <pre>
+
+sub _TicketGetClosed {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(TicketID Ticket)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # get close state types
+    my @List = $Kernel::OM->Get('Kernel::System::State')->StateGetStatesByType(
+        StateType => ['closed'],
+        Result    => 'ID',
+    );
+    return if !@List;
+
+    # Get id for history types
+    my @HistoryTypeIDs;
+    for my $HistoryType (qw(StateUpdate NewTicket)) {
+        push @HistoryTypeIDs, $Self->HistoryTypeLookup( Type => $HistoryType );
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT MAX(create_time)
+            FROM ticket_history
+            WHERE ticket_id = ?
+               AND state_id IN (${\(join ', ', sort @List)})
+               AND history_type_id IN  (${\(join ', ', sort @HistoryTypeIDs)})
+            ",
+        Bind => [ \$Param{TicketID} ],
+    );
+
+    my %Data;
+    ROW:
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        last ROW if !defined $Row[0];
+        $Data{Closed} = $Row[0];
+
+        # cleanup time stamps (some databases are using e. g. 2008-02-25 22:03:00.000000
+        # and 0000-00-00 00:00:00 time stamps)
+        $Data{Closed} =~ s/^(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d)\..+?$/$1/;
+    }
+
+    return if !$Data{Closed};
+
+    # get escalation properties
+    my %Escalation = $Self->TicketEscalationPreferences(
+        Ticket => $Param{Ticket},
+        UserID => $Param{UserID} || 1,
+    );
+
+    # get time object
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+    # get unix time stamps
+    my $CreateTime = $TimeObject->TimeStamp2SystemTime(
+        String => $Param{Ticket}->{Created},
+    );
+    my $SolutionTime = $TimeObject->TimeStamp2SystemTime(
+        String => $Data{Closed},
+    );
+
+    # get time between creation and solution
+    my $WorkingTime = $TimeObject->WorkingTime(
+        StartTime => $CreateTime,
+        StopTime  => $SolutionTime,
+        Calendar  => $Escalation{Calendar},
+    );
+
+    $Data{SolutionInMin} = int( $WorkingTime / 60 );
+
+    if ( $Escalation{SolutionTime} ) {
+        my $EscalationSolutionTime = $Escalation{SolutionTime} * 60;
+        $Data{SolutionDiffInMin} = int( ( $EscalationSolutionTime - $WorkingTime ) / 60 );
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<p>Collect attributes of (last) closing for given ticket.</p>
+
+<pre>    my %TicketGetClosed = $TicketObject-&gt;_TicketGetClosed(
+        TicketID =&gt; $Param{TicketID},
+        Ticket   =&gt; \%Ticket,
+    );
+</pre><h2 id="TicketGetFirstLock">_TicketGetFirstLock()</h2>
+
+<p><a href="#" onclick="toggleCode('method__TicketGetFirstLock');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method__TicketGetFirstLock">
+                                        <pre>
+
+sub _TicketGetFirstLock {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(TicketID Ticket)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    my $LockHistoryTypeID = $Self->HistoryTypeLookup( Type => 'Lock' );
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get first lock
+    return if !$DBObject->Prepare(
+        SQL => 'SELECT create_time '
+            . 'FROM ticket_history '
+            . 'WHERE ticket_id = ? AND history_type_id = ? '
+            . 'ORDER BY create_time ASC, id ASC',
+        Bind  => [ \$Param{TicketID}, \$LockHistoryTypeID, ],
+        Limit => 1,
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{FirstLock} = $Row[0];
+
+        # cleanup time stamp (some databases are using e. g. '2008-02-25 22:03:00.000000' time stamps)
+        $Data{FirstLock} =~ s{ \A ( \d{4} - \d{2} - \d{2} [ ] \d{2} : \d{2} : \d{2} ) .* \z }{$1}xms;
+    }
+
+    return %Data;
+}
+</pre></div>
+
+<p>Collect first lock time for given ticket.</p>
+
+<pre>    my %FirstLock = $TicketObject-&gt;_TicketGetFirstLock(
+        TicketID =&gt; $Param{TicketID},
+        Ticket   =&gt; \%Ticket,
     );
 </pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 

@@ -300,7 +300,7 @@ sub ArticleCreate {
     my $RandomString = $Kernel::OM->Get('Kernel::System::Main')->GenerateRandomString(
         Length => 32,
     );
-    my $ArticleInsertFingerprint = $$ . '-' . $RandomString . '-' . ($Param{MessageID} // '');
+    my $ArticleInsertFingerprint = $$ . '-' . $RandomString . '-' . ( $Param{MessageID} // '' );
 
     # get database object
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
@@ -338,13 +338,21 @@ sub ArticleCreate {
     );
 
     # get article id
-    my $ArticleID = $Self->_ArticleGetId(
-        TicketID     => $Param{TicketID},
-        MessageID    => $ArticleInsertFingerprint,
-        From         => $Param{From},
-        Subject      => $Param{Subject},
-        IncomingTime => $IncomingTime
+    return if !$DBObject->Prepare(
+        SQL => 'SELECT id FROM article
+            WHERE ticket_id = ?
+                AND a_message_id = ?
+                AND a_subject = ?
+                AND incoming_time = ?
+            ORDER BY id DESC',
+        Bind  => [ \$Param{TicketID}, \$ArticleInsertFingerprint, \$Param{Subject}, \$IncomingTime ],
+        Limit => 1,
     );
+
+    my $ArticleID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $ArticleID = $Row[0];
+    }
 
     # return if there is not article created
     if ( !$ArticleID ) {
@@ -500,6 +508,7 @@ sub ArticleCreate {
             TicketID         => $Param{TicketID},
             UserID           => $Param{UserID},
             AutoResponseType => $Param{AutoResponseType},
+            ArticleType      => $Param{ArticleType}
         );
     }
 
@@ -2659,7 +2668,13 @@ sub SendAutoResponse {
             User => $Ticket{CustomerUserID},
         );
 
-        if ( $CustomerUser{UserEmail} && $OrigHeader{From} !~ /\Q$CustomerUser{UserEmail}\E/i ) {
+        $Param{ArticleType} //= '';
+        if (
+            $CustomerUser{UserEmail}
+            && $OrigHeader{From} !~ /\Q$CustomerUser{UserEmail}\E/i
+            && $Param{ArticleType} ne 'email-internal'
+            )
+        {
             $Cc = $CustomerUser{UserEmail};
         }
     }
@@ -2740,6 +2755,7 @@ sub SendAutoResponse {
             Subject =&gt; 'For the message!',
         },
         UserID          =&gt; 123,
+        ArticleType     =&gt; 'email-internal'  # optional
     );
 </pre><p>Events:
     ArticleAutoResponse</p>
