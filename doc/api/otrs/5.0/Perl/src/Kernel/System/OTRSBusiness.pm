@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -575,8 +575,8 @@ sub HandleBusinessPermissionCloudServiceResult {
         LastUpdateTime     => $Kernel::OM->Get('Kernel::System::Time')->SystemTime2TimeStamp(
             SystemTime => $Kernel::OM->Get('Kernel::System::Time')->SystemTime()
         ),
-        AgentSessionLimit             => $OperationResult->{Data}->{AgentSessionLimit},
-        AgentSessionLimitPriorWarning => $OperationResult->{Data}->{AgentSessionLimitPriorWarning},
+        AgentSessionLimit             => $OperationResult->{Data}->{AgentSessionLimit}             // 0,
+        AgentSessionLimitPriorWarning => $OperationResult->{Data}->{AgentSessionLimitPriorWarning} // 0,
     );
 
     my $SystemDataObject = $Kernel::OM->Get('Kernel::System::SystemData');

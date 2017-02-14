@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -291,19 +291,25 @@ sub ActionRow {
 
             my $TranslatedWord = $Column;
             if ( $Column eq 'EscalationTime' ) {
-                $TranslatedWord = 'Service Time';
+                $TranslatedWord = Translatable('Service Time');
             }
             elsif ( $Column eq 'EscalationResponseTime' ) {
-                $TranslatedWord = 'First Response Time';
+                $TranslatedWord = Translatable('First Response Time');
             }
             elsif ( $Column eq 'EscalationSolutionTime' ) {
-                $TranslatedWord = 'Solution Time';
+                $TranslatedWord = Translatable('Solution Time');
             }
             elsif ( $Column eq 'EscalationUpdateTime' ) {
-                $TranslatedWord = 'Update Time';
+                $TranslatedWord = Translatable('Update Time');
             }
             elsif ( $Column eq 'PendingTime' ) {
-                $TranslatedWord = 'Pending till';
+                $TranslatedWord = Translatable('Pending till');
+            }
+            elsif ( $Column eq 'CustomerCompanyName' ) {
+                $TranslatedWord = Translatable('Customer Company Name');
+            }
+            elsif ( $Column eq 'CustomerUserID' ) {
+                $TranslatedWord = Translatable('Customer User ID');
             }
 
             $LayoutObject->Block(
@@ -930,6 +936,12 @@ sub Run {
                 }
                 elsif ( $Column eq 'PendingTime' ) {
                     $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Pending till');
+                }
+                elsif ( $Column eq 'CustomerCompanyName' ) {
+                    $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer Company Name');
+                }
+                elsif ( $Column eq 'CustomerUserID' ) {
+                    $TranslatedWord = $LayoutObject->{LanguageObject}->Translate('Customer User ID');
                 }
                 else {
                     $TranslatedWord = $LayoutObject->{LanguageObject}->Translate($Column);

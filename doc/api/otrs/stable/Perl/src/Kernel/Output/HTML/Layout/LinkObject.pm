@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -333,7 +333,9 @@ sub LinkObjectTableCreateComplex {
 
         # check if registered in SysConfig
         if (
-            IsHashRefWithData($Config)
+            # AgentLinkObject not allowed because it would result in nested forms
+            $OriginalAction ne 'AgentLinkObject'
+            && IsHashRefWithData($Config)
             && $Config->{ $Block->{Blockname} }
             && grep { $OriginalAction eq $_ } @SettingsVisible
             )
@@ -353,6 +355,14 @@ sub LinkObjectTableCreateComplex {
             my %Preferences = $Self->ComplexTablePreferencesGet(
                 Config  => $Config->{ $Block->{Blockname} },
                 PrefKey => "LinkObject::ComplexTable-" . $Block->{Blockname},
+            );
+
+            $LayoutObject->Block(
+                Name => 'ContentLargePreferencesForm',
+                Data => {
+                    Name     => $Block->{Blockname},
+                    NameForm => $Block->{Blockname},
+                },
             );
 
             $LayoutObject->Block(

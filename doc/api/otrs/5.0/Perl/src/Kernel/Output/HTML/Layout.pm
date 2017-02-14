@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -680,6 +680,7 @@ sub Login {
 
     # set Action parameter for the loader
     $Self->{Action} = 'Login';
+    $Param{IsLoginPage} = 1;
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
@@ -1540,13 +1541,6 @@ sub Footer {
         },
     );
 
-    # Banner
-    if ( !$ConfigObject->Get('Secure::DisableBanner') ) {
-        $Self->Block(
-            Name => 'Banner',
-        );
-    }
-
     # Don't check for business package if the database was not yet configured (in the installer)
     if ( $Kernel::OM->Get('Kernel::Config')->Get('SecureMode') ) {
         $Param{OTRSBusinessIsInstalled} = $Kernel::OM->Get('Kernel::System::OTRSBusiness')->OTRSBusinessIsInstalled();
@@ -1632,10 +1626,6 @@ sub Print {
         $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( $Param{Output} );
         binmode STDOUT, ':bytes';
     }
-
-    # Disable perl warnings in case of printing unicode private chars,
-    #   see https://rt.perl.org/Public/Bug/Display.html?id=121226.
-    no warnings 'nonchar';
 
     print ${ $Param{Output} };
 
@@ -2494,8 +2484,14 @@ sub Attachment {
         # Disallow external and inline scripts, active content, frames, but keep allowing inline styles
         #   as this is a common use case in emails.
         # Also disallow referrer headers to prevent referrer leaks.
+        # img-src:    allow external and inline (data:) images
+        # script-src: block all scripts
+        # object-src: allow 'self' so that the browser can load plugins for PDF display
+        # frame-src:  block all frames
+        # style-src:  allow inline styles for nice email display
+        # referrer:   don't send referrers to prevent referrer-leak attacks
         $Output
-            .= "Content-Security-Policy: default-src *; img-src * data:; script-src 'none'; object-src 'none'; frame-src 'none'; style-src 'unsafe-inline'; referrer no-referrer;\n";
+            .= "Content-Security-Policy: default-src *; img-src * data:; script-src 'none'; object-src 'self'; frame-src 'none'; style-src 'unsafe-inline'; referrer no-referrer;\n";
     }
 
     if ( $Param{Charset} ) {
@@ -3375,7 +3371,8 @@ sub CustomerLogin {
     $Param{TitleArea} = $Self->{LanguageObject}->Translate('Login') . ' - ';
 
     # set Action parameter for the loader
-    $Self->{Action} = 'CustomerLogin';
+    $Self->{Action}        = 'CustomerLogin';
+    $Param{IsLoginPage}    = 1;
     $Param{'XLoginHeader'} = 1;
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
@@ -3718,13 +3715,6 @@ sub CustomerFooter {
     }
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    # Banner
-    if ( !$ConfigObject->Get('Secure::DisableBanner') ) {
-        $Self->Block(
-            Name => 'Banner',
-        );
-    }
 
     # AutoComplete-Config
     my $AutocompleteConfig = $ConfigObject->Get('AutoComplete::Customer');
@@ -5082,6 +5072,11 @@ sub _BuildSelectionDataRefCreate {
 
             my @Fragment = split '::', $Row->{Value};
             $Row->{Value} = pop @Fragment;
+
+            # translate the individual tree options
+            if ( $OptionRef->{Translation} ) {
+                $Row->{Value} = $Self->{LanguageObject}->Translate( $Row->{Value} );
+            }
 
             # TODO: Here we are combining Max with HTMLQuote, check below for the REMARK:
             # Max and HTMLQuote needs to be done before spaces insert but after the split of the

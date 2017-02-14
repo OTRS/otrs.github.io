@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -115,6 +115,10 @@ sub CheckEmail {
         return 1;
     }
     my $Error = '';
+
+    # Workaround for https://github.com/Perl-Email-Project/Email-Valid/issues/36:
+    # remove comment from address when checking.
+    $Param{Address} =~ s{ \s* \( [^()]* \) \s* $ }{}smxg;
 
     # email address syntax check
     if ( !Email::Valid->address( $Param{Address} ) ) {

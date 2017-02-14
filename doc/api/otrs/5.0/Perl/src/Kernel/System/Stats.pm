@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -3334,9 +3334,8 @@ sub _GenerateDynamicStats {
     # check if we should cache this result
     if ( !$TitleTimeStart || !$TitleTimeStop ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message =>
-                "Can't cache: StatID $Param{StatID} has no time period, so you can't cache the stat!",
+            Priority => 'notice',
+            Message  => "Can't cache: StatID $Param{StatID} has no time period, so you can't cache the stat!",
         );
         return @StatArray;
     }
@@ -3349,9 +3348,8 @@ sub _GenerateDynamicStats {
 
     if ( $TimeObject->TimeStamp2SystemTime( String => $CheckTimeStop ) > $TimeObject->SystemTime() ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message =>
-                "Can't cache StatID $Param{StatID}: The selected end time is in the future!",
+            Priority => 'notice',
+            Message  => "Can't cache StatID $Param{StatID}: The selected end time is in the future!",
         );
         return @StatArray;
     }
