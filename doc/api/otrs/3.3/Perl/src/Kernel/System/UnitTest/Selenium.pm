@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -13,6 +13,7 @@ use strict;
 use warnings;
 
 use MIME::Base64();
+use File::Path();
 use File::Temp();
 
 use Kernel::Config;
@@ -308,13 +309,14 @@ sub HandleError {
     #}
 }
 
-=item DESTROY()
+=head2 DEMOLISH()
 
-cleanup. Adds a unit test result to indicate the shutdown.
+override DEMOLISH from L<Selenium::Remote::Driver> (required because this class is managed by L<Moo>).
+Adds a unit test result to indicate the shutdown, and performs some cleanups.
 
 =cut
 
-sub DESTROY {
+sub DEMOLISH {
     my $Self = shift;
 
     # Could be missing on early die.
@@ -323,7 +325,19 @@ sub DESTROY {
     }
 
     if ( $Self->{SeleniumTestsActive} ) {
-        $Self->SUPER::DESTROY();
+        $Self->SUPER::DEMOLISH(@_);
+    }
+
+    # Cleanup possibly leftover zombie firefox profiles.
+    my @LeftoverFirefoxProfiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => '/tmp/',
+        Filter    => 'anonymous*webdriver-profile',
+    );
+
+    for my $LeftoverFirefoxProfile (@LeftoverFirefoxProfiles) {
+        if (-d $LeftoverFirefoxProfile) {
+            File::Path::remove_tree($LeftoverFirefoxProfile);
+        }
     }
 }
 

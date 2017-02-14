@@ -69,13 +69,17 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/UnitTest/Selenium.pm">Source</a>
 </div>
-
-
 <div class="pod">
 <!-- INDEX START -->
 <h3 id="TOP">Index</h3>
 <ul>
-	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#NAME">NAME</a><br />
+	<ul>
+	<li><a href="#DEMOLISH">DEMOLISH()</a></li>
+	</ul>
+</li>
+</ul>
+</li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 <hr />
@@ -105,13 +109,11 @@ a failing test result and generate a screenshot for analysis.</p>
         browser_name        =&gt; 'phantomjs',
         platform            =&gt; 'ANY',
     };
-
 </pre></dd>		<dd><p>Then you can use the full API of Selenium::Remote::Driver on this object.</p></dd>
 	<dt>RunTest()</dt>
 		<dd><p>runs a selenium test if Selenium testing is configured and performs proper
 error handling (calls <code>HandleError()</code> if needed).</p></dd>
 <dd><pre>    $SeleniumObject-&gt;RunTest( sub { ... } );
-
 </pre></dd>	<dt>_execute_command()</dt>
 		<dd><p>Override internal command of base class.</p></dd>
 		<dd><p>We use it to output successful command runs to the UnitTest object.
@@ -125,15 +127,45 @@ Errors will cause an exeption and be caught elsewhere.</p></dd>
         User     =&gt; 'someuser',
         Password =&gt; 'somepassword',
     );
-
 </pre></dd>	<dt>HandleError()</dt>
 		<dd><p>use this method to handle any Selenium exceptions.</p></dd>
 <dd><pre>    $SeleniumObject-&gt;HandleError($@);
-
 </pre></dd>		<dd><p>It will create a failing test result and store a screenshot of the page
 for analysis.</p></dd>
-	<dt>DESTROY()</dt>
-		<dd><p>cleanup. Adds a unit test result to indicate the shutdown.</p></dd>
+<h2 id="DEMOLISH">DEMOLISH()</h2>
+
+<p><a href="#" onclick="toggleCode('method_DEMOLISH');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DEMOLISH">
+                                        <pre>
+
+sub DEMOLISH {
+    my $Self = shift;
+
+    # Could be missing on early die.
+    if ( $Self->{UnitTestObject} ) {
+        $Self->{UnitTestObject}->True( 1, "Shutting down Selenium scenario." );
+    }
+
+    if ( $Self->{SeleniumTestsActive} ) {
+        $Self->SUPER::DEMOLISH(@_);
+    }
+
+    # Cleanup possibly leftover zombie firefox profiles.
+    my @LeftoverFirefoxProfiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => '/tmp/',
+        Filter    => 'anonymous*webdriver-profile',
+    );
+
+    for my $LeftoverFirefoxProfile (@LeftoverFirefoxProfiles) {
+        if (-d $LeftoverFirefoxProfile) {
+            File::Path::remove_tree($LeftoverFirefoxProfile);
+        }
+    }
+}
+</pre></div>
+
+		<dd><p>override DEMOLISH from <a href="http://search.cpan.org/perldoc?Selenium%3A%3ARemote%3A%3ADriver">Selenium::Remote::Driver</a> (required because this class is managed by <a href="http://search.cpan.org/perldoc?Moo">Moo</a>).
+Adds a unit test result to indicate the shutdown, and performs some cleanups.</p></dd>
 </dl>
 <h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 

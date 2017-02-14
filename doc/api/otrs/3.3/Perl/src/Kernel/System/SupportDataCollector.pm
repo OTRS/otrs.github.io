@@ -1,5 +1,5 @@
 # --
-# Copyright (C) 2001-2016 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -104,7 +104,8 @@ sub new {
 collect system data
 
     my %Result = $SupportDataCollectorObject->Collect(
-        UseCache => 1,      # optional, (to get data from cache if any)
+        UseCache   => 1,    # optional, (to get data from cache if any)
+        WebTimeout => 60,   # (optional)
     );
 
     returns in case of error
@@ -230,7 +231,7 @@ sub Collect {
 }
 
 sub CollectByWebRequest {
-    my $Self = shift;
+    my ( $Self, %Param ) = @_;
 
     # Create a challenge token to authenticate this request without customer/agent login.
     #   PublicSupportDataCollector requires this ChallengeToken.
@@ -285,7 +286,7 @@ sub CollectByWebRequest {
     # create webuseragent object
     my $WebUserAgentObject = Kernel::System::WebUserAgent->new(
         %{$Self},
-        Timeout => 20,
+        Timeout => $Param{WebTimeout} || 20,
     );
 
     # define result

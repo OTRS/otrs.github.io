@@ -69,8 +69,6 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/ACL/DB/ACL.pm">Source</a>
 </div>
-
-
 <div class="pod">
 <!-- INDEX START -->
 <h3 id="TOP">Index</h3>
@@ -103,7 +101,6 @@ $(document).ready(function() {
     use Kernel::System::Time;
     use Kernel::System::DB;
     use Kernel::System::ACL::DB::ACL;
-
 </pre></dd><dd><pre>    my $ConfigObject = Kernel::Config-&gt;new();
     my $EncodeObject = Kernel::System::Encode-&gt;new(
         ConfigObject =&gt; $ConfigObject,
@@ -134,7 +131,6 @@ $(document).ready(function() {
         MainObject          =&gt; $MainObject,
         DBObject            =&gt; $DBObject,
     );
-
 </pre></dd>	<dt>ACLAdd()</dt>
 		<dd><p>add new ACL</p></dd>
 		<dd><p>returns the id of the created ACL if success or undef otherwise</p></dd>
@@ -148,10 +144,8 @@ $(document).ready(function() {
         ValidID        =&gt; 1,                    # mandatory
         UserID         =&gt; 123,                  # mandatory
     );
-
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    $ID = 567;
-
 </pre></dd>	<dt>ACLDelete()</dt>
 		<dd><p>delete an ACL</p></dd>
 		<dd><p>returns 1 if success or undef otherwise</p></dd>
@@ -159,7 +153,6 @@ $(document).ready(function() {
         ID      =&gt; 123,
         UserID  =&gt; 123,
     );
-
 </pre></dd>	<dt>ACLGet()</dt>
 		<dd><p>get ACL attributes</p></dd>
 <dd><pre>    my $ACL = $ACLObject-&gt;ACLGet(
@@ -167,7 +160,6 @@ $(document).ready(function() {
         Name            =&gt; 'ACL1',
         UserID          =&gt; 123,          # mandatory
     );
-
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    $ACL = {
         ID             =&gt; 123,
@@ -183,7 +175,6 @@ $(document).ready(function() {
         CreateBy       =&gt; 'user_login',
         ChangeBy       =&gt; 'user_login',
     };
-
 </pre></dd>	<dt>ACLUpdate()</dt>
 		<dd><p>update ACL attributes</p></dd>
 		<dd><p>returns 1 if success or undef otherwise</p></dd>
@@ -198,21 +189,17 @@ $(document).ready(function() {
         ConfigChange   =&gt; $ConfigChangeHashRef, # optional
         UserID         =&gt; 123,                  # mandatory
     );
-
 </pre></dd>	<dt>ACLList()</dt>
 		<dd><p>get an ACL list</p></dd>
 <dd><pre>    my $List = $ACLObject-&gt;ACLList(
         ValidIDs        =&gt; ['1','2'],           # optional, to filter ACLs that match listed valid IDs
         UserID          =&gt; 1,
     );
-
 </pre></dd><dd><pre>    Returns:
-
 </pre></dd><dd><pre>    $List = {
         1 =&gt; 'NameOfACL',
     }
 =cut
-
 </pre></dd>		<dd><p>sub ACLList {
     my ( $Self, %Param ) = @_;</p></dd>
 <dd><pre>    # check needed
@@ -223,7 +210,6 @@ $(document).ready(function() {
         );
         return;
     }
-
 </pre></dd><dd><pre>    my $ValidIDsStrg;
     if ( !IsArrayRefWithData( $Param{ValidIDs} ) ) {
         $ValidIDsStrg = 'ALL';
@@ -231,7 +217,6 @@ $(document).ready(function() {
     else {
         $ValidIDsStrg = join ',', @{ $Param{ValidIDs} };
     }
-
 </pre></dd><dd><pre>    # check cache
     my $CacheKey = 'ACLList::ValidIDs::' . $ValidIDsStrg;
     my $Cache    = $Self-&gt;{CacheObject}-&gt;Get(
@@ -239,25 +224,19 @@ $(document).ready(function() {
         Key  =&gt; $CacheKey,
     );
     return $Cache if ref $Cache;
-
 </pre></dd><dd><pre>    my $SQL = '
             SELECT id, name
             FROM acl ';
-
 </pre></dd><dd><pre>    if ( $ValidIDsStrg ne 'ALL' ) {
-
 </pre></dd><dd><pre>        my $ValidIDsStrgDB = join ',', map $Self-&gt;{DBObject}-&gt;Quote( $_, 'Integer' ),
             @{ $Param{ValidIDs} };
-
 </pre></dd><dd><pre>        $SQL .= &quot;WHERE valid_id IN ($ValidIDsStrgDB)&quot;;
     }
-
 </pre></dd><dd><pre>    return if !$Self-&gt;{DBObject}-&gt;Prepare( SQL =&gt; $SQL );
     my %Data;
     while ( my @Row = $Self-&gt;{DBObject}-&gt;FetchrowArray() ) {
         $Data{ $Row[0] } = $Row[1];
     }
-
 </pre></dd><dd><pre>    # set cache
     $Self-&gt;{CacheObject}-&gt;Set(
         Type  =&gt; 'ACLEditor_ACL',
@@ -265,17 +244,14 @@ $(document).ready(function() {
         Value =&gt; \%Data,
         TTL   =&gt; $Self-&gt;{CacheTTL},
     );
-
 </pre></dd><dd><pre>    return \%Data;
 }
-
 </pre></dd>	<dt>ACLListGet()</dt>
 		<dd><p>get an ACL list with all ACL details</p></dd>
 <dd><pre>    my $List = $ACLObject-&gt;ACLListGet(
         UserID   =&gt; 1,
         ValidIDs =&gt; ['1','2'], # optional, to filter ACLs that match listed valid IDs
     );
-
 </pre></dd>		<dd><p>Returns:</p></dd>
 <dd><pre>    $List = [
         {
@@ -301,32 +277,24 @@ $(document).ready(function() {
             ChangeTime    =&gt; '2012-07-04 15:08:00',
         },
     ];
-
 </pre></dd>	<dt>ACLsNeedSync()</dt>
 		<dd><p>Check if there are unsynchronized ACLs</p></dd>
 <dd><pre>    my $SyncCount = $ACLObject-&gt;ACLsNeedSync();
-
 </pre></dd><dd><pre>    Returns:
-
 </pre></dd><dd><pre>    $SyncCount = 0 || Number of ALCs that need to be synched
 =cut
-
 </pre></dd>		<dd><p>sub ACLsNeedSync {
     my ( $Self, %Param ) = @_;</p></dd>
 <dd><pre>    my $SQL = '
         SELECT COUNT(*)
         FROM acl_sync';
-
 </pre></dd><dd><pre>    return if !$Self-&gt;{DBObject}-&gt;Prepare( SQL =&gt; $SQL );
-
 </pre></dd><dd><pre>    my $NeedSync = 0;
     while ( my @Row = $Self-&gt;{DBObject}-&gt;FetchrowArray() ) {
         $NeedSync = $Row[0];
     }
-
 </pre></dd><dd><pre>    return $NeedSync;
 }
-
 </pre></dd>	<dt>ACLsNeedSyncReset()</dt>
 		<dd><p>Reset synchronization information for ACLs.</p></dd>
 	<dt>ACLDump()</dt>
@@ -336,7 +304,6 @@ $(document).ready(function() {
         Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatory for ResultType = 'FILE'
         UserID      =&gt; 1,
     );
-
 </pre></dd>		<dd><p>Returns:
     $ACLDump = '/opt/otrs/var/myfile.txt';          # or undef if can't write the file</p></dd>
 </dl>
