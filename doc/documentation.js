@@ -315,8 +315,16 @@ $(document).ready(function() {
             return false;
         });
 
-        $('div.toc p b').append('<a href="" class="toc-hide">Hide</a>');
-        $('.section div.toc').prepend('<p><b>Article navigation <a href="">Hide</a></b></p>');
+        $('div.toc p b').append('<a href="" class="toc-hide">Toggle</a>');
+
+        // Article navigation, decorate if it has content, remove otherwise.
+        if ( $('.section div.toc dl > dt').length ) {
+            $('.section div.toc').prepend('<p><b>Article navigation <a href="">Toggle</a></b></p>');
+        }
+        else {
+            $('.section div.toc').remove();
+
+        }
         $('dl.toc').removeClass('toc');
     }
     // API documentation
