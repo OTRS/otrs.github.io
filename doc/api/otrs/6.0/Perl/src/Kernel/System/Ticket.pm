@@ -189,10 +189,6 @@ Delete the ticket
         UserID   => 1,
     );
 
-=head1 DESCRIPTION
-
-All ticket functions.
-
 =head1 PUBLIC INTERFACE
 
 =head2 new()
@@ -912,7 +908,7 @@ sub TicketNumberLookup {
 
 rebuild a new ticket subject
 
-This will generate a subject like "RE: [Ticket# 2004040510440485] Some subject"
+This will generate a subject like C<RE: [Ticket# 2004040510440485] Some subject>
 
     my $NewSubject = $TicketObject->TicketSubjectBuild(
         TicketNumber => '2004040510440485',
@@ -920,7 +916,7 @@ This will generate a subject like "RE: [Ticket# 2004040510440485] Some subject"
         Action       => 'Reply',
     );
 
-This will generate a subject like  "[Ticket# 2004040510440485] Some subject"
+This will generate a subject like C<[Ticket# 2004040510440485] Some subject>
 (so without RE: )
 
     my $NewSubject = $TicketObject->TicketSubjectBuild(
@@ -930,7 +926,7 @@ This will generate a subject like  "[Ticket# 2004040510440485] Some subject"
         Action       => 'Reply',
     );
 
-This will generate a subject like "FWD: [Ticket# 2004040510440485] Some subject"
+This will generate a subject like C<FWD: [Ticket# 2004040510440485] Some subject>
 
     my $NewSubject = $TicketObject->TicketSubjectBuild(
         TicketNumber => '2004040510440485',
@@ -938,7 +934,7 @@ This will generate a subject like "FWD: [Ticket# 2004040510440485] Some subject"
         Action       => 'Forward', # Possible values are Reply and Forward, Reply is default.
     );
 
-This will generate a subject like "[Ticket# 2004040510440485] Re: Some subject"
+This will generate a subject like C<[Ticket# 2004040510440485] Re: Some subject>
 (so without clean-up of subject)
 
     my $NewSubject = $TicketObject->TicketSubjectBuild(
@@ -1184,7 +1180,7 @@ Returns:
         SolutionTime                     (seconds total till escalation, e. g. "3600")
     );
 
-To get extended ticket attributes, use param Extended:
+To get extended ticket attributes, use C<Extended>
 
     my %Ticket = $TicketObject->TicketGet(
         TicketID => 123,
@@ -1192,7 +1188,7 @@ To get extended ticket attributes, use param Extended:
         Extended => 1,
     );
 
-Additional params are:
+Additional parameters are:
 
     %Ticket = (
         FirstResponse                   (timestamp of first response, first contact with customer)
@@ -2358,7 +2354,7 @@ get escalation properties of a ticket
         UserID => $Param{UserID},
     );
 
-it returnes
+returns
 
     (general escalation info)
     EscalationDestinationIn          (escalation in e. g. 1h 4m)
@@ -3728,7 +3724,7 @@ to lock or unlock a ticket
 
 Optional attribute:
 SendNoNotification, disable or enable agent and customer notification for this
-action. Otherwise a notification will be sent to agent and cusomer.
+action. Otherwise a notification will be sent to agent and customer.
 
 For example:
 
@@ -4000,7 +3996,7 @@ to set a ticket state
 
 Optional attribute:
 SendNoNotification, disable or enable agent and customer notification for this
-action. Otherwise a notification will be sent to agent and cusomer.
+action. Otherwise a notification will be sent to agent and customer.
 
 For example:
 
@@ -4334,7 +4330,7 @@ Return:
 
 Optional attribute:
 SendNoNotification, disable or enable agent and customer notification for this
-action. Otherwise a notification will be sent to agent and cusomer.
+action. Otherwise a notification will be sent to agent and customer.
 
 For example:
 
@@ -4559,7 +4555,7 @@ Return:
 
 Optional attribute:
 SendNoNotification, disable or enable agent and customer notification for this
-action. Otherwise a notification will be sent to agent and cusomer.
+action. Otherwise a notification will be sent to agent and customer.
 
 For example:
 
@@ -6307,7 +6303,7 @@ sub TicketWatchSubscribe {
 
 =head2 TicketWatchUnsubscribe()
 
-to remove a subscribtion of a ticket
+to remove a subscription of a ticket
 
     my $Success = $TicketObject->TicketWatchUnsubscribe(
         TicketID    => 111,
