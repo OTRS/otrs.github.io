@@ -65,7 +65,7 @@ from from the web server process.
 
 Based on the request the Operation to be used is determined.
 
-No outbound communication is done here, except from continue requests.
+No out-bound communication is done here, except from continue requests.
 
 In case of an error, the resulting http error code and message are remembered for the response.
 
@@ -206,7 +206,7 @@ sub ProviderProcessRequest {
 
     # convert charset if necessary
     my $ContentCharset;
-    if ( $ENV{'CONTENT_TYPE'} =~ m{ \A ( .+ ) ;charset= ["']{0,1} ( .+? ) ["']{0,1} (;|\z) }xmsi ) {
+    if ( $ENV{'CONTENT_TYPE'} =~ m{ \A ( .+ ) ;[\s]{0,}charset= ["']{0,1} ( .+? ) ["']{0,1} (;|\z) }xmsi ) {
 
         # remember content type for the response
         $Self->{ContentType} = $1;
@@ -881,7 +881,7 @@ sub _Output {
     $Param{HTTPCode} ||= 500;
     my $ContentType;
     if ( $Param{HTTPCode} eq 200 ) {
-        $ContentType = 'application/soap+xml';
+        $ContentType = 'text/xml';
         if ( $Self->{ContentType} ) {
             $ContentType = $Self->{ContentType};
         }
