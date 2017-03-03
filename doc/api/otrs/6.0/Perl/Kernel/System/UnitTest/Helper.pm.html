@@ -87,7 +87,8 @@ $(document).ready(function() {
 	<li><a href="#FixedTimeUnset">FixedTimeUnset()</a></li>
 	<li><a href="#FixedTimeAddSeconds">FixedTimeAddSeconds()</a></li>
 	<li><a href="#ConfigSettingChange">ConfigSettingChange()</a></li>
-	<li><a href="#ConfigSettingCleanup">ConfigSettingCleanup()</a></li>
+	<li><a href="#CustomCodeActivate">CustomCodeActivate()</a></li>
+	<li><a href="#CustomFileCleanup">CustomFileCleanup()</a></li>
 	<li><a href="#UseTmpArticleDir">UseTmpArticleDir()</a></li>
 </ul>
 </li>
@@ -119,8 +120,8 @@ sub new {
 
     $Self->{UnitTestObject} = $Kernel::OM->Get('Kernel::System::UnitTest');
 
-    # remove any leftover configuration changes from aborted previous runs
-    $Self->ConfigSettingCleanup();
+    # Remove any leftover custom files from aborted previous runs.
+    $Self->CustomFileCleanup();
 
     # set environment variable to skip SSL certificate verification if needed
     if ( $Param{SkipSSLVerify} ) {
@@ -591,13 +592,67 @@ both in the current ConfigObject and also in the system configuration on disk.</
         Key   =&gt; 'MySetting',  # setting name
         Value =&gt; { ... } ,     # setting value
     );
-</pre><h2 id="ConfigSettingCleanup">ConfigSettingCleanup()</h2>
+</pre><h2 id="CustomCodeActivate">CustomCodeActivate()</h2>
 
-<p><a href="#" onclick="toggleCode('method_ConfigSettingCleanup');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ConfigSettingCleanup">
+<p><a href="#" onclick="toggleCode('method_CustomCodeActivate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomCodeActivate">
                                         <pre>
 
-sub ConfigSettingCleanup {
+sub CustomCodeActivate {
+    my ( $Self, %Param ) = @_;
+
+    my $Code = $Param{Code};
+    my $Identifier = $Param{Identifier} || $Self->GetRandomNumber();
+
+    die "Need 'Code'" if !defined $Code;
+
+    my $PackageName = "ZZZZUnitTest$Identifier";
+
+    my $Home     = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+    my $FileName = "$Home/Kernel/Config/Files/$PackageName.pm";
+    $Kernel::OM->Get('Kernel::System::Main')->FileWrite(
+        Location => $FileName,
+        Mode     => 'utf8',
+        Content  => \$Code,
+    ) || die "Could not write $FileName";
+
+    return 1;
+}
+</pre></div>
+
+<p>Temporarily include custom code in the system. For example, you may use this to redefine a
+subroutine from another class. This change will persist for remainder of the test.</p>
+
+<p>All code will be removed when the Helper object is destroyed.</p>
+
+<p>Please note that this will not work correctly in clustered environments.</p>
+
+<pre>    $Helper-&gt;CustomCodeActivate(
+        Code =&gt; q^
+package Kernel::System::WebUserAgent;
+use strict;
+use warnings;
+use Kernel::System::WebUserAgent;
+{
+    no warnings 'redefine';
+    sub Request {
+        my $JSONString = '{&quot;Results&quot;:{},&quot;ErrorMessage&quot;:&quot;&quot;,&quot;Success&quot;:1}';
+        return (
+            'Content' =&gt; $JSONString,
+            'Status' =&gt; '200 OK'
+        );
+    }
+}
+1;^,
+        Identifier =&gt; 'News',   # (optional) Code identifier to include in file name
+    );
+</pre><h2 id="CustomFileCleanup">CustomFileCleanup()</h2>
+
+<p><a href="#" onclick="toggleCode('method_CustomFileCleanup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomFileCleanup">
+                                        <pre>
+
+sub CustomFileCleanup {
     my ( $Self, %Param ) = @_;
 
     my $Home  = $Kernel::OM->Get('Kernel::Config')->Get('Home');
@@ -614,7 +669,7 @@ sub ConfigSettingCleanup {
 }
 </pre></div>
 
-<p>remove all config setting changes from ConfigSettingChange();</p>
+<p>Remove all custom files from <code>ConfigSettingChange()</code> and <code>CustomCodeActivate()</code>.</p>
 
 <h2 id="UseTmpArticleDir">UseTmpArticleDir()</h2>
 
