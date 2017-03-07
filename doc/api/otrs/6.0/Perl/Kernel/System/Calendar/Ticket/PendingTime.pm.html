@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+	<title>Kernel::System::Calendar::Ticket::EscalationTime</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
+
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
+  <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../../index.html">OTRS 6.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::Calendar::Ticket::PendingTime
+</div>
+<div>
+<a href="../../../../src/Kernel/System/Calendar/Ticket/PendingTime.pm">Source</a>
+</div>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#GetTime">GetTime()</a></li>
+	<li><a href="#SetTime">SetTime()</a></li>
+</ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
+
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+<p>Kernel::System::Calendar::Ticket::EscalationTime - PendingTime appointment type</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+<p>PendingTime ticket appointment type.</p>
+
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+<h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $TicketPendingTimeObject = $Kernel::OM-&gt;Get('Kernel::System::Calendar::Ticket::PendingTime');
+</pre><h2 id="GetTime">GetTime()</h2>
+
+<p><a href="#" onclick="toggleCode('method_GetTime');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetTime">
+                                        <pre>
+
+sub GetTime {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(Type TicketID)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID => $Param{TicketID},
+    );
+    return if !$Ticket{UntilTime};
+
+    # Calculate pending time.
+    my $PendingTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+    $PendingTimeObject->Add(
+        Seconds => $Ticket{UntilTime},
+    );
+
+    return $PendingTimeObject->ToString();
+}
+</pre></div>
+
+<p>returns time value for pending time appointment type.</p>
+
+<pre>    my $PendingTime = $TicketPendingTimeObject-&gt;GetTime(
+        Type     =&gt; 'PendingTime',
+        TicketID =&gt; 1,
+    );
+</pre><h2 id="SetTime">SetTime()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SetTime');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SetTime">
+                                        <pre>
+
+sub SetTime {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(Type Value TicketID)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my $PendingTimeObject = $Kernel::OM->Create(
+        'Kernel::System::DateTime',
+        ObjectParams => {
+            String => $Param{Value},
+        },
+    );
+    my $PendingTimeSetings = $PendingTimeObject->Get();
+
+    # set pending time
+    my $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketPendingTimeSet(
+        %{$PendingTimeSetings},
+        TicketID => $Param{TicketID},
+        UserID   => 1,
+    );
+
+    return $Success;
+}
+</pre></div>
+
+<p>set ticket pending time to supplied time value.</p>
+
+<pre>    my $Success = $TicketPendingTimeObject-&gt;SetTime(
+        Type     =&gt; 'PendingTime',
+        Value    =&gt; '2016-01-01 00:00:00'
+        TicketID =&gt; 1,
+    );
+</pre><p>returns 1 if successful.</p>
+
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
