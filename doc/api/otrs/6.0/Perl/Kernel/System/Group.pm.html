@@ -90,6 +90,7 @@ $(document).ready(function() {
 	<li><a href="#RoleUpdate">RoleUpdate()</a></li>
 	<li><a href="#RoleList">RoleList()</a></li>
 	<li><a href="#RoleDataList">RoleDataList()</a></li>
+	<li><a href="#PermissionCheck">PermissionCheck()</a></li>
 	<li><a href="#PermissionUserInvolvedGet">PermissionUserInvolvedGet()</a></li>
 	<li><a href="#PermissionUserGet">PermissionUserGet()</a></li>
 	<li><a href="#PermissionGroupGet">PermissionGroupGet()</a></li>
@@ -1040,6 +1041,38 @@ sub RoleDataList {
             ChangeTime =&gt; '2014-11-02 01:00:00',
             ChangeBy   =&gt; 1,
         },
+    );
+</pre><h2 id="PermissionCheck">PermissionCheck()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PermissionCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PermissionCheck">
+                                        <pre>
+
+sub PermissionCheck {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(UserID GroupName Type)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # PermissionUserGet already has in-memory caching enabled, so don't cache again here.
+    return { reverse $Self->PermissionUserGet(%Param) }->{ $Param{GroupName} } ? 1 : 0;
+}
+</pre></div>
+
+<p>Check if a user has a certain permission for a certain group.</p>
+
+<pre>    my $HasPermission = $GroupObject-&gt;PermissionCheck(
+        UserID    =&gt; $UserID,
+        GroupName =&gt; $GroupName,
+        Type      =&gt; 'move_into',
     );
 </pre><h2 id="PermissionUserInvolvedGet">PermissionUserInvolvedGet()</h2>
 
