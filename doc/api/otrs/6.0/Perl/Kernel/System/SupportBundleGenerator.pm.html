@@ -82,6 +82,7 @@ $(document).ready(function() {
 	<li><a href="#GenerateCustomFilesArchive">GenerateCustomFilesArchive()</a></li>
 	<li><a href="#GeneratePackageList">GeneratePackageList()</a></li>
 	<li><a href="#GenerateRegistrationInfo">GenerateRegistrationInfo()</a></li>
+	<li><a href="#GenerateConfigurationDump">GenerateConfigurationDump()</a></li>
 	<li><a href="#GenerateSupportData">GenerateSupportData()</a></li>
 </ul>
 </li>
@@ -210,6 +211,21 @@ sub Generate {
         };
     }
 
+    # get the configuration dump
+    ( $SupportFiles{ConfigurationDumpContent}, $SupportFiles{ConfigurationDumpFilename} )
+        = $Self->GenerateConfigurationDump();
+    if ( !$SupportFiles{ConfigurationDumpFilename} ) {
+        my $Message = 'Can not get the configuration dump!';
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $Message,
+        );
+        return {
+            Success => 0,
+            Message => $Message,
+        };
+    }
+
     # get config object
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
@@ -236,7 +252,7 @@ sub Generate {
     my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
 
     my @List;
-    for my $Key (qw(PackageList RegistrationInfo SupportData CustomFilesArchive)) {
+    for my $Key (qw(PackageList RegistrationInfo SupportData CustomFilesArchive ConfigurationDump)) {
 
         if ( $SupportFiles{ $Key . 'Filename' } && $SupportFiles{ $Key . 'Content' } ) {
 
@@ -386,28 +402,25 @@ sub GenerateCustomFilesArchive {
     my $HomeWithoutSlash = $Self->{Home};
     $HomeWithoutSlash =~ s{\A\/}{};
 
-    # Mask Passwords in Config.pm
-    my $Config = $TarObject->get_content( $HomeWithoutSlash . '/Kernel/Config.pm' );
+    # Mask Passwords in files
+    CONFIGFILE:
+    for my $FilePath (qw(/Kernel/Config.pm /Kernel/Config/Files/ZZZAAuto.pm /Kernel/Config/Files/ZZZAuto.pm)) {
 
-    if ( !$Config ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Kernel/Config.pm was not found in the modified files!",
-        );
-        return;
+        my $FullFilePath = $HomeWithoutSlash . $FilePath;
+        my $FileString   = $TarObject->get_content($FullFilePath);
+
+        if ( !$FileString ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "$FilePath was not found in the modified files!",
+            );
+            next CONFIGFILE;
+        }
+
+        $FileString = $Self->_MaskPasswords( StringToMask => $FileString );
+
+        $TarObject->replace_content( $FullFilePath, $FileString );
     }
-
-    # Trim any passswords from Config.pm.
-    # Simple settings like $Self->{'DatabasePw'} or $Self->{'AuthModule::LDAP::SearchUserPw1'}
-    $Config =~ s/(\$Self->\{'[^']+(?:Password|Pw)\d*'\}\s*=\s*)\'.*?\'/$1\'xxx\'/mg;
-
-    # Complex settings like:
-    #     $Self->{CustomerUser1} = {
-    #         Params => {
-    #             UserPw => 'xxx',
-    $Config =~ s/((?:Password|Pw)\d*\s*=>\s*)\'.*?\'/$1\'xxx\'/mg;
-
-    $TarObject->replace_content( $HomeWithoutSlash . '/Kernel/Config.pm', $Config );
 
     my $Write = $TarObject->write( $CustomFilesArchive, 0 );
     if ( !$Write ) {
@@ -559,7 +572,36 @@ sub GenerateRegistrationInfo {
 
 <pre>    $Content  = $FileContentsRef;
     $Filename = 'RegistrationInfo.json';
-</pre><h2 id="GenerateSupportData">GenerateSupportData()</h2>
+</pre><h2 id="GenerateConfigurationDump">GenerateConfigurationDump()</h2>
+
+<p><a href="#" onclick="toggleCode('method_GenerateConfigurationDump');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GenerateConfigurationDump">
+                                        <pre>
+
+sub GenerateConfigurationDump {
+    my ( $Self, %Param ) = @_;
+
+    my $Export = $Kernel::OM->Get('Kernel::System::SysConfig')->ConfigurationDump(
+        SkipDefaultSettings => 1,
+    );
+
+    $Export = $Self->_MaskPasswords(
+        StringToMask => $Export,
+        YAML         => 1
+    );
+
+    return ( \$Export, 'ModifiedSettings.yml' );
+}
+</pre></div>
+
+<p>Generates a &lt;.yml&gt; file with the otrs system registration information</p>
+
+<pre>    my ( $Content, $Filename ) = $SupportBundleGeneratorObject-&gt;GenerateConfigurationDump();
+</pre><p>Returns:
+    $Content  = $FileContentsRef;
+    $Filename = &lt;'ModifiedSettings.yml'&gt;;</p>
+
+<h2 id="GenerateSupportData">GenerateSupportData()</h2>
 
 <p><a href="#" onclick="toggleCode('method_GenerateSupportData');return false;">[Source]</a></p>
                                         <div class="method-source-code" id="method_GenerateSupportData">

@@ -28,7 +28,7 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::SysConfig::PriorityValidate</title>
+	<title>Kernel::System::XML::Simple</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <script type="text/javascript">
 
@@ -64,10 +64,10 @@ $(document).ready(function() {
 </div>
 <div class="path">
   <a href="../../../index.html">OTRS 6.0 API Reference Perl</a> &gt; Perl Modules &gt;
-  Kernel::System::SysConfig::PriorityValidate
+  Kernel::System::XML::Simple
 </div>
 <div>
-<a href="../../../src/Kernel/System/SysConfig/PriorityValidate.pm">Source</a>
+<a href="../../../src/Kernel/System/XML/Simple.pm">Source</a>
 </div>
 <div class="pod">
 <!-- INDEX START -->
@@ -78,8 +78,7 @@ $(document).ready(function() {
 	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
 <ul>
 	<li><a href="#new">new()</a></li>
-	<li><a href="#Validate">Validate()</a></li>
-	<li><a href="#GetAutoCorrectValue">GetAutoCorrectValue()</a></li>
+	<li><a href="#XMLIn">XMLIn()</a></li>
 </ul>
 </li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -89,11 +88,11 @@ $(document).ready(function() {
 
 <h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<p>Kernel::System::SysConfig::PriorityValidate - PriorityValidate lib</p>
+<p>Kernel::System::XML::Simple - Turn XML into a Perl structure</p>
 
 <h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
-<p>All functions for the PriorityValidate checks.</p>
+<p>Turn XML into a Perl structure.</p>
 
 <h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
@@ -110,114 +109,103 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    # set the debug flag
-    $Self->{Debug} = $Param{Debug} || 0;
-
     return $Self;
 }
 </pre></div>
 
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
+<p>create an object. Do not use it directly, instead use:</p>
 
-<pre>    my $PriorityValidateObject = $Kernel::OM-&gt;Get('Kernel::System::SysConfig::PriorityValidate');
-</pre><h2 id="Validate">Validate()</h2>
+<pre>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $XMLSimpleObject = $Kernel::OM-&gt;Get('Kernel::System::XML::Simple');
+</pre><h2 id="XMLIn">XMLIn()</h2>
 
-<p><a href="#" onclick="toggleCode('method_Validate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Validate">
+<p><a href="#" onclick="toggleCode('method_XMLIn');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_XMLIn">
                                         <pre>
 
-sub Validate {
+sub XMLIn {
     my ( $Self, %Param ) = @_;
 
-    # check needed stuff
-    if ( !$Param{Data} ) {
+    if ( !$Param{XMLInput} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Need Data!",
+            Message  => "Need parameter XMLInput!",
         );
         return;
     }
 
-    # data is a not a scalar
-    if ( ref $Param{Data} ) {
-
-        # get the reference type
-        my $RefType = ref $Param{Data};
-
+    if ( exists $Param{Options} && ref $Param{Options} ne 'HASH' ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Data must be a scalar, but it is a $RefType!",
+            Message  => "Parameter Options needs to be a hash ref!",
         );
         return;
     }
 
-    # get list of all valid priorities
-    my %Priorities = $Kernel::OM->Get('Kernel::System::Priority')->PriorityList(
-        Valid => 1,
-    );
+    my $PerlStructure;
+    eval {
 
-    # build lookup hash for priority names
-    my %Priority2ID = reverse %Priorities;
+        my $XMLSimpleObject = XML::LibXML::Simple->new();
 
-    # priority does not exist or is invalid
-    return if !$Priority2ID{ $Param{Data} };
+        $PerlStructure = $XMLSimpleObject->XMLin(
+            $Param{XMLInput},
+            $Param{Options} ? %{ $Param{Options} } : (),
+        );
+    };
 
-    return 1;
+    my $Error = $@;
+    if ($Error) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Error parsing XML: $Error",
+        );
+        return;
+    }
+
+    return $PerlStructure;
 }
 </pre></div>
 
-<p>Validates the given data, checks if the given priority exists and if it is valid.</p>
+<p>Turns given XML data into Perl structure.
+The resulting Perl structure can be in adjusted with options.
+Available options can be found here:
+http://search.cpan.org/~markov/XML-LibXML-Simple-0.97/lib/XML/LibXML/Simple.pod#Parameter_%options</p>
 
-<pre>    my $Success = $PriorityValidateObject-&gt;Validate(
-        Data =&gt; '3 normal',
-    );
-</pre><h2 id="GetAutoCorrectValue">GetAutoCorrectValue()</h2>
-
-<p><a href="#" onclick="toggleCode('method_GetAutoCorrectValue');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetAutoCorrectValue">
-                                        <pre>
-
-sub GetAutoCorrectValue {
-    my ( $Self, %Param ) = @_;
-
-    # get list of all valid priorities
-    my %Priorities = $Kernel::OM->Get('Kernel::System::Priority')->PriorityList(
-        Valid => 1,
+<pre>    # XML from file:
+    my $PerlStructure = $XMLSimpleObject-&gt;XMLIn(
+        XMLInput =&gt; '/xml/items.xml',
+        Options  =&gt; {
+            ForceArray   =&gt; 1,
+            ForceContent =&gt; 1,
+            ContentKey   =&gt; 'Content',
+        },
     );
 
-    # build lookup hash for priority names
-    my %Priority2ID = reverse %Priorities;
+    # XML from string:
+    my $PerlStructure = $XMLSimpleObject-&gt;XMLIn(
+        XMLInput =&gt; '&lt;MyXML&gt;&lt;Item Type=&quot;String&quot;&gt;My content&lt;/Item&gt;&lt;Item Type=&quot;Number&quot;&gt;23&lt;/Item&gt;&lt;/MyXML&gt;',
+        Options  =&gt; {
+            ForceArray   =&gt; 1,
+            ForceContent =&gt; 1,
+            ContentKey   =&gt; 'Content',
+        },
+    );
 
-    # try to find the priority '3 normal'
-    if ( $Priority2ID{'3 normal'} ) {
-        return '3 normal';
-    }
+    Results in:
 
-    # try to find the first priority containing 'normal'
-    elsif ( my ($Priority) = grep { $_ =~ m{ normal }xms } sort keys %Priority2ID ) {
-        return $Priority;
-    }
-
-    # try to find the first priority starting with '3 '
-    elsif ( ($Priority) = grep { $_ =~ m{ \A 3 [ ] }xms } sort keys %Priority2ID ) {
-        return $Priority;
-    }
-
-    # return the first valid priority in the list
-    else {
-        my @SortedPriorities = sort keys %Priority2ID;
-        return $SortedPriorities[0];
-    }
-
-    # return undef if no priority could be found
-    return;
-}
-</pre></div>
-
-<p>Returns a valid priority name which can be used to auto-correct
-a sysconfig option with an invalid priority name.</p>
-
-<pre>    my $Value = $PriorityValidateObject-&gt;GetAutoCorrectValue();
+    my $PerlStructure = {
+        Item =&gt; [
+            {
+                Type    =&gt; 'String',
+                Content =&gt; 'My content',
+            },
+            {
+                Type    =&gt; 'Number',
+                Content =&gt; '23',
+            },
+        ],
+    };
 </pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>

@@ -649,8 +649,11 @@ sub PackageInstall {
     );
 
     # install config
-    my $SysConfigObject = Kernel::System::SysConfig->new();
-    $SysConfigObject->WriteDefault();
+    $Self->_ConfigurationDeploy(
+        Comments => "Package Install $Structure{Name}->{Content} $Structure{Version}->{Content}",
+        Package  => $Structure{Name}->{Content},
+        Action   => 'PackageInstall',
+    );
 
     # install database (post)
     if ( $Structure{DatabaseInstall} && $Structure{DatabaseInstall}->{post} ) {
@@ -753,8 +756,11 @@ sub PackageReinstall {
     }
 
     # install config
-    my $SysConfigObject = Kernel::System::SysConfig->new();
-    $SysConfigObject->WriteDefault();
+    $Self->_ConfigurationDeploy(
+        Comments => "Package Reinstall $Structure{Name}->{Content} $Structure{Version}->{Content}",
+        Package  => $Structure{Name}->{Content},
+        Action   => 'PackageReinstall',
+    );
 
     # reinstall code (post)
     if ( $Structure{CodeReinstall} ) {
@@ -1059,8 +1065,11 @@ sub PackageUpgrade {
     }
 
     # install config
-    my $SysConfigObject = Kernel::System::SysConfig->new();
-    $SysConfigObject->WriteDefault();
+    $Self->_ConfigurationDeploy(
+        Comments => "Package Upgrade $Structure{Name}->{Content} $Structure{Version}->{Content}",
+        Package  => $Structure{Name}->{Content},
+        Action   => 'PackageUpgrade',
+    );
 
     # upgrade database (post)
     if ( $Structure{DatabaseUpgrade}->{post} && ref $Structure{DatabaseUpgrade}->{post} eq 'ARRAY' )
@@ -1257,8 +1266,11 @@ sub PackageUninstall {
     $Self->RepositoryRemove( Name => $Structure{Name}->{Content} );
 
     # install config
-    my $SysConfigObject = Kernel::System::SysConfig->new();
-    $SysConfigObject->WriteDefault();
+    $Self->_ConfigurationDeploy(
+        Comments => "Package Uninstall $Structure{Name}->{Content} $Structure{Version}->{Content}",
+        Package  => $Structure{Name}->{Content},
+        Action   => 'PackageUninstall',
+    );
 
     # uninstall database (post)
     if ( $Structure{DatabaseUninstall} && $Structure{DatabaseUninstall}->{post} ) {
@@ -2811,8 +2823,8 @@ sub PackageFileGetMD5Sum {
     );
     my %Structure = $Self->PackageParse( String => $Package );
 
-    return 1 if !$Structure{Filelist};
-    return 1 if ref $Structure{Filelist} ne 'ARRAY';
+    return {} if !$Structure{Filelist};
+    return {} if ref $Structure{Filelist} ne 'ARRAY';
 
     # cleanup the Home variable (remove tailing "/")
     my $Home = $Self->{Home};

@@ -512,6 +512,14 @@ EOF
         $Self->{ChallengeTokenParam} = "ChallengeToken=$Self->{UserChallengeToken};";
     }
 
+    # load NavigationModule if defined
+    if ( $Self->{ModuleReg} ) {
+        my $NavigationModule = $Kernel::OM->Get('Kernel::Config')->Get("Frontend::NavigationModule");
+        if ( $NavigationModule->{ $Param{Action} } ) {
+            $Self->{NavigationModule} = $NavigationModule->{ $Param{Action} };
+        }
+    }
+
     return $Self;
 }
 </pre></div>
@@ -1703,12 +1711,18 @@ sub Permission {
     );
 
     # No access restriction?
-    if ( !$Config->{GroupRo} && !$Config->{Group} ) {
+    if (
+        ref $Config->{GroupRo} eq 'ARRAY'
+        && @{ $Config->{GroupRo} }
+        && ref $Config->{Group} eq 'ARRAY'
+        && @{ $Config->{Group} }
+        )
+    {
         return 1;
     }
 
     # Array access restriction.
-    if ( $Item && ref $Item eq 'ARRAY' ) {
+    elsif ( $Item && ref $Item eq 'ARRAY' ) {
         for my $GroupName ( @{$Item} ) {
             return 1 if $GroupObject->PermissionCheck(
                 UserID    => $Self->{UserID},
@@ -1716,15 +1730,6 @@ sub Permission {
                 Type      => $Param{Type},
             );
         }
-    }
-
-    # Scalar access restriction.
-    elsif ($Item) {
-        return 1 if $GroupObject->PermissionCheck(
-            UserID    => $Self->{UserID},
-            GroupName => $Item,
-            Type      => $Param{Type},
-        );
     }
 
     return 0;
