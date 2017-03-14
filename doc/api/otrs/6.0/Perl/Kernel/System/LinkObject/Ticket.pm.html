@@ -86,6 +86,7 @@ $(document).ready(function() {
 	<li><a href="#LinkAddPost">LinkAddPost()</a></li>
 	<li><a href="#LinkDeletePre">LinkDeletePre()</a></li>
 	<li><a href="#LinkDeletePost">LinkDeletePost()</a></li>
+	<li><a href="#EventTypeConfigUpdate">EventTypeConfigUpdate()</a></li>
 </ul>
 </li>
 	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -506,7 +507,7 @@ sub LinkAddPost {
 
         # ticket event
         $TicketObject->EventHandler(
-            Event => 'TicketSlaveLinkAdd' . $Param{Type},
+            Event => 'TicketSourceLinkAdd' . $Param{Type},
             Data  => {
                 TicketID => $Param{Key},
             },
@@ -534,7 +535,7 @@ sub LinkAddPost {
 
         # ticket event
         $TicketObject->EventHandler(
-            Event  => 'TicketMasterLinkAdd' . $Param{Type},
+            Event  => 'TicketTargetLinkAdd' . $Param{Type},
             UserID => $Param{UserID},
             Data   => {
                 TicketID => $Param{Key},
@@ -659,7 +660,7 @@ sub LinkDeletePost {
 
         # ticket event
         $TicketObject->EventHandler(
-            Event => 'TicketSlaveLinkDelete' . $Param{Type},
+            Event => 'TicketSourceLinkDelete' . $Param{Type},
             Data  => {
                 TicketID => $Param{Key},
             },
@@ -687,7 +688,7 @@ sub LinkDeletePost {
 
         # ticket event
         $TicketObject->EventHandler(
-            Event => 'TicketMasterLinkDelete' . $Param{Type},
+            Event => 'TicketTargetLinkDelete' . $Param{Type},
             Data  => {
                 TicketID => $Param{Key},
             },
@@ -722,7 +723,100 @@ sub LinkDeletePost {
         State        =&gt; 'Valid',
         UserID       =&gt; 1,
     );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+</pre><h2 id="EventTypeConfigUpdate">EventTypeConfigUpdate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_EventTypeConfigUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_EventTypeConfigUpdate">
+                                        <pre>
+
+sub EventTypeConfigUpdate {
+    my ( $Self, %Param ) = @_;
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my $LinkTypes    = $ConfigObject->Get('LinkObject::Type') || {};
+    my $TicketEvents = $ConfigObject->Get('Events')->{Ticket} || [];
+
+    # Add missing ticket events for all configured link object types.
+    for my $LinkType ( sort keys %{$LinkTypes} ) {
+        for my $ObjectType (qw(Source Target)) {
+            for my $EventType (qw(Add Delete)) {
+                my $Event = "Ticket${ObjectType}Link${EventType}$LinkType";
+                if ( !grep { $_ eq $Event } @{$TicketEvents} ) {
+                    push @{$TicketEvents}, $Event;
+                }
+            }
+        }
+    }
+
+    return if !IsArrayRefWithData($TicketEvents);
+
+    my $SettingName = 'Events###Ticket';
+
+    # If called from a unit test, use passed unit test helper object to change the settings.
+    if ( $Param{Helper} ) {
+        return $Param{Helper}->ConfigSettingChange(
+            Valid => 1,
+            Key   => $SettingName,
+            Value => $TicketEvents,
+        );
+    }
+
+    my $SysConfigObject = $Kernel::OM->Get('Kernel::System::SysConfig');
+
+    # Otherwise, retrieve the effective setting value from SysConfig.
+    my %Setting = $SysConfigObject->SettingGet(
+        Name     => $SettingName,
+        Deployed => 1,
+    );
+    return if !IsHashRefWithData( \%Setting );
+
+    $Setting{EffectiveValue} = $TicketEvents;
+
+    # Lock the setting to admin user.
+    my $ExclusiveLockGUID = $SysConfigObject->SettingLock(
+        Name   => $SettingName,
+        Force  => 1,
+        UserID => 1,
+    );
+    $Setting{ExclusiveLockGUID} = $ExclusiveLockGUID;
+
+    # Update the setting.
+    my %UpdateSuccess = $SysConfigObject->SettingUpdate(
+        %Setting,
+        UserID => 1,
+    );
+
+    if ( !$UpdateSuccess{Success} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $UpdateSuccess{Error} // "Error while updating $SettingName!",
+        );
+
+        # Unlock the setting.
+        $SysConfigObject->SettingUnlock(
+            Name => $SettingName,
+        );
+
+        return;
+    }
+
+    # Deploy the configuration.
+    return $SysConfigObject->ConfigurationDeploy(
+        Comments      => "$SettingName Configuration Updated",
+        DirtySettings => [$SettingName],
+        UserID        => 1,
+        Force         => 1,
+    );
+}
+</pre></div>
+
+<p>Updates the ticket event configuration based on configured link types.</p>
+
+<pre>    my $Success = $LinkObjectTicketObject-&gt;EventTypeConfigUpdate();
+</pre><p>Returns true if successful.</p>
+
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
