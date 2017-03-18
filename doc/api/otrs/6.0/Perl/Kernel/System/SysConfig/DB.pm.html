@@ -89,6 +89,7 @@ $(document).ready(function() {
 	<li><a href="#DefaultSettingIsLockedByUser">DefaultSettingIsLockedByUser()</a></li>
 	<li><a href="#DefaultSettingUnlock">DefaultSettingUnlock()</a></li>
 	<li><a href="#DefaultSettingDirtyCleanUp">DefaultSettingDirtyCleanUp()</a></li>
+	<li><a href="#DefaultSettingSetDirty">DefaultSettingSetDirty()</a></li>
 	<li><a href="#DefaultSettingVersionAdd">DefaultSettingVersionAdd()</a></li>
 	<li><a href="#DefaultSettingVersionGet">DefaultSettingVersionGet()</a></li>
 	<li><a href="#DefaultSettingVersionDelete">DefaultSettingVersionDelete()</a></li>
@@ -1553,6 +1554,45 @@ sub DefaultSettingDirtyCleanUp {
 <p>Removes the IsDirty flag from default settings.</p>
 
 <pre>    my $Success = $SysConfigDBObject-&gt;DefaultSettingDirtyCleanUp();
+</pre><p>Returns:</p>
+
+<pre>    $Success = 1;       # or false in case of an error
+</pre><h2 id="DefaultSettingSetDirty">DefaultSettingSetDirty()</h2>
+
+<p><a href="#" onclick="toggleCode('method_DefaultSettingSetDirty');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DefaultSettingSetDirty">
+                                        <pre>
+
+sub DefaultSettingSetDirty {
+    my ( $Self, %Param ) = @_;
+
+    # Remove is dirty flag for default settings.
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => '
+            UPDATE sysconfig_default
+            SET is_dirty = 1
+            WHERE is_dirty = 0',
+    );
+
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    $CacheObject->CleanUp(
+        Type => 'SysConfigDefault',
+    );
+    $CacheObject->CleanUp(
+        Type => 'DefaultSettingListGet',
+    );
+    $CacheObject->CleanUp(
+        Type => 'SysConfigIsDirty',
+    );
+
+    return 1;
+}
+</pre></div>
+
+<p>Sets the IsDirty flag from default settings.</p>
+
+<pre>    my $Success = $SysConfigDBObject-&gt;DefaultSettingSetDirty();
 </pre><p>Returns:</p>
 
 <pre>    $Success = 1;       # or false in case of an error
