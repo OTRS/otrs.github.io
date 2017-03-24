@@ -701,6 +701,18 @@ sub TicketCreate {
         );
     }
 
+    if ( $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Type') ) {
+
+        # Insert history record for ticket type, so that initial value can be seen.
+        #   Please see bug#12702 for more information.
+        $Self->HistoryAdd(
+            TicketID     => $TicketID,
+            HistoryType  => 'TypeUpdate',
+            Name         => "\%\%$Param{Type}\%\%$Param{TypeID}",
+            CreateUserID => $Param{UserID},
+        );
+    }
+
     # set customer data if given
     if ( $Param{CustomerNo} || $Param{CustomerID} || $Param{CustomerUser} ) {
         $Self->TicketCustomerSet(
@@ -922,7 +934,6 @@ sub TicketIDLookup {
 
 <pre>    my $TicketID = $TicketObject-&gt;TicketIDLookup(
         TicketNumber =&gt; '2004040510440485',
-        UserID       =&gt; 123,
     );
 </pre><h2 id="TicketNumberLookup">TicketNumberLookup()</h2>
 
@@ -965,7 +976,6 @@ sub TicketNumberLookup {
 
 <pre>    my $TicketNumber = $TicketObject-&gt;TicketNumberLookup(
         TicketID =&gt; 123,
-        UserID   =&gt; 123,
     );
 </pre><h2 id="TicketSubjectBuild">TicketSubjectBuild()</h2>
 
