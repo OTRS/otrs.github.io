@@ -3980,57 +3980,81 @@ sub ValueAttributeList {
     return @Result;
 }
 
-=head2 ConfigItemGet()
+=head2 SettingsSet()
 
-(Deprecated and should be removed in further versions of OTRS) Get SysConfig setting attributes.
+This method locks provided settings(by force), updates them and deploys the changes (by force).
 
-    my %Setting = $SysConfigObject->ConfigItemGet(
-        Name            => 'Setting::Name',  # Setting name
-        Default         => 1,                # Returns the default setting attributes only
-        ModifiedID      => '123',            # (optional) Get setting value for given ModifiedID.
-        Deployed        => 1,                # (optional) Get deployed setting value. Default 0.
-        Translate       => 1,                # (optional) Translate translatable strings in EffectiveValue. Default 0.
-        NoLog           => 1,                # (optional) Do not log error if a setting does not exist.
+    my $Success = $SysConfigObject->SettingsSet(
+        UserID   => 1,                                      # (required) UserID
+        Comments => 'Deployment comment',                   # (optional) Comment
+        Settings => [                                       # (required) List of settings to update.
+            {
+                Name                   => 'Setting::Name',  # (required)
+                EffectiveValue         => 'Value',          # (optional)
+                IsValid                => 1,                # (optional)
+                UserModificationActive => 1,                # (optional)
+            },
+            ...
+        ],
     );
 
 Returns:
 
-    %Setting = (
-        DefaultID                => 123,
-        ModifiedID               => 456,         # optional
-        Name                     => "ProductName",
-        Description              => "Defines the name of the application ...",
-        Navigation               => "ASimple::Path::Structure",
-        IsInvisible              => 1,           # 1 or 0
-        IsReadonly               => 0,           # 1 or 0
-        IsRequired               => 1,           # 1 or 0
-        IsModified               => 1,           # 1 or 0
-        IsValid                  => 1,           # 1 or 0
-        HasConfigLevel           => 200,
-        UserModificationPossible => 0,           # 1 or 0
-        UserModificationActive   => 0,           # 1 or 0
-        UserPreferencesGroup     => 'Advanced',  # optional
-        XMLContentRaw            => "The XML structure as it is on the config file",
-        XMLContentParsed         => "XML parsed to Perl",
-        XMLFilename              => "Framework.xml",
-        EffectiveValue           => "Product 6",
-        IsDirty                  => 1,           # 1 or 0
-        ExclusiveLockGUID        => 'A32CHARACTERLONGSTRINGFORLOCKING',
-        ExclusiveLockUserID      => 1,
-        ExclusiveLockExpiryTime  => '2016-05-29 11:09:04',
-        CreateTime               => "2016-05-29 11:04:04",
-        CreateBy                 => 1,
-        ChangeTime               => "2016-05-29 11:04:04",
-        ChangeBy                 => 1,
-        DefaultValue             => 'Old default value',
-    );
+    $Success = 1;
 
 =cut
 
-sub ConfigItemGet {
+sub SettingsSet {
     my ( $Self, %Param ) = @_;
 
-    return $Self->SettingGet(%Param);
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Needed UserID!"
+        );
+
+        return;
+    }
+
+    if ( !IsArrayRefWithData( $Param{Settings} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Settings must be array with data!"
+        );
+
+        return;
+    }
+
+    my @DeploySettings;
+
+    for my $Setting ( @{ $Param{Settings} } ) {
+
+        my $ExclusiveLockGUID = $Self->SettingLock(
+            Name   => $Setting->{Name},
+            Force  => 1,
+            UserID => $Param{UserID},
+        );
+
+        return if !$ExclusiveLockGUID;
+
+        my %UpdateResult = $Self->SettingUpdate(
+            %{$Setting},
+            ExclusiveLockGUID => $ExclusiveLockGUID,
+            UserID            => $Param{UserID},
+        );
+
+        if ( $UpdateResult{Success} ) {
+            push @DeploySettings, $Setting->{Name};
+        }
+    }
+
+    # Deploy successfully updated settings.
+    my $DeploymentSuccess = $Self->ConfigurationDeploy(
+        Comments => $Param{Comments} || '',
+        UserID   => $Param{UserID},
+        Force    => 1,
+        DirtySettings => \@DeploySettings
+    );
 }
 
 =head1 PRIVATE INTERFACE

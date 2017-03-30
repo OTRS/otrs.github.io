@@ -4267,6 +4267,68 @@ sub _WeekOfYear {
     );
 }
 
+=head2 _HumanReadableAgeGet()
+
+Re-implementation of L<CustomerAge()|Kernel::Output::HTML::Layout/CustomerAge()> since this object is inaccessible from
+the backend.
+
+TODO: Currently, there is no support for translation of statistic values, it's planned to be implemented later on. For
+the time being, this method will return a string in English only.
+
+    my $HumanReadableAge = $StatsObject->_HumanReadableAgeGet(
+        Age   => 360,
+        Space => ' ',
+    );
+
+Returns (converted seconds in human readable format, i.e. '1 d 2 h'):
+
+    $HumanReadableAge = '6 h',
+
+=cut
+
+sub _HumanReadableAgeGet {
+    my ( $Self, %Param ) = @_;
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my $Age = defined( $Param{Age} ) ? $Param{Age} : return;
+    my $Space     = $Param{Space} || '<br/>';
+    my $AgeStrg   = '';
+    my $DayDsc    = 'd';
+    my $HourDsc   = 'h';
+    my $MinuteDsc = 'm';
+    if ( $ConfigObject->Get('TimeShowCompleteDescription') ) {
+        $DayDsc    = 'day(s)';
+        $HourDsc   = 'hour(s)';
+        $MinuteDsc = 'minute(s)';
+    }
+    if ( $Age =~ /^-(.*)/ ) {
+        $Age     = $1;
+        $AgeStrg = '-';
+    }
+
+    # get days
+    if ( $Age >= 86400 ) {
+        $AgeStrg .= int( ( $Age / 3600 ) / 24 ) . ' ';
+        $AgeStrg .= $DayDsc;
+        $AgeStrg .= $Space;
+    }
+
+    # get hours
+    if ( $Age >= 3600 ) {
+        $AgeStrg .= int( ( $Age / 3600 ) % 24 ) . ' ';
+        $AgeStrg .= $HourDsc;
+        $AgeStrg .= $Space;
+    }
+
+    # get minutes (just if age < 1 day)
+    if ( $ConfigObject->Get('TimeShowAlwaysLong') || $Age < 86400 ) {
+        $AgeStrg .= int( ( $Age / 60 ) % 60 ) . ' ';
+        $AgeStrg .= $MinuteDsc;
+    }
+    return $AgeStrg;
+}
+
 1;
 
 =end Internal:

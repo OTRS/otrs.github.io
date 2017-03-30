@@ -116,7 +116,7 @@ Updates <code>ZZZAAuto.pm</code> to the latest deployment found in the database.
 	<li><a href="#ConfigurationCategoriesGet">ConfigurationCategoriesGet()</a></li>
 	<li><a href="#ForbiddenValueTypesGet">ForbiddenValueTypesGet()</a></li>
 	<li><a href="#ValueAttributeList">ValueAttributeList()</a></li>
-	<li><a href="#ConfigItemGet">ConfigItemGet()</a></li>
+	<li><a href="#SettingsSet">SettingsSet()</a></li>
 </ul>
 </li>
 	<li><a href="#PRIVATE_INTERFACE">PRIVATE INTERFACE</a><br />
@@ -4072,60 +4072,84 @@ sub ValueAttributeList {
         &quot;Content&quot;,
         &quot;SelectedID&quot;,
     );
-</pre><h2 id="ConfigItemGet">ConfigItemGet()</h2>
+</pre><h2 id="SettingsSet">SettingsSet()</h2>
 
-<p><a href="#" onclick="toggleCode('method_ConfigItemGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ConfigItemGet">
+<p><a href="#" onclick="toggleCode('method_SettingsSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SettingsSet">
                                         <pre>
 
-sub ConfigItemGet {
+sub SettingsSet {
     my ( $Self, %Param ) = @_;
 
-    return $Self->SettingGet(%Param);
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Needed UserID!"
+        );
+
+        return;
+    }
+
+    if ( !IsArrayRefWithData( $Param{Settings} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Settings must be array with data!"
+        );
+
+        return;
+    }
+
+    my @DeploySettings;
+
+    for my $Setting ( @{ $Param{Settings} } ) {
+
+        my $ExclusiveLockGUID = $Self->SettingLock(
+            Name   => $Setting->{Name},
+            Force  => 1,
+            UserID => $Param{UserID},
+        );
+
+        return if !$ExclusiveLockGUID;
+
+        my %UpdateResult = $Self->SettingUpdate(
+            %{$Setting},
+            ExclusiveLockGUID => $ExclusiveLockGUID,
+            UserID            => $Param{UserID},
+        );
+
+        if ( $UpdateResult{Success} ) {
+            push @DeploySettings, $Setting->{Name};
+        }
+    }
+
+    # Deploy successfully updated settings.
+    my $DeploymentSuccess = $Self->ConfigurationDeploy(
+        Comments => $Param{Comments} || '',
+        UserID   => $Param{UserID},
+        Force    => 1,
+        DirtySettings => \@DeploySettings
+    );
 }
 </pre></div>
 
-<p>(Deprecated and should be removed in further versions of OTRS) Get SysConfig setting attributes.</p>
+<p>This method locks provided settings(by force), updates them and deploys the changes (by force).</p>
 
-<pre>    my %Setting = $SysConfigObject-&gt;ConfigItemGet(
-        Name            =&gt; 'Setting::Name',  # Setting name
-        Default         =&gt; 1,                # Returns the default setting attributes only
-        ModifiedID      =&gt; '123',            # (optional) Get setting value for given ModifiedID.
-        Deployed        =&gt; 1,                # (optional) Get deployed setting value. Default 0.
-        Translate       =&gt; 1,                # (optional) Translate translatable strings in EffectiveValue. Default 0.
-        NoLog           =&gt; 1,                # (optional) Do not log error if a setting does not exist.
+<pre>    my $Success = $SysConfigObject-&gt;SettingsSet(
+        UserID   =&gt; 1,                                      # (required) UserID
+        Comments =&gt; 'Deployment comment',                   # (optional) Comment
+        Settings =&gt; [                                       # (required) List of settings to update.
+            {
+                Name                   =&gt; 'Setting::Name',  # (required)
+                EffectiveValue         =&gt; 'Value',          # (optional)
+                IsValid                =&gt; 1,                # (optional)
+                UserModificationActive =&gt; 1,                # (optional)
+            },
+            ...
+        ],
     );
 </pre><p>Returns:</p>
 
-<pre>    %Setting = (
-        DefaultID                =&gt; 123,
-        ModifiedID               =&gt; 456,         # optional
-        Name                     =&gt; &quot;ProductName&quot;,
-        Description              =&gt; &quot;Defines the name of the application ...&quot;,
-        Navigation               =&gt; &quot;ASimple::Path::Structure&quot;,
-        IsInvisible              =&gt; 1,           # 1 or 0
-        IsReadonly               =&gt; 0,           # 1 or 0
-        IsRequired               =&gt; 1,           # 1 or 0
-        IsModified               =&gt; 1,           # 1 or 0
-        IsValid                  =&gt; 1,           # 1 or 0
-        HasConfigLevel           =&gt; 200,
-        UserModificationPossible =&gt; 0,           # 1 or 0
-        UserModificationActive   =&gt; 0,           # 1 or 0
-        UserPreferencesGroup     =&gt; 'Advanced',  # optional
-        XMLContentRaw            =&gt; &quot;The XML structure as it is on the config file&quot;,
-        XMLContentParsed         =&gt; &quot;XML parsed to Perl&quot;,
-        XMLFilename              =&gt; &quot;Framework.xml&quot;,
-        EffectiveValue           =&gt; &quot;Product 6&quot;,
-        IsDirty                  =&gt; 1,           # 1 or 0
-        ExclusiveLockGUID        =&gt; 'A32CHARACTERLONGSTRINGFORLOCKING',
-        ExclusiveLockUserID      =&gt; 1,
-        ExclusiveLockExpiryTime  =&gt; '2016-05-29 11:09:04',
-        CreateTime               =&gt; &quot;2016-05-29 11:04:04&quot;,
-        CreateBy                 =&gt; 1,
-        ChangeTime               =&gt; &quot;2016-05-29 11:04:04&quot;,
-        ChangeBy                 =&gt; 1,
-        DefaultValue             =&gt; 'Old default value',
-    );
+<pre>    $Success = 1;
 </pre><h1 id="PRIVATE_INTERFACE">PRIVATE INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="FileWriteAtomic">_FileWriteAtomic()</h2>
