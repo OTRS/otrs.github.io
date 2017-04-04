@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::SysConfig::BaseValueType &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::SysConfig::BaseValueType</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,117 +69,346 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/SysConfig/BaseValueType.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
-      <li><a href="#EffectiveValueGet">EffectiveValueGet()</a></li>
-      <li><a href="#ModifiedValueGet">ModifiedValueGet()</a></li>
-      <li><a href="#SettingRender">SettingRender()</a></li>
-      <li><a href="#AddItem">AddItem()</a></li>
-      <li><a href="#ValueAttributeGet">ValueAttributeGet()</a></li>
-      <li><a href="#DefaultItemAdd">DefaultItemAdd()</a></li>
-      <li><a href="#ForbiddenValueTypes">ForbiddenValueTypes()</a></li>
-    </ul>
-  </li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
+	<li><a href="#EffectiveValueGet">EffectiveValueGet()</a></li>
+	<li><a href="#ModifiedValueGet">ModifiedValueGet()</a></li>
+	<li><a href="#SettingRender">SettingRender()</a></li>
+	<li><a href="#AddItem">AddItem()</a></li>
+	<li><a href="#ValueAttributeGet">ValueAttributeGet()</a></li>
+	<li><a href="#DefaultItemAdd">DefaultItemAdd()</a></li>
+	<li><a href="#ForbiddenValueTypes">ForbiddenValueTypes()</a></li>
 </ul>
+</li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>Kernel::System::SysConfig::BaseValueType - Common system configuration value type backend functions.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <h2 id="SettingEffectiveValueCheck">SettingEffectiveValueCheck()</h2>
 
+<p><a href="#" onclick="toggleCode('method_SettingEffectiveValueCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SettingEffectiveValueCheck">
+                                        <pre>
+
+sub SettingEffectiveValueCheck {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(XMLContentParsed)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+
+            return;
+        }
+    }
+
+    my %Result = (
+        Success => 0,
+    );
+
+    my $Value = $Param{XMLContentParsed}->{Value};
+
+    for my $Parameter ( sort keys %{ $Param{Parameters} } ) {
+        if ( !defined $Value->[0]->{Item}->[0]->{$Parameter} ) {
+            $Value->[0]->{Item}->[0]->{$Parameter} = $Param{Parameters}->{$Parameter};
+        }
+    }
+
+    # Data should be scalar.
+    if ( ref $Param{EffectiveValue} ) {
+        $Result{Error} = 'EffectiveValue must be a scalar!';
+        return %Result;
+    }
+
+    my $Regex = $Value->[0]->{Item}->[0]->{ValueRegex};
+
+    # RegEx check.
+    if ( $Regex && $Param{EffectiveValue} !~ m{$Regex}gsmx ) {
+        $Result{Error} = "EffectiveValue not valid - regex '$Regex'!";
+        return %Result;
+    }
+
+    $Result{Success}        = 1;
+    $Result{EffectiveValue} = $Param{EffectiveValue};
+
+    return %Result;
+}
+</pre></div>
+
 <p>Check if provided EffectiveValue matches structure defined in XMLContentParsed.</p>
 
-<pre><code>    my %Result = $ValueTypeObject-&gt;SettingEffectiveValueCheck(
-        EffectiveValue =&gt; &#39;open&#39;,
+<pre>    my %Result = $ValueTypeObject-&gt;SettingEffectiveValueCheck(
+        EffectiveValue =&gt; 'open',
         XMLContentParsed =&gt; {
             Value =&gt; [
                 {
-                    &#39;Item&#39; =&gt; [
+                    'Item' =&gt; [
                         {
-                            &#39;Content&#39; =&gt; &quot;Scalar value&quot;,
+                            'Content' =&gt; &quot;Scalar value&quot;,
                         },
                     ],
                 },
             ],
         },
-    );</code></pre>
-
-<p>Result: $Result = ( EffectiveValue =&gt; &#39;open&#39;, # Note for common ValueTypes EffectiveValue is not changed. Success =&gt; 1, Error =&gt; undef, );</p>
+    );
+</pre><p>Result:
+    $Result = (
+        EffectiveValue =&gt; 'open',    # Note for common ValueTypes EffectiveValue is not changed.
+        Success =&gt; 1,
+        Error   =&gt; undef,
+    );</p>
 
 <h2 id="EffectiveValueGet">EffectiveValueGet()</h2>
 
+<p><a href="#" onclick="toggleCode('method_EffectiveValueGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_EffectiveValueGet">
+                                        <pre>
+
+sub EffectiveValueGet {
+    my ( $Self, %Param ) = @_;
+
+    if ( !IsArrayRefWithData( $Param{Value} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Value is missing or invalid!",
+        );
+
+        return '';
+    }
+
+    if ( scalar @{ $Param{Value} } > 1 ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Value must be a single element!",
+        );
+        return '';
+    }
+
+    $Param{Translate} = 0;    # common ValueTypes are never translated
+
+    my $Result = $Param{Value}->[0]->{Content} // '';
+
+    if (
+        $Result
+        && $Param{Translate}
+        && $Param{Value}->[0]->{Translatable}
+        )
+    {
+        $Result = $Kernel::OM->Get('Kernel::Language')->Translate($Result);
+    }
+
+    return $Result;
+}
+</pre></div>
+
 <p>Extracts the effective value from a XML parsed setting.</p>
 
-<pre><code>    my $EffectiveValue = $ValueTypeObject-&gt;EffectiveValueGet(
+<pre>    my $EffectiveValue = $ValueTypeObject-&gt;EffectiveValueGet(
         Value =&gt; [
             {
-                ValueRegex =&gt; &#39;&#39;,                       # (optional)
-                Content    =&gt; &#39;TheEffectiveValue&#39;,
-                ValueType  =&gt; &#39;AValueType&#39;,             # (optional)
+                ValueRegex =&gt; '',                       # (optional)
+                Content    =&gt; 'TheEffectiveValue',
+                ValueType  =&gt; 'AValueType',             # (optional)
                 # ...
             }
         ],
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
+<pre>    $EffectiveValue = 'TheEffectiveValue';
+</pre><h2 id="ModifiedValueGet">ModifiedValueGet()</h2>
 
-<pre><code>    $EffectiveValue = &#39;TheEffectiveValue&#39;;</code></pre>
+<p><a href="#" onclick="toggleCode('method_ModifiedValueGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ModifiedValueGet">
+                                        <pre>
 
-<h2 id="ModifiedValueGet">ModifiedValueGet()</h2>
+sub ModifiedValueGet {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(Value)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my $Result = $Param{Value};
+
+    # Update Content
+    $Result->[0]->{Item}->[0]->{Content} = $Param{EffectiveValue} || '';
+
+    return $Result;
+}
+</pre></div>
 
 <p>Returns parsed value with updated content(according to EffectiveValue).</p>
 
-<pre><code>    my $ModifiedValue = $ValueTypeObject-&gt;ModifiedValueGet(
-        &#39;EffectiveValue&#39; =&gt; &#39;Item 1&#39;,
-        &#39;Value&#39; =&gt; [
+<pre>    my $ModifiedValue = $ValueTypeObject-&gt;ModifiedValueGet(
+        'EffectiveValue' =&gt; 'Item 1',
+        'Value' =&gt; [
             {
-                &#39;Item&#39; =&gt; [
+                'Item' =&gt; [
                     {
-                        &#39;Content&#39; =&gt; &#39;Default value&#39;,
-                        &#39;ValueType&#39; =&gt; &#39;String&#39;,
+                        'Content' =&gt; 'Default value',
+                        'ValueType' =&gt; 'String',
                     },
                 ],
             },
         ],
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
-
-<pre><code>    $ModifiedValue = [
+<pre>    $ModifiedValue = [
         {
-            &#39;Item&#39; =&gt; [
+            'Item' =&gt; [
                 {
-                    &#39;Content&#39; =&gt; &#39;Item 1&#39;,
-                    &#39;ValueType&#39; =&gt; &#39;String&#39;,
+                    'Content' =&gt; 'Item 1',
+                    'ValueType' =&gt; 'String',
                 },
             ],
         },
-    ];</code></pre>
+    ];
+</pre><h2 id="SettingRender">SettingRender()</h2>
 
-<h2 id="SettingRender">SettingRender()</h2>
+<p><a href="#" onclick="toggleCode('method_SettingRender');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SettingRender">
+                                        <pre>
+
+sub SettingRender {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(Name EffectiveValue)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed",
+            );
+            return;
+        }
+    }
+
+    $Param{Class}        //= '';
+    $Param{DefaultValue} //= '';
+    my $IDSuffix = $Param{IDSuffix} || '';
+
+    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
+
+    my $EffectiveValue = $Param{EffectiveValue};
+    if (
+        !$EffectiveValue
+        && $Param{Item}
+        && $Param{Item}->[0]->{Content}
+        )
+    {
+        $EffectiveValue = $Param{Item}->[0]->{Content};
+    }
+
+    my $Regex;
+    if ( $Param{Item}->[0]->{ValueRegex} ) {
+        $Regex = $Param{Item}->[0]->{ValueRegex};
+        $Param{Class} .= ' Validate_Regex ';
+    }
+
+    my $DefaultValueStrg = $LanguageObject->Translate('Default');
+
+    my %EffectiveValueCheck = (
+        Success => 1,
+    );
+
+    if ( !$Param{SkipEffectiveValueCheck} ) {
+        %EffectiveValueCheck = $Self->SettingEffectiveValueCheck(
+            EffectiveValue   => $EffectiveValue,
+            XMLContentParsed => {
+                Value => [
+                    {
+                        Item => $Param{Item},
+                    },
+                ],
+            },
+        );
+    }
+
+    my $HTML = '<div class="SettingContent">';
+    $HTML .= "<input class=\"$Param{Class}\" type=\"text\" name=\"$Param{Name}\" id=\"$Param{Name}$IDSuffix\" ";
+
+    my $HTMLValue = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->Ascii2Html(
+        Text => $EffectiveValue,
+        Type => 'Normal',
+    );
+    $HTML .= "value=\"$HTMLValue\" ";
+
+    if ($Regex) {
+        $HTML .= "data-regex=\"$Regex\" ";
+    }
+
+    if ( !$Param{RW} ) {
+        $HTML .= "disabled='disabled' ";
+    }
+
+    $HTML .= " />\n";
+
+    if ( !$EffectiveValueCheck{Success} ) {
+        my $Message = $LanguageObject->Translate("Value is not correct! Please, consider updating this field.");
+
+        $HTML .= "<div class='BadEffectiveValue'>\n";
+        $HTML .= "<p>* $Message</p>\n";
+        $HTML .= "</div>\n";
+    }
+
+    if ($Regex) {
+        my $Message = $LanguageObject->Translate(
+            "Value doesn't satisfy regex (%s).", $Regex,
+        );
+
+        $HTML .= "<div class='TooltipErrorMessage' id=\"$Param{Name}$IDSuffix" . "Error\">\n";
+        $HTML .= "<p>$Message</p>\n";
+        $HTML .= "</div>\n";
+    }
+
+    $HTML .= "</div>";
+
+    if ( !$Param{IsArray} && !$Param{IsHash} ) {
+        $HTML .= <<"EOF";
+                                <div class=\"WidgetMessage Bottom\">
+                                    $DefaultValueStrg: $Param{DefaultValue}
+                                </div>
+EOF
+    }
+
+    return $HTML;
+}
+</pre></div>
 
 <p>Extracts the effective value from a XML parsed setting.</p>
 
-<pre><code>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
-        Name           =&gt; &#39;SettingName&#39;,
+<pre>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
+        Name           =&gt; 'SettingName',
         DefaultID      =&gt;  123,             # (required)
-        EffectiveValue =&gt; &#39;Product 6&#39;,
-        DefaultValue   =&gt; &#39;Product 5&#39;,      # (optional)
-        Class          =&gt; &#39;My class&#39;        # (optional)
+        EffectiveValue =&gt; 'Product 6',
+        DefaultValue   =&gt; 'Product 5',      # (optional)
+        Class          =&gt; 'My class'        # (optional)
         Item           =&gt; [                 # (optional) XML parsed item
             {
-                &#39;ValueType&#39; =&gt; &#39;String&#39;,
-                &#39;Content&#39; =&gt; &#39;admin@example.com&#39;,
-                &#39;ValueRegex&#39; =&gt; &#39;&#39;,
+                'ValueType' =&gt; 'String',
+                'Content' =&gt; 'admin@example.com',
+                'ValueRegex' =&gt; '',
             },
         ],
         RW =&gt; 1,                            # (optional) Allow editing. Default 0.
@@ -167,67 +417,135 @@ $(document).ready(function() {
         IDSuffix =&gt; 1,                      # (optional) Suffix will be added to the element ID
         SkipEffectiveValueCheck =&gt; 1,       # (optional) If enabled, system will not perform effective value check.
                                             #            Default: 1.
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
+<pre>    $SettingHTML = '&lt;div class &quot;Field&quot;...&lt;/div&gt;';
+</pre><h2 id="AddItem">AddItem()</h2>
 
-<pre><code>    $SettingHTML = &#39;&lt;div class &quot;Field&quot;...&lt;/div&gt;&#39;;</code></pre>
+<p><a href="#" onclick="toggleCode('method_AddItem');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AddItem">
+                                        <pre>
 
-<h2 id="AddItem">AddItem()</h2>
+sub AddItem {
+    my ( $Self, %Param ) = @_;
+
+    # Check needed stuff.
+    for my $Needed (qw(Name)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my $IDSuffix = $Param{IDSuffix} || '';
+    my $Class    = $Param{Class}    || '';
+
+    my $Name = $Param{Name} . $IDSuffix;
+
+    my $DefaultValue = '';
+
+    if ( $Param{DefaultItem} && $Param{DefaultItem}->{Item} ) {
+        $DefaultValue = $Param{DefaultItem} && $Param{DefaultItem}->{Item}->{Content} || '';
+    }
+    elsif ( $Param{DefaultItem} ) {
+        $DefaultValue = $Param{DefaultItem} && $Param{DefaultItem}->{Content} || '';
+    }
+
+    my $RemoveThisEntry = $Kernel::OM->Get('Kernel::Language')->Translate("Remove this entry");
+
+    my $Result = "<input type='text' id='$Name'
+        value='$DefaultValue' name='$Param{Name}' class='$Class Entry'/>";
+
+    return $Result;
+}
+</pre></div>
 
 <p>Generate HTML for new array/hash item.</p>
 
-<pre><code>    my $HTML = $ValueTypeObject-&gt;AddItem(
-        Name           =&gt; &#39;SettingName&#39;,    (required) Name
+<pre>    my $HTML = $ValueTypeObject-&gt;AddItem(
+        Name           =&gt; 'SettingName',    (required) Name
         DefaultItem    =&gt; {                 (optional) DefaultItem hash, if available
             Item =&gt; {
-                Content =&gt; &#39;Value&#39;,
+                Content =&gt; 'Value',
             },
         },
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
+<pre>    $HTML = &quot;&lt;input type='text' id='Setting_ExampleArray'
+        value='Value' name='ExampleArray' class='Entry'/&gt;&quot;;
+</pre><h2 id="ValueAttributeGet">ValueAttributeGet()</h2>
 
-<pre><code>    $HTML = &quot;&lt;input type=&#39;text&#39; id=&#39;Setting_ExampleArray&#39;
-        value=&#39;Value&#39; name=&#39;ExampleArray&#39; class=&#39;Entry&#39;/&gt;&quot;;</code></pre>
+<p><a href="#" onclick="toggleCode('method_ValueAttributeGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValueAttributeGet">
+                                        <pre>
 
-<h2 id="ValueAttributeGet">ValueAttributeGet()</h2>
+sub ValueAttributeGet {
+    my ( $Self, %Param ) = @_;
+
+    return 'Content';
+}
+</pre></div>
 
 <p>Returns attribute name in the parsed XML that contains Value.</p>
 
-<pre><code>    my $Result = $ValueTypeObject-&gt;ValueAttributeGet();</code></pre>
-
-<p>Result: $Result = &#39;Content&#39;;</p>
+<pre>    my $Result = $ValueTypeObject-&gt;ValueAttributeGet();
+</pre><p>Result:
+    $Result = 'Content';</p>
 
 <h2 id="DefaultItemAdd">DefaultItemAdd()</h2>
 
-<p>Return structure of the DefaultItem in case it&#39;s not inside of Array or Hash.</p>
+<p><a href="#" onclick="toggleCode('method_DefaultItemAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DefaultItemAdd">
+                                        <pre>
 
-<pre><code>    my $DefaultItem = $ValueTypeObject-&gt;DefaultItemAdd();</code></pre>
+sub DefaultItemAdd {
+    my ( $Self, %Param ) = @_;
 
-<p>Returns:</p>
+    # For most ValueTypes there is no such case, so return undef.
+    return;
+}
+</pre></div>
 
-<pre><code>    $DefaultItem = undef;
+<p>Return structure of the DefaultItem in case it's not inside of Array or Hash.</p>
+
+<pre>    my $DefaultItem = $ValueTypeObject-&gt;DefaultItemAdd();
+</pre><p>Returns:</p>
+
+<pre>    $DefaultItem = undef;
         # or
     $DefaultItem = {
         Item =&gt; {
-            Content =&gt; &#39;&#39;,
+            Content =&gt; '',
         },
-        ValueType =&gt; &#39;VacationDaysOneTime&#39;,
-    };</code></pre>
+        ValueType =&gt; 'VacationDaysOneTime',
+    };
+</pre><h2 id="ForbiddenValueTypes">ForbiddenValueTypes()</h2>
 
-<h2 id="ForbiddenValueTypes">ForbiddenValueTypes()</h2>
+<p><a href="#" onclick="toggleCode('method_ForbiddenValueTypes');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ForbiddenValueTypes">
+                                        <pre>
+
+sub ForbiddenValueTypes {
+    my ( $Self, %Param ) = @_;
+
+    return ();
+}
+</pre></div>
 
 <p>Return array of value types that are not allowed inside this value type.</p>
 
-<pre><code>    my @ForbiddenValueTypes = $ValueTypeObject-&gt;ForbiddenValueTypes();</code></pre>
+<pre>    my @ForbiddenValueTypes = $ValueTypeObject-&gt;ForbiddenValueTypes();
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
-
-<pre><code>    @ForbiddenValueTypes = (
-        &#39;Option&#39;,
+<pre>    @ForbiddenValueTypes = (
+        'Option',
         ...
-    );</code></pre>
-
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
-
+    );
+</pre>
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

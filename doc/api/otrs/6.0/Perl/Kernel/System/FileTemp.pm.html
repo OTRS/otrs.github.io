@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::FileTemp &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::FileTemp</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,55 +69,117 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/FileTemp.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#TempFile">TempFile()</a></li>
-      <li><a href="#TempDir">TempDir()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#TempFile">TempFile()</a></li>
+	<li><a href="#TempDir">TempDir()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::FileTemp - tmp files</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This module is managing temporary files and directories.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-<pre><code>    my $FileTempObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::FileTemp&#39;);</code></pre>
+sub new {
+    my ( $Type, %Param ) = @_;
 
-<h2 id="TempFile">TempFile()</h2>
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
 
-<p>returns an opened temporary file handle and its file name. Please note that you need to close the file handle for other processes to write to it.</p>
+    $Self->{FileHandleList} = [];
 
-<pre><code>    my ($FileHandle, $Filename) = $TempObject-&gt;TempFile(
-        Suffix =&gt; &#39;.png&#39;,   # optional, defaults to &#39;.tmp&#39;
-    );</code></pre>
+    return $Self;
+}
+</pre></div>
 
-<h2 id="TempDir">TempDir()</h2>
+<p>Don't use the constructor directly, use the ObjectManager instead:</p>
 
-<p>returns a temp directory. The directory and its contents will be removed if the FileTemp object goes out of scope.</p>
+<pre>    my $FileTempObject = $Kernel::OM-&gt;Get('Kernel::System::FileTemp');
+</pre><h2 id="TempFile">TempFile()</h2>
 
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+<p><a href="#" onclick="toggleCode('method_TempFile');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TempFile">
+                                        <pre>
+
+sub TempFile {
+    my ( $Self, %Param ) = @_;
+
+    my $TempDir = $Kernel::OM->Get('Kernel::Config')->Get('TempDir');
+
+    my ( $FH, $Filename ) = tempfile(
+        DIR    => $TempDir,
+        SUFFIX => $Param{Suffix} // '.tmp',
+        UNLINK => 1,
+    );
+
+    # remember created tmp files and handles
+    push @{ $Self->{FileHandleList} }, $FH;
+
+    return ( $FH, $Filename );
+}
+</pre></div>
+
+<p>returns an opened temporary file handle and its file name.
+Please note that you need to close the file handle for other processes to write to it.</p>
+
+<pre>    my ($FileHandle, $Filename) = $TempObject-&gt;TempFile(
+        Suffix =&gt; '.png',   # optional, defaults to '.tmp'
+    );
+</pre><h2 id="TempDir">TempDir()</h2>
+
+<p><a href="#" onclick="toggleCode('method_TempDir');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TempDir">
+                                        <pre>
+
+sub TempDir {
+    my $Self = shift;
+
+    my $TempDir = $Kernel::OM->Get('Kernel::Config')->Get('TempDir');
+
+    my $DirName = tempdir(
+        DIR     => $TempDir,
+        CLEANUP => 1,
+    );
+
+    return $DirName;
+}
+</pre></div>
+
+<p>returns a temp directory. The directory and its contents will be removed
+if the FileTemp object goes out of scope.</p>
+
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

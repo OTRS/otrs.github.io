@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::SysConfig::ValueType::PerlModule &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::SysConfig::ValueType::PerlModule</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,112 +69,416 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/SysConfig/ValueType/PerlModule.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
-      <li><a href="#SettingRender">SettingRender()</a></li>
-      <li><a href="#AddItem">AddItem()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
+	<li><a href="#SettingRender">SettingRender()</a></li>
+	<li><a href="#AddItem">AddItem()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::System::SysConfig::ValueType::PerlModule - System configuration perl module value type backed.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # Allocate new hash for object.
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
 <p>Create an object. Do not use it directly, instead use:</p>
 
-<pre><code>    use Kernel::System::ObjectManager;
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $ValueTypeObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SysConfig::ValueType::PerlModule&#39;);</code></pre>
+    my $ValueTypeObject = $Kernel::OM-&gt;Get('Kernel::System::SysConfig::ValueType::PerlModule');
+</pre><h2 id="SettingEffectiveValueCheck">SettingEffectiveValueCheck()</h2>
 
-<h2 id="SettingEffectiveValueCheck">SettingEffectiveValueCheck()</h2>
+<p><a href="#" onclick="toggleCode('method_SettingEffectiveValueCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SettingEffectiveValueCheck">
+                                        <pre>
+
+sub SettingEffectiveValueCheck {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(XMLContentParsed)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+
+            return;
+        }
+    }
+
+    my %Result = (
+        Success => 0,
+    );
+
+    # Data should be scalar.
+    if ( ref $Param{EffectiveValue} ) {
+        $Result{Error} = 'EffectiveValue for PerlModule must be a scalar!';
+        return %Result;
+    }
+
+    # Check if EffectiveValue matches ValueFilter.
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+    my $Home       = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+
+    my $ValueFilter = $Param{XMLContentParsed}->{Value}->[0]->{Item}->[0]->{ValueFilter};
+
+    my @ValidValue = $MainObject->DirectoryRead(
+        Directory => $Home,
+        Filter    => $ValueFilter,
+    );
+
+    for my $Value (@ValidValue) {
+
+        # Convert to the relative path.
+        $Value =~ s{^$Home/*(.*?)$}{$1}gsmx;
+
+        # Replace '/' with '::'.
+        $Value =~ s{/}{::}gsmx;
+
+        # Remove extension.
+        $Value =~ s{\..*$}{}gsmx;
+    }
+
+    if ( !grep { $_ eq $Param{EffectiveValue} } @ValidValue ) {
+        $Result{Error} = "$Param{EffectiveValue} doesn't satisfy ValueFilter($ValueFilter)!";
+        return %Result;
+    }
+
+    my $Loaded = $MainObject->Require(
+        $Param{EffectiveValue},
+        Silent => 1,
+    );
+
+    if ( !$Loaded ) {
+        $Result{Error} = "$Param{EffectiveValue} not exists!";
+        return %Result;
+    }
+
+    $Result{Success}        = 1;
+    $Result{EffectiveValue} = $Param{EffectiveValue};
+
+    return %Result;
+}
+</pre></div>
 
 <p>Check if provided EffectiveValue matches structure defined in XMLContentParsed.</p>
 
-<pre><code>    my %Result = $SysConfigObject-&gt;SettingEffectiveValueCheck(
+<pre>    my %Result = $SysConfigObject-&gt;SettingEffectiveValueCheck(
         XMLContentParsed =&gt; {
             Value =&gt; [
                 {
-                    &#39;Item&#39; =&gt; [
+                    'Item' =&gt; [
                         {
-                            &#39;Content&#39;     =&gt; &#39;Kernel::System::Log::SysLog&#39;,
-                            &#39;ValueFilter&#39; =&gt; &#39;Kernel/System/Log/*.pm&#39;,
-                            &#39;ValueType&#39;   =&gt; &#39;PerlModule&#39;,
+                            'Content'     =&gt; 'Kernel::System::Log::SysLog',
+                            'ValueFilter' =&gt; 'Kernel/System/Log/*.pm',
+                            'ValueType'   =&gt; 'PerlModule',
                         },
                     ],
                 },
             ],
         },
-        EffectiveValue =&gt; &#39;Kernel::System::Log::SysLog&#39;,
-    );</code></pre>
-
-<p>Result: %Result = ( EffectiveValue =&gt; &#39;Kernel::System::Log::SysLog&#39;, # Note for PerlModule ValueTypes EffectiveValue is not changed. Success =&gt; 1, Error =&gt; undef, );</p>
+        EffectiveValue =&gt; 'Kernel::System::Log::SysLog',
+    );
+</pre><p>Result:
+    %Result = (
+        EffectiveValue =&gt; 'Kernel::System::Log::SysLog',        # Note for PerlModule ValueTypes EffectiveValue is not changed.
+        Success =&gt; 1,
+        Error   =&gt; undef,
+    );</p>
 
 <h2 id="SettingRender">SettingRender()</h2>
 
+<p><a href="#" onclick="toggleCode('method_SettingRender');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SettingRender">
+                                        <pre>
+
+sub SettingRender {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(Name EffectiveValue)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed",
+            );
+            return;
+        }
+    }
+
+    $Param{Class}        //= '';
+    $Param{DefaultValue} //= '';
+    $Param{IDSuffix}     //= '';
+
+    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
+
+    my $Value = $Param{XMLContentParsed}->{Value};
+
+    my $EffectiveValue = $Param{EffectiveValue};
+    if (
+        !$EffectiveValue
+        && $Param{Item}
+        && $Param{Item}->[0]->{Content}
+        )
+    {
+        $EffectiveValue = $Param{Item}->[0]->{Content};
+    }
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my $Home = $ConfigObject->Get('Home');
+
+    my $Filter;
+
+    if (
+        $Param{Item}
+        && $Param{Item}->[0]->{ValueFilter}
+        )
+    {
+        $Filter = $Param{Item}->[0]->{ValueFilter};
+    }
+    elsif ( $Value->[0]->{Item} ) {
+        $Filter = $Value->[0]->{Item}->[0]->{ValueFilter};
+    }
+    elsif ( $Value->[0]->{Array} ) {
+        $Filter = $Value->[0]->{Array}->[0]->{DefaultItem}->[0]->{ValueFilter};
+    }
+    elsif ( $Value->[0]->{Hash} ) {
+        if (
+            $Value->[0]->{Hash}->[0]->{DefaultItem}
+            && $Value->[0]->{Hash}->[0]->{DefaultItem}->[0]->{ValueFilter}
+            )
+        {
+
+            # take ValueFilter from DefaultItem
+            $Filter = $Value->[0]->{Hash}->[0]->{DefaultItem}->[0]->{ValueFilter};
+        }
+        else {
+            # check if there is definition for certain key
+            ITEM:
+            for my $Item ( @{ $Value->[0]->{Hash}->[0]->{Item} } ) {
+                if ( $Item->{Key} eq $Param{Key} ) {
+                    $Filter = $Item->{ValueFilter} || '';
+                    last ITEM;
+                }
+            }
+        }
+    }
+
+    my @PerlModules = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => $Home,
+        Filter    => $Filter,
+    );
+
+    for my $Module (@PerlModules) {
+
+        # Convert to the relative path.
+        $Module =~ s{^$Home/*(.*?)$}{$1}gsmx;
+
+        # Replace '/' with '::'.
+        $Module =~ s{/}{::}gsmx;
+
+        # Remove extension.
+        $Module =~ s{\..*$}{}gsmx;
+    }
+
+    my $Name = $Param{Name};
+
+    # When displaying diff between current and old value, it can happen that value is missing
+    #    since it was renamed, or removed. In this case, we need to add this "old" value also.
+    if (
+        $EffectiveValue
+        && !grep { $_ eq $EffectiveValue } @PerlModules
+        )
+    {
+        push @PerlModules, $EffectiveValue;
+    }
+
+    my %EffectiveValueCheck = (
+        Success => 1,
+    );
+
+    if ( !$Param{SkipEffectiveValueCheck} ) {
+        %EffectiveValueCheck = $Self->SettingEffectiveValueCheck(
+            EffectiveValue   => $EffectiveValue,
+            XMLContentParsed => {
+                Value => [
+                    {
+                        Item => $Param{Item},
+                    },
+                ],
+            },
+        );
+    }
+
+    my $HTML = "<div class='SettingContent'>\n";
+    $HTML .= $Kernel::OM->Get('Kernel::Output::HTML::Layout')->BuildSelection(
+        Data          => \@PerlModules,
+        Name          => $Name,
+        ID            => $Param{Name} . $Param{IDSuffix},
+        Disabled      => $Param{RW} ? 0 : 1,
+        SelectedValue => $EffectiveValue,
+        Title         => $Param{Name},
+        OptionTitle   => 1,
+        Class         => "$Param{Class} Modernize",
+    );
+
+    if ( !$EffectiveValueCheck{Success} ) {
+        my $Message = $LanguageObject->Translate("Value is not correct! Please, consider updating this field.");
+
+        $HTML .= "<div class='BadEffectiveValue'>\n";
+        $HTML .= "<p>* $Message</p>\n";
+        $HTML .= "</div>\n";
+    }
+
+    $HTML .= "</div>\n";
+
+    if ( !$Param{IsArray} && !$Param{IsHash} ) {
+        my $DefaultText = $LanguageObject->Translate('Default');
+
+        $HTML .= <<"EOF";
+                                <div class=\"WidgetMessage Bottom\">
+                                    $DefaultText: $Param{DefaultValue}
+                                </div>
+EOF
+    }
+
+    return $HTML;
+}
+</pre></div>
+
 <p>Extracts the effective value from a XML parsed setting.</p>
 
-<pre><code>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
-        Name           =&gt; &#39;SettingName&#39;,
+<pre>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
+        Name           =&gt; 'SettingName',
         DefaultID      =&gt;  123,             # (required)
-        EffectiveValue =&gt; &#39;3 medium&#39;,
-        DefaultValue   =&gt; &#39;3 medium&#39;,      # (optional)
-        Class          =&gt; &#39;My class&#39;        # (optional)
+        EffectiveValue =&gt; '3 medium',
+        DefaultValue   =&gt; '3 medium',      # (optional)
+        Class          =&gt; 'My class'        # (optional)
         RW             =&gt; 1,                # (optional) Allow editing. Default 0.
         Item           =&gt; [                 # (optional) XML parsed item
             {
-                &#39;ValueType&#39; =&gt; &#39;PerlModule&#39;,
-                &#39;ValueFilter&#39; =&gt; &#39;&quot;Kernel/System/Log/*.pm&#39;,
-                &#39;Content&#39; =&gt; &#39;Kernel::System::Log::SysLog&#39;,
+                'ValueType' =&gt; 'PerlModule',
+                'ValueFilter' =&gt; '&quot;Kernel/System/Log/*.pm',
+                'Content' =&gt; 'Kernel::System::Log::SysLog',
             },
         ],
         IsArray =&gt; 1,                       # (optional) Item is part of the array
         IsHash  =&gt; 1,                       # (optional) Item is part of the hash
         SkipEffectiveValueCheck =&gt; 1,       # (optional) If enabled, system will not perform effective value check.
                                             #            Default: 1.
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
+<pre>    $SettingHTML = '&lt;div class &quot;Field&quot;...&lt;/div&gt;';
+</pre><h2 id="AddItem">AddItem()</h2>
 
-<pre><code>    $SettingHTML = &#39;&lt;div class &quot;Field&quot;...&lt;/div&gt;&#39;;</code></pre>
+<p><a href="#" onclick="toggleCode('method_AddItem');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AddItem">
+                                        <pre>
 
-<h2 id="AddItem">AddItem()</h2>
+sub AddItem {
+    my ( $Self, %Param ) = @_;
+
+    # Check needed stuff.
+    for my $Needed (qw(Name DefaultItem)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    $Param{Class}    //= '';
+    $Param{IDSuffix} //= '';
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+
+    my @PerlModules = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => $Home,
+        Filter    => $Param{DefaultItem}->{ValueFilter},
+    );
+
+    for my $Module (@PerlModules) {
+
+        # Convert to the relative path.
+        $Module =~ s{^$Home/*(.*?)$}{$1}gsmx;
+
+        # Replace '/' with '::'.
+        $Module =~ s{/}{::}gsmx;
+
+        # Remove extension.
+        $Module =~ s{\..*$}{}gsmx;
+    }
+
+    my $Result = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->BuildSelection(
+        Data          => \@PerlModules,
+        Name          => $Param{Name},
+        ID            => $Param{Name} . $Param{IDSuffix},
+        SelectedValue => $Param{DefaultItem}->{Content},
+        Title         => $Param{Name},
+        OptionTitle   => 1,
+        Class         => "$Param{Class} Modernize Entry",
+    );
+
+    return $Result;
+}
+</pre></div>
 
 <p>Generate HTML for new array/hash item.</p>
 
-<pre><code>    my $HTML = $ValueTypeObject-&gt;AddItem(
-        Name           =&gt; &#39;SettingName&#39;,    (required) Name
+<pre>    my $HTML = $ValueTypeObject-&gt;AddItem(
+        Name           =&gt; 'SettingName',    (required) Name
         DefaultItem    =&gt; {                 (required) DefaultItem hash
-            &#39;ValueType&#39; =&gt; &#39;PerlModule&#39;,
-            &#39;Content&#39; =&gt; &#39;Kernel::System::Log::SysLog&#39;,
-            &#39;ValueFilter&#39; =&gt; &#39;Kernel/System/Log/*.pm&#39;
+            'ValueType' =&gt; 'PerlModule',
+            'Content' =&gt; 'Kernel::System::Log::SysLog',
+            'ValueFilter' =&gt; 'Kernel/System/Log/*.pm'
         },
-        IDSuffix       =&gt; &#39;_Array1&#39;,        (optional) IDSuffix is needed for arrays and hashes.
-    );</code></pre>
+        IDSuffix       =&gt; '_Array1',        (optional) IDSuffix is needed for arrays and hashes.
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
-
-<pre><code>    $HTML = &#39;&lt;select class=&quot;Modernize&quot; id=&quot;SettingName&quot; name=&quot;SettingName&quot; title=&quot;SettingName&quot;&gt;
+<pre>    $HTML = '&lt;select class=&quot;Modernize&quot; id=&quot;SettingName&quot; name=&quot;SettingName&quot; title=&quot;SettingName&quot;&gt;
         ...
-        &lt;/select&gt;&#39;;</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+        &lt;/select&gt;';
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

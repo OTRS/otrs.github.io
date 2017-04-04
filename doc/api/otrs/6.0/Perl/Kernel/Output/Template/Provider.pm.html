@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::Output::Template::Provider &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::Output::Template::Provider</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,50 +69,401 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/Output/Template/Provider.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#OTRSInit">OTRSInit()</a></li>
-      <li><a href="#store">store()</a></li>
-      <li><a href="#MigrateDTLtoTT">MigrateDTLtoTT()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#OTRSInit">OTRSInit()</a></li>
+	<li><a href="#store">store()</a></li>
+	<li><a href="#MigrateDTLtoTT">MigrateDTLtoTT()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>Kernel::Output::Template::Provider - Template Toolkit custom provider</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <h2 id="OTRSInit">OTRSInit()</h2>
 
-<p>performs some post-initialization and creates a bridge between Template::Toolkit and OTRS by adding the OTRS objects to the Provider object. This method must be called after instantiating the Provider object.</p>
+<p><a href="#" onclick="toggleCode('method_OTRSInit');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_OTRSInit">
+                                        <pre>
 
-<p>Please note that we only store a weak reference to the LayoutObject to avoid ring references.</p>
+sub OTRSInit {
+    my ( $Self, %Param ) = @_;
+
+    # Don't fetch LayoutObject via ObjectManager as there might be several instances involved
+    #   at this point (for example in LinkObject there is an own LayoutObject to avoid block
+    #   name collisions).
+    $Self->{LayoutObject} = $Param{LayoutObject} || die "Got no LayoutObject!";
+
+    #
+    # Store a weak reference to the LayoutObject to avoid ring references.
+    #   We need it for the filters.
+    #
+    Scalar::Util::weaken( $Self->{LayoutObject} );
+
+    # define cache type
+    $Self->{CacheType} = 'TemplateProvider';
+
+    # caching can be disabled for debugging reasons
+    $Self->{CachingEnabled} = $Kernel::OM->Get('Kernel::Config')->Get('Frontend::TemplateCache') // 1;
+}
+</pre></div>
+
+<p>performs some post-initialization and creates a bridge between Template::Toolkit
+and OTRS by adding the OTRS objects to the Provider object. This method must be
+called after instantiating the Provider object.</p>
+
+<p>Please note that we only store a weak reference to the LayoutObject to avoid ring
+references.</p>
 
 <h2 id="store">store()</h2>
 
-<p>inherited from Template::Provider. This function override just makes sure that the original in-memory cache cannot be used.</p>
+<p><a href="#" onclick="toggleCode('method_store');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_store">
+                                        <pre>
+
+sub store {
+    my ( $Self, $Name, $Data ) = @_;
+
+    return $Data;    # no-op
+}
+</pre></div>
+
+<p>inherited from Template::Provider. This function override just makes sure that the original
+in-memory cache cannot be used.</p>
 
 <h2 id="MigrateDTLtoTT">MigrateDTLtoTT()</h2>
 
-<p>translates old <code>DTL</code> template content to <a href="http://search.cpan.org/perldoc?Template::Toolkit">Template::Toolkit</a> syntax.</p>
+<p><a href="#" onclick="toggleCode('method_MigrateDTLtoTT');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_MigrateDTLtoTT">
+                                        <pre>
 
-<pre><code>    my $TTCode = $ProviderObject-&gt;MigrateDTLtoTT( Content =&gt; $DTLCode );</code></pre>
+sub MigrateDTLtoTT {
+    my ( $Self, %Param ) = @_;
 
-<p>If an error was found, this method will <code>die()</code>, so please use eval around it.</p>
+    my $Content = $Param{Content};
 
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    my $ID = "[a-zA-Z0-9:_\-]+";
+
+    my $SafeArrrayAccess = sub {
+        my $ID = shift;
+        if ( $ID !~ m{^[a-zA-Z0-9_]+$}xms ) {
+            return "item(\"$ID\")";
+        }
+        return $ID;
+    };
+
+    # $Quote $Config
+    $Content =~ s{\$Quote{"\$Config{"($ID)"}"}}{[% Config("$1") | html %]}smxg;
+
+    # $Quote $Env
+    $Content =~ s{\$Quote{"\$Env{"($ID)"}"}}{[% Env("$1") | html %]}smxg;
+
+    # $Quote $Data
+    $Content =~ s{
+            \$Quote{"\$Data{"($ID)"}"}
+        }
+        {
+            '[% Data.' . $SafeArrrayAccess->($1) . ' | html %]'
+        }esmxg;
+
+    # $Quote with length
+    $Content =~ s{
+            \$Quote{"\$Data{"($ID)"}",\s*"(\d+)"}
+        }
+        {
+            '[% Data.' . $SafeArrrayAccess->($1) . " | truncate($2) | html %]"
+        }esmxg;
+
+    # $Quote with dynamic length
+    $Content =~ s{
+            \$Quote{"\$Data{"($ID)"}",\s*"\$Q?Data{"($ID)"}"}
+        }
+        {
+            '[% Data.' . $SafeArrrayAccess->($1) . ' | truncate(Data.' . $SafeArrrayAccess->($2) . ') | html %]'
+        }esmxg;
+
+    # $Quote with translated text and fixed length
+    $Content =~ s{
+            \$Quote{"\$Text{"\$Data{"($ID)"}"}",\s*"(\d+)"}
+        }
+        {
+            '[% Data.' . $SafeArrrayAccess->($1) . " | Translate | truncate($2) | html %]"
+        }esmxg;
+
+    # $Quote with translated text and dynamic length
+    $Content =~ s{
+            \$Quote{"\$Text{"\$Data{"($ID)"}"}",\s*"\$Q?Data{"($ID)"}"}
+        }
+        {
+            '[% Data.' . $SafeArrrayAccess->($1) . ' | Translate | truncate(Data.' . $SafeArrrayAccess->($2) . ') | html %]'
+        }esmxg;
+
+    my $MigrateTextTag = sub {
+        my %Param       = @_;
+        my $Mode        = $Param{Mode};          # HTML or JSON
+        my $Text        = $Param{Text};          # The translated text
+        my $Dot         = $Param{Dot};           # Closing dot, sometimes outside of the Tag
+        my $ParamString = $Param{Parameters};    # Parameters to interpolate
+
+        my $Result = '[% ';
+
+        # Text contains a tag
+        if ( $Text =~ m{\$TimeLong{"\$Q?Data{"($ID)"}"}}smx ) {
+            $Result .= "Translate(Localize(Data." . $SafeArrrayAccess->($1) . ", \"TimeLong\")";
+        }
+        elsif ( $Text =~ m{\$TimeShort{"\$Q?Data{"($ID)"}"}}smx ) {
+            $Result .= "Translate(Localize(Data." . $SafeArrrayAccess->($1) . ", \"TimeShort\")";
+        }
+        elsif ( $Text =~ m{\$Date{"\$Q?Data{"($ID)"}"}}smx ) {
+            $Result .= "Translate(Localize(Data." . $SafeArrrayAccess->($1) . ", \"Date\")";
+        }
+        elsif ( $Text =~ m{\$Q?Data{"($ID)"}}smx ) {
+            $Result .= "Translate(Data." . $SafeArrrayAccess->($1) . "";
+        }
+        elsif ( $Text =~ m{\$Config{"($ID)"}}smx ) {
+            $Result .= "Translate(Config(\"$1\")";
+        }
+        elsif ( $Text =~ m{\$Q?Env{"($ID)"}}smx ) {
+            $Result .= "Translate(Env(\"$1\")";
+        }
+
+        # Plain text
+        else {
+            $Text =~ s{"}{\\"}smxg;    # Escape " signs
+            if ( $Param{Dot} ) {
+                $Text .= $Param{Dot};
+            }
+            $Result .= "Translate(\"$Text\"";
+        }
+
+        my @Parameters = split m{,\s*}, $ParamString;
+
+        PARAMETER:
+        for my $Parameter (@Parameters) {
+            next PARAMETER if ( !$Parameter );
+            if ( $Parameter =~ m{\$TimeLong{"\$Q?Data{"($ID)"}"}}smx ) {
+                $Result .= ", Localize(Data.$1, \"TimeLong\")";
+            }
+            elsif ( $Parameter =~ m{\$TimeShort{"\$Q?Data{"($ID)"}"}}smx ) {
+                $Result .= ", Localize(Data.$1, \"TimeShort\")";
+            }
+            elsif ( $Parameter =~ m{\$Date{"\$Q?Data{"($ID)"}"}}smx ) {
+                $Result .= ", Localize(Data.$1, \"Date\")";
+            }
+            elsif ( $Parameter =~ m{\$Q?Data{"($ID)"}}smx ) {
+                $Result .= ", Data.$1";
+            }
+            elsif ( $Parameter =~ m{\$Config{"($ID)"}}smx ) {
+                $Result .= ", Config(\"$1\")";
+            }
+            elsif ( $Parameter =~ m{\$Q?Env{"($ID)"}}smx ) {
+                $Result .= ", Env(\"$1\")";
+            }
+            else {
+                $Parameter =~ s{^"|"$}{}smxg;    # Remove enclosing ""
+                $Parameter =~ s{"}{\\"}smxg;     # Escape " signs in the string
+                $Result .= ", \"$Parameter\"";
+            }
+        }
+
+        if ( $Mode eq 'JSON' ) {
+            $Result .= ') | JSON %]';
+        }
+        else {
+            $Result .= ') | html %]';
+        }
+
+        return $Result;
+    };
+
+    my $TextOrData = "";
+
+    # $Text
+    $Content =~ s{
+            \$Text{
+                ["']
+                (
+                    [^\$]+?
+                    |\$Q?Data{\"$ID\"}
+                    |\$Config{\"$ID\"}
+                    |\$Q?Env{\"$ID\"}
+                    |\$TimeLong{\"\$Q?Data{\"$ID\"}\"}
+                    |\$TimeShort{\"\$Q?Data{\"$ID\"}\"}
+                    |\$Date{\"\$Q?Data{\"$ID\"}\"}
+                )
+                ["']
+                ((?:
+                    ,\s*["']
+                    (?:
+                        [^\$]+?
+                        |\$Q?Data{\"$ID\"}
+                        |\$Config{\"$ID\"}
+                        |\$Q?Env{\"$ID\"}
+                        |\$TimeLong{\"\$Q?Data{\"$ID\"}\"}
+                        |\$TimeShort{\"\$Q?Data{\"$ID\"}\"}
+                        |\$Date{\"\$Q?Data{\"$ID\"}\"}
+                    )
+                ["'])*)
+            }
+        }
+        {
+            $MigrateTextTag->( Mode => 'HTML', Text => $1, Parameters => $2);
+        }esmxg;
+
+    # drop empty $Text
+    $Content =~ s{ \$Text [{] "" [}] }{}xmsg;
+
+    # $JSText
+    $Content =~ s{
+            ["']\$JSText{
+                ["']
+                (
+                    [^\$]+?
+                    |\$Q?Data{\"$ID\"}
+                    |\$Config{\"$ID\"}
+                    |\$Q?Env{\"$ID\"}
+                    |\$TimeLong{\"\$Q?Data{\"$ID\"}\"}
+                    |\$TimeShort{\"\$Q?Data{\"$ID\"}\"}
+                    |\$Date{\"\$Q?Data{\"$ID\"}\"}
+                )
+                ["']
+                ((?:
+                    ,\s*["']
+                    (?:
+                        [^\$]+?
+                        |\$Q?Data{\"$ID\"}
+                        |\$Config{\"$ID\"}
+                        |\$Q?Env{\"$ID\"}
+                        |\$TimeLong{\"\$Q?Data{\"$ID\"}\"}
+                        |\$TimeShort{\"\$Q?Data{\"$ID\"}\"}
+                        |\$Date{\"\$Q?Data{\"$ID\"}\"}
+                    )
+                ["'])*)
+            }
+            (.?)["']
+        }
+        {
+            $MigrateTextTag->( Mode => 'JSON', Text => $1, Parameters => $2, Dot => $3);
+        }esmxg;
+
+    # $TimeLong
+    $Content =~ s{\$TimeLong{"\$Q?Data{"($ID)"}"}}{[% Data.$1 | Localize("TimeLong") %]}smxg;
+
+    # $TimeShort
+    $Content =~ s{\$TimeShort{"\$Q?Data{"($ID)"}"}}{[% Data.$1 | Localize("TimeShort") %]}smxg;
+
+    # $Date
+    $Content =~ s{\$Date{"\$Q?Data{"($ID)"}"}}{[% Data.$1 | Localize("Date") %]}smxg;
+
+    # $QData with length
+    $Content =~ s{
+            \$QData{"($ID)",\s*"(\d+)"}
+        }
+        {
+            "[% Data." . $SafeArrrayAccess->($1) . " | truncate($2) | html %]"
+        }esmxg;
+
+    # simple $QData
+    $Content =~ s{
+            \$QData{"($ID)"}
+        }
+        {
+            "[% Data." . $SafeArrrayAccess->($1) . " | html %]"
+        }esmxg;
+
+    # $LQData
+    $Content =~ s{
+            \$LQData{"($ID)"}
+        }
+        {
+            "[% Data." . $SafeArrrayAccess->($1) . " | uri %]"
+        }esmxg;
+
+    # simple $Data
+    $Content =~ s{
+            \$Data{"($ID)"}
+        }
+        {
+            "[% Data." . $SafeArrrayAccess->($1) . " %]"
+        }esmxg;
+
+    # $Config
+    $Content =~ s{\$Config{"($ID)"}}{[% Config("$1") %]}smxg;
+
+    # $Env
+    $Content =~ s{\$Env{"($ID)"}}{[% Env("$1") %]}smxg;
+
+    # $QEnv
+    $Content =~ s{\$QEnv{"($ID)"}}{[% Env("$1") | html %]}smxg;
+
+    # dtl:block
+    my %BlockSeen;
+    $Content =~ s{<!--\s*dtl:block:($ID)\s*-->}{
+        if ($BlockSeen{$1}++ % 2) {
+            "[% RenderBlockEnd(\"$1\") %]";
+        }
+        else {
+            "[% RenderBlockStart(\"$1\") %]";
+        }
+    }esmxg;
+
+    # dtl:js_on_document_complete
+    $Content =~ s{
+            <!--\s*dtl:js_on_document_complete\s*-->(.*?)<!--\s*dtl:js_on_document_complete\s*-->
+        }
+        {
+            "[% WRAPPER JSOnDocumentComplete %]${1}[% END %]";
+        }esmxg;
+
+    # dtl:js_on_document_complete_insert
+    $Content
+        =~ s{<!--\s*dtl:js_on_document_complete_placeholder\s*-->}{[% PROCESS JSOnDocumentCompleteInsert %]}smxg;
+
+    # $Include
+    $Content =~ s{\$Include{"($ID)"}}{[% InsertTemplate("$1.tt") %]}smxg;
+
+    my ( $Counter, $ErrorMessage );
+    LINE:
+    for my $Line ( split /\n/, $Content ) {
+        $Counter++;
+
+        # Make sure there are no more DTL tags present in the code.
+        if ( $Line =~ m{\$(?:L?Q?Data|Quote|Config|Q?Env|Time|Date|Text|JSText|Include)\{}xms ) {
+            $ErrorMessage .= "Line $Counter: $Line\n";
+        }
+    }
+
+    die $ErrorMessage if $ErrorMessage;
+
+    return $Content;
+}
+</pre></div>
+
+<p>translates old <code>DTL</code> template content to <a href="http://search.cpan.org/perldoc?Template%3A%3AToolkit">Template::Toolkit</a> syntax.</p>
+
+<pre>    my $TTCode = $ProviderObject-&gt;MigrateDTLtoTT( Content =&gt; $DTLCode );
+</pre><p>If an error was found, this method will <code>die()</code>, so please use eval around it.</p>
+
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::GenericInterface::Webservice &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::Webservice</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,116 +69,580 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/GenericInterface/Webservice.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#WebserviceAdd">WebserviceAdd()</a></li>
-      <li><a href="#WebserviceGet">WebserviceGet()</a></li>
-      <li><a href="#WebserviceUpdate">WebserviceUpdate()</a></li>
-      <li><a href="#WebserviceDelete">WebserviceDelete()</a></li>
-      <li><a href="#WebserviceList">WebserviceList()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#WebserviceAdd">WebserviceAdd()</a></li>
+	<li><a href="#WebserviceGet">WebserviceGet()</a></li>
+	<li><a href="#WebserviceUpdate">WebserviceUpdate()</a></li>
+	<li><a href="#WebserviceDelete">WebserviceDelete()</a></li>
+	<li><a href="#WebserviceList">WebserviceList()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>Kernel::System::Webservice</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>Web service configuration backend.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-<pre><code>    my $WebserviceObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::GenericInterface::Webservice&#39;);</code></pre>
+sub new {
+    my ( $Webservice, %Param ) = @_;
 
-<h2 id="WebserviceAdd">WebserviceAdd()</h2>
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Webservice );
+
+    return $Self;
+}
+</pre></div>
+
+<p>Don't use the constructor directly, use the ObjectManager instead:</p>
+
+<pre>    my $WebserviceObject = $Kernel::OM-&gt;Get('Kernel::System::GenericInterface::Webservice');
+</pre><h2 id="WebserviceAdd">WebserviceAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_WebserviceAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_WebserviceAdd">
+                                        <pre>
+
+sub WebserviceAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(Name Config ValidID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!"
+            );
+            return;
+        }
+    }
+
+    # check config
+    if ( !IsHashRefWithData( $Param{Config} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Webservice Config should be a non empty hash reference!",
+        );
+        return;
+    }
+
+    # check config internals
+    if ( !IsHashRefWithData( $Param{Config}->{Debugger} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Webservice Config Debugger should be a non empty hash reference!",
+        );
+        return;
+    }
+    if ( !IsStringWithData( $Param{Config}->{Debugger}->{DebugThreshold} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Webservice Config Debugger DebugThreshold should be a non empty string!",
+        );
+        return;
+    }
+    if ( !defined $Param{Config}->{Provider} && !defined $Param{Config}->{Requester} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Webservice Config Provider or Requester should be defined!",
+        );
+        return;
+    }
+    for my $CommunicationType (qw(Provider Requester)) {
+        if ( defined $Param{Config}->{$CommunicationType} ) {
+            if ( !IsHashRefWithData( $Param{Config}->{$CommunicationType} ) ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Webservice Config $CommunicationType should be a non empty hash"
+                        . " reference!",
+                );
+                return;
+            }
+            if ( !IsHashRefWithData( $Param{Config}->{$CommunicationType}->{Transport} ) ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Webservice Config $CommunicationType Transport should be a"
+                        . " non empty hash reference!",
+                );
+                return;
+            }
+        }
+    }
+
+    # dump config as string
+    my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    return if !$DBObject->Do(
+        SQL =>
+            'INSERT INTO gi_webservice_config (name, config, valid_id, '
+            . ' create_time, create_by, change_time, change_by)'
+            . ' VALUES (?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{Name}, \$Config, \$Param{ValidID},
+            \$Param{UserID}, \$Param{UserID},
+        ],
+    );
+
+    return if !$DBObject->Prepare(
+        SQL  => 'SELECT id FROM gi_webservice_config WHERE name = ?',
+        Bind => [ \$Param{Name} ],
+    );
+
+    my $ID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $ID = $Row[0];
+    }
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'Webservice',
+    );
+
+    # get web service history object
+    my $WebserviceHistoryObject = $Kernel::OM->Get('Kernel::System::GenericInterface::WebserviceHistory');
+
+    # add history
+    return if !$WebserviceHistoryObject->WebserviceHistoryAdd(
+        WebserviceID => $ID,
+        Config       => $Param{Config},
+        UserID       => $Param{UserID},
+    );
+
+    return $ID;
+}
+</pre></div>
 
 <p>add new Webservices</p>
 
 <p>returns id of new web service if successful or undef otherwise</p>
 
-<pre><code>    my $ID = $WebserviceObject-&gt;WebserviceAdd(
-        Name    =&gt; &#39;some name&#39;,
+<pre>    my $ID = $WebserviceObject-&gt;WebserviceAdd(
+        Name    =&gt; 'some name',
         Config  =&gt; $ConfigHashRef,
         ValidID =&gt; 1,
         UserID  =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="WebserviceGet">WebserviceGet()</h2>
 
-<h2 id="WebserviceGet">WebserviceGet()</h2>
+<p><a href="#" onclick="toggleCode('method_WebserviceGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_WebserviceGet">
+                                        <pre>
+
+sub WebserviceGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ID} && !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ID or Name!'
+        );
+        return;
+    }
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # check cache
+    my $CacheKey;
+    if ( $Param{ID} ) {
+        $CacheKey = 'WebserviceGet::ID::' . $Param{ID};
+    }
+    else {
+        $CacheKey = 'WebserviceGet::Name::' . $Param{Name};
+
+    }
+    my $Cache = $CacheObject->Get(
+        Type => 'Webservice',
+        Key  => $CacheKey,
+    );
+    return $Cache if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # sql
+    if ( $Param{ID} ) {
+        return if !$DBObject->Prepare(
+            SQL => 'SELECT id, name, config, valid_id, create_time, change_time '
+                . 'FROM gi_webservice_config WHERE id = ?',
+            Bind  => [ \$Param{ID} ],
+            Limit => 1,
+        );
+    }
+    else {
+        return if !$DBObject->Prepare(
+            SQL => 'SELECT id, name, config, valid_id, create_time, change_time '
+                . 'FROM gi_webservice_config WHERE name = ?',
+            Bind  => [ \$Param{Name} ],
+            Limit => 1,
+        );
+    }
+
+    # get yaml object
+    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
+
+    my %Data;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+
+        my $Config = $YAMLObject->Load( Data => $Data[2] );
+
+        %Data = (
+            ID         => $Data[0],
+            Name       => $Data[1],
+            Config     => $Config,
+            ValidID    => $Data[3],
+            CreateTime => $Data[4],
+            ChangeTime => $Data[5],
+        );
+    }
+
+    # get the cache TTL (in seconds)
+    my $CacheTTL = int(
+        $Kernel::OM->Get('Kernel::Config')->Get('GenericInterface::WebserviceConfig::CacheTTL')
+            || 3600
+    );
+
+    # set cache
+    $CacheObject->Set(
+        Type  => 'Webservice',
+        Key   => $CacheKey,
+        Value => \%Data,
+        TTL   => $CacheTTL,
+    );
+
+    return \%Data;
+}
+</pre></div>
 
 <p>get Webservices attributes</p>
 
-<pre><code>    my $Webservice = $WebserviceObject-&gt;WebserviceGet(
+<pre>    my $Webservice = $WebserviceObject-&gt;WebserviceGet(
         ID   =&gt; 123,            # ID or Name must be provided
-        Name =&gt; &#39;MyWebservice&#39;,
-    );</code></pre>
+        Name =&gt; 'MyWebservice',
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
-
-<pre><code>    $Webservice = {
+<pre>    $Webservice = {
         ID         =&gt; 123,
-        Name       =&gt; &#39;some name&#39;,
+        Name       =&gt; 'some name',
         Config     =&gt; $ConfigHashRef,
         ValidID    =&gt; 123,
-        CreateTime =&gt; &#39;2011-02-08 15:08:00&#39;,
-        ChangeTime =&gt; &#39;2011-02-08 15:08:00&#39;,
-    };</code></pre>
+        CreateTime =&gt; '2011-02-08 15:08:00',
+        ChangeTime =&gt; '2011-02-08 15:08:00',
+    };
+</pre><h2 id="WebserviceUpdate">WebserviceUpdate()</h2>
 
-<h2 id="WebserviceUpdate">WebserviceUpdate()</h2>
+<p><a href="#" onclick="toggleCode('method_WebserviceUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_WebserviceUpdate">
+                                        <pre>
+
+sub WebserviceUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID Name Config ValidID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!"
+            );
+            return;
+        }
+    }
+
+    # check config
+    if ( !IsHashRefWithData( $Param{Config} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Webservice Config should be a non empty hash reference!",
+        );
+        return;
+    }
+
+    # check config internals
+    if ( !IsHashRefWithData( $Param{Config}->{Debugger} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Webservice Config Debugger should be a non empty hash reference!",
+        );
+        return;
+    }
+    if ( !IsStringWithData( $Param{Config}->{Debugger}->{DebugThreshold} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Webservice Config Debugger DebugThreshold should be a non empty string!",
+        );
+        return;
+    }
+    if ( !defined $Param{Config}->{Provider} && !defined $Param{Config}->{Requester} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Webservice Config Provider or Requester should be defined!",
+        );
+        return;
+    }
+    for my $CommunicationType (qw(Provider Requester)) {
+        if ( defined $Param{Config}->{$CommunicationType} ) {
+            if ( !IsHashRefWithData( $Param{Config}->{$CommunicationType} ) ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Webservice Config $CommunicationType should be a non empty hash"
+                        . " reference!",
+                );
+                return;
+            }
+            if ( !IsHashRefWithData( $Param{Config}->{$CommunicationType}->{Transport} ) ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Webservice Config $CommunicationType Transport should be a"
+                        . " non empty hash reference!",
+                );
+                return;
+            }
+        }
+    }
+
+    # dump config as string
+    my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # check if config and valid_id is the same
+    return if !$DBObject->Prepare(
+        SQL   => 'SELECT config, valid_id, name FROM gi_webservice_config WHERE id = ?',
+        Bind  => [ \$Param{ID} ],
+        Limit => 1,
+    );
+
+    my $ConfigCurrent;
+    my $ValidIDCurrent;
+    my $NameCurrent;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $ConfigCurrent  = $Data[0];
+        $ValidIDCurrent = $Data[1];
+        $NameCurrent    = $Data[2];
+    }
+
+    return 1 if $ValidIDCurrent eq $Param{ValidID}
+        && $Config eq $ConfigCurrent
+        && $NameCurrent eq $Param{Name};
+
+    # sql
+    return if !$DBObject->Do(
+        SQL => 'UPDATE gi_webservice_config SET name = ?, config = ?, '
+            . ' valid_id = ?, change_time = current_timestamp, '
+            . ' change_by = ? WHERE id = ?',
+        Bind => [
+            \$Param{Name}, \$Config, \$Param{ValidID}, \$Param{UserID},
+            \$Param{ID},
+        ],
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'Webservice',
+    );
+
+    # get web service history object
+    my $WebserviceHistoryObject = $Kernel::OM->Get('Kernel::System::GenericInterface::WebserviceHistory');
+
+    # add history
+    return if !$WebserviceHistoryObject->WebserviceHistoryAdd(
+        WebserviceID => $Param{ID},
+        Config       => $Param{Config},
+        UserID       => $Param{UserID},
+    );
+
+    return 1;
+}
+</pre></div>
 
 <p>update web service attributes</p>
 
 <p>returns 1 if successful or undef otherwise</p>
 
-<pre><code>    my $Success = $WebserviceObject-&gt;WebserviceUpdate(
+<pre>    my $Success = $WebserviceObject-&gt;WebserviceUpdate(
         ID      =&gt; 123,
-        Name    =&gt; &#39;some name&#39;,
+        Name    =&gt; 'some name',
         Config  =&gt; $ConfigHashRef,
         ValidID =&gt; 1,
         UserID  =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="WebserviceDelete">WebserviceDelete()</h2>
 
-<h2 id="WebserviceDelete">WebserviceDelete()</h2>
+<p><a href="#" onclick="toggleCode('method_WebserviceDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_WebserviceDelete">
+                                        <pre>
+
+sub WebserviceDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Key (qw(ID UserID)) {
+        if ( !$Param{$Key} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Key!"
+            );
+            return;
+        }
+    }
+
+    # check if exists
+    my $Webservice = $Self->WebserviceGet(
+        ID => $Param{ID},
+    );
+    return if !IsHashRefWithData($Webservice);
+
+    # get web service history object
+    my $WebserviceHistoryObject = $Kernel::OM->Get('Kernel::System::GenericInterface::WebserviceHistory');
+
+    # delete history
+    return if !$WebserviceHistoryObject->WebserviceHistoryDelete(
+        WebserviceID => $Param{ID},
+        UserID       => $Param{UserID},
+    );
+
+    # get debug log object
+    my $DebugLogObject = $Kernel::OM->Get('Kernel::System::GenericInterface::DebugLog');
+
+    # delete debugging data for web service
+    return if !$DebugLogObject->LogDelete(
+        WebserviceID   => $Param{ID},
+        NoErrorIfEmpty => 1,
+    );
+
+    # delete web service
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL  => 'DELETE FROM gi_webservice_config WHERE id = ?',
+        Bind => [ \$Param{ID} ],
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => 'Webservice',
+    );
+
+    return 1;
+}
+</pre></div>
 
 <p>delete a Webservice</p>
 
 <p>returns 1 if successful or undef otherwise</p>
 
-<pre><code>    my $Success = $WebserviceObject-&gt;WebserviceDelete(
+<pre>    my $Success = $WebserviceObject-&gt;WebserviceDelete(
         ID      =&gt; 123,
         UserID  =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="WebserviceList">WebserviceList()</h2>
 
-<h2 id="WebserviceList">WebserviceList()</h2>
+<p><a href="#" onclick="toggleCode('method_WebserviceList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_WebserviceList">
+                                        <pre>
+
+sub WebserviceList {
+    my ( $Self, %Param ) = @_;
+
+    # get cache object
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+    # check cache
+    my $Valid = 1;
+    if ( !$Param{Valid} ) {
+        $Valid = '0';
+    }
+    my $CacheKey = 'WebserviceList::Valid::' . $Valid;
+    my $Cache    = $CacheObject->Get(
+        Type => 'Webservice',
+        Key  => $CacheKey,
+    );
+    return $Cache if ref $Cache;
+
+    my $SQL = 'SELECT id, name FROM gi_webservice_config';
+
+    if ( !defined $Param{Valid} || $Param{Valid} eq 1 ) {
+
+        # get valid object
+        my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
+
+        $SQL .= ' WHERE valid_id IN (' . join ', ', $ValidObject->ValidIDsGet() . ')';
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare( SQL => $SQL );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[1];
+    }
+
+    # get the cache TTL (in seconds)
+    my $CacheTTL = int(
+        $Kernel::OM->Get('Kernel::Config')->Get('GenericInterface::WebserviceConfig::CacheTTL')
+            || 3600
+    );
+
+    # set cache
+    $CacheObject->Set(
+        Type  => 'Webservice',
+        Key   => $CacheKey,
+        Value => \%Data,
+        TTL   => $CacheTTL,
+    );
+
+    return \%Data;
+}
+</pre></div>
 
 <p>get web service list</p>
 
-<pre><code>    my $List = $WebserviceObject-&gt;WebserviceList();
+<pre>    my $List = $WebserviceObject-&gt;WebserviceList();
 
     or
 
     my $List = $WebserviceObject-&gt;WebserviceList(
         Valid =&gt; 0, # optional, defaults to 1
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

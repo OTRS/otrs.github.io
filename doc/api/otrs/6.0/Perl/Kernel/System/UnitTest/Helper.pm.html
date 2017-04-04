@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::UnitTest::Helper &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::UnitTest::Helper</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,46 +69,97 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/UnitTest/Helper.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#GetRandomID">GetRandomID()</a></li>
-      <li><a href="#GetRandomNumber">GetRandomNumber()</a></li>
-      <li><a href="#TestUserCreate">TestUserCreate()</a></li>
-      <li><a href="#TestCustomerUserCreate">TestCustomerUserCreate()</a></li>
-      <li><a href="#BeginWork">BeginWork()</a></li>
-      <li><a href="#Rollback">Rollback()</a></li>
-      <li><a href="#GetTestHTTPHostname">GetTestHTTPHostname()</a></li>
-      <li><a href="#FixedTimeSet">FixedTimeSet()</a></li>
-      <li><a href="#FixedTimeUnset">FixedTimeUnset()</a></li>
-      <li><a href="#FixedTimeAddSeconds">FixedTimeAddSeconds()</a></li>
-      <li><a href="#ConfigSettingChange">ConfigSettingChange()</a></li>
-      <li><a href="#CustomCodeActivate">CustomCodeActivate()</a></li>
-      <li><a href="#CustomFileCleanup">CustomFileCleanup()</a></li>
-      <li><a href="#UseTmpArticleDir">UseTmpArticleDir()</a></li>
-      <li><a href="#ProvideTestDatabase">ProvideTestDatabase()</a></li>
-      <li><a href="#TestDatabaseCleanup">TestDatabaseCleanup()</a></li>
-      <li><a href="#DatabaseXMLExecute">DatabaseXMLExecute()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#GetRandomID">GetRandomID()</a></li>
+	<li><a href="#GetRandomNumber">GetRandomNumber()</a></li>
+	<li><a href="#TestUserCreate">TestUserCreate()</a></li>
+	<li><a href="#TestCustomerUserCreate">TestCustomerUserCreate()</a></li>
+	<li><a href="#BeginWork">BeginWork()</a></li>
+	<li><a href="#Rollback">Rollback()</a></li>
+	<li><a href="#GetTestHTTPHostname">GetTestHTTPHostname()</a></li>
+	<li><a href="#FixedTimeSet">FixedTimeSet()</a></li>
+	<li><a href="#FixedTimeUnset">FixedTimeUnset()</a></li>
+	<li><a href="#FixedTimeAddSeconds">FixedTimeAddSeconds()</a></li>
+	<li><a href="#ConfigSettingChange">ConfigSettingChange()</a></li>
+	<li><a href="#CustomCodeActivate">CustomCodeActivate()</a></li>
+	<li><a href="#CustomFileCleanup">CustomFileCleanup()</a></li>
+	<li><a href="#UseTmpArticleDir">UseTmpArticleDir()</a></li>
+	<li><a href="#ProvideTestDatabase">ProvideTestDatabase()</a></li>
+	<li><a href="#TestDatabaseCleanup">TestDatabaseCleanup()</a></li>
+	<li><a href="#DatabaseXMLExecute">DatabaseXMLExecute()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>Kernel::System::UnitTest::Helper - unit test helper functions</p>
 
+
+
 <h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self->{Debug} = $Param{Debug} || 0;
+
+    $Self->{UnitTestObject} = $Kernel::OM->Get('Kernel::System::UnitTest');
+
+    # Remove any leftover custom files from aborted previous runs.
+    $Self->CustomFileCleanup();
+
+    # set environment variable to skip SSL certificate verification if needed
+    if ( $Param{SkipSSLVerify} ) {
+
+        # remember original value
+        $Self->{PERL_LWP_SSL_VERIFY_HOSTNAME} = $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME};
+
+        # set environment value to 0
+        $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;
+
+        $Self->{RestoreSSLVerify} = 1;
+        $Self->{UnitTestObject}->True( 1, 'Skipping SSL certificates verification' );
+    }
+
+    # switch article dir to a temporary one to avoid collisions
+    if ( $Param{UseTmpArticleDir} ) {
+        $Self->UseTmpArticleDir();
+    }
+
+    if ( $Param{RestoreDatabase} ) {
+        $Self->{RestoreDatabase} = 1;
+        my $StartedTransaction = $Self->BeginWork();
+        $Self->{UnitTestObject}->True( $StartedTransaction, 'Started database transaction.' );
+
+    }
+
+    return $Self;
+}
+</pre></div>
 
 <p>construct a helper object.</p>
 
-<pre><code>    use Kernel::System::ObjectManager;
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
-        &#39;Kernel::System::UnitTest::Helper&#39; =&gt; {
+        'Kernel::System::UnitTest::Helper' =&gt; {
             RestoreDatabase            =&gt; 1,        # runs the test in a transaction,
                                                     # and roll it back in the destructor
                                                     #
@@ -98,171 +170,759 @@ $(document).ready(function() {
                                                     # yourself.
         },
     );
-    my $Helper = $Kernel::OM-&gt;Get(&#39;Kernel::System::UnitTest::Helper&#39;);</code></pre>
+    my $Helper = $Kernel::OM-&gt;Get('Kernel::System::UnitTest::Helper');
+</pre><h2 id="GetRandomID">GetRandomID()</h2>
 
-<h2 id="GetRandomID">GetRandomID()</h2>
+<p><a href="#" onclick="toggleCode('method_GetRandomID');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetRandomID">
+                                        <pre>
+
+sub GetRandomID {
+    my ( $Self, %Param ) = @_;
+
+    return 'test' . $Self->GetRandomNumber();
+}
+</pre></div>
 
 <p>creates a random ID that can be used in tests as a unique identifier.</p>
 
 <p>It is guaranteed that within a test this function will never return a duplicate.</p>
 
-<p>Please note that these numbers are not really random and should only be used to create test data.</p>
+<p>Please note that these numbers are not really random and should only be used
+to create test data.</p>
 
 <h2 id="GetRandomNumber">GetRandomNumber()</h2>
+
+<p><a href="#" onclick="toggleCode('method_GetRandomNumber');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetRandomNumber">
+                                        <pre>
+
+sub GetRandomNumber {
+
+    my $PIDReversed = reverse $$;
+    my $PID = reverse sprintf '%.6d', $PIDReversed;
+
+    my $Prefix = $PID . substr time(), -5, 5;
+
+    return $Prefix . sprintf( '%.05d', ( $GetRandomNumberPrevious{$Prefix}++ || 0 ) );
+}
+</pre></div>
 
 <p>creates a random Number that can be used in tests as a unique identifier.</p>
 
 <p>It is guaranteed that within a test this function will never return a duplicate.</p>
 
-<p>Please note that these numbers are not really random and should only be used to create test data.</p>
+<p>Please note that these numbers are not really random and should only be used
+to create test data.</p>
 
 <h2 id="TestUserCreate">TestUserCreate()</h2>
 
-<p>creates a test user that can be used in tests. It will be set to invalid automatically during the destructor. Returns the login name of the new user, the password is the same.</p>
+<p><a href="#" onclick="toggleCode('method_TestUserCreate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TestUserCreate">
+                                        <pre>
 
-<pre><code>    my $TestUserLogin = $Helper-&gt;TestUserCreate(
-        Groups =&gt; [&#39;admin&#39;, &#39;users&#39;],           # optional, list of groups to add this user to (rw rights)
-        Language =&gt; &#39;de&#39;                        # optional, defaults to &#39;en&#39; if not set
-    );</code></pre>
+sub TestUserCreate {
+    my ( $Self, %Param ) = @_;
 
-<h2 id="TestCustomerUserCreate">TestCustomerUserCreate()</h2>
+    # disable email checks to create new user
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    local $ConfigObject->{CheckEmailAddresses} = 0;
 
-<p>creates a test customer user that can be used in tests. It will be set to invalid automatically during the destructor. Returns the login name of the new customer user, the password is the same.</p>
+    # create test user
+    my $TestUserID;
+    my $TestUserLogin;
+    COUNT:
+    for my $Count ( 1 .. 10 ) {
 
-<pre><code>    my $TestUserLogin = $Helper-&gt;TestCustomerUserCreate(
-        Language =&gt; &#39;de&#39;,   # optional, defaults to &#39;en&#39; if not set
-    );</code></pre>
+        $TestUserLogin = $Self->GetRandomID();
 
-<h2 id="BeginWork">BeginWork()</h2>
+        $TestUserID = $Kernel::OM->Get('Kernel::System::User')->UserAdd(
+            UserFirstname => $TestUserLogin,
+            UserLastname  => $TestUserLogin,
+            UserLogin     => $TestUserLogin,
+            UserPw        => $TestUserLogin,
+            UserEmail     => $TestUserLogin . '@localunittest.com',
+            ValidID       => 1,
+            ChangeUserID  => 1,
+        );
 
-<pre><code>    $Helper-&gt;BeginWork()</code></pre>
+        last COUNT if $TestUserID;
+    }
 
-<p>Starts a database transaction (in order to isolate the test from the static database).</p>
+    die 'Could not create test user login' if !$TestUserLogin;
+    die 'Could not create test user'       if !$TestUserID;
+
+    # Remember UserID of the test user to later set it to invalid
+    #   in the destructor.
+    $Self->{TestUsers} ||= [];
+    push( @{ $Self->{TestUsers} }, $TestUserID );
+
+    $Self->{UnitTestObject}->True( 1, "Created test user $TestUserID" );
+
+    # Add user to groups
+    GROUP_NAME:
+    for my $GroupName ( @{ $Param{Groups} || [] } ) {
+
+        # get group object
+        my $GroupObject = $Kernel::OM->Get('Kernel::System::Group');
+
+        my $GroupID = $GroupObject->GroupLookup( Group => $GroupName );
+        die "Cannot find group $GroupName" if ( !$GroupID );
+
+        $GroupObject->PermissionGroupUserAdd(
+            GID        => $GroupID,
+            UID        => $TestUserID,
+            Permission => {
+                ro        => 1,
+                move_into => 1,
+                create    => 1,
+                owner     => 1,
+                priority  => 1,
+                rw        => 1,
+            },
+            UserID => 1,
+        ) || die "Could not add test user $TestUserLogin to group $GroupName";
+
+        $Self->{UnitTestObject}->True( 1, "Added test user $TestUserLogin to group $GroupName" );
+    }
+
+    # set user language
+    my $UserLanguage = $Param{Language} || 'en';
+    $Kernel::OM->Get('Kernel::System::User')->SetPreferences(
+        UserID => $TestUserID,
+        Key    => 'UserLanguage',
+        Value  => $UserLanguage,
+    );
+    $Self->{UnitTestObject}->True( 1, "Set user UserLanguage to $UserLanguage" );
+
+    return $TestUserLogin;
+}
+</pre></div>
+
+<p>creates a test user that can be used in tests. It will
+be set to invalid automatically during the destructor. Returns
+the login name of the new user, the password is the same.</p>
+
+<pre>    my $TestUserLogin = $Helper-&gt;TestUserCreate(
+        Groups =&gt; ['admin', 'users'],           # optional, list of groups to add this user to (rw rights)
+        Language =&gt; 'de'                        # optional, defaults to 'en' if not set
+    );
+</pre><h2 id="TestCustomerUserCreate">TestCustomerUserCreate()</h2>
+
+<p><a href="#" onclick="toggleCode('method_TestCustomerUserCreate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TestCustomerUserCreate">
+                                        <pre>
+
+sub TestCustomerUserCreate {
+    my ( $Self, %Param ) = @_;
+
+    # disable email checks to create new user
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    local $ConfigObject->{CheckEmailAddresses} = 0;
+
+    # create test user
+    my $TestUser;
+    COUNT:
+    for my $Count ( 1 .. 10 ) {
+
+        my $TestUserLogin = $Self->GetRandomID();
+
+        $TestUser = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserAdd(
+            Source         => 'CustomerUser',
+            UserFirstname  => $TestUserLogin,
+            UserLastname   => $TestUserLogin,
+            UserCustomerID => $TestUserLogin,
+            UserLogin      => $TestUserLogin,
+            UserPassword   => $TestUserLogin,
+            UserEmail      => $TestUserLogin . '@localunittest.com',
+            ValidID        => 1,
+            UserID         => 1,
+        );
+
+        last COUNT if $TestUser;
+    }
+
+    die 'Could not create test user' if !$TestUser;
+
+    # Remember UserID of the test user to later set it to invalid
+    #   in the destructor.
+    $Self->{TestCustomerUsers} ||= [];
+    push( @{ $Self->{TestCustomerUsers} }, $TestUser );
+
+    $Self->{UnitTestObject}->True( 1, "Created test customer user $TestUser" );
+
+    # set customer user language
+    my $UserLanguage = $Param{Language} || 'en';
+    $Kernel::OM->Get('Kernel::System::CustomerUser')->SetPreferences(
+        UserID => $TestUser,
+        Key    => 'UserLanguage',
+        Value  => $UserLanguage,
+    );
+    $Self->{UnitTestObject}->True( 1, "Set customer user UserLanguage to $UserLanguage" );
+
+    return $TestUser;
+}
+</pre></div>
+
+<p>creates a test customer user that can be used in tests. It will
+be set to invalid automatically during the destructor. Returns
+the login name of the new customer user, the password is the same.</p>
+
+<pre>    my $TestUserLogin = $Helper-&gt;TestCustomerUserCreate(
+        Language =&gt; 'de',   # optional, defaults to 'en' if not set
+    );
+</pre><h2 id="BeginWork">BeginWork()</h2>
+
+<p><a href="#" onclick="toggleCode('method_BeginWork');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_BeginWork">
+                                        <pre>
+
+sub BeginWork {
+    my ( $Self, %Param ) = @_;
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    $DBObject->Connect();
+    return $DBObject->{dbh}->begin_work();
+}
+</pre></div>
+
+<pre>    $Helper-&gt;BeginWork()
+</pre><p>Starts a database transaction (in order to isolate the test from the static database).</p>
 
 <h2 id="Rollback">Rollback()</h2>
 
-<pre><code>    $Helper-&gt;Rollback()</code></pre>
+<p><a href="#" onclick="toggleCode('method_Rollback');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Rollback">
+                                        <pre>
 
-<p>Rolls back the current database transaction.</p>
+sub Rollback {
+    my ( $Self, %Param ) = @_;
+    my $DatabaseHandle = $Kernel::OM->Get('Kernel::System::DB')->{dbh};
+
+    # if there is no database handle, there's nothing to rollback
+    if ($DatabaseHandle) {
+        return $DatabaseHandle->rollback();
+    }
+    return 1;
+}
+</pre></div>
+
+<pre>    $Helper-&gt;Rollback()
+</pre><p>Rolls back the current database transaction.</p>
 
 <h2 id="GetTestHTTPHostname">GetTestHTTPHostname()</h2>
+
+<p><a href="#" onclick="toggleCode('method_GetTestHTTPHostname');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetTestHTTPHostname">
+                                        <pre>
+
+sub GetTestHTTPHostname {
+    my ( $Self, %Param ) = @_;
+
+    my $Host = $Kernel::OM->Get('Kernel::Config')->Get('TestHTTPHostname');
+    return $Host if $Host;
+
+    my $FQDN = $Kernel::OM->Get('Kernel::Config')->Get('FQDN');
+
+    # try to resolve fqdn host
+    if ( $FQDN ne 'yourhost.example.com' && gethostbyname($FQDN) ) {
+        $Host = $FQDN;
+    }
+
+    # try to resolve localhost instead
+    if ( !$Host && gethostbyname('localhost') ) {
+        $Host = 'localhost';
+    }
+
+    # use hardcoded localhost ip address
+    if ( !$Host ) {
+        $Host = '127.0.0.1';
+    }
+
+    return $Host;
+}
+</pre></div>
 
 <p>returns a hostname for HTTP based tests, possibly including the port.</p>
 
 <h2 id="FixedTimeSet">FixedTimeSet()</h2>
 
-<p>makes it possible to override the system time as long as this object lives. You can pass an optional time parameter that should be used, if not, the current system time will be used.</p>
+<p><a href="#" onclick="toggleCode('method_FixedTimeSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FixedTimeSet">
+                                        <pre>
 
-<p>All calls to methods of Kernel::System::Time and Kernel::System::DateTime will use the given time afterwards.</p>
+sub FixedTimeSet {
+    my ( $Self, $TimeToSave ) = @_;
 
-<pre><code>    $HelperObject-&gt;FixedTimeSet(366475757);         # with Timestamp
+    if ( $TimeToSave && ref $TimeToSave eq 'Kernel::System::DateTime' ) {
+        $FixedTime = $TimeToSave->ToEpoch();
+    }
+    else {
+        $FixedTime = $TimeToSave // CORE::time()
+    }
+
+    # This is needed to reload objects that directly use the native time functions
+    #   to get a hold of the overrides.
+    my @Objects = (
+        'Kernel::System::Time',
+        'Kernel::System::Cache::FileStorable',
+        'Kernel::System::PID',
+    );
+
+    for my $Object (@Objects) {
+        my $FilePath = $Object;
+        $FilePath =~ s{::}{/}xmsg;
+        $FilePath .= '.pm';
+        if ( $INC{$FilePath} ) {
+            no warnings 'redefine';
+            delete $INC{$FilePath};
+            $Kernel::OM->Get('Kernel::System::Main')->Require($Object);
+        }
+    }
+
+    return $FixedTime;
+}
+</pre></div>
+
+<p>makes it possible to override the system time as long as this object lives.
+You can pass an optional time parameter that should be used, if not,
+the current system time will be used.</p>
+
+<p>All calls to methods of Kernel::System::Time and Kernel::System::DateTime will
+use the given time afterwards.</p>
+
+<pre>    $HelperObject-&gt;FixedTimeSet(366475757);         # with Timestamp
     $HelperObject-&gt;FixedTimeSet($DateTimeObject);   # with previously created DateTime object
-    $HelperObject-&gt;FixedTimeSet();                  # set to current date and time</code></pre>
-
-<p>Returns: Timestamp</p>
+    $HelperObject-&gt;FixedTimeSet();                  # set to current date and time
+</pre><p>Returns:
+    Timestamp</p>
 
 <h2 id="FixedTimeUnset">FixedTimeUnset()</h2>
+
+<p><a href="#" onclick="toggleCode('method_FixedTimeUnset');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FixedTimeUnset">
+                                        <pre>
+
+sub FixedTimeUnset {
+    my ($Self) = @_;
+
+    undef $FixedTime;
+    return;
+}
+</pre></div>
 
 <p>restores the regular system time behaviour.</p>
 
 <h2 id="FixedTimeAddSeconds">FixedTimeAddSeconds()</h2>
 
-<p>adds a number of seconds to the fixed system time which was previously set by FixedTimeSet(). You can pass a negative value to go back in time.</p>
+<p><a href="#" onclick="toggleCode('method_FixedTimeAddSeconds');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_FixedTimeAddSeconds">
+                                        <pre>
+
+sub FixedTimeAddSeconds {
+    my ( $Self, $SecondsToAdd ) = @_;
+
+    return if !defined $FixedTime;
+    $FixedTime += $SecondsToAdd;
+    return;
+}
+</pre></div>
+
+<p>adds a number of seconds to the fixed system time which was previously
+set by FixedTimeSet(). You can pass a negative value to go back in time.</p>
 
 <h2 id="ConfigSettingChange">ConfigSettingChange()</h2>
 
-<p>temporarily change a configuration setting system wide to another value, both in the current ConfigObject and also in the system configuration on disk.</p>
+<p><a href="#" onclick="toggleCode('method_ConfigSettingChange');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ConfigSettingChange">
+                                        <pre>
+
+sub ConfigSettingChange {
+    my ( $Self, %Param ) = @_;
+
+    my $Valid = $Param{Valid} // 1;
+    my $Key   = $Param{Key};
+    my $Value = $Param{Value};
+
+    die "Need 'Key'" if !defined $Key;
+
+    my $RandomNumber = $Self->GetRandomNumber();
+
+    my $KeyDump = $Key;
+    $KeyDump =~ s|'|\\'|smxg;
+    $KeyDump = "\$Self->{'$KeyDump'}";
+    $KeyDump =~ s|\#{3}|'}->{'|smxg;
+
+    # Also set at runtime in the ConfigObject. This will be destroyed at the end of the unit test.
+    $Kernel::OM->Get('Kernel::Config')->Set(
+        Key   => $Key,
+        Value => $Valid ? $Value : undef,
+    );
+
+    my $ValueDump;
+    if ($Valid) {
+        $ValueDump = $Kernel::OM->Get('Kernel::System::Main')->Dump($Value);
+        $ValueDump =~ s/\$VAR1/$KeyDump/;
+    }
+    else {
+        $ValueDump = "delete $KeyDump;"
+    }
+
+    my $PackageName = "ZZZZUnitTest$RandomNumber";
+
+    my $Content = <<"EOF";
+# OTRS config file (automatically generated)
+# VERSION:1.1
+package Kernel::Config::Files::$PackageName;
+use strict;
+use warnings;
+no warnings 'redefine';
+use utf8;
+sub Load {
+    my (\$File, \$Self) = \@_;
+    $ValueDump
+}
+</pre></div>
+
+<p>temporarily change a configuration setting system wide to another value,
+both in the current ConfigObject and also in the system configuration on disk.</p>
 
 <p>This will be reset when the Helper object is destroyed.</p>
 
 <p>Please note that this will not work correctly in clustered environments.</p>
 
-<pre><code>    $Helper-&gt;ConfigSettingChange(
+<pre>    $Helper-&gt;ConfigSettingChange(
         Valid =&gt; 1,            # (optional) enable or disable setting
-        Key   =&gt; &#39;MySetting&#39;,  # setting name
+        Key   =&gt; 'MySetting',  # setting name
         Value =&gt; { ... } ,     # setting value
-    );</code></pre>
+    );
+</pre><h2 id="CustomCodeActivate">CustomCodeActivate()</h2>
 
-<h2 id="CustomCodeActivate">CustomCodeActivate()</h2>
+<p><a href="#" onclick="toggleCode('method_CustomCodeActivate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomCodeActivate">
+                                        <pre>
 
-<p>Temporarily include custom code in the system. For example, you may use this to redefine a subroutine from another class. This change will persist for remainder of the test.</p>
+sub CustomCodeActivate {
+    my ( $Self, %Param ) = @_;
+
+    my $Code = $Param{Code};
+    my $Identifier = $Param{Identifier} || $Self->GetRandomNumber();
+
+    die "Need 'Code'" if !defined $Code;
+
+    my $PackageName = "ZZZZUnitTest$Identifier";
+
+    my $Home     = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+    my $FileName = "$Home/Kernel/Config/Files/$PackageName.pm";
+    $Kernel::OM->Get('Kernel::System::Main')->FileWrite(
+        Location => $FileName,
+        Mode     => 'utf8',
+        Content  => \$Code,
+    ) || die "Could not write $FileName";
+
+    return 1;
+}
+</pre></div>
+
+<p>Temporarily include custom code in the system. For example, you may use this to redefine a
+subroutine from another class. This change will persist for remainder of the test.</p>
 
 <p>All code will be removed when the Helper object is destroyed.</p>
 
 <p>Please note that this will not work correctly in clustered environments.</p>
 
-<pre><code>    $Helper-&gt;CustomCodeActivate(
+<pre>    $Helper-&gt;CustomCodeActivate(
         Code =&gt; q^
 use Kernel::System::WebUserAgent;
 package Kernel::System::WebUserAgent;
 use strict;
 use warnings;
 {
-    no warnings &#39;redefine&#39;;
+    no warnings 'redefine';
     sub Request {
-        my $JSONString = &#39;{&quot;Results&quot;:{},&quot;ErrorMessage&quot;:&quot;&quot;,&quot;Success&quot;:1}&#39;;
+        my $JSONString = '{&quot;Results&quot;:{},&quot;ErrorMessage&quot;:&quot;&quot;,&quot;Success&quot;:1}';
         return (
             Content =&gt; \$JSONString,
-            Status  =&gt; &#39;200 OK&#39;,
+            Status  =&gt; '200 OK',
         );
     }
 }
 1;^,
-        Identifier =&gt; &#39;News&#39;,   # (optional) Code identifier to include in file name
-    );</code></pre>
+        Identifier =&gt; 'News',   # (optional) Code identifier to include in file name
+    );
+</pre><h2 id="CustomFileCleanup">CustomFileCleanup()</h2>
 
-<h2 id="CustomFileCleanup">CustomFileCleanup()</h2>
+<p><a href="#" onclick="toggleCode('method_CustomFileCleanup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CustomFileCleanup">
+                                        <pre>
+
+sub CustomFileCleanup {
+    my ( $Self, %Param ) = @_;
+
+    my $Home  = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+    my @Files = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => "$Home/Kernel/Config/Files",
+        Filter    => "ZZZZUnitTest*.pm",
+    );
+    for my $File (@Files) {
+        $Kernel::OM->Get('Kernel::System::Main')->FileDelete(
+            Location => $File,
+        ) || die "Could not delete $File";
+    }
+    return 1;
+}
+</pre></div>
 
 <p>Remove all custom files from <code>ConfigSettingChange()</code> and <code>CustomCodeActivate()</code>.</p>
 
 <h2 id="UseTmpArticleDir">UseTmpArticleDir()</h2>
 
+<p><a href="#" onclick="toggleCode('method_UseTmpArticleDir');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_UseTmpArticleDir">
+                                        <pre>
+
+sub UseTmpArticleDir {
+    my ( $Self, %Param ) = @_;
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+
+    my $TmpArticleDir;
+    TRY:
+    for my $Try ( 1 .. 100 ) {
+
+        $TmpArticleDir = $Home . '/var/tmp/unittest-article-' . $Self->GetRandomNumber();
+
+        next TRY if -e $TmpArticleDir;
+        last TRY;
+    }
+
+    $Self->ConfigSettingChange(
+        Valid => 1,
+        Key   => 'ArticleDir',
+        Value => $TmpArticleDir,
+    );
+
+    $Self->{TmpArticleDir} = $TmpArticleDir;
+
+    return 1;
+}
+</pre></div>
+
 <p>switch the article storage directory to a temporary one to prevent collisions;</p>
 
 <h2 id="ProvideTestDatabase">ProvideTestDatabase()</h2>
 
-<p>Provide temporary database for the test. Please first define test database settings in <code>Config.pm</code>, i.e:</p>
+<p><a href="#" onclick="toggleCode('method_ProvideTestDatabase');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ProvideTestDatabase">
+                                        <pre>
 
-<pre><code>    $Self-&gt;{TestDatabase} = {
-        DatabaseDSN  =&gt; &#39;DBI:mysql:database=otrs_test;host=127.0.0.1;&#39;,
-        DatabaseUser =&gt; &#39;otrs_test&#39;,
-        DatabasePw   =&gt; &#39;otrs_test&#39;,
-    };</code></pre>
+sub ProvideTestDatabase {
+    my ( $Self, %Param ) = @_;
 
-<p>The method call will override global database configuration for duration of the test, i.e. temporary database will receive all calls sent over system <code>DBObject</code>.</p>
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my $TestDatabase = $ConfigObject->Get('TestDatabase');
+    return if !$TestDatabase;
+
+    for (qw(DatabaseDSN DatabaseUser DatabasePw)) {
+        if ( !$TestDatabase->{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_ in TestDatabase!",
+            );
+            return;
+        }
+    }
+
+    my %EscapedSettings;
+    for my $Key (qw(DatabaseDSN DatabaseUser DatabasePw)) {
+
+        # Override database connection settings in memory.
+        $ConfigObject->Set(
+            Key   => $Key,
+            Value => $TestDatabase->{$Key},
+        );
+
+        # Escape quotes in database settings.
+        $EscapedSettings{$Key} = $TestDatabase->{$Key};
+        $EscapedSettings{$Key} =~ s/'/\\'/g;
+    }
+
+    # Override database connection settings system wide.
+    my $Identifier  = 'TestDatabase';
+    my $PackageName = "ZZZZUnitTest$Identifier";
+    $Self->CustomCodeActivate(
+        Code => qq^
+# OTRS config file (automatically generated)
+# VERSION:1.1
+package Kernel::Config::Files::$PackageName;
+use strict;
+use warnings;
+no warnings 'redefine';
+use utf8;
+sub Load {
+    my (\$File, \$Self) = \@_;
+    \$Self->{DatabaseDSN}  = '$EscapedSettings{DatabaseDSN}';
+    \$Self->{DatabaseUser} = '$EscapedSettings{DatabaseUser}';
+    \$Self->{DatabasePw}   = '$EscapedSettings{DatabasePw}';
+}
+</pre></div>
+
+<p>Provide temporary database for the test. Please first define test database settings in <code>Config.pm</code>,
+i.e:</p>
+
+<pre>    $Self-&gt;{TestDatabase} = {
+        DatabaseDSN  =&gt; 'DBI:mysql:database=otrs_test;host=127.0.0.1;',
+        DatabaseUser =&gt; 'otrs_test',
+        DatabasePw   =&gt; 'otrs_test',
+    };
+</pre><p>The method call will override global database configuration for duration of the test, i.e. temporary
+database will receive all calls sent over system <code>DBObject</code>.</p>
 
 <p>All database contents will be automatically dropped when the Helper object is destroyed.</p>
 
-<pre><code>    $Helper-&gt;ProvideTestDatabase(
+<pre>    $Helper-&gt;ProvideTestDatabase(
         DatabaseXMLString =&gt; $XML,      # (optional) OTRS database XML schema to execute
                                         # or
         DatabaseXMLFiles =&gt; [           # (optional) List of XML files to load and execute
-            &#39;/opt/otrs/scripts/database/otrs-schema.xml&#39;,
-            &#39;/opt/otrs/scripts/database/otrs-initial_insert.xml&#39;,
+            '/opt/otrs/scripts/database/otrs-schema.xml',
+            '/opt/otrs/scripts/database/otrs-initial_insert.xml',
         ],
-    );</code></pre>
+    );
+</pre><h2 id="TestDatabaseCleanup">TestDatabaseCleanup()</h2>
 
-<h2 id="TestDatabaseCleanup">TestDatabaseCleanup()</h2>
+<p><a href="#" onclick="toggleCode('method_TestDatabaseCleanup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TestDatabaseCleanup">
+                                        <pre>
 
-<p>Clears temporary database used in the test. Always call <code>ProvideTestDatabase()</code> called first, in order to set it up.</p>
+sub TestDatabaseCleanup {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Self->{ProvideTestDatabase} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Please call ProvideTestDatabase() first!',
+        );
+        return;
+    }
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # Get a list of all tables in database.
+    my @Tables = $DBObject->ListTables();
+
+    if ( scalar @Tables ) {
+        my $TableList = join ', ', sort @Tables;
+        my $DBType = $DBObject->{'DB::Type'};
+
+        if ( $DBType eq 'mysql' ) {
+
+            # Turn off checking foreign key constraints temporarily.
+            $DBObject->Do( SQL => 'SET foreign_key_checks = 0' );
+
+            # Drop all found tables in the database in same statement.
+            $DBObject->Do( SQL => "DROP TABLE $TableList" );
+
+            # Turn back on checking foreign key constraints.
+            $DBObject->Do( SQL => 'SET foreign_key_checks = 1' );
+        }
+        elsif ( $DBType eq 'postgresql' ) {
+
+            # Drop all found tables in the database in same statement.
+            $DBObject->Do( SQL => "DROP TABLE $TableList" );
+        }
+        elsif ( $DBType eq 'oracle' ) {
+
+            # Drop each found table in the database in a separate statement.
+            for my $Table (@Tables) {
+                $DBObject->Do( SQL => "DROP TABLE $Table CASCADE CONSTRAINTS" );
+            }
+        }
+
+        # Check if all tables have been dropped.
+        @Tables = $DBObject->ListTables();
+        return if scalar @Tables;
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>Clears temporary database used in the test. Always call <code>ProvideTestDatabase()</code> called first, in
+order to set it up.</p>
 
 <p>Please note that all database contents will be dropped, USE WITH CARE!</p>
 
-<pre><code>    $Helper-&gt;TestDatabaseCleanup();</code></pre>
+<pre>    $Helper-&gt;TestDatabaseCleanup();
+</pre><h2 id="DatabaseXMLExecute">DatabaseXMLExecute()</h2>
 
-<h2 id="DatabaseXMLExecute">DatabaseXMLExecute()</h2>
+<p><a href="#" onclick="toggleCode('method_DatabaseXMLExecute');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DatabaseXMLExecute">
+                                        <pre>
 
-<p>Execute supplied XML against current database. Content of supplied XML parameter must be valid OTRS database XML schema.</p>
+sub DatabaseXMLExecute {
+    my ( $Self, %Param ) = @_;
 
-<pre><code>    $Helper-&gt;DatabaseXMLExecute(
+    if ( !$Param{XML} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need XML!',
+        );
+        return;
+    }
+
+    my @XMLArray = $Kernel::OM->Get('Kernel::System::XML')->XMLParse( String => $Param{XML} );
+    if ( !@XMLArray ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Could not parse XML!',
+        );
+        return;
+    }
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    my @SQLPre = $DBObject->SQLProcessor(
+        Database => \@XMLArray,
+    );
+    if ( !@SQLPre ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Could not generate SQL!',
+        );
+        return;
+    }
+
+    my @SQLPost = $DBObject->SQLProcessorPost();
+
+    for my $SQL ( @SQLPre, @SQLPost ) {
+        my $Success = $DBObject->Do( SQL => $SQL );
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Database action failed: ' . $DBObject->Error(),
+            );
+            return;
+        }
+    }
+
+    return 1;
+}
+</pre></div>
+
+<p>Execute supplied XML against current database. Content of supplied XML parameter must be valid OTRS
+database XML schema.</p>
+
+<pre>    $Helper-&gt;DatabaseXMLExecute(
         XML =&gt; $XML,     # (required) OTRS database XML schema to execute
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

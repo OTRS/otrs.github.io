@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::Calendar::Ticket::EscalationTime &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::Calendar::Ticket::EscalationTime</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,58 +69,115 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/Calendar/Ticket/EscalationTime.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#GetTime">GetTime()</a></li>
-      <li><a href="#SetTime">SetTime()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#GetTime">GetTime()</a></li>
+	<li><a href="#SetTime">SetTime()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::System::Calendar::Ticket::EscalationTime - EscalationTime appointment type</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>EscalationTime ticket appointment type.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
 <p>create an object. Do not use it directly, instead use:</p>
 
-<pre><code>    use Kernel::System::ObjectManager;
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $TicketEscalationTimeObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Calendar::Ticket::EscalationTime&#39;);</code></pre>
+    my $TicketEscalationTimeObject = $Kernel::OM-&gt;Get('Kernel::System::Calendar::Ticket::EscalationTime');
+</pre><h2 id="GetTime">GetTime()</h2>
 
-<h2 id="GetTime">GetTime()</h2>
+<p><a href="#" onclick="toggleCode('method_GetTime');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetTime">
+                                        <pre>
+
+sub GetTime {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(Type TicketID)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    # get ticket data
+    my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID => $Param{TicketID},
+    );
+    return if !$Ticket{ $Param{Type} . 'DestinationDate' };
+
+    # return escalation destination date
+    return $Ticket{ $Param{Type} . 'DestinationDate' };
+}
+</pre></div>
 
 <p>returns time value for escalation time appointment type.</p>
 
-<pre><code>    my $SolutionTime = $TicketEscalationTimeObject-&gt;GetTime(
-        Type     =&gt; &#39;SolutionTime&#39;,
+<pre>    my $SolutionTime = $TicketEscalationTimeObject-&gt;GetTime(
+        Type     =&gt; 'SolutionTime',
         TicketID =&gt; 1,
-    );</code></pre>
+    );
+</pre><h2 id="SetTime">SetTime()</h2>
 
-<h2 id="SetTime">SetTime()</h2>
+<p><a href="#" onclick="toggleCode('method_SetTime');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SetTime">
+                                        <pre>
 
-<p>does nothing, as you cannot explicitly set ticket escalation times. returns 1 to prevent errors in log.</p>
+sub SetTime {
+    return 1;
+}
+</pre></div>
 
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+<p>does nothing, as you cannot explicitly set ticket escalation times.
+returns 1 to prevent errors in log.</p>
+
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

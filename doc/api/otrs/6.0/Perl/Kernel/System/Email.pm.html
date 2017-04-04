@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::Email &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::Email</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,57 +69,533 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/Email.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#Send">Send()</a></li>
-      <li><a href="#Check">Check()</a></li>
-      <li><a href="#Bounce">Bounce()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Send">Send()</a></li>
+	<li><a href="#Check">Check()</a></li>
+	<li><a href="#Bounce">Bounce()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::Email - to send email</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Global module to send email via sendmail or SMTP.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-<pre><code>    my $EmailObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Email&#39;);</code></pre>
+sub new {
+    my ( $Type, %Param ) = @_;
 
-<h2 id="Send">Send()</h2>
+    # allocate new hash for object
+    my $Self = {%Param};
+    bless( $Self, $Type );
+
+    # debug level
+    $Self->{Debug} = $Param{Debug} || 0;
+
+    # get configured backend module
+    my $GenericModule = $Kernel::OM->Get('Kernel::Config')->Get('SendmailModule')
+        || 'Kernel::System::Email::Sendmail';
+
+    # get backend object
+    $Self->{Backend} = $Kernel::OM->Get($GenericModule);
+
+    return $Self;
+}
+</pre></div>
+
+<p>Don't use the constructor directly, use the ObjectManager instead:</p>
+
+<pre>    my $EmailObject = $Kernel::OM-&gt;Get('Kernel::System::Email');
+</pre><h2 id="Send">Send()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Send');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Send">
+                                        <pre>
+
+sub Send {
+    my ( $Self, %Param ) = @_;
+
+    # Check needed stuff.
+    for my $Needed (qw(Body Charset)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+    if ( !$Param{To} && !$Param{Cc} && !$Param{Bcc} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need To, Cc or Bcc!'
+        );
+        return;
+    }
+
+    # Sign and Encrypt backwards compatibility.
+    if ( !IsHashRefWithData( $Param{EmailSecurity} ) ) {
+        if ( $Param{Sign} ) {
+            $Param{EmailSecurity}->{Backend} ||= $Param{Sign}->{Type}    || '';
+            $Param{EmailSecurity}->{Method}  ||= $Param{Sign}->{SubType} || '';
+            $Param{EmailSecurity}->{SignKey} ||= $Param{Sign}->{Key}     || '';
+        }
+        if ( $Param{Crypt} ) {
+            $Param{EmailSecurity}->{Backend}     ||= $Param{Crypt}->{Type}    || '';
+            $Param{EmailSecurity}->{Method}      ||= $Param{Crypt}->{SubType} || '';
+            $Param{EmailSecurity}->{EncryptKeys} ||= [ $Param{Crypt}->{Key} ] || [];
+        }
+    }
+
+    # Remove EmailSecurity if empty, or invalid
+    if ( !IsHashRefWithData( $Param{EmailSecurity} ) ) {
+        $Param{EmailSecurity} = undef;
+    }
+
+    # Check EmailSecurity options.
+    if ( $Param{EmailSecurity} ) {
+        if ( ref $Param{EmailSecurity} ne 'HASH' ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "EmailSecurity format is invalid!",
+            );
+
+            return;
+        }
+        elsif ( !$Param{EmailSecurity}->{Backend} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need EmailSecurity Backend!",
+            );
+
+            return;
+        }
+        elsif ( $Param{EmailSecurity}->{Backend} ne 'PGP' && $Param{EmailSecurity}->{Backend} ne 'SMIME' ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "EmailSecurity Backend is invalid!",
+            );
+
+            return;
+        }
+
+        $Param{EmailSecurity}->{Method} ||= 'Detached';
+
+        if ( $Param{EmailSecurity}->{Method} ne 'Detached' && $Param{EmailSecurity}->{Method} ne 'Inline' ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "EmailSecurity Method is invalid!",
+            );
+
+            return;
+        }
+        elsif ( $Param{EmailSecurity}->{SignKey} && !IsStringWithData( $Param{EmailSecurity}->{SignKey} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "EmailSecurity SignKey is invalid!",
+            );
+
+            return;
+        }
+        elsif ( $Param{EmailSecurity}->{EncryptKeys} && !IsArrayRefWithData( $Param{EmailSecurity}->{EncryptKeys} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "EmailSecurity EncryptKeys is invalid!",
+            );
+
+            return;
+        }
+    }
+
+    # Exchange original reference prevent it to grow up.
+    if ( ref $Param{Attachment} && ref $Param{Attachment} eq 'ARRAY' ) {
+        my @LocalAttachment = @{ $Param{Attachment} };
+        $Param{Attachment} = \@LocalAttachment;
+    }
+
+    # Get config object.
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # Check from
+    if ( !$Param{From} ) {
+        $Param{From} = $ConfigObject->Get('AdminEmail') || 'otrs@localhost';
+    }
+
+    # Replace all <br/> tags with <br /> tags (with a space) to show newlines in Lotus Notes.
+    if ( $Param{MimeType} && lc $Param{MimeType} eq 'text/html' ) {
+        $Param{Body} =~ s{\Q<br/>\E}{<br />}xmsgi;
+    }
+
+    # Map ReplyTo into Reply-To if present.
+    if ( $Param{ReplyTo} ) {
+        $Param{'Reply-To'} = $Param{ReplyTo};
+    }
+
+    # Get encrypt object (if needed).
+    my $EncryptObject;
+    if ( $Param{EmailSecurity} ) {
+
+        $EncryptObject = $Kernel::OM->Get( 'Kernel::System::Crypt::' . $Param{EmailSecurity}->{Backend} );
+
+        if ( !$EncryptObject ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'Not possible to create encrypt object',
+            );
+
+            return;
+        }
+    }
+
+    # Sign body inline.
+    if ( $Param{EmailSecurity}->{SignKey} && $Param{EmailSecurity}->{Method} eq 'Inline' ) {
+
+        my $Body = $EncryptObject->Sign(
+            Message => $Param{Body},
+            Key     => $Param{EmailSecurity}->{SignKey},
+            Type    => 'Clearsign',
+            Charset => $Param{Charset},
+        );
+
+        if ($Body) {
+            $Param{Body} = $Body;
+        }
+    }
+
+    # Encrypt body inline
+    if ( $Param{EmailSecurity}->{EncryptKeys} && $Param{EmailSecurity}->{Method} eq 'Inline' ) {
+
+        my $Body = $EncryptObject->Crypt(
+            Message => $Param{Body},
+            Key     => $Param{EmailSecurity}->{EncryptKeys},
+            Type    => $Param{EmailSecurity}->{Method},
+        );
+
+        if ($Body) {
+            $Param{Body} = $Body;
+        }
+    }
+
+    # # Create a new Mime Entity (This will all any attachments).
+    my $Entity = $Self->_CreateMimeEntity(%Param);
+
+    # Sign email detached
+    if ( $Param{EmailSecurity}->{SignKey} && $Param{EmailSecurity}->{Method} eq 'Detached' ) {
+
+        if ( $Param{EmailSecurity}->{Backend} eq 'PGP' ) {
+
+            # Determine used digest for proper micalg declaration.
+            my $ClearSign = $EncryptObject->Sign(
+                Message => 'dummy',
+                Key     => $Param{EmailSecurity}->{SignKey},
+                Type    => 'Clearsign',
+                Charset => $Param{Charset},
+            );
+            my $DigestAlgorithm = 'sha1';
+            if ($ClearSign) {
+                $DigestAlgorithm = lc $1 if $ClearSign =~ m{ \n Hash: [ ] ([^\n]+) \n }xms;
+            }
+
+            # Make it multi-part -=> one attachment for sign.
+            $Entity->make_multipart(
+                "signed; micalg=pgp-$DigestAlgorithm; protocol=\"application/pgp-signature\";",
+                Force => 1,
+            );
+
+            # Get string to sign.
+            my $T = $Entity->parts(0)->as_string();
+
+            # According to RFC3156 all line endings MUST be CR/LF.
+            $T =~ s/\x0A/\x0D\x0A/g;
+            $T =~ s/\x0D+/\x0D/g;
+            my $Signature = $EncryptObject->Sign(
+                Message => $T,
+                Key     => $Param{EmailSecurity}->{SignKey},
+                Type    => 'Detached',
+                Charset => $Param{Charset},
+            );
+
+            # If sign failed, remove multi part.
+            if ( !$Signature ) {
+                $Entity->make_singlepart();
+            }
+            else {
+
+                # Attach signature to email
+                $Entity->attach(
+                    Filename => 'pgp_sign.asc',
+                    Data     => $Signature,
+                    Type     => 'application/pgp-signature',
+                    Encoding => '7bit',
+                );
+            }
+        }
+        elsif ( $Param{EmailSecurity}->{Backend} eq 'SMIME' ) {
+
+            # Make it multi-part.
+            my $EntityCopy = $Entity->dup();
+            $EntityCopy->make_multipart(
+                'mixed;',
+                Force => 1,
+            );
+
+            # Get header to remember.
+            my $Head = $EntityCopy->head();
+            $Head->delete('MIME-Version');
+            $Head->delete('Content-Type');
+            $Head->delete('Content-Disposition');
+            $Head->delete('Content-Transfer-Encoding');
+            my $Header = $Head->as_string();
+
+            # Get string to sign.
+            my $T = $EntityCopy->parts(0)->as_string();
+
+            # According to RFC3156 all line endings MUST be CR/LF.
+            $T =~ s/\x0A/\x0D\x0A/g;
+            $T =~ s/\x0D+/\x0D/g;
+
+            # Remove empty line after multi-part preamble as it will be removed later by MIME::Parser
+            #    otherwise signed content will be different than the actual mail and verify will
+            #    fail.
+            $T =~ s{(This is a multi-part message in MIME format...\r\n)\r\n}{$1}g;
+
+            my $Signature = $EncryptObject->Sign(
+                Message  => $T,
+                Filename => $Param{EmailSecurity}->{SignKey},
+                Type     => 'Detached',
+            );
+            if ($Signature) {
+
+                my $Parser = MIME::Parser->new();
+                $Parser->output_to_core('ALL');
+
+                $Parser->output_dir( $ConfigObject->Get('TempDir') );
+                $Entity = $Parser->parse_data( $Header . $Signature );
+            }
+        }
+    }
+
+    # Encrypt email detached!
+    #my $NotCryptedBody = $Entity->body_as_string();
+    if ( $Param{EmailSecurity}->{EncryptKeys} && $Param{EmailSecurity}->{Method} eq 'Detached' ) {
+
+        if ( $Param{EmailSecurity}->{Backend} eq 'PGP' ) {
+
+            # Make it multi-part -=> one attachment for encryption
+            $Entity->make_multipart(
+                "encrypted; protocol=\"application/pgp-encrypted\";",
+                Force => 1,
+            );
+
+            # Encrypt it.
+            my $EncryptedMessage = $EncryptObject->Crypt(
+                Message => $Entity->parts(0)->as_string(),
+                Key     => $Param{EmailSecurity}->{EncryptKeys},
+            );
+
+            # If crypt failed, remove encrypted multi-part.
+            if ( !$EncryptedMessage ) {
+                $Entity->make_singlepart();
+            }
+            else {
+
+                # Eliminate all parts.
+                $Entity->parts( [] );
+
+                # Add encrypted parts.
+                $Entity->attach(
+                    Type        => 'application/pgp-encrypted',
+                    Disposition => 'attachment',
+                    Data        => [ "Version: 1", "" ],
+                    Encoding    => '7bit',
+                );
+                $Entity->attach(
+                    Type        => 'application/octet-stream',
+                    Disposition => 'inline',
+                    Filename    => 'msg.asc',
+                    Data        => $EncryptedMessage,
+                    Encoding    => '7bit',
+                );
+            }
+        }
+        elsif ( $Param{EmailSecurity}->{Backend} eq 'SMIME' ) {
+
+            # Make it multi-part -=> one attachment for encryption
+            $Entity->make_multipart(
+                'mixed;',
+                Force => 1,
+            );
+
+            # Get header to remember.
+            my $Head = $Entity->head();
+            $Head->delete('MIME-Version');
+            $Head->delete('Content-Type');
+            $Head->delete('Content-Disposition');
+            $Head->delete('Content-Transfer-Encoding');
+            my $Header = $Head->as_string();
+
+            my $T = $Entity->parts(0)->as_string();
+
+            # According to RFC3156 all line endings MUST be CR/LF.
+            $T =~ s/\x0A/\x0D\x0A/g;
+            $T =~ s/\x0D+/\x0D/g;
+
+            # Convert Encrypt Keys to a search structure for SMIME
+            #   From:
+            #       [ '123', '456' ]
+            #   To:
+            #       (
+            #           {
+            #               Filename => '123',
+            #           },
+            #           {
+            #               Filename => '456',
+            #           },
+            #       )
+            my @Certificates = map { { Filename => $_ } } @{ $Param{EmailSecurity}->{EncryptKeys} };
+
+            # Encrypt it
+            my $EncryptedMessage = $EncryptObject->Crypt(
+                Message      => $T,
+                Certificates => \@Certificates,
+            );
+
+            my $Parser = MIME::Parser->new();
+
+            $Parser->output_dir( $ConfigObject->Get('TempDir') );
+            $Entity = $Parser->parse_data( $Header . $EncryptedMessage );
+        }
+    }
+
+    # Get header from Entity.
+    my $Head = $Entity->head();
+    $Param{Header} = $Head->as_string();
+
+    # Remove not needed folding of email heads, we do have many problems with email clients.
+    my @Headers = split( /\n/, $Param{Header} );
+
+    # reset orig header
+    $Param{Header} = '';
+    for my $Line (@Headers) {
+        $Line =~ s/^    (.*)$/ $1/;
+
+        # Perform own wrapping of long lines due to MIME::Tools problems (see bug#9345).
+        #  MIME::Tools fails to wrap long lines where the Message-IDs are too long or
+        #  directly concatenated without spaces in between.
+        if ( $Line =~ m{^(References|In-Reply-To):}smx ) {
+            $Line =~ s{(.{64,}?)>\s*<}{$1>\n <}sxmg;
+        }
+        $Param{Header} .= $Line . "\n";
+    }
+
+    # Get body from Entity.
+    $Param{Body} = $Entity->body_as_string();
+
+    # get recipients
+    my @ToArray;
+    my $To = '';
+
+    RECIPIENT:
+    for my $Recipient (qw(To Cc Bcc)) {
+        next RECIPIENT if !$Param{$Recipient};
+        for my $Email ( Mail::Address->parse( $Param{$Recipient} ) ) {
+            push( @ToArray, $Email->address() );
+            if ($To) {
+                $To .= ', ';
+            }
+            $To .= $Email->address();
+        }
+    }
+
+    # add Bcc recipients
+    my $SendmailBcc = $ConfigObject->Get('SendmailBcc');
+    if ($SendmailBcc) {
+        push @ToArray, $SendmailBcc;
+        $To .= ', ' . $SendmailBcc;
+    }
+
+    # set envelope sender for replies
+    my $RealFrom = $ConfigObject->Get('SendmailEnvelopeFrom') || '';
+    if ( !$RealFrom ) {
+        my @Sender = Mail::Address->parse( $Param{From} );
+        $RealFrom = $Sender[0]->address();
+    }
+
+    # set envelope sender for auto-responses and notifications
+    if ( $Param{Loop} ) {
+        my $NotificationEnvelopeFrom = $ConfigObject->Get('SendmailNotificationEnvelopeFrom') || '';
+        my $NotificationFallback = $ConfigObject->Get('SendmailNotificationEnvelopeFrom::FallbackToEmailFrom');
+        if ( $NotificationEnvelopeFrom || !$NotificationFallback ) {
+            $RealFrom = $NotificationEnvelopeFrom;
+        }
+    }
+
+    # debug
+    if ( $Self->{Debug} > 1 ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "Sent email to '$To' from '$RealFrom'. Subject => '$Param{Subject}';",
+        );
+    }
+
+    # send email to backend
+    my $Sent = $Self->{Backend}->Send(
+        From    => $RealFrom,
+        ToArray => \@ToArray,
+        Header  => \$Param{Header},
+        Body    => \$Param{Body},
+    );
+
+    if ( !$Sent ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Message  => "Error sending message",
+            Priority => 'info',
+        );
+        return;
+    }
+
+    return ( \$Param{Header}, \$Param{Body} );
+}
+</pre></div>
 
 <p>To send an email without already created header:</p>
 
-<pre><code>    my $Sent = $SendObject-&gt;Send(
-        From          =&gt; &#39;me@example.com&#39;,
-        To            =&gt; &#39;friend@example.com&#39;,
-        Cc            =&gt; &#39;Some Customer B &lt;customer-b@example.com&gt;&#39;,   # not required
-        ReplyTo       =&gt; &#39;Some Customer B &lt;customer-b@example.com&gt;&#39;,   # not required, is possible to use &#39;Reply-To&#39; instead
-        Subject       =&gt; &#39;Some words!&#39;,
-        Charset       =&gt; &#39;iso-8859-15&#39;,
-        MimeType      =&gt; &#39;text/plain&#39;, # &quot;text/plain&quot; or &quot;text/html&quot;
-        Body          =&gt; &#39;Some nice text&#39;,
-        InReplyTo     =&gt; &#39;&lt;somemessageid-2@example.com&gt;&#39;,
-        References    =&gt; &#39;&lt;somemessageid-1@example.com&gt; &lt;somemessageid-2@example.com&gt;&#39;,
+<pre>    my $Sent = $SendObject-&gt;Send(
+        From          =&gt; 'me@example.com',
+        To            =&gt; 'friend@example.com',
+        Cc            =&gt; 'Some Customer B &lt;customer-b@example.com&gt;',   # not required
+        ReplyTo       =&gt; 'Some Customer B &lt;customer-b@example.com&gt;',   # not required, is possible to use 'Reply-To' instead
+        Subject       =&gt; 'Some words!',
+        Charset       =&gt; 'iso-8859-15',
+        MimeType      =&gt; 'text/plain', # &quot;text/plain&quot; or &quot;text/html&quot;
+        Body          =&gt; 'Some nice text',
+        InReplyTo     =&gt; '&lt;somemessageid-2@example.com&gt;',
+        References    =&gt; '&lt;somemessageid-1@example.com&gt; &lt;somemessageid-2@example.com&gt;',
         Loop          =&gt; 1, # not required, removes smtp from
         CustomHeaders =&gt; {
-            X-OTRS-MyHeader =&gt; &#39;Some Value&#39;,
+            X-OTRS-MyHeader =&gt; 'Some Value',
         },
         Attachment =&gt; [
             {
@@ -113,34 +610,34 @@ $(document).ready(function() {
             }
         ],
         EmailSecurity =&gt; {
-            Backend     =&gt; &#39;PGP&#39;,                       # PGP or SMIME
-            Method      =&gt; &#39;Detached&#39;,                  # Optional Detached or Inline (defaults to Detached)
-            SignKey     =&gt; &#39;81877F5E&#39;,                  # Optional
-            EncryptKeys =&gt; [ &#39;81877F5E&#39;, &#39;3b630c80&#39; ],  # Optional
+            Backend     =&gt; 'PGP',                       # PGP or SMIME
+            Method      =&gt; 'Detached',                  # Optional Detached or Inline (defaults to Detached)
+            SignKey     =&gt; '81877F5E',                  # Optional
+            EncryptKeys =&gt; [ '81877F5E', '3b630c80' ],  # Optional
         }
     );
 
     my $Sent = $SendObject-&gt;Send(                   (Backwards compatibility)
-        From                 =&gt; &#39;me@example.com&#39;,
-        To                   =&gt; &#39;friend@example.com&#39;,
-        Subject              =&gt; &#39;Some words!&#39;,
-        Charset              =&gt; &#39;iso-8859-15&#39;,
-        MimeType             =&gt; &#39;text/plain&#39;, # &quot;text/plain&quot; or &quot;text/html&quot;
-        Body                 =&gt; &#39;Some nice text&#39;,
-        InReplyTo            =&gt; &#39;&lt;somemessageid-2@example.com&gt;&#39;,
-        References           =&gt; &#39;&lt;somemessageid-1@example.com&gt; &lt;somemessageid-2@example.com&gt;&#39;,
+        From                 =&gt; 'me@example.com',
+        To                   =&gt; 'friend@example.com',
+        Subject              =&gt; 'Some words!',
+        Charset              =&gt; 'iso-8859-15',
+        MimeType             =&gt; 'text/plain', # &quot;text/plain&quot; or &quot;text/html&quot;
+        Body                 =&gt; 'Some nice text',
+        InReplyTo            =&gt; '&lt;somemessageid-2@example.com&gt;',
+        References           =&gt; '&lt;somemessageid-1@example.com&gt; &lt;somemessageid-2@example.com&gt;',
         Sign =&gt; {
-            Type    =&gt; &#39;PGP&#39;,
-            SubType =&gt; &#39;Inline|Detached&#39;,
-            Key     =&gt; &#39;81877F5E&#39;,
+            Type    =&gt; 'PGP',
+            SubType =&gt; 'Inline|Detached',
+            Key     =&gt; '81877F5E',
 
-            Type =&gt; &#39;SMIME&#39;,
-            Key  =&gt; &#39;3b630c80&#39;,
+            Type =&gt; 'SMIME',
+            Key  =&gt; '3b630c80',
         },
         Crypt =&gt; {
-            Type    =&gt; &#39;PGP&#39;,
-            SubType =&gt; &#39;Inline|Detached&#39;,
-            Key     =&gt; &#39;81877F5E&#39;,
+            Type    =&gt; 'PGP',
+            SubType =&gt; 'Inline|Detached',
+            Key     =&gt; '81877F5E',
         },
     );
 
@@ -149,29 +646,117 @@ $(document).ready(function() {
     }
     else {
         print &quot;Email not sent!\n&quot;;
-    }</code></pre>
+    }
+</pre><h2 id="Check">Check()</h2>
 
-<h2 id="Check">Check()</h2>
+<p><a href="#" onclick="toggleCode('method_Check');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Check">
+                                        <pre>
+
+sub Check {
+    my ( $Self, %Param ) = @_;
+
+    my %Check = $Self->{Backend}->Check();
+
+    if ( $Check{Successful} ) {
+        return ( Successful => 1 )
+    }
+    else {
+        return (
+            Successful => 0,
+            Message    => $Check{Message}
+        );
+    }
+}
+</pre></div>
 
 <p>Check mail configuration</p>
 
-<pre><code>    my %Check = $SendObject-&gt;Check();</code></pre>
+<pre>    my %Check = $SendObject-&gt;Check();
+</pre><h2 id="Bounce">Bounce()</h2>
 
-<h2 id="Bounce">Bounce()</h2>
+<p><a href="#" onclick="toggleCode('method_Bounce');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Bounce">
+                                        <pre>
+
+sub Bounce {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(From To Email)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # check and create message id
+    my $MessageID = $Param{'Message-ID'} || $Self->_MessageIDCreate();
+
+    # split body && header
+    my @EmailPlain = split( /\n/, $Param{Email} );
+    my $EmailObject = Mail::Internet->new( \@EmailPlain );
+
+    # get sender
+    my @Sender   = Mail::Address->parse( $Param{From} );
+    my $RealFrom = $Sender[0]->address();
+
+    # add ReSent header (see https://www.ietf.org/rfc/rfc2822.txt A.3. Resent messages)
+    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+
+    my $HeaderObject = $EmailObject->head();
+    $HeaderObject->replace( 'Resent-Message-ID', $MessageID );
+    $HeaderObject->replace( 'Resent-To',         $Param{To} );
+    $HeaderObject->replace( 'Resent-From',       $RealFrom );
+    $HeaderObject->replace( 'Resent-Date',       $DateTimeObject->ToEmailTimeStamp() );
+    my $Body         = $EmailObject->body();
+    my $BodyAsString = '';
+    for ( @{$Body} ) {
+        $BodyAsString .= $_ . "\n";
+    }
+    my $HeaderAsString = $HeaderObject->as_string();
+
+    # debug
+    if ( $Self->{Debug} > 1 ) {
+        my $OldMessageID = $HeaderObject->get('Message-ID') || '??';
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "Bounced email to '$Param{To}' from '$RealFrom'. "
+                . "MessageID => '$OldMessageID';",
+        );
+    }
+
+    my $Sent = $Self->{Backend}->Send(
+        From    => $RealFrom,
+        ToArray => [ $Param{To} ],
+        Header  => \$HeaderAsString,
+        Body    => \$BodyAsString,
+    );
+
+    return if !$Sent;
+
+    return ( \$HeaderAsString, \$BodyAsString );
+}
+</pre></div>
 
 <p>Bounce an email</p>
 
-<pre><code>    $SendObject-&gt;Bounce(
-        From  =&gt; &#39;me@example.com&#39;,
-        To    =&gt; &#39;friend@example.com&#39;,
+<pre>    $SendObject-&gt;Bounce(
+        From  =&gt; 'me@example.com',
+        To    =&gt; 'friend@example.com',
         Email =&gt; $Email,
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

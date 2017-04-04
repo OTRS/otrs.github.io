@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::EmailParser &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::EmailParser</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,47 +69,126 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/EmailParser.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#GetPlainEmail">GetPlainEmail()</a></li>
-      <li><a href="#GetParam">GetParam()</a></li>
-      <li><a href="#GetEmailAddress">GetEmailAddress()</a></li>
-      <li><a href="#GetRealname">GetRealname()</a></li>
-      <li><a href="#SplitAddressLine">SplitAddressLine()</a></li>
-      <li><a href="#GetContentType">GetContentType()</a></li>
-      <li><a href="#GetCharset">GetCharset()</a></li>
-      <li><a href="#GetReturnContentType">GetReturnContentType()</a></li>
-      <li><a href="#GetReturnCharset">GetReturnCharset()</a></li>
-      <li><a href="#GetMessageBody">GetMessageBody()</a></li>
-      <li><a href="#GetAttachments">GetAttachments()</a></li>
-      <li><a href="#GetReferences">GetReferences()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#GetPlainEmail">GetPlainEmail()</a></li>
+	<li><a href="#GetParam">GetParam()</a></li>
+	<li><a href="#GetEmailAddress">GetEmailAddress()</a></li>
+	<li><a href="#GetRealname">GetRealname()</a></li>
+	<li><a href="#SplitAddressLine">SplitAddressLine()</a></li>
+	<li><a href="#GetContentType">GetContentType()</a></li>
+	<li><a href="#GetCharset">GetCharset()</a></li>
+	<li><a href="#GetReturnContentType">GetReturnContentType()</a></li>
+	<li><a href="#GetReturnCharset">GetReturnCharset()</a></li>
+	<li><a href="#GetMessageBody">GetMessageBody()</a></li>
+	<li><a href="#GetAttachments">GetAttachments()</a></li>
+	<li><a href="#GetReferences">GetReferences()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::EmailParser - parse and encode an email</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>A module to parse and encode an email.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get debug level from parent
+    $Self->{Debug} = $Param{Debug} || 0;
+
+    if ( $Param{Mode} && $Param{Mode} eq 'Standalone' ) {
+        return $Self;
+    }
+
+    # check needed objects
+    if ( !$Param{Email} && !$Param{Entity} ) {
+        die "Need Email or Entity!";
+    }
+
+    # if email is given
+    if ( $Param{Email} ) {
+
+        # check if Email is an array ref
+        if ( ref $Param{Email} eq 'SCALAR' ) {
+            my @Content = split /\n/, ${ $Param{Email} };
+            for my $Line (@Content) {
+                $Line .= "\n";
+            }
+            $Param{Email} = \@Content;
+        }
+
+        # check if Email is an array ref
+        if ( ref $Param{Email} eq '' ) {
+            my @Content = split /\n/, $Param{Email};
+            for my $Line (@Content) {
+                $Line .= "\n";
+            }
+            $Param{Email} = \@Content;
+        }
+
+        $Self->{OriginalEmail} = join( '', @{ $Param{Email} } );
+
+        # create Mail::Internet object
+        $Self->{Email} = Mail::Internet->new( $Param{Email} );
+
+        # create a Mail::Header object with email
+        $Self->{HeaderObject} = $Self->{Email}->head();
+
+        # create MIME::Parser object and get message body or body of first attachment
+        my $Parser = MIME::Parser->new();
+        $Parser->output_to_core('ALL');
+
+        # Keep nested messages as attachments (see bug#1970).
+        $Parser->extract_nested_messages(0);
+        $Self->{ParserParts} = $Parser->parse_data( $Self->{Email}->as_string() );
+    }
+    else {
+        $Self->{ParserParts} = $Param{Entity};
+        $Self->{EntityMode}  = 1;
+    }
+
+    # get NoHTMLChecks param
+    if ( $Param{NoHTMLChecks} ) {
+        $Self->{NoHTMLChecks} = $Param{NoHTMLChecks};
+    }
+
+    # parse email at first
+    $Self->GetMessageBody();
+
+    return $Self;
+}
+</pre></div>
+
 <p>create an object. Do not use it directly, instead use:</p>
 
-<pre><code>    use Kernel::System::EmailParser;
+<pre>    use Kernel::System::EmailParser;
 
     # as string (takes more memory!)
     my $ParserObject = Kernel::System::EmailParser-&gt;new(
@@ -98,91 +198,495 @@ $(document).ready(function() {
 
     # as stand alone mode, without parsing emails
     my $ParserObject = Kernel::System::EmailParser-&gt;new(
-        Mode         =&gt; &#39;Standalone&#39;,
+        Mode         =&gt; 'Standalone',
         Debug        =&gt; 0,
-    );</code></pre>
+    );
+</pre><h2 id="GetPlainEmail">GetPlainEmail()</h2>
 
-<h2 id="GetPlainEmail">GetPlainEmail()</h2>
+<p><a href="#" onclick="toggleCode('method_GetPlainEmail');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetPlainEmail">
+                                        <pre>
+
+sub GetPlainEmail {
+    my $Self = shift;
+
+    return $Self->{OriginalEmail} || $Self->{Email}->as_string();
+}
+</pre></div>
 
 <p>To get a email as a string back (plain email).</p>
 
-<pre><code>    my $Email = $ParserObject-&gt;GetPlainEmail();</code></pre>
+<pre>    my $Email = $ParserObject-&gt;GetPlainEmail();
+</pre><h2 id="GetParam">GetParam()</h2>
 
-<h2 id="GetParam">GetParam()</h2>
+<p><a href="#" onclick="toggleCode('method_GetParam');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetParam">
+                                        <pre>
 
-<p>To get a header (e. g. Subject, To, ContentType, ...) of an email (mime is already done!).</p>
+sub GetParam {
+    my ( $Self, %Param ) = @_;
 
-<pre><code>    my $To = $ParserObject-&gt;GetParam( WHAT =&gt; &#39;To&#39; );</code></pre>
+    my $What = $Param{WHAT} || return;
 
-<h2 id="GetEmailAddress">GetEmailAddress()</h2>
+    if ( !$Self->{Email} || !$Self->{HeaderObject} ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Email and HeaderObject is needed!',
+        );
+        return;
+    }
+
+    $Self->{HeaderObject}->unfold();
+    $Self->{HeaderObject}->combine($What);
+    my $Line = $Self->{HeaderObject}->get($What) || '';
+    chomp($Line);
+    my $ReturnLine;
+
+    # We need to split address lists before decoding; see "6.2. Display of 'encoded-word's"
+    # in RFC 2047. Mail::Address routines will quote stuff if necessary (i.e. comma
+    # or semicolon found in phrase).
+    if ( $What =~ /^(From|To|Cc)/ ) {
+        for my $Address ( Mail::Address->parse($Line) ) {
+            $Address->phrase( $Self->_DecodeString( String => $Address->phrase() ) );
+            $Address->address( $Self->_DecodeString( String => $Address->address() ) );
+            $Address->comment( $Self->_DecodeString( String => $Address->comment() ) );
+            $ReturnLine .= ', ' if $ReturnLine;
+            $ReturnLine .= $Address->format();
+        }
+    }
+    else {
+        $ReturnLine = $Self->_DecodeString( String => $Line );
+    }
+
+    $ReturnLine //= '';
+
+    # debug
+    if ( $Self->{Debug} > 1 ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'debug',
+            Message  => "Get: $What; ReturnLine: $ReturnLine; OrigLine: $Line",
+        );
+    }
+
+    return $ReturnLine;
+}
+</pre></div>
+
+<p>To get a header (e. g. Subject, To, ContentType, ...) of an email
+(mime is already done!).</p>
+
+<pre>    my $To = $ParserObject-&gt;GetParam( WHAT =&gt; 'To' );
+</pre><h2 id="GetEmailAddress">GetEmailAddress()</h2>
+
+<p><a href="#" onclick="toggleCode('method_GetEmailAddress');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetEmailAddress">
+                                        <pre>
+
+sub GetEmailAddress {
+    my ( $Self, %Param ) = @_;
+
+    my $Email = '';
+    for my $EmailSplit ( $Self->_MailAddressParse( Email => $Param{Email} ) ) {
+        $Email = $EmailSplit->address();
+    }
+
+    # return if no email address is there
+    return if $Email !~ /@/;
+
+    # return email address
+    return $Email;
+}
+</pre></div>
 
 <p>To get the senders email address back.</p>
 
-<pre><code>    my $SenderEmail = $ParserObject-&gt;GetEmailAddress(
-        Email =&gt; &#39;Juergen Weber &lt;juergen.qeber@air.com&gt;&#39;,
-    );</code></pre>
+<pre>    my $SenderEmail = $ParserObject-&gt;GetEmailAddress(
+        Email =&gt; 'Juergen Weber &lt;juergen.qeber@air.com&gt;',
+    );
+</pre><h2 id="GetRealname">GetRealname()</h2>
 
-<h2 id="GetRealname">GetRealname()</h2>
+<p><a href="#" onclick="toggleCode('method_GetRealname');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetRealname">
+                                        <pre>
 
-<p>to get the sender&#39;s <code>RealName</code>.</p>
+sub GetRealname {
+    my ( $Self, %Param ) = @_;
+    my $Realname = '';
 
-<pre><code>    my $Realname = $ParserObject-&gt;GetRealname(
-        Email =&gt; &#39;Juergen Weber &lt;juergen.qeber@air.com&gt;&#39;,
-    );</code></pre>
+    # find "NamePart, NamePart" <some@example.com> (get not recognized by Mail::Address)
+    if ( $Param{Email} =~ /"(.+?)"\s+?\<.+?@.+?\..+?\>/ ) {
+        $Realname = $1;
 
-<h2 id="SplitAddressLine">SplitAddressLine()</h2>
+        # removes unnecessary blank spaces, if the string has quotes.
+        # This is because of bug 6059
+        $Realname =~ s/"\s+?(.+?)\s+?"/"$1"/g;
+        return $Realname;
+    }
+
+    # fallback of Mail::Address
+    for my $EmailSplit ( $Self->_MailAddressParse( Email => $Param{Email} ) ) {
+        $Realname = $EmailSplit->phrase();
+    }
+
+    return $Realname;
+}
+</pre></div>
+
+<p>to get the sender's <code>RealName</code>.</p>
+
+<pre>    my $Realname = $ParserObject-&gt;GetRealname(
+        Email =&gt; 'Juergen Weber &lt;juergen.qeber@air.com&gt;',
+    );
+</pre><h2 id="SplitAddressLine">SplitAddressLine()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SplitAddressLine');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SplitAddressLine">
+                                        <pre>
+
+sub SplitAddressLine {
+    my ( $Self, %Param ) = @_;
+
+    my @GetParam;
+    for my $Line ( $Self->_MailAddressParse( Email => $Param{Line} ) ) {
+        push @GetParam, $Line->format();
+    }
+
+    return @GetParam;
+}
+</pre></div>
 
 <p>To get an array of email addresses of an To, Cc or Bcc line back.</p>
 
-<pre><code>    my @Addresses = $ParserObject-&gt;SplitAddressLine(
-        Line =&gt; &#39;Juergen Weber &lt;juergen.qeber@air.com&gt;, me@example.com, hans@example.com (Hans Huber)&#39;,
-    );</code></pre>
-
-<p>This returns an array with (&#39;Juergen Weber &lt;juergen.qeber@air.com&gt;&#39;, &#39;me@example.com&#39;, &#39;hans@example.com (Hans Huber)&#39;).</p>
+<pre>    my @Addresses = $ParserObject-&gt;SplitAddressLine(
+        Line =&gt; 'Juergen Weber &lt;juergen.qeber@air.com&gt;, me@example.com, hans@example.com (Hans Huber)',
+    );
+</pre><p>This returns an array with ('Juergen Weber &lt;juergen.qeber@air.com&gt;', 'me@example.com', 'hans@example.com (Hans Huber)').</p>
 
 <h2 id="GetContentType">GetContentType()</h2>
 
+<p><a href="#" onclick="toggleCode('method_GetContentType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetContentType">
+                                        <pre>
+
+sub GetContentType {
+    my $Self = shift;
+
+    return $Self->{ContentType} if $Self->{ContentType};
+
+    return $Self->GetParam( WHAT => 'Content-Type' ) || 'text/plain';
+}
+</pre></div>
+
 <p>Returns the message body (or from the first attachment) &quot;ContentType&quot; header.</p>
 
-<pre><code>    my $ContentType = $ParserObject-&gt;GetContentType();
+<pre>    my $ContentType = $ParserObject-&gt;GetContentType();
 
-    (e. g. &#39;text/plain; charset=&quot;iso-8859-1&quot;&#39;)</code></pre>
+    (e. g. 'text/plain; charset=&quot;iso-8859-1&quot;')
+</pre><h2 id="GetCharset">GetCharset()</h2>
 
-<h2 id="GetCharset">GetCharset()</h2>
+<p><a href="#" onclick="toggleCode('method_GetCharset');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetCharset">
+                                        <pre>
+
+sub GetCharset {
+    my $Self = shift;
+
+    # return charset of already defined
+    if ( defined $Self->{Charset} ) {
+
+        # debug
+        if ( $Self->{Debug} > 0 ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'debug',
+                Message  => "Got charset from mime body: $Self->{Charset}",
+            );
+        }
+        return $Self->{Charset};
+    }
+
+    if ( !$Self->{Email} || !$Self->{HeaderObject} ) {
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Email and HeaderObject is needed!',
+        );
+        return;
+    }
+
+    # find charset
+    $Self->{HeaderObject}->unfold();
+    my $Line = $Self->{HeaderObject}->get('Content-Type') || '';
+    chomp $Line;
+    my %Data = $Self->GetContentTypeParams( ContentType => $Line );
+
+    # check content type (only do charset decode if no Content-Type or ContentType
+    # with text/* exists) if it's not a text content type (e. g. pdf, png, ...),
+    # return no charset
+    if ( $Data{ContentType} && $Data{ContentType} !~ /text/i ) {
+
+        # debug
+        if ( $Self->{Debug} > 0 ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'debug',
+                Message =>
+                    "Got no charset from email body because of ContentType ($Data{ContentType})!",
+            );
+        }
+
+        # remember charset
+        $Self->{Charset} = '';
+
+        # return charset
+        return '';
+    }
+
+    # return charset if it can be detected
+    if ( $Data{Charset} ) {
+
+        # debug
+        if ( $Self->{Debug} > 0 ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'debug',
+                Message  => "Got charset from email body: $Data{Charset}",
+            );
+        }
+
+        # remember charset
+        $Self->{Charset} = $Data{Charset};
+
+        # return charset
+        return $Data{Charset};
+    }
+
+    # if there is no available header for charset and content type, use
+    # iso-8859-1 as charset
+
+    # debug
+    if ( $Self->{Debug} > 0 ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'debug',
+            Message  => 'Got no charset from email body! Take iso-8859-1!',
+        );
+    }
+
+    # remember charset
+    $Self->{Charset} = 'ISO-8859-1';
+
+    # return charset
+    return 'ISO-8859-1';
+}
+</pre></div>
 
 <p>Returns the message body (or from the first attachment) &quot;charset&quot;.</p>
 
-<pre><code>    my $Charset = $ParserObject-&gt;GetCharset();
+<pre>    my $Charset = $ParserObject-&gt;GetCharset();
 
-    (e. g. iso-8859-1, utf-8, ...)</code></pre>
+    (e. g. iso-8859-1, utf-8, ...)
+</pre><h2 id="GetReturnContentType">GetReturnContentType()</h2>
 
-<h2 id="GetReturnContentType">GetReturnContentType()</h2>
+<p><a href="#" onclick="toggleCode('method_GetReturnContentType');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetReturnContentType">
+                                        <pre>
 
-<p>Returns the new message body (or from the first attachment) &quot;ContentType&quot; header (maybe the message is converted to utf-8).</p>
+sub GetReturnContentType {
+    my $Self = shift;
 
-<pre><code>    my $ContentType = $ParserObject-&gt;GetReturnContentType();</code></pre>
+    my $ContentType = $Self->GetContentType();
+    $ContentType =~ s/(charset=)(.*)/$1utf-8/ig;
 
-<p>(e. g. &#39;text/plain; charset=&quot;utf-8&quot;&#39;)</p>
+    # debug
+    if ( $Self->{Debug} > 0 ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'debug',
+            Message  => "Changed ContentType from '"
+                . $Self->GetContentType()
+                . "' to '$ContentType'.",
+        );
+    }
+    return $ContentType;
+}
+</pre></div>
+
+<p>Returns the new message body (or from the first attachment) &quot;ContentType&quot; header
+(maybe the message is converted to utf-8).</p>
+
+<pre>    my $ContentType = $ParserObject-&gt;GetReturnContentType();
+</pre><p>(e. g. 'text/plain; charset=&quot;utf-8&quot;')</p>
 
 <h2 id="GetReturnCharset">GetReturnCharset()</h2>
 
-<p>Returns the charset of the new message body &quot;Charset&quot; (maybe the message is converted to utf-8).</p>
+<p><a href="#" onclick="toggleCode('method_GetReturnCharset');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetReturnCharset">
+                                        <pre>
 
-<pre><code>    my $Charset = $ParserObject-&gt;GetReturnCharset();</code></pre>
+sub GetReturnCharset {
+    my $Self = shift;
 
-<p>(e. g. &#39;text/plain; charset=&quot;utf-8&quot;&#39;)</p>
+    return 'utf-8';
+}
+</pre></div>
+
+<p>Returns the charset of the new message body &quot;Charset&quot;
+(maybe the message is converted to utf-8).</p>
+
+<pre>    my $Charset = $ParserObject-&gt;GetReturnCharset();
+</pre><p>(e. g. 'text/plain; charset=&quot;utf-8&quot;')</p>
 
 <h2 id="GetMessageBody">GetMessageBody()</h2>
 
+<p><a href="#" onclick="toggleCode('method_GetMessageBody');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetMessageBody">
+                                        <pre>
+
+sub GetMessageBody {
+    my ( $Self, %Param ) = @_;
+
+    # check if message body is already there
+    return $Self->{MessageBody} if $Self->{MessageBody};
+
+    # get encode object
+    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
+
+    if ( !$Self->{EntityMode} && $Self->{ParserParts}->parts() == 0 ) {
+        $Self->{MimeEmail} = 0;
+        if ( $Self->{Debug} > 0 ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'debug',
+                Message  => 'It\'s a plain (not mime) email!',
+            );
+        }
+        my $BodyStrg = join( '', @{ $Self->{Email}->body() } );
+
+        # quoted printable!
+        if ( $Self->GetParam( WHAT => 'Content-Transfer-Encoding' ) =~ /quoted-printable/i ) {
+            $BodyStrg = MIME::QuotedPrint::decode($BodyStrg);
+        }
+
+        # base64 decode
+        elsif ( $Self->GetParam( WHAT => 'Content-Transfer-Encoding' ) =~ /base64/i ) {
+            $BodyStrg = decode_base64($BodyStrg);
+        }
+
+        # charset decode
+        if ( $Self->GetCharset() ) {
+            $Self->{MessageBody} = $EncodeObject->Convert2CharsetInternal(
+                Text  => $BodyStrg,
+                From  => $Self->GetCharset(),
+                Check => 1,
+            );
+        }
+        else {
+            $Self->{MessageBody} = $BodyStrg;
+        }
+
+        # check if the mail contains only HTML (store it as attachment and add text/plain)
+        $Self->CheckMessageBody();
+
+        # return message body
+        return $Self->{MessageBody};
+    }
+    else {
+        $Self->{MimeEmail} = 1;
+        if ( $Self->{Debug} > 0 ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'debug',
+                Message  => 'It\'s a mime email!',
+            );
+        }
+
+        # Check if there is a valid attachment there, if yes, return
+        #   the first attachment (normally text/plain) as message body.
+        # For multipart/mixed emails, PartsAttachments() will concatenate subsequent
+        #   body MIME parts into just one attachment.
+        my @Attachments = $Self->GetAttachments();
+        if ( @Attachments > 0 ) {
+            $Self->{Charset}     = $Attachments[0]->{Charset};
+            $Self->{ContentType} = $Attachments[0]->{ContentType};
+            if ( $Self->{Debug} > 0 ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'debug',
+                    Message  => "First attachment ContentType: $Self->{ContentType}",
+                );
+            }
+
+            # check if charset is given, set iso-8859-1 if content is text
+            if ( !$Self->{Charset} && $Self->{ContentType} =~ /\btext\b/ ) {
+                $Self->{Charset} = 'iso-8859-1';
+            }
+
+            # check if charset exists
+            if ( $Self->GetCharset() ) {
+                $Self->{MessageBody} = $EncodeObject->Convert2CharsetInternal(
+                    Text  => $Attachments[0]->{Content},
+                    From  => $Self->GetCharset(),
+                    Check => 1,
+                );
+            }
+            else {
+                $Self->{Charset}     = 'us-ascii';
+                $Self->{ContentType} = 'text/plain';
+                $Self->{MessageBody} = '- no text message => see attachment -';
+            }
+
+            # check if it's a html-only email (store it as attachment and add text/plain)
+            $Self->CheckMessageBody();
+
+            # return message body
+            return $Self->{MessageBody};
+        }
+        else {
+            if ( $Self->{Debug} > 0 ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'debug',
+                    Message =>
+                        'No attachments returned from GetAttachments(), just an empty attachment!?',
+                );
+            }
+
+            # return empty attachment
+            $Self->{Charset}     = 'iso-8859-1';
+            $Self->{ContentType} = 'text/plain';
+            return '-';
+        }
+    }
+
+    return;
+}
+</pre></div>
+
 <p>Returns the message body (or from the first attachment) from the email.</p>
 
-<pre><code>    my $Body = $ParserObject-&gt;GetMessageBody();</code></pre>
+<pre>    my $Body = $ParserObject-&gt;GetMessageBody();
+</pre><h2 id="GetAttachments">GetAttachments()</h2>
 
-<h2 id="GetAttachments">GetAttachments()</h2>
+<p><a href="#" onclick="toggleCode('method_GetAttachments');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetAttachments">
+                                        <pre>
+
+sub GetAttachments {
+    my ( $Self, %Param ) = @_;
+
+    # return if it's no mime email
+    return if !$Self->{MimeEmail};
+
+    # return if it is already parsed
+    return @{ $Self->{Attachments} } if $Self->{Attachments};
+
+    # parse email
+    $Self->PartsAttachments( Part => $Self->{ParserParts} );
+
+    # return if no attachments are found
+    return if !$Self->{Attachments};
+
+    # return attachments
+    return @{ $Self->{Attachments} };
+}
+</pre></div>
 
 <p>Returns an array of the email attachments.</p>
 
-<pre><code>    my @Attachments = $ParserObject-&gt;GetAttachments();
+<pre>    my @Attachments = $ParserObject-&gt;GetAttachments();
     for my $Attachment (@Attachments) {
         print $Attachment-&gt;{Filename};
         print $Attachment-&gt;{Charset};
@@ -194,21 +698,57 @@ $(document).ready(function() {
         print $Attachment-&gt;{ContentID};
         print $Attachment-&gt;{ContentAlternative};
         print $Attachment-&gt;{ContentMixed};
-    }</code></pre>
+    }
+</pre><h2 id="GetReferences">GetReferences()</h2>
 
-<h2 id="GetReferences">GetReferences()</h2>
+<p><a href="#" onclick="toggleCode('method_GetReferences');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetReferences">
+                                        <pre>
+
+sub GetReferences {
+    my ( $Self, %Param ) = @_;
+
+    # get references ids
+    my @ReferencesAll;
+    my $ReferencesString = $Self->GetParam( WHAT => 'References' );
+    if ($ReferencesString) {
+        push @ReferencesAll, ( $ReferencesString =~ /<([^>]+)>/g );
+    }
+
+    # get in reply to id
+    my $InReplyToString = $Self->GetParam( WHAT => 'In-Reply-To' );
+    if ($InReplyToString) {
+        chomp $InReplyToString;
+        $InReplyToString =~ s/.*?<([^>]+)>.*/$1/;
+        push @ReferencesAll, $InReplyToString;
+    }
+
+    # get uniq
+    my %Checked;
+    my @References;
+    for ( reverse @ReferencesAll ) {
+        if ( !$Checked{$_} ) {
+            push @References, $_;
+        }
+        $Checked{$_} = 1;
+    }
+    return @References;
+}
+</pre></div>
 
 <p>To get an array of reference ids of the parsed email</p>
 
-<pre><code>    my @References = $ParserObject-&gt;GetReferences();</code></pre>
+<pre>    my @References = $ParserObject-&gt;GetReferences();
+</pre><p>This returns an array with ('fasfda@host.de', '4124.2313.1231@host.com').</p>
 
-<p>This returns an array with (&#39;fasfda@host.de&#39;, &#39;4124.2313.1231@host.com&#39;).</p>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

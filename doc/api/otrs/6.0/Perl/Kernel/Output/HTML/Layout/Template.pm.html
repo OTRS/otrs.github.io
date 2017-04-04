@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::Output::HTML::Layout::Template &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::Output::HTML::LayoutTemplate</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,81 +69,366 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/Output/HTML/Layout/Template.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#Output">Output()</a></li>
-      <li><a href="#AddJSOnDocumentComplete">AddJSOnDocumentComplete()</a></li>
-      <li><a href="#AddJSData">AddJSData()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#Output">Output()</a></li>
+	<li><a href="#AddJSOnDocumentComplete">AddJSOnDocumentComplete()</a></li>
+	<li><a href="#AddJSData">AddJSData()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::Output::HTML::LayoutTemplate - template rendering engine based on Template::Toolkit</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="Output">Output()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Output');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Output">
+                                        <pre>
+
+sub Output {
+    my ( $Self, %Param ) = @_;
+
+    $Param{Data} ||= {};
+
+    # get and check param Data
+    if ( ref $Param{Data} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need HashRef in Param Data! Got: '" . ref( $Param{Data} ) . "'!",
+        );
+        $Self->FatalError();
+    }
+
+    # asure compatibility with old KeepScriptTags parameter
+    if ( $Param{KeepScriptTags} && !$Param{AJAX} ) {
+        $Param{AJAX} = $Param{KeepScriptTags};
+    }
+
+    # fill init Env
+    if ( !$Self->{EnvRef} ) {
+        %{ $Self->{EnvRef} } = %ENV;
+
+        # all $Self->{*}
+        for ( sort keys %{$Self} ) {
+            if ( defined $Self->{$_} && !ref $Self->{$_} ) {
+                $Self->{EnvRef}->{$_} = $Self->{$_};
+            }
+        }
+    }
+
+    # add new env
+    if ( $Self->{EnvNewRef} ) {
+        for my $Key ( sort keys %{ $Self->{EnvNewRef} } ) {
+            $Self->{EnvRef}->{$Key} = $Self->{EnvNewRef}->{$Key};
+        }
+        undef $Self->{EnvNewRef};
+    }
+
+    # if we use the HTML5 input type 'email' jQuery Validate will always validate
+    # we do not want that if CheckEmailAddresses is set to 'no' in SysConfig
+    $Self->{EnvRef}->{EmailFieldType}
+        = $Kernel::OM->Get('Kernel::Config')->Get('CheckEmailAddresses') ? 'email' : 'text';
+
+    my @TemplateFolders = (
+        "$Self->{CustomTemplateDir}",
+        "$Self->{CustomStandardTemplateDir}",
+        "$Self->{TemplateDir}",
+        "$Self->{StandardTemplateDir}",
+    );
+
+    my $TemplateString;
+
+    if ( $Param{TemplateFile} ) {
+        $Param{TemplateFileTT} .= "$Param{TemplateFile}.tt";
+    }
+
+    # take templates from string/array
+    elsif ( defined $Param{Template} && ref $Param{Template} eq 'ARRAY' ) {
+        for ( @{ $Param{Template} } ) {
+            $TemplateString .= $_;
+        }
+    }
+    elsif ( defined $Param{Template} ) {
+        $TemplateString = $Param{Template};
+    }
+    else {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Template or TemplateFile Param!',
+        );
+        $Self->FatalError();
+    }
+
+    if ( !$Self->{TemplateObject} ) {
+
+        $Self->{TemplateProviderObject} = Kernel::Output::Template::Provider->new(
+            {
+                INCLUDE_PATH => \@TemplateFolders,
+                EVAL_PERL    => 1,
+                COMPILE_EXT  => '.ttc',
+            }
+        );
+        $Self->{TemplateProviderObject}->OTRSInit(
+            LayoutObject => $Self,
+        );
+
+        my $Plugins = Template::Plugins->new(
+            {
+                PLUGIN_BASE => 'Kernel::Output::Template::Plugin',
+            }
+        );
+
+        my $Context = Template::Context->new(
+            {
+                EVAL_PERL      => 1,
+                STASH          => Template::Stash::XS->new(),
+                LOAD_TEMPLATES => [ $Self->{TemplateProviderObject} ],
+                LOAD_PLUGINS   => [$Plugins],
+            }
+        );
+
+        # Store a weak reference to the LayoutObject in the context
+        #   to avoid ring references. We need it for the plugins.
+        $Context->{LayoutObject} = $Self;
+        Scalar::Util::weaken( $Context->{LayoutObject} );
+
+        my $Success = $Self->{TemplateObject} = Template->new(
+            {
+                CONTEXT => $Context,
+
+                #DEBUG => Template::Constants::DEBUG_ALL,
+            }
+        );
+
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "$Template::ERROR;",
+            );
+
+            # $Self->FatalError(); # Don't use FatalError here, might cause infinite recursion
+            die "$Template::ERROR\n";
+        }
+    }
+
+    my $Output;
+    my $Success = $Self->{TemplateObject}->process(
+        $Param{TemplateFileTT} // \$TemplateString,
+        {
+            Data => $Param{Data} // {},
+            global => {
+                BlockData      => $Self->{BlockData} // [],
+                KeepScriptTags => $Param{AJAX}       // 0,
+            },
+        },
+        \$Output,
+    );
+    if ( !$Success ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $Self->{TemplateObject}->error(),
+        );
+        $Self->FatalError();
+    }
+
+    # If the browser does not send the session cookie, we need to append it to all links and image urls.
+    #   We cannot do this in the template preprocessor because links are often dynamically generated.
+    if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
+
+        # rewrite a hrefs
+        $Output =~ s{
+            (<a.+?href=")(.+?)(\#.+?|)(".+?>)
+        }
+        {
+            my $AHref   = $1;
+            my $Target  = $2;
+            my $End     = $3;
+            my $RealEnd = $4;
+            if ( lc $Target =~ /^(http:|https:|#|ftp:)/ ||
+                $Target !~ /\.(pl|php|cgi|fcg|fcgi|fpl)(\?|$)/ ||
+                $Target =~ /(\?|&|;)\Q$Self->{SessionName}\E=/) {
+                $AHref.$Target.$End.$RealEnd;
+            }
+            else {
+                $AHref.$Target.';'.$Self->{SessionName}.'='.$Self->{SessionID}.$End.$RealEnd;
+            }
+        }iegxs;
+
+        # rewrite img and iframe src
+        $Output =~ s{
+            (<(?:img|iframe).+?src=")(.+?)(".+?>)
+        }
+        {
+            my $AHref = $1;
+            my $Target = $2;
+            my $End = $3;
+            if (lc $Target =~ m{^http s? :}smx || !$Self->{SessionID} ||
+                $Target !~ /\.(pl|php|cgi|fcg|fcgi|fpl)(\?|$)/ ||
+                $Target =~ /\Q$Self->{SessionName}\E=/) {
+                $AHref.$Target.$End;
+            }
+            else {
+                $AHref.$Target.'&'.$Self->{SessionName}.'='.$Self->{SessionID}.$End;
+            }
+        }iegxs;
+    }
+
+    #
+    # "Post" Output filter handling
+    #
+    if ( $Self->{FilterElementPost} && ref $Self->{FilterElementPost} eq 'HASH' ) {
+
+        # extract filter list
+        my %FilterList = %{ $Self->{FilterElementPost} };
+
+        my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
+        FILTER:
+        for my $Filter ( sort keys %FilterList ) {
+
+            # extract filter config
+            my $FilterConfig = $FilterList{$Filter};
+
+            # extract template list
+            my %TemplateList = %{ $FilterConfig->{Templates} || {} };
+
+            next FILTER if !$Param{TemplateFile};
+            next FILTER if !$TemplateList{ $Param{TemplateFile} };
+
+            next FILTER if !$Kernel::OM->Get('Kernel::System::Main')->Require( $FilterConfig->{Module} );
+
+            # create new instance
+            my $Object = $FilterConfig->{Module}->new(
+                %{$Self},
+                LayoutObject => $Self,
+            );
+
+            next FILTER if !$Object;
+
+            # run output filter
+            $Object->Run(
+                %{$FilterConfig},
+                Data         => \$Output,
+                TemplateFile => $Param{TemplateFile} || '',
+            );
+        }
+    }
+
+    #
+    # AddJSData() handling
+    #
+    if ( $Param{AJAX} ) {
+        my %Data = %{ $Self->{_JSData} // {} };
+        if (%Data) {
+            my $JSONString = $Kernel::OM->Get('Kernel::System::JSON')->Encode(
+                Data     => \%Data,
+                SortKeys => 1,
+            );
+            $Output
+                .= "\n<script type=\"text/javascript\">//<![CDATA[\n\"use strict\";\nCore.Config.AddConfig($JSONString);\n//]]></script>";
+        }
+        delete $Self->{_JSData};
+    }
+
+    return $Output;
+}
+</pre></div>
 
 <p>generates HTML output based on a template file.</p>
 
 <p>Using a template file:</p>
 
-<pre><code>    my $HTML = $LayoutObject-&gt;Output(
-        TemplateFile =&gt; &#39;AdminLog.tt&#39;,
+<pre>    my $HTML = $LayoutObject-&gt;Output(
+        TemplateFile =&gt; 'AdminLog.tt',
         Data         =&gt; \%Param,
-    );</code></pre>
+    );
+</pre><p>Using a template string:</p>
 
-<p>Using a template string:</p>
-
-<pre><code>    my $HTML = $LayoutObject-&gt;Output(
-        Template =&gt; &#39;&lt;b&gt;[% Data.SomeKey | html %]&lt;/b&gt;&#39;,
+<pre>    my $HTML = $LayoutObject-&gt;Output(
+        Template =&gt; '&lt;b&gt;[% Data.SomeKey | html %]&lt;/b&gt;',
         Data     =&gt; \%Param,
-    );</code></pre>
+    );
+</pre><p>Additional parameters:</p>
 
-<p>Additional parameters:</p>
-
-<pre><code>    AJAX - AJAX-specific adjustements: this causes [% WRAPPER JSOnDocumentComplete %] blocks NOT
+<pre>    AJAX - AJAX-specific adjustements: this causes [% WRAPPER JSOnDocumentComplete %] blocks NOT
         to be replaced. This is important to be able to generate snippets which can be cached.
         Also, JS data added with AddJSData() calls is appended to the output here.
 
     my $HTML = $LayoutObject-&gt;Output(
-        TemplateFile   =&gt; &#39;AdminLog.tt&#39;,
+        TemplateFile   =&gt; 'AdminLog.tt',
         Data           =&gt; \%Param,
         AJAX           =&gt; 1,
     );
 
-    KeepScriptTags - DEPRECATED, please use the parameter &quot;AJAX&quot; instead</code></pre>
+    KeepScriptTags - DEPRECATED, please use the parameter &quot;AJAX&quot; instead
+</pre><h2 id="AddJSOnDocumentComplete">AddJSOnDocumentComplete()</h2>
 
-<h2 id="AddJSOnDocumentComplete">AddJSOnDocumentComplete()</h2>
+<p><a href="#" onclick="toggleCode('method_AddJSOnDocumentComplete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AddJSOnDocumentComplete">
+                                        <pre>
 
-<p>dynamically add JavaScript code that should be executed in Core.App.Ready(). Call this for any dynamically generated code that is not in a template.</p>
+sub AddJSOnDocumentComplete {
+    my ( $Self, %Param ) = @_;
 
-<pre><code>    $LayoutObject-&gt;AddJSOnDocumentComplete(
+    $Self->{_JSOnDocumentComplete} //= [];
+    push @{ $Self->{_JSOnDocumentComplete} }, $Param{Code};
+
+    return;
+}
+</pre></div>
+
+<p>dynamically add JavaScript code that should be executed in Core.App.Ready().
+Call this for any dynamically generated code that is not in a template.</p>
+
+<pre>    $LayoutObject-&gt;AddJSOnDocumentComplete(
         Code =&gt; $MyCode,
-    );</code></pre>
+    );
+</pre><h2 id="AddJSData">AddJSData()</h2>
 
-<h2 id="AddJSData">AddJSData()</h2>
+<p><a href="#" onclick="toggleCode('method_AddJSData');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AddJSData">
+                                        <pre>
 
-<p>dynamically add JavaScript data that should be handed over to JavaScript via Core.Config.</p>
+sub AddJSData {
+    my ( $Self, %Param ) = @_;
 
-<pre><code>    $LayoutObject-&gt;AddJSData(
-        Key   =&gt; &#39;Key1&#39;,  # the key to store this data
+    return if !$Param{Key};
+
+    $Self->{_JSData} //= {};
+    $Self->{_JSData}->{ $Param{Key} } = $Param{Value};
+
+    return;
+}
+</pre></div>
+
+<p>dynamically add JavaScript data that should be handed over to
+JavaScript via Core.Config.</p>
+
+<pre>    $LayoutObject-&gt;AddJSData(
+        Key   =&gt; 'Key1',  # the key to store this data
         Value =&gt; { ... }  # simple or complex data
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

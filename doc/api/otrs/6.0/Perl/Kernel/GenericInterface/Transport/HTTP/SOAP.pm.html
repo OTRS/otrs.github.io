@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::GenericInterface::Transport::HTTP::SOAP &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::GenericInterface::Transport::SOAP</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,35 +69,276 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/GenericInterface/Transport/HTTP/SOAP.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#ProviderProcessRequest">ProviderProcessRequest()</a></li>
-      <li><a href="#ProviderGenerateResponse">ProviderGenerateResponse()</a></li>
-      <li><a href="#RequesterPerformRequest">RequesterPerformRequest()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#ProviderProcessRequest">ProviderProcessRequest()</a></li>
+	<li><a href="#ProviderGenerateResponse">ProviderGenerateResponse()</a></li>
+	<li><a href="#RequesterPerformRequest">RequesterPerformRequest()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::GenericInterface::Transport::SOAP - GenericInterface network transport interface for HTTP::SOAP</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<p>usually, you want to create an instance of this by using Kernel::GenericInterface::Transport-&gt;new();</p>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # check needed objects
+    for my $Needed (qw(DebuggerObject TransportConfig)) {
+        $Self->{$Needed} = $Param{$Needed} || die "Got no $Needed!";
+    }
+
+    # set binary mode for STDIN and STDOUT (normally is the same as :raw)
+    binmode STDIN;
+    binmode STDOUT;
+
+    return $Self;
+}
+</pre></div>
+
+<p>usually, you want to create an instance of this
+by using Kernel::GenericInterface::Transport-&gt;new();</p>
 
 <h2 id="ProviderProcessRequest">ProviderProcessRequest()</h2>
 
-<p>Process an incoming web service request. This function has to read the request data from from the web server process.</p>
+<p><a href="#" onclick="toggleCode('method_ProviderProcessRequest');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ProviderProcessRequest">
+                                        <pre>
+
+sub ProviderProcessRequest {
+    my ( $Self, %Param ) = @_;
+
+    # check transport config
+    if ( !IsHashRefWithData( $Self->{TransportConfig} ) ) {
+        return $Self->_Error(
+            Summary   => 'HTTP::SOAP Have no TransportConfig',
+            HTTPError => 500,
+        );
+    }
+    if ( !IsHashRefWithData( $Self->{TransportConfig}->{Config} ) ) {
+        return $Self->_Error(
+            Summary   => 'HTTP::SOAP Have no Config',
+            HTTPError => 500,
+        );
+    }
+    my $Config = $Self->{TransportConfig}->{Config};
+
+    # check namespace config
+    if ( !IsStringWithData( $Config->{NameSpace} ) ) {
+        return $Self->_Error(
+            Summary   => 'HTTP::SOAP Have no NameSpace in config',
+            HTTPError => 500,
+        );
+    }
+
+    # check basic stuff
+    my $Length = $ENV{'CONTENT_LENGTH'} || 0;
+
+    # if the HTTP_TRANSFER_ENCODING environment variable is defined, check if is chunked
+    my $Chunked = (
+        defined $ENV{'HTTP_TRANSFER_ENCODING'}
+            && $ENV{'HTTP_TRANSFER_ENCODING'} =~ /^chunked.*$/
+    ) || 0;
+
+    my $Content = q{};
+
+    # if chunked transfer encoding is used, read request from chunks and calculate its length
+    #   afterwards
+    if ($Chunked) {
+        my $Buffer;
+        while ( read( STDIN, $Buffer, 1024 ) ) {
+            $Content .= $Buffer;
+        }
+        $Length = length($Content);
+    }
+
+    # no length provided
+    if ( !$Length ) {
+        return $Self->_Error(
+            Summary   => HTTP::Status::status_message(411),
+            HTTPError => 411,
+        );
+    }
+
+    # request bigger than allowed
+    if ( IsInteger( $Config->{MaxLength} ) && $Length > $Config->{MaxLength} ) {
+        return $Self->_Error(
+            Summary   => HTTP::Status::status_message(413),
+            HTTPError => 413,
+        );
+    }
+
+    # in case client requests to continue submission, tell it to continue
+    if ( IsStringWithData( $ENV{EXPECT} ) && $ENV{EXPECT} =~ m{ \b 100-Continue \b }xmsi ) {
+        $Self->_Output(
+            HTTPCode => 100,
+            Content  => '',
+        );
+    }
+
+    # do we have a soap action header?
+    my $OperationFromHeader;
+    if ( $ENV{'HTTP_SOAPACTION'} ) {
+        my ( $SOAPAction, $NameSpaceFromHeader );
+        ( $SOAPAction, $NameSpaceFromHeader, $OperationFromHeader ) = $ENV{'HTTP_SOAPACTION'} =~ m{
+             \A
+            ["']{0,1} # optional enclosing single or double quotes
+            (
+                ( .+? )     # namespace
+                [#/]
+                ( [^#/]+? )  # operation
+            )
+            ["']{0,1} # optional enclosing single or double quotes
+            \z
+        }xms;
+
+        if ( !$NameSpaceFromHeader || !$OperationFromHeader ) {
+            return $Self->_Error(
+                Summary => "Invalid SOAPAction '$SOAPAction'",
+            );
+        }
+
+        # Remove trailing "/" form configuration and request for comparison
+        $NameSpaceFromHeader =~ s{\A ( .+? ) / \z}{$1}msx;
+
+        my $NameSpace = $Config->{NameSpace};
+        $NameSpace =~ s{\A ( .+? ) / \z}{$1}msx;
+
+        # check name-space for match to configuration
+        if ( $NameSpaceFromHeader ne $NameSpace ) {
+            return $Self->_Error(
+                Summary =>
+                    "Namespace from SOAPAction '$NameSpaceFromHeader' does not match namespace"
+                    . " from configuration '$NameSpace'",
+            );
+        }
+    }
+
+    # if no chunked transfer encoding was used, read request directly
+    if ( !$Chunked ) {
+        read STDIN, $Content, $Length;
+    }
+
+    # check if we have content
+    if ( !IsStringWithData($Content) ) {
+        return $Self->_Error(
+            Summary   => 'Could not read input data',
+            HTTPError => 500,
+        );
+    }
+
+    # convert charset if necessary
+    my $ContentCharset;
+    if ( $ENV{'CONTENT_TYPE'} =~ m{ \A ( .+ ) ;\s*charset= ["']{0,1} ( .+? ) ["']{0,1} (;|\z) }xmsi ) {
+
+        # remember content type for the response
+        $Self->{ContentType} = $1;
+
+        $ContentCharset = $2;
+    }
+    if ( $ContentCharset && $ContentCharset !~ m{ \A utf [-]? 8 \z }xmsi ) {
+        $Content = $Kernel::OM->Get('Kernel::System::Encode')->Convert2CharsetInternal(
+            Text => $Content,
+            From => $ContentCharset,
+        );
+    }
+    else {
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$Content );
+    }
+
+    # send received data to debugger
+    $Self->{DebuggerObject}->Debug(
+        Summary => 'Received data by provider from remote system',
+        Data    => $Content,
+    );
+
+    # deserialize
+    my $Deserialized = eval { SOAP::Deserializer->deserialize($Content); };
+    my $DeserializedFault = $@ || '';
+    if ($DeserializedFault) {
+        return $Self->_Error(
+            Summary   => 'Error deserializing message:' . $DeserializedFault,
+            HTTPError => 500,
+        );
+    }
+
+    # check if the deserialized result is there
+    if ( !defined $Deserialized || !$Deserialized->body() ) {
+        return $Self->_Error(
+            Summary   => 'Got no result body from deserialized content',
+            HTTPError => 500,
+        );
+    }
+
+    # get body for request
+    my $Body = $Deserialized->body();
+
+    # get operation from soap data
+    my $Operation = ( sort keys %{$Body} )[0];
+
+    # check operation against header
+    if ( $OperationFromHeader && $Operation ne $OperationFromHeader ) {
+        return $Self->_Error(
+            Summary =>
+                "Operation from SOAP data '$Operation' does not match operation"
+                . " from SOAPAction '$OperationFromHeader'",
+        );
+    }
+
+    my $OperationData = $Body->{$Operation};
+
+    # determine local operation name from request wrapper name scheme
+    # possible values are 'Append', 'Plain' and 'Request'
+    my $LocalOperation = $Operation;
+    if ( $Config->{RequestNameScheme} eq 'Request' ) {
+        $LocalOperation =~ s{ Request \z }{}xms;
+    }
+    elsif (
+        $Config->{RequestNameScheme} eq 'Append'
+        && $Config->{RequestNameFreeText}
+        && $LocalOperation =~ m{ \A ( .+ ) $Config->{RequestNameFreeText} \z }xms
+        )
+    {
+        $LocalOperation = $1;
+    }
+
+    # remember operation for response
+    $Self->{Operation} = $LocalOperation;
+
+    # all OK - return data
+    return {
+        Success   => 1,
+        Operation => $LocalOperation,
+        Data      => $OperationData || undef,
+    };
+}
+</pre></div>
+
+<p>Process an incoming web service request. This function has to read the request data
+from from the web server process.</p>
 
 <p>Based on the request the Operation to be used is determined.</p>
 
@@ -84,26 +346,144 @@ $(document).ready(function() {
 
 <p>In case of an error, the resulting http error code and message are remembered for the response.</p>
 
-<pre><code>    my $Result = $TransportObject-&gt;ProviderProcessRequest();
+<pre>    my $Result = $TransportObject-&gt;ProviderProcessRequest();
 
     $Result = {
         Success      =&gt; 1,                  # 0 or 1
-        ErrorMessage =&gt; &#39;&#39;,                 # in case of error
-        Operation    =&gt; &#39;DesiredOperation&#39;, # name of the operation to perform
+        ErrorMessage =&gt; '',                 # in case of error
+        Operation    =&gt; 'DesiredOperation', # name of the operation to perform
         Data         =&gt; {                   # data payload of request
             ...
         },
-    };</code></pre>
+    };
+</pre><h2 id="ProviderGenerateResponse">ProviderGenerateResponse()</h2>
 
-<h2 id="ProviderGenerateResponse">ProviderGenerateResponse()</h2>
+<p><a href="#" onclick="toggleCode('method_ProviderGenerateResponse');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ProviderGenerateResponse">
+                                        <pre>
+
+sub ProviderGenerateResponse {
+    my ( $Self, %Param ) = @_;
+
+    # do we have a http error message to return
+    if ( IsStringWithData( $Self->{HTTPError} ) && IsStringWithData( $Self->{HTTPMessage} ) ) {
+        return $Self->_Output(
+            HTTPCode => $Self->{HTTPError},
+            Content  => $Self->{HTTPMessage},
+        );
+    }
+
+    # check data param
+    if ( defined $Param{Data} && ref $Param{Data} ne 'HASH' ) {
+        return $Self->_Output(
+            HTTPCode => 500,
+            Content  => 'Invalid data',
+        );
+    }
+
+    my $Config = $Self->{TransportConfig}->{Config};
+
+    # check success param
+    my $OperationResponse;
+    my $HTTPCode;
+    if ( !$Param{Success} ) {
+
+        # create SOAP Fault structure
+        my $FaultString = $Param{ErrorMessage} || 'Unknown';
+        $Param{Data} = {
+            faultcode   => 'Server',
+            faultstring => $FaultString,
+        };
+
+        # override OperationResponse string to Fault to make the correct SOAP envelope
+        $OperationResponse = 'Fault';
+
+        # override HTTPCode to 500
+        $HTTPCode = 500;
+    }
+    else {
+        $HTTPCode = 200;
+
+        # build response wrapper name
+        # possible values are 'Append', 'Plain', 'Replace' and 'Response'
+        $OperationResponse = $Self->{Operation};
+        $Config->{ResponseNameScheme} ||= 'Response';
+        if ( $Config->{ResponseNameScheme} eq 'Response' ) {
+            $Config->{ResponseNameScheme}   = 'Append';
+            $Config->{ResponseNameFreeText} = 'Response';
+        }
+        if ( $Config->{ResponseNameFreeText} ) {
+            if ( $Config->{ResponseNameScheme} eq 'Append' ) {
+
+                # append configured text
+                $OperationResponse .= $Config->{ResponseNameFreeText};
+            }
+            elsif ( $Config->{ResponseNameScheme} eq 'Replace' ) {
+
+                # completely replace name with configured text
+                $OperationResponse = $Config->{ResponseNameFreeText};
+            }
+        }
+    }
+
+    # prepare data
+    my $SOAPResult;
+    if ( defined $Param{Data} && IsHashRefWithData( $Param{Data} ) ) {
+        my $SOAPData = $Self->_SOAPOutputRecursion(
+            Data => $Param{Data},
+            Sort => $Config->{Sort},
+        );
+
+        # check output of recursion
+        if ( !$SOAPData->{Success} ) {
+            return $Self->_Output(
+                HTTPCode => 500,
+                Content  => "Error in SOAPOutputRecursion: " . $SOAPData->{ErrorMessage},
+            );
+        }
+        $SOAPResult = SOAP::Data->value( @{ $SOAPData->{Data} } );
+
+        if ( ref $SOAPResult ne 'SOAP::Data' ) {
+            return $Self->_Output(
+                HTTPCode => 500,
+                Content  => 'Error in SOAP result',
+            );
+        }
+    }
+
+    # create return structure
+    my @CallData = ( 'response', $OperationResponse );
+    if ($SOAPResult) {
+        push @CallData, $SOAPResult;
+    }
+    my $Serialized = SOAP::Serializer->autotype(0)->default_ns( $Config->{NameSpace} )->envelope(@CallData);
+    my $SerializedFault = $@ || '';
+    if ($SerializedFault) {
+        return $Self->_Output(
+            HTTPCode => 500,
+            Content  => 'Error serializing message:' . $SerializedFault,
+        );
+    }
+
+    # no error - return output
+    return $Self->_Output(
+        HTTPCode => $HTTPCode,
+        Content  => $Serialized,
+    );
+}
+</pre></div>
 
 <p>Generates response for an incoming web service request.</p>
 
-<p>In case of an error, error code and message are taken from environment (previously set on request processing).</p>
+<p>In case of an error, error code and message are taken from environment
+(previously set on request processing).</p>
 
-<p>The HTTP code is set accordingly - <code>200</code> for (syntactically) correct messages - <code>4xx</code> for http errors - <code>500</code> for content syntax errors</p>
+<p>The HTTP code is set accordingly
+- <code>200</code> for (syntactically) correct messages
+- <code>4xx</code> for http errors
+- <code>500</code> for content syntax errors</p>
 
-<pre><code>    my $Result = $TransportObject-&gt;ProviderGenerateResponse(
+<pre>    my $Result = $TransportObject-&gt;ProviderGenerateResponse(
         Success =&gt; 1
         Data    =&gt; { # data payload for response, optional
             ...
@@ -112,15 +492,353 @@ $(document).ready(function() {
 
     $Result = {
         Success      =&gt; 1,   # 0 or 1
-        ErrorMessage =&gt; &#39;&#39;,  # in case of error
-    };</code></pre>
+        ErrorMessage =&gt; '',  # in case of error
+    };
+</pre><h2 id="RequesterPerformRequest">RequesterPerformRequest()</h2>
 
-<h2 id="RequesterPerformRequest">RequesterPerformRequest()</h2>
+<p><a href="#" onclick="toggleCode('method_RequesterPerformRequest');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_RequesterPerformRequest">
+                                        <pre>
 
-<p>Prepare data payload as XML structure, generate an outgoing web service request, receive the response and return its data.</p>
+sub RequesterPerformRequest {
+    my ( $Self, %Param ) = @_;
 
-<pre><code>    my $Result = $TransportObject-&gt;RequesterPerformRequest(
-        Operation =&gt; &#39;remote_op&#39;, # name of remote operation to perform
+    # check transport config
+    if ( !IsHashRefWithData( $Self->{TransportConfig} ) ) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'SOAP Transport: Have no TransportConfig',
+        };
+    }
+    if ( !IsHashRefWithData( $Self->{TransportConfig}->{Config} ) ) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'SOAP Transport: Have no Config',
+        };
+    }
+    my $Config = $Self->{TransportConfig}->{Config};
+
+    # check name-space and endpoint config
+    NEEDED:
+    for my $Needed (qw(Endpoint NameSpace)) {
+        next NEEDED if IsStringWithData( $Config->{$Needed} );
+
+        return {
+            Success      => 0,
+            ErrorMessage => "SOAP Transport: Have no $Needed in config",
+        };
+    }
+
+    # check data param
+    if ( defined $Param{Data} && ref $Param{Data} ne 'HASH' ) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'SOAP Transport: Invalid Data',
+        };
+    }
+
+    # check operation param
+    if ( !IsStringWithData( $Param{Operation} ) ) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'SOAP Transport: Need Operation',
+        };
+    }
+
+    # prepare data if we have any
+    my $SOAPData;
+    if ( defined $Param{Data} && IsHashRefWithData( $Param{Data} ) ) {
+        $SOAPData = $Self->_SOAPOutputRecursion(
+            Data => $Param{Data},
+            Sort => $Config->{Sort},
+        );
+
+        # check output of recursion
+        if ( !$SOAPData->{Success} ) {
+            return {
+                Success      => 0,
+                ErrorMessage => "Error in SOAPOutputRecursion: " . $SOAPData->{ErrorMessage},
+            };
+        }
+    }
+
+    # build request wrapper name
+    # possible values are 'Append', 'Plain' and 'Request'
+    my $OperationRequest = $Param{Operation};
+    $Config->{RequestNameScheme} ||= 'Plain';
+    if ( $Config->{RequestNameScheme} eq 'Request' ) {
+        $Config->{RequestNameScheme}   = 'Append';
+        $Config->{RequestNameFreeText} = 'Request';
+    }
+    if ( $Config->{RequestNameScheme} = 'Append' && $Config->{RequestNameFreeText} ) {
+        $OperationRequest .= $Config->{RequestNameFreeText};
+    }
+
+    # prepare method
+    my $SOAPMethod = SOAP::Data->name($OperationRequest)->uri( $Config->{NameSpace} );
+    if ( ref $SOAPMethod ne 'SOAP::Data' ) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'SOAP Transport: Error preparing used method',
+        };
+    }
+
+    # add authentication if configured
+    my $URL = $Config->{Endpoint};
+    if ( IsHashRefWithData( $Config->{Authentication} ) ) {
+
+        # basic authentication
+        if (
+            IsStringWithData( $Config->{Authentication}->{Type} )
+            && $Config->{Authentication}->{Type} eq 'BasicAuth'
+            )
+        {
+            my $User     = $Config->{Authentication}->{User};
+            my $Password = $Config->{Authentication}->{Password};
+            if ( IsStringWithData($User) && IsStringWithData($Password) ) {
+                $URL =~ s{ ( http s? :// ) }{$1\Q$User\E:\Q$Password\E@}xmsi;
+            }
+        }
+    }
+
+    # add SSL options if configured
+    if ( IsHashRefWithData( $Config->{SSL} ) ) {
+
+        # use SSL options
+        if (
+            IsStringWithData( $Config->{SSL}->{UseSSL} )
+            && $Config->{SSL}->{UseSSL} eq 'Yes'
+            )
+        {
+
+            # Force Net::SSL instead of IO::Socket::SSL, otherwise GI can't connect to certificate
+            #   authentication restricted servers, see https://metacpan.org/pod/Net::HTTPS#ENVIRONMENT,
+            #   see bug #12306.
+            $ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS} = 'Net::SSL';    ## no critic
+
+            $ENV{HTTPS_PKCS12_FILE}     = $Config->{SSL}->{SSLP12Certificate};    ## no critic
+            $ENV{HTTPS_PKCS12_PASSWORD} = $Config->{SSL}->{SSLP12Password};       ## no critic
+
+            # add certificate authority
+            if ( IsStringWithData( $Config->{SSL}->{SSLCAFile} ) ) {
+                $ENV{HTTPS_CA_FILE} = $Config->{SSL}->{SSLCAFile};                ## no critic
+            }
+            if ( IsStringWithData( $Config->{SSL}->{SSLCADir} ) ) {
+                $ENV{HTTPS_CA_DIR} = $Config->{SSL}->{SSLCADir};                  ## no critic
+            }
+        }
+    }
+
+    # add proxy
+    if ( IsStringWithData( $Config->{SSL}->{SSLProxy} ) ) {
+        $ENV{HTTPS_PROXY} = $Config->{SSL}->{SSLProxy};                           ## no critic
+    }
+
+    # add proxy basic authentication
+    if ( IsStringWithData( $Config->{SSL}->{SSLProxyUser} ) ) {
+        $ENV{HTTPS_PROXY_USERNAME} = $Config->{SSL}->{SSLProxyUser};              ## no critic
+    }
+    if ( IsStringWithData( $Config->{SSL}->{SSLProxyPassword} ) ) {
+        $ENV{HTTPS_PROXY_PASSWORD} = $Config->{SSL}->{SSLProxyPassword};          ## no critic
+    }
+
+    # prepare connect
+    my $SOAPHandle = eval {
+        SOAP::Lite->autotype(0)->default_ns( $Config->{NameSpace} )->proxy(
+            $URL,
+            timeout => 60,
+        );
+    };
+    my $SOAPHandleFault = $@ || '';
+    if ($SOAPHandleFault) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'Error creating SOAPHandle: ' . $SOAPHandleFault,
+        };
+    }
+
+    # check if needed to modify the SOAPAction header
+    if ( IsStringWithData( $Config->{SOAPAction} ) ) {
+
+        if ( $Config->{SOAPAction} eq 'No' ) {
+
+            # send empty header
+            $SOAPHandle->on_action( sub {'""'} );
+        }
+
+        # SOAPAction defaults to '"<NameSpace (uri)>#<Operation>"'
+        # if a different separator was selected (e.g. '/' for .NET)
+        #     we need to set it manually in order to insert separator
+        # if original operation name was modified
+        #     we need to set it manually to retain original operation name
+        elsif (
+            $Config->{SOAPActionSeparator} ne '#'
+            || $OperationRequest ne $Param{Operation}
+            )
+        {
+            $SOAPHandle->on_action(
+                sub { '"' . $Config->{NameSpace} . $Config->{SOAPActionSeparator} . $Param{Operation} . '"' }
+            );
+        }
+    }
+
+    # send request to server
+    # for SOAP::Lite version > .712 if $SOAPData->{Data} is an array and is sent directly the
+    # result is that the data is surrounded by <soapenc:Array>, to avoid this is necessary to
+    # pass each part of the $SOAPData->{Data} Array one by one
+    my @CallData = ($SOAPMethod);
+    if ($SOAPData) {
+
+        # check if $SOAPData->{Data} is an array reference
+        if ( IsArrayRefWithData( $SOAPData->{Data} ) ) {
+
+            # push array element ($DataPart) one by one
+            for my $DataPart ( @{ $SOAPData->{Data} } ) {
+                push @CallData, $DataPart;
+            }
+        }
+
+        # otherwise use the same method as before
+        else {
+            push @CallData, $SOAPData->{Data};
+        }
+    }
+    my $SOAPResult = eval {
+        $SOAPHandle->call(@CallData);
+    };
+    my $SOAPResultFault = $@ || '';
+    if ($SOAPResultFault) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'Error in SOAP call: ' . $SOAPResultFault,
+        };
+    }
+
+    # check if the soap result is there
+    if ( !defined $SOAPResult || !$SOAPResult->body() ) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'Got no result body from soap call',
+        };
+    }
+
+    # send sent data to debugger
+    if ( !$SOAPResult->context()->transport()->proxy()->http_response()->request()->content() ) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'SOAP Transport: Could not get XML data sent to remote system',
+        };
+    }
+    my $XMLRequest = $SOAPResult->context()->transport()->proxy()->http_response()->request()->content();
+
+    # get encode object
+    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
+
+    $EncodeObject->EncodeInput( \$XMLRequest );
+    $Self->{DebuggerObject}->Debug(
+        Summary => 'XML data sent to remote system',
+        Data    => $XMLRequest,
+    );
+
+    # check received data
+    if ( !$SOAPResult->context()->transport()->proxy()->http_response()->content() ) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'Could not get XML data received from remote system',
+        };
+    }
+    my $XMLResponse = $SOAPResult->context()->transport()->proxy()->http_response()->content();
+
+    # convert charset if necessary
+    if ( $Config->{Encoding} && $Config->{Encoding} !~ m{ \A utf -? 8 \z }xmsi ) {
+        $XMLResponse = $EncodeObject->Convert(
+            Text => $XMLResponse,
+            From => $Config->{Encoding},
+            To   => 'utf-8',
+        );
+    }
+    else {
+        $EncodeObject->EncodeInput( \$XMLResponse );
+    }
+
+    # send processed data to debugger
+    $Self->{DebuggerObject}->Debug(
+        Summary => 'Xml data received from remote system',
+        Data    => $XMLResponse,
+    );
+
+    # deserialize response
+    my $Deserialized = eval {
+        SOAP::Deserializer->deserialize($XMLResponse);
+    };
+
+    # check if deserializing was successful
+    if ( !defined $Deserialized || !$Deserialized->body() ) {
+        return {
+            Success      => 0,
+            ErrorMessage => 'SOAP Transport: Could not deserialize received XML data',
+        };
+    }
+
+    my $Body = $Deserialized->body();
+
+    # check if we got a SOAP Fault message
+    if ( exists $Body->{'Fault'} ) {
+        my $ErrorMessage = '';
+        for my $Key ( sort keys %{ $Body->{Fault} } ) {
+            $ErrorMessage .= "$Key: $Body->{Fault}->{$Key}, ";
+        }
+        $ErrorMessage = substr $ErrorMessage, 0, -2;
+        return {
+            Success      => 0,
+            ErrorMessage => $ErrorMessage,
+        };
+    }
+
+    # build response wrapper name
+    # possible values are 'Append', 'Plain', 'Replace' and 'Response'
+    my $OperationResponse = $Param{Operation};
+    $Config->{ResponseNameScheme} ||= 'Response';
+    if ( $Config->{ResponseNameScheme} eq 'Response' ) {
+        $Config->{ResponseNameScheme}   = 'Append';
+        $Config->{ResponseNameFreeText} = 'Response';
+    }
+    if ( $Config->{ResponseNameFreeText} ) {
+        if ( $Config->{ResponseNameScheme} eq 'Append' ) {
+
+            # append configured text
+            $OperationResponse .= $Config->{ResponseNameFreeText};
+        }
+        elsif ( $Config->{ResponseNameScheme} eq 'Replace' ) {
+
+            # completely replace name with configured text
+            $OperationResponse = $Config->{ResponseNameFreeText};
+        }
+    }
+
+    # check if we have response data for the specified operation in the soap result
+    if ( !exists $Body->{$OperationResponse} ) {
+        return {
+            Success => 0,
+            ErrorMessage =>
+                "No response data found for specified operation '$Param{Operation}'"
+                . " in soap response",
+        };
+    }
+
+    # all OK - return result
+    return {
+        Success => 1,
+        Data    => $Body->{$OperationResponse} || undef,
+    };
+}
+</pre></div>
+
+<p>Prepare data payload as XML structure, generate an outgoing web service request,
+receive the response and return its data.</p>
+
+<pre>    my $Result = $TransportObject-&gt;RequesterPerformRequest(
+        Operation =&gt; 'remote_op', # name of remote operation to perform
         Data      =&gt; {            # data payload for request
             ...
         },
@@ -128,17 +846,19 @@ $(document).ready(function() {
 
     $Result = {
         Success      =&gt; 1,        # 0 or 1
-        ErrorMessage =&gt; &#39;&#39;,       # in case of error
+        ErrorMessage =&gt; '',       # in case of error
         Data         =&gt; {
             ...
         },
-    };</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    };
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::SupportDataCollector &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::SupportDataCollector</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,54 +69,187 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/SupportDataCollector.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#Collect">Collect()</a></li>
-      <li><a href="#CollectAsynchronous">CollectAsynchronous()</a></li>
-      <li><a href="#CleanupAsynchronous">CleanupAsynchronous()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Collect">Collect()</a></li>
+	<li><a href="#CollectAsynchronous">CollectAsynchronous()</a></li>
+	<li><a href="#CleanupAsynchronous">CleanupAsynchronous()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::SupportDataCollector - system data collector</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>All stats functions.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-<pre><code>    my $SupportDataCollectorObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SupportDataCollector&#39;);</code></pre>
+sub new {
+    my ( $Type, %Param ) = @_;
 
-<h2 id="Collect">Collect()</h2>
+    # allocate new hash ref to object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
+<p>Don't use the constructor directly, use the ObjectManager instead:</p>
+
+<pre>    my $SupportDataCollectorObject = $Kernel::OM-&gt;Get('Kernel::System::SupportDataCollector');
+
+
+
+</pre><h2 id="Collect">Collect()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Collect');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Collect">
+                                        <pre>
+
+sub Collect {
+    my ( $Self, %Param ) = @_;
+
+    my $CacheKey = 'DataCollect';
+
+    if ( $Param{UseCache} ) {
+        my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => 'SupportDataCollector',
+            Key  => $CacheKey,
+        );
+        return %{$Cache} if ref $Cache eq 'HASH';
+    }
+
+    # Data must be collected in a web request context to be able to collect web server data.
+    #   If called from CLI, make a web request to collect the data, but if the data couldn't
+    #   be collected the function runs normal.
+    if ( !$ENV{GATEWAY_INTERFACE} ) {
+
+        my %ResultWebRequest = $Self->CollectByWebRequest(%Param);
+
+        return %ResultWebRequest if $ResultWebRequest{Success};
+    }
+
+    # Get the disabled plugins from the config to generate a lookup hash, which can be used to skip these plugins.
+    my $PluginDisabled = $Kernel::OM->Get('Kernel::Config')->Get('SupportDataCollector::DisablePlugins') || [];
+    my %LookupPluginDisabled = map { $_ => 1 } @{$PluginDisabled};
+
+    # Get the identifier filter blacklist from the config to generate a lookup hash, which can be used to
+    # filter these identifier.
+    my $IdentifierFilterBlacklist
+        = $Kernel::OM->Get('Kernel::Config')->Get('SupportDataCollector::IdentifierFilterBlacklist') || [];
+    my %LookupIdentifierFilterBlacklist = map { $_ => 1 } @{$IdentifierFilterBlacklist};
+
+    # Look for all plug-ins in the FS.
+    my @PluginFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => dirname(__FILE__) . "/SupportDataCollector/Plugin",
+        Filter    => "*.pm",
+        Recursive => 1,
+    );
+
+    # Look for all asynchronous plug-ins in the FS.
+    my @PluginAsynchronousFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => dirname(__FILE__) . "/SupportDataCollector/PluginAsynchronous",
+        Filter    => "*.pm",
+        Recursive => 1,
+    );
+
+    # Merge the both plug-in types together.
+    my @PluginFilesAll = ( @PluginFiles, @PluginAsynchronousFiles );
+
+    my @Result;
+
+    # Execute all plug-ins.
+    PLUGINFILE:
+    for my $PluginFile (@PluginFilesAll) {
+
+        # Convert file name => package name
+        $PluginFile =~ s{^.*(Kernel/System.*)[.]pm$}{$1}xmsg;
+        $PluginFile =~ s{/+}{::}xmsg;
+
+        next PLUGINFILE if $LookupPluginDisabled{$PluginFile};
+
+        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($PluginFile) ) {
+            return (
+                Success      => 0,
+                ErrorMessage => "Could not load $PluginFile!",
+            );
+        }
+        my $PluginObject = $PluginFile->new( %{$Self} );
+
+        my %PluginResult = $PluginObject->Run();
+
+        if ( !%PluginResult || !$PluginResult{Success} ) {
+            return (
+                Success      => 0,
+                ErrorMessage => "Error during execution of $PluginFile: $PluginResult{ErrorMessage}",
+            );
+        }
+
+        push @Result, @{ $PluginResult{Result} // [] };
+    }
+
+    # Remove the disabled plugins after the execution, because some plugins returns
+    #   more information with a own identifier.
+    @Result = grep { !$LookupIdentifierFilterBlacklist{ $_->{Identifier} } } @Result;
+
+    # Sort the results from the plug-ins by the short identifier.
+    @Result = sort { $a->{ShortIdentifier} cmp $b->{ShortIdentifier} } @Result;
+
+    my %ReturnData = (
+        Success => 1,
+        Result  => \@Result,
+    );
+
+    # Cache the result only, if the support data were collected in a web request,
+    #   to have all support data in the admin view.
+    if ( $ENV{GATEWAY_INTERFACE} ) {
+
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => 'SupportDataCollector',
+            Key   => $CacheKey,
+            Value => \%ReturnData,
+            TTL   => 60 * 10,
+        );
+    }
+
+    return %ReturnData;
+}
+</pre></div>
 
 <p>collect system data</p>
 
-<pre><code>    my %Result = $SupportDataCollectorObject-&gt;Collect(
+<pre>    my %Result = $SupportDataCollectorObject-&gt;Collect(
         UseCache   =&gt; 1,    # (optional) to get data from cache if any
         WebTimeout =&gt; 60,   # (optional)
-        Hostname   =&gt; &#39;my.test.host:8080&#39; # (optional, for testing purposes)
+        Hostname   =&gt; 'my.test.host:8080' # (optional, for testing purposes)
     );
 
     returns in case of error
 
     (
         Success      =&gt; 0,
-        ErrorMessage =&gt; &#39;...&#39;,
+        ErrorMessage =&gt; '...',
     )
 
     otherwise
@@ -104,58 +258,141 @@ $(document).ready(function() {
         Success =&gt; 1,
         Result  =&gt; [
             {
-                Identifier  =&gt; &#39;Kernel::System::SupportDataCollector::OTRS::Version&#39;,
-                DisplayPath =&gt; &#39;OTRS&#39;,
+                Identifier  =&gt; 'Kernel::System::SupportDataCollector::OTRS::Version',
+                DisplayPath =&gt; 'OTRS',
                 Status      =&gt; $StatusOK,
-                Label       =&gt; &#39;OTRS Version&#39;
-                Value       =&gt; &#39;3.3.2&#39;,
-                Message     =&gt; &#39;&#39;,
+                Label       =&gt; 'OTRS Version'
+                Value       =&gt; '3.3.2',
+                Message     =&gt; '',
             },
             {
-                Identifier  =&gt; &#39;Kernel::System::SupportDataCollector::Apache::mod_perl&#39;,
-                DisplayPath =&gt; &#39;OTRS&#39;,
+                Identifier  =&gt; 'Kernel::System::SupportDataCollector::Apache::mod_perl',
+                DisplayPath =&gt; 'OTRS',
                 Status      =&gt; $StatusProblem,
-                Label       =&gt; &#39;mod_perl usage&#39;
-                Value       =&gt; &#39;0&#39;,
-                Message     =&gt; &#39;Please enable mod_perl to speed up OTRS.&#39;,
+                Label       =&gt; 'mod_perl usage'
+                Value       =&gt; '0',
+                Message     =&gt; 'Please enable mod_perl to speed up OTRS.',
             },
             {
-                Identifier       =&gt; &#39;Some::Identifier&#39;,
-                DisplayPath      =&gt; &#39;SomePath&#39;,
+                Identifier       =&gt; 'Some::Identifier',
+                DisplayPath      =&gt; 'SomePath',
                 Status           =&gt; $StatusOK,
-                Label            =&gt; &#39;Some Label&#39;
-                Value            =&gt; &#39;0&#39;,
-                MessageFormatted =&gt; &#39;Some \n Formatted \n\t Text.&#39;,
+                Label            =&gt; 'Some Label'
+                Value            =&gt; '0',
+                MessageFormatted =&gt; 'Some \n Formatted \n\t Text.',
             },
         ],
-    )</code></pre>
+    )
+</pre><h2 id="CollectAsynchronous">CollectAsynchronous()</h2>
 
-<h2 id="CollectAsynchronous">CollectAsynchronous()</h2>
+<p><a href="#" onclick="toggleCode('method_CollectAsynchronous');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CollectAsynchronous">
+                                        <pre>
+
+sub CollectAsynchronous {
+    my ( $Self, %Param ) = @_;
+
+    # Look for all plug-ins in the FS
+    my @PluginFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => dirname(__FILE__) . "/SupportDataCollector/PluginAsynchronous",
+        Filter    => "*.pm",
+        Recursive => 1,
+    );
+
+    # Execute all plug-ins
+    for my $PluginFile (@PluginFiles) {
+
+        # Convert file name => package name
+        $PluginFile =~ s{^.*(Kernel/System.*)[.]pm$}{$1}xmsg;
+        $PluginFile =~ s{/+}{::}xmsg;
+
+        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($PluginFile) ) {
+            return (
+                Success      => 0,
+                ErrorMessage => "Could not load $PluginFile!",
+            );
+        }
+        my $PluginObject = $PluginFile->new( %{$Self} );
+
+        my $Success = $PluginObject->RunAsynchronous();
+
+        if ( !$Success ) {
+            return (
+                Success      => 0,
+                ErrorMessage => "Error during asynchronous execution of $PluginFile.",
+            );
+        }
+    }
+
+    return (
+        Success => 1,
+    );
+}
+</pre></div>
 
 <p>collect asynchronous data (the asynchronous plug-in decide at which place the data will be saved)</p>
 
-<pre><code>    my %Result = $SupportDataCollectorObject-&gt;CollectAsynchronous();</code></pre>
+<pre>    my %Result = $SupportDataCollectorObject-&gt;CollectAsynchronous();
+</pre><p>returns:</p>
 
-<p>returns:</p>
-
-<pre><code>    %Result = (
+<pre>    %Result = (
         Success      =&gt; 1,                  # or 0 in case of an error
-        ErrorMessage =&gt; &#39;some message&#39;      # optional (only in case of an error)
-    );</code></pre>
-
-<p>return</p>
+        ErrorMessage =&gt; 'some message'      # optional (only in case of an error)
+    );
+</pre><p>return</p>
 
 <h2 id="CleanupAsynchronous">CleanupAsynchronous()</h2>
 
+<p><a href="#" onclick="toggleCode('method_CleanupAsynchronous');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_CleanupAsynchronous">
+                                        <pre>
+
+sub CleanupAsynchronous {
+    my ( $Self, %Param ) = @_;
+
+    # Look for all plug-ins in the FS
+    my @PluginFiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => dirname(__FILE__) . "/SupportDataCollector/PluginAsynchronous",
+        Filter    => "*.pm",
+        Recursive => 1,
+    );
+
+    # Execute all Plug-ins
+    PLUGINFILE:
+    for my $PluginFile (@PluginFiles) {
+
+        # Convert file name => package name
+        $PluginFile =~ s{^.*(Kernel/System.*)[.]pm$}{$1}xmsg;
+        $PluginFile =~ s{/+}{::}xmsg;
+
+        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($PluginFile) ) {
+            return (
+                Success      => 0,
+                ErrorMessage => "Could not load $PluginFile!",
+            );
+        }
+        my $PluginObject = $PluginFile->new( %{$Self} );
+
+        next PLUGINFILE if !$PluginFile->can('CleanupAsynchronous');
+
+        $PluginObject->CleanupAsynchronous();
+    }
+
+    return 1;
+}
+</pre></div>
+
 <p>clean-up asynchronous data (the asynchronous plug-in decide for themselves)</p>
 
-<pre><code>    my $Success = $SupportDataCollectorObject-&gt;CleanupAsynchronous();</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+<pre>    my $Success = $SupportDataCollectorObject-&gt;CleanupAsynchronous();
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

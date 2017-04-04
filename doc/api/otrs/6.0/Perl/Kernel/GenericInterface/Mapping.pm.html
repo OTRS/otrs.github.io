@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::GenericInterface::Mapping &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::GenericInterface::Mapping</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,36 +69,111 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/GenericInterface/Mapping.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#Map">Map()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Map">Map()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::GenericInterface::Mapping - GenericInterface data mapping interface</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # check needed params
+    for my $Needed (qw(DebuggerObject MappingConfig)) {
+        if ( !$Param{$Needed} ) {
+
+            return {
+                Success      => 0,
+                ErrorMessage => "Got no $Needed!"
+            };
+        }
+
+        $Self->{$Needed} = $Param{$Needed};
+    }
+
+    # add optional params
+    OPTIONAL:
+    for my $Optional (qw(Invoker InvokerType Operation OperationType)) {
+        next OPTIONAL if !$Param{$Optional};
+
+        $Self->{$Optional} = $Param{$Optional};
+    }
+
+    # check config - we need at least a config type
+    if ( !IsHashRefWithData( $Param{MappingConfig} ) ) {
+
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'Got no MappingConfig as hash ref with content!',
+        );
+    }
+    if ( !IsStringWithData( $Param{MappingConfig}->{Type} ) ) {
+
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'Got no MappingConfig with Type as string with value!',
+        );
+    }
+
+    # check config - if we have a map config, it has to be a non-empty hash ref
+    if (
+        defined $Param{MappingConfig}->{Config}
+        && !IsHashRefWithData( $Param{MappingConfig}->{Config} )
+        )
+    {
+
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'Got MappingConfig with Data, but Data is no hash ref with content!',
+        );
+    }
+
+    # load backend module
+    my $GenericModule = 'Kernel::GenericInterface::Mapping::' . $Param{MappingConfig}->{Type};
+    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($GenericModule) ) {
+
+        return $Self->{DebuggerObject}->Error( Summary => "Can't load mapping backend module!" );
+    }
+    $Self->{BackendObject} = $GenericModule->new( %{$Self} );
+
+    # pass back error message from backend if backend module could not be executed
+    return $Self->{BackendObject} if ref $Self->{BackendObject} ne $GenericModule;
+
+    return $Self;
+}
+</pre></div>
+
 <p>create an object.</p>
 
-<pre><code>    use Kernel::GenericInterface::Debugger;
+<pre>    use Kernel::GenericInterface::Debugger;
     use Kernel::GenericInterface::Mapping;
 
     my $DebuggerObject = Kernel::GenericInterface::Debugger-&gt;new(
         DebuggerConfig   =&gt; {
-            DebugThreshold  =&gt; &#39;debug&#39;,
+            DebugThreshold  =&gt; 'debug',
             TestMode        =&gt; 0,           # optional, in testing mode the data will not be written to the DB
             # ...
         },
@@ -87,23 +183,51 @@ $(document).ready(function() {
     );
     my $MappingObject = Kernel::GenericInterface::Mapping-&gt;new(
         DebuggerObject =&gt; $DebuggerObject,
-        Invoker        =&gt; &#39;TicketLock&#39;,            # the name of the invoker in the web service
-        InvokerType    =&gt; &#39;Nagios::TicketLock&#39;,    # the Invoker backend to use
-        Operation      =&gt; &#39;TicketCreate&#39;,          # the name of the operation in the web service
-        OperationType  =&gt; &#39;Ticket::TicketCreate&#39;,  # the local operation backend to use
+        Invoker        =&gt; 'TicketLock',            # the name of the invoker in the web service
+        InvokerType    =&gt; 'Nagios::TicketLock',    # the Invoker backend to use
+        Operation      =&gt; 'TicketCreate',          # the name of the operation in the web service
+        OperationType  =&gt; 'Ticket::TicketCreate',  # the local operation backend to use
         MappingConfig =&gt; {
-            Type =&gt; &#39;MappingSimple&#39;,
+            Type =&gt; 'MappingSimple',
             Config =&gt; {
                 # ...
             },
         },
-    );</code></pre>
+    );
+</pre><h2 id="Map">Map()</h2>
 
-<h2 id="Map">Map()</h2>
+<p><a href="#" onclick="toggleCode('method_Map');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Map">
+                                        <pre>
+
+sub Map {
+    my ( $Self, %Param ) = @_;
+
+    # check data - only accept undef or hash ref
+    if ( defined $Param{Data} && ref $Param{Data} ne 'HASH' ) {
+
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'Got Data but it is not a hash ref in Mapping handler!'
+        );
+    }
+
+    # return if data is empty
+    if ( !defined $Param{Data} || !%{ $Param{Data} } ) {
+
+        return {
+            Success => 1,
+            Data    => {},
+        };
+    }
+
+    # start map on backend
+    return $Self->{BackendObject}->Map(%Param);
+}
+</pre></div>
 
 <p>perform data mapping in backend</p>
 
-<pre><code>    my $Result = $MappingObject-&gt;Map(
+<pre>    my $Result = $MappingObject-&gt;Map(
         Data =&gt; {              # data payload before mapping
             ...
         },
@@ -111,17 +235,19 @@ $(document).ready(function() {
 
     $Result = {
         Success         =&gt; 1,  # 0 or 1
-        ErrorMessage    =&gt; &#39;&#39;, # in case of error
+        ErrorMessage    =&gt; '', # in case of error
         Data            =&gt; {   # data payload of after mapping
             ...
         },
-    };</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    };
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

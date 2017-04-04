@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::YAML &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::YAML</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,56 +69,170 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/YAML.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#Dump">Dump()</a></li>
-      <li><a href="#Load">Load()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Dump">Dump()</a></li>
+	<li><a href="#Load">Load()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::YAML - YAML wrapper functions</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Functions for YAML serialization / deserialization.</p>
 
+
+
 <h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
 
 <p>create a YAML object. Do not use it directly, instead use:</p>
 
-<pre><code>    my $YAMLObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::YAML&#39;);</code></pre>
+<pre>    my $YAMLObject = $Kernel::OM-&gt;Get('Kernel::System::YAML');
+</pre><h2 id="Dump">Dump()</h2>
 
-<h2 id="Dump">Dump()</h2>
+<p><a href="#" onclick="toggleCode('method_Dump');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Dump">
+                                        <pre>
+
+sub Dump {
+    my ( $Self, %Param ) = @_;
+
+    # check for needed data
+    if ( !defined $Param{Data} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Data!',
+        );
+        return;
+    }
+
+    my $Result = YAML::Any::Dump( $Param{Data} ) || "--- ''\n";
+
+    # Make sure the resulting string has the UTF-8 flag.
+    Encode::_utf8_on($Result);
+
+    return $Result;
+}
+</pre></div>
 
 <p>Dump a perl data structure to a YAML string.</p>
 
-<pre><code>    my $YAMLString = $YAMLObject-&gt;Dump(
+<pre>    my $YAMLString = $YAMLObject-&gt;Dump(
         Data     =&gt; $Data,
-    );</code></pre>
+    );
+</pre><h2 id="Load">Load()</h2>
 
-<h2 id="Load">Load()</h2>
+<p><a href="#" onclick="toggleCode('method_Load');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Load">
+                                        <pre>
 
-<p>Load a YAML string to a perl data structure. This string must be a encoded in UTF8.</p>
+sub Load {
+    my ( $Self, %Param ) = @_;
 
-<pre><code>    my $PerlStructureScalar = $YAMLObject-&gt;Load(
+    # check for needed data
+    return if !defined $Param{Data};
+
+    if ( Encode::is_utf8( $Param{Data} ) ) {
+        Encode::_utf8_off( $Param{Data} );
+    }
+
+    # There is a currently a problem with YAML loader it cant load YAML representations of:
+    #   0, '0' or ''.
+    # This workaround looks for this special cases and returns the correct value without using the
+    #   loader
+    if ( $Param{Data} =~ m{\A---[ ](?: '0' | 0 )\n\z}msx ) {
+        return 0;
+    }
+    elsif ( $Param{Data} eq "--- ''\n" ) {
+        return '';
+    }
+
+    my $Result;
+
+    # get used YAML implementation
+    my $YAMLImplementation = YAML::Any->implementation();
+
+    if ( !eval { $Result = YAML::Any::Load( $Param{Data} ) } ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Loading the YAML string failed: ' . $@,
+        );
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'YAML data was: "' . $Param{Data} . '"',
+        );
+
+        # if used implementation is pure perl YAML there is nothing to do, but exit with error
+        return if $YAMLImplementation eq 'YAML';
+
+        # otherwise use pure-perl YAML as fallback if YAML::XS or other can't parse the data
+        # structure correctly
+        if ( !eval { $Result = YAML::Load( $Param{Data} ) } ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => 'YAML data was not readable even by pure-perl YAML module',
+            );
+            return;
+        }
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Data was only readable pure-perl YAML module, please contact the'
+                . ' System Administrator to update this record, as the stored data is still in a'
+                . ' wrong format!',
+        );
+    }
+
+    # YAML does not set the UTF8 flag on strings that need it, do that manually now.
+    if ( $YAMLImplementation eq 'YAML' && defined $Result ) {
+        _AddUTF8Flag( \$Result );
+    }
+
+    return $Result;
+}
+</pre></div>
+
+<p>Load a YAML string to a perl data structure.
+This string must be a encoded in UTF8.</p>
+
+<pre>    my $PerlStructureScalar = $YAMLObject-&gt;Load(
         Data =&gt; $YAMLString,
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

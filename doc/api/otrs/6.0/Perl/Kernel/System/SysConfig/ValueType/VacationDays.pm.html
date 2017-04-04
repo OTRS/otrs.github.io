@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::SysConfig::ValueType::VacationDays &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::SysConfig::ValueType::VacationDays</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,93 +69,328 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/SysConfig/ValueType/VacationDays.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
-      <li><a href="#SettingRender">SettingRender()</a></li>
-      <li><a href="#AddItem">AddItem()</a></li>
-      <li><a href="#DefaultItemAdd">DefaultItemAdd()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
+	<li><a href="#SettingRender">SettingRender()</a></li>
+	<li><a href="#AddItem">AddItem()</a></li>
+	<li><a href="#DefaultItemAdd">DefaultItemAdd()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::System::SysConfig::ValueType::VacationDays - System configuration vacation-days value type backed.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # Allocate new hash for object.
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
 <p>Create an object. Do not use it directly, instead use:</p>
 
-<pre><code>    use Kernel::System::ObjectManager;
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $ValueTypeObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SysConfig::ValueType::VacationDays&#39;);</code></pre>
+    my $ValueTypeObject = $Kernel::OM-&gt;Get('Kernel::System::SysConfig::ValueType::VacationDays');
+</pre><h2 id="SettingEffectiveValueCheck">SettingEffectiveValueCheck()</h2>
 
-<h2 id="SettingEffectiveValueCheck">SettingEffectiveValueCheck()</h2>
+<p><a href="#" onclick="toggleCode('method_SettingEffectiveValueCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SettingEffectiveValueCheck">
+                                        <pre>
+
+sub SettingEffectiveValueCheck {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(XMLContentParsed)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+
+            return;
+        }
+    }
+
+    my %Result = (
+        Success => 0,
+    );
+
+    # Data should be hash.
+    if ( ref $Param{EffectiveValue} ne 'HASH' ) {
+        $Result{Error} = 'EffectiveValue for VacationDays must be a hash!';
+        return %Result;
+    }
+
+    MONTH:
+    for my $Month ( sort keys %{ $Param{EffectiveValue} } ) {
+        if ( $Month !~ m{^([1-9]|1[0-2])$}gsmx ) {
+            $Result{Error} = "'$Month' must be a month number(1..12)!";
+            last MONTH;
+        }
+
+        if ( !IsHashRefWithData( $Param{EffectiveValue}->{$Month} ) ) {
+            $Result{Error} = "'$Month' must be a hash reference!";
+            last MONTH;
+        }
+
+        for my $Day ( sort keys %{ $Param{EffectiveValue}->{$Month} } ) {
+            if ( $Day !~ m{^([1-9]|[12][0-9]|3[01])$}gsmx ) {
+                $Result{Error} = "'$Day' must be a day number(1..31)!";
+                last MONTH;
+            }
+
+            if (
+                ref $Param{EffectiveValue}->{$Month}->{$Day}
+                || !$Param{EffectiveValue}->{$Month}->{$Day}
+                )
+            {
+                $Result{Error} = "Vacation description must be a string!";
+                last MONTH;
+            }
+        }
+    }
+    return %Result if $Result{Error};
+
+    $Result{Success}        = 1;
+    $Result{EffectiveValue} = $Param{EffectiveValue};
+
+    return %Result;
+}
+</pre></div>
 
 <p>Check if provided EffectiveValue matches structure defined in XMLContentParsed.</p>
 
-<pre><code>    my %Result = $SysConfigObject-&gt;SettingEffectiveValueCheck(
+<pre>    my %Result = $SysConfigObject-&gt;SettingEffectiveValueCheck(
         XMLContentParsed =&gt; {
             Value =&gt; [
                 {
-                    &#39;Item&#39; =&gt; [
+                    'Item' =&gt; [
                         {
-                            &#39;Item&#39; =&gt; [
+                            'Item' =&gt; [
                                 {
-                                    &#39;Content&#39;      =&gt; &#39;New Year\&#39;s Day&#39;,
-                                    &#39;Translatable&#39; =&gt; &#39;1&#39;,
-                                    &#39;ValueDay&#39;     =&gt; &#39;1&#39;,
-                                    &#39;ValueMonth&#39;   =&gt; &#39;1&#39;,
+                                    'Content'      =&gt; 'New Year\'s Day',
+                                    'Translatable' =&gt; '1',
+                                    'ValueDay'     =&gt; '1',
+                                    'ValueMonth'   =&gt; '1',
                                 },
                             ],
-                            &#39;ValueType&#39; =&gt; &#39;VacationDays&#39;,
+                            'ValueType' =&gt; 'VacationDays',
                         },
                     ],
                 },
             ],
         },
         EffectiveValue =&gt; {
-            &#39;1&#39; =&gt; {
-                &#39;1&#39; =&gt; &#39;New Year\&#39;s Day&#39;,
+            '1' =&gt; {
+                '1' =&gt; 'New Year\'s Day',
             },
-            &#39;12&#39; =&gt; {
-                &#39;24&#39; =&gt; &#39;Christmas Eve&#39;,
+            '12' =&gt; {
+                '24' =&gt; 'Christmas Eve',
             },
         },
-    );</code></pre>
-
-<p>Result: %Result = ( EffectiveValue =&gt; { # Note for VacationDays ValueTypes EffectiveValue is not changed. &#39;1&#39; =&gt; { &#39;1&#39; =&gt; &#39;New Year\&#39;s Day&#39;, }, &#39;12&#39; =&gt; { &#39;24&#39; =&gt; &#39;Christmas Eve&#39;, }, }, Success =&gt; 1, Error =&gt; undef, );</p>
+    );
+</pre><p>Result:
+    %Result = (
+        EffectiveValue =&gt; {                     # Note for VacationDays ValueTypes EffectiveValue is not changed.
+            '1' =&gt; {
+                '1' =&gt; 'New Year\'s Day',
+            },
+            '12' =&gt; {
+                '24' =&gt; 'Christmas Eve',
+            },
+        },
+        Success =&gt; 1,
+        Error   =&gt; undef,
+    );</p>
 
 <h2 id="SettingRender">SettingRender()</h2>
 
+<p><a href="#" onclick="toggleCode('method_SettingRender');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SettingRender">
+                                        <pre>
+
+sub SettingRender {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(Name EffectiveValue)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed",
+            );
+            return;
+        }
+    }
+
+    $Param{Class} //= '';
+    $Param{Class} .= " VacationDays ";
+    $Param{DefaultValue} //= '';
+    my $IDSuffix = $Param{IDSuffix} || '';
+
+    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
+    my $LayoutObject   = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $EffectiveValue = $Param{EffectiveValue};
+
+    my %EffectiveValueCheck = (
+        Success => 1,
+    );
+
+    if ( !$Param{SkipEffectiveValueCheck} ) {
+        %EffectiveValueCheck = $Self->SettingEffectiveValueCheck(
+            EffectiveValue   => $EffectiveValue,
+            XMLContentParsed => {
+                Value => [
+                    {
+                        Item => $Param{Item},
+                    },
+                ],
+            },
+        );
+    }
+
+    my $HTML = "<div class='Array VacationDaysArray'>\n";
+
+    if ( !$EffectiveValueCheck{Success} ) {
+        my $Message = $LanguageObject->Translate("Value is not correct! Please, consider updating this setting.");
+
+        $HTML .= "<div class='BadEffectiveValue'>\n";
+        $HTML .= "<p>* $Message</p>\n";
+        $HTML .= "</div>\n";
+    }
+
+    my @Days;
+    for my $Item ( 1 .. 31 ) {
+        push @Days, sprintf( "%02d", $Item );
+    }
+
+    my @Months;
+    for my $Item ( 1 .. 12 ) {
+        push @Months, sprintf( "%02d", $Item );
+    }
+
+    my $AddNewEntry     = $LanguageObject->Translate("Add new entry");
+    my $RemoveThisEntry = $LanguageObject->Translate("Remove this entry");
+
+    my $Index = 1;
+
+    for my $Month ( sort { $a <=> $b } keys %{ $Param{EffectiveValue} } ) {
+
+        for my $Day ( sort { $a <=> $b } keys %{ $Param{EffectiveValue}->{$Month} } ) {
+            my $Text = $Param{EffectiveValue}->{$Month}->{$Day};
+
+            $HTML .= "<div class='ArrayItem'>\n";
+            $HTML .= "<div class='SettingContent'>\n";
+
+            # month
+            $HTML .= $LayoutObject->BuildSelection(
+                Data     => \@Months,
+                Name     => $Param{Name},
+                ID       => $Param{Name} . $IDSuffix . $Index . "Month",
+                Class    => $Param{Class},
+                Disabled => $Param{RW} ? 0 : 1,
+                SelectedValue => sprintf( "%02d", $Month ),
+                Title         => $LanguageObject->Translate("Month"),
+            );
+
+            $HTML .= "<span>/</span>";
+
+            # day
+            $HTML .= $LayoutObject->BuildSelection(
+                Data     => \@Days,
+                Name     => $Param{Name},
+                ID       => $Param{Name} . $IDSuffix . $Index . "Day",
+                Class    => $Param{Class},
+                Disabled => $Param{RW} ? 0 : 1,
+                SelectedValue => sprintf( "%02d", $Day ),
+                Title         => $LanguageObject->Translate("Day"),
+            );
+
+            # description
+            my $HTMLDescription = $LayoutObject->Ascii2Html(
+                Text => $Text,
+                Type => 'Normal',
+            );
+            $HTML .= "<input class=\"$Param{Class}\" type=\"text\" name=\"$Param{Name}\" "
+                . "id=\"$Param{Name}$IDSuffix" . $Index . "Description\" value=\"$HTMLDescription\" "
+                . "title=\"" . $LanguageObject->Translate("Description") . "\" ";
+
+            if ( !$Param{RW} ) {
+                $HTML .= "disabled='disabled' ";
+            }
+
+            $HTML .= " />\n";
+
+            $HTML .= "</div>\n";    # SettingContent
+
+            if ( $Param{RW} ) {
+                $HTML .= "<button class='RemoveButton' type='button' "
+                    . "title='$RemoveThisEntry' value='Remove this entry'>\n"
+                    . "    <i class='fa fa-minus-circle'></i>\n"
+                    . "    <span class='InvisibleText'>$RemoveThisEntry</span>\n"
+                    . "</button>\n";
+            }
+            $HTML .= "</div>\n";    # ArrayItem
+            $Index++;
+        }
+    }
+
+    if ( $Param{RW} ) {
+        $HTML .= "    <button data-suffix='$Index' class='AddArrayItem' "
+            . "type='button' title='$AddNewEntry' value='Add new entry'>\n"
+            . "        <i class='fa fa-plus-circle'></i>\n"
+            . "        <span class='InvisibleText'>$AddNewEntry</span>\n"
+            . "    </button>\n";
+    }
+    $HTML .= "</div>\n";            # Array
+
+    return $HTML;
+}
+</pre></div>
+
 <p>Extracts the effective value from a XML parsed setting.</p>
 
-<pre><code>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
-        Name           =&gt; &#39;SettingName&#39;,
+<pre>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
+        Name           =&gt; 'SettingName',
         DefaultID      =&gt;  123,             # (required)
-        EffectiveValue =&gt; &#39;{
-            &#39;1&#39; =&gt; {
-                &#39;1&#39; =&gt; &#39;New Year\&#39;s Day&#39;,
+        EffectiveValue =&gt; '{
+            '1' =&gt; {
+                '1' =&gt; 'New Year\'s Day',
             },
             ...
         },
-        DefaultValue   =&gt; &#39;Product 5&#39;,      # (optional)
-        Class          =&gt; &#39;My class&#39;        # (optional)
+        DefaultValue   =&gt; 'Product 5',      # (optional)
+        Class          =&gt; 'My class'        # (optional)
         Item           =&gt; [                 # (optional) XML parsed item
             {
-                &#39;ValueType&#39; =&gt; &#39;VacationDays&#39;,
-                &#39;Content&#39; =&gt; &#39;&#39;,
-                &#39;ValueRegex&#39; =&gt; &#39;&#39;,
+                'ValueType' =&gt; 'VacationDays',
+                'Content' =&gt; '',
+                'ValueRegex' =&gt; '',
             },
         ],
         RW       =&gt; 1,                      # (optional) Allow editing. Default 0.
@@ -143,50 +399,138 @@ $(document).ready(function() {
         IDSuffix =&gt; 1,                      # (optional) Suffix will be added to the element ID
         SkipEffectiveValueCheck =&gt; 1,       # (optional) If enabled, system will not perform effective value check.
                                             #            Default: 1.
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
+<pre>    $SettingHTML = '&lt;div class &quot;Field&quot;...&lt;/div&gt;';
+</pre><h2 id="AddItem">AddItem()</h2>
 
-<pre><code>    $SettingHTML = &#39;&lt;div class &quot;Field&quot;...&lt;/div&gt;&#39;;</code></pre>
+<p><a href="#" onclick="toggleCode('method_AddItem');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AddItem">
+                                        <pre>
 
-<h2 id="AddItem">AddItem()</h2>
+sub AddItem {
+    my ( $Self, %Param ) = @_;
+
+    # Check needed stuff.
+    for my $Needed (qw(Name)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
+    my $LayoutObject   = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    my $IDSuffix = $Param{IDSuffix} || '';
+    my $Class    = $Param{Class}    || '';
+    $Class .= " VacationDays ";
+
+    my $Name = $Param{Name} . $IDSuffix;
+
+    my @Days;
+    for my $Item ( 1 .. 31 ) {
+        push @Days, sprintf( "%02d", $Item );
+    }
+
+    my @Months;
+    for my $Item ( 1 .. 12 ) {
+        push @Months, sprintf( "%02d", $Item );
+    }
+
+    my $RemoveThisEntry = $Kernel::OM->Get('Kernel::Language')->Translate("Remove this entry");
+
+    my $HTML = "";
+
+    # month
+    $HTML .= $LayoutObject->BuildSelection(
+        Data          => \@Months,
+        Name          => $Param{Name},
+        ID            => $Param{Name} . $IDSuffix . "Month",
+        Class         => $Class,
+        SelectedValue => '01',
+        Title         => $LanguageObject->Translate("Month"),
+    );
+
+    $HTML .= "<span>/</span>";
+
+    # day
+    $HTML .= $LayoutObject->BuildSelection(
+        Data          => \@Days,
+        Name          => $Param{Name},
+        ID            => $Param{Name} . $IDSuffix . "Day",
+        Class         => $Class,
+        SelectedValue => '01',
+        Title         => $LanguageObject->Translate("Day"),
+    );
+
+    # Description
+    $HTML .= "<input class=\"$Class\" type=\"text\" name=\"$Param{Name}\" "
+        . "id=\"$Param{Name}$IDSuffix" . "Description\" value=\"\" "
+        . "title=\"" . $LanguageObject->Translate("Description") . "\" "
+        . " />\n";
+
+    return $HTML;
+}
+</pre></div>
 
 <p>Generate HTML for new array/hash item.</p>
 
-<pre><code>    my $HTML = $ValueTypeObject-&gt;AddItem(
-        Name           =&gt; &#39;SettingName&#39;,    (required) Name
+<pre>    my $HTML = $ValueTypeObject-&gt;AddItem(
+        Name           =&gt; 'SettingName',    (required) Name
         DefaultItem    =&gt; {                 (optional) DefaultItem hash, if available
             Item =&gt; {
-                Content =&gt; &#39;Value&#39;,
+                Content =&gt; 'Value',
             },
         },
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
+<pre>    $HTML = &quot;&lt;input type='text' id='Setting_ExampleArray'
+        value='Value' name='ExampleArray' class='Entry'/&gt;&quot;;
+</pre><h2 id="DefaultItemAdd">DefaultItemAdd()</h2>
 
-<pre><code>    $HTML = &quot;&lt;input type=&#39;text&#39; id=&#39;Setting_ExampleArray&#39;
-        value=&#39;Value&#39; name=&#39;ExampleArray&#39; class=&#39;Entry&#39;/&gt;&quot;;</code></pre>
+<p><a href="#" onclick="toggleCode('method_DefaultItemAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DefaultItemAdd">
+                                        <pre>
 
-<h2 id="DefaultItemAdd">DefaultItemAdd()</h2>
+sub DefaultItemAdd {
+    my ( $Self, %Param ) = @_;
 
-<p>Return structure of the DefaultItem in case it&#39;s not inside of Array or Hash.</p>
-
-<pre><code>    my $DefaultItem = $ValueTypeObject-&gt;DefaultItemAdd();</code></pre>
-
-<p>Returns:</p>
-
-<pre><code>    $DefaultItem = {
-        Item =&gt; {
-            Content =&gt; &#39;&#39;,
+    my %Result = (
+        Item => {
+            Content => '',
         },
-        ValueType =&gt; &#39;VacationDays&#39;,
-    };</code></pre>
+        ValueType => 'VacationDays',
+    );
 
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    return \%Result;
+}
+</pre></div>
+
+<p>Return structure of the DefaultItem in case it's not inside of Array or Hash.</p>
+
+<pre>    my $DefaultItem = $ValueTypeObject-&gt;DefaultItemAdd();
+</pre><p>Returns:</p>
+
+<pre>    $DefaultItem = {
+        Item =&gt; {
+            Content =&gt; '',
+        },
+        ValueType =&gt; 'VacationDays',
+    };
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

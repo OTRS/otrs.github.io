@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::UnitTest::Selenium &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::UnitTest::Selenium</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,36 +69,96 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/UnitTest/Selenium.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#RunTest">RunTest()</a></li>
-      <li><a href="#get">get()</a></li>
-      <li><a href="#VerifiedGet">VerifiedGet()</a></li>
-      <li><a href="#VerifiedRefresh">VerifiedRefresh()</a></li>
-      <li><a href="#Login">Login()</a></li>
-      <li><a href="#WaitFor">WaitFor()</a></li>
-      <li><a href="#DragAndDrop">DragAndDrop()</a></li>
-      <li><a href="#HandleError">HandleError()</a></li>
-      <li><a href="#DEMOLISH">DEMOLISH()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#RunTest">RunTest()</a></li>
+	<li><a href="#get">get()</a></li>
+	<li><a href="#VerifiedGet">VerifiedGet()</a></li>
+	<li><a href="#VerifiedRefresh">VerifiedRefresh()</a></li>
+	<li><a href="#Login">Login()</a></li>
+	<li><a href="#WaitFor">WaitFor()</a></li>
+	<li><a href="#DragAndDrop">DragAndDrop()</a></li>
+	<li><a href="#HandleError">HandleError()</a></li>
+	<li><a href="#DEMOLISH">DEMOLISH()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>Kernel::System::UnitTest::Selenium - run front end tests</p>
 
-<p>This class inherits from Selenium::Remote::Driver. You can use its full API (see <a href="http://search.cpan.org/~aivaturi/Selenium-Remote-Driver-0.15/lib/Selenium/Remote/Driver.pm">http://search.cpan.org/~aivaturi/Selenium-Remote-Driver-0.15/lib/Selenium/Remote/Driver.pm</a>).</p>
+<p>This class inherits from Selenium::Remote::Driver. You can use
+its full API (see
+<a href="http://search.cpan.org/~aivaturi/Selenium-Remote-Driver-0.15/lib/Selenium/Remote/Driver.pm">http://search.cpan.org/~aivaturi/Selenium-Remote-Driver-0.15/lib/Selenium/Remote/Driver.pm</a>).</p>
 
-<p>Every successful Selenium command will be logged as a successful unit test. In case of an error, an exception will be thrown that you can catch in your unit test file and handle with <code>HandleError()</code> in this class. It will output a failing test result and generate a screen shot for analysis.</p>
+<p>Every successful Selenium command will be logged as a successful unit test.
+In case of an error, an exception will be thrown that you can catch in your
+unit test file and handle with <code>HandleError()</code> in this class. It will output
+a failing test result and generate a screen shot for analysis.</p>
 
 <h2 id="new">new()</h2>
+
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Class, %Param ) = @_;
+
+    $Param{UnitTestObject} ||= $Kernel::OM->Get('Kernel::System::UnitTest');
+
+    $Param{UnitTestObject}->True( 1, "Starting up Selenium scenario..." );
+
+    my %SeleniumTestsConfig = %{ $Kernel::OM->Get('Kernel::Config')->Get('SeleniumTestsConfig') // {} };
+
+    if ( !%SeleniumTestsConfig ) {
+        my $Self = bless {}, $Class;
+        $Self->{UnitTestObject} = $Param{UnitTestObject};
+        return $Self;
+    }
+
+    for my $Needed (qw(remote_server_addr port browser_name platform)) {
+        if ( !$SeleniumTestsConfig{$Needed} ) {
+            die "SeleniumTestsConfig must provide $Needed!";
+        }
+    }
+
+    $Kernel::OM->Get('Kernel::System::Main')->RequireBaseClass('Selenium::Remote::Driver')
+        || die "Could not load Selenium::Remote::Driver";
+
+    $Kernel::OM->Get('Kernel::System::Main')->Require('Kernel::System::UnitTest::Selenium::WebElement')
+        || die "Could not load Kernel::System::UnitTest::Selenium::WebElement";
+
+    my $Self = $Class->SUPER::new(
+        webelement_class => 'Kernel::System::UnitTest::Selenium::WebElement',
+        %SeleniumTestsConfig
+    );
+    $Self->{UnitTestObject}      = $Param{UnitTestObject};
+    $Self->{SeleniumTestsActive} = 1;
+
+    #$Self->debug_on();
+
+    # set screen size from config or use defauls
+    my $Height = $SeleniumTestsConfig{window_height} || 1200;
+    my $Width  = $SeleniumTestsConfig{window_width}  || 1400;
+
+    $Self->set_window_size( $Height, $Width );
+
+    $Self->{BaseURL} = $Kernel::OM->Get('Kernel::Config')->Get('HttpType') . '://';
+    $Self->{BaseURL} .= Kernel::System::UnitTest::Helper->GetTestHTTPHostname();
+
+    return $Self;
+}
+</pre></div>
 
 <p>create a selenium object to run front end tests.</p>
 
@@ -85,100 +166,434 @@ $(document).ready(function() {
 
 <p>Specify the connection details in <code>Config.pm</code>, like this:</p>
 
-<pre><code>    $Self-&gt;{&#39;SeleniumTestsConfig&#39;} = {
-        remote_server_addr  =&gt; &#39;localhost&#39;,
-        port                =&gt; &#39;4444&#39;,
-        browser_name        =&gt; &#39;phantomjs&#39;,
-        platform            =&gt; &#39;ANY&#39;,
+<pre>    $Self-&gt;{'SeleniumTestsConfig'} = {
+        remote_server_addr  =&gt; 'localhost',
+        port                =&gt; '4444',
+        browser_name        =&gt; 'phantomjs',
+        platform            =&gt; 'ANY',
         window_height       =&gt; 1200,    # optional, default 1000
         window_width        =&gt; 1600,    # optional, default 1200
         extra_capabilities =&gt; {
             marionette     =&gt; \0,   # Required to run FF 47 or older on Selenium 3+.
         },
-    };</code></pre>
-
-<p>Then you can use the full API of <a href="http://search.cpan.org/perldoc?Selenium::Remote::Driver">Selenium::Remote::Driver</a> on this object.</p>
+    };
+</pre><p>Then you can use the full API of <a href="http://search.cpan.org/perldoc?Selenium%3A%3ARemote%3A%3ADriver">Selenium::Remote::Driver</a> on this object.</p>
 
 <h2 id="RunTest">RunTest()</h2>
 
-<p>runs a selenium test if Selenium testing is configured and performs proper error handling (calls <code>HandleError()</code> if needed).</p>
+<p><a href="#" onclick="toggleCode('method_RunTest');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_RunTest">
+                                        <pre>
 
-<pre><code>    $SeleniumObject-&gt;RunTest( sub { ... } );</code></pre>
+sub RunTest {
+    my ( $Self, $Test ) = @_;
 
-<h2 id="get">get()</h2>
+    if ( !$Self->{SeleniumTestsActive} ) {
+        $Self->{UnitTestObject}->True( 1, 'Selenium testing is not active, skipping tests.' );
+        return 1;
+    }
+
+    eval {
+        $Test->();
+    };
+    $Self->HandleError($@) if $@;
+
+    return 1;
+}
+</pre></div>
+
+<p>runs a selenium test if Selenium testing is configured and performs proper
+error handling (calls <code>HandleError()</code> if needed).</p>
+
+<pre>    $SeleniumObject-&gt;RunTest( sub { ... } );
+</pre><h2 id="get">get()</h2>
+
+<p><a href="#" onclick="toggleCode('method_get');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_get">
+                                        <pre>
+
+sub get {    ## no critic
+    my ( $Self, $URL ) = @_;
+
+    if ( $URL !~ m{http[s]?://}smx ) {
+        $URL = "$Self->{BaseURL}/$URL";
+    }
+
+    $Self->SUPER::get($URL);
+
+    return;
+}
+</pre></div>
 
 <p>Override get method of base class to prepend the correct base URL.</p>
 
-<pre><code>    $SeleniumObject-&gt;get(
+<pre>    $SeleniumObject-&gt;get(
         $URL,
-    );</code></pre>
+    );
+</pre><h2 id="VerifiedGet">VerifiedGet()</h2>
 
-<h2 id="VerifiedGet">VerifiedGet()</h2>
+<p><a href="#" onclick="toggleCode('method_VerifiedGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_VerifiedGet">
+                                        <pre>
 
-<p>perform a get() call, but wait for the page to be fully loaded (works only within OTRS). Will die() if the verification fails.</p>
+sub VerifiedGet {
+    my ( $Self, $URL ) = @_;
 
-<pre><code>    $SeleniumObject-&gt;VerifiedGet(
+    $Self->get($URL);
+
+    $Self->WaitFor(
+        JavaScript =>
+            'return typeof(Core) == "object" && typeof(Core.App) == "object" && Core.App.PageLoadComplete'
+    ) || die "OTRS API verification failed after page load.";
+
+    return;
+}
+</pre></div>
+
+<p>perform a get() call, but wait for the page to be fully loaded (works only within OTRS).
+Will die() if the verification fails.</p>
+
+<pre>    $SeleniumObject-&gt;VerifiedGet(
         $URL,
-    );</code></pre>
+    );
+</pre><h2 id="VerifiedRefresh">VerifiedRefresh()</h2>
 
-<h2 id="VerifiedRefresh">VerifiedRefresh()</h2>
+<p><a href="#" onclick="toggleCode('method_VerifiedRefresh');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_VerifiedRefresh">
+                                        <pre>
 
-<p>perform a refresh() call, but wait for the page to be fully loaded (works only within OTRS). Will die() if the verification fails.</p>
+sub VerifiedRefresh {
+    my ( $Self, $URL ) = @_;
 
-<pre><code>    $SeleniumObject-&gt;VerifiedRefresh();</code></pre>
+    $Self->refresh();
 
-<h2 id="Login">Login()</h2>
+    $Self->WaitFor(
+        JavaScript =>
+            'return typeof(Core) == "object" && typeof(Core.App) == "object" && Core.App.PageLoadComplete'
+    ) || die "OTRS API verification failed after page load.";
+
+    return;
+}
+</pre></div>
+
+<p>perform a refresh() call, but wait for the page to be fully loaded (works only within OTRS).
+Will die() if the verification fails.</p>
+
+<pre>    $SeleniumObject-&gt;VerifiedRefresh();
+</pre><h2 id="Login">Login()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Login');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Login">
+                                        <pre>
+
+sub Login {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Type User Password)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    $Self->{UnitTestObject}->True( 1, 'Initiating login...' );
+
+    # we will try several times to log in
+    my $MaxTries = 5;
+
+    TRY:
+    for my $Try ( 1 .. $MaxTries ) {
+
+        eval {
+            my $ScriptAlias = $Kernel::OM->Get('Kernel::Config')->Get('ScriptAlias');
+
+            if ( $Param{Type} eq 'Agent' ) {
+                $ScriptAlias .= 'index.pl';
+            }
+            else {
+                $ScriptAlias .= 'customer.pl';
+            }
+
+            $Self->get("${ScriptAlias}");
+
+            $Self->delete_all_cookies();
+            $Self->VerifiedGet("${ScriptAlias}?Action=Login;User=$Param{User};Password=$Param{Password}");
+
+            # login successful?
+            $Self->find_element( 'a#LogoutButton', 'css' );    # dies if not found
+
+            $Self->{UnitTestObject}->True( 1, 'Login sequence ended...' );
+        };
+
+        # an error happend
+        if ($@) {
+
+            $Self->{UnitTestObject}->True( 1, "Login attempt $Try of $MaxTries not successful." );
+
+            # try again
+            next TRY if $Try < $MaxTries;
+
+            # log error
+            $Self->HandleError($@);
+            die "Login failed!";
+        }
+
+        # login was sucessful
+        else {
+            last TRY;
+        }
+    }
+
+    return 1;
+}
+</pre></div>
 
 <p>login to agent or customer interface</p>
 
-<pre><code>    $SeleniumObject-&gt;Login(
-        Type     =&gt; &#39;Agent&#39;, # Agent|Customer
-        User     =&gt; &#39;someuser&#39;,
-        Password =&gt; &#39;somepassword&#39;,
-    );</code></pre>
+<pre>    $SeleniumObject-&gt;Login(
+        Type     =&gt; 'Agent', # Agent|Customer
+        User     =&gt; 'someuser',
+        Password =&gt; 'somepassword',
+    );
+</pre><h2 id="WaitFor">WaitFor()</h2>
 
-<h2 id="WaitFor">WaitFor()</h2>
+<p><a href="#" onclick="toggleCode('method_WaitFor');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_WaitFor">
+                                        <pre>
 
-<p>wait with increasing sleep intervals until the given condition is true or the wait time is over. Exactly one condition (JavaScript or WindowCount) must be specified.</p>
+sub WaitFor {
+    my ( $Self, %Param ) = @_;
 
-<pre><code>    my $Success = $SeleniumObject-&gt;WaitFor(
-        JavaScript   =&gt; &#39;return $(&quot;.someclass&quot;).length&#39;,   # Javascript code that checks condition
+    if ( !$Param{JavaScript} && !$Param{WindowCount} && !$Param{AlertPresent} && !$Param{Callback} ) {
+        die "Need JavaScript, WindowCount or AlertPresent.";
+    }
+
+    local $Self->{SuppressCommandRecording} = 1;
+
+    $Param{Time} //= 20;
+    my $WaitedSeconds = 0;
+    my $Interval      = 0.1;
+
+    while ( $WaitedSeconds <= $Param{Time} ) {
+        if ( $Param{JavaScript} ) {
+            return 1 if $Self->execute_script( $Param{JavaScript} )
+        }
+        elsif ( $Param{WindowCount} ) {
+            return 1 if scalar( @{ $Self->get_window_handles() } ) == $Param{WindowCount};
+        }
+        elsif ( $Param{AlertPresent} ) {
+
+            # Eval is needed because the method would throw if no alert is present (yet).
+            return 1 if eval { $Self->get_alert_text() };
+        }
+        elsif ( $Param{Callback} ) {
+            return 1 if $Param{Callback}->();
+        }
+        Time::HiRes::sleep($Interval);
+        $WaitedSeconds += $Interval;
+        $Interval += 0.1;
+    }
+
+    my $Argument = '';
+    for my $Key (qw(JavaScript WindowCount AlertPresent)) {
+        $Argument = "$Key => $Param{$Key}" if $Param{$Key};
+    }
+    $Argument = "Callback" if $Param{Callback};
+
+    die "WaitFor($Argument) failed.";
+}
+</pre></div>
+
+<p>wait with increasing sleep intervals until the given condition is true or the wait time is over.
+Exactly one condition (JavaScript or WindowCount) must be specified.</p>
+
+<pre>    my $Success = $SeleniumObject-&gt;WaitFor(
+        JavaScript   =&gt; 'return $(&quot;.someclass&quot;).length',   # Javascript code that checks condition
         AlertPresent =&gt; 1,                                 # Wait until an alert, confirm or prompt dialog is present
         WindowCount  =&gt; 2,                                 # Wait until this many windows are open
         Callback     =&gt; sub { ... }                        # Wait until function returns true
         Time         =&gt; 20,                                # optional, wait time in seconds (default 20)
-    );</code></pre>
+    );
+</pre><h2 id="DragAndDrop">DragAndDrop()</h2>
 
-<h2 id="DragAndDrop">DragAndDrop()</h2>
+<p><a href="#" onclick="toggleCode('method_DragAndDrop');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DragAndDrop">
+                                        <pre>
+
+sub DragAndDrop {
+
+    my ( $Self, %Param ) = @_;
+
+    # Value is optional parameter
+    for my $Needed (qw(Element Target)) {
+        if ( !$Param{$Needed} ) {
+            die "Need $Needed";
+        }
+    }
+
+    my %TargetOffset;
+    if ( $Param{TargetOffset} ) {
+        %TargetOffset = (
+            xoffset => $Param{TargetOffset}->{X} || 0,
+            yoffset => $Param{TargetOffset}->{Y} || 0,
+        );
+    }
+
+    # Make sure Element is visible
+    $Self->WaitFor(
+        JavaScript => 'return typeof($) === "function" && $(\'' . $Param{Element} . ':visible\').length;',
+    );
+    my $Element = $Self->find_element( $Param{Element}, 'css' );
+
+    # Move mouse to from element, drag and drop
+    $Self->mouse_move_to_location( element => $Element );
+
+    # Holds the mouse button on the element
+    $Self->button_down();
+
+    # Make sure Target is visible
+    $Self->WaitFor(
+        JavaScript => 'return typeof($) === "function" && $(\'' . $Param{Target} . ':visible\').length;',
+    );
+    my $Target = $Self->find_element( $Param{Target}, 'css' );
+
+    # Move mouse to the destination
+    $Self->mouse_move_to_location(
+        element => $Target,
+        %TargetOffset,
+    );
+
+    # Release
+    $Self->button_up();
+
+    return;
+}
+</pre></div>
 
 <p>Drag and drop an element.</p>
 
-<pre><code>    $SeleniumObject-&gt;DragAndDrop(
-        Element         =&gt; &#39;.Element&#39;, # (required) css selector of element which should be dragged
-        Target          =&gt; &#39;.Target&#39;,  # (required) css selector of element on which the dragged element should be dropped
+<pre>    $SeleniumObject-&gt;DragAndDrop(
+        Element         =&gt; '.Element', # (required) css selector of element which should be dragged
+        Target          =&gt; '.Target',  # (required) css selector of element on which the dragged element should be dropped
         TargetOffset    =&gt; {           # (optional) Offset for target. If not specified, the mouse will move to the middle of the element.
             X   =&gt; 150,
             Y   =&gt; 100,
         }
-    );</code></pre>
+    );
+</pre><h2 id="HandleError">HandleError()</h2>
 
-<h2 id="HandleError">HandleError()</h2>
+<p><a href="#" onclick="toggleCode('method_HandleError');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_HandleError">
+                                        <pre>
+
+sub HandleError {
+    my ( $Self, $Error ) = @_;
+
+    $Self->{UnitTestObject}->False( 1, "Exception in Selenium': $Error" );
+
+    #eval {
+    my $Data = $Self->screenshot();
+    return if !$Data;
+    $Data = MIME::Base64::decode_base64($Data);
+
+    #
+    # Store screenshots in a local folder from where they can be opened directly in the browser.
+    #
+    my $LocalScreenshotDir = $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/var/httpd/htdocs/SeleniumScreenshots';
+    mkdir $LocalScreenshotDir || return $Self->False( 1, "Could not create $LocalScreenshotDir." );
+
+    my $Filename = $Kernel::OM->Get('Kernel::System::Time')->CurrentTimestamp();
+    $Filename .= '-' . ( int rand 100_000_000 ) . '.png';
+    $Filename =~ s{[ :]}{-}smxg;
+
+    my $HttpType = $Kernel::OM->Get('Kernel::Config')->Get('HttpType');
+    my $Hostname = $Kernel::OM->Get('Kernel::System::UnitTest::Helper')->GetTestHTTPHostname();
+    my $URL      = "$HttpType://$Hostname/"
+        . $Kernel::OM->Get('Kernel::Config')->Get('Frontend::WebPath')
+        . "SeleniumScreenshots/$Filename";
+
+    $Kernel::OM->Get('Kernel::System::Main')->FileWrite(
+        Directory => $LocalScreenshotDir,
+        Filename  => $Filename,
+        Content   => \$Data,
+    ) || return $Self->False( 1, "Could not write file $LocalScreenshotDir/$Filename" );
+
+    #
+    # If a shared screenshot folder is present, then we also store the screenshot there for external use.
+    #
+    if ( -d '/var/otrs-unittest/' ) {
+
+        my $SharedScreenshotDir = '/var/otrs-unittest/SeleniumScreenshots';
+        mkdir $SharedScreenshotDir || return $Self->False( 1, "Could not create $SharedScreenshotDir." );
+
+        $Kernel::OM->Get('Kernel::System::Main')->FileWrite(
+            Directory => $SharedScreenshotDir,
+            Filename  => $Filename,
+            Content   => \$Data,
+        ) || return $Self->False( 1, "Could not write file $SharedScreenshotDir/$Filename" );
+    }
+
+    $Self->{UnitTestObject}->False( 1, "Saved screenshot in $URL" );
+    $Self->{UnitTestObject}->AttachSeleniumScreenshot(
+        Filename => $Filename,
+        Content  => $Data
+    );
+}
+</pre></div>
 
 <p>use this method to handle any Selenium exceptions.</p>
 
-<pre><code>    $SeleniumObject-&gt;HandleError($@);</code></pre>
-
-<p>It will create a failing test result and store a screen shot of the page for analysis (in folder /var/otrs-unittest if it exists, in $Home/var/httpd/htdocs otherwise).</p>
+<pre>    $SeleniumObject-&gt;HandleError($@);
+</pre><p>It will create a failing test result and store a screen shot of the page
+for analysis (in folder /var/otrs-unittest if it exists, in $Home/var/httpd/htdocs otherwise).</p>
 
 <h2 id="DEMOLISH">DEMOLISH()</h2>
 
-<p>override DEMOLISH from <a href="http://search.cpan.org/perldoc?Selenium::Remote::Driver">Selenium::Remote::Driver</a> (required because this class is managed by <a href="http://search.cpan.org/perldoc?Moo">Moo</a>). Adds a unit test result to indicate the shutdown, and performs some clean-ups.</p>
+<p><a href="#" onclick="toggleCode('method_DEMOLISH');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_DEMOLISH">
+                                        <pre>
 
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+sub DEMOLISH {
+    my $Self = shift;
+
+    # Could be missing on early die.
+    if ( $Self->{UnitTestObject} ) {
+        $Self->{UnitTestObject}->True( 1, "Shutting down Selenium scenario." );
+    }
+
+    if ( $Self->{SeleniumTestsActive} ) {
+        $Self->SUPER::DEMOLISH(@_);
+    }
+
+    # Cleanup possibly leftover zombie firefox profiles.
+    my @LeftoverFirefoxProfiles = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
+        Directory => '/tmp/',
+        Filter    => 'anonymous*webdriver-profile',
+    );
+
+    for my $LeftoverFirefoxProfile (@LeftoverFirefoxProfiles) {
+        if ( -d $LeftoverFirefoxProfile ) {
+            File::Path::remove_tree($LeftoverFirefoxProfile);
+        }
+    }
+}
+</pre></div>
+
+<p>override DEMOLISH from <a href="http://search.cpan.org/perldoc?Selenium%3A%3ARemote%3A%3ADriver">Selenium::Remote::Driver</a> (required because this class is managed by <a href="http://search.cpan.org/perldoc?Moo">Moo</a>).
+Adds a unit test result to indicate the shutdown, and performs some clean-ups.</p>
+
+<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

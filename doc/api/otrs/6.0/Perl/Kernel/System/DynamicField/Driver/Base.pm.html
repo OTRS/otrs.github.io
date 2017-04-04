@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::DynamicField::Driver::Base &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::DynamicField::Driver::Base</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,44 +69,175 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/DynamicField/Driver/Base.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#EditLabelRender">EditLabelRender()</a></li>
-      <li><a href="#ValueSearch">ValueSearch()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#EditLabelRender">EditLabelRender()</a></li>
+	<li><a href="#ValueSearch">ValueSearch()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::System::DynamicField::Driver::Base - common fields backend functions</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="EditLabelRender">EditLabelRender()</h2>
 
+<p><a href="#" onclick="toggleCode('method_EditLabelRender');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_EditLabelRender">
+                                        <pre>
+
+sub EditLabelRender {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(DynamicFieldConfig FieldName)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # check DynamicFieldConfig (general)
+    if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The field configuration is invalid",
+        );
+        return;
+    }
+
+    # check DynamicFieldConfig (internally)
+    for my $Needed (qw(Label)) {
+        if ( !$Param{DynamicFieldConfig}->{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed in DynamicFieldConfig!"
+            );
+            return;
+        }
+    }
+
+    my $Name      = $Param{FieldName};
+    my $LabelText = $Param{DynamicFieldConfig}->{Label};
+
+    my $LabelID    = 'Label' . $Param{FieldName};
+    my $HTMLString = '';
+
+    if ( $Param{Mandatory} ) {
+
+        # opening tag
+        $HTMLString = <<"EOF";
+<label id="$LabelID" for="$Name" class="Mandatory">
+    <span class="Marker">*</span>
+EOF
+    }
+    else {
+
+        # opening tag
+        $HTMLString = <<"EOF";
+<label id="$LabelID" for="$Name">
+EOF
+    }
+
+    # text
+    $HTMLString .= $Param{LayoutObject}->Ascii2Html(
+        Text => $Param{LayoutObject}->{LanguageObject}->Translate("$LabelText")
+    );
+    if ( $Param{AdditionalText} ) {
+        $HTMLString .= " (";
+        $HTMLString .= $Param{LayoutObject}->Ascii2Html(
+            Text => $Param{LayoutObject}->{LanguageObject}->Translate("$Param{AdditionalText}")
+        );
+        $HTMLString .= ")";
+    }
+    $HTMLString .= ":\n";
+
+    # closing tag
+    $HTMLString .= <<"EOF";
+</label>
+EOF
+
+    return $HTMLString;
+}
+</pre></div>
+
 <p>creates the label HTML to be used in edit masks.</p>
 
-<pre><code>    my $LabelHTML = $BackendObject-&gt;EditLabelRender(
+<pre>    my $LabelHTML = $BackendObject-&gt;EditLabelRender(
         DynamicFieldConfig =&gt; $DynamicFieldConfig,      # complete config of the DynamicField
-        FieldName          =&gt; &#39;TheField&#39;,               # the value to be set on the &#39;for&#39; attribute
-        AdditionalText     =&gt; &#39;Between&#39;                 # other text to be placed next to FieldName
+        FieldName          =&gt; 'TheField',               # the value to be set on the 'for' attribute
+        AdditionalText     =&gt; 'Between'                 # other text to be placed next to FieldName
         Mandatory          =&gt; 1,                        # 0 or 1,
-    );</code></pre>
+    );
+</pre><h2 id="ValueSearch">ValueSearch()</h2>
 
-<h2 id="ValueSearch">ValueSearch()</h2>
+<p><a href="#" onclick="toggleCode('method_ValueSearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ValueSearch">
+                                        <pre>
+
+sub ValueSearch {
+    my ( $Self, %Param ) = @_;
+
+    # check mandatory parameters
+    if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need DynamicFieldConfig!"
+        );
+        return;
+    }
+
+    my $SearchTerm = $Param{Search};
+    my $Operator   = 'Equals';
+    if ( $Self->HasBehavior( Behavior => 'IsLikeOperatorCapable' ) ) {
+        $SearchTerm = '%' . $Param{Search} . '%';
+        $Operator   = 'Like';
+    }
+
+    my $SearchSQL = $Self->SearchSQLGet(
+        DynamicFieldConfig => $Param{DynamicFieldConfig},
+        TableAlias         => 'dynamic_field_value',
+        SearchTerm         => $SearchTerm,
+        Operator           => $Operator,
+    );
+
+    if ( !defined $SearchSQL || !length $SearchSQL ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Error generating search SQL!"
+        );
+        return;
+    }
+
+    my $Values = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->ValueSearch(
+        FieldID   => $Param{DynamicFieldConfig}->{ID},
+        Search    => $Param{Search},
+        SearchSQL => $SearchSQL,
+    );
+
+    return $Values;
+}
+</pre></div>
 
 <p>Searches/fetches dynamic field value.</p>
 
-<pre><code>    my $Value = $BackendObject-&gt;ValueSearch(
+<pre>    my $Value = $BackendObject-&gt;ValueSearch(
         DynamicFieldConfig =&gt; $DynamicFieldConfig,      # complete config of the DynamicField
-        Search             =&gt; &#39;test&#39;,
+        Search             =&gt; 'test',
     );
 
     Returns [
@@ -93,17 +245,19 @@ $(document).ready(function() {
             ID            =&gt; 437,
             FieldID       =&gt; 23,
             ObjectID      =&gt; 133,
-            ValueText     =&gt; &#39;some text&#39;,
-            ValueDateTime =&gt; &#39;1977-12-12 12:00:00&#39;,
+            ValueText     =&gt; 'some text',
+            ValueDateTime =&gt; '1977-12-12 12:00:00',
             ValueInt      =&gt; 123,
         },
-    ];</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    ];
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

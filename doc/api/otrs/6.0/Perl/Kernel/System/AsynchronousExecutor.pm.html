@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::AsynchronousExecutor &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::AsynchronousExecutor</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,55 +69,148 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/AsynchronousExecutor.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#AsyncCall">AsyncCall()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#AsyncCall">AsyncCall()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::AsynchronousExecutor - base class to delegate tasks to the OTRS Scheduler Daemon</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
-<p>ObjectManager controlled modules can add this base class to execute some time consuming tasks in the background using the separate process OTRS Scheduler Daemon.</p>
+<p>ObjectManager controlled modules can add this base class to execute some time consuming tasks in the
+background using the separate process OTRS Scheduler Daemon.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="AsyncCall">AsyncCall()</h2>
 
+<p><a href="#" onclick="toggleCode('method_AsyncCall');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_AsyncCall">
+                                        <pre>
+
+sub AsyncCall {
+    my ( $Self, %Param ) = @_;
+
+    my $FunctionName = $Param{FunctionName};
+
+    if ( !IsStringWithData($FunctionName) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Function needs to be a non empty string!",
+        );
+        return;
+    }
+
+    my $ObjectName = $Param{ObjectName} || ref $Self;
+
+    # create a new object
+    my $LocalObject;
+    eval {
+        $LocalObject = $Kernel::OM->Get($ObjectName);
+    };
+
+    # check if is possible to create the object
+    if ( !$LocalObject ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Could not create $ObjectName object!",
+        );
+
+        return;
+    }
+
+    # check if object reference is the same as expected
+    if ( ref $LocalObject ne $ObjectName ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$ObjectName object is not valid!",
+        );
+        return;
+    }
+
+    # check if the object can execute the function
+    if ( !$LocalObject->can($FunctionName) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$ObjectName can not execute $FunctionName()!",
+        );
+        return;
+    }
+
+    if ( $Param{FunctionParams} && !ref $Param{FunctionParams} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "FunctionParams needs to be a hash or list reference.",
+        );
+        return;
+    }
+
+    # define the task name with object name and concatenate the function name
+    my $TaskName = substr "$ObjectName-$FunctionName()", 0, 255;
+
+    # create a new task
+    my $TaskID = $Kernel::OM->Get('Kernel::System::Scheduler')->TaskAdd(
+        Type                     => 'AsynchronousExecutor',
+        Name                     => $TaskName,
+        Attempts                 => $Param{Attempts} || 1,
+        MaximumParallelInstances => $Param{MaximumParallelInstances} || 0,
+        Data                     => {
+            Object   => $ObjectName,
+            Function => $FunctionName,
+            Params   => $Param{FunctionParams} // {},
+        },
+    );
+
+    if ( !$TaskID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Could not create new AsynchronousExecutor: '$TaskName' task!",
+        );
+        return;
+    }
+
+    return 1;
+}
+</pre></div>
+
 <p>creates a scheduler daemon task to execute a function asynchronously.</p>
 
-<pre><code>    my $Success = $Object-&gt;AsyncCall(
-        ObjectName               =&gt; &#39;Kernel::System::Ticket&#39;,   # optional, if not given the object is used from where
+<pre>    my $Success = $Object-&gt;AsyncCall(
+        ObjectName               =&gt; 'Kernel::System::Ticket',   # optional, if not given the object is used from where
                                                                 # this function was called
-        FunctionName             =&gt; &#39;MyFunction&#39;,               # the name of the function to execute
+        FunctionName             =&gt; 'MyFunction',               # the name of the function to execute
         FunctionParams           =&gt; \%MyParams,                 # a ref with the required parameters for the function
         Attempts                 =&gt; 3,                          # optional, default: 1, number of tries to lock the
                                                                 #   task by the scheduler
         MaximumParallelInstances =&gt; 1,                          # optional, default: 0 (unlimited), number of same
                                                                 #   function calls from the same object that can be
                                                                 #   executed at the the same time
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
-
-<pre><code>    $Success = 1;  # of false in case of an error</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+<pre>    $Success = 1;  # of false in case of an error
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

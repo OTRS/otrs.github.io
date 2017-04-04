@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::SLA &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::SLA</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,105 +69,541 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/SLA.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#SLAList">SLAList()</a></li>
-      <li><a href="#SLAGet">SLAGet()</a></li>
-      <li><a href="#SLALookup">SLALookup()</a></li>
-      <li><a href="#SLAAdd">SLAAdd()</a></li>
-      <li><a href="#SLAUpdate">SLAUpdate()</a></li>
-      <li><a href="#SLAPreferencesSet">SLAPreferencesSet()</a></li>
-      <li><a href="#SLAPreferencesGet">SLAPreferencesGet()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#SLAList">SLAList()</a></li>
+	<li><a href="#SLAGet">SLAGet()</a></li>
+	<li><a href="#SLALookup">SLALookup()</a></li>
+	<li><a href="#SLAAdd">SLAAdd()</a></li>
+	<li><a href="#SLAUpdate">SLAUpdate()</a></li>
+	<li><a href="#SLAPreferencesSet">SLAPreferencesSet()</a></li>
+	<li><a href="#SLAPreferencesGet">SLAPreferencesGet()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::SLA - sla lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>All sla functions.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-<pre><code>    my $SLAObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SLA&#39;);</code></pre>
+sub new {
+    my ( $Type, %Param ) = @_;
 
-<h2 id="SLAList">SLAList()</h2>
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get configured preferences object
+    my $GeneratorModule = $Kernel::OM->Get('Kernel::Config')->Get('SLA::PreferencesModule')
+        || 'Kernel::System::SLA::PreferencesDB';
+
+    # get preferences object
+    $Self->{PreferencesObject} = $Kernel::OM->Get($GeneratorModule);
+
+    $Self->{CacheType} = 'SLA';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
+
+    return $Self;
+}
+</pre></div>
+
+<p>Don't use the constructor directly, use the ObjectManager instead:</p>
+
+<pre>    my $SLAObject = $Kernel::OM-&gt;Get('Kernel::System::SLA');
+</pre><h2 id="SLAList">SLAList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SLAList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SLAList">
+                                        <pre>
+
+sub SLAList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserID!'
+        );
+        return;
+    }
+
+    # set valid param
+    if ( !defined $Param{Valid} ) {
+        $Param{Valid} = 1;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # add ServiceID
+    my %SQLTable;
+    $SQLTable{sla} = 'sla s';
+    my @SQLWhere;
+    if ( $Param{ServiceID} ) {
+
+        # quote
+        $Param{ServiceID} = $DBObject->Quote( $Param{ServiceID}, 'Integer' );
+
+        $SQLTable{service} = 'service_sla r';
+        push @SQLWhere, "s.id = r.sla_id AND r.service_id = $Param{ServiceID}";
+    }
+
+    # add valid part
+    if ( $Param{Valid} ) {
+
+        # get valid object
+        my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
+
+        # create the valid list
+        my $ValidIDs = join ', ', $ValidObject->ValidIDsGet();
+
+        push @SQLWhere, "s.valid_id IN ( $ValidIDs )";
+    }
+
+    # create the table and where strings
+    my $TableString = join q{, }, values %SQLTable;
+    my $WhereString = @SQLWhere ? ' WHERE ' . join q{ AND }, @SQLWhere : '';
+
+    # ask database
+    $DBObject->Prepare(
+        SQL => "SELECT s.id, s.name FROM $TableString $WhereString",
+    );
+
+    # fetch the result
+    my %SLAList;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $SLAList{ $Row[0] } = $Row[1];
+    }
+
+    return %SLAList;
+}
+</pre></div>
 
 <p>return a hash list of slas</p>
 
-<pre><code>    my %SLAList = $SLAObject-&gt;SLAList(
+<pre>    my %SLAList = $SLAObject-&gt;SLAList(
         ServiceID =&gt; 1,  # (optional)
         Valid     =&gt; 0,  # (optional) default 1 (0|1)
         UserID    =&gt; 1,
-    );</code></pre>
+    );
+</pre><h2 id="SLAGet">SLAGet()</h2>
 
-<h2 id="SLAGet">SLAGet()</h2>
+<p><a href="#" onclick="toggleCode('method_SLAGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SLAGet">
+                                        <pre>
+
+sub SLAGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(SLAID UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # check if result is already cached
+    my $CacheKey = 'Cache::SLAGet::' . $Param{SLAID};
+    my $Cached   = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type           => $Self->{CacheType},
+        Key            => $CacheKey,
+        CacheInMemory  => 1,
+        CacheInBackend => 0,
+    );
+
+    if ( ref $Cached eq 'HASH' ) {
+        return %{$Cached};
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get sla from db
+    $DBObject->Prepare(
+        SQL => 'SELECT id, name, calendar_name, first_response_time, first_response_notify, '
+            . 'update_time, update_notify, solution_time, solution_notify, '
+            . 'valid_id, comments, create_time, create_by, change_time, change_by '
+            . 'FROM sla WHERE id = ?',
+        Bind => [
+            \$Param{SLAID},
+        ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my %SLAData;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $SLAData{SLAID}               = $Row[0];
+        $SLAData{Name}                = $Row[1];
+        $SLAData{Calendar}            = $Row[2] || '';
+        $SLAData{FirstResponseTime}   = $Row[3];
+        $SLAData{FirstResponseNotify} = $Row[4];
+        $SLAData{UpdateTime}          = $Row[5];
+        $SLAData{UpdateNotify}        = $Row[6];
+        $SLAData{SolutionTime}        = $Row[7];
+        $SLAData{SolutionNotify}      = $Row[8];
+        $SLAData{ValidID}             = $Row[9];
+        $SLAData{Comment}             = $Row[10] || '';
+        $SLAData{CreateTime}          = $Row[11];
+        $SLAData{CreateBy}            = $Row[12];
+        $SLAData{ChangeTime}          = $Row[13];
+        $SLAData{ChangeBy}            = $Row[14];
+    }
+
+    # check sla
+    if ( !$SLAData{SLAID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No such SLAID ($Param{SLAID})!",
+        );
+        return;
+    }
+
+    # get all service ids
+    $DBObject->Prepare(
+        SQL  => 'SELECT service_id FROM service_sla WHERE sla_id = ? ORDER BY service_id ASC',
+        Bind => [ \$SLAData{SLAID} ],
+    );
+
+    # fetch the result
+    my @ServiceIDs;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        push @ServiceIDs, $Row[0];
+    }
+
+    # add the ids
+    $SLAData{ServiceIDs} = \@ServiceIDs;
+
+    # get sla preferences
+    my %Preferences = $Self->SLAPreferencesGet( SLAID => $Param{SLAID} );
+
+    # merge hash
+    if (%Preferences) {
+        %SLAData = ( %SLAData, %Preferences );
+    }
+
+    # cache result
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type => $Self->{CacheType},
+        TTL  => $Self->{CacheTTL},
+        Key  => $CacheKey,
+
+        # make a local copy of the sla data to avoid it being altered in-memory later
+        Value          => {%SLAData},
+        CacheInMemory  => 1,
+        CacheInBackend => 0,
+    );
+
+    return %SLAData;
+}
+</pre></div>
 
 <p>Returns an SLA as a hash</p>
 
-<pre><code>    my %SLAData = $SLAObject-&gt;SLAGet(
+<pre>    my %SLAData = $SLAObject-&gt;SLAGet(
         SLAID  =&gt; 123,
         UserID =&gt; 1,
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
+<pre>    my %SLAData = (
+          'SLAID'               =&gt; '2',
+          'Name'                =&gt; 'Diamond Pacific - S2',
+          'Calendar'            =&gt; '2',
+          'FirstResponseTime'   =&gt; '60',   # in minutes according to business hours
+          'FirstResponseNotify' =&gt; '70',   # in percent
+          'UpdateTime'          =&gt; '360',  # in minutes according to business hours
+          'UpdateNotify'        =&gt; '70',   # in percent
+          'SolutionTime'        =&gt; '960',  # in minutes according to business hours
+          'SolutionNotify'      =&gt; '80',   # in percent
+          'ServiceIDs'          =&gt; [ '4', '7', '8' ],
+          'ValidID'             =&gt; '1',
+          'Comment'             =&gt; 'Some Comment',
+          'CreateBy'            =&gt; '93',
+          'CreateTime'          =&gt; '2011-06-16 22:54:54',
+          'ChangeBy'            =&gt; '93',
+          'ChangeTime'          =&gt; '2011-06-16 22:54:54',
+    );
+</pre><h2 id="SLALookup">SLALookup()</h2>
 
-<pre><code>    my %SLAData = (
-          &#39;SLAID&#39;               =&gt; &#39;2&#39;,
-          &#39;Name&#39;                =&gt; &#39;Diamond Pacific - S2&#39;,
-          &#39;Calendar&#39;            =&gt; &#39;2&#39;,
-          &#39;FirstResponseTime&#39;   =&gt; &#39;60&#39;,   # in minutes according to business hours
-          &#39;FirstResponseNotify&#39; =&gt; &#39;70&#39;,   # in percent
-          &#39;UpdateTime&#39;          =&gt; &#39;360&#39;,  # in minutes according to business hours
-          &#39;UpdateNotify&#39;        =&gt; &#39;70&#39;,   # in percent
-          &#39;SolutionTime&#39;        =&gt; &#39;960&#39;,  # in minutes according to business hours
-          &#39;SolutionNotify&#39;      =&gt; &#39;80&#39;,   # in percent
-          &#39;ServiceIDs&#39;          =&gt; [ &#39;4&#39;, &#39;7&#39;, &#39;8&#39; ],
-          &#39;ValidID&#39;             =&gt; &#39;1&#39;,
-          &#39;Comment&#39;             =&gt; &#39;Some Comment&#39;,
-          &#39;CreateBy&#39;            =&gt; &#39;93&#39;,
-          &#39;CreateTime&#39;          =&gt; &#39;2011-06-16 22:54:54&#39;,
-          &#39;ChangeBy&#39;            =&gt; &#39;93&#39;,
-          &#39;ChangeTime&#39;          =&gt; &#39;2011-06-16 22:54:54&#39;,
-    );</code></pre>
+<p><a href="#" onclick="toggleCode('method_SLALookup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SLALookup">
+                                        <pre>
 
-<h2 id="SLALookup">SLALookup()</h2>
+sub SLALookup {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{SLAID} && !$Param{Name} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need SLAID or Name!',
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $Param{SLAID} ) {
+
+        # check cache
+        my $CacheKey = 'Cache::SLALookup::ID::' . $Param{SLAID};
+        my $Cached   = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type           => $Self->{CacheType},
+            Key            => $CacheKey,
+            CacheInMemory  => 1,
+            CacheInBackend => 0,
+        );
+        if ( defined $Cached ) {
+            return $Cached;
+        }
+
+        # lookup
+        $DBObject->Prepare(
+            SQL   => 'SELECT name FROM sla WHERE id = ?',
+            Bind  => [ \$Param{SLAID}, ],
+            Limit => 1,
+        );
+
+        # fetch the result
+        my $Name = '';
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            $Name = $Row[0];
+        }
+
+        # cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type           => $Self->{CacheType},
+            TTL            => $Self->{CacheTTL},
+            Key            => $CacheKey,
+            Value          => $Name,
+            CacheInMemory  => 1,
+            CacheInBackend => 0,
+        );
+
+        return $Name;
+    }
+    else {
+
+        # check cache
+        my $CacheKey = 'Cache::SLALookup::Name::' . $Param{Name};
+        my $Cached   = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type           => $Self->{CacheType},
+            Key            => $CacheKey,
+            CacheInMemory  => 1,
+            CacheInBackend => 0,
+        );
+        if ( defined $Cached ) {
+            return $Cached;
+        }
+
+        # lookup
+        $DBObject->Prepare(
+            SQL   => 'SELECT id FROM sla WHERE name = ?',
+            Bind  => [ \$Param{Name} ],
+            Limit => 1,
+        );
+
+        # fetch the result
+        my $SLAID = '';
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            $SLAID = $Row[0];
+        }
+
+        # cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type           => $Self->{CacheType},
+            TTL            => $Self->{CacheTTL},
+            Key            => $CacheKey,
+            Value          => $SLAID,
+            CacheInMemory  => 1,
+            CacheInBackend => 0,
+        );
+
+        return $SLAID;
+    }
+}
+</pre></div>
 
 <p>returns the name or the sla id</p>
 
-<pre><code>    my $SLAName = $SLAObject-&gt;SLALookup(
+<pre>    my $SLAName = $SLAObject-&gt;SLALookup(
         SLAID =&gt; 123,
     );
 
     or
 
     my $SLAID = $SLAObject-&gt;SLALookup(
-        Name =&gt; &#39;SLA Name&#39;,
-    );</code></pre>
+        Name =&gt; 'SLA Name',
+    );
+</pre><h2 id="SLAAdd">SLAAdd()</h2>
 
-<h2 id="SLAAdd">SLAAdd()</h2>
+<p><a href="#" onclick="toggleCode('method_SLAAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SLAAdd">
+                                        <pre>
+
+sub SLAAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(Name ValidID UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # check service ids
+    if ( defined $Param{ServiceIDs} && ref $Param{ServiceIDs} ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'ServiceIDs needs to be an array reference!',
+        );
+        return;
+    }
+
+    # set default values
+    $Param{ServiceIDs}          ||= [];
+    $Param{Calendar}            ||= '';
+    $Param{Comment}             ||= '';
+    $Param{FirstResponseTime}   ||= 0;
+    $Param{FirstResponseNotify} ||= 0;
+    $Param{UpdateTime}          ||= 0;
+    $Param{UpdateNotify}        ||= 0;
+    $Param{SolutionTime}        ||= 0;
+    $Param{SolutionNotify}      ||= 0;
+
+    # get check item object
+    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
+    # cleanup given params
+    for my $Argument (qw(Name Comment)) {
+        $CheckItemObject->StringClean(
+            StringRef         => \$Param{$Argument},
+            RemoveAllNewlines => 1,
+            RemoveAllTabs     => 1,
+        );
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # find exiting sla's with the same name
+    $DBObject->Prepare(
+        SQL   => 'SELECT id FROM sla WHERE name = ?',
+        Bind  => [ \$Param{Name} ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my $NoAdd;
+    while ( $DBObject->FetchrowArray() ) {
+        $NoAdd = 1;
+    }
+
+    # abort insert of new sla, if name already exists
+    if ($NoAdd) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't add new SLA! '$Param{Name}' already exists.",
+        );
+        return;
+    }
+
+    # add sla to database
+    return if !$DBObject->Do(
+        SQL => 'INSERT INTO sla '
+            . '(name, calendar_name, first_response_time, first_response_notify, '
+            . 'update_time, update_notify, solution_time, solution_notify, '
+            . 'valid_id, comments, create_time, create_by, change_time, change_by) VALUES '
+            . '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{Name},                \$Param{Calendar},       \$Param{FirstResponseTime},
+            \$Param{FirstResponseNotify}, \$Param{UpdateTime},     \$Param{UpdateNotify},
+            \$Param{SolutionTime},        \$Param{SolutionNotify}, \$Param{ValidID}, \$Param{Comment},
+            \$Param{UserID}, \$Param{UserID},
+        ],
+    );
+
+    # get sla id
+    return if !$DBObject->Prepare(
+        SQL   => 'SELECT id FROM sla WHERE name = ?',
+        Bind  => [ \$Param{Name} ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my $SLAID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $SLAID = $Row[0];
+    }
+
+    # check sla id
+    if ( !$SLAID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't find SLAID for '$Param{Name}'!",
+        );
+        return;
+    }
+
+    # remove all existing allocations
+    $DBObject->Do(
+        SQL  => 'DELETE FROM service_sla WHERE sla_id = ?',
+        Bind => [ \$SLAID ],
+    );
+
+    # add the new allocations
+    for my $ServiceID ( @{ $Param{ServiceIDs} } ) {
+
+        # add one allocation
+        $DBObject->Do(
+            SQL  => 'INSERT INTO service_sla (service_id, sla_id) VALUES (?, ?)',
+            Bind => [ \$ServiceID, \$SLAID ],
+        );
+    }
+
+    return $SLAID;
+}
+</pre></div>
 
 <p>add a sla</p>
 
-<pre><code>    my $SLAID = $SLAObject-&gt;SLAAdd(
+<pre>    my $SLAID = $SLAObject-&gt;SLAAdd(
         ServiceIDs          =&gt; [ 1, 5, 7 ],  # (optional)
-        Name                =&gt; &#39;SLA Name&#39;,
-        Calendar            =&gt; &#39;Calendar1&#39;,  # (optional)
+        Name                =&gt; 'SLA Name',
+        Calendar            =&gt; 'Calendar1',  # (optional)
         FirstResponseTime   =&gt; 120,          # (optional)
         FirstResponseNotify =&gt; 60,           # (optional) notify agent if first response escalation is 60% reached
         UpdateTime          =&gt; 180,          # (optional)
@@ -154,19 +611,144 @@ $(document).ready(function() {
         SolutionTime        =&gt; 580,          # (optional)
         SolutionNotify      =&gt; 80,           # (optional) notify agent if solution escalation is 80% reached
         ValidID             =&gt; 1,
-        Comment             =&gt; &#39;Comment&#39;,    # (optional)
+        Comment             =&gt; 'Comment',    # (optional)
         UserID              =&gt; 1,
-    );</code></pre>
+    );
+</pre><h2 id="SLAUpdate">SLAUpdate()</h2>
 
-<h2 id="SLAUpdate">SLAUpdate()</h2>
+<p><a href="#" onclick="toggleCode('method_SLAUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SLAUpdate">
+                                        <pre>
+
+sub SLAUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(SLAID Name ValidID UserID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # check service ids
+    if ( defined $Param{ServiceIDs} && ref $Param{ServiceIDs} ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'ServiceIDs need to be an array reference!',
+        );
+        return;
+    }
+
+    # set default values
+    $Param{ServiceIDs}          ||= [];
+    $Param{Calendar}            ||= '';
+    $Param{Comment}             ||= '';
+    $Param{FirstResponseTime}   ||= 0;
+    $Param{FirstResponseNotify} ||= 0;
+    $Param{UpdateTime}          ||= 0;
+    $Param{UpdateNotify}        ||= 0;
+    $Param{SolutionTime}        ||= 0;
+    $Param{SolutionNotify}      ||= 0;
+
+    # get check item object
+    my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
+
+    # cleanup given params
+    for my $Argument (qw(Name Comment)) {
+        $CheckItemObject->StringClean(
+            StringRef         => \$Param{$Argument},
+            RemoveAllNewlines => 1,
+            RemoveAllTabs     => 1,
+        );
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # find exiting sla's with the same name
+    return if !$DBObject->Prepare(
+        SQL   => 'SELECT id FROM sla WHERE name = ?',
+        Bind  => [ \$Param{Name} ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my $Update = 0;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( $Row[0] != $Param{SLAID} ) {
+            $Update = $Row[0];
+        }
+    }
+
+    # abort update of sla, if name already exists
+    if ($Update) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't update SLA! '$Param{Name}' already exists.",
+        );
+        return;
+    }
+
+    # reset cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => $Self->{CacheType},
+        Key  => 'Cache::SLAGet::' . $Param{SLAID},
+    );
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => $Self->{CacheType},
+        Key  => 'Cache::SLALookup::Name::' . $Param{Name},
+    );
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => $Self->{CacheType},
+        Key  => 'Cache::SLALookup::ID::' . $Param{SLAID},
+    );
+
+    # update service
+    return if !$DBObject->Do(
+        SQL => 'UPDATE sla SET name = ?, calendar_name = ?, '
+            . 'first_response_time = ?, first_response_notify = ?, '
+            . 'update_time = ?, update_notify = ?, solution_time = ?, solution_notify = ?, '
+            . 'valid_id = ?, comments = ?, change_time = current_timestamp, change_by = ? '
+            . 'WHERE id = ?',
+        Bind => [
+            \$Param{Name},                \$Param{Calendar},       \$Param{FirstResponseTime},
+            \$Param{FirstResponseNotify}, \$Param{UpdateTime},     \$Param{UpdateNotify},
+            \$Param{SolutionTime},        \$Param{SolutionNotify}, \$Param{ValidID}, \$Param{Comment},
+            \$Param{UserID}, \$Param{SLAID},
+        ],
+    );
+
+    # remove all existing allocations
+    return if !$DBObject->Do(
+        SQL  => 'DELETE FROM service_sla WHERE sla_id = ?',
+        Bind => [ \$Param{SLAID}, ]
+    );
+
+    # add the new allocations
+    for my $ServiceID ( @{ $Param{ServiceIDs} } ) {
+
+        # add one allocation
+        return if !$DBObject->Do(
+            SQL  => 'INSERT INTO service_sla (service_id, sla_id) VALUES (?, ?)',
+            Bind => [ \$ServiceID, \$Param{SLAID} ],
+        );
+    }
+
+    return 1;
+}
+</pre></div>
 
 <p>update a existing sla</p>
 
-<pre><code>    my $True = $SLAObject-&gt;SLAUpdate(
+<pre>    my $True = $SLAObject-&gt;SLAUpdate(
         SLAID               =&gt; 2,
         ServiceIDs          =&gt; [ 1, 2, 3 ],  # (optional)
-        Name                =&gt; &#39;Service Name&#39;,
-        Calendar            =&gt; &#39;Calendar1&#39;,  # (optional)
+        Name                =&gt; 'Service Name',
+        Calendar            =&gt; 'Calendar1',  # (optional)
         FirstResponseTime   =&gt; 120,          # (optional)
         FirstResponseNotify =&gt; 60,           # (optional) notify agent if first response escalation is 60% reached
         UpdateTime          =&gt; 180,          # (optional)
@@ -174,35 +756,57 @@ $(document).ready(function() {
         SolutionTime        =&gt; 580,          # (optional)
         SolutionNotify      =&gt; 80,           # (optional) notify agent if solution escalation is 80% reached
         ValidID             =&gt; 1,
-        Comment             =&gt; &#39;Comment&#39;,    # (optional)
+        Comment             =&gt; 'Comment',    # (optional)
         UserID              =&gt; 1,
-    );</code></pre>
+    );
+</pre><h2 id="SLAPreferencesSet">SLAPreferencesSet()</h2>
 
-<h2 id="SLAPreferencesSet">SLAPreferencesSet()</h2>
+<p><a href="#" onclick="toggleCode('method_SLAPreferencesSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SLAPreferencesSet">
+                                        <pre>
+
+sub SLAPreferencesSet {
+    my $Self = shift;
+
+    return $Self->{PreferencesObject}->SLAPreferencesSet(@_);
+}
+</pre></div>
 
 <p>set SLA preferences</p>
 
-<pre><code>    $SLAObject-&gt;SLAPreferencesSet(
+<pre>    $SLAObject-&gt;SLAPreferencesSet(
         SLAID  =&gt; 123,
-        Key    =&gt; &#39;UserComment&#39;,
-        Value  =&gt; &#39;some comment&#39;,
+        Key    =&gt; 'UserComment',
+        Value  =&gt; 'some comment',
         UserID =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="SLAPreferencesGet">SLAPreferencesGet()</h2>
 
-<h2 id="SLAPreferencesGet">SLAPreferencesGet()</h2>
+<p><a href="#" onclick="toggleCode('method_SLAPreferencesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SLAPreferencesGet">
+                                        <pre>
+
+sub SLAPreferencesGet {
+    my $Self = shift;
+
+    return $Self->{PreferencesObject}->SLAPreferencesGet(@_);
+}
+</pre></div>
 
 <p>get SLA preferences</p>
 
-<pre><code>    my %Preferences = $SLAObject-&gt;SLAPreferencesGet(
+<pre>    my %Preferences = $SLAObject-&gt;SLAPreferencesGet(
         SLAID  =&gt; 123,
         UserID =&gt; 123,
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

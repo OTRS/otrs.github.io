@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::Priority &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::Priority</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,96 +69,371 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/Priority.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#PriorityList">PriorityList()</a></li>
-      <li><a href="#PriorityGet">PriorityGet()</a></li>
-      <li><a href="#PriorityAdd">PriorityAdd()</a></li>
-      <li><a href="#PriorityUpdate">PriorityUpdate()</a></li>
-      <li><a href="#PriorityLookup">PriorityLookup()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#PriorityList">PriorityList()</a></li>
+	<li><a href="#PriorityGet">PriorityGet()</a></li>
+	<li><a href="#PriorityAdd">PriorityAdd()</a></li>
+	<li><a href="#PriorityUpdate">PriorityUpdate()</a></li>
+	<li><a href="#PriorityLookup">PriorityLookup()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::Priority - priority lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>All ticket priority functions.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self->{CacheType} = 'Priority';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
+
+    return $Self;
+}
+</pre></div>
+
 <p>create an object</p>
 
-<pre><code>    my $PriorityObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Priority&#39;);</code></pre>
+<pre>    my $PriorityObject = $Kernel::OM-&gt;Get('Kernel::System::Priority');
 
-<h2 id="PriorityList">PriorityList()</h2>
+
+
+</pre><h2 id="PriorityList">PriorityList()</h2>
+
+<p><a href="#" onclick="toggleCode('method_PriorityList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PriorityList">
+                                        <pre>
+
+sub PriorityList {
+    my ( $Self, %Param ) = @_;
+
+    # check valid param
+    if ( !defined $Param{Valid} ) {
+        $Param{Valid} = 1;
+    }
+
+    # create cachekey
+    my $CacheKey;
+    if ( $Param{Valid} ) {
+        $CacheKey = 'PriorityList::Valid';
+    }
+    else {
+        $CacheKey = 'PriorityList::All';
+    }
+
+    # check cache
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+    return %{$Cache} if $Cache;
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # create sql
+    my $SQL = 'SELECT id, name FROM ticket_priority ';
+    if ( $Param{Valid} ) {
+        $SQL
+            .= "WHERE valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
+    }
+
+    return if !$DBObject->Prepare( SQL => $SQL );
+
+    # fetch the result
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[1];
+    }
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%Data,
+    );
+
+    return %Data;
+}
+</pre></div>
 
 <p>return a priority list as hash</p>
 
-<pre><code>    my %List = $PriorityObject-&gt;PriorityList(
+<pre>    my %List = $PriorityObject-&gt;PriorityList(
         Valid =&gt; 0,
-    );</code></pre>
+    );
+</pre><h2 id="PriorityGet">PriorityGet()</h2>
 
-<h2 id="PriorityGet">PriorityGet()</h2>
+<p><a href="#" onclick="toggleCode('method_PriorityGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PriorityGet">
+                                        <pre>
+
+sub PriorityGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(PriorityID UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # check cache
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => 'PriorityGet' . $Param{PriorityID},
+    );
+    return %{$Cache} if $Cache;
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # ask database
+    return if !$DBObject->Prepare(
+        SQL => 'SELECT id, name, valid_id, create_time, create_by, change_time, change_by '
+            . 'FROM ticket_priority WHERE id = ?',
+        Bind  => [ \$Param{PriorityID} ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ID}         = $Row[0];
+        $Data{Name}       = $Row[1];
+        $Data{ValidID}    = $Row[2];
+        $Data{CreateTime} = $Row[3];
+        $Data{CreateBy}   = $Row[4];
+        $Data{ChangeTime} = $Row[5];
+        $Data{ChangeBy}   = $Row[6];
+    }
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => 'PriorityGet' . $Param{PriorityID},
+        Value => \%Data,
+    );
+
+    return %Data;
+}
+</pre></div>
 
 <p>get a priority</p>
 
-<pre><code>    my %List = $PriorityObject-&gt;PriorityGet(
+<pre>    my %List = $PriorityObject-&gt;PriorityGet(
         PriorityID =&gt; 123,
         UserID     =&gt; 1,
-    );</code></pre>
+    );
+</pre><h2 id="PriorityAdd">PriorityAdd()</h2>
 
-<h2 id="PriorityAdd">PriorityAdd()</h2>
+<p><a href="#" onclick="toggleCode('method_PriorityAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PriorityAdd">
+                                        <pre>
+
+sub PriorityAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Name ValidID UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Do(
+        SQL => 'INSERT INTO ticket_priority (name, valid_id, create_time, create_by, '
+            . 'change_time, change_by) VALUES '
+            . '(?, ?, current_timestamp, ?, current_timestamp, ?)',
+        Bind => [
+            \$Param{Name}, \$Param{ValidID}, \$Param{UserID}, \$Param{UserID},
+        ],
+    );
+
+    # get new priority id
+    return if !$DBObject->Prepare(
+        SQL   => 'SELECT id FROM ticket_priority WHERE name = ?',
+        Bind  => [ \$Param{Name} ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my $ID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $ID = $Row[0];
+    }
+
+    return if !$ID;
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
+
+    return $ID;
+}
+</pre></div>
 
 <p>add a ticket priority</p>
 
-<pre><code>    my $True = $PriorityObject-&gt;PriorityAdd(
-        Name    =&gt; &#39;Prio&#39;,
+<pre>    my $True = $PriorityObject-&gt;PriorityAdd(
+        Name    =&gt; 'Prio',
         ValidID =&gt; 1,
         UserID  =&gt; 1,
-    );</code></pre>
+    );
+</pre><h2 id="PriorityUpdate">PriorityUpdate()</h2>
 
-<h2 id="PriorityUpdate">PriorityUpdate()</h2>
+<p><a href="#" onclick="toggleCode('method_PriorityUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PriorityUpdate">
+                                        <pre>
+
+sub PriorityUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(PriorityID Name ValidID UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Do(
+        SQL => 'UPDATE ticket_priority SET name = ?, valid_id = ?, '
+            . 'change_time = current_timestamp, change_by = ? WHERE id = ?',
+        Bind => [
+            \$Param{Name}, \$Param{ValidID}, \$Param{UserID}, \$Param{PriorityID},
+        ],
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
+
+    return 1;
+}
+</pre></div>
 
 <p>update a existing ticket priority</p>
 
-<pre><code>    my $True = $PriorityObject-&gt;PriorityUpdate(
+<pre>    my $True = $PriorityObject-&gt;PriorityUpdate(
         PriorityID     =&gt; 123,
-        Name           =&gt; &#39;New Prio&#39;,
+        Name           =&gt; 'New Prio',
         ValidID        =&gt; 1,
         UserID         =&gt; 1,
-    );</code></pre>
+    );
+</pre><h2 id="PriorityLookup">PriorityLookup()</h2>
 
-<h2 id="PriorityLookup">PriorityLookup()</h2>
+<p><a href="#" onclick="toggleCode('method_PriorityLookup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_PriorityLookup">
+                                        <pre>
+
+sub PriorityLookup {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Priority} && !$Param{PriorityID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Priority or PriorityID!'
+        );
+        return;
+    }
+
+    # get (already cached) priority list
+    my %PriorityList = $Self->PriorityList(
+        Valid => 0,
+    );
+
+    my $Key;
+    my $Value;
+    my $ReturnData;
+    if ( $Param{PriorityID} ) {
+        $Key        = 'PriorityID';
+        $Value      = $Param{PriorityID};
+        $ReturnData = $PriorityList{ $Param{PriorityID} };
+    }
+    else {
+        $Key   = 'Priority';
+        $Value = $Param{Priority};
+        my %PriorityListReverse = reverse %PriorityList;
+        $ReturnData = $PriorityListReverse{ $Param{Priority} };
+    }
+
+    # check if data exists
+    if ( !defined $ReturnData ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No $Key for $Value found!",
+        );
+        return;
+    }
+
+    return $ReturnData;
+}
+</pre></div>
 
 <p>returns the id or the name of a priority</p>
 
-<pre><code>    my $PriorityID = $PriorityObject-&gt;PriorityLookup(
-        Priority =&gt; &#39;3 normal&#39;,
+<pre>    my $PriorityID = $PriorityObject-&gt;PriorityLookup(
+        Priority =&gt; '3 normal',
     );
 
     my $Priority = $PriorityObject-&gt;PriorityLookup(
         PriorityID =&gt; 1,
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

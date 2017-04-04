@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::GenericInterface::Transport::HTTP::Test &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::GenericInterface::Transport::Test</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,79 +69,225 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/GenericInterface/Transport/HTTP/Test.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#ProviderProcessRequest">ProviderProcessRequest()</a></li>
-      <li><a href="#ProviderGenerateResponse">ProviderGenerateResponse()</a></li>
-      <li><a href="#RequesterPerformRequest">RequesterPerformRequest()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#ProviderProcessRequest">ProviderProcessRequest()</a></li>
+	<li><a href="#ProviderGenerateResponse">ProviderGenerateResponse()</a></li>
+	<li><a href="#RequesterPerformRequest">RequesterPerformRequest()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::GenericInterface::Transport::Test - GenericInterface network transport interface for testing purposes</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<p>usually, you want to create an instance of this by using Kernel::GenericInterface::Transport-&gt;new();</p>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-<pre><code>    use Kernel::GenericInterface::Transport;
+sub new {
+    my $Class = shift;
+
+    return $Class->SUPER::new(@_);
+}
+</pre></div>
+
+<p>usually, you want to create an instance of this
+by using Kernel::GenericInterface::Transport-&gt;new();</p>
+
+<pre>    use Kernel::GenericInterface::Transport;
 
     my $TransportObject = Kernel::GenericInterface::Transport-&gt;new(
 
         TransportConfig =&gt; {
-            Type =&gt; &#39;HTTP::Test&#39;,
+            Type =&gt; 'HTTP::Test',
             Config =&gt; {
                 Fail =&gt; 0,  # 0 or 1
             },
         },
-    );</code></pre>
-
-<p>In the config parameter &#39;Fail&#39; you can tell the transport to simulate failed network requests. If &#39;Fail&#39; is set to 0, the transport will return the query string of the requests as return data (see <a href="http://search.cpan.org/perldoc?RequesterPerformRequest">RequesterPerformRequest</a> for an example);</p>
+    );
+</pre><p>In the config parameter 'Fail' you can tell the transport to simulate
+failed network requests. If 'Fail' is set to 0, the transport will return
+the query string of the requests as return data (see <a href="http://search.cpan.org/perldoc?RequesterPerformRequest">RequesterPerformRequest</a>
+for an example);</p>
 
 <h2 id="ProviderProcessRequest">ProviderProcessRequest()</h2>
 
-<p>this will read the incoming HTTP request via CGI and return the HTTP parameters in the data hash.</p>
+<p><a href="#" onclick="toggleCode('method_ProviderProcessRequest');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ProviderProcessRequest">
+                                        <pre>
+
+sub ProviderProcessRequest {
+    my ( $Self, %Param ) = @_;
+
+    if ( $Self->{TransportConfig}->{Config}->{Fail} ) {
+
+        return {
+            Success      => 0,
+            ErrorMessage => "HTTP status code: 500",
+            Data         => {},
+        };
+    }
+
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my %Result;
+    for my $ParamName ( $ParamObject->GetParamNames() ) {
+        $Result{$ParamName} = $ParamObject->GetParam( Param => $ParamName );
+    }
+
+    # special handling for empty post request
+    if ( scalar keys %Result == 1 && exists $Result{POSTDATA} && !$Result{POSTDATA} ) {
+        %Result = ();
+    }
+
+    if ( !%Result ) {
+
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'No request data found.',
+        );
+    }
+
+    return {
+        Success   => 1,
+        Data      => \%Result,
+        Operation => 'test_operation',
+    };
+}
+</pre></div>
+
+<p>this will read the incoming HTTP request via CGI and
+return the HTTP parameters in the data hash.</p>
 
 <h2 id="ProviderGenerateResponse">ProviderGenerateResponse()</h2>
 
-<p>this will generate a query string from the passed data hash and generate an HTTP response with this string as the body. This response will be printed so that the web server will send it to the client.</p>
+<p><a href="#" onclick="toggleCode('method_ProviderGenerateResponse');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ProviderGenerateResponse">
+                                        <pre>
+
+sub ProviderGenerateResponse {
+    my ( $Self, %Param ) = @_;
+
+    if ( $Self->{TransportConfig}->{Config}->{Fail} ) {
+
+        return {
+            Success      => 0,
+            ErrorMessage => 'Test response generation failed',
+        };
+    }
+
+    my $Response;
+
+    if ( !$Param{Success} ) {
+        $Response = HTTP::Response->new( 500 => ( $Param{ErrorMessage} || 'Internal Server Error' ) );
+        $Response->protocol('HTTP/1.0');
+        $Response->content_type("text/plain; charset=UTF-8");
+        $Response->date(time);
+    }
+    else {
+
+        # generate a request string from the data
+        my $Request = HTTP::Request::Common::POST( 'http://testhost.local/', Content => $Param{Data} );
+
+        $Response = HTTP::Response->new( 200 => "OK" );
+        $Response->protocol('HTTP/1.0');
+        $Response->content_type("text/plain; charset=UTF-8");
+        $Response->add_content_utf8( $Request->content() );
+        $Response->date(time);
+    }
+
+    $Self->{DebuggerObject}->Debug(
+        Summary => 'Sending HTTP response',
+        Data    => $Response->as_string(),
+    );
+
+    # now send response to client
+    print STDOUT $Response->as_string();
+
+    return {
+        Success => 1,
+    };
+}
+</pre></div>
+
+<p>this will generate a query string from the passed data hash
+and generate an HTTP response with this string as the body.
+This response will be printed so that the web server will
+send it to the client.</p>
 
 <h2 id="RequesterPerformRequest">RequesterPerformRequest()</h2>
 
-<p>in Fail mode, returns error status. Otherwise, returns the query string generated out of the data for the HTTP response.</p>
+<p><a href="#" onclick="toggleCode('method_RequesterPerformRequest');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_RequesterPerformRequest">
+                                        <pre>
 
-<pre><code>    my $Result = $TransportObject-&gt;RequesterPerformRequest(
-        Data =&gt; {
-            A =&gt; &#39;A&#39;,
-            b =&gt; &#39;b&#39;,
+sub RequesterPerformRequest {
+    my ( $Self, %Param ) = @_;
+
+    if ( $Self->{TransportConfig}->{Config}->{Fail} ) {
+
+        return {
+            Success      => 0,
+            ErrorMessage => "HTTP status code: 500",
+            Data         => {},
+        };
+    }
+
+    # use custom protocol handler to avoid sending out real network requests
+    LWP::Protocol::implementor(
+        testhttp => 'Kernel::GenericInterface::Transport::HTTP::Test::CustomHTTPProtocol'
+    );
+    my $UserAgent = LWP::UserAgent->new();
+    my $Response = $UserAgent->post( 'testhttp://localhost.local/', Content => $Param{Data} );
+
+    return {
+        Success => 1,
+        Data    => {
+            ResponseContent => $Response->content(),
         },
-    );</code></pre>
+    };
+}
+</pre></div>
 
-<p>Returns</p>
+<p>in Fail mode, returns error status. Otherwise, returns the
+query string generated out of the data for the HTTP response.</p>
 
-<pre><code>    $Result = {
+<pre>    my $Result = $TransportObject-&gt;RequesterPerformRequest(
+        Data =&gt; {
+            A =&gt; 'A',
+            b =&gt; 'b',
+        },
+    );
+</pre><p>Returns</p>
+
+<pre>    $Result = {
         Success =&gt; 1,
         Data =&gt; {
-            ResponseData =&gt; &#39;A=A&amp;b=b&#39;,
+            ResponseData =&gt; 'A=A&amp;b=b',
         },
-    };</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    };
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

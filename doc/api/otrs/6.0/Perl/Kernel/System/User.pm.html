@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::User &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::User</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,252 +69,1413 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/User.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#GetUserData">GetUserData()</a></li>
-      <li><a href="#UserAdd">UserAdd()</a></li>
-      <li><a href="#UserUpdate">UserUpdate()</a></li>
-      <li><a href="#UserSearch">UserSearch()</a></li>
-      <li><a href="#SetPassword">SetPassword()</a></li>
-      <li><a href="#UserLookup">UserLookup()</a></li>
-      <li><a href="#UserName">UserName()</a></li>
-      <li><a href="#UserList">UserList()</a></li>
-      <li><a href="#GenerateRandomPassword">GenerateRandomPassword()</a></li>
-      <li><a href="#SetPreferences">SetPreferences()</a></li>
-      <li><a href="#GetPreferences">GetPreferences()</a></li>
-      <li><a href="#SearchPreferences">SearchPreferences()</a></li>
-      <li><a href="#TokenGenerate">TokenGenerate()</a></li>
-      <li><a href="#TokenCheck">TokenCheck()</a></li>
-      <li><a href="#UserLoginExistsCheck">UserLoginExistsCheck()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#GetUserData">GetUserData()</a></li>
+	<li><a href="#UserAdd">UserAdd()</a></li>
+	<li><a href="#UserUpdate">UserUpdate()</a></li>
+	<li><a href="#UserSearch">UserSearch()</a></li>
+	<li><a href="#SetPassword">SetPassword()</a></li>
+	<li><a href="#UserLookup">UserLookup()</a></li>
+	<li><a href="#UserName">UserName()</a></li>
+	<li><a href="#UserList">UserList()</a></li>
+	<li><a href="#GenerateRandomPassword">GenerateRandomPassword()</a></li>
+	<li><a href="#SetPreferences">SetPreferences()</a></li>
+	<li><a href="#GetPreferences">GetPreferences()</a></li>
+	<li><a href="#SearchPreferences">SearchPreferences()</a></li>
+	<li><a href="#TokenGenerate">TokenGenerate()</a></li>
+	<li><a href="#TokenCheck">TokenCheck()</a></li>
+	<li><a href="#UserLoginExistsCheck">UserLoginExistsCheck()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::User - user lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>All user functions. E. g. to add and updated user and other functions.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-<pre><code>    my $UserObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::User&#39;);</code></pre>
+sub new {
+    my ( $Type, %Param ) = @_;
 
-<h2 id="GetUserData">GetUserData()</h2>
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # get user table
+    $Self->{UserTable}       = $ConfigObject->Get('DatabaseUserTable')       || 'user';
+    $Self->{UserTableUserID} = $ConfigObject->Get('DatabaseUserTableUserID') || 'id';
+    $Self->{UserTableUserPW} = $ConfigObject->Get('DatabaseUserTableUserPW') || 'pw';
+    $Self->{UserTableUser}   = $ConfigObject->Get('DatabaseUserTableUser')   || 'login';
+
+    $Self->{CacheType} = 'User';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
+
+    # set lower if database is case sensitive
+    $Self->{Lower} = '';
+    if ( $Kernel::OM->Get('Kernel::System::DB')->GetDatabaseFunction('CaseSensitive') ) {
+        $Self->{Lower} = 'LOWER';
+    }
+
+    return $Self;
+}
+</pre></div>
+
+<p>Don't use the constructor directly, use the ObjectManager instead:</p>
+
+<pre>    my $UserObject = $Kernel::OM-&gt;Get('Kernel::System::User');
+</pre><h2 id="GetUserData">GetUserData()</h2>
+
+<p><a href="#" onclick="toggleCode('method_GetUserData');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetUserData">
+                                        <pre>
+
+sub GetUserData {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{User} && !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need User or UserID!',
+        );
+        return;
+    }
+
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # get configuration for the full name order
+    my $FirstnameLastNameOrder = $ConfigObject->Get('FirstnameLastnameOrder') || 0;
+
+    # check if result is cached
+    if ( $Param{Valid} ) {
+        $Param{Valid} = 1;
+    }
+    else {
+        $Param{Valid} = 0;
+    }
+    if ( $Param{NoOutOfOffice} ) {
+        $Param{NoOutOfOffice} = 1;
+    }
+    else {
+        $Param{NoOutOfOffice} = 0;
+    }
+
+    my $CacheKey;
+    if ( $Param{User} ) {
+        $CacheKey = join '::', 'GetUserData', 'User',
+            $Param{User},
+            $Param{Valid},
+            $FirstnameLastNameOrder,
+            $Param{NoOutOfOffice};
+    }
+    else {
+        $CacheKey = join '::', 'GetUserData', 'UserID',
+            $Param{UserID},
+            $Param{Valid},
+            $FirstnameLastNameOrder,
+            $Param{NoOutOfOffice};
+    }
+
+    # check cache
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+    return %{$Cache} if $Cache;
+
+    # get initial data
+    my @Bind;
+    my $SQL = "SELECT $Self->{UserTableUserID}, $Self->{UserTableUser}, "
+        . " title, first_name, last_name, $Self->{UserTableUserPW}, valid_id, "
+        . " create_time, change_time FROM $Self->{UserTable} WHERE ";
+
+    if ( $Param{User} ) {
+        my $User = lc $Param{User};
+        $SQL .= " $Self->{Lower}($Self->{UserTableUser}) = ?";
+        push @Bind, \$User;
+    }
+    else {
+        $SQL .= " $Self->{UserTableUserID} = ?";
+        push @Bind, \$Param{UserID};
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL   => $SQL,
+        Bind  => \@Bind,
+        Limit => 1,
+    );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{UserID}        = $Row[0];
+        $Data{UserLogin}     = $Row[1];
+        $Data{UserTitle}     = $Row[2];
+        $Data{UserFirstname} = $Row[3];
+        $Data{UserLastname}  = $Row[4];
+        $Data{UserPw}        = $Row[5];
+        $Data{ValidID}       = $Row[6];
+        $Data{CreateTime}    = $Row[7];
+        $Data{ChangeTime}    = $Row[8];
+    }
+
+    # check data
+    if ( !$Data{UserID} ) {
+        if ( $Param{User} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'notice',
+                Message  => "Panic! No UserData for user: '$Param{User}'!!!",
+            );
+            return;
+        }
+        else {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'notice',
+                Message  => "Panic! No UserData for user id: '$Param{UserID}'!!!",
+            );
+            return;
+        }
+    }
+
+    # Store CacheTTL locally so that we can reduce it for users that are out of office.
+    my $CacheTTL = $Self->{CacheTTL};
+
+    # check valid, return if there is locked for valid users
+    if ( $Param{Valid} ) {
+
+        my $Hit = 0;
+
+        for ( $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet() ) {
+            if ( $_ eq $Data{ValidID} ) {
+                $Hit = 1;
+            }
+        }
+
+        if ( !$Hit ) {
+
+            # set cache
+            $Kernel::OM->Get('Kernel::System::Cache')->Set(
+                Type  => $Self->{CacheType},
+                TTL   => $CacheTTL,
+                Key   => $CacheKey,
+                Value => {},
+            );
+            return;
+        }
+    }
+
+    # generate the full name and save it in the hash
+    my $UserFullname = $Self->_UserFullname(
+        %Data,
+        NameOrder => $FirstnameLastNameOrder,
+    );
+
+    # save the generated fullname in the hash.
+    $Data{UserFullname} = $UserFullname;
+
+    # get preferences
+    my %Preferences = $Self->GetPreferences( UserID => $Data{UserID} );
+
+    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+
+    # add last login timestamp
+    if ( $Preferences{UserLastLogin} ) {
+        $Preferences{UserLastLoginTimestamp} = $TimeObject->SystemTime2TimeStamp(
+            SystemTime => $Preferences{UserLastLogin},
+        );
+    }
+
+    # check compat stuff
+    if ( !$Preferences{UserEmail} ) {
+        $Preferences{UserEmail} = $Data{UserLogin};
+    }
+
+    # out of office check
+    if ( !$Param{NoOutOfOffice} ) {
+        if ( $Preferences{OutOfOffice} ) {
+            my $Time = $TimeObject->SystemTime();
+            my $Start
+                = "$Preferences{OutOfOfficeStartYear}-$Preferences{OutOfOfficeStartMonth}-$Preferences{OutOfOfficeStartDay} 00:00:00";
+            my $TimeStart = $TimeObject->TimeStamp2SystemTime(
+                String => $Start,
+            );
+            my $End
+                = "$Preferences{OutOfOfficeEndYear}-$Preferences{OutOfOfficeEndMonth}-$Preferences{OutOfOfficeEndDay} 23:59:59";
+            my $TimeEnd = $TimeObject->TimeStamp2SystemTime(
+                String => $End,
+            );
+            if ( $TimeStart < $Time && $TimeEnd > $Time ) {
+                my $OutOfOfficeMessageTemplate =
+                    $ConfigObject->Get('OutOfOfficeMessageTemplate') || '*** out of office until %s (%s d left) ***';
+                my $TillDate = sprintf(
+                    '%04d-%02d-%02d',
+                    $Preferences{OutOfOfficeEndYear},
+                    $Preferences{OutOfOfficeEndMonth},
+                    $Preferences{OutOfOfficeEndDay}
+                );
+                my $Till = int( ( $TimeEnd - $Time ) / 60 / 60 / 24 );
+                $Preferences{OutOfOfficeMessage} = sprintf( $OutOfOfficeMessageTemplate, $TillDate, $Till );
+                $Data{UserLastname} .= ' ' . $Preferences{OutOfOfficeMessage};
+            }
+
+            # Reduce CacheTTL to one hour for users that are out of office to make sure the cache expires timely
+            #   even if there is no update action.
+            $CacheTTL = 60 * 60 * 1;
+        }
+    }
+
+    # merge hash
+    %Data = ( %Data, %Preferences );
+
+    # add preferences defaults
+    my $Config = $ConfigObject->Get('PreferencesGroups');
+    if ( $Config && ref $Config eq 'HASH' ) {
+
+        KEY:
+        for my $Key ( sort keys %{$Config} ) {
+
+            next KEY if !defined $Config->{$Key}->{DataSelected};
+
+            # check if data is defined
+            next KEY if defined $Data{ $Config->{$Key}->{PrefKey} };
+
+            # set default data
+            $Data{ $Config->{$Key}->{PrefKey} } = $Config->{$Key}->{DataSelected};
+        }
+    }
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $CacheTTL,
+        Key   => $CacheKey,
+        Value => \%Data,
+    );
+
+    return %Data;
+}
+</pre></div>
 
 <p>get user data (UserLogin, UserFirstname, UserLastname, UserEmail, ...)</p>
 
-<pre><code>    my %User = $UserObject-&gt;GetUserData(
+<pre>    my %User = $UserObject-&gt;GetUserData(
         UserID =&gt; 123,
     );
 
     or
 
     my %User = $UserObject-&gt;GetUserData(
-        User          =&gt; &#39;franz&#39;,
+        User          =&gt; 'franz',
         Valid         =&gt; 1,       # not required -&gt; 0|1 (default 0)
                                   # returns only data if user is valid
         NoOutOfOffice =&gt; 1,       # not required -&gt; 0|1 (default 0)
                                   # returns data without out of office infos
-    );</code></pre>
+    );
+</pre><h2 id="UserAdd">UserAdd()</h2>
 
-<h2 id="UserAdd">UserAdd()</h2>
+<p><a href="#" onclick="toggleCode('method_UserAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_UserAdd">
+                                        <pre>
+
+sub UserAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(UserFirstname UserLastname UserLogin UserEmail ValidID ChangeUserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # check if a user with this login (username) already exits
+    if ( $Self->UserLoginExistsCheck( UserLogin => $Param{UserLogin} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "A user with username '$Param{UserLogin}' already exists!"
+        );
+        return;
+    }
+
+    # check email address
+    if (
+        $Param{UserEmail}
+        && !$Kernel::OM->Get('Kernel::System::CheckItem')->CheckEmail( Address => $Param{UserEmail} )
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Email address ($Param{UserEmail}) not valid ("
+                . $Kernel::OM->Get('Kernel::System::CheckItem')->CheckError() . ")!",
+        );
+        return;
+    }
+
+    # check password
+    if ( !$Param{UserPw} ) {
+        $Param{UserPw} = $Self->GenerateRandomPassword();
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # Don't store the user's password in plaintext initially. It will be stored in a
+    #   hashed version later with SetPassword().
+    my $RandomPassword = $Self->GenerateRandomPassword();
+
+    # sql
+    return if !$DBObject->Do(
+        SQL => "INSERT INTO $Self->{UserTable} "
+            . "(title, first_name, last_name, "
+            . " $Self->{UserTableUser}, $Self->{UserTableUserPW}, "
+            . " valid_id, create_time, create_by, change_time, change_by)"
+            . " VALUES "
+            . " (?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)",
+        Bind => [
+            \$Param{UserTitle}, \$Param{UserFirstname}, \$Param{UserLastname},
+            \$Param{UserLogin}, \$RandomPassword, \$Param{ValidID},
+            \$Param{ChangeUserID}, \$Param{ChangeUserID},
+        ],
+    );
+
+    # get new user id
+    my $UserLogin = lc $Param{UserLogin};
+    return if !$DBObject->Prepare(
+        SQL => "SELECT $Self->{UserTableUserID} FROM $Self->{UserTable} "
+            . " WHERE $Self->{Lower}($Self->{UserTableUser}) = ?",
+        Bind  => [ \$UserLogin ],
+        Limit => 1,
+    );
+
+    # fetch the result
+    my $UserID;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $UserID = $Row[0];
+    }
+
+    # check if user exists
+    if ( !$UserID ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "Unable to create User: '$Param{UserLogin}' ($Param{ChangeUserID})!",
+        );
+        return;
+    }
+
+    # log notice
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'notice',
+        Message =>
+            "User: '$Param{UserLogin}' ID: '$UserID' created successfully ($Param{ChangeUserID})!",
+    );
+
+    # set password
+    $Self->SetPassword(
+        UserLogin => $Param{UserLogin},
+        PW        => $Param{UserPw}
+    );
+
+    # set email address
+    $Self->SetPreferences(
+        UserID => $UserID,
+        Key    => 'UserEmail',
+        Value  => $Param{UserEmail}
+    );
+
+    # set mobile phone
+    $Self->SetPreferences(
+        UserID => $UserID,
+        Key    => 'UserMobile',
+        Value  => $Param{UserMobile} || '',
+    );
+
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
+
+    return $UserID;
+}
+</pre></div>
 
 <p>to add new users</p>
 
-<pre><code>    my $UserID = $UserObject-&gt;UserAdd(
-        UserFirstname =&gt; &#39;Huber&#39;,
-        UserLastname  =&gt; &#39;Manfred&#39;,
-        UserLogin     =&gt; &#39;mhuber&#39;,
-        UserPw        =&gt; &#39;some-pass&#39;, # not required
-        UserEmail     =&gt; &#39;email@example.com&#39;,
-        UserMobile    =&gt; &#39;1234567890&#39;, # not required
+<pre>    my $UserID = $UserObject-&gt;UserAdd(
+        UserFirstname =&gt; 'Huber',
+        UserLastname  =&gt; 'Manfred',
+        UserLogin     =&gt; 'mhuber',
+        UserPw        =&gt; 'some-pass', # not required
+        UserEmail     =&gt; 'email@example.com',
+        UserMobile    =&gt; '1234567890', # not required
         ValidID       =&gt; 1,
         ChangeUserID  =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="UserUpdate">UserUpdate()</h2>
 
-<h2 id="UserUpdate">UserUpdate()</h2>
+<p><a href="#" onclick="toggleCode('method_UserUpdate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_UserUpdate">
+                                        <pre>
+
+sub UserUpdate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(UserID UserFirstname UserLastname UserLogin ValidID ChangeUserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # store old user login for later use
+    my $OldUserLogin = $Self->UserLookup(
+        UserID => $Param{UserID},
+    );
+
+    # check if a user with this login (username) already exists
+    if (
+        $Self->UserLoginExistsCheck(
+            UserLogin => $Param{UserLogin},
+            UserID    => $Param{UserID}
+        )
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "A user with username '$Param{UserLogin}' already exists!"
+        );
+        return;
+    }
+
+    # check email address
+    if (
+        $Param{UserEmail}
+        && !$Kernel::OM->Get('Kernel::System::CheckItem')->CheckEmail( Address => $Param{UserEmail} )
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Email address ($Param{UserEmail}) not valid ("
+                . $Kernel::OM->Get('Kernel::System::CheckItem')->CheckError() . ")!",
+        );
+        return;
+    }
+
+    # update db
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => "UPDATE $Self->{UserTable} SET title = ?, first_name = ?, last_name = ?, "
+            . " $Self->{UserTableUser} = ?, valid_id = ?, "
+            . " change_time = current_timestamp, change_by = ? "
+            . " WHERE $Self->{UserTableUserID} = ?",
+        Bind => [
+            \$Param{UserTitle}, \$Param{UserFirstname}, \$Param{UserLastname},
+            \$Param{UserLogin}, \$Param{ValidID}, \$Param{ChangeUserID}, \$Param{UserID},
+        ],
+    );
+
+    # check pw
+    if ( $Param{UserPw} ) {
+        $Self->SetPassword(
+            UserLogin => $Param{UserLogin},
+            PW        => $Param{UserPw}
+        );
+    }
+
+    # set email address
+    $Self->SetPreferences(
+        UserID => $Param{UserID},
+        Key    => 'UserEmail',
+        Value  => $Param{UserEmail}
+    );
+
+    # set email address
+    $Self->SetPreferences(
+        UserID => $Param{UserID},
+        Key    => 'UserMobile',
+        Value  => $Param{UserMobile} || '',
+    );
+
+    # update search profiles if the UserLogin changed
+    if ( lc $OldUserLogin ne lc $Param{UserLogin} ) {
+        $Kernel::OM->Get('Kernel::System::SearchProfile')->SearchProfileUpdateUserLogin(
+            Base         => 'TicketSearch',
+            UserLogin    => $OldUserLogin,
+            NewUserLogin => $Param{UserLogin},
+        );
+    }
+
+    $Self->_UserCacheClear( UserID => $Param{UserID} );
+
+    # TODO Not needed to delete the cache if ValidID or Name was not changed
+
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+    my $SystemPermissionConfig = $Kernel::OM->Get('Kernel::Config')->Get('System::Permission') || [];
+
+    for my $Type ( @{$SystemPermissionConfig}, 'rw' ) {
+
+        $CacheObject->Delete(
+            Type => 'GroupPermissionUserGet',
+            Key  => 'PermissionUserGet::' . $Param{UserID} . '::' . $Type,
+        );
+    }
+
+    $CacheObject->CleanUp(
+        Type => 'GroupPermissionGroupGet',
+    );
+
+    return 1;
+}
+</pre></div>
 
 <p>to update users</p>
 
-<pre><code>    $UserObject-&gt;UserUpdate(
+<pre>    $UserObject-&gt;UserUpdate(
         UserID        =&gt; 4321,
-        UserFirstname =&gt; &#39;Huber&#39;,
-        UserLastname  =&gt; &#39;Manfred&#39;,
-        UserLogin     =&gt; &#39;mhuber&#39;,
-        UserPw        =&gt; &#39;some-pass&#39;, # not required
-        UserEmail     =&gt; &#39;email@example.com&#39;,
-        UserMobile    =&gt; &#39;1234567890&#39;, # not required
+        UserFirstname =&gt; 'Huber',
+        UserLastname  =&gt; 'Manfred',
+        UserLogin     =&gt; 'mhuber',
+        UserPw        =&gt; 'some-pass', # not required
+        UserEmail     =&gt; 'email@example.com',
+        UserMobile    =&gt; '1234567890', # not required
         ValidID       =&gt; 1,
         ChangeUserID  =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="UserSearch">UserSearch()</h2>
 
-<h2 id="UserSearch">UserSearch()</h2>
+<p><a href="#" onclick="toggleCode('method_UserSearch');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_UserSearch">
+                                        <pre>
+
+sub UserSearch {
+    my ( $Self, %Param ) = @_;
+
+    my %Users;
+    my $Valid = $Param{Valid} // 1;
+
+    # check needed stuff
+    if ( !$Param{Search} && !$Param{UserLogin} && !$Param{PostMasterSearch} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Search, UserLogin or PostMasterSearch!',
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get like escape string needed for some databases (e.g. oracle)
+    my $LikeEscapeString = $DBObject->GetDatabaseFunction('LikeEscapeString');
+
+    # build SQL string
+    my $SQL = "SELECT $Self->{UserTableUserID}, login
+                   FROM $Self->{UserTable} WHERE ";
+    my @Bind;
+
+    if ( $Param{Search} ) {
+
+        my %QueryCondition = $DBObject->QueryCondition(
+            Key      => [qw(login first_name last_name)],
+            Value    => $Param{Search},
+            BindMode => 1,
+        );
+        $SQL .= $QueryCondition{SQL} . ' ';
+        push @Bind, @{ $QueryCondition{Values} };
+    }
+    elsif ( $Param{PostMasterSearch} ) {
+
+        my %UserID = $Self->SearchPreferences(
+            Key   => 'UserEmail',
+            Value => $Param{PostMasterSearch},
+        );
+
+        for ( sort keys %UserID ) {
+            my %User = $Self->GetUserData(
+                UserID => $_,
+                Valid  => $Param{Valid},
+            );
+            if (%User) {
+                return %UserID;
+            }
+        }
+
+        return;
+    }
+    elsif ( $Param{UserLogin} ) {
+
+        $SQL .= " $Self->{Lower}($Self->{UserTableUser}) LIKE ? $LikeEscapeString";
+        $Param{UserLogin} =~ s/\*/%/g;
+        $Param{UserLogin} = $DBObject->Quote( $Param{UserLogin}, 'Like' );
+        push @Bind, \$Param{UserLogin};
+    }
+
+    # add valid option
+    if ($Valid) {
+        $SQL .= "AND valid_id IN ("
+            . join( ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet() ) . ")";
+    }
+
+    # get data
+    return if !$DBObject->Prepare(
+        SQL   => $SQL,
+        Bind  => \@Bind,
+        Limit => $Self->{UserSearchListLimit} || $Param{Limit},
+    );
+
+    # fetch the result
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Users{ $Row[0] } = $Row[1];
+    }
+
+    return %Users;
+}
+</pre></div>
 
 <p>to search users</p>
 
-<pre><code>    my %List = $UserObject-&gt;UserSearch(
-        Search =&gt; &#39;*some*&#39;, # also &#39;hans+huber&#39; possible
+<pre>    my %List = $UserObject-&gt;UserSearch(
+        Search =&gt; '*some*', # also 'hans+huber' possible
         Valid  =&gt; 1, # not required
     );
 
     my %List = $UserObject-&gt;UserSearch(
-        UserLogin =&gt; &#39;*some*&#39;,
+        UserLogin =&gt; '*some*',
         Limit     =&gt; 50,
         Valid     =&gt; 1, # not required
     );
 
     my %List = $UserObject-&gt;UserSearch(
-        PostMasterSearch =&gt; &#39;email@example.com&#39;,
+        PostMasterSearch =&gt; 'email@example.com',
         Valid            =&gt; 1, # not required
-    );</code></pre>
+    );
+</pre><p>Returns hash of UserID, Login pairs:</p>
 
-<p>Returns hash of UserID, Login pairs:</p>
+<pre>    my %List = (
+        1 =&gt; 'root@locahost',
+        4 =&gt; 'admin',
+        9 =&gt; 'joe',
+    );
+</pre><p>For PostMasterSearch, it returns hash of UserID, Email pairs:</p>
 
-<pre><code>    my %List = (
-        1 =&gt; &#39;root@locahost&#39;,
-        4 =&gt; &#39;admin&#39;,
-        9 =&gt; &#39;joe&#39;,
-    );</code></pre>
+<pre>    my %List = (
+        4 =&gt; 'john@example.com',
+        9 =&gt; 'joe@example.com',
+    );
+</pre><h2 id="SetPassword">SetPassword()</h2>
 
-<p>For PostMasterSearch, it returns hash of UserID, Email pairs:</p>
+<p><a href="#" onclick="toggleCode('method_SetPassword');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SetPassword">
+                                        <pre>
 
-<pre><code>    my %List = (
-        4 =&gt; &#39;john@example.com&#39;,
-        9 =&gt; &#39;joe@example.com&#39;,
-    );</code></pre>
+sub SetPassword {
+    my ( $Self, %Param ) = @_;
 
-<h2 id="SetPassword">SetPassword()</h2>
+    # check needed stuff
+    if ( !$Param{UserLogin} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserLogin!'
+        );
+        return;
+    }
+
+    # get old user data
+    my %User = $Self->GetUserData( User => $Param{UserLogin} );
+    if ( !$User{UserLogin} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'No such User!',
+        );
+        return;
+    }
+
+    my $Pw = $Param{PW} || '';
+    my $CryptedPw = '';
+
+    # get crypt type
+    my $CryptType = $Kernel::OM->Get('Kernel::Config')->Get('AuthModule::DB::CryptType') || 'sha2';
+
+    # crypt plain (no crypt at all)
+    if ( $CryptType eq 'plain' ) {
+        $CryptedPw = $Pw;
+    }
+
+    # crypt with UNIX crypt
+    elsif ( $CryptType eq 'crypt' ) {
+
+        # encode output, needed by crypt() only non utf8 signs
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Pw );
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{UserLogin} );
+
+        $CryptedPw = crypt( $Pw, $Param{UserLogin} );
+    }
+
+    # crypt with md5
+    elsif ( $CryptType eq 'md5' || !$CryptType ) {
+
+        # encode output, needed by unix_md5_crypt() only non utf8 signs
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Pw );
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{UserLogin} );
+
+        $CryptedPw = unix_md5_crypt( $Pw, $Param{UserLogin} );
+    }
+
+    # crypt with md5 (compatible with Apache's .htpasswd files)
+    elsif ( $CryptType eq 'apr1' ) {
+
+        # encode output, needed by unix_md5_crypt() only non utf8 signs
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Pw );
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Param{UserLogin} );
+
+        $CryptedPw = apache_md5_crypt( $Pw, $Param{UserLogin} );
+    }
+
+    # crypt with sha1
+    elsif ( $CryptType eq 'sha1' ) {
+
+        my $SHAObject = Digest::SHA->new('sha1');
+
+        # encode output, needed by sha1_hex() only non utf8 signs
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Pw );
+
+        $SHAObject->add($Pw);
+        $CryptedPw = $SHAObject->hexdigest();
+    }
+
+    # bcrypt
+    elsif ( $CryptType eq 'bcrypt' ) {
+
+        if ( !$Kernel::OM->Get('Kernel::System::Main')->Require('Crypt::Eksblowfish::Bcrypt') ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message =>
+                    "User: '$User{UserLogin}' tried to store password with bcrypt but 'Crypt::Eksblowfish::Bcrypt' is not installed!",
+            );
+            return;
+        }
+
+        my $Cost = 9;
+        my $Salt = $Kernel::OM->Get('Kernel::System::Main')->GenerateRandomString( Length => 16 );
+
+        # remove UTF8 flag, required by Crypt::Eksblowfish::Bcrypt
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Pw );
+
+        # calculate password hash
+        my $Octets = Crypt::Eksblowfish::Bcrypt::bcrypt_hash(
+            {
+                key_nul => 1,
+                cost    => 9,
+                salt    => $Salt,
+            },
+            $Pw
+        );
+
+        # We will store cost and salt in the password string so that it can be decoded
+        #   in future even if we use a higher cost by default.
+        $CryptedPw = "BCRYPT:$Cost:$Salt:" . Crypt::Eksblowfish::Bcrypt::en_base64($Octets);
+    }
+
+    # crypt with sha256 as fallback
+    else {
+
+        my $SHAObject = Digest::SHA->new('sha256');
+
+        # encode output, needed by sha256_hex() only non utf8 signs
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Pw );
+
+        $SHAObject->add($Pw);
+        $CryptedPw = $SHAObject->hexdigest();
+    }
+
+    # update db
+    my $UserLogin = lc $Param{UserLogin};
+    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
+        SQL => "UPDATE $Self->{UserTable} SET $Self->{UserTableUserPW} = ? "
+            . " WHERE $Self->{Lower}($Self->{UserTableUser}) = ?",
+        Bind => [ \$CryptedPw, \$UserLogin ],
+    );
+
+    # log notice
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'notice',
+        Message  => "User: '$Param{UserLogin}' changed password successfully!",
+    );
+
+    return 1;
+}
+</pre></div>
 
 <p>to set users passwords</p>
 
-<pre><code>    $UserObject-&gt;SetPassword(
-        UserLogin =&gt; &#39;some-login&#39;,
-        PW        =&gt; &#39;some-new-password&#39;
-    );</code></pre>
+<pre>    $UserObject-&gt;SetPassword(
+        UserLogin =&gt; 'some-login',
+        PW        =&gt; 'some-new-password'
+    );
+</pre><h2 id="UserLookup">UserLookup()</h2>
 
-<h2 id="UserLookup">UserLookup()</h2>
+<p><a href="#" onclick="toggleCode('method_UserLookup');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_UserLookup">
+                                        <pre>
+
+sub UserLookup {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{UserLogin} && !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need UserLogin or UserID!'
+        );
+        return;
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    if ( $Param{UserLogin} ) {
+
+        # check cache
+        my $CacheKey = 'UserLookup::ID::' . $Param{UserLogin};
+        my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+        return $Cache if $Cache;
+
+        # build sql query
+        my $UserLogin = lc $Param{UserLogin};
+
+        return if !$DBObject->Prepare(
+            SQL => "SELECT $Self->{UserTableUserID} FROM $Self->{UserTable} "
+                . " WHERE $Self->{Lower}($Self->{UserTableUser}) = ?",
+            Bind  => [ \$UserLogin ],
+            Limit => 1,
+        );
+
+        # fetch the result
+        my $ID;
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            $ID = $Row[0];
+        }
+
+        if ( !$ID ) {
+            if ( !$Param{Silent} ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "No UserID found for '$Param{UserLogin}'!",
+                );
+            }
+            return;
+        }
+
+        # set cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => $ID,
+        );
+
+        return $ID;
+    }
+
+    else {
+
+        # check cache
+        my $CacheKey = 'UserLookup::Login::' . $Param{UserID};
+        my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+        return $Cache if $Cache;
+
+        # build sql query
+        return if !$DBObject->Prepare(
+            SQL => "SELECT $Self->{UserTableUser} FROM $Self->{UserTable} "
+                . " WHERE $Self->{UserTableUserID} = ?",
+            Bind  => [ \$Param{UserID} ],
+            Limit => 1,
+        );
+
+        # fetch the result
+        my $Login;
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            $Login = $Row[0];
+        }
+
+        if ( !$Login ) {
+            if ( !$Param{Silent} ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "No UserLogin found for '$Param{UserID}'!",
+                );
+            }
+            return;
+        }
+
+        # set cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type  => $Self->{CacheType},
+            TTL   => $Self->{CacheTTL},
+            Key   => $CacheKey,
+            Value => $Login,
+        );
+
+        return $Login;
+    }
+}
+</pre></div>
 
 <p>user login or id lookup</p>
 
-<pre><code>    my $UserLogin = $UserObject-&gt;UserLookup(
+<pre>    my $UserLogin = $UserObject-&gt;UserLookup(
         UserID =&gt; 1,
-        Silent =&gt; 1, # optional, don&#39;t generate log entry if user was not found
+        Silent =&gt; 1, # optional, don't generate log entry if user was not found
     );
 
     my $UserID = $UserObject-&gt;UserLookup(
-        UserLogin =&gt; &#39;some_user_login&#39;,
-        Silent    =&gt; 1, # optional, don&#39;t generate log entry if user was not found
-    );</code></pre>
+        UserLogin =&gt; 'some_user_login',
+        Silent    =&gt; 1, # optional, don't generate log entry if user was not found
+    );
+</pre><h2 id="UserName">UserName()</h2>
 
-<h2 id="UserName">UserName()</h2>
+<p><a href="#" onclick="toggleCode('method_UserName');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_UserName">
+                                        <pre>
+
+sub UserName {
+    my ( $Self, %Param ) = @_;
+
+    my %User = $Self->GetUserData(%Param);
+
+    return if !%User;
+    return $User{UserFullname};
+}
+</pre></div>
 
 <p>get user name</p>
 
-<pre><code>    my $Name = $UserObject-&gt;UserName(
-        User =&gt; &#39;some-login&#39;,
+<pre>    my $Name = $UserObject-&gt;UserName(
+        User =&gt; 'some-login',
     );
 
     or
 
     my $Name = $UserObject-&gt;UserName(
         UserID =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="UserList">UserList()</h2>
 
-<h2 id="UserList">UserList()</h2>
+<p><a href="#" onclick="toggleCode('method_UserList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_UserList">
+                                        <pre>
+
+sub UserList {
+    my ( $Self, %Param ) = @_;
+
+    my $Type = $Param{Type} || 'Short';
+
+    # set valid option
+    my $Valid = $Param{Valid} // 1;
+
+    # get config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # get configuration for the full name order
+    my $FirstnameLastNameOrder = $ConfigObject->Get('FirstnameLastnameOrder') || 0;
+    my $NoOutOfOffice = $Param{NoOutOfOffice} || 0;
+
+    # check cache
+    my $CacheKey = join '::', 'UserList', $Type, $Valid, $FirstnameLastNameOrder, $NoOutOfOffice;
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+    return %{$Cache} if $Cache;
+
+    my $SelectStr;
+    if ( $Type eq 'Short' ) {
+        $SelectStr = "$ConfigObject->{DatabaseUserTableUserID}, "
+            . " $ConfigObject->{DatabaseUserTableUser}";
+    }
+    else {
+        $SelectStr = "$ConfigObject->{DatabaseUserTableUserID}, "
+            . " last_name, first_name, "
+            . " $ConfigObject->{DatabaseUserTableUser}";
+    }
+
+    my $SQL = "SELECT $SelectStr FROM $ConfigObject->{DatabaseUserTable}";
+
+    # sql query
+    if ($Valid) {
+        $SQL
+            .= " WHERE valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare( SQL => $SQL );
+
+    # fetch the result
+    my %UsersRaw;
+    my %Users;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $UsersRaw{ $Row[0] } = \@Row;
+    }
+
+    if ( $Type eq 'Short' ) {
+        for my $CurrentUserID ( sort keys %UsersRaw ) {
+            $Users{$CurrentUserID} = $UsersRaw{$CurrentUserID}->[1];
+        }
+    }
+    else {
+        for my $CurrentUserID ( sort keys %UsersRaw ) {
+            my @Data         = @{ $UsersRaw{$CurrentUserID} };
+            my $UserFullname = $Self->_UserFullname(
+                UserFirstname => $Data[2],
+                UserLastname  => $Data[1],
+                UserLogin     => $Data[3],
+                NameOrder     => $FirstnameLastNameOrder,
+            );
+
+            $Users{$CurrentUserID} = $UserFullname;
+        }
+    }
+
+    # check vacation option
+    if ( !$NoOutOfOffice ) {
+
+        USERID:
+        for my $UserID ( sort keys %Users ) {
+            next USERID if !$UserID;
+
+            my %User = $Self->GetUserData(
+                UserID => $UserID,
+            );
+            if ( $User{OutOfOfficeMessage} ) {
+                $Users{$UserID} .= ' ' . $User{OutOfOfficeMessage};
+            }
+        }
+    }
+
+    # set cache
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%Users,
+    );
+
+    return %Users;
+}
+</pre></div>
 
 <p>return a hash with all users</p>
 
-<pre><code>    my %List = $UserObject-&gt;UserList(
-        Type          =&gt; &#39;Short&#39;, # Short|Long, default Short
+<pre>    my %List = $UserObject-&gt;UserList(
+        Type          =&gt; 'Short', # Short|Long, default Short
         Valid         =&gt; 1,       # default 1
         NoOutOfOffice =&gt; 1,       # (optional) default 0
-    );</code></pre>
+    );
+</pre><h2 id="GenerateRandomPassword">GenerateRandomPassword()</h2>
 
-<h2 id="GenerateRandomPassword">GenerateRandomPassword()</h2>
+<p><a href="#" onclick="toggleCode('method_GenerateRandomPassword');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GenerateRandomPassword">
+                                        <pre>
+
+sub GenerateRandomPassword {
+    my ( $Self, %Param ) = @_;
+
+    # generated passwords are eight characters long by default.
+    my $Size = $Param{Size} || 8;
+
+    my $Password = $Kernel::OM->Get('Kernel::System::Main')->GenerateRandomString(
+        Length => $Size,
+    );
+
+    return $Password;
+}
+</pre></div>
 
 <p>generate a random password</p>
 
-<pre><code>    my $Password = $UserObject-&gt;GenerateRandomPassword();
+<pre>    my $Password = $UserObject-&gt;GenerateRandomPassword();
 
     or
 
     my $Password = $UserObject-&gt;GenerateRandomPassword(
         Size =&gt; 16,
-    );</code></pre>
+    );
+</pre><h2 id="SetPreferences">SetPreferences()</h2>
 
-<h2 id="SetPreferences">SetPreferences()</h2>
+<p><a href="#" onclick="toggleCode('method_SetPreferences');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SetPreferences">
+                                        <pre>
+
+sub SetPreferences {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Key UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    # get current setting
+    my %User = $Self->GetUserData(
+        UserID        => $Param{UserID},
+        NoOutOfOffice => 1,
+    );
+
+    # no updated needed
+    return 1
+        if defined $User{ $Param{Key} }
+        && defined $Param{Value}
+        && $User{ $Param{Key} } eq $Param{Value};
+
+    $Self->_UserCacheClear( UserID => $Param{UserID} );
+
+    # get user preferences config
+    my $GeneratorModule = $Kernel::OM->Get('Kernel::Config')->Get('User::PreferencesModule')
+        || 'Kernel::System::User::Preferences::DB';
+
+    # get generator preferences module
+    my $PreferencesObject = $Kernel::OM->Get($GeneratorModule);
+
+    # set preferences
+    return $PreferencesObject->SetPreferences(%Param);
+}
+</pre></div>
 
 <p>set user preferences</p>
 
-<pre><code>    $UserObject-&gt;SetPreferences(
-        Key    =&gt; &#39;UserComment&#39;,
-        Value  =&gt; &#39;some comment&#39;,
+<pre>    $UserObject-&gt;SetPreferences(
+        Key    =&gt; 'UserComment',
+        Value  =&gt; 'some comment',
         UserID =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="GetPreferences">GetPreferences()</h2>
 
-<h2 id="GetPreferences">GetPreferences()</h2>
+<p><a href="#" onclick="toggleCode('method_GetPreferences');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_GetPreferences">
+                                        <pre>
+
+sub GetPreferences {
+    my ( $Self, %Param ) = @_;
+
+    # get user preferences config
+    my $GeneratorModule = $Kernel::OM->Get('Kernel::Config')->Get('User::PreferencesModule')
+        || 'Kernel::System::User::Preferences::DB';
+
+    # get generator preferences module
+    my $PreferencesObject = $Kernel::OM->Get($GeneratorModule);
+
+    return $PreferencesObject->GetPreferences(%Param);
+}
+</pre></div>
 
 <p>get user preferences</p>
 
-<pre><code>    my %Preferences = $UserObject-&gt;GetPreferences(
+<pre>    my %Preferences = $UserObject-&gt;GetPreferences(
         UserID =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="SearchPreferences">SearchPreferences()</h2>
 
-<h2 id="SearchPreferences">SearchPreferences()</h2>
+<p><a href="#" onclick="toggleCode('method_SearchPreferences');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SearchPreferences">
+                                        <pre>
+
+sub SearchPreferences {
+    my $Self = shift;
+
+    # get user preferences config
+    my $GeneratorModule = $Kernel::OM->Get('Kernel::Config')->Get('User::PreferencesModule')
+        || 'Kernel::System::User::Preferences::DB';
+
+    # get generator preferences module
+    my $PreferencesObject = $Kernel::OM->Get($GeneratorModule);
+
+    return $PreferencesObject->SearchPreferences(@_);
+}
+</pre></div>
 
 <p>search in user preferences</p>
 
-<pre><code>    my %UserList = $UserObject-&gt;SearchPreferences(
-        Key   =&gt; &#39;UserEmail&#39;,
-        Value =&gt; &#39;email@example.com&#39;,   # optional, limit to a certain value/pattern
-    );</code></pre>
+<pre>    my %UserList = $UserObject-&gt;SearchPreferences(
+        Key   =&gt; 'UserEmail',
+        Value =&gt; 'email@example.com',   # optional, limit to a certain value/pattern
+    );
+</pre><h2 id="TokenGenerate">TokenGenerate()</h2>
 
-<h2 id="TokenGenerate">TokenGenerate()</h2>
+<p><a href="#" onclick="toggleCode('method_TokenGenerate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TokenGenerate">
+                                        <pre>
+
+sub TokenGenerate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need UserID!"
+        );
+        return;
+    }
+    my $Token = $Kernel::OM->Get('Kernel::System::Main')->GenerateRandomString(
+        Length => 15,
+    );
+
+    # save token in preferences
+    $Self->SetPreferences(
+        Key    => 'UserToken',
+        Value  => $Token,
+        UserID => $Param{UserID},
+    );
+
+    return $Token;
+}
+</pre></div>
 
 <p>generate a random token</p>
 
-<pre><code>    my $Token = $UserObject-&gt;TokenGenerate(
+<pre>    my $Token = $UserObject-&gt;TokenGenerate(
         UserID =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="TokenCheck">TokenCheck()</h2>
 
-<h2 id="TokenCheck">TokenCheck()</h2>
+<p><a href="#" onclick="toggleCode('method_TokenCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TokenCheck">
+                                        <pre>
+
+sub TokenCheck {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Token} || !$Param{UserID} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Token and UserID!'
+        );
+        return;
+    }
+
+    # get preferences token
+    my %Preferences = $Self->GetPreferences(
+        UserID => $Param{UserID},
+    );
+
+    # check requested vs. stored token
+    if ( $Preferences{UserToken} && $Preferences{UserToken} eq $Param{Token} ) {
+
+        # reset password token
+        $Self->SetPreferences(
+            Key    => 'UserToken',
+            Value  => '',
+            UserID => $Param{UserID},
+        );
+
+        # return true if token is valid
+        return 1;
+    }
+
+    # return false if token is invalid
+    return;
+}
+</pre></div>
 
 <p>check password token</p>
 
-<pre><code>    my $Valid = $UserObject-&gt;TokenCheck(
+<pre>    my $Valid = $UserObject-&gt;TokenCheck(
         Token  =&gt; $Token,
         UserID =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="UserLoginExistsCheck">UserLoginExistsCheck()</h2>
 
-<h2 id="UserLoginExistsCheck">UserLoginExistsCheck()</h2>
+<p><a href="#" onclick="toggleCode('method_UserLoginExistsCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_UserLoginExistsCheck">
+                                        <pre>
+
+sub UserLoginExistsCheck {
+    my ( $Self, %Param ) = @_;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare(
+        SQL =>
+            "SELECT $Self->{UserTableUserID} FROM $Self->{UserTable} WHERE $Self->{UserTableUser} = ?",
+        Bind => [ \$Param{UserLogin} ],
+    );
+
+    # fetch the result
+    my $Flag;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        if ( !$Param{UserID} || $Param{UserID} ne $Row[0] ) {
+            $Flag = 1;
+        }
+    }
+    if ($Flag) {
+        return 1;
+    }
+    return 0;
+}
+</pre></div>
 
 <p>return 1 if another user with this login (username) already exists</p>
 
-<pre><code>    $Exist = $UserObject-&gt;UserLoginExistsCheck(
-        UserLogin =&gt; &#39;Some::UserLogin&#39;,
+<pre>    $Exist = $UserObject-&gt;UserLoginExistsCheck(
+        UserLogin =&gt; 'Some::UserLogin',
         UserID =&gt; 1, # optional
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

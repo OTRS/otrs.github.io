@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::Output::HTML::LinkObject::Appointment &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::Output::HTML::LinkObject::Appointment</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,88 +69,370 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/Output/HTML/LinkObject/Appointment.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#TableCreateComplex">TableCreateComplex()</a></li>
-      <li><a href="#TableCreateSimple">TableCreateSimple()</a></li>
-      <li><a href="#ContentStringCreate">ContentStringCreate()</a></li>
-      <li><a href="#SelectableObjectList">SelectableObjectList()</a></li>
-      <li><a href="#SearchOptionList">SearchOptionList()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#TableCreateComplex">TableCreateComplex()</a></li>
+	<li><a href="#TableCreateSimple">TableCreateSimple()</a></li>
+	<li><a href="#ContentStringCreate">ContentStringCreate()</a></li>
+	<li><a href="#SelectableObjectList">SelectableObjectList()</a></li>
+	<li><a href="#SearchOptionList">SearchOptionList()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::Output::HTML::LinkObject::Appointment - layout backend module</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>All layout functions of link object (appointment).</p>
 
 <h2 id="new">new()</h2>
 
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # check needed objects
+    for my $Needed (qw(UserLanguage UserID)) {
+        $Self->{$Needed} = $Param{$Needed} || die "Got no $Needed!";
+    }
+
+    # create our own LayoutObject instance to avoid block data collisions with the main page
+    $Self->{LayoutObject} = Kernel::Output::HTML::Layout->new( %{$Self} );
+
+    # define needed variables
+    $Self->{ObjectData} = {
+        Object     => 'Appointment',
+        Realname   => 'Appointment',
+        ObjectName => 'TicketID',
+    };
+
+    return $Self;
+}
+</pre></div>
+
 <p>create an object</p>
 
-<pre><code>    $BackendObject = Kernel::Output::HTML::LinkObject::Appointment-&gt;new(
-        UserLanguage =&gt; &#39;en&#39;,
+<pre>    $BackendObject = Kernel::Output::HTML::LinkObject::Appointment-&gt;new(
+        UserLanguage =&gt; 'en',
         UserID       =&gt; 1,
-    );</code></pre>
+    );
+</pre><h2 id="TableCreateComplex">TableCreateComplex()</h2>
 
-<h2 id="TableCreateComplex">TableCreateComplex()</h2>
+<p><a href="#" onclick="toggleCode('method_TableCreateComplex');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TableCreateComplex">
+                                        <pre>
+
+sub TableCreateComplex {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ObjectLinkListWithData} || ref $Param{ObjectLinkListWithData} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ObjectLinkListWithData!',
+        );
+        return;
+    }
+
+    # create needed objects
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # convert the list
+    my %LinkList;
+    for my $LinkType ( sort keys %{ $Param{ObjectLinkListWithData} } ) {
+
+        # extract link type List
+        my $LinkTypeList = $Param{ObjectLinkListWithData}->{$LinkType};
+
+        for my $Direction ( sort keys %{$LinkTypeList} ) {
+
+            # extract direction list
+            my $DirectionList = $Param{ObjectLinkListWithData}->{$LinkType}->{$Direction};
+
+            for my $AppointmentID ( sort keys %{$DirectionList} ) {
+
+                $LinkList{$AppointmentID}->{Data} = $DirectionList->{$AppointmentID};
+            }
+        }
+    }
+
+    my $ComplexTableData = $ConfigObject->Get("LinkObject::ComplexTable");
+    my $DefaultColumns;
+    if (
+        $ComplexTableData
+        && IsHashRefWithData($ComplexTableData)
+        && $ComplexTableData->{Appointment}
+        && IsHashRefWithData( $ComplexTableData->{Appointment} )
+        )
+    {
+        $DefaultColumns = $ComplexTableData->{"Appointment"}->{"DefaultColumns"};
+    }
+
+    my @TimeLongTypes = (
+        "Created",
+        "Changed",
+        "StartTime",
+        "EndTime",
+        "NotificationTime",
+    );
+
+    # define the block data
+    my @Headline = (
+        {
+            Content => 'Title',
+        },
+    );
+
+    my $UserObject = $Kernel::OM->Get('Kernel::System::User');
+
+    # load user preferences
+    my %Preferences = $UserObject->GetPreferences(
+        UserID => $Self->{UserID},
+    );
+
+    if ( !$DefaultColumns || !IsHashRefWithData($DefaultColumns) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Missing configuration for LinkObject::ComplexTable###Appointment!',
+        );
+        return;
+    }
+
+    # Get default column priority from SysConfig
+    # Each column in table (Title, StartTime, EndTime,...) has defined Priority in SysConfig.
+    # System use this priority to sort columns, if user doesn't have own settings.
+    my %SortOrder;
+
+    if (
+        $ComplexTableData->{"Appointment"}->{"Priority"}
+        && IsHashRefWithData( $ComplexTableData->{"Appointment"}->{"Priority"} )
+        )
+    {
+        %SortOrder = %{ $ComplexTableData->{"Appointment"}->{"Priority"} };
+    }
+
+    my %UserColumns = %{$DefaultColumns};
+
+    if ( $Preferences{'LinkObject::ComplexTable-Appointment'} ) {
+        my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
+
+        my $ColumnsEnabled = $JSONObject->Decode(
+            Data => $Preferences{'LinkObject::ComplexTable-Appointment'},
+        );
+
+        if (
+            $ColumnsEnabled
+            && IsHashRefWithData($ColumnsEnabled)
+            && $ColumnsEnabled->{Order}
+            && IsArrayRefWithData( $ColumnsEnabled->{Order} )
+            )
+        {
+            # Clear sort order
+            %SortOrder = ();
+
+            DEFAULTCOLUMN:
+            for my $DefaultColumn ( sort keys %UserColumns ) {
+                my $Index = 0;
+
+                for my $UserSetting ( @{ $ColumnsEnabled->{Order} } ) {
+                    $Index++;
+                    if ( $DefaultColumn eq $UserSetting ) {
+                        $UserColumns{$DefaultColumn} = 2;
+                        $SortOrder{$DefaultColumn}   = $Index;
+
+                        next DEFAULTCOLUMN;
+                    }
+                }
+
+                # not found, means user chose to hide this item
+                if ( $UserColumns{$DefaultColumn} == 2 ) {
+                    $UserColumns{$DefaultColumn} = 1;
+                }
+
+                if ( !$SortOrder{$DefaultColumn} ) {
+                    $SortOrder{$DefaultColumn} = 0;    # Set 0, it system will hide this item anyways
+                }
+            }
+        }
+    }
+    else {
+        # user has no own settings
+        for my $Column ( sort keys %UserColumns ) {
+            if ( !$SortOrder{$Column} ) {
+                $SortOrder{$Column} = 0;               # Set 0, it system will hide this item anyways
+            }
+        }
+    }
+
+    # Define Headline columns
+
+    # Sort
+    COLUMN:
+    for my $Column ( sort { $SortOrder{$a} <=> $SortOrder{$b} } keys %UserColumns ) {
+
+        next COLUMN if $Column eq 'Title';    # Always present, already added.
+
+        # if enabled by default
+        if ( $UserColumns{$Column} == 2 ) {
+
+            # appointment fields
+            my $ColumnName = $Column;
+
+            push @Headline, {
+                Content => $ColumnName,
+            };
+        }
+    }
+
+    # create the item list (table content)
+    my @ItemList;
+
+    APPOINTMENTID:
+    for my $AppointmentID (
+        sort { $LinkList{$a}{Data}->{AppointmentID} <=> $LinkList{$b}{Data}->{AppointmentID} }
+        keys %LinkList
+        )
+    {
+        next APPOINTMENTID if !$AppointmentID;
+
+        # extract appointment and calendar data
+        my $Appointment = $LinkList{$AppointmentID}{Data};
+        my %Calendar    = $Kernel::OM->Get('Kernel::System::Calendar')->CalendarGet(
+            CalendarID => $Appointment->{CalendarID},
+        );
+
+        # Title be present (since it contains master link to the appointment)
+        my @ItemColumns = (
+            {
+                Type    => 'Link',
+                Key     => $AppointmentID,
+                Content => $Appointment->{Title},
+                Link    => $Self->{LayoutObject}->{Baselink}
+                    . 'Action=AgentAppointmentCalendarOverview;AppointmentID='
+                    . $AppointmentID,
+                MaxLength => 70,
+            },
+        );
+
+        # Sort
+        COLUMN:
+        for my $Column ( sort { $SortOrder{$a} <=> $SortOrder{$b} } keys %UserColumns ) {
+
+            next COLUMN if $Column eq 'Title';    # Always present, already added.
+
+            # if enabled by default
+            if ( $UserColumns{$Column} == 2 ) {
+
+                my %Hash;
+                if ( grep { $_ eq $Column } @TimeLongTypes ) {
+                    $Hash{'Type'} = 'TimeLong';
+                }
+                else {
+                    $Hash{'Type'} = 'Text';
+                }
+
+                if ( $Column eq 'NotificationTime' ) {
+                    $Hash{'Content'} = $Appointment->{NotificationDate};
+                }
+                elsif ( $Column eq 'Created' ) {
+                    $Hash{'Content'} = $Appointment->{CreateTime};
+                }
+                elsif ( $Column eq 'Changed' ) {
+                    $Hash{'Content'} = $Appointment->{ChangeTime};
+                }
+                elsif ( $Column eq 'CalendarName' ) {
+                    $Hash{'Content'} = $Calendar{CalendarName};
+                }
+                else {
+                    $Hash{'Content'} = $Appointment->{$Column};
+                }
+
+                push @ItemColumns, \%Hash;
+            }
+        }
+
+        push @ItemList, \@ItemColumns;
+    }
+
+    return if !@ItemList;
+
+    my %Block = (
+        Object     => $Self->{ObjectData}->{Object},
+        Blockname  => $Self->{ObjectData}->{Realname},
+        ObjectName => $Self->{ObjectData}->{ObjectName},
+        ObjectID   => $Param{ObjectID},
+        Headline   => \@Headline,
+        ItemList   => \@ItemList,
+    );
+
+    return ( \%Block );
+}
+</pre></div>
 
 <p>return an array with the block data</p>
 
 <p>Return</p>
 
-<pre><code>    %BlockData = (
+<pre>    %BlockData = (
         {
-            Object    =&gt; &#39;Appointment&#39;,
-            Blockname =&gt; &#39;Appointment&#39;,
+            Object    =&gt; 'Appointment',
+            Blockname =&gt; 'Appointment',
             Headline  =&gt; [
                 {
-                    Content =&gt; &#39;Title&#39;,
+                    Content =&gt; 'Title',
                 },
                 {
-                    Content =&gt; &#39;Description&#39;,
+                    Content =&gt; 'Description',
                     Width   =&gt; 200,
                 },
                 {
-                    Content =&gt; &#39;Start Time&#39;,
+                    Content =&gt; 'Start Time',
                     Width   =&gt; 150,
                 },
                 {
-                    Content =&gt; &#39;End Time&#39;,
+                    Content =&gt; 'End Time',
                     Width   =&gt; 150,
                 },
             ],
             ItemList =&gt; [
                 [
                     {
-                        Type      =&gt; &#39;Link&#39;,
+                        Type      =&gt; 'Link',
                         Key       =&gt; $AppointmentID,
-                        Content   =&gt; &#39;Appointment title&#39;,
+                        Content   =&gt; 'Appointment title',
                         MaxLength =&gt; 70,
                     },
                     {
-                        Type      =&gt; &#39;Text&#39;,
-                        Content   =&gt; &#39;Appointment description&#39;,
+                        Type      =&gt; 'Text',
+                        Content   =&gt; 'Appointment description',
                         MaxLength =&gt; 100,
                     },
                     {
-                        Type    =&gt; &#39;TimeLong&#39;,
-                        Content =&gt; &#39;2016-01-01 12:00:00&#39;,
+                        Type    =&gt; 'TimeLong',
+                        Content =&gt; '2016-01-01 12:00:00',
                     },
                     {
-                        Type    =&gt; &#39;TimeLong&#39;,
-                        Content =&gt; &#39;2016-01-01 13:00:00&#39;,
+                        Type    =&gt; 'TimeLong',
+                        Content =&gt; '2016-01-01 13:00:00',
                     },
                 ],
             ],
@@ -138,21 +441,81 @@ $(document).ready(function() {
 
     @BlockData = $BackendObject-&gt;TableCreateComplex(
         ObjectLinkListWithData =&gt; $ObjectLinkListRef,
-    );</code></pre>
+    );
+</pre><h2 id="TableCreateSimple">TableCreateSimple()</h2>
 
-<h2 id="TableCreateSimple">TableCreateSimple()</h2>
+<p><a href="#" onclick="toggleCode('method_TableCreateSimple');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_TableCreateSimple">
+                                        <pre>
+
+sub TableCreateSimple {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ObjectLinkListWithData} || ref $Param{ObjectLinkListWithData} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ObjectLinkListWithData!',
+        );
+        return;
+    }
+
+    my %LinkOutputData;
+    for my $LinkType ( sort keys %{ $Param{ObjectLinkListWithData} } ) {
+
+        # extract link type List
+        my $LinkTypeList = $Param{ObjectLinkListWithData}->{$LinkType};
+
+        for my $Direction ( sort keys %{$LinkTypeList} ) {
+
+            # extract direction list
+            my $DirectionList = $Param{ObjectLinkListWithData}->{$LinkType}->{$Direction};
+
+            my @ItemList;
+            for my $AppointmentID (
+                sort {
+                    lc $DirectionList->{$a}->{NameShort} cmp lc $DirectionList->{$b}->{NameShort}
+                } keys %{$DirectionList}
+                )
+            {
+
+                # extract appointment data
+                my $Appointment = $DirectionList->{$AppointmentID};
+
+                # define item data
+                my %Item = (
+                    Type    => 'Link',
+                    Content => "A:$AppointmentID",
+                    Title   => Translatable('Appointment'),
+                    Link    => $Self->{LayoutObject}->{Baselink}
+                        . 'Action=AgentAppointmentCalendarOverview;AppointmentID='
+                        . $AppointmentID,
+                    MaxLength => 20,
+                );
+
+                push @ItemList, \%Item;
+            }
+
+            # add item list to link output data
+            $LinkOutputData{ $LinkType . '::' . $Direction }->{Appointment} = \@ItemList;
+        }
+    }
+
+    return %LinkOutputData;
+}
+</pre></div>
 
 <p>return a hash with the link output data</p>
 
 <p>Return</p>
 
-<pre><code>    %LinkOutputData = (
+<pre>    %LinkOutputData = (
         Normal::Source =&gt; {
             Appointment =&gt; [
                 {
-                    Type    =&gt; &#39;Link&#39;,
-                    Content =&gt; &#39;A:1&#39;,
-                    Title   =&gt; &#39;Title of appointment&#39;,
+                    Type    =&gt; 'Link',
+                    Content =&gt; 'A:1',
+                    Title   =&gt; 'Title of appointment',
                 },
             ],
         },
@@ -160,69 +523,210 @@ $(document).ready(function() {
 
     %LinkOutputData = $BackendObject-&gt;TableCreateSimple(
         ObjectLinkListWithData =&gt; $ObjectLinkListRef,
-    );</code></pre>
+    );
+</pre><h2 id="ContentStringCreate">ContentStringCreate()</h2>
 
-<h2 id="ContentStringCreate">ContentStringCreate()</h2>
+<p><a href="#" onclick="toggleCode('method_ContentStringCreate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ContentStringCreate">
+                                        <pre>
+
+sub ContentStringCreate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ContentData} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ContentData!'
+        );
+        return;
+    }
+
+    return;
+}
+</pre></div>
 
 <p>return a output string</p>
 
-<pre><code>    my $String = $LayoutObject-&gt;ContentStringCreate(
+<pre>    my $String = $LayoutObject-&gt;ContentStringCreate(
         ContentData =&gt; $HashRef,
-    );</code></pre>
+    );
+</pre><h2 id="SelectableObjectList">SelectableObjectList()</h2>
 
-<h2 id="SelectableObjectList">SelectableObjectList()</h2>
+<p><a href="#" onclick="toggleCode('method_SelectableObjectList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SelectableObjectList">
+                                        <pre>
+
+sub SelectableObjectList {
+    my ( $Self, %Param ) = @_;
+
+    my $Selected;
+    if ( $Param{Selected} && $Param{Selected} eq $Self->{ObjectData}->{Object} ) {
+        $Selected = 1;
+    }
+
+    # object select list
+    my @ObjectSelectList = (
+        {
+            Key      => $Self->{ObjectData}->{Object},
+            Value    => $Self->{ObjectData}->{Realname},
+            Selected => $Selected,
+        },
+    );
+
+    return @ObjectSelectList;
+}
+</pre></div>
 
 <p>Return an array hash with select-able objects.</p>
 
 <p>Returns:</p>
 
-<pre><code>    @SelectableObjectList = (
+<pre>    @SelectableObjectList = (
         {
-            Key   =&gt; &#39;Appointment&#39;,
-            Value =&gt; &#39;Appointment&#39;,
+            Key   =&gt; 'Appointment',
+            Value =&gt; 'Appointment',
         },
     );
 
     @SelectableObjectList = $BackendObject-&gt;SelectableObjectList(
         Selected =&gt; $Identifier,  # (optional)
-    );</code></pre>
+    );
+</pre><h2 id="SearchOptionList">SearchOptionList()</h2>
 
-<h2 id="SearchOptionList">SearchOptionList()</h2>
+<p><a href="#" onclick="toggleCode('method_SearchOptionList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SearchOptionList">
+                                        <pre>
+
+sub SearchOptionList {
+    my ( $Self, %Param ) = @_;
+
+    my $ParamHook = $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Hook') || 'Ticket#';
+
+    # search option list
+    my @SearchOptionList = (
+        {
+            Key  => 'AppointmentTitle',
+            Name => Translatable('Title'),
+            Type => 'Text',
+        },
+        {
+            Key  => 'AppointmentDescription',
+            Name => Translatable('Description'),
+            Type => 'Text',
+        },
+        {
+            Key  => 'AppointmentCalendarID',
+            Name => Translatable('Calendar'),
+            Type => 'List',
+        },
+    );
+
+    # add formkey
+    for my $Row (@SearchOptionList) {
+        $Row->{FormKey} = 'SEARCH::' . $Row->{Key};
+    }
+
+    # add form data and input string
+    ROW:
+    for my $Row (@SearchOptionList) {
+
+        next ROW if $Row->{Type} eq 'Hidden';
+
+        # Prepare text input fields.
+        if ( $Row->{Type} eq 'Text' ) {
+
+            # get form data
+            $Row->{FormData} = $Kernel::OM->Get('Kernel::System::Web::Request')->GetParam( Param => $Row->{FormKey} );
+
+            # parse the input text block
+            $Self->{LayoutObject}->Block(
+                Name => 'InputText',
+                Data => {
+                    Key   => $Row->{FormKey},
+                    Value => $Row->{FormData} || '',
+                },
+            );
+
+            # add the input string
+            $Row->{InputStrg} = $Self->{LayoutObject}->Output(
+                TemplateFile => 'LinkObject',
+            );
+        }
+
+        # Prepare drop down lists.
+        elsif ( $Row->{Type} eq 'List' ) {
+
+            # get form data
+            my @FormData = $Kernel::OM->Get('Kernel::System::Web::Request')->GetArray( Param => $Row->{FormKey} );
+            $Row->{FormData} = \@FormData;
+
+            if ( $Row->{Key} eq 'AppointmentCalendarID' ) {
+                my @CalendarList = $Kernel::OM->Get('Kernel::System::Calendar')->CalendarList(
+                    UserID     => $Self->{UserID},
+                    Permission => 'rw',
+                    ValidID    => 1,
+                );
+
+                my @CalendarData = map {
+                    {
+                        Key   => $_->{CalendarID},
+                        Value => $_->{CalendarName},
+                    }
+                } sort { $a->{CalendarName} cmp $b->{CalendarName} } @CalendarList;
+
+                $Row->{InputStrg} = $Self->{LayoutObject}->BuildSelection(
+                    Data       => \@CalendarData,
+                    Name       => $Row->{FormKey},
+                    SelectedID => $Row->{FormData},
+                    Class      => 'Modernize',
+                    Multiple   => 1,
+                );
+            }
+        }
+
+    }
+
+    return @SearchOptionList;
+}
+</pre></div>
 
 <p>return an array hash with search options</p>
 
 <p>Return</p>
 
-<pre><code>    @SearchOptionList = (
+<pre>    @SearchOptionList = (
         {
-            Key       =&gt; &#39;AppointmentTitle&#39;,
-            Name      =&gt; &#39;Title&#39;,
+            Key       =&gt; 'AppointmentTitle',
+            Name      =&gt; 'Title',
             InputStrg =&gt; $FormString,
-            FormData  =&gt; &#39;1234&#39;,
+            FormData  =&gt; '1234',
         },
         {
-            Key       =&gt; &#39;AppointmentDescription&#39;,
-            Name      =&gt; &#39;Description&#39;,
+            Key       =&gt; 'AppointmentDescription',
+            Name      =&gt; 'Description',
             InputStrg =&gt; $FormString,
-            FormData  =&gt; &#39;BlaBla&#39;,
+            FormData  =&gt; 'BlaBla',
         },
         {
-            Key       =&gt; &#39;AppointmentCalendarID&#39;,
-            Name      =&gt; &#39;Calendar&#39;,
+            Key       =&gt; 'AppointmentCalendarID',
+            Name      =&gt; 'Calendar',
             InputStrg =&gt; $FormString,
-            FormData  =&gt; &#39;Calendar1&#39;,
+            FormData  =&gt; 'Calendar1',
         },
     );
 
     @SearchOptionList = $BackendObject-&gt;SearchOptionList(
-        SubObject =&gt; &#39;Bla&#39;,  # (optional)
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+        SubObject =&gt; 'Bla',  # (optional)
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::CloudService::Backend::Run &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::CloudService::Backend::Run</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,55 +69,308 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/CloudService/Backend/Run.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#Request">Request()</a></li>
-      <li><a href="#OperationResultGet">OperationResultGet()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Request">Request()</a></li>
+	<li><a href="#OperationResultGet">OperationResultGet()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::System::CloudService::Backend::Run - cloud service lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>All functions for cloud service communication.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # set system registration data
+    %{ $Self->{RegistrationData} } =
+        $Kernel::OM->Get('Kernel::System::SystemData')->SystemDataGroupGet(
+        Group  => 'Registration',
+        UserID => 1,
+        );
+
+    # set URL for calling cloud services
+    $Self->{CloudServiceURL} = 'https://cloud.otrs.com/otrs/public.pl';
+
+    return $Self;
+}
+</pre></div>
+
 <p>create a CloudService object. Do not use it directly, instead use:</p>
 
-<pre><code>    my $CloudServiceObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::CloudService::Backend::Run&#39;);</code></pre>
+<pre>    my $CloudServiceObject = $Kernel::OM-&gt;Get('Kernel::System::CloudService::Backend::Run');
+</pre><h2 id="Request">Request()</h2>
 
-<h2 id="Request">Request()</h2>
+<p><a href="#" onclick="toggleCode('method_Request');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Request">
+                                        <pre>
+
+sub Request {
+    my ( $Self, %Param ) = @_;
+
+    # create config object
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # check if cloud services are disabled
+    my $CloudServicesDisabled = $ConfigObject->Get('CloudServices::Disabled');
+
+    return if $CloudServicesDisabled;
+
+    # check needed stuff
+    if ( !defined $Param{RequestData} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need RequestData!"
+        );
+        return;
+    }
+
+    # RequestData might be a hash
+    if ( !IsHashRefWithData( $Param{RequestData} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Wrong structure for RequestData, it might be an hash with data!",
+        );
+        return;
+    }
+
+    # check in detail each request data
+    for my $CloudService ( sort keys %{ $Param{RequestData} } ) {
+
+        # check if CloudService is defined and not empty
+        if ( !$CloudService ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "A CloudService name is needed!",
+            );
+            return;
+        }
+
+        # check if CloudService is defined and not empty
+        if ( !IsArrayRefWithData( $Param{RequestData}->{$CloudService} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "CloudService::$CloudService data structure is not valid!",
+            );
+            return;
+        }
+
+        for my $Instance ( @{ $Param{RequestData}->{$CloudService} } ) {
+
+            # check if Operation is present
+            if ( !$Instance->{Operation} ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Each operation request needs a Operation name!",
+                );
+                return;
+            }
+
+            # if Data is present it might be a hash
+            if ( $Instance->{Data} && ref $Instance->{Data} ne 'HASH' ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Request Data needs to be a hash structure!",
+                );
+                return;
+            }
+        }
+    }
+
+    # create json object
+    my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
+
+    # get UniqueIDAut structure if needed
+    my $UniqueIDAuth;
+    if (
+        defined $Self->{RegistrationData}->{State}
+        && $Self->{RegistrationData}->{State} eq 'registered'
+        )
+    {
+
+        # create cache object
+        my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+
+        # check cache
+        my $CacheKey = "APIKey::" . $Self->{RegistrationData}->{APIKey} || ''
+            . "::UniqueID::" . $Self->{RegistrationData}->{UniqueID} || '';
+        my $CacheContent = $CacheObject->Get(
+            Type => 'RequestUniqueIDAuth',
+            Key  => $CacheKey,
+        );
+
+        if ( defined $CacheContent ) {
+            $UniqueIDAuth = $CacheContent;
+        }
+        else {
+            # create JSON string
+            $UniqueIDAuth = $JSONObject->Encode(
+                Data => {
+                    APIKey   => $Self->{RegistrationData}->{APIKey}   || '',
+                    UniqueID => $Self->{RegistrationData}->{UniqueID} || '',
+                },
+            );
+            $CacheObject->Set(
+                Type  => 'RequestUniqueIDAuth',
+                Key   => $CacheKey,
+                Value => $UniqueIDAuth || '',
+                TTL   => 3 * 24 * 60 * 60,
+            );
+        }
+    }
+
+    # get OTRSIDAuth structure if needed
+    my $OTRSIDAuth = '';
+    if ( $Param{OTRSID} && $Param{Password} ) {
+
+        $OTRSIDAuth = $JSONObject->Encode(
+            Data => {
+                OTRSID   => $Param{OTRSID},
+                Password => $Param{Password},
+            },
+        );
+    }
+
+    my $RequestTimeout = $Param{Timeout} || $ConfigObject->Get('WebUserAgent::Timeout') || 15;
+    my $RequestProxy   = $Param{Proxy}   || $ConfigObject->Get('WebUserAgent::Proxy')   || '';
+
+    # set timeout setting for packages
+    if ( grep {/^Package/i} sort keys %{ $Param{RequestData} } ) {
+        $RequestTimeout = $ConfigObject->Get('Package::Timeout') || 120;
+    }
+
+    # create JSON string
+    my $RequestData = $JSONObject->Encode(
+        Data => $Param{RequestData},
+    );
+
+    # add params to webuseragent object
+    $Kernel::OM->ObjectParamAdd(
+        'Kernel::System::WebUserAgent' => {
+            Timeout => $RequestTimeout,
+            Proxy   => $RequestProxy,
+        },
+    );
+
+    # perform webservice request
+    my %Response;
+    TRY:
+    for my $Try ( 1 .. 3 ) {
+
+        %Response = $Kernel::OM->Get('Kernel::System::WebUserAgent')->Request(
+            Type => 'POST',
+            URL  => $Self->{CloudServiceURL},
+            Data => {
+                Action       => 'PublicCloudService',
+                RequestData  => $RequestData,
+                UniqueIDAuth => $UniqueIDAuth,
+                OTRSIDAuth   => $OTRSIDAuth,
+            },
+        );
+
+        last TRY if %Response
+            && $Response{Status} eq '200 OK'
+            && $Response{Content}
+            && ref $Response{Content} eq 'SCALAR';
+    }
+
+    # test if the web response was successful
+    if ( !%Response || $Response{Status} ne '200 OK' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "PublicCloudService - Can't connect to server - $Response{Status}",
+        );
+        return;
+    }
+
+    # check if we have content as a scalar ref
+    if ( !$Response{Content} || ref $Response{Content} ne 'SCALAR' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message =>
+                "PublicCloudService - No content received from public cloud service. Please try again later.'",
+        );
+        return;
+    }
+
+    # convert internal used charset
+    $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput(
+        $Response{Content},
+    );
+
+    # decode JSON data
+    my $ResponseData = $JSONObject->Decode(
+        Data => ${ $Response{Content} },
+    );
+
+    # check response structure
+    if ( !IsHashRefWithData($ResponseData) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can't decode JSON data: 'PublicCloudService'!",
+        );
+        return;
+    }
+
+    # check if we have an error
+    if ( !$ResponseData->{Success} ) {
+        my $ResponseErrorMessage = $ResponseData->{ErrorMessage} || 'No error message available.';
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "PublicCloudService - Error from server: $ResponseErrorMessage !",
+        );
+        return;
+    }
+
+    # return data from server if defined
+    return $ResponseData->{Results} if defined $ResponseData->{Results};
+    return;
+}
+</pre></div>
 
 <p>perform a cloud service communication and return result data</p>
 
-<pre><code>    my $RequestResult = $CloudServiceObject-&gt;Request(
+<pre>    my $RequestResult = $CloudServiceObject-&gt;Request(
         OTRSIDAuth =&gt; { #  will be send encoded as JSON
-            OTRSID =&gt; &#39;&#39;,
-            Password =&gt; &#39;&#39;,
+            OTRSID =&gt; '',
+            Password =&gt; '',
         },
         UniqueIDAuth =&gt; { #  will send encoded as JSON
-            UniqueID =&gt; &#39;&#39;,
-            APIKey =&gt; &#39;&#39;,
+            UniqueID =&gt; '',
+            APIKey =&gt; '',
         },
         RequestData =&gt; { # this complex structure will be send encoded as JSON
             CloudServiceTest =&gt; [
                 {
-                    InstanceName = &#39;AnyName&#39;, # optional
+                    InstanceName = 'AnyName', # optional
                     Operation    =&gt; &quot;ConfigurationSet&quot;,
                     Data         =&gt; {
                         # ... request operation data ...
@@ -118,14 +392,14 @@ $(document).ready(function() {
                     },
                 },
                 {
-                    InstanceName = &#39;InstanceNameOne&#39;, # optional
+                    InstanceName = 'InstanceNameOne', # optional
                     Operation    =&gt; &quot;FAOGet&quot;,
                     Data         =&gt; {
                         # ... request operation data ...
                     },
                 },
                 {
-                    InstanceName = &#39;InstanceNameTwo&#39;, # optional
+                    InstanceName = 'InstanceNameTwo', # optional
                     Operation    =&gt; &quot;FAOGet&quot;,
                     Data         =&gt; {
                         # ... request operation data ...
@@ -136,15 +410,40 @@ $(document).ready(function() {
             # ... other entries may follow ...
         },
         Timeout =&gt; 15,                  # optional, timeout
-        Proxy   =&gt; &#39;proxy.example.com&#39;, # optional, proxy
-    );</code></pre>
+        Proxy   =&gt; 'proxy.example.com', # optional, proxy
+    );
 
-<p>Returns: $RequestResult { Success =&gt; 1, ErrorMessage =&gt; &#39;...&#39;, # optional Results =&gt; { CloudServiceTest =&gt; [ { Success =&gt; 1, # 1 or 0 ErrorMessage =&gt; &#39;...&#39;, # optional InstanceName = &#39;AnyName&#39;, # optional Operation =&gt; &quot;ConfigurationSet&quot;, Data =&gt; { # ... response operation data .. }, }, { Success =&gt; 0, # 1 or 0 ErrorMessage =&gt; &#39;...&#39;, # optional Operation =&gt; &quot;SomeOperation&quot;, Data =&gt; { # ... response operation data ... }, }, ],</p>
 
-<pre><code>            FeatureAddonManagement =&gt; [
+
+</pre><p>Returns:
+    $RequestResult {
+        Success      =&gt; 1,
+        ErrorMessage =&gt; '...', # optional
+        Results      =&gt; {
+            CloudServiceTest =&gt; [
                 {
                     Success      =&gt; 1, # 1 or 0
-                    ErrorMessage =&gt; &#39;...&#39;, # optional
+                    ErrorMessage =&gt; '...', # optional
+                    InstanceName = 'AnyName', # optional
+                    Operation    =&gt; &quot;ConfigurationSet&quot;,
+                    Data         =&gt; {
+                        # ... response operation data ..
+                    },
+                },
+                {
+                    Success      =&gt; 0, # 1 or 0
+                    ErrorMessage =&gt; '...', # optional
+                    Operation    =&gt; &quot;SomeOperation&quot;,
+                    Data         =&gt; {
+                        # ... response operation data ...
+                    },
+                },
+            ],</p>
+
+<pre>            FeatureAddonManagement =&gt; [
+                {
+                    Success      =&gt; 1, # 1 or 0
+                    ErrorMessage =&gt; '...', # optional
                     Operation    =&gt; &quot;FAOListAssigned&quot;,
                     Data         =&gt; {
                         # ... response operation data ..
@@ -152,8 +451,8 @@ $(document).ready(function() {
                 },
                 {
                     Success      =&gt; 1, # 1 or 0
-                    ErrorMessage =&gt; &#39;...&#39;, # optional
-                    InstanceName = &#39;InstanceNameOne&#39;, # optional
+                    ErrorMessage =&gt; '...', # optional
+                    InstanceName = 'InstanceNameOne', # optional
                     Operation    =&gt; &quot;FaoGet&quot;,
                     Data         =&gt; {
                         # ... response operation data ...
@@ -161,8 +460,8 @@ $(document).ready(function() {
                 },
                 {
                     Success      =&gt; 0, # 1 or 0
-                    ErrorMessage =&gt; &#39;...&#39;, # optional
-                    InstanceName = &#39;InstanceNameTwo&#39;, # optional
+                    ErrorMessage =&gt; '...', # optional
+                    InstanceName = 'InstanceNameTwo', # optional
                     Operation    =&gt; &quot;FaoGet&quot;,
                     Data         =&gt; {
                         # ... response operation data ...
@@ -170,30 +469,130 @@ $(document).ready(function() {
                 },
             ],
         },
-    };</code></pre>
+    };
+</pre><h2 id="OperationResultGet">OperationResultGet()</h2>
 
-<h2 id="OperationResultGet">OperationResultGet()</h2>
+<p><a href="#" onclick="toggleCode('method_OperationResultGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_OperationResultGet">
+                                        <pre>
 
-<pre><code>    my $OperationResult = $CloudServiceObject-&gt;OperationResultGet(
-        CloudService =&gt; &#39;Test&#39;,
-        Operation    =&gt; &#39;test&#39;,
-        InstanceName =&gt; &#39;AnyName&#39;,      # optional
+sub OperationResultGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed
+    for my $Needed (qw(RequestResult CloudService Operation)) {
+
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+
+            return {
+                Success => 0,
+            };
+        }
+    }
+
+    # check RequestResult internals
+    if ( !IsHashRefWithData( $Param{RequestResult} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The format of the request result is invalid!",
+        );
+
+        return {
+            Success => 0,
+        };
+    }
+
+    if ( !$Param{RequestResult}->{ $Param{CloudService} } ) {
+        my $Message = "No CloudService:'$Param{CloudService}' found in the request result!";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$Message",
+        );
+
+        return {
+            Success      => 0,
+            ErrorMessage => $Message,
+        };
+    }
+
+    if ( !IsArrayRefWithData( $Param{RequestResult}->{ $Param{CloudService} } ) ) {
+        my $Message = "Results from CloudService:'$Param{CloudService}' are invalid!";
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "$Message",
+        );
+
+        return {
+            Success      => 0,
+            ErrorMessage => $Message,
+        };
+    }
+
+    # create a shortcut for actual cloud-service results
+    my @CloudServiceResults = @{ $Param{RequestResult}->{ $Param{CloudService} } };
+
+    RESULT:
+    for my $OperationResult (@CloudServiceResults) {
+
+        next RESULT if $OperationResult->{Operation} ne $Param{Operation};
+
+        if ( !$Param{InstanceName} ) {
+
+            next RESULT if defined $OperationResult->{InstanceName};
+        }
+        else {
+
+            next RESULT if $OperationResult->{InstanceName} ne $Param{InstanceName};
+        }
+
+        return $OperationResult;
+    }
+
+    # if not found return an error
+    my $Message = "No Results from CloudService:'$Param{CloudService}' Operation:'$Param{Operation}'";
+    if ( $Param{InstanceName} ) {
+        $Message .= " InstanceName:'$Param{InstanceName}'!";
+    }
+    else {
+        $Message .= " Without InstanceName!";
+    }
+
+    $Kernel::OM->Get('Kernel::System::Log')->Log(
+        Priority => 'error',
+        Message  => $Message,
+    );
+
+    return {
+        Success => 0,
+        Message => "No results found!",
+    };
+}
+</pre></div>
+
+<pre>    my $OperationResult = $CloudServiceObject-&gt;OperationResultGet(
+        CloudService =&gt; 'Test',
+        Operation    =&gt; 'test',
+        InstanceName =&gt; 'AnyName',      # optional
         RequestResult =&gt;  {
             Success      =&gt; 1,
             Results      =&gt; {
                 Test =&gt; [
                     {
                         Success      =&gt; 1,
-                        InstanceName =&gt; &#39;AnyName&#39;,
-                        Operation    =&gt; &#39;Test&#39;,
+                        InstanceName =&gt; 'AnyName',
+                        Operation    =&gt; 'Test',
                         Data         =&gt; {
                             # ... response operation data ..
                         },
                     },
                     {
                         Success      =&gt; 0,
-                        ErrorMessage =&gt; &#39;some message&#39;,
-                        Operation    =&gt; &#39;SomeOperation&#39;,
+                        ErrorMessage =&gt; 'some message',
+                        Operation    =&gt; 'SomeOperation',
                         Data         =&gt; {
                             # ... response operation data ...
                         },
@@ -201,25 +600,26 @@ $(document).ready(function() {
                 ],
             },
         };
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
-
-<pre><code>    $OperationResult {
+<pre>    $OperationResult {
         Success      =&gt; 1,
-        ErrorMessage =&gt; &#39;a message&#39;         # optional
-        InstanceName =&gt; &#39;AnyName&#39;,
+        ErrorMessage =&gt; 'a message'         # optional
+        InstanceName =&gt; 'AnyName',
         Operation    =&gt; &quot;Test&quot;,
         Data         =&gt; {
             # ... response operation data ..
         },
-    },</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+    },
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

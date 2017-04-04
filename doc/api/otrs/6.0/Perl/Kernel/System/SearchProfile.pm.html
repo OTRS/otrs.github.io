@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::SearchProfile &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::SearchProfile</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,97 +69,411 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/SearchProfile.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#SearchProfileAdd">SearchProfileAdd()</a></li>
-      <li><a href="#SearchProfileGet">SearchProfileGet()</a></li>
-      <li><a href="#SearchProfileDelete">SearchProfileDelete()</a></li>
-      <li><a href="#SearchProfileList">SearchProfileList()</a></li>
-      <li><a href="#SearchProfileUpdateUserLogin">SearchProfileUpdateUserLogin()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#SearchProfileAdd">SearchProfileAdd()</a></li>
+	<li><a href="#SearchProfileGet">SearchProfileGet()</a></li>
+	<li><a href="#SearchProfileDelete">SearchProfileDelete()</a></li>
+	<li><a href="#SearchProfileList">SearchProfileList()</a></li>
+	<li><a href="#SearchProfileUpdateUserLogin">SearchProfileUpdateUserLogin()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>Kernel::System::SearchProfile - module to manage search profiles</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>module with all functions to manage search profiles</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-<pre><code>    my $SearchProfileObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SearchProfile&#39;);</code></pre>
+sub new {
+    my ( $Type, %Param ) = @_;
 
-<h2 id="SearchProfileAdd">SearchProfileAdd()</h2>
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self->{CacheType} = 'SearchProfile';
+    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
+
+    # set lower if database is case sensitive
+    $Self->{Lower} = '';
+    if ( $Kernel::OM->Get('Kernel::System::DB')->GetDatabaseFunction('CaseSensitive') ) {
+        $Self->{Lower} = 'LOWER';
+    }
+
+    return $Self;
+}
+</pre></div>
+
+<p>Don't use the constructor directly, use the ObjectManager instead:</p>
+
+<pre>    my $SearchProfileObject = $Kernel::OM-&gt;Get('Kernel::System::SearchProfile');
+</pre><h2 id="SearchProfileAdd">SearchProfileAdd()</h2>
+
+<p><a href="#" onclick="toggleCode('method_SearchProfileAdd');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SearchProfileAdd">
+                                        <pre>
+
+sub SearchProfileAdd {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Base Name Key UserLogin)) {
+        if ( !defined $Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # check value
+    return 1 if !defined $Param{Value};
+
+    # create login string
+    my $Login = $Param{Base} . '::' . $Param{UserLogin};
+
+    my @Data;
+    if ( ref $Param{Value} eq 'ARRAY' ) {
+        @Data = @{ $Param{Value} };
+        $Param{Type} = 'ARRAY';
+    }
+    else {
+        @Data = ( $Param{Value} );
+        $Param{Type} = 'SCALAR';
+    }
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    for my $Value (@Data) {
+
+        return if !$DBObject->Do(
+            SQL => "
+                INSERT INTO search_profile
+                (login, profile_name,  profile_type, profile_key, profile_value)
+                VALUES (?, ?, ?, ?, ?)
+                ",
+            Bind => [
+                \$Login, \$Param{Name}, \$Param{Type}, \$Param{Key}, \$Value,
+            ],
+        );
+    }
+
+    # reset cache
+    my $CacheKey = $Login . '::' . $Param{Name};
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => $Self->{CacheType},
+        Key  => $Login,
+    );
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+
+    return 1;
+}
+</pre></div>
 
 <p>to add a search profile item</p>
 
-<pre><code>    $SearchProfileObject-&gt;SearchProfileAdd(
-        Base      =&gt; &#39;TicketSearch&#39;,
-        Name      =&gt; &#39;last-search&#39;,
-        Key       =&gt; &#39;Body&#39;,
+<pre>    $SearchProfileObject-&gt;SearchProfileAdd(
+        Base      =&gt; 'TicketSearch',
+        Name      =&gt; 'last-search',
+        Key       =&gt; 'Body',
         Value     =&gt; $String,    # SCALAR|ARRAYREF
         UserLogin =&gt; 123,
-    );</code></pre>
+    );
+</pre><h2 id="SearchProfileGet">SearchProfileGet()</h2>
 
-<h2 id="SearchProfileGet">SearchProfileGet()</h2>
+<p><a href="#" onclick="toggleCode('method_SearchProfileGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SearchProfileGet">
+                                        <pre>
+
+sub SearchProfileGet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Base Name UserLogin)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # create login string
+    my $Login = $Param{Base} . '::' . $Param{UserLogin};
+
+    # check the cache
+    my $CacheKey = $Login . '::' . $Param{Name};
+    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+    return %{$Cache} if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get search profile
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT profile_type, profile_key, profile_value
+            FROM search_profile
+            WHERE profile_name = ?
+                AND $Self->{Lower}(login) = $Self->{Lower}(?)
+            ",
+        Bind => [ \$Param{Name}, \$Login ],
+    );
+
+    my %Result;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        if ( $Data[0] eq 'ARRAY' ) {
+            push @{ $Result{ $Data[1] } }, $Data[2];
+        }
+        else {
+            $Result{ $Data[1] } = $Data[2];
+        }
+    }
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $CacheKey,
+        Value => \%Result
+    );
+
+    return %Result;
+}
+</pre></div>
 
 <p>returns hash with search profile.</p>
 
-<pre><code>    my %SearchProfileData = $SearchProfileObject-&gt;SearchProfileGet(
-        Base      =&gt; &#39;TicketSearch&#39;,
-        Name      =&gt; &#39;last-search&#39;,
-        UserLogin =&gt; &#39;me&#39;,
-    );</code></pre>
+<pre>    my %SearchProfileData = $SearchProfileObject-&gt;SearchProfileGet(
+        Base      =&gt; 'TicketSearch',
+        Name      =&gt; 'last-search',
+        UserLogin =&gt; 'me',
+    );
+</pre><h2 id="SearchProfileDelete">SearchProfileDelete()</h2>
 
-<h2 id="SearchProfileDelete">SearchProfileDelete()</h2>
+<p><a href="#" onclick="toggleCode('method_SearchProfileDelete');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SearchProfileDelete">
+                                        <pre>
+
+sub SearchProfileDelete {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Base Name UserLogin)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # create login string
+    my $Login = $Param{Base} . '::' . $Param{UserLogin};
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # delete search profile
+    return if !$DBObject->Do(
+        SQL => "
+            DELETE
+            FROM search_profile
+            WHERE profile_name = ?
+                AND $Self->{Lower}(login) = $Self->{Lower}(?)
+            ",
+        Bind => [ \$Param{Name}, \$Login ],
+    );
+
+    # delete cache
+    my $CacheKey = $Login . '::' . $Param{Name};
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => $Self->{CacheType},
+        Key  => $Login,
+    );
+    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+
+    return 1;
+}
+</pre></div>
 
 <p>deletes a search profile.</p>
 
-<pre><code>    $SearchProfileObject-&gt;SearchProfileDelete(
-        Base      =&gt; &#39;TicketSearch&#39;,
-        Name      =&gt; &#39;last-search&#39;,
-        UserLogin =&gt; &#39;me&#39;,
-    );</code></pre>
+<pre>    $SearchProfileObject-&gt;SearchProfileDelete(
+        Base      =&gt; 'TicketSearch',
+        Name      =&gt; 'last-search',
+        UserLogin =&gt; 'me',
+    );
+</pre><h2 id="SearchProfileList">SearchProfileList()</h2>
 
-<h2 id="SearchProfileList">SearchProfileList()</h2>
+<p><a href="#" onclick="toggleCode('method_SearchProfileList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SearchProfileList">
+                                        <pre>
+
+sub SearchProfileList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Base UserLogin)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # create login string
+    my $Login = $Param{Base} . '::' . $Param{UserLogin};
+
+    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $Login,
+    );
+    return %{$Cache} if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get search profile list
+    return if !$DBObject->Prepare(
+        SQL => "
+            SELECT profile_name
+            FROM search_profile
+            WHERE $Self->{Lower}(login) = $Self->{Lower}(?)
+            ",
+        Bind => [ \$Login ],
+    );
+
+    # fetch the result
+    my %Result;
+    while ( my @Data = $DBObject->FetchrowArray() ) {
+        $Result{ $Data[0] } = $Data[0];
+    }
+
+    $Kernel::OM->Get('Kernel::System::Cache')->Set(
+        Type  => $Self->{CacheType},
+        TTL   => $Self->{CacheTTL},
+        Key   => $Login,
+        Value => \%Result,
+    );
+
+    return %Result;
+}
+</pre></div>
 
 <p>returns a hash of all profiles for the given user.</p>
 
-<pre><code>    my %SearchProfiles = $SearchProfileObject-&gt;SearchProfileList(
-        Base      =&gt; &#39;TicketSearch&#39;,
-        UserLogin =&gt; &#39;me&#39;,
-    );</code></pre>
+<pre>    my %SearchProfiles = $SearchProfileObject-&gt;SearchProfileList(
+        Base      =&gt; 'TicketSearch',
+        UserLogin =&gt; 'me',
+    );
+</pre><h2 id="SearchProfileUpdateUserLogin">SearchProfileUpdateUserLogin()</h2>
 
-<h2 id="SearchProfileUpdateUserLogin">SearchProfileUpdateUserLogin()</h2>
+<p><a href="#" onclick="toggleCode('method_SearchProfileUpdateUserLogin');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SearchProfileUpdateUserLogin">
+                                        <pre>
+
+sub SearchProfileUpdateUserLogin {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for (qw(Base UserLogin NewUserLogin)) {
+        if ( !defined( $Param{$_} ) ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!",
+            );
+            return;
+        }
+    }
+
+    # get existing profiles
+    my %SearchProfiles = $Self->SearchProfileList(
+        Base      => $Param{Base},
+        UserLogin => $Param{UserLogin},
+    );
+
+    # iterate over profiles; create them for new login name and delete old ones
+    for my $SearchProfile ( sort keys %SearchProfiles ) {
+        my %Search = $Self->SearchProfileGet(
+            Base      => $Param{Base},
+            Name      => $SearchProfile,
+            UserLogin => $Param{UserLogin},
+        );
+
+        # add profile for new login (needs to be done per attribute)
+        for my $Attribute ( sort keys %Search ) {
+            $Self->SearchProfileAdd(
+                Base      => $Param{Base},
+                Name      => $SearchProfile,
+                Key       => $Attribute,
+                Value     => $Search{$Attribute},
+                UserLogin => $Param{NewUserLogin},
+            );
+        }
+
+        # delete the old profile
+        $Self->SearchProfileDelete(
+            Base      => $Param{Base},
+            Name      => $SearchProfile,
+            UserLogin => $Param{UserLogin},
+        );
+    }
+
+    return 1;
+}
+</pre></div>
 
 <p>changes the UserLogin of SearchProfiles</p>
 
-<pre><code>    my $Result = $SearchProfileObject-&gt;SearchProfileUpdateUserLogin(
-        Base         =&gt; &#39;TicketSearch&#39;,
-        UserLogin    =&gt; &#39;me&#39;,
-        NewUserLogin =&gt; &#39;newme&#39;,
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+<pre>    my $Result = $SearchProfileObject-&gt;SearchProfileUpdateUserLogin(
+        Base         =&gt; 'TicketSearch',
+        UserLogin    =&gt; 'me',
+        NewUserLogin =&gt; 'newme',
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

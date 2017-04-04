@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::Output::HTML::Layout::LinkObject &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::Output::HTML::Layout::LinkObject</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,116 +69,1042 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/Output/HTML/Layout/LinkObject.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#LinkObjectTableCreate">LinkObjectTableCreate()</a></li>
-      <li><a href="#LinkObjectTableCreateComplex">LinkObjectTableCreateComplex()</a></li>
-      <li><a href="#LinkObjectTableCreateSimple">LinkObjectTableCreateSimple()</a></li>
-      <li><a href="#LinkObjectSelectableObjectList">LinkObjectSelectableObjectList()</a></li>
-      <li><a href="#LinkObjectSearchOptionList">LinkObjectSearchOptionList()</a></li>
-      <li><a href="#ComplexTablePreferencesGet">ComplexTablePreferencesGet()</a></li>
-      <li><a href="#ComplexTablePreferencesSet">ComplexTablePreferencesSet()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#LinkObjectTableCreate">LinkObjectTableCreate()</a></li>
+	<li><a href="#LinkObjectTableCreateComplex">LinkObjectTableCreateComplex()</a></li>
+	<li><a href="#LinkObjectTableCreateSimple">LinkObjectTableCreateSimple()</a></li>
+	<li><a href="#LinkObjectSelectableObjectList">LinkObjectSelectableObjectList()</a></li>
+	<li><a href="#LinkObjectSearchOptionList">LinkObjectSearchOptionList()</a></li>
+	<li><a href="#ComplexTablePreferencesGet">ComplexTablePreferencesGet()</a></li>
+	<li><a href="#ComplexTablePreferencesSet">ComplexTablePreferencesSet()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::Output::HTML::Layout::LinkObject - all LinkObject-related HTML functions</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>All LinkObject-related HTML functions</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="LinkObjectTableCreate">LinkObjectTableCreate()</h2>
 
+<p><a href="#" onclick="toggleCode('method_LinkObjectTableCreate');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkObjectTableCreate">
+                                        <pre>
+
+sub LinkObjectTableCreate {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Argument (qw(LinkListWithData ViewMode)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    if ( $Param{ViewMode} =~ m{ \A Simple }xms ) {
+
+        return $Self->LinkObjectTableCreateSimple(
+            LinkListWithData => $Param{LinkListWithData},
+            ViewMode         => $Param{ViewMode},
+        );
+    }
+    else {
+
+        return $Self->LinkObjectTableCreateComplex(
+            LinkListWithData => $Param{LinkListWithData},
+            ViewMode         => $Param{ViewMode},
+            AJAX             => $Param{AJAX},
+            SourceObject     => $Param{Object},
+            ObjectID         => $Param{Key},
+        );
+    }
+}
+</pre></div>
+
 <p>create a output table</p>
 
-<pre><code>    my $String = $LayoutObject-&gt;LinkObjectTableCreate(
+<pre>    my $String = $LayoutObject-&gt;LinkObjectTableCreate(
         LinkListWithData =&gt; $LinkListWithDataRef,
-        ViewMode         =&gt; &#39;Simple&#39;, # (Simple|SimpleRaw|Complex|ComplexAdd|ComplexDelete|ComplexRaw)
-    );</code></pre>
+        ViewMode         =&gt; 'Simple', # (Simple|SimpleRaw|Complex|ComplexAdd|ComplexDelete|ComplexRaw)
+    );
+</pre><h2 id="LinkObjectTableCreateComplex">LinkObjectTableCreateComplex()</h2>
 
-<h2 id="LinkObjectTableCreateComplex">LinkObjectTableCreateComplex()</h2>
+<p><a href="#" onclick="toggleCode('method_LinkObjectTableCreateComplex');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkObjectTableCreateComplex">
+                                        <pre>
+
+sub LinkObjectTableCreateComplex {
+    my ( $Self, %Param ) = @_;
+
+    # get log object
+    my $LogObject = $Kernel::OM->Get('Kernel::System::Log');
+
+    # check needed stuff
+    for my $Argument (qw(LinkListWithData ViewMode)) {
+        if ( !$Param{$Argument} ) {
+            $LogObject->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # check link list
+    if ( ref $Param{LinkListWithData} ne 'HASH' ) {
+        $LogObject->Log(
+            Priority => 'error',
+            Message  => 'LinkListWithData must be a hash reference!',
+        );
+        return;
+    }
+
+    return if !%{ $Param{LinkListWithData} };
+
+    # convert the link list
+    my %LinkList;
+    for my $Object ( sort keys %{ $Param{LinkListWithData} } ) {
+
+        for my $LinkType ( sort keys %{ $Param{LinkListWithData}->{$Object} } ) {
+
+            # extract link type List
+            my $LinkTypeList = $Param{LinkListWithData}->{$Object}->{$LinkType};
+
+            for my $Direction ( sort keys %{$LinkTypeList} ) {
+
+                # extract direction list
+                my $DirectionList = $Param{LinkListWithData}->{$Object}->{$LinkType}->{$Direction};
+
+                for my $ObjectKey ( sort keys %{$DirectionList} ) {
+
+                    $LinkList{$Object}->{$ObjectKey}->{$LinkType} = $Direction;
+                }
+            }
+        }
+    }
+
+    my @OutputData;
+    OBJECT:
+    for my $Object ( sort { lc $a cmp lc $b } keys %{ $Param{LinkListWithData} } ) {
+
+        # load backend
+        my $BackendObject = $Self->_LoadLinkObjectLayoutBackend(
+            Object => $Object,
+        );
+
+        next OBJECT if !$BackendObject;
+
+        # get block data
+        my @BlockData = $BackendObject->TableCreateComplex(
+            ObjectLinkListWithData => $Param{LinkListWithData}->{$Object},
+            Action                 => $Self->{Action},
+            ObjectID               => $Param{ObjectID},
+        );
+
+        next OBJECT if !@BlockData;
+
+        push @OutputData, @BlockData;
+    }
+
+    # error handling
+    for my $Block (@OutputData) {
+
+        ITEM:
+        for my $Item ( @{ $Block->{ItemList} } ) {
+            if ( !grep { $_->{Key} } @{$Item} ) {
+                $Item->[0] = {
+                    Type => 'Text',
+                    Content =>
+                        'ERROR: Key attribute not found in any column of the item list.',
+                };
+            }
+
+            next ITEM if $Block->{Object};
+
+            if ( !$Block->{Object} ) {
+                $Item->[0] = {
+                    Type    => 'Text',
+                    Content => 'ERROR: Object attribute not found in the block data.',
+                };
+            }
+        }
+    }
+
+    # add "linked as" column to the table
+    for my $Block (@OutputData) {
+
+        # define the headline column
+        my $Column = {
+            Content => $Kernel::OM->Get('Kernel::Language')->Translate('Linked as'),
+        };
+
+        # add new column to the headline
+        push @{ $Block->{Headline} }, $Column;
+
+        for my $Item ( @{ $Block->{ItemList} } ) {
+
+            # search for key
+            my ($ItemWithKey) = grep { $_->{Key} } @{$Item};
+
+            # define check-box cell
+            my $CheckboxCell = {
+                Type         => 'LinkTypeList',
+                Content      => '',
+                LinkTypeList => $LinkList{ $Block->{Object} }->{ $ItemWithKey->{Key} },
+                Translate    => 1,
+            };
+
+            # add check-box cell to item
+            push @{$Item}, $CheckboxCell;
+        }
+    }
+
+    return @OutputData if $Param{ViewMode} && $Param{ViewMode} eq 'ComplexRaw';
+
+    if ( $Param{ViewMode} eq 'ComplexAdd' ) {
+
+        for my $Block (@OutputData) {
+
+            # define the headline column
+            my $Column = {
+                Content => 'Select',
+            };
+
+            # add new column to the headline
+            unshift @{ $Block->{Headline} }, $Column;
+
+            for my $Item ( @{ $Block->{ItemList} } ) {
+
+                # search for key
+                my ($ItemWithKey) = grep { $_->{Key} } @{$Item};
+
+                # define check-box cell
+                my $CheckboxCell = {
+                    Type    => 'Checkbox',
+                    Name    => 'LinkTargetKeys',
+                    Content => $ItemWithKey->{Key},
+                };
+
+                # add check-box cell to item
+                unshift @{$Item}, $CheckboxCell;
+            }
+        }
+    }
+
+    if ( $Param{ViewMode} eq 'ComplexDelete' ) {
+
+        for my $Block (@OutputData) {
+
+            # define the headline column
+            my $Column = {
+                Content => ' ',
+            };
+
+            # add new column to the headline
+            unshift @{ $Block->{Headline} }, $Column;
+
+            for my $Item ( @{ $Block->{ItemList} } ) {
+
+                # search for key
+                my ($ItemWithKey) = grep { $_->{Key} } @{$Item};
+
+                # define check-box delete cell
+                my $CheckboxCell = {
+                    Type         => 'CheckboxDelete',
+                    Object       => $Block->{Object},
+                    Content      => '',
+                    Key          => $ItemWithKey->{Key},
+                    LinkTypeList => $LinkList{ $Block->{Object} }->{ $ItemWithKey->{Key} },
+                    Translate    => 1,
+                };
+
+                # add check-box cell to item
+                unshift @{$Item}, $CheckboxCell;
+            }
+        }
+    }
+
+    # create new instance of the layout object
+    my $LayoutObject  = Kernel::Output::HTML::Layout->new( %{$Self} );
+    my $LayoutObject2 = Kernel::Output::HTML::Layout->new( %{$Self} );
+
+    # output the table complex block
+    $LayoutObject->Block(
+        Name => 'TableComplex',
+    );
+
+    # set block description
+    my $BlockDescription = $Param{ViewMode} eq 'ComplexAdd' ? Translatable('Search Result') : Translatable('Linked');
+
+    my $BlockCounter = 0;
+
+    my $Config = $Kernel::OM->Get('Kernel::Config')->Get("LinkObject::ComplexTable") || {};
+    my $SettingsVisibility = $Kernel::OM->Get('Kernel::Config')->Get("LinkObject::ComplexTable::SettingsVisibility")
+        || {};
+
+    my @SettingsVisible = ();
+
+    if ( IsHashRefWithData($SettingsVisibility) ) {
+        for my $Key ( sort keys %{$SettingsVisibility} ) {
+
+            for my $Item ( @{ $SettingsVisibility->{$Key} } ) {
+
+                # check if it's not in array
+                if ( !grep { $Item eq $_ } @SettingsVisible ) {
+                    push @SettingsVisible, $Item;
+                }
+            }
+        }
+    }
+
+    # get OriginalAction
+    my $OriginalAction = $Kernel::OM->Get('Kernel::System::Web::Request')->GetParam( Param => 'OriginalAction' )
+        || $Self->{Action};
+
+    BLOCK:
+    for my $Block (@OutputData) {
+
+        next BLOCK if !$Block->{ItemList};
+        next BLOCK if ref $Block->{ItemList} ne 'ARRAY';
+        next BLOCK if !@{ $Block->{ItemList} };
+
+        # output the block
+        $LayoutObject->Block(
+            Name => 'TableComplexBlock',
+            Data => {
+                BlockDescription => $BlockDescription,
+                Blockname        => $Block->{Blockname} || '',
+                Name             => $Block->{Blockname},
+                NameForm         => $Block->{Blockname},
+                AJAX             => $Param{AJAX},
+            },
+        );
+
+        # check if registered in SysConfig
+        if (
+            # AgentLinkObject not allowed because it would result in nested forms
+            $OriginalAction ne 'AgentLinkObject'
+            && IsHashRefWithData($Config)
+            && $Config->{ $Block->{Blockname} }
+            && grep { $OriginalAction eq $_ } @SettingsVisible
+            )
+        {
+            my $SourceObjectData = '';
+            if ( $Block->{ObjectName} && $Block->{ObjectID} ) {
+                $SourceObjectData = "<input type='hidden' name='$Block->{ObjectName}' value='$Block->{ObjectID}' />";
+            }
+
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'LinkObjectName',
+                Value => $Block->{Blockname},
+            );
+
+            $LayoutObject->Block(
+                Name => 'ContentLargePreferences',
+                Data => {
+                    Name => $Block->{Blockname},
+                },
+            );
+
+            my %Preferences = $Self->ComplexTablePreferencesGet(
+                Config  => $Config->{ $Block->{Blockname} },
+                PrefKey => "LinkObject::ComplexTable-" . $Block->{Blockname},
+            );
+
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'LinkObjectPreferences',
+                Value => \%Preferences,
+            );
+
+            $LayoutObject->Block(
+                Name => 'ContentLargePreferencesForm',
+                Data => {
+                    Name     => $Block->{Blockname},
+                    NameForm => $Block->{Blockname},
+                },
+            );
+
+            $LayoutObject->Block(
+                Name => $Preferences{Name} . 'PreferencesItem' . $Preferences{Block},
+                Data => {
+                    %Preferences,
+                    NameForm          => $Block->{Blockname},
+                    NamePref          => $Preferences{Name},
+                    Name              => $Block->{Blockname},
+                    SourceObject      => $Param{SourceObject},
+                    DestinationObject => $Block->{Blockname},
+                    OriginalAction    => $OriginalAction,
+                    SourceObjectData  => $SourceObjectData,
+                },
+            );
+        }
+
+        # output table headline
+        for my $HeadlineColumn ( @{ $Block->{Headline} } ) {
+
+            # output a headline column block
+            $LayoutObject->Block(
+                Name => 'TableComplexBlockColumn',
+                Data => $HeadlineColumn,
+            );
+        }
+
+        # output item list
+        for my $Row ( @{ $Block->{ItemList} } ) {
+
+            # output a table row block
+            $LayoutObject->Block(
+                Name => 'TableComplexBlockRow',
+            );
+
+            for my $Column ( @{$Row} ) {
+
+                # create the content string
+                my $Content = $Self->_LinkObjectContentStringCreate(
+                    Object       => $Block->{Object},
+                    ContentData  => $Column,
+                    LayoutObject => $LayoutObject2,
+                );
+
+                # output a table column block
+                $LayoutObject->Block(
+                    Name => 'TableComplexBlockRowColumn',
+                    Data => {
+                        %{$Column},
+                        Content => $Content,
+                    },
+                );
+            }
+        }
+
+        if ( $Param{ViewMode} eq 'ComplexAdd' ) {
+
+            # output the action row block
+            $LayoutObject->Block(
+                Name => 'TableComplexBlockActionRow',
+            );
+
+            $LayoutObject->Block(
+                Name => 'TableComplexBlockActionRowBulk',
+                Data => {
+                    Name        => Translatable('Bulk'),
+                    TableNumber => $BlockCounter,
+                },
+            );
+
+            # output the footer block
+            $LayoutObject->Block(
+                Name => 'TableComplexBlockFooterAdd',
+                Data => {
+                    LinkTypeStrg => $Param{LinkTypeStrg} || '',
+                },
+            );
+        }
+
+        elsif ( $Param{ViewMode} eq 'ComplexDelete' ) {
+
+            # output the action row block
+            $LayoutObject->Block(
+                Name => 'TableComplexBlockActionRow',
+            );
+
+            $LayoutObject->Block(
+                Name => 'TableComplexBlockActionRowBulk',
+                Data => {
+                    Name        => Translatable('Bulk'),
+                    TableNumber => $BlockCounter,
+                },
+            );
+
+            # output the footer block
+            $LayoutObject->Block(
+                Name => 'TableComplexBlockFooterDelete',
+            );
+        }
+        else {
+
+            # output the footer block
+            $LayoutObject->Block(
+                Name => 'TableComplexBlockFooterNormal',
+            );
+        }
+
+        # increase BlockCounter to set correct IDs for Select All Check-boxes
+        $BlockCounter++;
+    }
+
+    return $LayoutObject->Output(
+        TemplateFile => 'LinkObject',
+        AJAX         => $Param{AJAX},
+    );
+}
+</pre></div>
 
 <p>create a complex output table</p>
 
-<pre><code>    my $String = $LayoutObject-&gt;LinkObjectTableCreateComplex(
+<pre>    my $String = $LayoutObject-&gt;LinkObjectTableCreateComplex(
         LinkListWithData =&gt; $LinkListRef,
-        ViewMode         =&gt; &#39;Complex&#39;, # (Complex|ComplexAdd|ComplexDelete|ComplexRaw)
-    );</code></pre>
+        ViewMode         =&gt; 'Complex', # (Complex|ComplexAdd|ComplexDelete|ComplexRaw)
+    );
+</pre><h2 id="LinkObjectTableCreateSimple">LinkObjectTableCreateSimple()</h2>
 
-<h2 id="LinkObjectTableCreateSimple">LinkObjectTableCreateSimple()</h2>
+<p><a href="#" onclick="toggleCode('method_LinkObjectTableCreateSimple');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkObjectTableCreateSimple">
+                                        <pre>
+
+sub LinkObjectTableCreateSimple {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{LinkListWithData} || ref $Param{LinkListWithData} ne 'HASH' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need LinkListWithData!'
+        );
+        return;
+    }
+
+    # get type list
+    my %TypeList = $Kernel::OM->Get('Kernel::System::LinkObject')->TypeList(
+        UserID => $Self->{UserID},
+    );
+
+    return if !%TypeList;
+
+    my %OutputData;
+    OBJECT:
+    for my $Object ( sort keys %{ $Param{LinkListWithData} } ) {
+
+        # load backend
+        my $BackendObject = $Self->_LoadLinkObjectLayoutBackend(
+            Object => $Object,
+        );
+
+        next OBJECT if !$BackendObject;
+
+        # get link output data
+        my %LinkOutputData = $BackendObject->TableCreateSimple(
+            ObjectLinkListWithData => $Param{LinkListWithData}->{$Object},
+        );
+
+        next OBJECT if !%LinkOutputData;
+
+        for my $LinkType ( sort keys %LinkOutputData ) {
+
+            $OutputData{$LinkType}->{$Object} = $LinkOutputData{$LinkType}->{$Object};
+        }
+    }
+
+    return %OutputData if $Param{ViewMode} && $Param{ViewMode} eq 'SimpleRaw';
+
+    # create new instance of the layout object
+    my $LayoutObject  = Kernel::Output::HTML::Layout->new( %{$Self} );
+    my $LayoutObject2 = Kernel::Output::HTML::Layout->new( %{$Self} );
+
+    my $Count = 0;
+    for my $LinkTypeLinkDirection ( sort { lc $a cmp lc $b } keys %OutputData ) {
+        $Count++;
+
+        # output the table simple block
+        if ( $Count == 1 ) {
+            $LayoutObject->Block(
+                Name => 'TableSimple',
+            );
+        }
+
+        # investigate link type name
+        my @LinkData = split q{::}, $LinkTypeLinkDirection;
+        my $LinkTypeName = $TypeList{ $LinkData[0] }->{ $LinkData[1] . 'Name' };
+
+        # output the type block
+        $LayoutObject->Block(
+            Name => 'TableSimpleType',
+            Data => {
+                LinkTypeName => $LinkTypeName,
+            },
+        );
+
+        # extract object list
+        my $ObjectList = $OutputData{$LinkTypeLinkDirection};
+
+        for my $Object ( sort { lc $a cmp lc $b } keys %{$ObjectList} ) {
+
+            for my $Item ( @{ $ObjectList->{$Object} } ) {
+
+                # create the content string
+                my $Content = $Self->_LinkObjectContentStringCreate(
+                    Object       => $Object,
+                    ContentData  => $Item,
+                    LayoutObject => $LayoutObject2,
+                );
+
+                # output the type block
+                $LayoutObject->Block(
+                    Name => 'TableSimpleTypeRow',
+                    Data => {
+                        %{$Item},
+                        Content => $Content,
+                    },
+                );
+            }
+        }
+    }
+
+    # show no linked object available
+    if ( !$Count ) {
+        $LayoutObject->Block(
+            Name => 'TableSimpleNone',
+            Data => {},
+        );
+    }
+
+    return $LayoutObject->Output(
+        TemplateFile => 'LinkObject',
+    );
+}
+</pre></div>
 
 <p>create a simple output table</p>
 
-<pre><code>    my $String = $LayoutObject-&gt;LinkObjectTableCreateSimple(
+<pre>    my $String = $LayoutObject-&gt;LinkObjectTableCreateSimple(
         LinkListWithData =&gt; $LinkListWithDataRef,
-        ViewMode         =&gt; &#39;SimpleRaw&#39;,            # (optional) (Simple|SimpleRaw)
-    );</code></pre>
+        ViewMode         =&gt; 'SimpleRaw',            # (optional) (Simple|SimpleRaw)
+    );
+</pre><h2 id="LinkObjectSelectableObjectList">LinkObjectSelectableObjectList()</h2>
 
-<h2 id="LinkObjectSelectableObjectList">LinkObjectSelectableObjectList()</h2>
+<p><a href="#" onclick="toggleCode('method_LinkObjectSelectableObjectList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkObjectSelectableObjectList">
+                                        <pre>
+
+sub LinkObjectSelectableObjectList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Object} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Object!'
+        );
+        return;
+    }
+
+    # get possible objects list
+    my %PossibleObjectsList = $Kernel::OM->Get('Kernel::System::LinkObject')->PossibleObjectsList(
+        Object => $Param{Object},
+        UserID => $Self->{UserID},
+    );
+
+    return if !%PossibleObjectsList;
+
+    # get the select lists
+    my @SelectableObjectList;
+    my @SelectableTempList;
+    my $AddBlankLines;
+    POSSIBLEOBJECT:
+    for my $PossibleObject ( sort { lc $a cmp lc $b } keys %PossibleObjectsList ) {
+
+        # load backend
+        my $BackendObject = $Self->_LoadLinkObjectLayoutBackend(
+            Object => $PossibleObject,
+        );
+
+        return if !$BackendObject;
+
+        # get object select list
+        my @SelectableList = $BackendObject->SelectableObjectList(
+            %Param,
+        );
+
+        next POSSIBLEOBJECT if !@SelectableList;
+
+        push @SelectableTempList,   \@SelectableList;
+        push @SelectableObjectList, @SelectableList;
+
+        next POSSIBLEOBJECT if $AddBlankLines;
+
+        # check each keys if blank lines must be added
+        ROW:
+        for my $Row (@SelectableList) {
+            next ROW if !$Row->{Key} || $Row->{Key} !~ m{ :: }xms;
+            $AddBlankLines = 1;
+            last ROW;
+        }
+    }
+
+    # add blank lines
+    if ($AddBlankLines) {
+
+        # reset list
+        @SelectableObjectList = ();
+
+        # define blank line entry
+        my %BlankLine = (
+            Key      => '-',
+            Value    => '-------------------------',
+            Disabled => 1,
+        );
+
+        # insert the blank lines
+        for my $Elements (@SelectableTempList) {
+            push @SelectableObjectList, @{$Elements};
+        }
+        continue {
+            push @SelectableObjectList, \%BlankLine;
+        }
+
+        # add blank lines in top of the list
+        unshift @SelectableObjectList, \%BlankLine;
+    }
+
+    # create new instance of the layout object
+    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+
+    # create target object string
+    my $TargetObjectStrg = $LayoutObject->BuildSelection(
+        Data     => \@SelectableObjectList,
+        Name     => 'TargetIdentifier',
+        Class    => 'Modernize',
+        TreeView => 1,
+    );
+
+    return $TargetObjectStrg;
+}
+</pre></div>
 
 <p>return a selection list of link-able objects</p>
 
-<pre><code>    my $String = $LayoutObject-&gt;LinkObjectSelectableObjectList(
-        Object   =&gt; &#39;Ticket&#39;,
+<pre>    my $String = $LayoutObject-&gt;LinkObjectSelectableObjectList(
+        Object   =&gt; 'Ticket',
         Selected =&gt; $Identifier,  # (optional)
-    );</code></pre>
+    );
+</pre><h2 id="LinkObjectSearchOptionList">LinkObjectSearchOptionList()</h2>
 
-<h2 id="LinkObjectSearchOptionList">LinkObjectSearchOptionList()</h2>
+<p><a href="#" onclick="toggleCode('method_LinkObjectSearchOptionList');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_LinkObjectSearchOptionList">
+                                        <pre>
+
+sub LinkObjectSearchOptionList {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{Object} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Object!'
+        );
+        return;
+    }
+
+    # load backend
+    my $BackendObject = $Self->_LoadLinkObjectLayoutBackend(
+        Object => $Param{Object},
+    );
+
+    return if !$BackendObject;
+
+    # get search option list
+    my @SearchOptionList = $BackendObject->SearchOptionList(
+        %Param,
+    );
+
+    return @SearchOptionList;
+}
+</pre></div>
 
 <p>return a list of search options</p>
 
-<pre><code>    my @SearchOptionList = $LayoutObject-&gt;LinkObjectSearchOptionList(
-        Object    =&gt; &#39;Ticket&#39;,
-        SubObject =&gt; &#39;Bla&#39;,     # (optional)
-    );</code></pre>
+<pre>    my @SearchOptionList = $LayoutObject-&gt;LinkObjectSearchOptionList(
+        Object    =&gt; 'Ticket',
+        SubObject =&gt; 'Bla',     # (optional)
+    );
+</pre><h2 id="ComplexTablePreferencesGet">ComplexTablePreferencesGet()</h2>
 
-<h2 id="ComplexTablePreferencesGet">ComplexTablePreferencesGet()</h2>
+<p><a href="#" onclick="toggleCode('method_ComplexTablePreferencesGet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ComplexTablePreferencesGet">
+                                        <pre>
+
+sub ComplexTablePreferencesGet {
+    my ( $Self, %Param ) = @_;
+
+    # configure columns
+    my @ColumnsEnabled;
+    my @ColumnsAvailable;
+    my @ColumnsAvailableNotEnabled;
+
+    # check for default settings
+    if (
+        $Param{Config}->{DefaultColumns}
+        && IsHashRefWithData( $Param{Config}->{DefaultColumns} )
+        )
+    {
+        @ColumnsAvailable = grep { $Param{Config}->{DefaultColumns}->{$_} }
+            keys %{ $Param{Config}->{DefaultColumns} };
+        @ColumnsEnabled = grep { $Param{Config}->{DefaultColumns}->{$_} eq '2' }
+            keys %{ $Param{Config}->{DefaultColumns} };
+
+        if (
+            $Param{Config}->{Priority}
+            && IsHashRefWithData( $Param{Config}->{Priority} )
+            )
+        {
+            # sort according to priority defined in SysConfig
+            @ColumnsEnabled
+                = sort { $Param{Config}->{Priority}->{$a} <=> $Param{Config}->{Priority}->{$b} } @ColumnsEnabled;
+        }
+    }
+
+    # Translate all columns and send it to JS.
+    my $LayoutObject   = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
+
+    my @AllColumns = ( @ColumnsAvailable, @ColumnsEnabled );
+    for my $Column (@AllColumns) {
+        my $TranslatedWord = $Column;
+        if ( $Column eq 'EscalationTime' ) {
+            $TranslatedWord = Translatable('Service Time');
+        }
+        elsif ( $Column eq 'EscalationResponseTime' ) {
+            $TranslatedWord = Translatable('First Response Time');
+        }
+        elsif ( $Column eq 'EscalationSolutionTime' ) {
+            $TranslatedWord = Translatable('Solution Time');
+        }
+        elsif ( $Column eq 'EscalationUpdateTime' ) {
+            $TranslatedWord = Translatable('Update Time');
+        }
+        elsif ( $Column eq 'PendingTime' ) {
+            $TranslatedWord = Translatable('Pending till');
+        }
+        elsif ( $Column eq 'CustomerCompanyName' ) {
+            $TranslatedWord = Translatable('Customer Company Name');
+        }
+        elsif ( $Column eq 'CustomerUserID' ) {
+            $TranslatedWord = Translatable('Customer User ID');
+        }
+
+        # Send data to JS.
+        $LayoutObject->AddJSData(
+            Key   => 'Column' . $Column,
+            Value => $LanguageObject->Translate($TranslatedWord),
+        );
+    }
+
+    # check if the user has filter preferences for this widget
+    my %Preferences = $Kernel::OM->Get('Kernel::System::User')->GetPreferences(
+        UserID => $Self->{UserID},
+    );
+
+    # get JSON object
+    my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
+
+    # if preference settings are available, take them
+    if ( $Preferences{ $Param{PrefKey} } ) {
+
+        my $ColumnsEnabled = $JSONObject->Decode(
+            Data => $Preferences{ $Param{PrefKey} },
+        );
+
+        @ColumnsEnabled = grep { $ColumnsEnabled->{Columns}->{$_} == 1 }
+            keys %{ $ColumnsEnabled->{Columns} };
+
+        if ( $ColumnsEnabled->{Order} && @{ $ColumnsEnabled->{Order} } ) {
+            @ColumnsEnabled = @{ $ColumnsEnabled->{Order} };
+        }
+
+        # remove duplicate columns
+        my %UniqueColumns;
+        my @ColumnsEnabledAux;
+
+        for my $Column (@ColumnsEnabled) {
+            if ( !$UniqueColumns{$Column} ) {
+                push @ColumnsEnabledAux, $Column;
+            }
+            $UniqueColumns{$Column} = 1;
+        }
+
+        # set filtered column list
+        @ColumnsEnabled = @ColumnsEnabledAux;
+    }
+
+    my %Columns;
+    for my $ColumnName ( sort { $a cmp $b } @ColumnsAvailable ) {
+        $Columns{Columns}->{$ColumnName} = ( grep { $ColumnName eq $_ } @ColumnsEnabled ) ? 1 : 0;
+        if ( !grep { $_ eq $ColumnName } @ColumnsEnabled ) {
+            push @ColumnsAvailableNotEnabled, $ColumnName;
+        }
+    }
+    $Columns{Order} = \@ColumnsEnabled;
+
+    my %Params = (
+        Desc             => Translatable('Shown Columns'),
+        Name             => "ContentLarge",
+        Block            => 'AllocationList',
+        Columns          => $JSONObject->Encode( Data => \%Columns ),
+        ColumnsEnabled   => $JSONObject->Encode( Data => \@ColumnsEnabled ),
+        ColumnsAvailable => $JSONObject->Encode( Data => \@ColumnsAvailableNotEnabled ),
+        Translation      => 1,
+    );
+
+    return %Params;
+}
+</pre></div>
 
 <p>get items needed for AllocationList initialization.</p>
 
-<pre><code>    my %Preferences = $LayoutObject-&gt;ComplexTablePreferencesGet(
+<pre>    my %Preferences = $LayoutObject-&gt;ComplexTablePreferencesGet(
         Config  =&gt; {
-            &#39;DefaultColumns&#39; =&gt; {
-                &#39;Age&#39; =&gt; 1,
-                &#39;EscalationTime&#39; =&gt; 1,
+            'DefaultColumns' =&gt; {
+                'Age' =&gt; 1,
+                'EscalationTime' =&gt; 1,
                 ...
             },
             Priority =&gt; {
-                &#39;Age&#39; =&gt; 120,
-                &#39;TicketNumber&#39; =&gt; 100,
+                'Age' =&gt; 120,
+                'TicketNumber' =&gt; 100,
                 ...
             }
         }.
         PrefKey =&gt; &quot;LinkObject::ComplexTable-Ticket&quot;,
-    );</code></pre>
-
-<p>returns: %Preferences = { &#39;ColumnsAvailable&#39; =&gt; &#39;[&quot;Age&quot;,&quot;Changed&quot;,&quot;CustomerID&quot;,&quot;CustomerName&quot;,&quot;CustomerUserID&quot;,...]&#39;, &#39;Block&#39; =&gt; &#39;AllocationList&#39;, &#39;Translation&#39; =&gt; 1, &#39;Name&#39; =&gt; &#39;ContentLarge&#39;, &#39;Columns&#39; =&gt; &#39;{&quot;Columns&quot;:{&quot;SLA&quot;:0,&quot;Type&quot;:0,&quot;Owner&quot;:0,&quot;Service&quot;:0,&quot;CustomerUserID&quot;:0,...}}&#39;, &#39;Desc&#39; =&gt; &#39;Shown Columns&#39;, &#39;ColumnsEnabled&#39; =&gt; &#39;[&quot;State&quot;,&quot;TicketNumber&quot;,&quot;Title&quot;,&quot;Created&quot;,&quot;Queue&quot;]&#39;, };</p>
+    );
+</pre><p>returns:
+    %Preferences =  {
+        'ColumnsAvailable' =&gt; '[&quot;Age&quot;,&quot;Changed&quot;,&quot;CustomerID&quot;,&quot;CustomerName&quot;,&quot;CustomerUserID&quot;,...]',
+        'Block' =&gt; 'AllocationList',
+        'Translation' =&gt; 1,
+        'Name' =&gt; 'ContentLarge',
+        'Columns' =&gt; '{&quot;Columns&quot;:{&quot;SLA&quot;:0,&quot;Type&quot;:0,&quot;Owner&quot;:0,&quot;Service&quot;:0,&quot;CustomerUserID&quot;:0,...}}',
+        'Desc' =&gt; 'Shown Columns',
+        'ColumnsEnabled' =&gt; '[&quot;State&quot;,&quot;TicketNumber&quot;,&quot;Title&quot;,&quot;Created&quot;,&quot;Queue&quot;]',
+    };</p>
 
 <h2 id="ComplexTablePreferencesSet">ComplexTablePreferencesSet()</h2>
 
+<p><a href="#" onclick="toggleCode('method_ComplexTablePreferencesSet');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_ComplexTablePreferencesSet">
+                                        <pre>
+
+sub ComplexTablePreferencesSet {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw( DestinationObject)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # needed objects
+    my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my $JSONObject   = $Kernel::OM->Get('Kernel::System::JSON');
+
+    my $Result = 'Unknown';
+    my $Config = $ConfigObject->Get("LinkObject::ComplexTable") || {};
+
+    # get default preferences
+    my %Preferences = $Self->ComplexTablePreferencesGet(
+        Config  => $Config->{ $Param{DestinationObject} },
+        PrefKey => "LinkObject::ComplexTable-" . $Param{DestinationObject},
+    );
+
+    if ( !%Preferences ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "No preferences for $Param{DestinationObject}!"
+        );
+        return;
+    }
+
+    # get params
+    my $Value = $ParamObject->GetParam( Param => $Preferences{Name} );
+
+    # decode JSON value
+    my $Preference = $JSONObject->Decode(
+        Data => $Value,
+    );
+
+    # remove Columns (not needed)
+    delete $Preference->{Columns};
+
+    if ( $Param{DestinationObject} eq 'Ticket' ) {
+
+        # Make sure that ticket number is always present, otherwise there will be problems.
+        if ( !grep { $_ eq 'TicketNumber' } @{ $Preference->{Order} } ) {
+            unshift @{ $Preference->{Order} }, 'TicketNumber';
+        }
+    }
+
+    if ( IsHashRefWithData($Preference) ) {
+
+        $Value = $JSONObject->Encode(
+            Data => $Preference,
+        );
+
+        # update runtime vars
+        $Self->{ $Preferences{Name} } = $Value;
+
+        # update session
+        $Kernel::OM->Get('Kernel::System::AuthSession')->UpdateSessionID(
+            SessionID => $Self->{SessionID},
+            Key       => $Preferences{Name},
+            Value     => $Value,
+        );
+
+        # update preferences
+        if ( !$ConfigObject->Get('DemoSystem') ) {
+            $Kernel::OM->Get('Kernel::System::User')->SetPreferences(
+                UserID => $Self->{UserID},
+                Key    => "LinkObject::ComplexTable-" . $Param{DestinationObject},
+                Value  => $Value,
+            );
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
+</pre></div>
+
 <p>set user preferences.</p>
 
-<pre><code>    my $Success = $LayoutObject-&gt;ComplexTablePreferencesSet(
-        DestinationObject =&gt; &#39;Ticket&#39;,
-    );</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+<pre>    my $Success = $LayoutObject-&gt;ComplexTablePreferencesSet(
+        DestinationObject =&gt; 'Ticket',
+    );
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

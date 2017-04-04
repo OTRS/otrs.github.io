@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::SysConfig::ValueType::WorkingHours &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::SysConfig::ValueType::WorkingHours</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,93 +69,262 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/SysConfig/ValueType/WorkingHours.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
-      <li><a href="#SettingRender">SettingRender()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
+	<li><a href="#SettingRender">SettingRender()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>Kernel::System::SysConfig::ValueType::WorkingHours - System configuration working-hours value type backed.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # Allocate new hash for object.
+    my $Self = {};
+    bless( $Self, $Type );
+
+    return $Self;
+}
+</pre></div>
+
 <p>Create an object. Do not use it directly, instead use:</p>
 
-<pre><code>    use Kernel::System::ObjectManager;
+<pre>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $ValueTypeObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SysConfig::ValueType::WorkingHours&#39;);</code></pre>
+    my $ValueTypeObject = $Kernel::OM-&gt;Get('Kernel::System::SysConfig::ValueType::WorkingHours');
+</pre><h2 id="SettingEffectiveValueCheck">SettingEffectiveValueCheck()</h2>
 
-<h2 id="SettingEffectiveValueCheck">SettingEffectiveValueCheck()</h2>
+<p><a href="#" onclick="toggleCode('method_SettingEffectiveValueCheck');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SettingEffectiveValueCheck">
+                                        <pre>
+
+sub SettingEffectiveValueCheck {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(XMLContentParsed)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+
+            return;
+        }
+    }
+
+    my %Result = (
+        Success => 0,
+    );
+
+    # Data should be hash.
+    if ( ref $Param{EffectiveValue} ne 'HASH' ) {
+        $Result{Error} = 'EffectiveValue for WorkingHours must be a hash!';
+        return %Result;
+    }
+
+    my @Days = ( 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun' );
+
+    DAY:
+    for my $Day ( sort keys %{ $Param{EffectiveValue} } ) {
+        if ( !grep { $_ eq $Day } @Days ) {
+            $Result{Error} = "'$Day' must be Mon, Tue, Wed, Thu, Fri, Sat or Sun!";
+            last DAY;
+        }
+
+        if ( ref $Param{EffectiveValue}->{$Day} ne 'ARRAY' ) {
+            $Result{Error} = "'$Day' must be an array reference!";
+            last DAY;
+        }
+
+        for my $Hour ( @{ $Param{EffectiveValue}->{$Day} } ) {
+
+            if ( $Hour !~ m{^([0-9]|1[0-9]|2[0-3])$}gsmx ) {
+                $Result{Error} = "'$Hour' must be number(0-23)!";
+                last DAY;
+            }
+        }
+    }
+
+    return %Result if $Result{Error};
+
+    $Result{Success}        = 1;
+    $Result{EffectiveValue} = $Param{EffectiveValue};
+
+    return %Result;
+}
+</pre></div>
 
 <p>Check if provided EffectiveValue matches structure defined in XMLContentParsed.</p>
 
-<pre><code>    my %Result = $SysConfigObject-&gt;SettingEffectiveValueCheck(
+<pre>    my %Result = $SysConfigObject-&gt;SettingEffectiveValueCheck(
         XMLContentParsed =&gt; {
             Value =&gt; [
                 {
-                    &#39;Item&#39; =&gt; [
+                    'Item' =&gt; [
                         {
-                            &#39;Item&#39; =&gt; [
+                            'Item' =&gt; [
                                 {
-                                    &#39;Item&#39; =&gt; [
+                                    'Item' =&gt; [
                                         {
-                                            &#39;Content&#39;   =&gt; &#39;8&#39;,
-                                            &#39;ValueType&#39; =&gt; &#39;Hour&#39;,
+                                            'Content'   =&gt; '8',
+                                            'ValueType' =&gt; 'Hour',
                                         },
                                     ],
-                                    &#39;ValueName&#39; =&gt; &#39;Tue&#39;,
-                                    &#39;ValueType&#39; =&gt; &#39;Day&#39;,
+                                    'ValueName' =&gt; 'Tue',
+                                    'ValueType' =&gt; 'Day',
                                 },
                             ],
-                            &#39;ValueType&#39; =&gt; &#39;WorkingHours&#39;,
+                            'ValueType' =&gt; 'WorkingHours',
                         },
                     ],
                 },
             ],
         },
         EffectiveValue =&gt; {
-            &#39;Fri&#39; =&gt; [
-                &#39;8&#39;,
-                &#39;9&#39;,
+            'Fri' =&gt; [
+                '8',
+                '9',
             ],
         },
-    );</code></pre>
-
-<p>Result: %Result = ( EffectiveValue =&gt; { # Note for WorkingHours ValueTypes EffectiveValue is not changed. &#39;Fri&#39; =&gt; [ &#39;8&#39;, &#39;9&#39;, ], }, Success =&gt; 1, Error =&gt; undef, );</p>
+    );
+</pre><p>Result:
+    %Result = (
+        EffectiveValue =&gt; {         # Note for WorkingHours ValueTypes EffectiveValue is not changed.
+            'Fri' =&gt; [
+                '8',
+                '9',
+            ],
+        },
+        Success =&gt; 1,
+        Error   =&gt; undef,
+    );</p>
 
 <h2 id="SettingRender">SettingRender()</h2>
 
+<p><a href="#" onclick="toggleCode('method_SettingRender');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_SettingRender">
+                                        <pre>
+
+sub SettingRender {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(Name EffectiveValue)) {
+        if ( !defined $Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed",
+            );
+            return;
+        }
+    }
+
+    $Param{Class} //= '';
+    $Param{Class} .= " WorkingHoursContainer ";
+
+    my $IDSuffix = $Param{IDSuffix} || '';
+
+    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
+
+    my $EffectiveValue = $Param{EffectiveValue};
+
+    my %EffectiveValueCheck = (
+        Success => 1,
+    );
+
+    if ( !$Param{SkipEffectiveValueCheck} ) {
+        %EffectiveValueCheck = $Self->SettingEffectiveValueCheck(
+            EffectiveValue   => $EffectiveValue,
+            XMLContentParsed => {
+                Value => [
+                    {
+                        Item => $Param{Item},
+                    },
+                ],
+            },
+        );
+    }
+
+    my $HTML = "<div class='SettingContent'>\n";
+
+    if ( !$EffectiveValueCheck{Success} ) {
+        my $Message = $LanguageObject->Translate("Value is not correct! Please, consider updating this field.");
+
+        $HTML .= "<div class='BadEffectiveValue'>\n";
+        $HTML .= "<p>* $Message</p>\n";
+        $HTML .= "</div>\n";
+    }
+
+    for my $Day (qw(Mon Tue Wed Thu Fri Sat Sun)) {
+        $HTML .= "<p>" . $LanguageObject->Translate($Day) . "</p>\n";
+
+        for my $Hour ( 0 .. 23 ) {
+            my $Checked = 0;
+            if ( grep { $_ == $Hour } @{ $EffectiveValue->{$Day} } ) {
+                $Checked = 1;
+            }
+
+            $HTML .= "<div class='WorkingHoursItem'>\n";
+            $HTML .= "<label for='$Param{Name}$IDSuffix$Day$Hour'>$Hour</label>\n";
+            $HTML .= "<input type='checkbox' value='$Hour' name='$Param{Name}' "
+                . "id='$Param{Name}$IDSuffix$Day$Hour' data-day='$Day' class='WorkingHours' ";
+
+            if ($Checked) {
+                $HTML .= "checked='checked' ";
+            }
+
+            $HTML .= " />\n";
+
+            $HTML .= "</div>\n";
+        }
+
+        $HTML .= "<div class='Clear'></div>\n"
+    }
+    $HTML .= "</div>\n";
+
+    return $HTML;
+}
+</pre></div>
+
 <p>Extracts the effective value from a XML parsed setting.</p>
 
-<pre><code>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
-        Name           =&gt; &#39;SettingName&#39;,
+<pre>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
+        Name           =&gt; 'SettingName',
         DefaultID      =&gt;  123,             # (required)
-        EffectiveValue =&gt; &#39;{
-            &#39;1&#39; =&gt; {
-                &#39;1&#39; =&gt; &#39;New Year\&#39;s Day&#39;,
+        EffectiveValue =&gt; '{
+            '1' =&gt; {
+                '1' =&gt; 'New Year\'s Day',
             },
             ...
         },
-        DefaultValue   =&gt; &#39;Product 5&#39;,      # (optional)
-        Class          =&gt; &#39;My class&#39;        # (optional)
+        DefaultValue   =&gt; 'Product 5',      # (optional)
+        Class          =&gt; 'My class'        # (optional)
         Item           =&gt; [                 # (optional) XML parsed item
             {
-                &#39;ValueType&#39; =&gt; &#39;VacationDays&#39;,
-                &#39;Content&#39; =&gt; &#39;&#39;,
-                &#39;ValueRegex&#39; =&gt; &#39;&#39;,
+                'ValueType' =&gt; 'VacationDays',
+                'Content' =&gt; '',
+                'ValueRegex' =&gt; '',
             },
         ],
         RW       =&gt; 1,                      # (optional) Allow editing. Default 0.
@@ -143,17 +333,18 @@ $(document).ready(function() {
         IDSuffix =&gt; 1,                      # (optional) Suffix will be added to the element ID
         SkipEffectiveValueCheck =&gt; 1,       # (optional) If enabled, system will not perform effective value check.
                                             #            Default: 1.
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
-
-<pre><code>    $SettingHTML = &#39;&lt;div class &quot;Field&quot;...&lt;/div&gt;&#39;;</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+<pre>    $SettingHTML = '&lt;div class &quot;Field&quot;...&lt;/div&gt;';
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>

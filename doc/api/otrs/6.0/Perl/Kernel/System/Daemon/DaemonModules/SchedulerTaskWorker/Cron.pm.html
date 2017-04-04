@@ -1,5 +1,5 @@
-
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,11 +28,32 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::Cron &mdash; OTRS 6.0 API Reference Perl</title>
+	<title>Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::Cron</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <script type="text/javascript">
 
-</head>
-<body><div class="box">
+  function toggleCode( id ) {
+    if ( document.getElementById )
+      elem = document.getElementById( id );
+    else if ( document.all )
+      elem = eval( "document.all." + id );
+    else
+      return false;
+
+    elemStyle = elem.style;
+
+    if ( elemStyle.display != "block" ) {
+      elemStyle.display = "block"
+    } else {
+      elemStyle.display = "none"
+    }
+
+    return true;
+  }
+  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
+  </script></head>
+<body>
+<div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -48,62 +69,202 @@ $(document).ready(function() {
 <div>
 <a href="../../../../../src/Kernel/System/Daemon/DaemonModules/SchedulerTaskWorker/Cron.pm">Source</a>
 </div>
-
-
-
-<ul id="index">
-  <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
-    <ul>
-      <li><a href="#new">new()</a></li>
-      <li><a href="#Run">Run()</a></li>
-    </ul>
-  </li>
-  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+<ul>
+	<li><a href="#NAME">NAME</a></li>
+	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
+<ul>
+	<li><a href="#new">new()</a></li>
+	<li><a href="#Run">Run()</a></li>
 </ul>
+</li>
+	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+<hr />
+<!-- INDEX END -->
 
-<h1 id="NAME">NAME</h1>
+<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
 
 <p>Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::Cron - Scheduler daemon task handler module for cron like jobs</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
+<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
 
 <p>This task handler executes scheduler tasks based in cron notation.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
 
 <h2 id="new">new()</h2>
 
-<pre><code>    my $TaskHandlerObject = $Kernel::OM-Get(&#39;Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::Cron&#39;);</code></pre>
+<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_new">
+                                        <pre>
 
-<h2 id="Run">Run()</h2>
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self->{Debug}      = $Param{Debug};
+    $Self->{WorkerName} = 'Worker: Cron';
+
+    return $Self;
+}
+</pre></div>
+
+<pre>    my $TaskHandlerObject = $Kernel::OM-Get('Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::Cron');
+</pre><h2 id="Run">Run()</h2>
+
+<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
+                                        <div class="method-source-code" id="method_Run">
+                                        <pre>
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+
+    # Check task params.
+    my $CheckResult = $Self->_CheckTaskParams(
+        %Param,
+        NeededDataAttributes => [ 'Module', 'Function' ],
+        DataParamsRef        => 'ARRAY',
+    );
+
+    # Stop execution if an error in params is detected.
+    return if !$CheckResult;
+
+    my $StartSystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
+
+    my $ModuleObject;
+    eval {
+        $ModuleObject = $Kernel::OM->Get( $Param{Data}->{Module} );
+    };
+    if ( !$ModuleObject ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Can not create a new Object for Module: '$Param{Data}->{Module}'! - Task: $Param{TaskName}",
+        );
+
+        return;
+    }
+
+    my $Function = $Param{Data}->{Function};
+
+    # Check if the module provide the required function.
+    return if !$ModuleObject->can($Function);
+
+    my @Parameters = @{ $Param{Data}->{Params} || [] };
+
+    # To capture the standard error.
+    my $ErrorMessage;
+
+    my $Result;
+
+    if ( $Self->{Debug} ) {
+        print "    $Self->{WorkerName} Executes task: $Param{TaskName}\n";
+    }
+
+    eval {
+
+        # Restore child signal to default, main daemon set it to 'IGNORE' to be able to create
+        #   multiple process at the same time, but in workers this causes problems if function does
+        #   system calls (on linux), since system calls returns -1. See bug#12126.
+        local $SIG{CHLD} = 'DEFAULT';
+
+        # Localize the standard error, everything will be restored after the eval block.
+        local *STDERR;
+
+        # Redirect the standard error to a variable.
+        open STDERR, ">>", \$ErrorMessage;
+
+        # Disable ANSI terminal colors for console commands, then in case of an error the output
+        #   will be clean.
+        # Prevent used once warning, setting the variable as local and then assign the value
+        #   in the next statement.
+        local $Kernel::System::Console::BaseCommand::SuppressANSI;
+        $Kernel::System::Console::BaseCommand::SuppressANSI = 1;
+
+        # Run function on the module with the specified parameters in Data->{Params}
+        $Result = $ModuleObject->$Function(
+            @Parameters,
+        );
+    };
+
+    # Get current system time (as soon as the method has been called).
+    my $EndSystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
+
+    my $IsConsoleCommand;
+    if (
+        substr( $Param{Data}->{Module}, 0, length 'Kernel::System::Console' ) eq 'Kernel::System::Console'
+        && $Function eq 'Execute'
+        )
+    {
+        $IsConsoleCommand = 1;
+    }
+
+    my $ConsoleCommandFailure;
+
+    # Console commands send 1 as result if fail.
+    if ( $IsConsoleCommand && $Result ) {
+        $ConsoleCommandFailure = 1;
+    }
+
+    my $Success = 1;
+
+    # Check if there are errors.
+    if ( $ErrorMessage || $ConsoleCommandFailure ) {
+
+        $ErrorMessage //= '';
+
+        $Self->_HandleError(
+            TaskName     => $Param{TaskName},
+            TaskType     => 'Cron',
+            LogMessage   => "There was an error executing $Function() in $Param{Data}->{Module}: $ErrorMessage",
+            ErrorMessage => $ErrorMessage,
+        );
+
+        $Success = 0;
+    }
+
+    # Update worker task.
+    $Kernel::OM->Get('Kernel::System::Daemon::SchedulerDB')->RecurrentTaskWorkerInfoSet(
+        LastWorkerTaskID      => $Param{TaskID},
+        LastWorkerStatus      => $Success,
+        LastWorkerRunningTime => $EndSystemTime - $StartSystemTime,
+    );
+
+    return $Success;
+}
+</pre></div>
 
 <p>Performs the selected Cron task.</p>
 
-<pre><code>    my $Success = $TaskHandlerObject-&gt;Run(
+<pre>    my $Success = $TaskHandlerObject-&gt;Run(
         TaskID   =&gt; 123,
-        TaskName =&gt; &#39;some name&#39;,                                        # optional
+        TaskName =&gt; 'some name',                                        # optional
         Data     =&gt; {
-            Module   =&gt; &#39;Kernel::System:::Console:Command::Help&#39;,
-            Function =&gt; &#39;Execute&#39;,
+            Module   =&gt; 'Kernel::System:::Console:Command::Help',
+            Function =&gt; 'Execute',
             Params   =&gt; [                                               # parameters array reference
-             &#39;--force&#39;,
-             &#39;--option&#39;,
-             &#39;my option&#39;,
+             '--force',
+             '--option',
+             'my option',
             ],
         },
-    );</code></pre>
+    );
+</pre><p>Returns:</p>
 
-<p>Returns:</p>
-
-<pre><code>    $Success =&gt; 1,  # or fail in case of an error</code></pre>
-
-<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+<pre>    $Success =&gt; 1,  # or fail in case of an error
+</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
+the enclosed file COPYING for license information (AGPL). If you
+did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
-<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
+</html>
