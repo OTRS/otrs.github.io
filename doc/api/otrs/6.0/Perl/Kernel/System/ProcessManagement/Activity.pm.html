@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::ProcessManagement::Activity</title>
+<title>Kernel::System::ProcessManagement::Activity &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,200 +48,82 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/ProcessManagement/Activity.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#ActivityGet">ActivityGet()</a></li>
-	<li><a href="#ActivityList">ActivityList()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#ActivityGet">ActivityGet()</a></li>
+      <li><a href="#ActivityList">ActivityList()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::ProcessManagement::Activity - Activities lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All Process Management Activity functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $ActivityObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ProcessManagement::Activity&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
+<h2 id="ActivityGet">ActivityGet()</h2>
 
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $ActivityObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::Activity');
-</pre><h2 id="ActivityGet">ActivityGet()</h2>
-
-<p><a href="#" onclick="toggleCode('method_ActivityGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ActivityGet">
-                                        <pre>
-
-sub ActivityGet {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ActivityEntityID Interface)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!"
-            );
-            return;
-        }
-    }
-
-    # get config object
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    my $Activity = $ConfigObject->Get('Process::Activity');
-
-    if ( !IsHashRefWithData($Activity) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Activity config!'
-        );
-        return;
-    }
-
-    my $ActivityEntity = $Activity->{ $Param{ActivityEntityID} };
-
-    if ( !IsHashRefWithData($ActivityEntity) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No data for Activity '$Param{ActivityEntityID}' found!"
-        );
-        return;
-    }
-
-    # limit activity dialogs by interface
-    return $ActivityEntity if ref $Param{Interface} ne 'ARRAY' && $Param{Interface} eq 'all';
-    if ( ref $Param{Interface} ne 'ARRAY' && $Param{Interface} ne 'all' ) {
-        $Param{Interface} = [ $Param{Interface} ];
-    }
-
-    # get activity dialogs
-    my $ActivityDialogs = $ConfigObject->Get('Process::ActivityDialog');
-
-    if ( IsHashRefWithData( $ActivityEntity->{ActivityDialog} ) ) {
-
-        # filter activity dialogs
-        ACTIVITYDIALOG:
-        for my $ActivityDialogID ( sort keys %{ $ActivityEntity->{ActivityDialog} } ) {
-            my $ActivityDialog = $ActivityEntity->{ActivityDialog}->{$ActivityDialogID};
-            if ( IsHashRefWithData($ActivityDialog) ) {
-                $ActivityDialog = $ActivityDialog->{ActivityDialogEntityID};
-            }
-            for my $Interface ( @{ $Param{Interface} } ) {
-
-                # keep activity dialog if interface is included in activity dialog configuration
-                if (
-                    grep { $_ eq $Interface } @{ $ActivityDialogs->{$ActivityDialog}->{Interface} }
-                    )
-                {
-                    next ACTIVITYDIALOG;
-                }
-            }
-
-            # remove activity dialog if no match could be found
-            delete $ActivityEntity->{ActivityDialog}->{$ActivityDialogID};
-        }
-    }
-
-    return $ActivityEntity;
-}
-</pre></div>
-
-<pre>    Get Activity info
+<pre><code>    Get Activity info
     Returned activity dialogs are limited to given interface
 
     my $Activity = $ActivityObject-&gt;ActivityGet(
-        ActivityEntityID =&gt; 'A1',
-        Interface        =&gt; ['AgentInterface'],   # ['AgentInterface'] or ['CustomerInterface'] or ['AgentInterface', 'CustomerInterface'] or 'all'
+        ActivityEntityID =&gt; &#39;A1&#39;,
+        Interface        =&gt; [&#39;AgentInterface&#39;],   # [&#39;AgentInterface&#39;] or [&#39;CustomerInterface&#39;] or [&#39;AgentInterface&#39;, &#39;CustomerInterface&#39;] or &#39;all&#39;
     );
 
     Returns:
 
     $Activity = {
-          'Name'           =&gt; 'Activity 3'
-          'CreateTime'     =&gt; '08-02-2012 13:37:00',
-          'ChangeBy'       =&gt; '2',
-          'ChangeTime'     =&gt; '09-02-2012 13:37:00',
-          'CreateBy'       =&gt; '3',
-          'ActivityDialog' =&gt; {
-              '1' =&gt; 'AD5',
-              '3' =&gt; 'AD7',
-              '2' =&gt; 'AD6',
+          &#39;Name&#39;           =&gt; &#39;Activity 3&#39;
+          &#39;CreateTime&#39;     =&gt; &#39;08-02-2012 13:37:00&#39;,
+          &#39;ChangeBy&#39;       =&gt; &#39;2&#39;,
+          &#39;ChangeTime&#39;     =&gt; &#39;09-02-2012 13:37:00&#39;,
+          &#39;CreateBy&#39;       =&gt; &#39;3&#39;,
+          &#39;ActivityDialog&#39; =&gt; {
+              &#39;1&#39; =&gt; &#39;AD5&#39;,
+              &#39;3&#39; =&gt; &#39;AD7&#39;,
+              &#39;2&#39; =&gt; &#39;AD6&#39;,
             },
-        };
-</pre><h2 id="ActivityList">ActivityList()</h2>
+        };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ActivityList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ActivityList">
-                                        <pre>
+<h2 id="ActivityList">ActivityList()</h2>
 
-sub ActivityList {
-    my ( $Self, %Param ) = @_;
-
-    my $Activities = $Kernel::OM->Get('Kernel::Config')->Get('Process::Activity');
-
-    if ( !IsHashRefWithData($Activities) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Activity config!'
-        );
-        return;
-    }
-
-    my %ActivityList = map { $_ => $Activities->{$_}->{Name} || '' } keys %{$Activities};
-
-    return \%ActivityList;
-}
-</pre></div>
-
-<pre>    Get a list of all Activities
+<pre><code>    Get a list of all Activities
 
     my $Activities = $ActivityObject-&gt;ActivityList();
 
     Returns:
 
     $ActivityList = {
-        'A1' =&gt; 'Activity 1',
-        'A2' =&gt; 'Activity 2',
-        'A3' =&gt; '',
-    };
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+        &#39;A1&#39; =&gt; &#39;Activity 1&#39;,
+        &#39;A2&#39; =&gt; &#39;Activity 2&#39;,
+        &#39;A3&#39; =&gt; &#39;&#39;,
+    };</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

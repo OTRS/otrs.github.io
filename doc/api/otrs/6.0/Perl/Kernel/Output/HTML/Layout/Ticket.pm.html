@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::Output::HTML::Layout::Ticket</title>
+<title>Kernel::Output::HTML::Layout::Ticket &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,685 +48,64 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/Output/HTML/Layout/Ticket.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#AgentCustomerViewTable">AgentCustomerViewTable()</a></li>
-	<li><a href="#ArticleQuote">ArticleQuote()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#AgentCustomerViewTable">AgentCustomerViewTable()</a></li>
+      <li><a href="#ArticleQuote">ArticleQuote()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::Output::HTML::Layout::Ticket - all Ticket-related HTML functions</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All Ticket-related HTML functions</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="AgentCustomerViewTable">AgentCustomerViewTable()</h2>
 
-<p><a href="#" onclick="toggleCode('method_AgentCustomerViewTable');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AgentCustomerViewTable">
-                                        <pre>
-
-sub AgentCustomerViewTable {
-    my ( $Self, %Param ) = @_;
-
-    # check customer params
-    if ( ref $Param{Data} ne 'HASH' ) {
-        $Self->FatalError( Message => 'Need Hash ref in Data param' );
-    }
-    elsif ( ref $Param{Data} eq 'HASH' && !%{ $Param{Data} } ) {
-        return $Self->{LanguageObject}->Translate('none');
-    }
-
-    # add ticket params if given
-    if ( $Param{Ticket} ) {
-        %{ $Param{Data} } = ( %{ $Param{Data} }, %{ $Param{Ticket} } );
-    }
-
-    my @MapNew;
-    my $Map = $Param{Data}->{Config}->{Map};
-    if ($Map) {
-        @MapNew = ( @{$Map} );
-    }
-
-    # check if customer company support is enabled
-    if ( $Param{Data}->{Config}->{CustomerCompanySupport} ) {
-        my $Map2 = $Param{Data}->{CompanyConfig}->{Map};
-        if ($Map2) {
-            push( @MapNew, @{$Map2} );
-        }
-    }
-
-    my $ShownType = 1;
-    if ( $Param{Type} && $Param{Type} eq Translatable('Lite') ) {
-        $ShownType = 2;
-
-        # check if min one lite view item is configured, if not, use
-        # the normal view also
-        my $Used = 0;
-        for my $Field (@MapNew) {
-            if ( $Field->[3] == 2 ) {
-                $Used = 1;
-            }
-        }
-        if ( !$Used ) {
-            $ShownType = 1;
-        }
-    }
-
-    # build html table
-    $Self->Block(
-        Name => 'Customer',
-        Data => $Param{Data},
-    );
-
-    # get needed objects
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $MainObject   = $Kernel::OM->Get('Kernel::System::Main');
-
-    # check Frontend::CustomerUser::Image
-    my $CustomerImage = $ConfigObject->Get('Frontend::CustomerUser::Image');
-    if ($CustomerImage) {
-        my %Modules = %{$CustomerImage};
-
-        MODULE:
-        for my $Module ( sort keys %Modules ) {
-            if ( !$MainObject->Require( $Modules{$Module}->{Module} ) ) {
-                $Self->FatalDie();
-            }
-
-            my $Object = $Modules{$Module}->{Module}->new(
-                %{$Self},
-                LayoutObject => $Self,
-            );
-
-            # run module
-            next MODULE if !$Object;
-
-            $Object->Run(
-                Config => $Modules{$Module},
-                Data   => $Param{Data},
-            );
-        }
-    }
-
-    my $DynamicFieldConfigs = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldListGet(
-        ObjectType => [ 'CustomerUser', 'CustomerCompany', ],
-    );
-
-    my %DynamicFieldLookup = map { $_->{Name} => $_ } @{$DynamicFieldConfigs};
-
-    # Get dynamic field object.
-    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
-
-    # build table
-    FIELD:
-    for my $Field (@MapNew) {
-        if ( $Field->[3] && $Field->[3] >= $ShownType && $Param{Data}->{ $Field->[0] } ) {
-            my %Record = (
-                %{ $Param{Data} },
-                Key   => $Field->[1],
-                Value => $Param{Data}->{ $Field->[0] },
-            );
-
-            # render dynamic field values
-            if ( $Field->[5] eq 'dynamic_field' ) {
-                if ( !IsArrayRefWithData( $Record{Value} ) ) {
-                    $Record{Value} = [ $Record{Value} ];
-                }
-
-                my $DynamicFieldConfig = $DynamicFieldLookup{ $Field->[2] };
-
-                next FIELD if !$DynamicFieldConfig;
-
-                my @RenderedValues;
-                VALUE:
-                for my $Value ( @{ $Record{Value} } ) {
-                    my $RenderedValue = $DynamicFieldBackendObject->DisplayValueRender(
-                        DynamicFieldConfig => $DynamicFieldConfig,
-                        Value              => $Value,
-                        HTMLOutput         => 0,
-                        LayoutObject       => $Self,
-                    );
-
-                    next VALUE if !IsHashRefWithData($RenderedValue) || !defined $RenderedValue->{Value};
-
-                    push @RenderedValues, $RenderedValue->{Value};
-                }
-
-                $Record{Value} = join ', ', @RenderedValues;
-                $Record{Key} = $DynamicFieldConfig->{Label};
-            }
-
-            if (
-                $Field->[6]
-                && ( $Param{Data}->{TicketID} || $Param{Ticket} )
-                )
-            {
-                $Record{LinkStart} = "<a href=\"$Field->[6]\"";
-                if ( !$Param{Ticket} ) {
-                    $Record{LinkStart} .= " target=\"_blank\"";
-                }
-                elsif ( $Field->[8] ) {
-                    $Record{LinkStart} .= " target=\"$Field->[8]\"";
-                }
-                if ( $Field->[9] ) {
-                    $Record{LinkStart} .= " class=\"$Field->[9]\"";
-                }
-                $Record{LinkStart} .= ">";
-                $Record{LinkStop} = "</a>";
-            }
-            if ( $Field->[0] ) {
-                $Record{ValueShort} = $Self->Ascii2Html(
-                    Text => $Record{Value},
-                    Max  => $Param{Max}
-                );
-            }
-            $Self->Block(
-                Name => 'CustomerRow',
-                Data => \%Record,
-            );
-
-            if (
-                $Param{Data}->{Config}->{CustomerCompanySupport}
-                && $Field->[0] eq 'CustomerCompanyName'
-                )
-            {
-                my $CompanyValidID = $Param{Data}->{CustomerCompanyValidID};
-
-                if ($CompanyValidID) {
-                    my @ValidIDs = $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet();
-                    my $CompanyIsValid = grep { $CompanyValidID == $_ } @ValidIDs;
-
-                    if ( !$CompanyIsValid ) {
-                        $Self->Block(
-                            Name => 'CustomerRowCustomerCompanyInvalid',
-                        );
-                    }
-                }
-            }
-
-            if (
-                $ConfigObject->Get('ChatEngine::Active')
-                && $Field->[0] eq 'UserLogin'
-                )
-            {
-                # Check if agent has permission to start chats with the customer users.
-                my $EnableChat = 1;
-                my $ChatStartingAgentsGroup
-                    = $ConfigObject->Get('ChatEngine::PermissionGroup::ChatStartingAgents') || 'users';
-                my $ChatStartingAgentsGroupPermission = $Kernel::OM->Get('Kernel::System::Group')->PermissionCheck(
-                    UserID    => $Self->{UserID},
-                    GroupName => $ChatStartingAgentsGroup,
-                    Type      => 'rw',
-                );
-
-                if ( !$ChatStartingAgentsGroupPermission ) {
-                    $EnableChat = 0;
-                }
-                if (
-                    $EnableChat
-                    && !$ConfigObject->Get('ChatEngine::ChatDirection::AgentToCustomer')
-                    )
-                {
-                    $EnableChat = 0;
-                }
-
-                if ($EnableChat) {
-                    my $VideoChatEnabled = 0;
-                    my $VideoChatAgentsGroup
-                        = $ConfigObject->Get('ChatEngine::PermissionGroup::VideoChatAgents') || 'users';
-                    my $VideoChatAgentsGroupPermission = $Kernel::OM->Get('Kernel::System::Group')->PermissionCheck(
-                        UserID    => $Self->{UserID},
-                        GroupName => $VideoChatAgentsGroup,
-                        Type      => 'rw',
-                    );
-
-                    # Enable the video chat feature if system is entitled and agent is a member of configured group.
-                    if ($VideoChatAgentsGroupPermission) {
-                        if ( $Kernel::OM->Get('Kernel::System::Main')
-                            ->Require( 'Kernel::System::VideoChat', Silent => 1 ) )
-                        {
-                            $VideoChatEnabled = $Kernel::OM->Get('Kernel::System::VideoChat')->IsEnabled();
-                        }
-                    }
-
-                    my $CustomerEnableChat = 0;
-                    my $ChatAccess         = 0;
-                    my $VideoChatAvailable = 0;
-                    my $VideoChatSupport   = 0;
-
-                    # Default status is offline.
-                    my $UserState            = Translatable('Offline');
-                    my $UserStateDescription = $Self->{LanguageObject}->Translate('User is currently offline.');
-
-                    my $CustomerChatAvailability = $Kernel::OM->Get('Kernel::System::Chat')->CustomerAvailabilityGet(
-                        UserID => $Param{Data}->{UserID},
-                    );
-
-                    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
-
-                    my %CustomerUser = $CustomerUserObject->CustomerUserDataGet(
-                        User => $Param{Data}->{UserID},
-                    );
-                    $CustomerUser{UserFullname} = $CustomerUserObject->CustomerName(
-                        UserLogin => $Param{Data}->{UserID},
-                    );
-                    $VideoChatSupport = 1 if $CustomerUser{VideoChatHasWebRTC};
-
-                    if ( $CustomerChatAvailability == 3 ) {
-                        $UserState            = Translatable('Active');
-                        $CustomerEnableChat   = 1;
-                        $UserStateDescription = $Self->{LanguageObject}->Translate('User is currently active.');
-                        $VideoChatAvailable   = 1;
-                    }
-                    elsif ( $CustomerChatAvailability == 2 ) {
-                        $UserState            = Translatable('Away');
-                        $CustomerEnableChat   = 1;
-                        $UserStateDescription = $Self->{LanguageObject}->Translate('User was inactive for a while.');
-                    }
-
-                    $Self->Block(
-                        Name => 'CustomerRowUserStatus',
-                        Data => {
-                            %CustomerUser,
-                            UserState            => $UserState,
-                            UserStateDescription => $UserStateDescription,
-                        },
-                    );
-
-                    if ($CustomerEnableChat) {
-                        $Self->Block(
-                            Name => 'CustomerRowChatIcons',
-                            Data => {
-                                %{ $Param{Data} },
-                                %CustomerUser,
-                                VideoChatEnabled   => $VideoChatEnabled,
-                                VideoChatAvailable => $VideoChatAvailable,
-                                VideoChatSupport   => $VideoChatSupport,
-                            },
-                        );
-                    }
-                }
-            }
-        }
-    }
-
-    # check Frontend::CustomerUser::Item
-    my $CustomerItem      = $ConfigObject->Get('Frontend::CustomerUser::Item');
-    my $CustomerItemCount = 0;
-    if ($CustomerItem) {
-        $Self->Block(
-            Name => 'CustomerItem',
-        );
-        my %Modules = %{$CustomerItem};
-
-        MODULE:
-        for my $Module ( sort keys %Modules ) {
-            if ( !$MainObject->Require( $Modules{$Module}->{Module} ) ) {
-                $Self->FatalDie();
-            }
-
-            my $Object = $Modules{$Module}->{Module}->new(
-                %{$Self},
-                LayoutObject => $Self,
-            );
-
-            # run module
-            next MODULE if !$Object;
-
-            my $Run = $Object->Run(
-                Config => $Modules{$Module},
-                Data   => $Param{Data},
-            );
-
-            next MODULE if !$Run;
-
-            $CustomerItemCount++;
-        }
-    }
-
-    # create & return output
-    return $Self->Output(
-        TemplateFile => 'AgentCustomerTableView',
-        Data         => \%Param
-    );
-}
-</pre></div>
-
 <h2 id="ArticleQuote">ArticleQuote()</h2>
 
-<p><a href="#" onclick="toggleCode('method_ArticleQuote');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ArticleQuote">
-                                        <pre>
-
-sub ArticleQuote {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(TicketID ArticleID FormID UploadCacheObject)) {
-        if ( !$Param{$_} ) {
-            $Self->FatalError( Message => "Need $_!" );
-        }
-    }
-
-    # get needed objects
-    my $ConfigObject  = $Kernel::OM->Get('Kernel::Config');
-    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
-
-    # body preparation for plain text processing
-    if ( $ConfigObject->Get('Frontend::RichText') ) {
-
-        my $Body = '';
-
-        # check for html body
-        my @ArticleBox = $ArticleObject->ArticleContentIndex(
-            TicketID                   => $Param{TicketID},
-            StripPlainBodyAsAttachment => 3,
-            UserID                     => $Self->{UserID},
-            DynamicFields              => 0,
-        );
-
-        my %NotInlineAttachments;
-        ARTICLE:
-        for my $ArticleTmp (@ArticleBox) {
-
-            # search for article to answer (reply article)
-            next ARTICLE if $ArticleTmp->{ArticleID} ne $Param{ArticleID};
-
-            # check if no html body exists
-            last ARTICLE if !$ArticleTmp->{AttachmentIDOfHTMLBody};
-
-            my %AttachmentHTML = $ArticleObject->ArticleAttachment(
-                ArticleID => $ArticleTmp->{ArticleID},
-                FileID    => $ArticleTmp->{AttachmentIDOfHTMLBody},
-                UserID    => $Self->{UserID},
-            );
-            my $Charset = $AttachmentHTML{ContentType} || '';
-            $Charset =~ s/.+?charset=("|'|)(\w+)/$2/gi;
-            $Charset =~ s/"|'//g;
-            $Charset =~ s/(.+?);.*/$1/g;
-
-            # convert html body to correct charset
-            $Body = $Kernel::OM->Get('Kernel::System::Encode')->Convert(
-                Text  => $AttachmentHTML{Content},
-                From  => $Charset,
-                To    => $Self->{UserCharset},
-                Check => 1,
-            );
-
-            # get HTML utils object
-            my $HTMLUtilsObject = $Kernel::OM->Get('Kernel::System::HTMLUtils');
-
-            # add url quoting
-            $Body = $HTMLUtilsObject->LinkQuote(
-                String => $Body,
-            );
-
-            # strip head, body and meta elements
-            $Body = $HTMLUtilsObject->DocumentStrip(
-                String => $Body,
-            );
-
-            # display inline images if exists
-            my $SessionID = '';
-            if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
-                $SessionID = ';' . $Self->{SessionName} . '=' . $Self->{SessionID};
-            }
-            my $AttachmentLink = $Self->{Baselink}
-                . 'Action=PictureUpload'
-                . ';FormID='
-                . $Param{FormID}
-                . $SessionID
-                . ';ContentID=';
-
-            # search inline documents in body and add it to upload cache
-            my %Attachments = %{ $ArticleTmp->{Atms} };
-            my %AttachmentAlreadyUsed;
-            $Body =~ s{
-                (=|"|')cid:(.*?)("|'|>|\/>|\s)
-            }
-            {
-                my $Start= $1;
-                my $ContentID = $2;
-                my $End = $3;
-
-                # improve html quality
-                if ( $Start ne '"' && $Start ne '\'' ) {
-                    $Start .= '"';
-                }
-                if ( $End ne '"' && $End ne '\'' ) {
-                    $End = '"' . $End;
-                }
-
-                # find attachment to include
-                ATMCOUNT:
-                for my $AttachmentID ( sort keys %Attachments ) {
-
-                    if ( lc $Attachments{$AttachmentID}->{ContentID} ne lc "<$ContentID>" ) {
-                        next ATMCOUNT;
-                    }
-
-                    # get whole attachment
-                    my %AttachmentPicture = $ArticleObject->ArticleAttachment(
-                        ArticleID => $Param{ArticleID},
-                        FileID    => $AttachmentID,
-                        UserID    => $Self->{UserID},
-                    );
-
-                    # content id cleanup
-                    $AttachmentPicture{ContentID} =~ s/^<//;
-                    $AttachmentPicture{ContentID} =~ s/>$//;
-
-                    # find cid, add attachment URL and remember, file is already uploaded
-                    $ContentID = $AttachmentLink . $Self->LinkEncode( $AttachmentPicture{ContentID} );
-
-                    # add to upload cache if not uploaded and remember
-                    if (!$AttachmentAlreadyUsed{$AttachmentID}) {
-
-                        # remember
-                        $AttachmentAlreadyUsed{$AttachmentID} = 1;
-
-                        # write attachment to upload cache
-                        $Param{UploadCacheObject}->FormIDAddFile(
-                            FormID      => $Param{FormID},
-                            Disposition => 'inline',
-                            %{ $Attachments{$AttachmentID} },
-                            %AttachmentPicture,
-                        );
-                    }
-                }
-
-                # return link
-                $Start . $ContentID . $End;
-            }egxi;
-
-            # find inline images using Content-Location instead of Content-ID
-            ATTACHMENT:
-            for my $AttachmentID ( sort keys %Attachments ) {
-
-                next ATTACHMENT if !$Attachments{$AttachmentID}->{ContentID};
-
-                # get whole attachment
-                my %AttachmentPicture = $ArticleObject->ArticleAttachment(
-                    ArticleID => $Param{ArticleID},
-                    FileID    => $AttachmentID,
-                    UserID    => $Self->{UserID},
-                );
-
-                # content id cleanup
-                $AttachmentPicture{ContentID} =~ s/^<//;
-                $AttachmentPicture{ContentID} =~ s/>$//;
-
-                $Body =~ s{
-                    ("|')(\Q$AttachmentPicture{ContentID}\E)("|'|>|\/>|\s)
-                }
-                {
-                    my $Start= $1;
-                    my $ContentID = $2;
-                    my $End = $3;
-
-                    # find cid, add attachment URL and remember, file is already uploaded
-                    $ContentID = $AttachmentLink . $Self->LinkEncode( $AttachmentPicture{ContentID} );
-
-                    # add to upload cache if not uploaded and remember
-                    if (!$AttachmentAlreadyUsed{$AttachmentID}) {
-
-                        # remember
-                        $AttachmentAlreadyUsed{$AttachmentID} = 1;
-
-                        # write attachment to upload cache
-                        $Param{UploadCacheObject}->FormIDAddFile(
-                            FormID      => $Param{FormID},
-                            Disposition => 'inline',
-                            %{ $Attachments{$AttachmentID} },
-                            %AttachmentPicture,
-                        );
-                    }
-
-                    # return link
-                    $Start . $ContentID . $End;
-                }egxi;
-            }
-
-            # find not inline images
-            ATTACHMENT:
-            for my $AttachmentID ( sort keys %Attachments ) {
-                next ATTACHMENT if $AttachmentAlreadyUsed{$AttachmentID};
-                $NotInlineAttachments{$AttachmentID} = 1;
-            }
-
-            # do no more article
-            last ARTICLE;
-        }
-
-        # attach also other attachments on article forward
-        if ( $Body && $Param{AttachmentsInclude} ) {
-            for my $AttachmentID ( sort keys %NotInlineAttachments ) {
-                my %Attachment = $ArticleObject->ArticleAttachment(
-                    ArticleID => $Param{ArticleID},
-                    FileID    => $AttachmentID,
-                    UserID    => $Self->{UserID},
-                );
-
-                # add attachment
-                $Param{UploadCacheObject}->FormIDAddFile(
-                    FormID => $Param{FormID},
-                    %Attachment,
-                    Disposition => 'attachment',
-                );
-            }
-        }
-        return $Body if $Body;
-    }
-
-    # as fallback use text body for quote
-    my %Article = $ArticleObject->ArticleGet(
-        ArticleID     => $Param{ArticleID},
-        DynamicFields => 0,
-    );
-
-    # check if original content isn't text/plain or text/html, don't use it
-    if ( !$Article{ContentType} ) {
-        $Article{ContentType} = 'text/plain';
-    }
-
-    if ( $Article{ContentType} !~ /text\/(plain|html)/i ) {
-        $Article{Body}        = '-> no quotable message <-';
-        $Article{ContentType} = 'text/plain';
-    }
-    else {
-        $Article{Body} = $Self->WrapPlainText(
-            MaxCharacters => $ConfigObject->Get('Ticket::Frontend::TextAreaEmail') || 82,
-            PlainText => $Article{Body},
-        );
-    }
-
-    # attach attachments
-    if ( $Param{AttachmentsInclude} ) {
-        my %ArticleIndex = $ArticleObject->ArticleAttachmentIndex(
-            ArticleID                  => $Param{ArticleID},
-            UserID                     => $Self->{UserID},
-            StripPlainBodyAsAttachment => 3,
-            Article                    => \%Article,
-        );
-        for my $Index ( sort keys %ArticleIndex ) {
-            my %Attachment = $ArticleObject->ArticleAttachment(
-                ArticleID => $Param{ArticleID},
-                FileID    => $Index,
-                UserID    => $Self->{UserID},
-            );
-
-            # add attachment
-            $Param{UploadCacheObject}->FormIDAddFile(
-                FormID => $Param{FormID},
-                %Attachment,
-                Disposition => 'attachment',
-            );
-        }
-    }
-
-    # return body as html
-    if ( $ConfigObject->Get('Frontend::RichText') ) {
-
-        $Article{Body} = $Self->Ascii2Html(
-            Text           => $Article{Body},
-            HTMLResultMode => 1,
-            LinkFeature    => 1,
-        );
-    }
-
-    # return body as plain text
-    return $Article{Body};
-}
-</pre></div>
-
-<p>get body and attach e. g. inline documents and/or attach all attachments to
-upload cache</p>
+<p>get body and attach e. g. inline documents and/or attach all attachments to upload cache</p>
 
 <p>for forward or split, get body and attach all attachments</p>
 
-<pre>    my $HTMLBody = $LayoutObject-&gt;ArticleQuote(
+<pre><code>    my $HTMLBody = $LayoutObject-&gt;ArticleQuote(
         TicketID           =&gt; 123,
         ArticleID          =&gt; 123,
         FormID             =&gt; $Self-&gt;{FormID},
         UploadCacheObject   =&gt; $Self-&gt;{UploadCacheObject},
         AttachmentsInclude =&gt; 1,
-    );
-</pre><p>or just for including inline documents to upload cache</p>
+    );</code></pre>
 
-<pre>    my $HTMLBody = $LayoutObject-&gt;ArticleQuote(
+<p>or just for including inline documents to upload cache</p>
+
+<pre><code>    my $HTMLBody = $LayoutObject-&gt;ArticleQuote(
         TicketID           =&gt; 123,
         ArticleID          =&gt; 123,
         FormID             =&gt; $Self-&gt;{FormID},
         UploadCacheObject  =&gt; $Self-&gt;{UploadCacheObject},
         AttachmentsInclude =&gt; 0,
-    );
-</pre><p>Both will also work without rich text (if $ConfigObject-&gt;Get('Frontend::RichText')
-is false), return param will be text/plain instead.</p>
+    );</code></pre>
 
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<p>Both will also work without rich text (if $ConfigObject-&gt;Get(&#39;Frontend::RichText&#39;) is false), return param will be text/plain instead.</p>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

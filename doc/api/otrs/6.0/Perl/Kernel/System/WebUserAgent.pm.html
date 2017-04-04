@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::WebUserAgent</title>
+<title>Kernel::System::WebUserAgent &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,244 +48,111 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/WebUserAgent.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Request">Request()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Request">Request()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::WebUserAgent - a web user agent lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All web user agent functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # get database object
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    $Self->{Timeout} = $Param{Timeout} || $ConfigObject->Get('WebUserAgent::Timeout') || 15;
-    $Self->{Proxy}   = $Param{Proxy}   || $ConfigObject->Get('WebUserAgent::Proxy')   || '';
-
-    return $Self;
-}
-</pre></div>
-
 <p>create an object</p>
 
-<pre>    use Kernel::System::WebUserAgent;
+<pre><code>    use Kernel::System::WebUserAgent;
 
     my $WebUserAgentObject = Kernel::System::WebUserAgent-&gt;new(
         Timeout =&gt; 15,                  # optional, timeout
-        Proxy   =&gt; 'proxy.example.com', # optional, proxy
-    );
-</pre><h2 id="Request">Request()</h2>
+        Proxy   =&gt; &#39;proxy.example.com&#39;, # optional, proxy
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Request');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Request">
-                                        <pre>
-
-sub Request {
-    my ( $Self, %Param ) = @_;
-
-    # define method - default to GET
-    $Param{Type} ||= 'GET';
-
-    my $Response;
-
-    # init agent
-    my $UserAgent = LWP::UserAgent->new();
-
-    # In some scenarios like transparent HTTPS proxies, it can be neccessary to turn off
-    #   SSL certificate validation.
-    if (
-        $Param{SkipSSLVerification}
-        || $Kernel::OM->Get('Kernel::Config')->Get('WebUserAgent::DisableSSLVerification')
-        )
-    {
-        $UserAgent->ssl_opts(
-            verify_hostname => 0,
-        );
-    }
-
-    # set credentials
-    if ( $Param{Credentials} ) {
-        my %CredentialParams    = %{ $Param{Credentials} || {} };
-        my @Keys                = qw(Location Realm User Password);
-        my $AllCredentialParams = !first { !defined $_ } @CredentialParams{@Keys};
-
-        if ($AllCredentialParams) {
-            $UserAgent->credentials(
-                @CredentialParams{@Keys},
-            );
-        }
-    }
-
-    # set headers
-    if ( $Param{Header} ) {
-        $UserAgent->default_headers(
-            HTTP::Headers->new( %{ $Param{Header} } ),
-        );
-    }
-
-    # set timeout
-    $UserAgent->timeout( $Self->{Timeout} );
-
-    # get database object
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    # set user agent
-    $UserAgent->agent(
-        $ConfigObject->Get('Product') . ' ' . $ConfigObject->Get('Version')
-    );
-
-    # set proxy
-    if ( $Self->{Proxy} ) {
-        $UserAgent->proxy( [ 'http', 'https', 'ftp' ], $Self->{Proxy} );
-    }
-
-    if ( $Param{Type} eq 'GET' ) {
-
-        # perform get request on URL
-        $Response = $UserAgent->get( $Param{URL} );
-    }
-
-    else {
-
-        # check for Data param
-        if ( !IsArrayRefWithData( $Param{Data} ) && !IsHashRefWithData( $Param{Data} ) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message =>
-                    'WebUserAgent POST: Need Data param containing a hashref or arrayref with data.',
-            );
-            return ( Status => 0 );
-        }
-
-        # perform post request plus data
-        $Response = $UserAgent->post( $Param{URL}, $Param{Data} );
-    }
-
-    if ( !$Response->is_success() ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't perform $Param{Type} on $Param{URL}: " . $Response->status_line(),
-        );
-        return (
-            Status => $Response->status_line(),
-        );
-    }
-
-    # get the content to convert internal used charset
-    my $ResponseContent = $Response->decoded_content();
-    $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$ResponseContent );
-
-    if ( $Param{Return} && $Param{Return} eq 'REQUEST' ) {
-        return (
-            Status  => $Response->status_line(),
-            Content => \$Response->request()->as_string(),
-        );
-    }
-
-    # return request
-    return (
-        Status  => $Response->status_line(),
-        Content => \$ResponseContent,
-    );
-}
-</pre></div>
+<h2 id="Request">Request()</h2>
 
 <p>return the content of requested URL.</p>
 
 <p>Simple GET request:</p>
 
-<pre>    my %Response = $WebUserAgentObject-&gt;Request(
-        URL =&gt; 'http://example.com/somedata.xml',
+<pre><code>    my %Response = $WebUserAgentObject-&gt;Request(
+        URL =&gt; &#39;http://example.com/somedata.xml&#39;,
         SkipSSLVerification =&gt; 1, # (optional)
-    );
-</pre><p>Or a POST request; attributes can be a hashref like this:</p>
+    );</code></pre>
 
-<pre>    my %Response = $WebUserAgentObject-&gt;Request(
-        URL  =&gt; 'http://example.com/someurl',
-        Type =&gt; 'POST',
-        Data =&gt; { Attribute1 =&gt; 'Value', Attribute2 =&gt; 'Value2' },
+<p>Or a POST request; attributes can be a hashref like this:</p>
+
+<pre><code>    my %Response = $WebUserAgentObject-&gt;Request(
+        URL  =&gt; &#39;http://example.com/someurl&#39;,
+        Type =&gt; &#39;POST&#39;,
+        Data =&gt; { Attribute1 =&gt; &#39;Value&#39;, Attribute2 =&gt; &#39;Value2&#39; },
         SkipSSLVerification =&gt; 1, # (optional)
-    );
-</pre><p>alternatively, you can use an arrayref like this:</p>
+    );</code></pre>
 
-<pre>    my %Response = $WebUserAgentObject-&gt;Request(
-        URL  =&gt; 'http://example.com/someurl',
-        Type =&gt; 'POST',
-        Data =&gt; [ Attribute =&gt; 'Value', Attribute =&gt; 'OtherValue' ],
+<p>alternatively, you can use an arrayref like this:</p>
+
+<pre><code>    my %Response = $WebUserAgentObject-&gt;Request(
+        URL  =&gt; &#39;http://example.com/someurl&#39;,
+        Type =&gt; &#39;POST&#39;,
+        Data =&gt; [ Attribute =&gt; &#39;Value&#39;, Attribute =&gt; &#39;OtherValue&#39; ],
         SkipSSLVerification =&gt; 1, # (optional)
-    );
-</pre><p>returns</p>
+    );</code></pre>
 
-<pre>    %Response = (
-        Status  =&gt; '200 OK',    # http status
+<p>returns</p>
+
+<pre><code>    %Response = (
+        Status  =&gt; &#39;200 OK&#39;,    # http status
         Content =&gt; $ContentRef, # content of requested URL
-    );
-</pre><p>You can even pass some headers</p>
+    );</code></pre>
 
-<pre>    my %Response = $WebUserAgentObject-&gt;Request(
-        URL    =&gt; 'http://example.com/someurl',
-        Type   =&gt; 'POST',
-        Data   =&gt; [ Attribute =&gt; 'Value', Attribute =&gt; 'OtherValue' ],
+<p>You can even pass some headers</p>
+
+<pre><code>    my %Response = $WebUserAgentObject-&gt;Request(
+        URL    =&gt; &#39;http://example.com/someurl&#39;,
+        Type   =&gt; &#39;POST&#39;,
+        Data   =&gt; [ Attribute =&gt; &#39;Value&#39;, Attribute =&gt; &#39;OtherValue&#39; ],
         Header =&gt; {
-            Authorization =&gt; 'Basic xxxx',
-            Content_Type  =&gt; 'text/json',
+            Authorization =&gt; &#39;Basic xxxx&#39;,
+            Content_Type  =&gt; &#39;text/json&#39;,
         },
         SkipSSLVerification =&gt; 1, # (optional)
-    );
-</pre><p>If you need to set credentials</p>
+    );</code></pre>
 
-<pre>    my %Response = $WebUserAgentObject-&gt;Request(
-        URL          =&gt; 'http://example.com/someurl',
-        Type         =&gt; 'POST',
-        Data         =&gt; [ Attribute =&gt; 'Value', Attribute =&gt; 'OtherValue' ],
+<p>If you need to set credentials</p>
+
+<pre><code>    my %Response = $WebUserAgentObject-&gt;Request(
+        URL          =&gt; &#39;http://example.com/someurl&#39;,
+        Type         =&gt; &#39;POST&#39;,
+        Data         =&gt; [ Attribute =&gt; &#39;Value&#39;, Attribute =&gt; &#39;OtherValue&#39; ],
         Credentials  =&gt; {
-            User     =&gt; 'otrs_user',
-            Password =&gt; 'otrs_password',
-            Realm    =&gt; 'OTRS Unittests',
-            Location =&gt; 'ftp.otrs.org:80',
+            User     =&gt; &#39;otrs_user&#39;,
+            Password =&gt; &#39;otrs_password&#39;,
+            Realm    =&gt; &#39;OTRS Unittests&#39;,
+            Location =&gt; &#39;ftp.otrs.org:80&#39;,
         },
         SkipSSLVerification =&gt; 1, # (optional)
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

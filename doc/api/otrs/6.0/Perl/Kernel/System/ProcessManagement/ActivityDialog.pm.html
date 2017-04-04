@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::ProcessManagement::ActivityDialog</title>
+<title>Kernel::System::ProcessManagement::ActivityDialog &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,278 +48,114 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/ProcessManagement/ActivityDialog.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#ActivityDialogGet">ActivityDialogGet()</a></li>
-	<li><a href="#ActivityDialogCompletedCheck">ActivityDialogCompletedCheck()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#ActivityDialogGet">ActivityDialogGet()</a></li>
+      <li><a href="#ActivityDialogCompletedCheck">ActivityDialogCompletedCheck()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::ProcessManagement::ActivityDialog - activity dialog lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All Process Management Activity Dialog functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $ActivityDialogObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ProcessManagement::ActivityDialog&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
+<h2 id="ActivityDialogGet">ActivityDialogGet()</h2>
 
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $ActivityDialogObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::ActivityDialog');
-</pre><h2 id="ActivityDialogGet">ActivityDialogGet()</h2>
-
-<p><a href="#" onclick="toggleCode('method_ActivityDialogGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ActivityDialogGet">
-                                        <pre>
-
-sub ActivityDialogGet {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ActivityDialogEntityID Interface)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!"
-            );
-            return;
-        }
-    }
-
-    if ( $Param{Interface} ne 'all' && ref $Param{Interface} ne 'ARRAY' ) {
-        $Param{Interface} = [ $Param{Interface} ];
-    }
-
-    my $ActivityDialog = $Kernel::OM->Get('Kernel::Config')->Get('Process::ActivityDialog');
-
-    if ( !IsHashRefWithData($ActivityDialog) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need ActivityDialog config!'
-        );
-        return;
-    }
-
-    if ( !IsHashRefWithData( $ActivityDialog->{ $Param{ActivityDialogEntityID} } ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No Data for ActivityDialog '$Param{ActivityDialogEntityID}' found!"
-        );
-        return;
-    }
-
-    if (
-        $Param{Interface} ne 'all'
-        && !IsArrayRefWithData(
-            $ActivityDialog->{ $Param{ActivityDialogEntityID} }->{Interface}
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No Interface for ActivityDialog '$Param{ActivityDialogEntityID}' found!"
-        );
-    }
-
-    if ( $Param{Interface} ne 'all' ) {
-        my $Success;
-        INTERFACE:
-        for my $CurrentInterface ( @{ $Param{Interface} } ) {
-            if (
-                grep { $CurrentInterface eq $_ }
-                @{ $ActivityDialog->{ $Param{ActivityDialogEntityID} }->{Interface} }
-                )
-            {
-                $Success = 1;
-                last INTERFACE;
-            }
-        }
-
-        if ( !$Success ) {
-            if ( !$Param{Silent} ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message =>
-                        "Not permitted Interface(s) '"
-                        . join( '\', \'', @{ $Param{Interface} } )
-                        . "' for ActivityDialog '$Param{ActivityDialogEntityID}'!"
-                );
-            }
-            return;
-        }
-    }
-
-    return $ActivityDialog->{ $Param{ActivityDialogEntityID} };
-}
-</pre></div>
-
-<pre>    Get activity dialog info
+<pre><code>    Get activity dialog info
 
     my $ActivityDialog = $ActivityDialogObject-&gt;ActivityDialogGet(
-        ActivityDialogEntityID =&gt; 'AD1',
-        Interface              =&gt; ['AgentInterface'],   # ['AgentInterface'] or ['CustomerInterface'] or ['AgentInterface', 'CustomerInterface'] or 'all'
+        ActivityDialogEntityID =&gt; &#39;AD1&#39;,
+        Interface              =&gt; [&#39;AgentInterface&#39;],   # [&#39;AgentInterface&#39;] or [&#39;CustomerInterface&#39;] or [&#39;AgentInterface&#39;, &#39;CustomerInterface&#39;] or &#39;all&#39;
         Silent                 =&gt; 1,    # 1 or 0, default 0, if set to 1, will not log errors about not matching interfaces
     );
 
     Returns:
 
     $ActivityDialog = {
-        Name             =&gt; 'UnitTestActivity',
-        Interface        =&gt; 'CustomerInterface',   # 'AgentInterface', 'CustomerInterface', ['AgentInterface'] or ['CustomerInterface'] or ['AgentInterface', 'CustomerInterface']
-        DescriptionShort =&gt; 'AD1 Process Short',
-        DescriptionLong  =&gt; 'AD1 Process Long description',
-        CreateTime       =&gt; '07-02-2012 13:37:00',
-        CreateBy         =&gt; '2',
-        ChangeTime       =&gt; '08-02-2012 13:37:00',
-        ChangeBy         =&gt; '3',
+        Name             =&gt; &#39;UnitTestActivity&#39;,
+        Interface        =&gt; &#39;CustomerInterface&#39;,   # &#39;AgentInterface&#39;, &#39;CustomerInterface&#39;, [&#39;AgentInterface&#39;] or [&#39;CustomerInterface&#39;] or [&#39;AgentInterface&#39;, &#39;CustomerInterface&#39;]
+        DescriptionShort =&gt; &#39;AD1 Process Short&#39;,
+        DescriptionLong  =&gt; &#39;AD1 Process Long description&#39;,
+        CreateTime       =&gt; &#39;07-02-2012 13:37:00&#39;,
+        CreateBy         =&gt; &#39;2&#39;,
+        ChangeTime       =&gt; &#39;08-02-2012 13:37:00&#39;,
+        ChangeBy         =&gt; &#39;3&#39;,
         Fields =&gt; {
             DynamicField_Make =&gt; {
                 Display          =&gt; 2,
-                DescriptionLong  =&gt; 'Make Long',
-                DescriptionShort =&gt; 'Make Short',
+                DescriptionLong  =&gt; &#39;Make Long&#39;,
+                DescriptionShort =&gt; &#39;Make Short&#39;,
             },
             DynamicField_VWModel =&gt; {
                 Display          =&gt; 2,
-                DescriptionLong  =&gt; 'VWModel Long',
-                DescriptionShort =&gt; 'VWModel Short',
+                DescriptionLong  =&gt; &#39;VWModel Long&#39;,
+                DescriptionShort =&gt; &#39;VWModel Short&#39;,
             },
             DynamicField_PeugeotModel =&gt; {
                 Display          =&gt; 0,
-                DescriptionLong  =&gt; 'PeugeotModel Long',
-                DescriptionShort =&gt; 'PeugeotModel Short',
+                DescriptionLong  =&gt; &#39;PeugeotModel Long&#39;,
+                DescriptionShort =&gt; &#39;PeugeotModel Short&#39;,
             },
             StateID =&gt; {
                Display          =&gt; 1,
-               DescriptionLong  =&gt; 'StateID Long',
-               DescriptionShort =&gt; 'StateID Short',
+               DescriptionLong  =&gt; &#39;StateID Long&#39;,
+               DescriptionShort =&gt; &#39;StateID Short&#39;,
             },
         },
         FieldOrder =&gt; [
-            'StateID',
-            'DynamicField_Make',
-            'DynamicField_VWModelModel',
-            'DynamicField_PeugeotModel'
+            &#39;StateID&#39;,
+            &#39;DynamicField_Make&#39;,
+            &#39;DynamicField_VWModelModel&#39;,
+            &#39;DynamicField_PeugeotModel&#39;
         ],
-        SubmitAdviceText =&gt; 'NOTE: If you submit the form ...',
-        SubmitButtonText =&gt; 'Make an inquiry',
-    };
-</pre><h2 id="ActivityDialogCompletedCheck">ActivityDialogCompletedCheck()</h2>
+        SubmitAdviceText =&gt; &#39;NOTE: If you submit the form ...&#39;,
+        SubmitButtonText =&gt; &#39;Make an inquiry&#39;,
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ActivityDialogCompletedCheck');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ActivityDialogCompletedCheck">
-                                        <pre>
+<h2 id="ActivityDialogCompletedCheck">ActivityDialogCompletedCheck()</h2>
 
-sub ActivityDialogCompletedCheck {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ActivityDialogEntityID Data)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!"
-            );
-            return;
-        }
-    }
-
-    if ( !IsHashRefWithData( $Param{Data} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Data has no values!",
-        );
-        return;
-    }
-
-    my $ActivityDialog = $Self->ActivityDialogGet(
-        ActivityDialogEntityID => $Param{ActivityDialogEntityID},
-        Interface              => 'all',
-    );
-    if ( !$ActivityDialog ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't get ActivtyDialog '$Param{ActivityDialogEntityID}'!",
-        );
-        return;
-    }
-
-    if ( !$ActivityDialog->{Fields} || ref $ActivityDialog->{Fields} ne 'HASH' ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't get fields for ActivtyDialog '$Param{ActivityDialogEntityID}'!",
-        );
-        return;
-    }
-
-    # loop over the fields of the config activity dialog to check if the required fields are filled
-    FIELDLOOP:
-    for my $Field ( sort keys %{ $ActivityDialog->{Fields} } ) {
-
-        # Checks if Field was invisible
-        next FIELDLOOP if ( !$ActivityDialog->{Fields}->{$Field}->{Display} );
-
-        # Checks if Field was visible but not required
-        next FIELDLOOP if ( $ActivityDialog->{Fields}->{$Field}->{Display} == 1 );
-
-        # checks if $Data->{Field} is defined and not an empty string
-        return if ( !IsStringWithData( $Param{Data}->{$Field} ) );
-    }
-
-    return 1;
-}
-</pre></div>
-
-<pre>    Checks if an activity dialog is completed
+<pre><code>    Checks if an activity dialog is completed
 
     my $Completed = $ActivityDialogObject-&gt;ActivityDialogCompletedCheck(
-        ActivityDialogEntityID =&gt; 'AD1',
+        ActivityDialogEntityID =&gt; &#39;AD1&#39;,
         Data                   =&gt; {
-            Queue         =&gt; 'Raw',
-            DynamicField1 =&gt; 'Value',
-            Subject       =&gt; 'Testsubject',
+            Queue         =&gt; &#39;Raw&#39;,
+            DynamicField1 =&gt; &#39;Value&#39;,
+            Subject       =&gt; &#39;Testsubject&#39;,
             # ...
         },
     );
 
     Returns:
 
-    $Completed = 1; # 0
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+    $Completed = 1; # 0</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

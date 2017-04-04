@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::Spelling</title>
+<title>Kernel::System::Spelling &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,288 +48,69 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/Spelling.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Check">Check()</a></li>
-	<li><a href="#Error">Error()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Check">Check()</a></li>
+      <li><a href="#Error">Error()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::Spelling - spelling lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
-<p>This module is the spellchecker backend wrapper of OTRS.
-Currently, <code>ispell</code> and <code>aspell</code> are supported as spellchecker backends.</p>
+<p>This module is the spellchecker backend wrapper of OTRS. Currently, <code>ispell</code> and <code>aspell</code> are supported as spellchecker backends.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $SpellingObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Spelling&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $SpellingObject = $Kernel::OM-&gt;Get('Kernel::System::Spelling');
-</pre><h2 id="Check">Check()</h2>
-
-<p><a href="#" onclick="toggleCode('method_Check');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Check">
-                                        <pre>
-
-sub Check {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{Text} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need Text!"
-        );
-        return;
-    }
-
-    # default ignored words
-    my @Ignore = qw(com org de net Cc www Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec Sun Mon Tue Wed Thu Fri
-        Sat Fwd Re DNS Date To Cc Bcc ca tm COM Co op netscape bcc jpg gif email Tel ie eg otrs suse redhat debian
-        caldera php perl java html unsubscribe queue event day month year ticket
-    );
-
-    # get config object
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    # spell checker config options
-    my $SpellChecker = $ConfigObject->Get('SpellCheckerBin') || 'ispell';
-
-    # add configured ignored words
-    if ( ref $ConfigObject->Get('SpellCheckerIgnore') eq 'ARRAY' ) {
-        for ( @{ $ConfigObject->Get('SpellCheckerIgnore') } ) {
-            push @Ignore, $_;
-        }
-    }
-
-    # don't correct emails
-    $Param{Text} =~ s/<.+?\@.+?>//g;
-    $Param{Text} =~ s/\s.+?\@.+?\s/ /g;
-
-    # don't correct quoted text
-    $Param{Text} =~ s/^>.*$//gm;
-
-    # ispell encoding:
-    if ( $SpellChecker =~ /ispell/ ) {
-        $Param{Text} =~ s/ä/a"/g;
-        $Param{Text} =~ s/ö/o"/g;
-        $Param{Text} =~ s/ü/u"/g;
-        $Param{Text} =~ s/Ä/A"/g;
-        $Param{Text} =~ s/Ö/O"/g;
-        $Param{Text} =~ s/Ü/U"/g;
-        $Param{Text} =~ s/ß/sS/g;
-    }
-
-    # check if spell checker exists in file system
-    if ( !-e $ConfigObject->Get('SpellCheckerBin') ) {
-        $Self->{Error} = 1;
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't find spellchecker ("
-                . $ConfigObject->Get('SpellCheckerBin') . "): $!",
-        );
-        return;
-    }
-
-    # add -a
-    $SpellChecker .= ' -a ';
-
-    # set dict
-    if ( $Param{SpellLanguage} ) {
-        $SpellChecker .= " -d $Param{SpellLanguage}";
-    }
-
-    # get spell output
-
-    # write text to file and read it with (i|a)spell
-    # - can't use IPC::Open* because it's not working with mod_perl* :-/
-    my ( $FH, $TmpFile ) = $Kernel::OM->Get('Kernel::System::FileTemp')->TempFile();
-    if ( !$FH ) {
-        $Self->{Error} = 1;
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't write spell tmp text to $TmpFile: $!",
-        );
-        return;
-    }
-
-    # get encode object
-    my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
-
-    $EncodeObject->EncodeOutput( \$Param{Text} );
-    print $FH $Param{Text};
-
-    # aspell encoding
-    if ( $SpellChecker =~ /aspell/ ) {
-        $SpellChecker .= ' --encoding=utf-8';
-    }
-
-    # open spell checker
-    my $Spell;
-    if ( !open( $Spell, "-|", "$SpellChecker < $TmpFile" ) ) {    ## no critic
-        $Self->{Error} = 1;
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't open spellchecker: $!",
-        );
-        return;
-    }
-
-    my $Output      = '';
-    my $Lines       = 1;
-    my $CurrentLine = 0;
-    my %Data;
-    while ( my $Line = <$Spell> ) {
-
-        $CurrentLine++;
-
-        # set utf8 stamp if running in utf8 mode
-        $EncodeObject->EncodeInput( \$Line );
-
-        # ispell encoding:
-        if ( $SpellChecker =~ /ispell/ ) {
-            $Line =~ s/a"/ä/g;
-            $Line =~ s/o"/ö/g;
-            $Line =~ s/u"/ü/g;
-            $Line =~ s/A"/Ä/g;
-            $Line =~ s/O"/Ö/g;
-            $Line =~ s/U"/Ü/g;
-            $Line =~ s/sS/ß/g;
-        }
-
-        # '#' words with no suggestions
-        if ( $Line =~ /^# (.+?) .+?$/ ) {
-            $Data{$CurrentLine} = {
-                Word    => $1,
-                Replace => '',
-                Line    => $Lines,
-            };
-        }
-
-        # '&' words with suggestions
-        elsif ( $Line =~ /^& (.+?) .+?: (.*)$/ ) {
-            my @Replace = split /, /, $2;
-            $Data{$CurrentLine} = {
-                Word    => $1,
-                Replace => \@Replace,
-                Line    => $Lines,
-            };
-        }
-
-        # increase line count
-        elsif ( $Line =~ /^\n$/ ) {
-            $Lines++;
-        }
-    }
-
-    # drop double words and add line of double word
-    # bug#9914: only delete double words for non-wysiwyg spellchecker
-    if ( !$Param{RichText} ) {
-        my %DoubleWords;
-        for ( sort { $a <=> $b } keys %Data ) {
-            if ( $DoubleWords{ $Data{$_}->{Word} } ) {
-                $DoubleWords{ $Data{$_}->{Word} }->{Line} .= "/" . $Data{$_}->{Line};
-                delete $Data{$_};
-            }
-            else {
-                $DoubleWords{ $Data{$_}->{Word} } = $Data{$_};
-            }
-        }
-    }
-
-    # remove ignored words
-    for my $Word ( sort keys %Data ) {
-        for my $IgnoreWord (@Ignore) {
-            if (
-                defined $Data{$Word}
-                && $Data{$Word}->{Word}
-                && $Data{$Word}->{Word} =~ /^$IgnoreWord$/i
-                )
-            {
-                delete $Data{$Word};
-            }
-        }
-    }
-
-    close($Spell);
-
-    return %Data;
-}
-</pre></div>
+<h2 id="Check">Check()</h2>
 
 <p>spelling check for some text</p>
 
-<pre>    my %Result = $SpellingObject-&gt;Check(
-        Text          =&gt; 'Some Text to check.',
-        SpellLanguage =&gt; 'en',
+<pre><code>    my %Result = $SpellingObject-&gt;Check(
+        Text          =&gt; &#39;Some Text to check.&#39;,
+        SpellLanguage =&gt; &#39;en&#39;,
         RichText      =&gt; 1, # default: 0
     );
 
     # a result could be
-    $Result{'SomeWordWithError'} = {
+    $Result{&#39;SomeWordWithError&#39;} = {
         Replace =&gt; [
-            'SomeWord A',
-            'SomeWord B',
-            'SomeWord C',
+            &#39;SomeWord A&#39;,
+            &#39;SomeWord B&#39;,
+            &#39;SomeWord C&#39;,
         ],
         Line =&gt; 123,
-    };
-</pre><h2 id="Error">Error()</h2>
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Error');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Error">
-                                        <pre>
-
-sub Error {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{Error};
-}
-</pre></div>
+<h2 id="Error">Error()</h2>
 
 <p>check if spelling check returns a system error (read log backend for error message)</p>
 
-<pre>    my $TrueIfError = $SpellObject-&gt;Error();
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<pre><code>    my $TrueIfError = $SpellObject-&gt;Error();</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

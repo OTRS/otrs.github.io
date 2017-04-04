@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::GenericInterface::Transport</title>
+<title>Kernel::GenericInterface::Transport &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,72 +48,38 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/GenericInterface/Transport.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#ProviderProcessRequest">ProviderProcessRequest()</a></li>
-	<li><a href="#ProviderGenerateResponse">ProviderGenerateResponse()</a></li>
-	<li><a href="#RequesterPerformRequest">RequesterPerformRequest()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#ProviderProcessRequest">ProviderProcessRequest()</a></li>
+      <li><a href="#ProviderGenerateResponse">ProviderGenerateResponse()</a></li>
+      <li><a href="#RequesterPerformRequest">RequesterPerformRequest()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::GenericInterface::Transport - GenericInterface network transport interface</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    my $Self = {};
-    bless( $Self, $Type );
-
-    for my $Needed (qw( DebuggerObject TransportConfig)) {
-        $Self->{$Needed} = $Param{$Needed} || return {
-            Success => 0,
-            Summary => "Got no $Needed!",
-        };
-    }
-
-    # select and instantiate the backend
-    my $Backend = 'Kernel::GenericInterface::Transport::' . $Self->{TransportConfig}->{Type};
-
-    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($Backend) ) {
-        return $Self->{DebuggerObject}->Error( Summary => "Backend $Backend not found." );
-    }
-    $Self->{BackendObject} = $Backend->new( %{$Self} );
-
-    # if the backend constructor failed, it returns an error hash, pass it on in this case
-    return $Self->{BackendObject} if ref $Self->{BackendObject} ne $Backend;
-
-    return $Self;
-}
-</pre></div>
-
 <p>create an object.</p>
 
-<pre>    use Kernel::GenericInterface::Debugger;
+<pre><code>    use Kernel::GenericInterface::Debugger;
     use Kernel::GenericInterface::Transport;
 
     my $DebuggerObject = Kernel::GenericInterface::Debugger-&gt;new(
         DebuggerConfig   =&gt; {
-            DebugThreshold  =&gt; 'debug',
+            DebugThreshold  =&gt; &#39;debug&#39;,
             TestMode        =&gt; 0,           # optional, in testing mode the data will not be written to the DB
             # ...
         },
@@ -145,80 +90,35 @@ sub new {
     my $TransportObject = Kernel::GenericInterface::Transport-&gt;new(
         DebuggerObject =&gt; $DebuggerObject,
         TransportConfig =&gt; {
-            Type =&gt; 'HTTP::SOAP',
+            Type =&gt; &#39;HTTP::SOAP&#39;,
             Config =&gt; {
                 ...
             },
         },
-    );
-</pre><h2 id="ProviderProcessRequest">ProviderProcessRequest()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProviderProcessRequest');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProviderProcessRequest">
-                                        <pre>
+<h2 id="ProviderProcessRequest">ProviderProcessRequest()</h2>
 
-sub ProviderProcessRequest {
-    my ( $Self, %Param ) = @_;
+<p>process an incoming web service request. This function has to read the request data from from the web server process.</p>
 
-    my $Result = $Self->{BackendObject}->ProviderProcessRequest(%Param);
-
-    # make sure an operation is provided in success case
-    if ( $Result->{Success} && !$Result->{Operation} ) {
-
-        return $Self->{DebuggerObject}->Error(
-            Summary => 'TransportObject backend did not return an operation',
-        );
-    }
-
-    return $Result;
-}
-</pre></div>
-
-<p>process an incoming web service request. This function has to read the request data
-from from the web server process.</p>
-
-<pre>    my $Result = $TransportObject-&gt;ProviderProcessRequest();
+<pre><code>    my $Result = $TransportObject-&gt;ProviderProcessRequest();
 
     $Result = {
         Success         =&gt; 1,                   # 0 or 1
-        ErrorMessage    =&gt; '',                  # in case of error
-        Operation       =&gt; 'DesiredOperation',  # name of the operation to perform
+        ErrorMessage    =&gt; &#39;&#39;,                  # in case of error
+        Operation       =&gt; &#39;DesiredOperation&#39;,  # name of the operation to perform
         Data            =&gt; {                    # data payload of request
             ...
         },
-    };
-</pre><h2 id="ProviderGenerateResponse">ProviderGenerateResponse()</h2>
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProviderGenerateResponse');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProviderGenerateResponse">
-                                        <pre>
-
-sub ProviderGenerateResponse {
-    my ( $Self, %Param ) = @_;
-
-    if ( !defined $Param{Success} ) {
-
-        return $Self->{DebuggerObject}->Error(
-            Summary => 'Missing parameter Success.',
-        );
-    }
-
-    if ( $Param{Data} && ref $Param{Data} ne 'HASH' ) {
-
-        return $Self->{DebuggerObject}->Error(
-            Summary => 'Data is not a hash reference.',
-        );
-    }
-
-    return $Self->{BackendObject}->ProviderGenerateResponse(%Param);
-}
-</pre></div>
+<h2 id="ProviderGenerateResponse">ProviderGenerateResponse()</h2>
 
 <p>generate response for an incoming web service request.</p>
 
-<pre>    my $Result = $TransportObject-&gt;ProviderGenerateResponse(
+<pre><code>    my $Result = $TransportObject-&gt;ProviderGenerateResponse(
         Success         =&gt; 1,       # 1 or 0
-        ErrorMessage    =&gt; '',      # in case of an error, optional
+        ErrorMessage    =&gt; &#39;&#39;,      # in case of an error, optional
         Data            =&gt; {        # data payload for response, optional
             ...
         },
@@ -227,39 +127,15 @@ sub ProviderGenerateResponse {
 
     $Result = {
         Success         =&gt; 1,                   # 0 or 1
-        ErrorMessage    =&gt; '',                  # in case of error
-    };
-</pre><h2 id="RequesterPerformRequest">RequesterPerformRequest()</h2>
+        ErrorMessage    =&gt; &#39;&#39;,                  # in case of error
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_RequesterPerformRequest');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_RequesterPerformRequest">
-                                        <pre>
-
-sub RequesterPerformRequest {
-    my ( $Self, %Param ) = @_;
-
-    if ( !$Param{Operation} ) {
-
-        return $Self->{DebuggerObject}->Error(
-            Summary => 'Missing parameter Operation.',
-        );
-    }
-
-    if ( $Param{Data} && ref $Param{Data} ne 'HASH' ) {
-
-        return $Self->{DebuggerObject}->Error(
-            Summary => 'Data is not a hash reference.',
-        );
-    }
-
-    return $Self->{BackendObject}->RequesterPerformRequest(%Param);
-}
-</pre></div>
+<h2 id="RequesterPerformRequest">RequesterPerformRequest()</h2>
 
 <p>generate an outgoing web service request, receive the response and return its data..</p>
 
-<pre>    my $Result = $TransportObject-&gt;RequesterPerformRequest(
-        Operation       =&gt; 'remote_op', # name of remote operation to perform
+<pre><code>    my $Result = $TransportObject-&gt;RequesterPerformRequest(
+        Operation       =&gt; &#39;remote_op&#39;, # name of remote operation to perform
         Data            =&gt; {            # data payload for request
             ...
         },
@@ -267,19 +143,17 @@ sub RequesterPerformRequest {
 
     $Result = {
         Success         =&gt; 1,                   # 0 or 1
-        ErrorMessage    =&gt; '',                  # in case of error
+        ErrorMessage    =&gt; &#39;&#39;,                  # in case of error
         Data            =&gt; {
             ...
         },
-    };
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+    };</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

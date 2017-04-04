@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::GenericInterface::Operation::Ticket::TicketGet</title>
+<title>Kernel::GenericInterface::Operation::Ticket::TicketGet &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,371 +48,53 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/GenericInterface/Operation/Ticket/TicketGet.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Run">Run()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Run">Run()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::GenericInterface::Operation::Ticket::TicketGet - GenericInterface Ticket Get Operation backend</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # check needed objects
-    for my $Needed (qw(DebuggerObject WebserviceID)) {
-        if ( !$Param{$Needed} ) {
-            return {
-                Success      => 0,
-                ErrorMessage => "Got no $Needed!",
-            };
-        }
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    return $Self;
-}
-</pre></div>
-
-<p>usually, you want to create an instance of this
-by using Kernel::GenericInterface::Operation-&gt;new();</p>
+<p>usually, you want to create an instance of this by using Kernel::GenericInterface::Operation-&gt;new();</p>
 
 <h2 id="Run">Run()</h2>
 
-<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Run">
-                                        <pre>
+<p>perform TicketGet Operation. This function is able to return one or more ticket entries in one call.</p>
 
-sub Run {
-    my ( $Self, %Param ) = @_;
-
-    my $Result = $Self->Init(
-        WebserviceID => $Self->{WebserviceID},
-    );
-
-    if ( !$Result->{Success} ) {
-        return $Self->ReturnError(
-            ErrorCode    => 'Webservice.InvalidConfiguration',
-            ErrorMessage => $Result->{ErrorMessage},
-        );
-    }
-
-    my ( $UserID, $UserType ) = $Self->Auth(
-        %Param,
-    );
-
-    return $Self->ReturnError(
-        ErrorCode    => 'TicketGet.AuthFail',
-        ErrorMessage => "TicketGet: Authorization failing!",
-    ) if !$UserID;
-
-    # check needed stuff
-    for my $Needed (qw(TicketID)) {
-        if ( !$Param{Data}->{$Needed} ) {
-            return $Self->ReturnError(
-                ErrorCode    => 'TicketGet.MissingParameter',
-                ErrorMessage => "TicketGet: $Needed parameter is missing!",
-            );
-        }
-    }
-    my $ErrorMessage = '';
-
-    # all needed variables
-    my @TicketIDs;
-    if ( IsStringWithData( $Param{Data}->{TicketID} ) ) {
-        @TicketIDs = split( /,/, $Param{Data}->{TicketID} );
-    }
-    elsif ( IsArrayRefWithData( $Param{Data}->{TicketID} ) ) {
-        @TicketIDs = @{ $Param{Data}->{TicketID} };
-    }
-    else {
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketGet.WrongStructure',
-            ErrorMessage => "TicketGet: Structure for TicketID is not correct!",
-        );
-    }
-
-    # Get the list of dynamic fields for object article.
-    my $ArticleDynamicFieldList = $Kernel::OM->Get('Kernel::System::DynamicField')->DynamicFieldList(
-        ObjectType => 'Article',
-        ResultType => 'HASH',
-    );
-
-    # Crate a lookup list for easy search
-    my %ArticleDynamicFieldLookup = reverse %{$ArticleDynamicFieldList};
-
-    TICKET:
-    for my $TicketID (@TicketIDs) {
-
-        my $Access = $Self->CheckAccessPermissions(
-            TicketID => $TicketID,
-            UserID   => $UserID,
-            UserType => $UserType,
-        );
-
-        next TICKET if $Access;
-
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketGet.AccessDenied',
-            ErrorMessage => 'TicketGet: User does not have access to the ticket!',
-        );
-    }
-
-    my $DynamicFields = $Param{Data}->{DynamicFields} || 0;
-    my $Extended      = $Param{Data}->{Extended}      || 0;
-    my $AllArticles   = $Param{Data}->{AllArticles}   || 0;
-    my $ArticleOrder  = $Param{Data}->{ArticleOrder}  || 'ASC';
-    my $ArticleLimit  = $Param{Data}->{ArticleLimit}  || 0;
-    my $Attachments   = $Param{Data}->{Attachments}   || 0;
-    my $GetAttachmentContents = $Param{Data}->{GetAttachmentContents} // 1;
-
-    my $ReturnData = {
-        Success => 1,
-    };
-    my @Item;
-
-    my $ArticleSenderType = '';
-    if ( IsArrayRefWithData( $Param{Data}->{ArticleSenderType} ) ) {
-        $ArticleSenderType = $Param{Data}->{ArticleSenderType};
-    }
-    elsif ( IsStringWithData( $Param{Data}->{ArticleSenderType} ) ) {
-        $ArticleSenderType = [ $Param{Data}->{ArticleSenderType} ]
-    }
-
-    # By default does not include HYML body as attachment (3) unless is explicitly requested (2).
-    my $StripPlainBodyAsAttachment = $Param{Data}->{HTMLBodyAsAttachment} ? 2 : 3;
-
-    # start ticket loop
-    TICKET:
-    for my $TicketID (@TicketIDs) {
-
-        my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-
-        # get the Ticket entry
-        my %TicketEntryRaw = $TicketObject->TicketGet(
-            TicketID      => $TicketID,
-            DynamicFields => $DynamicFields,
-            Extended      => $Extended,
-            UserID        => $UserID,
-        );
-
-        if ( !IsHashRefWithData( \%TicketEntryRaw ) ) {
-
-            $ErrorMessage = 'Could not get Ticket data'
-                . ' in Kernel::GenericInterface::Operation::Ticket::TicketGet::Run()';
-
-            return $Self->ReturnError(
-                ErrorCode    => 'TicketGet.NotValidTicketID',
-                ErrorMessage => "TicketGet: $ErrorMessage",
-            );
-        }
-
-        my %TicketEntry;
-        my @DynamicFields;
-
-        # remove all dynamic fields form main ticket hash and set them into an array.
-        ATTRIBUTE:
-        for my $Attribute ( sort keys %TicketEntryRaw ) {
-
-            if ( $Attribute =~ m{\A DynamicField_(.*) \z}msx ) {
-                push @DynamicFields, {
-                    Name  => $1,
-                    Value => $TicketEntryRaw{$Attribute},
-                };
-                next ATTRIBUTE;
-            }
-
-            $TicketEntry{$Attribute} = $TicketEntryRaw{$Attribute};
-        }
-
-        # add dynamic fields array into 'DynamicField' hash key if any
-        if (@DynamicFields) {
-            $TicketEntry{DynamicField} = \@DynamicFields;
-        }
-
-        # set Ticket entry data
-        my $TicketBundle = {
-            %TicketEntry,
-        };
-
-        if ( !$AllArticles ) {
-            push @Item, $TicketBundle;
-            next TICKET;
-        }
-
-        my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
-
-        my $ArticleTypes;
-        if ( $UserType eq 'Customer' ) {
-            $ArticleTypes = [ $ArticleObject->ArticleTypeList( Type => 'Customer' ) ];
-        }
-
-        my @ArticleBoxRaw = $ArticleObject->ArticleGet(
-            TicketID          => $TicketID,
-            ArticleSenderType => $ArticleSenderType,
-            ArticleType       => $ArticleTypes,
-            DynamicFields     => $DynamicFields,
-            Extended          => $Extended,
-            Order             => $ArticleOrder,
-            Limit             => $ArticleLimit,
-            UserID            => $UserID,
-        );
-
-        # start article loop
-        ARTICLE:
-        for my $Article (@ArticleBoxRaw) {
-
-            next ARTICLE if !$Attachments;
-
-            # get attachment index (without attachments)
-            my %AtmIndex = $ArticleObject->ArticleAttachmentIndex(
-                ContentPath                => $Article->{ContentPath},
-                ArticleID                  => $Article->{ArticleID},
-                StripPlainBodyAsAttachment => $StripPlainBodyAsAttachment,
-                Article                    => $Article,
-                UserID                     => $UserID,
-            );
-
-            next ARTICLE if !IsHashRefWithData( \%AtmIndex );
-
-            my @Attachments;
-            ATTACHMENT:
-            for my $FileID ( sort keys %AtmIndex ) {
-                next ATTACHMENT if !$FileID;
-                my %Attachment = $ArticleObject->ArticleAttachment(
-                    ArticleID => $Article->{ArticleID},
-                    FileID    => $FileID,                 # as returned by ArticleAttachmentIndex
-                    UserID    => $UserID,
-                );
-
-                next ATTACHMENT if !IsHashRefWithData( \%Attachment );
-
-                $Attachment{FileID} = $FileID;
-                if ($GetAttachmentContents)
-                {
-                    # convert content to base64
-                    $Attachment{Content} = encode_base64( $Attachment{Content} );
-                }
-                else {
-                    # unset content
-                    $Attachment{Content}            = '';
-                    $Attachment{ContentAlternative} = '';
-                }
-                push @Attachments, {%Attachment};
-            }
-
-            # set Attachments data
-            $Article->{Attachment} = \@Attachments;
-
-        }    # finish article loop
-
-        # set Ticket entry data
-        if (@ArticleBoxRaw) {
-
-            my @ArticleBox;
-
-            for my $ArticleRaw (@ArticleBoxRaw) {
-                my %Article;
-                my @ArticleDynamicFields;
-
-                # remove all dynamic fields form main article hash and set them into an array.
-                ATTRIBUTE:
-                for my $Attribute ( sort keys %{$ArticleRaw} ) {
-
-                    if ( $Attribute =~ m{\A DynamicField_(.*) \z}msx ) {
-
-                        # Skip dynamic fields that are not for article object
-                        next ATTRIBUTE if ( !$ArticleDynamicFieldLookup{$1} );
-
-                        push @ArticleDynamicFields, {
-                            Name  => $1,
-                            Value => $ArticleRaw->{$Attribute},
-                        };
-                        next ATTRIBUTE;
-                    }
-
-                    $Article{$Attribute} = $ArticleRaw->{$Attribute};
-                }
-
-                # add dynamic fields array into 'DynamicField' hash key if any
-                if (@ArticleDynamicFields) {
-                    $Article{DynamicField} = \@ArticleDynamicFields;
-                }
-
-                push @ArticleBox, \%Article;
-            }
-            $TicketBundle->{Article} = \@ArticleBox;
-        }
-
-        # add
-        push @Item, $TicketBundle;
-    }    # finish ticket loop
-
-    if ( !scalar @Item ) {
-        $ErrorMessage = 'Could not get Ticket data'
-            . ' in Kernel::GenericInterface::Operation::Ticket::TicketGet::Run()';
-
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketGet.NotTicketData',
-            ErrorMessage => "TicketGet: $ErrorMessage",
-        );
-
-    }
-
-    # set ticket data into return structure
-    $ReturnData->{Data}->{Ticket} = \@Item;
-
-    # return result
-    return $ReturnData;
-}
-</pre></div>
-
-<p>perform TicketGet Operation. This function is able to return
-one or more ticket entries in one call.</p>
-
-<pre>    my $Result = $OperationObject-&gt;Run(
+<pre><code>    my $Result = $OperationObject-&gt;Run(
         Data =&gt; {
-            UserLogin            =&gt; 'some agent login',                            # UserLogin or CustomerUserLogin or SessionID is
+            UserLogin            =&gt; &#39;some agent login&#39;,                            # UserLogin or CustomerUserLogin or SessionID is
                                                                                    #   required
-            CustomerUserLogin    =&gt; 'some customer login',
+            CustomerUserLogin    =&gt; &#39;some customer login&#39;,
             SessionID            =&gt; 123,
 
-            Password             =&gt; 'some password',                               # if UserLogin or customerUserLogin is sent then
+            Password             =&gt; &#39;some password&#39;,                               # if UserLogin or customerUserLogin is sent then
                                                                                    #   Password is required
-            TicketID             =&gt; '32,33',                                       # required, could be coma separated IDs or an Array
+            TicketID             =&gt; &#39;32,33&#39;,                                       # required, could be coma separated IDs or an Array
             DynamicFields        =&gt; 0,                                             # Optional, 0 as default. Indicate if Dynamic Fields
                                                                                    #     should be included or not on the ticket content.
             Extended             =&gt; 1,                                             # Optional, 0 as default
             AllArticles          =&gt; 1,                                             # Optional, 0 as default. Set as 1 will include articles
                                                                                    #     for tickets.
             ArticleSenderType    =&gt; [ $ArticleSenderType1, $ArticleSenderType2 ],  # Optional, only requested article sender types
-            ArticleOrder         =&gt; 'DESC',                                        # Optional, DESC,ASC - default is ASC
+            ArticleOrder         =&gt; &#39;DESC&#39;,                                        # Optional, DESC,ASC - default is ASC
             ArticleLimit         =&gt; 5,                                             # Optional
-            Attachments          =&gt; 1,                                             # Optional, 0 as default. If it's set with the value 1,
+            Attachments          =&gt; 1,                                             # Optional, 0 as default. If it&#39;s set with the value 1,
                                                                                    # attachments for articles will be included on ticket data
             GetAttachmentContents = 1                                              # Optional, 1 as default. 0|1,
             HTMLBodyAsAttachment =&gt; 1                                              # Optional, If enabled the HTML body version of each article
@@ -443,47 +104,47 @@ one or more ticket entries in one call.</p>
 
     $Result = {
         Success      =&gt; 1,                                # 0 or 1
-        ErrorMessage =&gt; '',                               # In case of an error
+        ErrorMessage =&gt; &#39;&#39;,                               # In case of an error
         Data         =&gt; {
             Ticket =&gt; [
                 {
-                    TicketNumber       =&gt; '20101027000001',
-                    Title              =&gt; 'some title',
+                    TicketNumber       =&gt; &#39;20101027000001&#39;,
+                    Title              =&gt; &#39;some title&#39;,
                     TicketID           =&gt; 123,
-                    State              =&gt; 'some state',
+                    State              =&gt; &#39;some state&#39;,
                     StateID            =&gt; 123,
-                    StateType          =&gt; 'some state type',
-                    Priority           =&gt; 'some priority',
+                    StateType          =&gt; &#39;some state type&#39;,
+                    Priority           =&gt; &#39;some priority&#39;,
                     PriorityID         =&gt; 123,
-                    Lock               =&gt; 'lock',
+                    Lock               =&gt; &#39;lock&#39;,
                     LockID             =&gt; 123,
-                    Queue              =&gt; 'some queue',
+                    Queue              =&gt; &#39;some queue&#39;,
                     QueueID            =&gt; 123,
-                    CustomerID         =&gt; 'customer_id_123',
-                    CustomerUserID     =&gt; 'customer_user_id_123',
-                    Owner              =&gt; 'some_owner_login',
+                    CustomerID         =&gt; &#39;customer_id_123&#39;,
+                    CustomerUserID     =&gt; &#39;customer_user_id_123&#39;,
+                    Owner              =&gt; &#39;some_owner_login&#39;,
                     OwnerID            =&gt; 123,
-                    Type               =&gt; 'some ticket type',
+                    Type               =&gt; &#39;some ticket type&#39;,
                     TypeID             =&gt; 123,
-                    SLA                =&gt; 'some sla',
+                    SLA                =&gt; &#39;some sla&#39;,
                     SLAID              =&gt; 123,
-                    Service            =&gt; 'some service',
+                    Service            =&gt; &#39;some service&#39;,
                     ServiceID          =&gt; 123,
-                    Responsible        =&gt; 'some_responsible_login',
+                    Responsible        =&gt; &#39;some_responsible_login&#39;,
                     ResponsibleID      =&gt; 123,
                     Age                =&gt; 3456,
-                    Created            =&gt; '2010-10-27 20:15:00'
-                    CreateTimeUnix     =&gt; '1231414141',
+                    Created            =&gt; &#39;2010-10-27 20:15:00&#39;
+                    CreateTimeUnix     =&gt; &#39;1231414141&#39;,
                     CreateBy           =&gt; 123,
-                    Changed            =&gt; '2010-10-27 20:15:15',
+                    Changed            =&gt; &#39;2010-10-27 20:15:15&#39;,
                     ChangeBy           =&gt; 123,
-                    ArchiveFlag        =&gt; 'y',
+                    ArchiveFlag        =&gt; &#39;y&#39;,
 
-                    # If DynamicFields =&gt; 1 was passed, you'll get an entry like this for each dynamic field:
+                    # If DynamicFields =&gt; 1 was passed, you&#39;ll get an entry like this for each dynamic field:
                     DynamicField =&gt; [
                         {
-                            Name  =&gt; 'some name',
-                            Value =&gt; 'some value',
+                            Name  =&gt; &#39;some name&#39;,
+                            Value =&gt; &#39;some value&#39;,
                         },
                     ],
 
@@ -552,11 +213,11 @@ one or more ticket entries in one call.</p>
                             MimeType
                             IncomingTime
 
-                            # If DynamicFields =&gt; 1 was passed, you'll get an entry like this for each dynamic field:
+                            # If DynamicFields =&gt; 1 was passed, you&#39;ll get an entry like this for each dynamic field:
                             DynamicField =&gt; [
                                 {
-                                    Name  =&gt; 'some name',
-                                    Value =&gt; 'some value',
+                                    Name  =&gt; &#39;some name&#39;,
+                                    Value =&gt; &#39;some value&#39;,
                                 },
                             ],
 
@@ -586,15 +247,13 @@ one or more ticket entries in one call.</p>
                 },
             ]
         },
-    };
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+    };</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

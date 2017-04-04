@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::ProcessManagement::DB::Process</title>
+<title>Kernel::System::ProcessManagement::DB::Process &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,508 +48,83 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/ProcessManagement/DB/Process.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#ProcessAdd">ProcessAdd()</a></li>
-	<li><a href="#ProcessDelete">ProcessDelete()</a></li>
-	<li><a href="#ProcessGet">ProcessGet()</a></li>
-	<li><a href="#ProcessUpdate">ProcessUpdate()</a></li>
-	<li><a href="#ProcessList">ProcessList()</a></li>
-	<li><a href="#ProcessListGet">ProcessListGet()</a></li>
-	<li><a href="#ProcessDump">ProcessDump()</a></li>
-	<li><a href="#ProcessImport">ProcessImport()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#ProcessAdd">ProcessAdd()</a></li>
+      <li><a href="#ProcessDelete">ProcessDelete()</a></li>
+      <li><a href="#ProcessGet">ProcessGet()</a></li>
+      <li><a href="#ProcessUpdate">ProcessUpdate()</a></li>
+      <li><a href="#ProcessList">ProcessList()</a></li>
+      <li><a href="#ProcessListGet">ProcessListGet()</a></li>
+      <li><a href="#ProcessDump">ProcessDump()</a></li>
+      <li><a href="#ProcessImport">ProcessImport()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::ProcessManagement::DB::Process</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>Process Management DB Process backend</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $ProcessObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ProcessManagement::DB::Process&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    $Self->{EntityObject}           = Kernel::System::ProcessManagement::DB::Entity->new();
-    $Self->{ActivityDialogObject}   = Kernel::System::ProcessManagement::DB::ActivityDialog->new();
-    $Self->{ActivityObject}         = Kernel::System::ProcessManagement::DB::Activity->new();
-    $Self->{StateObject}            = Kernel::System::ProcessManagement::DB::Process::State->new();
-    $Self->{TransitionObject}       = Kernel::System::ProcessManagement::DB::Transition->new();
-    $Self->{TransitionActionObject} = Kernel::System::ProcessManagement::DB::TransitionAction->new();
-
-    # get the cache TTL (in seconds)
-    $Self->{CacheTTL} = int( $Kernel::OM->Get('Kernel::Config')->Get('Process::CacheTTL') || 3600 );
-
-    # set lower if database is case sensitive
-    $Self->{Lower} = '';
-    if ( $Kernel::OM->Get('Kernel::System::DB')->GetDatabaseFunction('CaseSensitive') ) {
-        $Self->{Lower} = 'LOWER';
-    }
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $ProcessObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::DB::Process');
-</pre><h2 id="ProcessAdd">ProcessAdd()</h2>
-
-<p><a href="#" onclick="toggleCode('method_ProcessAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessAdd">
-                                        <pre>
-
-sub ProcessAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Key (qw(EntityID Name StateEntityID Layout Config UserID)) {
-        if ( !$Param{$Key} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Key!",
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # check if EntityID already exists
-    return if !$DBObject->Prepare(
-        SQL => "
-            SELECT id
-            FROM pm_process
-            WHERE $Self->{Lower}(entity_id) = $Self->{Lower}(?)",
-        Bind  => [ \$Param{EntityID} ],
-        Limit => 1,
-    );
-
-    my $EntityExists;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        $EntityExists = 1;
-    }
-
-    if ($EntityExists) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "The EntityID:$Param{EntityID} already exists for a process!"
-        );
-        return;
-    }
-
-    # check config valid format (at least it must contain the description)
-    if ( !IsHashRefWithData( $Param{Config} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Config needs to be a valid Hash reference!",
-        );
-        return;
-    }
-    if ( !$Param{Config}->{Description} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need Description in Config!",
-        );
-        return;
-    }
-
-    # get yaml object
-    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
-
-    # dump layout and config as string
-    my $Layout = $YAMLObject->Dump( Data => $Param{Layout} );
-    my $Config = $YAMLObject->Dump( Data => $Param{Config} );
-
-    # Make sure the resulting string has the UTF-8 flag. YAML only sets it if
-    #   part of the data already had it.
-    utf8::upgrade($Layout);
-    utf8::upgrade($Config);
-
-    # SQL
-    return if !$DBObject->Do(
-        SQL => '
-            INSERT INTO pm_process ( entity_id, name, state_entity_id, layout, config, create_time,
-                create_by, change_time, change_by )
-            VALUES (?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-        Bind => [
-            \$Param{EntityID}, \$Param{Name}, \$Param{StateEntityID}, \$Layout, \$Config,
-            \$Param{UserID}, \$Param{UserID},
-        ],
-    );
-
-    return if !$DBObject->Prepare(
-        SQL  => 'SELECT id FROM pm_process WHERE entity_id = ?',
-        Bind => [ \$Param{EntityID} ],
-    );
-
-    my $ID;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $ID = $Row[0];
-    }
-
-    # delete cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'ProcessManagement_Process',
-    );
-
-    return if !$ID;
-
-    return $ID;
-}
-</pre></div>
+<h2 id="ProcessAdd">ProcessAdd()</h2>
 
 <p>add new Process</p>
 
 <p>returns the id of the created process if success or undef otherwise</p>
 
-<pre>    my $ID = $ProcessObject-&gt;ProcessAdd(
-        EntityID       =&gt; 'P1'             # mandatory, exportable unique identifier
-        Name           =&gt; 'NameOfProcess', # mandatory
-        StateEntityID  =&gt; 'S1',
+<pre><code>    my $ID = $ProcessObject-&gt;ProcessAdd(
+        EntityID       =&gt; &#39;P1&#39;             # mandatory, exportable unique identifier
+        Name           =&gt; &#39;NameOfProcess&#39;, # mandatory
+        StateEntityID  =&gt; &#39;S1&#39;,
         Layout         =&gt; $LayoutHashRef,  # mandatory, diagram objects positions to be stored in
                                            #   YAML format
         Config         =&gt; $ConfigHashRef,  # mandatory, process configuration to be stored in YAML
                                            #   format
         UserID         =&gt; 123,             # mandatory
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $ID = 567;
-</pre><h2 id="ProcessDelete">ProcessDelete()</h2>
+<p>Returns:</p>
 
-<p><a href="#" onclick="toggleCode('method_ProcessDelete');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessDelete">
-                                        <pre>
+<pre><code>    $ID = 567;</code></pre>
 
-sub ProcessDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Key (qw(ID UserID)) {
-        if ( !$Param{$Key} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Key!"
-            );
-            return;
-        }
-    }
-
-    # check if exists
-    my $Process = $Self->ProcessGet(
-        ID     => $Param{ID},
-        UserID => 1,
-    );
-    return if !IsHashRefWithData($Process);
-
-    # delete process
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL  => 'DELETE FROM pm_process WHERE id = ?',
-        Bind => [ \$Param{ID} ],
-    );
-
-    # delete cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'ProcessManagement_Process',
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="ProcessDelete">ProcessDelete()</h2>
 
 <p>delete a Process</p>
 
 <p>returns 1 if success or undef otherwise</p>
 
-<pre>    my $Success = $ProcessObject-&gt;ProcessDelete(
+<pre><code>    my $Success = $ProcessObject-&gt;ProcessDelete(
         ID      =&gt; 123,
         UserID  =&gt; 123,
-    );
-</pre><h2 id="ProcessGet">ProcessGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessGet">
-                                        <pre>
-
-sub ProcessGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ID} && !$Param{EntityID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need ID or EntityID!'
-        );
-        return;
-    }
-
-    if ( !$Param{UserID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need UserID!',
-        );
-        return;
-    }
-
-    my $ActivityNames = 0;
-    if ( defined $Param{ActivityNames} && $Param{ActivityNames} == 1 ) {
-        $ActivityNames = 1;
-    }
-    my $TransitionNames = 0;
-    if ( defined $Param{TransitionNames} && $Param{TransitionNames} == 1 ) {
-        $TransitionNames = 1;
-    }
-    my $TransitionActionNames = 0;
-    if ( defined $Param{TransitionActionNames} && $Param{TransitionActionNames} == 1 ) {
-        $TransitionActionNames = 1;
-    }
-
-    # check cache
-    my $CacheKey;
-    if ( $Param{ID} ) {
-        $CacheKey = 'ProcessGet::ID::' . $Param{ID} . '::ActivityNames::'
-            . $ActivityNames
-            . '::TransitionNames::'
-            . $TransitionNames
-            . '::TransitionActionNames::'
-            . $TransitionActionNames;
-    }
-    else {
-        $CacheKey = 'ProcessGet::EntityID::' . $Param{EntityID} . '::ActivityNames::'
-            . $ActivityNames
-            . '::TransitionNames::'
-            . $TransitionNames
-            . '::TransitionActionNames::'
-            . $TransitionActionNames;
-    }
-
-    # get cache object
-    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
-
-    my $Cache = $CacheObject->Get(
-        Type => 'ProcessManagement_Process',
-        Key  => $CacheKey,
-    );
-    return $Cache if $Cache;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # SQL
-    if ( $Param{ID} ) {
-        return if !$DBObject->Prepare(
-            SQL => '
-                SELECT id, entity_id, name, state_entity_id, layout, config, create_time,
-                    change_time
-                FROM pm_process
-                WHERE id = ?',
-            Bind  => [ \$Param{ID} ],
-            Limit => 1,
-        );
-    }
-    else {
-        return if !$DBObject->Prepare(
-            SQL => '
-                SELECT id, entity_id, name, state_entity_id, layout, config, create_time,
-                    change_time
-                FROM pm_process
-                WHERE entity_id = ?',
-            Bind  => [ \$Param{EntityID} ],
-            Limit => 1,
-        );
-    }
-
-    # get yaml object
-    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
-
-    my %Data;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        my $Layout = $YAMLObject->Load( Data => $Data[4] );
-        my $Config = $YAMLObject->Load( Data => $Data[5] );
-
-        %Data = (
-            ID            => $Data[0],
-            EntityID      => $Data[1],
-            Name          => $Data[2],
-            StateEntityID => $Data[3],
-            Layout        => $Layout,
-            Config        => $Config,
-            CreateTime    => $Data[6],
-            ChangeTime    => $Data[7],
-
-        );
-    }
-
-    return if !$Data{ID};
-
-    # create the ActivityList
-    if ($ActivityNames) {
-        my %Activities;
-
-        if ( IsHashRefWithData( $Data{Config}->{Path} ) ) {
-
-            my $ActivityList = $Self->{ActivityObject}->ActivityList(
-                UseEntities => 1,
-                UserID      => 1,
-            );
-
-            for my $ActivityEntityID ( sort keys %{ $Data{Config}->{Path} } ) {
-                $Activities{$ActivityEntityID} = $ActivityList->{$ActivityEntityID};
-            }
-        }
-        $Data{Activities} = \%Activities;
-    }
-    else {
-        my @Activities;
-
-        if ( IsHashRefWithData( $Data{Config}->{Path} ) ) {
-
-            # get path keys (ActivityEntityIDs) and map them into an array
-            @Activities = map {$_} sort keys %{ $Data{Config}->{Path} };
-        }
-        $Data{Activities} = \@Activities;
-    }
-
-    # create the transition list
-    if ($TransitionNames) {
-
-        my %Transitions;
-        if ( IsHashRefWithData( $Data{Config}->{Path} ) ) {
-
-            my $TransitionList = $Self->{TransitionObject}->TransitionList(
-                UseEntities => 1,
-                UserID      => 1,
-            );
-
-            for my $ActivityEntityID ( sort keys %{ $Data{Config}->{Path} } ) {
-                for my $TransitionEntityID (
-                    sort keys %{ $Data{Config}->{Path}->{$ActivityEntityID} }
-                    )
-                {
-                    $Transitions{$TransitionEntityID} = $TransitionList->{$TransitionEntityID};
-                }
-            }
-        }
-        $Data{Transitions} = \%Transitions;
-    }
-    else {
-        my @Transitions;
-
-        if ( IsHashRefWithData( $Data{Config}->{Path} ) ) {
-
-            for my $ActivityEntityID ( sort keys %{ $Data{Config}->{Path} } ) {
-
-                for my $TransitionEntityID (
-                    sort keys %{ $Data{Config}->{Path}->{$ActivityEntityID} }
-                    )
-                {
-                    push @Transitions, $TransitionEntityID;
-                }
-            }
-        }
-        $Data{Transitions} = \@Transitions;
-    }
-
-    # create the transition action list
-    if ($TransitionActionNames) {
-
-        my %TransitionActions;
-        if ( IsHashRefWithData( $Data{Config}->{Path} ) ) {
-
-            my $TransitionActionList = $Self->{TransitionActionObject}->TransitionActionList(
-                UseEntities => 1,
-                UserID      => 1,
-            );
-
-            for my $ActivityEntityID ( sort keys %{ $Data{Config}->{Path} } ) {
-
-                my $TransitionPath = $Data{Config}->{Path}->{$ActivityEntityID};
-                for my $TransitionEntityID ( sort keys %{$TransitionPath} ) {
-
-                    my $TransitionActionPath = $Data{Config}->{Path}->{$ActivityEntityID}->{$TransitionEntityID}
-                        ->{Action};
-                    if ( $TransitionActionPath && @{$TransitionActionPath} ) {
-                        for my $TransitionActionEntityID ( sort @{$TransitionActionPath} ) {
-                            $TransitionActions{$TransitionActionEntityID}
-                                = $TransitionActionList->{$TransitionEntityID};
-                        }
-                    }
-                }
-            }
-        }
-        $Data{TransitionActions} = \%TransitionActions;
-    }
-    else {
-        my @TransitionActions;
-
-        if ( IsHashRefWithData( $Data{Config}->{Path} ) ) {
-
-            for my $ActivityEntityID ( sort keys %{ $Data{Config}->{Path} } ) {
-
-                my $TransitionPath = $Data{Config}->{Path}->{$ActivityEntityID};
-                for my $TransitionEntityID ( sort keys %{$TransitionPath} ) {
-
-                    my $TransitionActionPath = $TransitionPath->{$TransitionEntityID}->{TransitionAction};
-                    if ( $TransitionActionPath && @{$TransitionActionPath} ) {
-                        for my $TransitionActionEntityID ( sort @{$TransitionActionPath} ) {
-                            push @TransitionActions, $TransitionActionEntityID;
-                        }
-                    }
-                }
-            }
-        }
-        $Data{TransitionActions} = \@TransitionActions;
-    }
-
-    $Data{State} = $Self->{StateObject}->StateLookup(
-        EntityID => $Data{StateEntityID},
-        UserID   => 1,
-    );
-
-    # set cache
-    $CacheObject->Set(
-        Type  => 'ProcessManagement_Process',
-        Key   => $CacheKey,
-        Value => \%Data,
-        TTL   => $Self->{CacheTTL},
-    );
-
-    return \%Data;
-}
-</pre></div>
+<h2 id="ProcessGet">ProcessGet()</h2>
 
 <p>get Process attributes</p>
 
-<pre>    my $Process = $ProcessObject-&gt;ProcessGet(
+<pre><code>    my $Process = $ProcessObject-&gt;ProcessGet(
         ID              =&gt; 123,          # ID or EntityID is needed
-        EntityID        =&gt; 'P1',
+        EntityID        =&gt; &#39;P1&#39;,
         ActivityNames   =&gt; 1,            # default 0, 1 || 0, if 0 returns an Activities array
                                          #     with the activity entity IDs, if 1 returns an
                                          #     Activities hash with the activity entity IDs as
@@ -584,280 +138,78 @@ sub ProcessGet {
                                          #     TransitionAction hash with the TransitionAction entity IDs as
                                          #     keys and TransitionAction Names as values
         UserID          =&gt; 123,          # mandatory
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $Process = {
+<p>Returns:</p>
+
+<pre><code>    $Process = {
         ID            =&gt; 123,
-        EntityID      =&gt; 'P1',
-        Name          =&gt; 'some name',
-        StateEntityID =&gt; 'S1',
-        State         =&gt; 'Active',
+        EntityID      =&gt; &#39;P1&#39;,
+        Name          =&gt; &#39;some name&#39;,
+        StateEntityID =&gt; &#39;S1&#39;,
+        State         =&gt; &#39;Active&#39;,
         Layout        =&gt; $LayoutHashRef,
         Config        =&gt; $ConfigHashRef,
-        Activities    =&gt; ['A1','A2','A3'],
-        Activities    =&gt; ['T1','T2','T3'],
-        CreateTime    =&gt; '2012-07-04 15:08:00',
-        ChangeTime    =&gt; '2012-07-04 15:08:00',
+        Activities    =&gt; [&#39;A1&#39;,&#39;A2&#39;,&#39;A3&#39;],
+        Activities    =&gt; [&#39;T1&#39;,&#39;T2&#39;,&#39;T3&#39;],
+        CreateTime    =&gt; &#39;2012-07-04 15:08:00&#39;,
+        ChangeTime    =&gt; &#39;2012-07-04 15:08:00&#39;,
     };
 
     $Process = {
         ID            =&gt; 123,
-        EntityID      =&gt; 'P1',
-        Name          =&gt; 'some name',
-        StateEntityID =&gt; 'S1',
-        State         =&gt; 'Active',
+        EntityID      =&gt; &#39;P1&#39;,
+        Name          =&gt; &#39;some name&#39;,
+        StateEntityID =&gt; &#39;S1&#39;,
+        State         =&gt; &#39;Active&#39;,
         Layout        =&gt; $LayoutHashRef,
         Config        =&gt; $ConfigHashRef,
         Activities    =&gt; {
-            'A1' =&gt; 'Activity1',
-            'A2' =&gt; 'Activity2',
-            'A3' =&gt; 'Activity3',
+            &#39;A1&#39; =&gt; &#39;Activity1&#39;,
+            &#39;A2&#39; =&gt; &#39;Activity2&#39;,
+            &#39;A3&#39; =&gt; &#39;Activity3&#39;,
         };
         Transitions   =&gt; {
-            'T1' =&gt; 'Transition1',
-            'T2' =&gt; 'Transition2',
-            'T3' =&gt; 'Transition3',
+            &#39;T1&#39; =&gt; &#39;Transition1&#39;,
+            &#39;T2&#39; =&gt; &#39;Transition2&#39;,
+            &#39;T3&#39; =&gt; &#39;Transition3&#39;,
         };
         TransitionActions =&gt; {
-            'TA1' =&gt; 'TransitionAction1',
-            'TA2' =&gt; 'TransitionAction2',
-            'TA3' =&gt; 'TransitionAction3',
+            &#39;TA1&#39; =&gt; &#39;TransitionAction1&#39;,
+            &#39;TA2&#39; =&gt; &#39;TransitionAction2&#39;,
+            &#39;TA3&#39; =&gt; &#39;TransitionAction3&#39;,
         };
-        CreateTime =&gt; '2012-07-04 15:08:00',
-        ChangeTime =&gt; '2012-07-04 15:08:00',
-    };
-</pre><h2 id="ProcessUpdate">ProcessUpdate()</h2>
+        CreateTime =&gt; &#39;2012-07-04 15:08:00&#39;,
+        ChangeTime =&gt; &#39;2012-07-04 15:08:00&#39;,
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessUpdate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessUpdate">
-                                        <pre>
-
-sub ProcessUpdate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Key (qw(ID EntityID Name StateEntityID Layout Config UserID)) {
-        if ( !$Param{$Key} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Key!"
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # check if EntityID already exists
-    return if !$DBObject->Prepare(
-        SQL => "
-            SELECT id FROM pm_process
-            WHERE $Self->{Lower}(entity_id) = $Self->{Lower}(?)
-            AND id != ?",
-        Bind  => [ \$Param{EntityID}, \$Param{ID} ],
-        LIMIT => 1,
-    );
-
-    my $EntityExists;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        $EntityExists = 1;
-    }
-
-    if ($EntityExists) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "The EntityID:$Param{Name} already exists for a process!",
-        );
-        return;
-    }
-
-    # check config valid format (at least it must contain the description)
-    if ( !IsHashRefWithData( $Param{Config} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Config needs to be a valid Hash reference!",
-        );
-        return;
-    }
-    if ( !$Param{Config}->{Description} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need Description in Config!",
-        );
-        return;
-    }
-
-    # get yaml object
-    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
-
-    # dump layout and config as string
-    my $Layout = $YAMLObject->Dump( Data => $Param{Layout} );
-    my $Config = $YAMLObject->Dump( Data => $Param{Config} );
-
-    # Make sure the resulting string has the UTF-8 flag. YAML only sets it if
-    #   part of the data already had it.
-    utf8::upgrade($Layout);
-    utf8::upgrade($Config);
-
-    # check if need to update db
-    return if !$DBObject->Prepare(
-        SQL => '
-            SELECT entity_id, name, state_entity_id, layout, config
-            FROM pm_process
-            WHERE id = ?',
-        Bind  => [ \$Param{ID} ],
-        Limit => 1,
-    );
-
-    my $CurrentEntityID;
-    my $CurrentName;
-    my $CurrentStateEntityID;
-    my $CurrentLayout;
-    my $CurrentConfig;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        $CurrentEntityID      = $Data[0];
-        $CurrentName          = $Data[1];
-        $CurrentStateEntityID = $Data[2];
-        $CurrentLayout        = $Data[3];
-        $CurrentConfig        = $Data[4];
-    }
-
-    if ($CurrentEntityID) {
-
-        return 1 if $CurrentEntityID eq $Param{EntityID}
-            && $CurrentName eq $Param{Name}
-            && $CurrentStateEntityID eq $Param{StateEntityID}
-            && $CurrentLayout eq $Layout
-            && $CurrentConfig eq $Config;
-    }
-
-    # SQL
-    return if !$DBObject->Do(
-        SQL => '
-            UPDATE pm_process
-            SET entity_id = ?, name = ?,  state_entity_id = ?, layout = ?, config = ?,
-                change_time = current_timestamp,  change_by = ?
-            WHERE id = ?',
-        Bind => [
-            \$Param{EntityID}, \$Param{Name}, \$Param{StateEntityID}, \$Layout, \$Config,
-            \$Param{UserID}, \$Param{ID},
-        ],
-    );
-
-    # delete cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'ProcessManagement_Process',
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="ProcessUpdate">ProcessUpdate()</h2>
 
 <p>update Process attributes</p>
 
 <p>returns 1 if success or undef otherwise</p>
 
-<pre>    my $Success = $ProcessObject-&gt;ProcessUpdate(
+<pre><code>    my $Success = $ProcessObject-&gt;ProcessUpdate(
         ID            =&gt; 123,             # mandatory
-        EntityID      =&gt; 'P1'             # mandatory, exportable unique identifier
-        Name          =&gt; 'NameOfProcess', # mandatory
-        StateentityID =&gt; 'S1',
+        EntityID      =&gt; &#39;P1&#39;             # mandatory, exportable unique identifier
+        Name          =&gt; &#39;NameOfProcess&#39;, # mandatory
+        StateentityID =&gt; &#39;S1&#39;,
         Layout        =&gt; $LayoutHashRef,  # mandatory, diagram objects positions to be stored in
                                           #   YAML format
         Config        =&gt; $ConfigHashRef,  # mandatory, process configuration to be stored in YAML
                                           #   format
         UserID        =&gt; 123,             # mandatory
-    );
-</pre><h2 id="ProcessList">ProcessList()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessList">
-                                        <pre>
-
-sub ProcessList {
-    my ( $Self, %Param ) = @_;
-
-    # check needed
-    if ( !$Param{UserID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need UserID!"
-        );
-        return;
-    }
-
-    my $StateEntityIDsStrg;
-    if ( !IsArrayRefWithData( $Param{StateEntityIDs} ) ) {
-        $StateEntityIDsStrg = 'ALL';
-    }
-    else {
-        $StateEntityIDsStrg = join ',', @{ $Param{StateEntityIDs} };
-    }
-
-    # check cache
-    my $UseEntities = 0;
-    if ( defined $Param{UseEntities} && $Param{UseEntities} ) {
-        $UseEntities = 1;
-    }
-
-    # get cache object
-    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
-
-    my $CacheKey = 'ProcessList::UseEntities::' . $UseEntities . '::StateEntityIDs::'
-        . $StateEntityIDsStrg;
-    my $Cache = $CacheObject->Get(
-        Type => 'ProcessManagement_Process',
-        Key  => $CacheKey,
-    );
-    return $Cache if ref $Cache;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    my $SQL = '
-            SELECT id, entity_id, name
-            FROM pm_process ';
-    if ( $StateEntityIDsStrg ne 'ALL' ) {
-
-        my $StateEntityIDsStrgDB =
-            join ',', map "'" . $DBObject->Quote($_) . "'", @{ $Param{StateEntityIDs} };
-
-        $SQL .= "WHERE state_entity_id IN ($StateEntityIDsStrgDB)";
-    }
-
-    return if !$DBObject->Prepare( SQL => $SQL );
-
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        if ( !$UseEntities ) {
-            $Data{ $Row[0] } = $Row[2];
-        }
-        else {
-            $Data{ $Row[1] } = $Row[2];
-        }
-    }
-
-    # set cache
-    $CacheObject->Set(
-        Type  => 'ProcessManagement_Process',
-        Key   => $CacheKey,
-        Value => \%Data,
-        TTL   => $Self->{CacheTTL},
-    );
-
-    return \%Data;
-}
-</pre></div>
+<h2 id="ProcessList">ProcessList()</h2>
 
 <p>get a Process list</p>
 
-<pre>    my $List = $ProcessObject-&gt;ProcessList(
+<pre><code>    my $List = $ProcessObject-&gt;ProcessList(
         UseEntities     =&gt; 0,                   # default 0, 1 || 0. if 0 the return hash keys are
                                                 #    the process IDs otherwise keys are the
                                                 #    process entity IDs
-        StateEntityIDs  =&gt; ['S1','S2'],         # optional, to filter processes that match listed
+        StateEntityIDs  =&gt; [&#39;S1&#39;,&#39;S2&#39;],         # optional, to filter processes that match listed
                                                 #    state entity IDs
         UserID          =&gt; 1,
     );
@@ -865,502 +217,209 @@ sub ProcessList {
     Returns:
 
     $List = {
-        1 =&gt; 'NameOfProcess',
+        1 =&gt; &#39;NameOfProcess&#39;,
     }
 
     or
 
     $List = {
-        'P1' =&gt; 'NameOfProcess',
-    }
-</pre><h2 id="ProcessListGet">ProcessListGet()</h2>
+        &#39;P1&#39; =&gt; &#39;NameOfProcess&#39;,
+    }</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessListGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessListGet">
-                                        <pre>
-
-sub ProcessListGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need UserID!',
-        );
-        return;
-    }
-
-    # get cache object
-    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
-
-    # check cache
-    my $CacheKey = 'ProcessListGet';
-
-    my $Cache = $CacheObject->Get(
-        Type => 'ProcessManagement_Process',
-        Key  => $CacheKey,
-    );
-    return $Cache if $Cache;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # SQL
-    return if !$DBObject->Prepare(
-        SQL => '
-            SELECT id, entity_id
-            FROM pm_process
-            ORDER BY id',
-    );
-
-    my @ProcessIDs;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        push @ProcessIDs, $Row[0];
-    }
-
-    my @Data;
-    for my $ItemID (@ProcessIDs) {
-
-        my $ProcessData = $Self->ProcessGet(
-            ID     => $ItemID,
-            UserID => 1,
-        );
-        push @Data, $ProcessData;
-    }
-
-    # set cache
-    $CacheObject->Set(
-        Type  => 'ProcessManagement_Process',
-        Key   => $CacheKey,
-        Value => \@Data,
-        TTL   => $Self->{CacheTTL},
-    );
-
-    return \@Data;
-}
-</pre></div>
+<h2 id="ProcessListGet">ProcessListGet()</h2>
 
 <p>get a Process list with all process details</p>
 
-<pre>    my $List = $ProcessObject-&gt;ProcessListGet(
+<pre><code>    my $List = $ProcessObject-&gt;ProcessListGet(
         UserID      =&gt; 1,
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $List = [
+<p>Returns:</p>
+
+<pre><code>    $List = [
         {
             ID            =&gt; 123,
-            EntityID      =&gt; 'P1',
-            Name          =&gt; 'some name',
-            StateEntityID =&gt; 'S1',
-            State         =&gt; 'Active',
+            EntityID      =&gt; &#39;P1&#39;,
+            Name          =&gt; &#39;some name&#39;,
+            StateEntityID =&gt; &#39;S1&#39;,
+            State         =&gt; &#39;Active&#39;,
             Layout        =&gt; $LayoutHashRef,
             Config        =&gt; $ConfigHashRef,
-            Activities    =&gt; ['A1','A2','A3'],
-            CreateTime    =&gt; '2012-07-04 15:08:00',
-            ChangeTime    =&gt; '2012-07-04 15:08:00',
+            Activities    =&gt; [&#39;A1&#39;,&#39;A2&#39;,&#39;A3&#39;],
+            CreateTime    =&gt; &#39;2012-07-04 15:08:00&#39;,
+            ChangeTime    =&gt; &#39;2012-07-04 15:08:00&#39;,
         },
         {
             ID            =&gt; 456,
-            EntityID      =&gt; 'P2',
-            Name          =&gt; 'some name',
-            StateEntityID =&gt; 'S1',
-            State         =&gt; 'Active',
+            EntityID      =&gt; &#39;P2&#39;,
+            Name          =&gt; &#39;some name&#39;,
+            StateEntityID =&gt; &#39;S1&#39;,
+            State         =&gt; &#39;Active&#39;,
             Layout        =&gt; $LayoutHashRef,
             Config        =&gt; $ConfigHashRef,
-            Activities    =&gt; ['A3','A4','A5'],
-            CreateTime    =&gt; '2012-07-04 15:10:00',
-            ChangeTime    =&gt; '2012-07-04 15:10:00',
+            Activities    =&gt; [&#39;A3&#39;,&#39;A4&#39;,&#39;A5&#39;],
+            CreateTime    =&gt; &#39;2012-07-04 15:10:00&#39;,
+            ChangeTime    =&gt; &#39;2012-07-04 15:10:00&#39;,
         },
-    ];
-</pre><h2 id="ProcessDump">ProcessDump()</h2>
+    ];</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessDump');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessDump">
-                                        <pre>
+<h2 id="ProcessDump">ProcessDump()</h2>
 
-sub ProcessDump {
-    my ( $Self, %Param ) = @_;
+<p>gets a complete processes information dump from the DB including: Process State, Activities, ActivityDialogs, Transitions and TransitionActions</p>
 
-    # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need UserID!',
-        );
-        return;
-    }
-
-    if ( !defined $Param{ResultType} )
-    {
-        $Param{ResultType} = 'SCALAR';
-    }
-
-    if ( $Param{ResultType} eq 'FILE' ) {
-        if ( !$Param{Location} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => 'Need Location for ResultType \'FILE\'!',
-            );
-
-        }
-    }
-
-    # get States
-    my %StateDump = %{ $Self->{StateObject}->StateList( UserID => 1 ) };
-
-    # get Processes
-    my $ProcessList = $Self->ProcessListGet( UserID => 1 );
-
-    my %ProcessDump;
-
-    PROCESS:
-    for my $ProcessData ( @{$ProcessList} ) {
-
-        next PROCESS if !IsHashRefWithData($ProcessData);
-
-        $ProcessDump{ $ProcessData->{EntityID} } = {
-            Name                => $ProcessData->{Name},
-            CreateTime          => $ProcessData->{CreateTime},
-            ChangeTime          => $ProcessData->{ChangeTime},
-            StateEntityID       => $ProcessData->{StateEntityID},
-            State               => $ProcessData->{State},
-            StartActivity       => $ProcessData->{Config}->{StartActivity} || '',
-            StartActivityDialog => $ProcessData->{Config}->{StartActivityDialog} || '',
-            Path                => $ProcessData->{Config}->{Path} || {},
-        };
-    }
-
-    # get Activities
-    my $ActivitiesList = $Self->{ActivityObject}->ActivityListGet( UserID => 1 );
-
-    my %ActivityDump;
-
-    ACTIVITY:
-    for my $ActivityData ( @{$ActivitiesList} ) {
-
-        next ACTIVITY if !IsHashRefWithData($ActivityData);
-
-        $ActivityDump{ $ActivityData->{EntityID} } = {
-            ID             => $ActivityData->{ID},
-            Name           => $ActivityData->{Name},
-            CreateTime     => $ActivityData->{CreateTime},
-            ChangeTime     => $ActivityData->{ChangeTime},
-            ActivityDialog => $ActivityData->{Config}->{ActivityDialog} || '',
-        };
-    }
-
-    # get ActivityDialogs
-    my $ActivityDialogsList = $Self->{ActivityDialogObject}->ActivityDialogListGet( UserID => 1 );
-
-    my %ActivityDialogDump;
-
-    ACTIVITYDIALOG:
-    for my $ActivityDialogData ( @{$ActivityDialogsList} ) {
-
-        next ACTIVITY if !IsHashRefWithData($ActivityDialogData);
-
-        $ActivityDialogDump{ $ActivityDialogData->{EntityID} } = {
-            Name             => $ActivityDialogData->{Name},
-            CreateTime       => $ActivityDialogData->{CreateTime},
-            ChangeTime       => $ActivityDialogData->{ChangeTime},
-            Interface        => $ActivityDialogData->{Config}->{Interface} || '',
-            DescriptionShort => $ActivityDialogData->{Config}->{DescriptionShort} || '',
-            DescriptionLong  => $ActivityDialogData->{Config}->{DescriptionLong} || '',
-            Fields           => $ActivityDialogData->{Config}->{Fields} || {},
-            FieldOrder       => $ActivityDialogData->{Config}->{FieldOrder} || [],
-            Permission       => $ActivityDialogData->{Config}->{Permission} || '',
-            RequiredLock     => $ActivityDialogData->{Config}->{RequiredLock} || '',
-            SubmitAdviceText => $ActivityDialogData->{Config}->{SubmitAdviceText} || '',
-            SubmitButtonText => $ActivityDialogData->{Config}->{SubmitButtonText} || '',
-        };
-    }
-
-    # get Transitions
-    my $TransitionsList = $Self->{TransitionObject}->TransitionListGet( UserID => 1 );
-
-    my %TransitionDump;
-
-    TRANSITION:
-    for my $TransitionData ( @{$TransitionsList} ) {
-
-        next TRANSITION if !IsHashRefWithData($TransitionData);
-
-        $TransitionDump{ $TransitionData->{EntityID} } = {
-            Name             => $TransitionData->{Name},
-            CreateTime       => $TransitionData->{CreateTime},
-            ChangeTime       => $TransitionData->{ChangeTime},
-            Condition        => $TransitionData->{Config}->{Condition} || {},
-            ConditionLinking => $TransitionData->{Config}->{ConditionLinking} || '',
-        };
-    }
-
-    # get TransitionActions
-    my $TransitionActionsList = $Self->{TransitionActionObject}->TransitionActionListGet( UserID => 1 );
-
-    my %TransitionActionDump;
-
-    TRANSITIONACTION:
-    for my $TransitionActionData ( @{$TransitionActionsList} ) {
-
-        next TRANSITIONACTION if !IsHashRefWithData($TransitionActionData);
-
-        $TransitionActionDump{ $TransitionActionData->{EntityID} } = {
-            Name       => $TransitionActionData->{Name},
-            CreateTime => $TransitionActionData->{CreateTime},
-            ChangeTime => $TransitionActionData->{ChangeTime},
-            Module     => $TransitionActionData->{Config}->{Module} || '',
-            Config     => $TransitionActionData->{Config}->{Config} || {},
-        };
-    }
-
-    # delete cache (this will also delete the cache for display or hide AgentTicketProcess menu
-    # item)
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'ProcessManagement_Process',
-    );
-
-    # return Hash useful for JSON
-    if ( $Param{ResultType} eq 'HASH' ) {
-
-        return {
-            'Process'          => \%ProcessDump,
-            'State'            => \%StateDump,
-            'Activity'         => \%ActivityDump,
-            'ActivityDialog'   => \%ActivityDialogDump,
-            'Transition'       => \%TransitionDump,
-            'TransitionAction' => \%TransitionActionDump,
-        };
-
-    }
-    else {
-
-        # create output
-
-        my $Output = $Self->_ProcessItemOutput(
-            Key   => "Process",
-            Value => \%ProcessDump,
-        );
-
-        $Output .= $Self->_ProcessItemOutput(
-            Key   => 'Process::State',
-            Value => \%StateDump,
-        );
-
-        $Output .= $Self->_ProcessItemOutput(
-            Key   => 'Process::Activity',
-            Value => \%ActivityDump,
-        );
-
-        $Output .= $Self->_ProcessItemOutput(
-            Key   => 'Process::ActivityDialog',
-            Value => \%ActivityDialogDump,
-        );
-
-        $Output .= $Self->_ProcessItemOutput(
-            Key   => 'Process::Transition',
-            Value => \%TransitionDump,
-        );
-
-        $Output .= $Self->_ProcessItemOutput(
-            Key   => 'Process::TransitionAction',
-            Value => \%TransitionActionDump,
-        );
-
-        # return a scalar variable with all config as test
-        if ( $Param{ResultType} ne 'FILE' ) {
-
-            return $Output;
-        }
-
-        # return a file location
-        else {
-
-            # get current time for the file comment
-            my $CurrentTime = $Kernel::OM->Get('Kernel::System::Time')->CurrentTimestamp();
-
-            # get user data of the current user to use for the file comment
-            my %User = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
-                UserID => $Param{UserID},
-            );
-
-            # remove home from location path to show in file comment
-            my $Home     = $Kernel::OM->Get('Kernel::Config')->Get('Home');
-            my $Location = $Param{Location};
-            $Location =~ s{$Home\/}{}xmsg;
-
-            # build comment (therefore we need to trick out the filter)
-            my $FileStart = <<'EOF';
-# OTRS config file (automatically generated)
-# VERSION:1.1
-package Kernel::Config::Files::ZZZProcessManagement;
-use strict;
-use warnings;
-no warnings 'redefine';
-use utf8;
-sub Load {
-    my ($File, $Self) = @_;
-EOF
-
-            my $FileEnd = <<'EOF';
-}
-</pre></div>
-
-<p>gets a complete processes information dump from the DB including: Process State, Activities,
-ActivityDialogs, Transitions and TransitionActions</p>
-
-<pre>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
-        ResultType  =&gt; 'SCALAR'                     # 'SCALAR' || 'HASH' || 'FILE'
-        Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatory for ResultType = 'FILE'
+<pre><code>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
+        ResultType  =&gt; &#39;SCALAR&#39;                     # &#39;SCALAR&#39; || &#39;HASH&#39; || &#39;FILE&#39;
+        Location    =&gt; &#39;/opt/otrs/var/myfile.txt&#39;   # mandatory for ResultType = &#39;FILE&#39;
         UserID      =&gt; 1,
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $ProcessDump = '
-        $Self-&gt;{'Process'} = {
-          'P1' =&gt; {
-            'Name' =&gt; 'Process 1',
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'Path' =&gt; {
-              'A1' =&gt; {
-                'T1' =&gt; {
-                  'Action' =&gt; [
-                    'TA1',
+<p>Returns:</p>
+
+<pre><code>    $ProcessDump = &#39;
+        $Self-&gt;{&#39;Process&#39;} = {
+          &#39;P1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Process 1&#39;,
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;Path&#39; =&gt; {
+              &#39;A1&#39; =&gt; {
+                &#39;T1&#39; =&gt; {
+                  &#39;Action&#39; =&gt; [
+                    &#39;TA1&#39;,
                   ],
               }
             },
-            'StartActivity' =&gt; 'A1',
-            'StartActivityDialog' =&gt; 'AD1',
-            'State' =&gt; 'S1'
+            &#39;StartActivity&#39; =&gt; &#39;A1&#39;,
+            &#39;StartActivityDialog&#39; =&gt; &#39;AD1&#39;,
+            &#39;State&#39; =&gt; &#39;S1&#39;
           },
           # ...
         };
 
-        $Self-&gt;{'Process::State'} = {
-          'S1' =&gt; 'Active',
-          'S2' =&gt; 'Inactive',
-          'S3' =&gt; 'FadeAway'
+        $Self-&gt;{&#39;Process::State&#39;} = {
+          &#39;S1&#39; =&gt; &#39;Active&#39;,
+          &#39;S2&#39; =&gt; &#39;Inactive&#39;,
+          &#39;S3&#39; =&gt; &#39;FadeAway&#39;
         };
 
-        $Self-&gt;{'Process::Activity'} = {
-          'A1' =&gt; {
-            'Name' =&gt; 'Activity 1'
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'ActivityDialog' =&gt; {
-              '1' =&gt; 'AD1',
+        $Self-&gt;{&#39;Process::Activity&#39;} = {
+          &#39;A1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Activity 1&#39;
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ActivityDialog&#39; =&gt; {
+              &#39;1&#39; =&gt; &#39;AD1&#39;,
               }
             },
           },
           # ...
         };
 
-        $Self-&gt;{'Process::ActivityDialog'} = {
-          'AD1' =&gt; {
-            'Name' =&gt; 'Activity Dialog 1',
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'DescriptionLong' =&gt; 'Longer description',
-            'DescriptionShort' =&gt; 'Short description',
-            'FieldOrder' =&gt; [
-              'StateID',
-              'DynamicField_Marke',
+        $Self-&gt;{&#39;Process::ActivityDialog&#39;} = {
+          &#39;AD1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Activity Dialog 1&#39;,
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;DescriptionLong&#39; =&gt; &#39;Longer description&#39;,
+            &#39;DescriptionShort&#39; =&gt; &#39;Short description&#39;,
+            &#39;FieldOrder&#39; =&gt; [
+              &#39;StateID&#39;,
+              &#39;DynamicField_Marke&#39;,
             ],
-            'Fields' =&gt; {
-              'StateID' =&gt; {
-                'DefaultValue' =&gt; '1',
-                'DescriptionLong' =&gt; 'Longer description',
-                'DescriptionShort' =&gt; 'Short description',
-                'Display' =&gt; '0'
+            &#39;Fields&#39; =&gt; {
+              &#39;StateID&#39; =&gt; {
+                &#39;DefaultValue&#39; =&gt; &#39;1&#39;,
+                &#39;DescriptionLong&#39; =&gt; &#39;Longer description&#39;,
+                &#39;DescriptionShort&#39; =&gt; &#39;Short description&#39;,
+                &#39;Display&#39; =&gt; &#39;0&#39;
               },
-              'DynamicField_Marke' =&gt; {
-                'DescriptionLong' =&gt; 'Longer description',
-                'DescriptionShort' =&gt; 'Short description',
-                'Display' =&gt; '2'
+              &#39;DynamicField_Marke&#39; =&gt; {
+                &#39;DescriptionLong&#39; =&gt; &#39;Longer description&#39;,
+                &#39;DescriptionShort&#39; =&gt; &#39;Short description&#39;,
+                &#39;Display&#39; =&gt; &#39;2&#39;
               },
             },
             #...
         };
 
-        $Self-&gt;{'Process::Transition'} = {
-          'T1' =&gt; {
-            'Name' =&gt; 'Transition 1'
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'Condition' =&gt; {
-              'Type' =&gt; 'and',
-              'Cond1' =&gt; {
-                'Fields' =&gt; {
-                  'DynamicField_Marke' =&gt; {
-                    'Match' =&gt; 'Teststring',
-                    'Type' =&gt; 'String',
+        $Self-&gt;{&#39;Process::Transition&#39;} = {
+          &#39;T1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Transition 1&#39;
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;Condition&#39; =&gt; {
+              &#39;Type&#39; =&gt; &#39;and&#39;,
+              &#39;Cond1&#39; =&gt; {
+                &#39;Fields&#39; =&gt; {
+                  &#39;DynamicField_Marke&#39; =&gt; {
+                    &#39;Match&#39; =&gt; &#39;Teststring&#39;,
+                    &#39;Type&#39; =&gt; &#39;String&#39;,
                   },
                 },
-                'Type' =&gt; 'and',
+                &#39;Type&#39; =&gt; &#39;and&#39;,
               },
             },
           },
           # ...
         };
 
-        $Self-&gt;{'Process::Action'} = {
-          'TA1' =&gt; {
-            'Name' =&gt; 'Queue Move',
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'Module' =&gt; 'Kernel::System::Process::Transition::Action::QueueMove',
-            'Config' =&gt; {
-              'NewOwner' =&gt; 'root@localhost',
-              'TargetQueue' =&gt; 'Raw',
+        $Self-&gt;{&#39;Process::Action&#39;} = {
+          &#39;TA1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Queue Move&#39;,
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;Module&#39; =&gt; &#39;Kernel::System::Process::Transition::Action::QueueMove&#39;,
+            &#39;Config&#39; =&gt; {
+              &#39;NewOwner&#39; =&gt; &#39;root@localhost&#39;,
+              &#39;TargetQueue&#39; =&gt; &#39;Raw&#39;,
             },
           },
           # ...
         };
-     ';
+     &#39;;
 
     my $ProcessDump = $ProcessObject-&gt;ProcessDump(
-        ResultType  =&gt; 'HASH'                       # 'SCALAR' || 'HASH' || 'FILE'
-        Location    =&gt; '/opt/otrs/var/myfile.txt'   # mandatory for ResultType = 'FILE'
+        ResultType  =&gt; &#39;HASH&#39;                       # &#39;SCALAR&#39; || &#39;HASH&#39; || &#39;FILE&#39;
+        Location    =&gt; &#39;/opt/otrs/var/myfile.txt&#39;   # mandatory for ResultType = &#39;FILE&#39;
         UserID      =&gt; 1,
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $ProcessDump = {
+<p>Returns:</p>
+
+<pre><code>    $ProcessDump = {
         Process =&gt; {
-          'P1' =&gt; {
-            'Name' =&gt; 'Process 1',
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'Path' =&gt; {
-              'A1' =&gt; {
-                'T1' =&gt; {
-                  'Action' =&gt; [
-                    'TA1',
+          &#39;P1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Process 1&#39;,
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;Path&#39; =&gt; {
+              &#39;A1&#39; =&gt; {
+                &#39;T1&#39; =&gt; {
+                  &#39;Action&#39; =&gt; [
+                    &#39;TA1&#39;,
                   ],
               }
             },
-            'StartActivity' =&gt; 'A1',
-            'StartActivityDialog' =&gt; 'AD1',
-            'State' =&gt; 'S1'
+            &#39;StartActivity&#39; =&gt; &#39;A1&#39;,
+            &#39;StartActivityDialog&#39; =&gt; &#39;AD1&#39;,
+            &#39;State&#39; =&gt; &#39;S1&#39;
           },
           # ...
         };
 
         State =&gt; {
-          'S1' =&gt; 'Active',
-          'S2' =&gt; 'Inactive',
-          'S3' =&gt; 'FadeAway'
+          &#39;S1&#39; =&gt; &#39;Active&#39;,
+          &#39;S2&#39; =&gt; &#39;Inactive&#39;,
+          &#39;S3&#39; =&gt; &#39;FadeAway&#39;
         };
 
         Activity =&gt; {
-          'A1' =&gt; {
-            'Name' =&gt; 'Activity 1'
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'ActivityDialog' =&gt; {
-              '1' =&gt; 'AD1',
+          &#39;A1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Activity 1&#39;
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ActivityDialog&#39; =&gt; {
+              &#39;1&#39; =&gt; &#39;AD1&#39;,
               }
             },
           },
@@ -1368,47 +427,47 @@ ActivityDialogs, Transitions and TransitionActions</p>
         };
 
         ActivityDialog =&gt; {
-          'AD1' =&gt; {
-            'Name' =&gt; 'Activity Dialog 1',
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'DescriptionLong' =&gt; 'Longer description',
-            'DescriptionShort' =&gt; 'Short description',
-            'FieldOrder' =&gt; [
-              'StateID',
-              'DynamicField_Marke',
+          &#39;AD1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Activity Dialog 1&#39;,
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;DescriptionLong&#39; =&gt; &#39;Longer description&#39;,
+            &#39;DescriptionShort&#39; =&gt; &#39;Short description&#39;,
+            &#39;FieldOrder&#39; =&gt; [
+              &#39;StateID&#39;,
+              &#39;DynamicField_Marke&#39;,
             ],
-            'Fields' =&gt; {
-              'StateID' =&gt; {
-                'DefaultValue' =&gt; '1',
-                'DescriptionLong' =&gt; 'Longer description',
-                'DescriptionShort' =&gt; 'Short description',
-                'Display' =&gt; '0'
+            &#39;Fields&#39; =&gt; {
+              &#39;StateID&#39; =&gt; {
+                &#39;DefaultValue&#39; =&gt; &#39;1&#39;,
+                &#39;DescriptionLong&#39; =&gt; &#39;Longer description&#39;,
+                &#39;DescriptionShort&#39; =&gt; &#39;Short description&#39;,
+                &#39;Display&#39; =&gt; &#39;0&#39;
               },
-              'DynamicField_Marke' =&gt; {
-                'DescriptionLong' =&gt; 'Longer description',
-                'DescriptionShort' =&gt; 'Short description',
-                'Display' =&gt; '2'
+              &#39;DynamicField_Marke&#39; =&gt; {
+                &#39;DescriptionLong&#39; =&gt; &#39;Longer description&#39;,
+                &#39;DescriptionShort&#39; =&gt; &#39;Short description&#39;,
+                &#39;Display&#39; =&gt; &#39;2&#39;
               },
             },
             #...
         };
 
         Transition =&gt; {
-          'T1' =&gt; {
-            'Name' =&gt; 'Transition 1'
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'Condition' =&gt; {
-              'Type' =&gt; 'and',
-              'Cond1' =&gt; {
-                'Fields' =&gt; {
-                  'DynamicField_Marke' =&gt; {
-                    'Match' =&gt; 'Teststring',
-                    'Type' =&gt; 'String',
+          &#39;T1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Transition 1&#39;
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;Condition&#39; =&gt; {
+              &#39;Type&#39; =&gt; &#39;and&#39;,
+              &#39;Cond1&#39; =&gt; {
+                &#39;Fields&#39; =&gt; {
+                  &#39;DynamicField_Marke&#39; =&gt; {
+                    &#39;Match&#39; =&gt; &#39;Teststring&#39;,
+                    &#39;Type&#39; =&gt; &#39;String&#39;,
                   },
                 },
-                'Type' =&gt; 'and',
+                &#39;Type&#39; =&gt; &#39;and&#39;,
               },
             },
           },
@@ -1416,14 +475,14 @@ ActivityDialogs, Transitions and TransitionActions</p>
         };
 
         TransitionAction =&gt; {
-          'TA1' =&gt; {
-            'Name' =&gt; 'Queue Move',
-            'CreateTime' =&gt; '2012-07-21 08:11:33',
-            'ChangeTime' =&gt; '2012-07-21 08:11:33',
-            'Module' =&gt; 'Kernel::System::Process::Transition::Action::QueueMove',
-            'Config' =&gt; {
-              'NewOwner' =&gt; 'root@localhost',
-              'TargetQueue' =&gt; 'Raw',
+          &#39;TA1&#39; =&gt; {
+            &#39;Name&#39; =&gt; &#39;Queue Move&#39;,
+            &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
+            &#39;Module&#39; =&gt; &#39;Kernel::System::Process::Transition::Action::QueueMove&#39;,
+            &#39;Config&#39; =&gt; {
+              &#39;NewOwner&#39; =&gt; &#39;root@localhost&#39;,
+              &#39;TargetQueue&#39; =&gt; &#39;Raw&#39;,
             },
           },
           # ...
@@ -1431,404 +490,36 @@ ActivityDialogs, Transitions and TransitionActions</p>
     }
 
     my $ProcessDump = $ProcessObject-&gt;ProcessDump(
-        ResultType  =&gt; 'Location'                     # 'SCALAR' || 'HASH' || 'FILE'
-        Location    =&gt; '/opt/otrs/var/myfile.txt'     # mandatory for ResultType = 'FILE'
+        ResultType  =&gt; &#39;Location&#39;                     # &#39;SCALAR&#39; || &#39;HASH&#39; || &#39;FILE&#39;
+        Location    =&gt; &#39;/opt/otrs/var/myfile.txt&#39;     # mandatory for ResultType = &#39;FILE&#39;
         UserID      =&gt; 1,
-    );
-</pre><p>Returns:
-    $ProcessDump = '/opt/otrs/var/myfile.txt';      # or undef if can't write the file</p>
+    );</code></pre>
+
+<p>Returns: $ProcessDump = &#39;/opt/otrs/var/myfile.txt&#39;; # or undef if can&#39;t write the file</p>
 
 <h2 id="ProcessImport">ProcessImport()</h2>
 
-<p><a href="#" onclick="toggleCode('method_ProcessImport');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessImport">
-                                        <pre>
-
-sub ProcessImport {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(Content UserID)) {
-
-        # check needed stuff
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    my $ProcessData = $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Param{Content} );
-    if ( ref $ProcessData ne 'HASH' ) {
-        return (
-            Message =>
-                "Couldn't read process configuration file. Please make sure you file is valid.",
-        );
-    }
-
-    # collect all used fields and make sure they're present
-    my @UsedDynamicFields;
-    for my $ActivityDialog ( sort keys %{ $ProcessData->{ActivityDialogs} } ) {
-        for my $FieldName (
-            sort
-            keys %{ $ProcessData->{ActivityDialogs}->{$ActivityDialog}->{Config}->{Fields} }
-            )
-        {
-            if ( $FieldName =~ s{DynamicField_(\w+)}{$1}xms ) {
-                push @UsedDynamicFields, $FieldName;
-            }
-        }
-    }
-
-    # get dynamic field object
-    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField');
-
-    # get all present dynamic fields and check if the fields used in the config are beyond them
-    my $DynamicFieldList = $DynamicFieldObject->DynamicFieldList(
-        ResultType => 'HASH',
-    );
-    my @PresentDynamicFieldNames = values %{$DynamicFieldList};
-
-    my @MissingDynamicFieldNames;
-    for my $UsedDynamicFieldName (@UsedDynamicFields) {
-        if ( !grep { $_ eq $UsedDynamicFieldName } @PresentDynamicFieldNames ) {
-            push @MissingDynamicFieldNames, $UsedDynamicFieldName;
-        }
-    }
-
-    if ( $#MissingDynamicFieldNames > -1 ) {
-        my $MissingDynamicFields = join( ', ', @MissingDynamicFieldNames );
-        return (
-            Message => "The following dynamic fields are missing: $MissingDynamicFields. "
-                . "Import has been stopped.",
-        );
-    }
-
-    # make sure all activities and dialogs are present
-    my @UsedActivityDialogs;
-    for my $ActivityEntityID ( @{ $ProcessData->{Process}->{Activities} } ) {
-        if ( ref $ProcessData->{Activities}->{$ActivityEntityID} ne 'HASH' ) {
-            return (
-                Message => "Missing data for Activity $ActivityEntityID.",
-            );
-        }
-        else {
-            for my $UsedActivityDialog (
-                @{ $ProcessData->{Activities}->{$ActivityEntityID}->{ActivityDialogs} }
-                )
-            {
-                push @UsedActivityDialogs, $UsedActivityDialog;
-            }
-        }
-    }
-
-    for my $ActivityDialogEntityID (@UsedActivityDialogs) {
-        if ( ref $ProcessData->{ActivityDialogs}->{$ActivityDialogEntityID} ne 'HASH' ) {
-            return (
-                Message => "Missing data for ActivityDialog $ActivityDialogEntityID.",
-            );
-        }
-    }
-
-    # make sure all transitions are present
-    for my $TransitionEntityID ( @{ $ProcessData->{Process}->{Transitions} } ) {
-        if ( ref $ProcessData->{Transitions}->{$TransitionEntityID} ne 'HASH' ) {
-            return (
-                Message => "Missing data for Transition $TransitionEntityID.",
-            );
-        }
-    }
-
-    # make sure all transition actions are present
-    for my $TransitionActionEntityID ( @{ $ProcessData->{Process}->{TransitionActions} } ) {
-        if ( ref $ProcessData->{TransitionActions}->{$TransitionActionEntityID} ne 'HASH' ) {
-            return (
-                Message => "Missing data for TransitionAction $TransitionActionEntityID.",
-            );
-        }
-    }
-
-    my %EntityMapping;
-    my %PartNameMap = (
-        Activity         => 'Activities',
-        ActivityDialog   => 'ActivityDialogs',
-        Transition       => 'Transitions',
-        TransitionAction => 'TransitionActions'
-    );
-
-    # if OverwriteExistingEntities no new entities must be added to the DB unless the entity does
-    #    not not exists
-    if ( $Param{OverwriteExistingEntities} ) {
-
-        my $EntityID    = $ProcessData->{Process}->{EntityID};
-        my $NewEntityID = $EntityID;
-
-        # check if EntityID matched the format (it could be that a process from 3.3.x is been
-        #    imported)
-        if ( $NewEntityID !~ m{\A Process - [0-9a-f]{32} \z}msx ) {
-
-            # generate new EntityIDs
-            $NewEntityID = $Self->{EntityObject}->EntityIDGenerate(
-                EntityType => 'Process',
-                UserID     => $Param{UserID},
-            );
-        }
-
-        $EntityMapping{Process}->{$EntityID} = $NewEntityID;
-
-        for my $PartName (qw(Activity ActivityDialog Transition TransitionAction)) {
-            for my $PartEntityID ( sort keys %{ $ProcessData->{ $PartNameMap{$PartName} } } ) {
-
-                $NewEntityID = $PartEntityID;
-
-                # check if EntityID matched the format (it could be that a process from 3.3.x is been
-                #    imported)
-                if ( $NewEntityID !~ m{\A $PartName - [0-9a-f]{32}? \z}msx ) {
-
-                    # generate new EntityIDs
-                    $NewEntityID = $Self->{EntityObject}->EntityIDGenerate(
-                        EntityType => $PartName,
-                        UserID     => $Param{UserID},
-                    );
-                }
-
-                $EntityMapping{ $PartNameMap{$PartName} }->{$PartEntityID} = $NewEntityID;
-            }
-
-            # make sure that all entity mapping parts are defined as hash references
-            $EntityMapping{ $PartNameMap{$PartName} } //= {}
-        }
-    }
-    else {
-
-        my $EntityID = $ProcessData->{Process}->{EntityID};
-
-        # generate new EntityIDs
-        my $NewEntityID = $Self->{EntityObject}->EntityIDGenerate(
-            EntityType => 'Process',
-            UserID     => $Param{UserID},
-        );
-
-        $EntityMapping{Process}->{$EntityID} = $NewEntityID;
-
-        for my $PartName (qw(Activity ActivityDialog Transition TransitionAction)) {
-            for my $PartEntityID ( sort keys %{ $ProcessData->{ $PartNameMap{$PartName} } } ) {
-
-                $NewEntityID = $Self->{EntityObject}->EntityIDGenerate(
-                    EntityType => $PartName,
-                    UserID     => $Param{UserID},
-                );
-                $EntityMapping{ $PartNameMap{$PartName} }->{$PartEntityID} = $NewEntityID;
-            }
-
-            # make sure that all entity mapping parts are defined as hash references
-            $EntityMapping{ $PartNameMap{$PartName} } //= {};
-        }
-
-        # set EntityIDs
-        my $UpdateResult = $Self->_ImportedEntitiesUpdate(
-            ProcessData   => $ProcessData,
-            EntityMapping => \%EntityMapping,
-        );
-
-        if ( !$UpdateResult->{Success} ) {
-            return %{$UpdateResult};
-        }
-
-        # overwrite process data with the temporary entities
-        $ProcessData = $UpdateResult->{ProcessData};
-    }
-
-    # invert the entity mappings, this is needed as we need to check if the new entities exists:
-    #    for non overwriting processes they must not exists and new records must be generated,
-    #    for overwriting processes it might happens that one record does not exists and it needs
-    #    to be created before it is updated
-    # if new entities are to be created they will be using minimal data and updated with real data
-    #    later, this way overwriting and non overwriting processes will share the same logic
-    %{ $EntityMapping{Process} }           = reverse %{ $EntityMapping{Process} };
-    %{ $EntityMapping{Activities} }        = reverse %{ $EntityMapping{Activities} };
-    %{ $EntityMapping{ActivityDialogs} }   = reverse %{ $EntityMapping{ActivityDialogs} };
-    %{ $EntityMapping{Transitions} }       = reverse %{ $EntityMapping{Transitions} };
-    %{ $EntityMapping{TransitionActions} } = reverse %{ $EntityMapping{TransitionActions} };
-
-    my %AddedEntityIDs;
-
-    # get all processes
-    my $ProcessList = $Self->ProcessList(
-        UseEntities => 1,
-        UserID      => $Param{UserID},
-    );
-
-    # check if processes exists otherwise create them
-    for my $ProcessEntityID ( sort keys %{ $EntityMapping{Process} } ) {
-        if ( !$ProcessList->{$ProcessEntityID} ) {
-
-            # create an empty process
-            my $ProcessID = $Self->ProcessAdd(
-                EntityID      => $ProcessEntityID,
-                Name          => 'NewProcess',
-                StateEntityID => 'S1',
-                Layout        => {},
-                Config        => {
-                    Path        => {},
-                    Description => 'NewProcess',
-                },
-                UserID => $Param{UserID},
-            );
-            if ( !$ProcessID ) {
-                return $Self->_ProcessImportRollBack(
-                    AddedEntityIDs => \%AddedEntityIDs,
-                    UserID         => $Param{UserID},
-                    Message        => 'Process '
-                        . $ProcessData->{Process}->{Name}
-                        . ' could not be added. Stopping import!',
-                );
-            }
-
-            # remember added entity
-            $AddedEntityIDs{Process}->{$ProcessEntityID} = $ProcessID;
-        }
-    }
-
-    my %PartConfigMap = (
-        Activity       => {},
-        ActivityDialog => {
-            DescriptionShort => 'NewActivityDialog',
-            Fields           => {},
-            FieldOrder       => [],
-        },
-        Transition => {
-            Condition => {},
-        },
-        TransitionAction => {
-            Module => 'NewTransitionAction',
-            Config => {},
-        },
-    );
-
-    # create missing process parts
-    for my $PartName (qw(Activity ActivityDialog Transition TransitionAction)) {
-
-        my $PartListFunction = $PartName . 'List';
-        my $PartAddFunction  = $PartName . 'Add';
-        my $PartObject       = $PartName . 'Object';
-
-        # get all part items
-        my $PartsList = $Self->{$PartObject}->$PartListFunction(
-            UseEntities => 1,
-            UserID      => $Param{UserID},
-        );
-
-        # check if part exists otherwise create them
-        for my $PartEntityID ( sort keys %{ $EntityMapping{ $PartNameMap{$PartName} } } ) {
-            if ( !$PartsList->{$PartEntityID} ) {
-
-                # create an empty part
-                my $PartID = $Self->{$PartObject}->$PartAddFunction(
-                    EntityID => $PartEntityID,
-                    Name     => "New$PartName",
-                    Config   => $PartConfigMap{$PartName},
-                    UserID   => $Param{UserID},
-                );
-                if ( !$PartID ) {
-                    return $Self->_ProcessImportRollBack(
-                        AddedEntityIDs => \%AddedEntityIDs,
-                        UserID         => $Param{UserID},
-                        Message        => "$PartName "
-                            . $ProcessData->{ $PartNameMap{$PartName} }->{$PartEntityID}->{Name}
-                            . ' could not be added. Stopping import!',
-                    );
-                }
-
-                # remember added entity
-                $AddedEntityIDs{ $PartNameMap{$PartName} }->{$PartEntityID} = $PartID;
-            }
-        }
-    }
-
-    # update all entities with real data
-    # update process
-    for my $ProcessEntityID ( sort keys %{ $EntityMapping{Process} } ) {
-        my $Process = $Self->ProcessGet(
-            EntityID => $ProcessEntityID,
-            UserID   => $Param{UserID},
-        );
-        my $Success = $Self->ProcessUpdate(
-            %{ $ProcessData->{Process} },
-            ID     => $Process->{ID},
-            UserID => $Param{UserID},
-        );
-        if ( !$Success ) {
-            return $Self->_ProcessImportRollBack(
-                AddedEntityIDs => \%AddedEntityIDs,
-                UserID         => $Param{UserID},
-                Message        => "Process: $ProcessEntityID could not be updated. "
-                    . "Stopping import!",
-            );
-        }
-    }
-
-    # update all other process parts
-    for my $PartName (qw(Activity ActivityDialog Transition TransitionAction)) {
-
-        my $PartGetFunction    = $PartName . 'Get';
-        my $PartUpdateFunction = $PartName . 'Update';
-        my $PartObject         = $PartName . 'Object';
-
-        for my $PartEntityID ( sort keys %{ $EntityMapping{ $PartNameMap{$PartName} } } ) {
-            my $Part = $Self->{$PartObject}->$PartGetFunction(
-                EntityID => $PartEntityID,
-                UserID   => $Param{UserID}
-            );
-            my $Success = $Self->{$PartObject}->$PartUpdateFunction(
-                %{ $ProcessData->{ $PartNameMap{$PartName} }->{$PartEntityID} },
-                ID     => $Part->{ID},
-                UserID => $Param{UserID},
-            );
-            if ( !$Success ) {
-                return $Self->_ProcessImportRollBack(
-                    AddedEntityIDs => \%AddedEntityIDs,
-                    UserID         => $Param{UserID},
-                    Message        => "$PartName: $PartEntityID could not be updated. "
-                        . " Stopping import!",
-                );
-            }
-        }
-    }
-
-    return (
-        Message => $Kernel::OM->Get('Kernel::Language')->Translate(
-            'The process "%s" and all of its data has been imported successfully.',
-            $ProcessData->{Process}->{Name}
-        ),
-        Success => 1,
-    );
-}
-</pre></div>
-
 <p>import a process YAML file/content</p>
 
-<pre>    my %ProcessImport = $ProcessObject-&gt;ProcessImport(
+<pre><code>    my %ProcessImport = $ProcessObject-&gt;ProcessImport(
         Content                   =&gt; $YAMLContent, # mandatory, YAML format
         OverwriteExistingEntities =&gt; 0,            # 0 || 1
         UserID                    =&gt; 1,            # mandatory
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    %ProcessImport = (
-        Message =&gt; 'The Message to show.', # error or success message
-        Comment =&gt; 'Any comment',          # optional
+<p>Returns:</p>
+
+<pre><code>    %ProcessImport = (
+        Message =&gt; &#39;The Message to show.&#39;, # error or success message
+        Comment =&gt; &#39;Any comment&#39;,          # optional
         Success =&gt; 1,                      # 1 if success or undef otherwise
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

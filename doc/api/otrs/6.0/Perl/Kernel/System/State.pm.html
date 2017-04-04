@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::State</title>
+<title>Kernel::System::State &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,243 +48,71 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/State.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#StateAdd">StateAdd()</a></li>
-	<li><a href="#StateGet">StateGet()</a></li>
-	<li><a href="#StateUpdate">StateUpdate()</a></li>
-	<li><a href="#StateGetStatesByType">StateGetStatesByType()</a></li>
-	<li><a href="#StateList">StateList()</a></li>
-	<li><a href="#StateLookup">StateLookup()</a></li>
-	<li><a href="#StateTypeList">StateTypeList()</a></li>
-	<li><a href="#StateTypeLookup">StateTypeLookup()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#StateAdd">StateAdd()</a></li>
+      <li><a href="#StateGet">StateGet()</a></li>
+      <li><a href="#StateUpdate">StateUpdate()</a></li>
+      <li><a href="#StateGetStatesByType">StateGetStatesByType()</a></li>
+      <li><a href="#StateList">StateList()</a></li>
+      <li><a href="#StateLookup">StateLookup()</a></li>
+      <li><a href="#StateTypeList">StateTypeList()</a></li>
+      <li><a href="#StateTypeLookup">StateTypeLookup()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::State - state lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All ticket state functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    $Self->{CacheType} = 'State';
-    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
-
-    # check needed config options
-    for my $Needed (qw(Ticket::ViewableStateType Ticket::UnlockStateType)) {
-        if ( !$Kernel::OM->Get('Kernel::Config')->Get($Needed) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "$Needed is missing in the configuration!",
-            );
-        }
-    }
-
-    return $Self;
-}
-</pre></div>
-
 <p>create an object</p>
 
-<pre>    my $StateObject = $Kernel::OM-&gt;Get('Kernel::System::State');
-</pre><h2 id="StateAdd">StateAdd()</h2>
+<pre><code>    my $StateObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::State&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_StateAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_StateAdd">
-                                        <pre>
-
-sub StateAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Name ValidID TypeID UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # store data
-    return if !$DBObject->Do(
-        SQL => 'INSERT INTO ticket_state (name, valid_id, type_id, comments,'
-            . ' create_time, create_by, change_time, change_by)'
-            . ' VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-        Bind => [
-            \$Param{Name}, \$Param{ValidID}, \$Param{TypeID}, \$Param{Comment},
-            \$Param{UserID}, \$Param{UserID},
-        ],
-    );
-
-    # get new state id
-    return if !$DBObject->Prepare(
-        SQL   => 'SELECT id FROM ticket_state WHERE name = ?',
-        Bind  => [ \$Param{Name} ],
-        Limit => 1,
-    );
-
-    # fetch the result
-    my $ID;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $ID = $Row[0];
-    }
-
-    return if !$ID;
-
-    # delete cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => $Self->{CacheType},
-    );
-
-    return $ID;
-}
-</pre></div>
+<h2 id="StateAdd">StateAdd()</h2>
 
 <p>add new states</p>
 
-<pre>    my $ID = $StateObject-&gt;StateAdd(
-        Name    =&gt; 'New State',
-        Comment =&gt; 'some comment',
+<pre><code>    my $ID = $StateObject-&gt;StateAdd(
+        Name    =&gt; &#39;New State&#39;,
+        Comment =&gt; &#39;some comment&#39;,
         ValidID =&gt; 1,
         TypeID  =&gt; 1,
         UserID  =&gt; 123,
-    );
-</pre><h2 id="StateGet">StateGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_StateGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_StateGet">
-                                        <pre>
-
-sub StateGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ID} && !$Param{Name} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need ID or Name!"
-        );
-        return;
-    }
-
-    # check cache
-    my $CacheKey;
-    if ( $Param{Name} ) {
-        $CacheKey = 'StateGet::Name::' . $Param{Name};
-    }
-    else {
-        $CacheKey = 'StateGet::ID::' . $Param{ID};
-    }
-    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => $CacheKey,
-    );
-    return %{$Cache} if $Cache;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # sql
-    my @Bind;
-    my $SQL = 'SELECT ts.id, ts.name, ts.valid_id, ts.comments, ts.type_id, tst.name,'
-        . ' ts.change_time, ts.create_time'
-        . ' FROM ticket_state ts, ticket_state_type tst WHERE ts.type_id = tst.id AND ';
-    if ( $Param{Name} ) {
-        $SQL .= ' ts.name = ?';
-        push @Bind, \$Param{Name};
-    }
-    else {
-        $SQL .= ' ts.id = ?';
-        push @Bind, \$Param{ID};
-    }
-
-    return if !$DBObject->Prepare(
-        SQL   => $SQL,
-        Bind  => \@Bind,
-        Limit => 1,
-    );
-
-    # fetch the result
-    my %Data;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        %Data = (
-            ID         => $Data[0],
-            Name       => $Data[1],
-            Comment    => $Data[3],
-            ValidID    => $Data[2],
-            TypeID     => $Data[4],
-            TypeName   => $Data[5],
-            ChangeTime => $Data[6],
-            CreateTime => $Data[7],
-        );
-    }
-
-    # set cache
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => $CacheKey,
-        Value => \%Data,
-    );
-
-    # no data found...
-    if ( !%Data ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "State '$Param{Name}' not found!",
-        );
-        return;
-    }
-
-    return %Data;
-}
-</pre></div>
+<h2 id="StateGet">StateGet()</h2>
 
 <p>get state attributes</p>
 
-<pre>    my %State = $StateObject-&gt;StateGet(
-        Name  =&gt; 'New State',
+<pre><code>    my %State = $StateObject-&gt;StateGet(
+        Name  =&gt; &#39;New State&#39;,
     );
 
     my %State = $StateObject-&gt;StateGet(
         ID    =&gt; 123,
-    );
-</pre><p>returns</p>
+    );</code></pre>
 
-<pre>    my %State = (
+<p>returns</p>
+
+<pre><code>    my %State = (
         Name       =&gt; &quot;new&quot;,
         ID         =&gt; 1,
         TypeName   =&gt; &quot;new&quot;,
@@ -314,275 +121,44 @@ sub StateGet {
         CreateTime =&gt; &quot;2010-11-29 11:04:04&quot;,
         ChangeTime =&gt; &quot;2010-11-29 11:04:04&quot;,
         Comment    =&gt; &quot;New ticket created by customer.&quot;,
-    );
-</pre><h2 id="StateUpdate">StateUpdate()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_StateUpdate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_StateUpdate">
-                                        <pre>
-
-sub StateUpdate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(ID Name ValidID TypeID UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # sql
-    return if !$DBObject->Do(
-        SQL => 'UPDATE ticket_state SET name = ?, comments = ?, type_id = ?, '
-            . ' valid_id = ?, change_time = current_timestamp, change_by = ? '
-            . ' WHERE id = ?',
-        Bind => [
-            \$Param{Name}, \$Param{Comment}, \$Param{TypeID}, \$Param{ValidID},
-            \$Param{UserID}, \$Param{ID},
-        ],
-    );
-
-    # delete cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => $Self->{CacheType},
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="StateUpdate">StateUpdate()</h2>
 
 <p>update state attributes</p>
 
-<pre>    $StateObject-&gt;StateUpdate(
+<pre><code>    $StateObject-&gt;StateUpdate(
         ID             =&gt; 123,
-        Name           =&gt; 'New State',
-        Comment        =&gt; 'some comment',
+        Name           =&gt; &#39;New State&#39;,
+        Comment        =&gt; &#39;some comment&#39;,
         ValidID        =&gt; 1,
         TypeID         =&gt; 1,
         UserID         =&gt; 123,
-    );
-</pre><h2 id="StateGetStatesByType">StateGetStatesByType()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_StateGetStatesByType');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_StateGetStatesByType">
-                                        <pre>
-
-sub StateGetStatesByType {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Result} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Result!'
-        );
-        return;
-    }
-
-    if ( !$Param{Type} && !$Param{StateType} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Type or StateType!'
-        );
-        return;
-    }
-
-    # cache key
-    my $CacheKey = 'StateGetStatesByType::';
-    if ( $Param{Type} ) {
-        $CacheKey .= 'Type::' . $Param{Type};
-    }
-    if ( $Param{StateType} ) {
-
-        my @StateType;
-        if ( ref $Param{StateType} eq 'ARRAY' ) {
-            @StateType = @{ $Param{StateType} };
-        }
-        else {
-            push @StateType, $Param{StateType};
-        }
-        $CacheKey .= 'StateType::' . join ':', sort @StateType;
-    }
-
-    # check cache
-    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => $CacheKey,
-    );
-    if ($Cache) {
-        if ( $Param{Result} eq 'Name' ) {
-            return @{ $Cache->{Name} };
-        }
-        elsif ( $Param{Result} eq 'HASH' ) {
-            return %{ $Cache->{HASH} };
-        }
-        return @{ $Cache->{ID} };
-    }
-
-    # sql
-    my @StateType;
-    my @Name;
-    my @ID;
-    my %Data;
-    if ( $Param{Type} ) {
-
-        # get config object
-        my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-        if ( $ConfigObject->Get( 'Ticket::' . $Param{Type} . 'StateType' ) ) {
-            @StateType = @{ $ConfigObject->Get( 'Ticket::' . $Param{Type} . 'StateType' ) };
-        }
-        else {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Type 'Ticket::$Param{Type}StateType' not found in Kernel/Config.pm!",
-            );
-            die;
-        }
-    }
-    else {
-        if ( ref $Param{StateType} eq 'ARRAY' ) {
-            @StateType = @{ $Param{StateType} };
-        }
-        else {
-            push @StateType, $Param{StateType};
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    @StateType = map { $DBObject->Quote($_) } @StateType;
-
-    my $SQL = ''
-        . 'SELECT ts.id, ts.name, tst.name'
-        . ' FROM ticket_state ts, ticket_state_type tst'
-        . ' WHERE tst.id = ts.type_id'
-        . " AND tst.name IN ('${\(join '\', \'', sort @StateType)}' )"
-        . " AND ts.valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
-
-    return if !$DBObject->Prepare( SQL => $SQL );
-
-    # fetch the result
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        push @Name, $Data[1];
-        push @ID,   $Data[0];
-        $Data{ $Data[0] } = $Data[1];
-    }
-
-    # set runtime cache
-    my $All = {
-        Name => \@Name,
-        ID   => \@ID,
-        HASH => \%Data,
-    };
-
-    # set permanent cache
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => $CacheKey,
-        Value => $All,
-    );
-
-    if ( $Param{Result} eq 'Name' ) {
-        return @Name;
-    }
-    elsif ( $Param{Result} eq 'HASH' ) {
-        return %Data;
-    }
-
-    return @ID;
-}
-</pre></div>
+<h2 id="StateGetStatesByType">StateGetStatesByType()</h2>
 
 <p>get list of states for a type or a list of state types.</p>
 
-<p>Get all states with state type open and new:
-(available: new, open, closed, pending reminder, pending auto, removed, merged)</p>
+<p>Get all states with state type open and new: (available: new, open, closed, pending reminder, pending auto, removed, merged)</p>
 
-<pre>    my @List = $StateObject-&gt;StateGetStatesByType(
-        StateType =&gt; ['open', 'new'],
-        Result    =&gt; 'ID', # HASH|ID|Name
-    );
-</pre><p>Get all state types used by config option named like
-Ticket::ViewableStateType for &quot;Viewable&quot; state types.</p>
+<pre><code>    my @List = $StateObject-&gt;StateGetStatesByType(
+        StateType =&gt; [&#39;open&#39;, &#39;new&#39;],
+        Result    =&gt; &#39;ID&#39;, # HASH|ID|Name
+    );</code></pre>
 
-<pre>    my %List = $StateObject-&gt;StateGetStatesByType(
-        Type   =&gt; 'Viewable',
-        Result =&gt; 'HASH', # HASH|ID|Name
-    );
-</pre><h2 id="StateList">StateList()</h2>
+<p>Get all state types used by config option named like Ticket::ViewableStateType for &quot;Viewable&quot; state types.</p>
 
-<p><a href="#" onclick="toggleCode('method_StateList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_StateList">
-                                        <pre>
+<pre><code>    my %List = $StateObject-&gt;StateGetStatesByType(
+        Type   =&gt; &#39;Viewable&#39;,
+        Result =&gt; &#39;HASH&#39;, # HASH|ID|Name
+    );</code></pre>
 
-sub StateList {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'UserID!'
-        );
-        return;
-    }
-
-    my $Valid = 1;
-    if ( !$Param{Valid} && defined( $Param{Valid} ) ) {
-        $Valid = 0;
-    }
-
-    # check cache
-    my $CacheKey = 'StateList::' . $Valid;
-    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => $CacheKey,
-    );
-    return %{$Cache} if $Cache;
-
-    # sql
-    my $SQL = 'SELECT id, name FROM ticket_state';
-    if ($Valid) {
-        $SQL
-            .= " WHERE valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    return if !$DBObject->Prepare( SQL => $SQL );
-
-    # fetch the result
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Data{ $Row[0] } = $Row[1];
-    }
-
-    # set cache
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => $CacheKey,
-        Value => \%Data,
-    );
-
-    return %Data;
-}
-</pre></div>
+<h2 id="StateList">StateList()</h2>
 
 <p>get state list as a hash of ID, Name pairs</p>
 
-<pre>    my %List = $StateObject-&gt;StateList(
+<pre><code>    my %List = $StateObject-&gt;StateList(
         UserID =&gt; 123,
     );
 
@@ -594,10 +170,11 @@ sub StateList {
     my %List = $StateObject-&gt;StateList(
         UserID =&gt; 123,
         Valid  =&gt; 0,
-    );
-</pre><p>returns</p>
+    );</code></pre>
 
-<pre>    my %List = (
+<p>returns</p>
+
+<pre><code>    my %List = (
         1 =&gt; &quot;new&quot;,
         2 =&gt; &quot;closed successful&quot;,
         3 =&gt; &quot;closed unsuccessful&quot;,
@@ -607,128 +184,31 @@ sub StateList {
         7 =&gt; &quot;pending auto close+&quot;,
         8 =&gt; &quot;pending auto close-&quot;,
         9 =&gt; &quot;merged&quot;,
-    );
-</pre><h2 id="StateLookup">StateLookup()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_StateLookup');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_StateLookup">
-                                        <pre>
-
-sub StateLookup {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{State} && !$Param{StateID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            State   => 'error',
-            Message => 'Need State or StateID!'
-        );
-        return;
-    }
-
-    # get (already cached) state list
-    my %StateList = $Self->StateList(
-        Valid  => 0,
-        UserID => 1,
-    );
-
-    my $Key;
-    my $Value;
-    my $ReturnData;
-    if ( $Param{StateID} ) {
-        $Key        = 'StateID';
-        $Value      = $Param{StateID};
-        $ReturnData = $StateList{ $Param{StateID} };
-    }
-    else {
-        $Key   = 'State';
-        $Value = $Param{State};
-        my %StateListReverse = reverse %StateList;
-        $ReturnData = $StateListReverse{ $Param{State} };
-    }
-
-    # check if data exists
-    if ( !defined $ReturnData ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No $Key for $Value found!",
-        );
-        return;
-    }
-
-    return $ReturnData;
-}
-</pre></div>
+<h2 id="StateLookup">StateLookup()</h2>
 
 <p>returns the id or the name of a state</p>
 
-<pre>    my $StateID = $StateObject-&gt;StateLookup(
-        State =&gt; 'closed successful',
+<pre><code>    my $StateID = $StateObject-&gt;StateLookup(
+        State =&gt; &#39;closed successful&#39;,
     );
 
     my $State = $StateObject-&gt;StateLookup(
         StateID =&gt; 2,
-    );
-</pre><h2 id="StateTypeList">StateTypeList()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_StateTypeList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_StateTypeList">
-                                        <pre>
-
-sub StateTypeList {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{UserID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'UserID!'
-        );
-        return;
-    }
-
-    # check cache
-    my $CacheKey = 'StateTypeList';
-    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => $CacheKey,
-    );
-    return %{$Cache} if $Cache;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # sql
-    return if !$DBObject->Prepare(
-        SQL => 'SELECT id, name FROM ticket_state_type',
-    );
-
-    # fetch the result
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Data{ $Row[0] } = $Row[1];
-    }
-
-    # set cache
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => $CacheKey,
-        Value => \%Data,
-    );
-
-    return %Data;
-}
-</pre></div>
+<h2 id="StateTypeList">StateTypeList()</h2>
 
 <p>get state type list as a hash of ID, Name pairs</p>
 
-<pre>    my %ListType = $StateObject-&gt;StateTypeList(
+<pre><code>    my %ListType = $StateObject-&gt;StateTypeList(
         UserID =&gt; 123,
-    );
-</pre><p>returns</p>
+    );</code></pre>
 
-<pre>    my %ListType = (
+<p>returns</p>
+
+<pre><code>    my %ListType = (
         1 =&gt; &quot;new&quot;,
         2 =&gt; &quot;open&quot;,
         3 =&gt; &quot;closed&quot;,
@@ -736,76 +216,27 @@ sub StateTypeList {
         5 =&gt; &quot;pending auto&quot;,
         6 =&gt; &quot;removed&quot;,
         7 =&gt; &quot;merged&quot;,
-    );
-</pre><h2 id="StateTypeLookup">StateTypeLookup()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_StateTypeLookup');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_StateTypeLookup">
-                                        <pre>
-
-sub StateTypeLookup {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{StateType} && !$Param{StateTypeID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            StateType => 'error',
-            Message   => 'Need StateType or StateTypeID!',
-        );
-        return;
-    }
-
-    # get (already cached) state type list
-    my %StateTypeList = $Self->StateTypeList(
-        UserID => 1,
-    );
-
-    my $Key;
-    my $Value;
-    my $ReturnData;
-    if ( $Param{StateTypeID} ) {
-        $Key        = 'StateTypeID';
-        $Value      = $Param{StateTypeID};
-        $ReturnData = $StateTypeList{ $Param{StateTypeID} };
-    }
-    else {
-        $Key   = 'StateType';
-        $Value = $Param{StateType};
-        my %StateTypeListReverse = reverse %StateTypeList;
-        $ReturnData = $StateTypeListReverse{ $Param{StateType} };
-    }
-
-    # check if data exists
-    if ( !defined $ReturnData ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No $Key for $Value found!",
-        );
-        return;
-    }
-
-    return $ReturnData;
-}
-</pre></div>
+<h2 id="StateTypeLookup">StateTypeLookup()</h2>
 
 <p>returns the id or the name of a state type</p>
 
-<pre>    my $StateTypeID = $StateTypeObject-&gt;StateTypeLookup(
-        StateType =&gt; 'pending auto',
-    );
-</pre><p>or</p>
+<pre><code>    my $StateTypeID = $StateTypeObject-&gt;StateTypeLookup(
+        StateType =&gt; &#39;pending auto&#39;,
+    );</code></pre>
 
-<pre>    my $StateType = $StateTypeObject-&gt;StateTypeLookup(
+<p>or</p>
+
+<pre><code>    my $StateType = $StateTypeObject-&gt;StateTypeLookup(
         StateTypeID =&gt; 1,
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

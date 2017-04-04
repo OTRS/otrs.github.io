@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::GenericInterface::Operation::Ticket::TicketSearch</title>
+<title>Kernel::GenericInterface::Operation::Ticket::TicketSearch &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,189 +48,75 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/GenericInterface/Operation/Ticket/TicketSearch.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Run">Run()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Run">Run()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::GenericInterface::Operation::Ticket::TicketSearch - GenericInterface Ticket Search Operation backend</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # check needed objects
-    for my $Needed (qw(DebuggerObject WebserviceID)) {
-        if ( !$Param{$Needed} ) {
-            return {
-                Success      => 0,
-                ErrorMessage => "Got no $Needed!",
-            };
-        }
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    # get config for this screen
-    $Self->{Config} = $Kernel::OM->Get('Kernel::Config')->Get('GenericInterface::Operation::TicketSearch');
-
-    return $Self;
-}
-</pre></div>
-
-<p>usually, you want to create an instance of this
-by using Kernel::GenericInterface::Operation-&gt;new();</p>
+<p>usually, you want to create an instance of this by using Kernel::GenericInterface::Operation-&gt;new();</p>
 
 <h2 id="Run">Run()</h2>
 
-<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Run">
-                                        <pre>
-
-sub Run {
-    my ( $Self, %Param ) = @_;
-
-    my $Result = $Self->Init(
-        WebserviceID => $Self->{WebserviceID},
-    );
-
-    if ( !$Result->{Success} ) {
-        $Self->ReturnError(
-            ErrorCode    => 'Webservice.InvalidConfiguration',
-            ErrorMessage => $Result->{ErrorMessage},
-        );
-    }
-
-    my ( $UserID, $UserType ) = $Self->Auth(
-        %Param,
-    );
-
-    return $Self->ReturnError(
-        ErrorCode    => 'TicketSearch.AuthFail',
-        ErrorMessage => "TicketSearch: Authorization failing!",
-    ) if !$UserID;
-
-    # all needed variables
-    $Self->{SearchLimit} = $Param{Data}->{Limit}
-        || $Self->{Config}->{SearchLimit}
-        || 500;
-    $Self->{SortBy} = $Param{Data}->{SortBy}
-        || $Self->{Config}->{'SortBy::Default'}
-        || 'Age';
-    $Self->{OrderBy} = $Param{Data}->{OrderBy}
-        || $Self->{Config}->{'Order::Default'}
-        || 'Down';
-    $Self->{FullTextIndex} = $Param{Data}->{FullTextIndex} || 0;
-
-    # get parameter from data
-    my %GetParam = $Self->_GetParams( %{ $Param{Data} } );
-
-    # create time settings
-    %GetParam = $Self->_CreateTimeSettings(%GetParam);
-
-    # get dynamic fields
-    my %DynamicFieldSearchParameters = $Self->_GetDynamicFields( %{ $Param{Data} } );
-
-    # perform ticket search
-    $UserType = ( $UserType eq 'Customer' ) ? 'CustomerUserID' : 'UserID';
-    my @TicketIDs = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSearch(
-        %GetParam,
-        %DynamicFieldSearchParameters,
-        Result              => 'ARRAY',
-        SortBy              => $Self->{SortBy},
-        OrderBy             => $Self->{OrderBy},
-        Limit               => $Self->{SearchLimit},
-        $UserType           => $UserID,
-        ConditionInline     => $Self->{Config}->{ExtendedSearchCondition},
-        ContentSearchPrefix => '*',
-        ContentSearchSuffix => '*',
-        FullTextIndex       => $Self->{FullTextIndex},
-    );
-
-    if (@TicketIDs) {
-
-        return {
-            Success => 1,
-            Data    => {
-                TicketID => \@TicketIDs,
-            },
-        };
-    }
-
-    # return result
-    return {
-        Success => 1,
-        Data    => {},
-    };
-}
-</pre></div>
-
 <p>perform TicketSearch Operation. This will return a Ticket ID list.</p>
 
-<pre>    my $Result = $OperationObject-&gt;Run(
+<pre><code>    my $Result = $OperationObject-&gt;Run(
         # ticket number (optional) as STRING or as ARRAYREF
-        TicketNumber =&gt; '%123546%',
-        TicketNumber =&gt; ['%123546%', '%123666%'],
+        TicketNumber =&gt; &#39;%123546%&#39;,
+        TicketNumber =&gt; [&#39;%123546%&#39;, &#39;%123666%&#39;],
 
         # ticket title (optional) as STRING or as ARRAYREF
-        Title =&gt; '%SomeText%',
-        Title =&gt; ['%SomeTest1%', '%SomeTest2%'],
+        Title =&gt; &#39;%SomeText%&#39;,
+        Title =&gt; [&#39;%SomeTest1%&#39;, &#39;%SomeTest2%&#39;],
 
-        Queues   =&gt; ['system queue', 'other queue'],
+        Queues   =&gt; [&#39;system queue&#39;, &#39;other queue&#39;],
         QueueIDs =&gt; [1, 42, 512],
 
         # use also sub queues of Queue|Queues in search
         UseSubQueues =&gt; 0,
 
         # You can use types like normal, ...
-        Types   =&gt; ['normal', 'change', 'incident'],
+        Types   =&gt; [&#39;normal&#39;, &#39;change&#39;, &#39;incident&#39;],
         TypeIDs =&gt; [3, 4],
 
         # You can use states like new, open, pending reminder, ...
-        States   =&gt; ['new', 'open'],
+        States   =&gt; [&#39;new&#39;, &#39;open&#39;],
         StateIDs =&gt; [3, 4],
 
         # (Open|Closed) tickets for all closed or open tickets.
-        StateType =&gt; 'Open',
+        StateType =&gt; &#39;Open&#39;,
 
         # You also can use real state types like new, open, closed,
         # pending reminder, pending auto, removed and merged.
-        StateType    =&gt; ['open', 'new'],
+        StateType    =&gt; [&#39;open&#39;, &#39;new&#39;],
         StateTypeIDs =&gt; [1, 2, 3],
 
-        Priorities  =&gt; ['1 very low', '2 low', '3 normal'],
+        Priorities  =&gt; [&#39;1 very low&#39;, &#39;2 low&#39;, &#39;3 normal&#39;],
         PriorityIDs =&gt; [1, 2, 3],
 
-        Services   =&gt; ['Service A', 'Service B'],
+        Services   =&gt; [&#39;Service A&#39;, &#39;Service B&#39;],
         ServiceIDs =&gt; [1, 2, 3],
 
-        SLAs   =&gt; ['SLA A', 'SLA B'],
+        SLAs   =&gt; [&#39;SLA A&#39;, &#39;SLA B&#39;],
         SLAIDs =&gt; [1, 2, 3],
 
-        Locks   =&gt; ['unlock'],
+        Locks   =&gt; [&#39;unlock&#39;],
         LockIDs =&gt; [1, 2, 3],
 
         OwnerIDs =&gt; [1, 12, 455, 32]
@@ -261,45 +126,45 @@ sub Run {
         WatchUserIDs =&gt; [1, 12, 455, 32]
 
         # CustomerID (optional) as STRING or as ARRAYREF
-        CustomerID =&gt; '123',
-        CustomerID =&gt; ['123', 'ABC'],
+        CustomerID =&gt; &#39;123&#39;,
+        CustomerID =&gt; [&#39;123&#39;, &#39;ABC&#39;],
 
         # CustomerUserLogin (optional) as STRING as ARRAYREF
-        CustomerUserLogin =&gt; 'uid123',
-        CustomerUserLogin =&gt; ['uid123', 'uid777'],
+        CustomerUserLogin =&gt; &#39;uid123&#39;,
+        CustomerUserLogin =&gt; [&#39;uid123&#39;, &#39;uid777&#39;],
 
         # create ticket properties (optional)
         CreatedUserIDs     =&gt; [1, 12, 455, 32]
-        CreatedTypes       =&gt; ['normal', 'change', 'incident'],
+        CreatedTypes       =&gt; [&#39;normal&#39;, &#39;change&#39;, &#39;incident&#39;],
         CreatedTypeIDs     =&gt; [1, 2, 3],
-        CreatedPriorities  =&gt; ['1 very low', '2 low', '3 normal'],
+        CreatedPriorities  =&gt; [&#39;1 very low&#39;, &#39;2 low&#39;, &#39;3 normal&#39;],
         CreatedPriorityIDs =&gt; [1, 2, 3],
-        CreatedStates      =&gt; ['new', 'open'],
+        CreatedStates      =&gt; [&#39;new&#39;, &#39;open&#39;],
         CreatedStateIDs    =&gt; [3, 4],
-        CreatedQueues      =&gt; ['system queue', 'other queue'],
+        CreatedQueues      =&gt; [&#39;system queue&#39;, &#39;other queue&#39;],
         CreatedQueueIDs    =&gt; [1, 42, 512],
 
         # DynamicFields
         #   At least one operator must be specified. Operators will be connected with AND,
         #       values in an operator with OR.
-        #   You can also pass more than one argument to an operator: ['value1', 'value2']
+        #   You can also pass more than one argument to an operator: [&#39;value1&#39;, &#39;value2&#39;]
         DynamicField =&gt; [                                                  # optional
             {
-                Name   =&gt; 'some name',
+                Name   =&gt; &#39;some name&#39;,
                 Empty             =&gt; 1,                       # will return dynamic fields without a value
                                                                   # set to 0 to search fields with a value present
                 Equals            =&gt; 123,
-                Like              =&gt; 'value*',                # &quot;equals&quot; operator with wildcard support
-                GreaterThan       =&gt; '2001-01-01 01:01:01',
-                GreaterThanEquals =&gt; '2001-01-01 01:01:01',
-                SmallerThan       =&gt; '2002-02-02 02:02:02',
-                SmallerThanEquals =&gt; '2002-02-02 02:02:02',
+                Like              =&gt; &#39;value*&#39;,                # &quot;equals&quot; operator with wildcard support
+                GreaterThan       =&gt; &#39;2001-01-01 01:01:01&#39;,
+                GreaterThanEquals =&gt; &#39;2001-01-01 01:01:01&#39;,
+                SmallerThan       =&gt; &#39;2002-02-02 02:02:02&#39;,
+                SmallerThanEquals =&gt; &#39;2002-02-02 02:02:02&#39;,
             },
             # ...
         ],
         # or
         # DynamicField =&gt; {
-        #    Name   =&gt; 'some name',
+        #    Name   =&gt; &#39;some name&#39;,
         #    # ...
         #    Equals =&gt; 123,
         #    # ...
@@ -307,25 +172,21 @@ sub Run {
 
 
 
-
-
-
-
         # article stuff (optional)
-        From    =&gt; '%spam@example.com%',
-        To      =&gt; '%service@example.com%',
-        Cc      =&gt; '%client@example.com%',
-        Subject =&gt; '%VIRUS 32%',
-        Body    =&gt; '%VIRUS 32%',
+        From    =&gt; &#39;%spam@example.com%&#39;,
+        To      =&gt; &#39;%service@example.com%&#39;,
+        Cc      =&gt; &#39;%client@example.com%&#39;,
+        Subject =&gt; &#39;%VIRUS 32%&#39;,
+        Body    =&gt; &#39;%VIRUS 32%&#39;,
 
         # attachment stuff (optional, applies only for ArticleStorageDB)
-        AttachmentName =&gt; '%anyfile.txt%',
+        AttachmentName =&gt; &#39;%anyfile.txt%&#39;,
 
         # use full article text index if configured (optional, default off)
         FullTextIndex =&gt; 1,
 
         # article content search (AND or OR for From, To, Cc, Subject and Body) (optional)
-        ContentSearch =&gt; 'AND',
+        ContentSearch =&gt; &#39;AND&#39;,
 
         # content conditions for From,To,Cc,Subject,Body
         # Title,CustomerID and CustomerUserLogin (all optional)
@@ -337,9 +198,9 @@ sub Run {
         ArticleCreateTimeNewerMinutes =&gt; 120,
 
         # articles with create time after ... (article newer than this date) (optional)
-        ArticleCreateTimeNewerDate =&gt; '2006-01-09 00:00:01',
+        ArticleCreateTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
         # articles with created time before ... (article older than this date) (optional)
-        ArticleCreateTimeOlderDate =&gt; '2006-01-19 23:59:59',
+        ArticleCreateTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
 
         # tickets created more than 60 minutes ago (ticket older than 60 minutes)  (optional)
         TicketCreateTimeOlderMinutes =&gt; 60,
@@ -347,9 +208,9 @@ sub Run {
         TicketCreateTimeNewerMinutes =&gt; 120,
 
         # tickets with create time after ... (ticket newer than this date) (optional)
-        TicketCreateTimeNewerDate =&gt; '2006-01-09 00:00:01',
+        TicketCreateTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
         # tickets with created time before ... (ticket older than this date) (optional)
-        TicketCreateTimeOlderDate =&gt; '2006-01-19 23:59:59',
+        TicketCreateTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
 
         # ticket history entries that created more than 60 minutes ago (optional)
         TicketChangeTimeOlderMinutes =&gt; 60,
@@ -362,14 +223,14 @@ sub Run {
         TicketLastChangeTimeNewerMinutes =&gt; 120,
 
         # tickets with changed time after ... (ticket changed newer than this date) (optional)
-        TicketLastChangeTimeNewerDate =&gt; '2006-01-09 00:00:01',
+        TicketLastChangeTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
         # tickets with changed time before ... (ticket changed older than this date) (optional)
-        TicketLastChangeTimeOlderDate =&gt; '2006-01-19 23:59:59',
+        TicketLastChangeTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
 
         # ticket history entry create time after ... (ticket history entries newer than this date) (optional)
-        TicketChangeTimeNewerDate =&gt; '2006-01-09 00:00:01',
+        TicketChangeTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
         # ticket history entry create time before ... (ticket history entries older than this date) (optional)
-        TicketChangeTimeOlderDate =&gt; '2006-01-19 23:59:59',
+        TicketChangeTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
 
         # tickets closed more than 60 minutes ago (optional)
         TicketCloseTimeOlderMinutes =&gt; 60,
@@ -377,9 +238,9 @@ sub Run {
         TicketCloseTimeNewerMinutes =&gt; 120,
 
         # tickets with closed time after ... (ticket closed newer than this date) (optional)
-        TicketCloseTimeNewerDate =&gt; '2006-01-09 00:00:01',
+        TicketCloseTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
         # tickets with closed time before ... (ticket closed older than this date) (optional)
-        TicketCloseTimeOlderDate =&gt; '2006-01-19 23:59:59',
+        TicketCloseTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
 
         # tickets with pending time of more than 60 minutes ago (optional)
         TicketPendingTimeOlderMinutes =&gt; 60,
@@ -387,9 +248,9 @@ sub Run {
         TicketPendingTimeNewerMinutes =&gt; 120,
 
         # tickets with pending time after ... (optional)
-        TicketPendingTimeNewerDate =&gt; '2006-01-09 00:00:01',
+        TicketPendingTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
         # tickets with pending time before ... (optional)
-        TicketPendingTimeOlderDate =&gt; '2006-01-19 23:59:59',
+        TicketPendingTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
 
         # you can use all following escalation options with this four different ways of escalations
         # TicketEscalationTime...
@@ -403,42 +264,40 @@ sub Run {
         TicketEscalationTimeNewerMinutes =&gt; -120,
 
         # tickets with escalation time after ... (optional)
-        TicketEscalationTimeNewerDate =&gt; '2006-01-09 00:00:01',
+        TicketEscalationTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
         # tickets with escalation time before ... (optional)
-        TicketEscalationTimeOlderDate =&gt; '2006-01-09 23:59:59',
+        TicketEscalationTimeOlderDate =&gt; &#39;2006-01-09 23:59:59&#39;,
 
         # search in archive (optional)
-        ArchiveFlags =&gt; ['y', 'n'],
+        ArchiveFlags =&gt; [&#39;y&#39;, &#39;n&#39;],
 
         # OrderBy and SortBy (optional)
-        OrderBy =&gt; 'Down',  # Down|Up
-        SortBy  =&gt; 'Age',   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age|Type|Lock
+        OrderBy =&gt; &#39;Down&#39;,  # Down|Up
+        SortBy  =&gt; &#39;Age&#39;,   # Owner|Responsible|CustomerID|State|TicketNumber|Queue|Priority|Age|Type|Lock
                             # Changed|Title|Service|SLA|PendingTime|EscalationTime
                             # EscalationUpdateTime|EscalationResponseTime|EscalationSolutionTime
                             # DynamicField_FieldNameX
                             # TicketFreeTime1-6|TicketFreeKey1-16|TicketFreeText1-16
 
         # OrderBy and SortBy as ARRAY for sub sorting (optional)
-        OrderBy =&gt; ['Down', 'Up'],
-        SortBy  =&gt; ['Priority', 'Age'],
+        OrderBy =&gt; [&#39;Down&#39;, &#39;Up&#39;],
+        SortBy  =&gt; [&#39;Priority&#39;, &#39;Age&#39;],
         },
     );
 
     $Result = {
         Success      =&gt; 1,                                # 0 or 1
-        ErrorMessage =&gt; '',                               # In case of an error
+        ErrorMessage =&gt; &#39;&#39;,                               # In case of an error
         Data         =&gt; {
             TicketID =&gt; [ 1, 2, 3, 4 ],
         },
-    };
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+    };</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

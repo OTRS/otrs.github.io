@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericAgent</title>
+<title>Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericAgent &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,172 +48,58 @@ $(document).ready(function() {
 <div>
 <a href="../../../../../src/Kernel/System/Daemon/DaemonModules/SchedulerTaskWorker/GenericAgent.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Run">Run()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Run">Run()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericAgent - Scheduler daemon task handler module for GenericAgent</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>This task handler executes generic agent jobs</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<pre><code>    my $TaskHandlerObject = $Kernel::OM-Get(&#39;Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericAgent&#39;);</code></pre>
 
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    my $Self = {};
-    bless( $Self, $Type );
-
-    $Self->{Debug}      = $Param{Debug};
-    $Self->{WorkerName} = 'Worker: GenericAgent';
-
-    return $Self;
-}
-</pre></div>
-
-<pre>    my $TaskHandlerObject = $Kernel::OM-Get('Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericAgent');
-</pre><h2 id="Run">Run()</h2>
-
-<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Run">
-                                        <pre>
-
-sub Run {
-    my ( $Self, %Param ) = @_;
-
-    # check task params
-    my $CheckResult = $Self->_CheckTaskParams(
-        %Param,
-        NeededDataAttributes => [ 'Name', 'Valid' ],
-    );
-
-    # Stop execution if an error in params is detected.
-    return if !$CheckResult;
-
-    # Skip if job is not valid.
-    return if !$Param{Data}->{Valid};
-
-    my %Job = %{ $Param{Data} };
-
-    my $StartSystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
-
-    # Check if last run was less than 1 minute ago.
-    if (
-        $Job{ScheduleLastRunUnixTime}
-        && $StartSystemTime - $Job{ScheduleLastRunUnixTime} < 60
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "GenericAgent Job: $Job{Name}, was already executed less than 1 minute ago!",
-        );
-        return;
-    }
-
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    my $TicketLimit = $ConfigObject->Get('Daemon::SchedulerGenericAgentTaskManager::TicketLimit') || 0;
-    my $SleepTime   = $ConfigObject->Get('Daemon::SchedulerGenericAgentTaskManager::SleepTime')   || 0;
-
-    my $Success;
-    my $ErrorMessage;
-
-    if ( $Self->{Debug} ) {
-        print "    $Self->{WorkerName} executes task: $Param{TaskName}\n";
-    }
-
-    do {
-
-        # Restore child signal to default, main daemon set it to 'IGNORE' to be able to create
-        #   multiple process at the same time, but in workers this causes problems if function does
-        #   system calls (on linux), since system calls returns -1. See bug#12126.
-        local $SIG{CHLD} = 'DEFAULT';
-
-        # Localize the standard error, everything will be restored after the eval block.
-        local *STDERR;
-
-        # Redirect the standard error to a variable.
-        open STDERR, ">>", \$ErrorMessage;
-
-        $Success = $Kernel::OM->Get('Kernel::System::GenericAgent')->JobRun(
-            Job       => $Job{Name},
-            Limit     => $TicketLimit,
-            SleepTime => $SleepTime,
-            UserID    => 1,
-        );
-    };
-
-    # Get current system time (as soon as the job finish to run).
-    my $EndSystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
-
-    if ( !$Success ) {
-
-        $ErrorMessage ||= "$Job{Name} execution failed without an error message!";
-
-        $Self->_HandleError(
-            TaskName     => $Job{Name},
-            TaskType     => 'GenericAgent',
-            LogMessage   => "There was an error executing $Job{Name}: $ErrorMessage",
-            ErrorMessage => "$ErrorMessage",
-        );
-    }
-
-    # Update worker task.
-    $Kernel::OM->Get('Kernel::System::Daemon::SchedulerDB')->RecurrentTaskWorkerInfoSet(
-        LastWorkerTaskID      => $Param{TaskID},
-        LastWorkerStatus      => $Success,
-        LastWorkerRunningTime => $EndSystemTime - $StartSystemTime,
-    );
-
-    return $Success;
-}
-</pre></div>
+<h2 id="Run">Run()</h2>
 
 <p>Performs the selected task.</p>
 
-<pre>    my $Result = $TaskHandlerObject-&gt;Run(
+<pre><code>    my $Result = $TaskHandlerObject-&gt;Run(
         TaskID   =&gt; 123,
-        TaskName =&gt; 'some name',    # optional
+        TaskName =&gt; &#39;some name&#39;,    # optional
         Data     =&gt; {               # job data as got from Kernel::System::GenericAgent::JobGet()
-            Name 'job name',
+            Name &#39;job name&#39;,
             Valid 1,
             # ...
         },
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $Result =  1;       # or fail in case of an error
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../../up.gif" /></a></h1>
+<p>Returns:</p>
+
+<pre><code>    $Result =  1;       # or fail in case of an error</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

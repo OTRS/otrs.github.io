@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::Web::InterfacePublic</title>
+<title>Kernel::System::Web::InterfacePublic &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,260 +48,54 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/Web/InterfacePublic.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Run">Run()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Run">Run()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::Web::InterfacePublic - the public web interface</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>the global public web interface</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # get debug level
-    $Self->{Debug} = $Param{Debug} || 0;
-
-    # performance log
-    $Self->{PerformanceLogStart} = time();
-
-    $Kernel::OM->ObjectParamAdd(
-        'Kernel::System::Log' => {
-            LogPrefix => $Kernel::OM->Get('Kernel::Config')->Get('CGILogPrefix'),
-        },
-        'Kernel::System::Web::Request' => {
-            WebRequest => $Param{WebRequest} || 0,
-        },
-    );
-
-    # debug info
-    if ( $Self->{Debug} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'debug',
-            Message  => 'Global handle started...',
-        );
-    }
-
-    return $Self;
-}
-</pre></div>
-
 <p>create public web interface object</p>
 
-<pre>    use Kernel::System::Web::InterfacePublic;
+<pre><code>    use Kernel::System::Web::InterfacePublic;
 
     my $Debug = 0;
     my $Interface = Kernel::System::Web::InterfacePublic-&gt;new(
         Debug      =&gt; $Debug,
         WebRequest =&gt; CGI::Fast-&gt;new(), # optional, e. g. if fast cgi is used, the CGI object is already provided
-    );
-</pre><h2 id="Run">Run()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Run">
-                                        <pre>
-
-sub Run {
-    my $Self = shift;
-
-    # get common framework params
-    my %Param;
-
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
-
-    # get session id
-    $Param{SessionName} = $ConfigObject->Get('CustomerPanelSessionName') || 'CSID';
-    $Param{SessionID} = $ParamObject->GetParam( Param => $Param{SessionName} ) || '';
-
-    # drop old session id (if exists)
-    my $QueryString = $ENV{QUERY_STRING} || '';
-    $QueryString =~ s/(\?|&|;|)$Param{SessionName}(=&|=;|=.+?&|=.+?$)/;/g;
-
-    # define framework params
-    my $FrameworkParams = {
-        Lang         => '',
-        Action       => '',
-        Subaction    => '',
-        RequestedURL => $QueryString,
-    };
-    for my $Key ( sort keys %{$FrameworkParams} ) {
-        $Param{$Key} = $ParamObject->GetParam( Param => $Key )
-            || $FrameworkParams->{$Key};
-    }
-
-    # validate language
-    if ( $Param{Lang} && $Param{Lang} !~ m{\A[a-z]{2}(?:_[A-Z]{2})?\z}xms ) {
-        delete $Param{Lang};
-    }
-
-    # Check if the browser sends the SessionID cookie and set the SessionID-cookie
-    # as SessionID! GET or POST SessionID have the lowest priority.
-    if ( $ConfigObject->Get('SessionUseCookie') ) {
-        $Param{SessionIDCookie} = $ParamObject->GetCookie( Key => $Param{SessionName} );
-        if ( $Param{SessionIDCookie} ) {
-            $Param{SessionID} = $Param{SessionIDCookie};
-        }
-    }
-
-    # get common application and add-on application params
-    # Important!
-    # This must be done before creating the layout object,
-    # because otherwise the action parameter is not passed and then
-    # the loader can not load module specific JavaScript and CSS
-    # For details see bug: http://bugs.otrs.org/show_bug.cgi?id=6471
-    my %CommonObjectParam = %{ $ConfigObject->Get('PublicFrontend::CommonParam') };
-    for my $Key ( sort keys %CommonObjectParam ) {
-        $Param{$Key} = $ParamObject->GetParam( Param => $Key ) || $CommonObjectParam{$Key};
-    }
-
-    # security check Action Param (replace non-word chars)
-    $Param{Action} =~ s/\W//g;
-
-    $Kernel::OM->ObjectParamAdd(
-        'Kernel::Output::HTML::Layout' => {
-            %Param,
-            SessionIDCookie => 1,
-            Debug           => $Self->{Debug},
-        },
-    );
-
-    my $DBCanConnect = $Kernel::OM->Get('Kernel::System::DB')->Connect();
-
-    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    if ( !$DBCanConnect ) {
-        $LayoutObject->CustomerFatalError(
-            Comment => Translatable('Please contact the administrator.'),
-        );
-    }
-    if ( $ParamObject->Error() ) {
-        $LayoutObject->CustomerFatalError(
-            Message => $ParamObject->Error(),
-            Comment => Translatable('Please contact the administrator.'),
-        );
-    }
-
-    # run modules if a version value exists
-    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require("Kernel::Modules::$Param{Action}") ) {
-        $LayoutObject->CustomerFatalError(
-            Comment => Translatable('Please contact the administrator.'),
-        );
-        return 1;
-    }
-
-    # module registry
-    my $ModuleReg = $ConfigObject->Get('PublicFrontend::Module')->{ $Param{Action} };
-    if ( !$ModuleReg ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message =>
-                "Module Kernel::Modules::$Param{Action} not registered in Kernel/Config.pm!",
-        );
-        $LayoutObject->CustomerFatalError(
-            Comment => Translatable('Please contact the administrator.'),
-        );
-        return;
-    }
-
-    # debug info
-    if ( $Self->{Debug} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'debug',
-            Message  => 'Kernel::Modules::' . $Param{Action} . '->new',
-        );
-    }
-
-    my $FrontendObject = ( 'Kernel::Modules::' . $Param{Action} )->new(
-        UserID => 1,
-        %Param,
-        Debug => $Self->{Debug},
-    );
-
-    # debug info
-    if ( $Self->{Debug} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'debug',
-            Message  => 'Kernel::Modules::' . $Param{Action} . '->run',
-        );
-    }
-
-    # ->Run $Action with $FrontendObject
-    $LayoutObject->Print( Output => \$FrontendObject->Run() );
-
-    # log request time
-    if ( $ConfigObject->Get('PerformanceLog') ) {
-        if ( ( !$QueryString && $Param{Action} ) || $QueryString !~ /Action=/ ) {
-            $QueryString = 'Action=' . $Param{Action} . '&Subaction=' . $Param{Subaction};
-        }
-        my $File = $ConfigObject->Get('PerformanceLog::File');
-        ## no critic
-        if ( open my $Out, '>>', $File ) {
-            ## use critic
-            print $Out time()
-                . '::Public::'
-                . ( time() - $Self->{PerformanceLogStart} )
-                . "::-::$QueryString\n";
-            close $Out;
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'notice',
-                Message  => 'Response::Public: '
-                    . ( time() - $Self->{PerformanceLogStart} )
-                    . "s taken (URL:$QueryString)",
-            );
-        }
-        else {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Can't write $File: $!",
-            );
-        }
-    }
-
-    return 1;
-}
-</pre></div>
+<h2 id="Run">Run()</h2>
 
 <p>execute the object</p>
 
-<pre>    $Interface-&gt;Run();
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<pre><code>    $Interface-&gt;Run();</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

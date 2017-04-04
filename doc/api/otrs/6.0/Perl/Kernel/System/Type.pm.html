@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::Type</title>
+<title>Kernel::System::Type &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,489 +48,121 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/Type.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#TypeAdd">TypeAdd()</a></li>
-	<li><a href="#TypeGet">TypeGet()</a></li>
-	<li><a href="#TypeUpdate">TypeUpdate()</a></li>
-	<li><a href="#TypeList">TypeList()</a></li>
-	<li><a href="#TypeLookup">TypeLookup()</a></li>
-	<li><a href="#NameExistsCheck">NameExistsCheck()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#TypeAdd">TypeAdd()</a></li>
+      <li><a href="#TypeGet">TypeGet()</a></li>
+      <li><a href="#TypeUpdate">TypeUpdate()</a></li>
+      <li><a href="#TypeList">TypeList()</a></li>
+      <li><a href="#TypeLookup">TypeLookup()</a></li>
+      <li><a href="#NameExistsCheck">NameExistsCheck()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::Type - type lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All type functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    $Self->{CacheType} = 'Type';
-    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
-
-    return $Self;
-}
-</pre></div>
-
 <p>create an object</p>
 
-<pre>    my $TypeObject = $Kernel::OM-&gt;Get('Kernel::System::Type');
-</pre><h2 id="TypeAdd">TypeAdd()</h2>
+<pre><code>    my $TypeObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Type&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_TypeAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_TypeAdd">
-                                        <pre>
-
-sub TypeAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Name ValidID UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # check if a type with this name already exists
-    if ( $Self->NameExistsCheck( Name => $Param{Name} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "A type with name '$Param{Name}' already exists!"
-        );
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    return if !$DBObject->Do(
-        SQL => 'INSERT INTO ticket_type (name, valid_id, '
-            . ' create_time, create_by, change_time, change_by)'
-            . ' VALUES (?, ?, current_timestamp, ?, current_timestamp, ?)',
-        Bind => [ \$Param{Name}, \$Param{ValidID}, \$Param{UserID}, \$Param{UserID} ],
-    );
-
-    # get new type id
-    return if !$DBObject->Prepare(
-        SQL   => 'SELECT id FROM ticket_type WHERE name = ?',
-        Bind  => [ \$Param{Name} ],
-        Limit => 1,
-    );
-
-    # fetch the result
-    my $ID;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $ID = $Row[0];
-    }
-    return if !$ID;
-
-    # reset cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => $Self->{CacheType},
-    );
-
-    return $ID;
-}
-</pre></div>
+<h2 id="TypeAdd">TypeAdd()</h2>
 
 <p>add a new ticket type</p>
 
-<pre>    my $ID = $TypeObject-&gt;TypeAdd(
-        Name    =&gt; 'New Type',
+<pre><code>    my $ID = $TypeObject-&gt;TypeAdd(
+        Name    =&gt; &#39;New Type&#39;,
         ValidID =&gt; 1,
         UserID  =&gt; 123,
-    );
-</pre><h2 id="TypeGet">TypeGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_TypeGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_TypeGet">
-                                        <pre>
-
-sub TypeGet {
-    my ( $Self, %Param ) = @_;
-
-    # either ID or Name must be passed
-    if ( !$Param{ID} && !$Param{Name} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need ID or Name!',
-        );
-        return;
-    }
-
-    # check that not both ID and Name are given
-    if ( $Param{ID} && $Param{Name} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need either ID OR Name - not both!',
-        );
-        return;
-    }
-
-    # lookup the ID
-    if ( $Param{Name} ) {
-        $Param{ID} = $Self->TypeLookup(
-            Type => $Param{Name},
-        );
-        if ( !$Param{ID} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "TypeID for Type '$Param{Name}' not found!",
-            );
-            return;
-        }
-    }
-
-    # check cache
-    my $CacheKey = 'TypeGet::ID::' . $Param{ID};
-    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => $CacheKey,
-    );
-    return %{$Cache} if $Cache;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # ask the database
-    return if !$DBObject->Prepare(
-        SQL => 'SELECT id, name, valid_id, '
-            . 'create_time, create_by, change_time, change_by '
-            . 'FROM ticket_type WHERE id = ?',
-        Bind => [ \$Param{ID} ],
-    );
-
-    # fetch the result
-    my %Type;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        $Type{ID}         = $Data[0];
-        $Type{Name}       = $Data[1];
-        $Type{ValidID}    = $Data[2];
-        $Type{CreateTime} = $Data[3];
-        $Type{CreateBy}   = $Data[4];
-        $Type{ChangeTime} = $Data[5];
-        $Type{ChangeBy}   = $Data[6];
-    }
-
-    # no data found
-    if ( !%Type ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "TypeID '$Param{ID}' not found!",
-        );
-        return;
-    }
-
-    # set cache
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => $CacheKey,
-        Value => \%Type,
-    );
-
-    return %Type;
-}
-</pre></div>
+<h2 id="TypeGet">TypeGet()</h2>
 
 <p>get types attributes</p>
 
-<pre>    my %Type = $TypeObject-&gt;TypeGet(
+<pre><code>    my %Type = $TypeObject-&gt;TypeGet(
         ID =&gt; 123,
     );
 
     my %Type = $TypeObject-&gt;TypeGet(
-        Name =&gt; 'default',
-    );
-</pre><p>Returns:</p>
+        Name =&gt; &#39;default&#39;,
+    );</code></pre>
 
-<pre>    Type = (
-        ID                  =&gt; '123',
-        Name                =&gt; 'Service Request',
-        ValidID             =&gt; '1',
-        CreateTime          =&gt; '2010-04-07 15:41:15',
-        CreateBy            =&gt; '321',
-        ChangeTime          =&gt; '2010-04-07 15:59:45',
-        ChangeBy            =&gt; '223',
-    );
-</pre><h2 id="TypeUpdate">TypeUpdate()</h2>
+<p>Returns:</p>
 
-<p><a href="#" onclick="toggleCode('method_TypeUpdate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_TypeUpdate">
-                                        <pre>
+<pre><code>    Type = (
+        ID                  =&gt; &#39;123&#39;,
+        Name                =&gt; &#39;Service Request&#39;,
+        ValidID             =&gt; &#39;1&#39;,
+        CreateTime          =&gt; &#39;2010-04-07 15:41:15&#39;,
+        CreateBy            =&gt; &#39;321&#39;,
+        ChangeTime          =&gt; &#39;2010-04-07 15:59:45&#39;,
+        ChangeBy            =&gt; &#39;223&#39;,
+    );</code></pre>
 
-sub TypeUpdate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(ID Name ValidID UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # check if a type with this name already exists
-    if (
-        $Self->NameExistsCheck(
-            Name => $Param{Name},
-            ID   => $Param{ID}
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "A type with name '$Param{Name}' already exists!"
-        );
-        return;
-    }
-
-    my %Type = $Self->TypeGet(
-        ID => $Param{ID},
-    );
-
-    # check if the type is set as a default ticket type
-    if (
-        $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Type::Default') eq $Type{Name}
-        && $Param{ValidID} != 1
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "The ticket type is set as a default ticket type, so it cannot be set to invalid!"
-        );
-        return;
-    }
-
-    # sql
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL => 'UPDATE ticket_type SET name = ?, valid_id = ?, '
-            . ' change_time = current_timestamp, change_by = ? WHERE id = ?',
-        Bind => [
-            \$Param{Name}, \$Param{ValidID}, \$Param{UserID}, \$Param{ID},
-        ],
-    );
-
-    # reset cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => $Self->{CacheType},
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="TypeUpdate">TypeUpdate()</h2>
 
 <p>update type attributes</p>
 
-<pre>    $TypeObject-&gt;TypeUpdate(
+<pre><code>    $TypeObject-&gt;TypeUpdate(
         ID      =&gt; 123,
-        Name    =&gt; 'New Type',
+        Name    =&gt; &#39;New Type&#39;,
         ValidID =&gt; 1,
         UserID  =&gt; 123,
-    );
-</pre><h2 id="TypeList">TypeList()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_TypeList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_TypeList">
-                                        <pre>
-
-sub TypeList {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    my $Valid = 1;
-    if ( !$Param{Valid} && defined $Param{Valid} ) {
-        $Valid = 0;
-    }
-
-    # check cache
-    my $CacheKey = "TypeList::Valid::$Valid";
-    my $Cache    = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => $CacheKey,
-    );
-    return %{$Cache} if $Cache;
-
-    # create the valid list
-    my $ValidIDs = join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet();
-
-    # build SQL
-    my $SQL = 'SELECT id, name FROM ticket_type';
-
-    # add WHERE statement
-    if ($Valid) {
-        $SQL .= ' WHERE valid_id IN (' . $ValidIDs . ')';
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # ask database
-    return if !$DBObject->Prepare(
-        SQL => $SQL,
-    );
-
-    # fetch the result
-    my %TypeList;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $TypeList{ $Row[0] } = $Row[1];
-    }
-
-    # set cache
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => $CacheKey,
-        Value => \%TypeList,
-    );
-
-    return %TypeList;
-}
-</pre></div>
+<h2 id="TypeList">TypeList()</h2>
 
 <p>get type list</p>
 
-<pre>    my %List = $TypeObject-&gt;TypeList();
-</pre><p>or</p>
+<pre><code>    my %List = $TypeObject-&gt;TypeList();</code></pre>
 
-<pre>    my %List = $TypeObject-&gt;TypeList(
+<p>or</p>
+
+<pre><code>    my %List = $TypeObject-&gt;TypeList(
         Valid =&gt; 0,
-    );
-</pre><h2 id="TypeLookup">TypeLookup()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_TypeLookup');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_TypeLookup">
-                                        <pre>
-
-sub TypeLookup {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Type} && !$Param{TypeID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Got no Type or TypeID!',
-        );
-        return;
-    }
-
-    # get (already cached) type list
-    my %TypeList = $Self->TypeList(
-        Valid => 0,
-    );
-
-    my $Key;
-    my $Value;
-    my $ReturnData;
-    if ( $Param{TypeID} ) {
-        $Key        = 'TypeID';
-        $Value      = $Param{TypeID};
-        $ReturnData = $TypeList{ $Param{TypeID} };
-    }
-    else {
-        $Key   = 'Type';
-        $Value = $Param{Type};
-        my %TypeListReverse = reverse %TypeList;
-        $ReturnData = $TypeListReverse{ $Param{Type} };
-    }
-
-    # check if data exists
-    if ( !defined $ReturnData ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No $Key for $Value found!",
-        );
-        return;
-    }
-
-    return $ReturnData;
-}
-</pre></div>
+<h2 id="TypeLookup">TypeLookup()</h2>
 
 <p>get id or name for a ticket type</p>
 
-<pre>    my $Type = $TypeObject-&gt;TypeLookup( TypeID =&gt; $TypeID );
+<pre><code>    my $Type = $TypeObject-&gt;TypeLookup( TypeID =&gt; $TypeID );
 
-    my $TypeID = $TypeObject-&gt;TypeLookup( Type =&gt; $Type );
-</pre><h2 id="NameExistsCheck">NameExistsCheck()</h2>
+    my $TypeID = $TypeObject-&gt;TypeLookup( Type =&gt; $Type );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_NameExistsCheck');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_NameExistsCheck">
-                                        <pre>
+<h2 id="NameExistsCheck">NameExistsCheck()</h2>
 
-sub NameExistsCheck {
-    my ( $Self, %Param ) = @_;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-    return if !$DBObject->Prepare(
-        SQL  => 'SELECT id FROM ticket_type WHERE name = ?',
-        Bind => [ \$Param{Name} ],
-    );
-
-    # fetch the result
-    my $Flag;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        if ( !$Param{ID} || $Param{ID} ne $Row[0] ) {
-            $Flag = 1;
-        }
-    }
-    if ($Flag) {
-        return 1;
-    }
-    return 0;
-}
-</pre></div>
-
-<pre>    return 1 if another type with this name already exits
+<pre><code>    return 1 if another type with this name already exits
 
         $Exist = $TypeObject-&gt;NameExistsCheck(
-            Name =&gt; 'Some::Template',
+            Name =&gt; &#39;Some::Template&#39;,
             ID =&gt; 1, # optional
-        );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+        );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::MailAccount</title>
+<title>Kernel::System::MailAccount &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,523 +48,144 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/MailAccount.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#MailAccountAdd">MailAccountAdd()</a></li>
-	<li><a href="#MailAccountGet">MailAccountGet()</a></li>
-	<li><a href="#MailAccountUpdate">MailAccountUpdate()</a></li>
-	<li><a href="#MailAccountDelete">MailAccountDelete()</a></li>
-	<li><a href="#MailAccountList">MailAccountList()</a></li>
-	<li><a href="#MailAccountBackendList">MailAccountBackendList()</a></li>
-	<li><a href="#MailAccountFetch">MailAccountFetch()</a></li>
-	<li><a href="#MailAccountCheck">MailAccountCheck()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#MailAccountAdd">MailAccountAdd()</a></li>
+      <li><a href="#MailAccountGet">MailAccountGet()</a></li>
+      <li><a href="#MailAccountUpdate">MailAccountUpdate()</a></li>
+      <li><a href="#MailAccountDelete">MailAccountDelete()</a></li>
+      <li><a href="#MailAccountList">MailAccountList()</a></li>
+      <li><a href="#MailAccountBackendList">MailAccountBackendList()</a></li>
+      <li><a href="#MailAccountFetch">MailAccountFetch()</a></li>
+      <li><a href="#MailAccountCheck">MailAccountCheck()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::MailAccount - to manage mail accounts</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All functions to manage the mail accounts.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $MailAccountObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::MailAccount&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $MailAccountObject = $Kernel::OM-&gt;Get('Kernel::System::MailAccount');
-</pre><h2 id="MailAccountAdd">MailAccountAdd()</h2>
-
-<p><a href="#" onclick="toggleCode('method_MailAccountAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_MailAccountAdd">
-                                        <pre>
-
-sub MailAccountAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Login Password Host ValidID Trusted DispatchingBy QueueID UserID)) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "$_ not defined!"
-            );
-            return;
-        }
-    }
-    for (qw(Login Password Host Type ValidID UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # check if dispatching is by From
-    if ( $Param{DispatchingBy} eq 'From' ) {
-        $Param{QueueID} = 0;
-    }
-    elsif ( $Param{DispatchingBy} eq 'Queue' && !$Param{QueueID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need QueueID for dispatching!"
-        );
-        return;
-    }
-
-    # only set IMAP folder on IMAP type accounts
-    # fallback to 'INBOX' if none given
-    if ( $Param{Type} =~ m{ IMAP .* }xmsi ) {
-        if ( !defined $Param{IMAPFolder} || !$Param{IMAPFolder} ) {
-            $Param{IMAPFolder} = 'INBOX';
-        }
-    }
-    else {
-        $Param{IMAPFolder} = '';
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # sql
-    return if !$DBObject->Do(
-        SQL =>
-            'INSERT INTO mail_account (login, pw, host, account_type, valid_id, comments, queue_id, '
-            . ' imap_folder, trusted, create_time, create_by, change_time, change_by)'
-            . ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-        Bind => [
-            \$Param{Login},   \$Param{Password}, \$Param{Host},    \$Param{Type},
-            \$Param{ValidID}, \$Param{Comment},  \$Param{QueueID}, \$Param{IMAPFolder},
-            \$Param{Trusted}, \$Param{UserID},   \$Param{UserID},
-        ],
-    );
-
-    return if !$DBObject->Prepare(
-        SQL  => 'SELECT id FROM mail_account WHERE login = ? AND host = ? AND account_type = ?',
-        Bind => [ \$Param{Login}, \$Param{Host}, \$Param{Type} ],
-    );
-
-    my $ID;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $ID = $Row[0];
-    }
-
-    return $ID;
-}
-</pre></div>
+<h2 id="MailAccountAdd">MailAccountAdd()</h2>
 
 <p>adds a new mail account</p>
 
-<pre>    $MailAccount-&gt;MailAccountAdd(
-        Login         =&gt; 'mail',
-        Password      =&gt; 'SomePassword',
-        Host          =&gt; 'pop3.example.com',
-        Type          =&gt; 'POP3',
-        IMAPFolder    =&gt; 'Some Folder', # optional, only valid for IMAP-type accounts
+<pre><code>    $MailAccount-&gt;MailAccountAdd(
+        Login         =&gt; &#39;mail&#39;,
+        Password      =&gt; &#39;SomePassword&#39;,
+        Host          =&gt; &#39;pop3.example.com&#39;,
+        Type          =&gt; &#39;POP3&#39;,
+        IMAPFolder    =&gt; &#39;Some Folder&#39;, # optional, only valid for IMAP-type accounts
         ValidID       =&gt; 1,
         Trusted       =&gt; 0,
-        DispatchingBy =&gt; 'Queue', # Queue|From
+        DispatchingBy =&gt; &#39;Queue&#39;, # Queue|From
         QueueID       =&gt; 12,
         UserID        =&gt; 123,
-    );
-</pre><h2 id="MailAccountGet">MailAccountGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_MailAccountGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_MailAccountGet">
-                                        <pre>
-
-sub MailAccountGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need ID!"
-        );
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # sql
-    return if !$DBObject->Prepare(
-        SQL =>
-            'SELECT login, pw, host, account_type, queue_id, imap_folder, trusted, comments, valid_id, '
-            . ' create_time, change_time FROM mail_account WHERE id = ?',
-        Bind => [ \$Param{ID} ],
-    );
-
-    my %Data;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        %Data = (
-            ID         => $Param{ID},
-            Login      => $Data[0],
-            Password   => $Data[1],
-            Host       => $Data[2],
-            Type       => $Data[3] || 'POP3',    # compat for old setups
-            QueueID    => $Data[4],
-            IMAPFolder => $Data[5],
-            Trusted    => $Data[6],
-            Comment    => $Data[7],
-            ValidID    => $Data[8],
-            CreateTime => $Data[9],
-            ChangeTime => $Data[10],
-        );
-    }
-
-    if ( $Data{QueueID} == 0 ) {
-        $Data{DispatchingBy} = 'From';
-    }
-    else {
-        $Data{DispatchingBy} = 'Queue';
-    }
-
-    # only return IMAP folder on IMAP type accounts
-    # fallback to 'INBOX' if none given
-    if ( $Data{Type} =~ m{ IMAP .* }xmsi ) {
-        if ( defined $Data{IMAPFolder} && !$Data{IMAPFolder} ) {
-            $Data{IMAPFolder} = 'INBOX';
-        }
-    }
-    else {
-        $Data{IMAPFolder} = '';
-    }
-
-    return %Data;
-}
-</pre></div>
+<h2 id="MailAccountGet">MailAccountGet()</h2>
 
 <p>returns a hash of mail account data</p>
 
-<pre>    my %MailAccount = $MailAccount-&gt;MailAccountGet(
+<pre><code>    my %MailAccount = $MailAccount-&gt;MailAccountGet(
         ID =&gt; 123,
-    );
-</pre><p>(returns: ID, Login, Password, Host, Type, QueueID, Trusted, IMAPFolder, Comment, DispatchingBy, ValidID)</p>
+    );</code></pre>
+
+<p>(returns: ID, Login, Password, Host, Type, QueueID, Trusted, IMAPFolder, Comment, DispatchingBy, ValidID)</p>
 
 <h2 id="MailAccountUpdate">MailAccountUpdate()</h2>
 
-<p><a href="#" onclick="toggleCode('method_MailAccountUpdate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_MailAccountUpdate">
-                                        <pre>
-
-sub MailAccountUpdate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(ID Login Password Host Type ValidID Trusted DispatchingBy QueueID UserID)) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # check if dispatching is by From
-    if ( $Param{DispatchingBy} eq 'From' ) {
-        $Param{QueueID} = 0;
-    }
-    elsif ( $Param{DispatchingBy} eq 'Queue' && !$Param{QueueID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need QueueID for dispatching!"
-        );
-        return;
-    }
-
-    # only set IMAP folder on IMAP type accounts
-    # fallback to 'INBOX' if none given
-    if ( $Param{Type} =~ m{ IMAP .* }xmsi ) {
-        if ( !defined $Param{IMAPFolder} || !$Param{IMAPFolder} ) {
-            $Param{IMAPFolder} = 'INBOX';
-        }
-    }
-    else {
-        $Param{IMAPFolder} = '';
-    }
-
-    # sql
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL => 'UPDATE mail_account SET login = ?, pw = ?, host = ?, account_type = ?, '
-            . ' comments = ?, imap_folder = ?, trusted = ?, valid_id = ?, change_time = current_timestamp, '
-            . ' change_by = ?, queue_id = ? WHERE id = ?',
-        Bind => [
-            \$Param{Login},   \$Param{Password},   \$Param{Host},    \$Param{Type},
-            \$Param{Comment}, \$Param{IMAPFolder}, \$Param{Trusted}, \$Param{ValidID},
-            \$Param{UserID},  \$Param{QueueID},    \$Param{ID},
-        ],
-    );
-
-    return 1;
-}
-</pre></div>
-
 <p>update a new mail account</p>
 
-<pre>    $MailAccount-&gt;MailAccountUpdate(
+<pre><code>    $MailAccount-&gt;MailAccountUpdate(
         ID            =&gt; 1,
-        Login         =&gt; 'mail',
-        Password      =&gt; 'SomePassword',
-        Host          =&gt; 'pop3.example.com',
-        Type          =&gt; 'POP3',
-        IMAPFolder    =&gt; 'Some Folder', # optional, only valid for IMAP-type accounts
+        Login         =&gt; &#39;mail&#39;,
+        Password      =&gt; &#39;SomePassword&#39;,
+        Host          =&gt; &#39;pop3.example.com&#39;,
+        Type          =&gt; &#39;POP3&#39;,
+        IMAPFolder    =&gt; &#39;Some Folder&#39;, # optional, only valid for IMAP-type accounts
         ValidID       =&gt; 1,
         Trusted       =&gt; 0,
-        DispatchingBy =&gt; 'Queue', # Queue|From
+        DispatchingBy =&gt; &#39;Queue&#39;, # Queue|From
         QueueID       =&gt; 12,
         UserID        =&gt; 123,
-    );
-</pre><h2 id="MailAccountDelete">MailAccountDelete()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_MailAccountDelete');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_MailAccountDelete">
-                                        <pre>
-
-sub MailAccountDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need ID!"
-        );
-        return;
-    }
-
-    # sql
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL  => 'DELETE FROM mail_account WHERE id = ?',
-        Bind => [ \$Param{ID} ],
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="MailAccountDelete">MailAccountDelete()</h2>
 
 <p>deletes a mail account</p>
 
-<pre>    $MailAccount-&gt;MailAccountDelete(
+<pre><code>    $MailAccount-&gt;MailAccountDelete(
         ID =&gt; 123,
-    );
-</pre><h2 id="MailAccountList">MailAccountList()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_MailAccountList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_MailAccountList">
-                                        <pre>
-
-sub MailAccountList {
-    my ( $Self, %Param ) = @_;
-
-    # get valid object
-    my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
-
-    my $Where = $Param{Valid}
-        ? 'WHERE valid_id IN ( ' . join ', ', $ValidObject->ValidIDsGet() . ' )'
-        : '';
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    return if !$DBObject->Prepare(
-        SQL => "SELECT id, host, login FROM mail_account $Where",
-    );
-
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Data{ $Row[0] } = "$Row[1] ($Row[2])";
-    }
-
-    return %Data;
-}
-</pre></div>
+<h2 id="MailAccountList">MailAccountList()</h2>
 
 <p>returns a list (Key, Name) of all mail accounts</p>
 
-<pre>    my %List = $MailAccount-&gt;MailAccountList(
+<pre><code>    my %List = $MailAccount-&gt;MailAccountList(
         Valid =&gt; 0, # just valid/all accounts
-    );
-</pre><h2 id="MailAccountBackendList">MailAccountBackendList()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_MailAccountBackendList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_MailAccountBackendList">
-                                        <pre>
-
-sub MailAccountBackendList {
-    my ( $Self, %Param ) = @_;
-
-    my $Directory = $Kernel::OM->Get('Kernel::Config')->Get('Home') . '/Kernel/System/MailAccount/';
-
-    my @List = $Kernel::OM->Get('Kernel::System::Main')->DirectoryRead(
-        Directory => $Directory,
-        Filter    => '*.pm',
-    );
-
-    my %Backends;
-    for my $File (@List) {
-
-        # remove .pm
-        $File =~ s/^.*\/(.+?)\.pm$/$1/;
-        my $GenericModule = "Kernel::System::MailAccount::$File";
-
-        # try to load module $GenericModule
-        if ( eval "require $GenericModule" ) {    ## no critic
-            if ( eval { $GenericModule->new() } ) {
-                $Backends{$File} = $File;
-            }
-        }
-    }
-
-    return %Backends;
-}
-</pre></div>
+<h2 id="MailAccountBackendList">MailAccountBackendList()</h2>
 
 <p>returns a list of usable backends</p>
 
-<pre>    my %List = $MailAccount-&gt;MailAccountBackendList();
-</pre><h2 id="MailAccountFetch">MailAccountFetch()</h2>
+<pre><code>    my %List = $MailAccount-&gt;MailAccountBackendList();</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_MailAccountFetch');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_MailAccountFetch">
-                                        <pre>
-
-sub MailAccountFetch {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Login Password Host Type Trusted DispatchingBy QueueID UserID)) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # load backend
-    my $GenericModule = "Kernel::System::MailAccount::$Param{Type}";
-
-    # try to load module $GenericModule
-    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($GenericModule) ) {
-        return;
-    }
-
-    # fetch mails
-    my $Backend = $GenericModule->new();
-
-    return $Backend->Fetch(%Param);
-}
-</pre></div>
+<h2 id="MailAccountFetch">MailAccountFetch()</h2>
 
 <p>fetch emails by using backend</p>
 
-<pre>    my $Ok = $MailAccount-&gt;MailAccountFetch(
-        Login         =&gt; 'mail',
-        Password      =&gt; 'SomePassword',
-        Host          =&gt; 'pop3.example.com',
-        Type          =&gt; 'POP3', # POP3,POP3s,IMAP,IMAPS
+<pre><code>    my $Ok = $MailAccount-&gt;MailAccountFetch(
+        Login         =&gt; &#39;mail&#39;,
+        Password      =&gt; &#39;SomePassword&#39;,
+        Host          =&gt; &#39;pop3.example.com&#39;,
+        Type          =&gt; &#39;POP3&#39;, # POP3,POP3s,IMAP,IMAPS
         Trusted       =&gt; 0,
-        DispatchingBy =&gt; 'Queue', # Queue|From
+        DispatchingBy =&gt; &#39;Queue&#39;, # Queue|From
         QueueID       =&gt; 12,
         UserID        =&gt; 123,
-    );
-</pre><h2 id="MailAccountCheck">MailAccountCheck()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_MailAccountCheck');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_MailAccountCheck">
-                                        <pre>
-
-sub MailAccountCheck {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Login Password Host Type Timeout Debug)) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # load backend
-    my $GenericModule = "Kernel::System::MailAccount::$Param{Type}";
-
-    # try to load module $GenericModule
-    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($GenericModule) ) {
-        return;
-    }
-
-    # check if connect is successful
-    my $Backend = $GenericModule->new();
-    my %Check   = $Backend->Connect(%Param);
-
-    if ( $Check{Successful} ) {
-        return ( Successful => 1 )
-    }
-    else {
-        return (
-            Successful => 0,
-            Message    => $Check{Message}
-        );
-    }
-}
-</pre></div>
+<h2 id="MailAccountCheck">MailAccountCheck()</h2>
 
 <p>Check inbound mail configuration</p>
 
-<pre>    my %Check = $MailAccount-&gt;MailAccountCheck(
-        Login         =&gt; 'mail',
-        Password      =&gt; 'SomePassword',
-        Host          =&gt; 'pop3.example.com',
-        Type          =&gt; 'POP3', # POP3|POP3S|IMAP|IMAPS
-        Timeout       =&gt; '60',
-        Debug         =&gt; '0',
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<pre><code>    my %Check = $MailAccount-&gt;MailAccountCheck(
+        Login         =&gt; &#39;mail&#39;,
+        Password      =&gt; &#39;SomePassword&#39;,
+        Host          =&gt; &#39;pop3.example.com&#39;,
+        Type          =&gt; &#39;POP3&#39;, # POP3|POP3S|IMAP|IMAPS
+        Timeout       =&gt; &#39;60&#39;,
+        Debug         =&gt; &#39;0&#39;,
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

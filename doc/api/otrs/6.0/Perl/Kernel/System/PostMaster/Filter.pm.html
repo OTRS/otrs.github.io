@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::PostMaster::Filter</title>
+<title>Kernel::System::PostMaster::Filter &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,238 +48,83 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/PostMaster/Filter.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#FilterList">FilterList()</a></li>
-	<li><a href="#FilterAdd">FilterAdd()</a></li>
-	<li><a href="#FilterDelete">FilterDelete()</a></li>
-	<li><a href="#FilterGet">FilterGet()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#FilterList">FilterList()</a></li>
+      <li><a href="#FilterAdd">FilterAdd()</a></li>
+      <li><a href="#FilterDelete">FilterDelete()</a></li>
+      <li><a href="#FilterGet">FilterGet()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::PostMaster::Filter</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All postmaster database filters</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $PMFilterObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::PostMaster::Filter&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $PMFilterObject = $Kernel::OM-&gt;Get('Kernel::System::PostMaster::Filter');
-</pre><h2 id="FilterList">FilterList()</h2>
-
-<p><a href="#" onclick="toggleCode('method_FilterList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_FilterList">
-                                        <pre>
-
-sub FilterList {
-    my ( $Self, %Param ) = @_;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    return if !$DBObject->Prepare(
-        SQL => 'SELECT f_name FROM postmaster_filter',
-    );
-
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Data{ $Row[0] } = $Row[0];
-    }
-
-    return %Data;
-}
-</pre></div>
+<h2 id="FilterList">FilterList()</h2>
 
 <p>get all filter</p>
 
-<pre>    my %FilterList = $PMFilterObject-&gt;FilterList();
-</pre><h2 id="FilterAdd">FilterAdd()</h2>
+<pre><code>    my %FilterList = $PMFilterObject-&gt;FilterList();</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_FilterAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_FilterAdd">
-                                        <pre>
-
-sub FilterAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Name StopAfterMatch Match Set)) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    my %Not = %{ $Param{Not} || {} };
-
-    for my $Type (qw(Match Set)) {
-
-        my %Data = %{ $Param{$Type} };
-
-        for my $Key ( sort keys %Data ) {
-
-            return if !$DBObject->Do(
-                SQL =>
-                    'INSERT INTO postmaster_filter (f_name, f_stop, f_type, f_key, f_value, f_not)'
-                    . ' VALUES (?, ?, ?, ?, ?, ?)',
-                Bind => [
-                    \$Param{Name}, \$Param{StopAfterMatch}, \$Type,
-                    \$Key, \$Data{$Key}, \$Not{$Key}
-                ],
-            );
-        }
-    }
-
-    return 1;
-}
-</pre></div>
+<h2 id="FilterAdd">FilterAdd()</h2>
 
 <p>add a filter</p>
 
-<pre>    $PMFilterObject-&gt;FilterAdd(
-        Name           =&gt; 'some name',
+<pre><code>    $PMFilterObject-&gt;FilterAdd(
+        Name           =&gt; &#39;some name&#39;,
         StopAfterMatch =&gt; 0,
         Match = {
-            From =&gt; 'email@example.com',
-            Subject =&gt; '^ADV: 123',
+            From =&gt; &#39;email@example.com&#39;,
+            Subject =&gt; &#39;^ADV: 123&#39;,
         },
         Set {
-            'X-OTRS-Queue' =&gt; 'Some::Queue',
+            &#39;X-OTRS-Queue&#39; =&gt; &#39;Some::Queue&#39;,
         },
-    );
-</pre><h2 id="FilterDelete">FilterDelete()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_FilterDelete');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_FilterDelete">
-                                        <pre>
-
-sub FilterDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Name)) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    return if !$DBObject->Do(
-        SQL  => 'DELETE FROM postmaster_filter WHERE f_name = ?',
-        Bind => [ \$Param{Name} ],
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="FilterDelete">FilterDelete()</h2>
 
 <p>delete a filter</p>
 
-<pre>    $PMFilterObject-&gt;FilterDelete(
-        Name =&gt; '123',
-    );
-</pre><h2 id="FilterGet">FilterGet()</h2>
+<pre><code>    $PMFilterObject-&gt;FilterDelete(
+        Name =&gt; &#39;123&#39;,
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_FilterGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_FilterGet">
-                                        <pre>
-
-sub FilterGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Name)) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    return if !$DBObject->Prepare(
-        SQL =>
-            'SELECT f_type, f_key, f_value, f_name, f_stop, f_not FROM postmaster_filter WHERE f_name = ?',
-        Bind => [ \$Param{Name} ],
-    );
-
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Data{ $Row[0] }->{ $Row[1] } = $Row[2];
-        $Data{Name}                   = $Row[3];
-        $Data{StopAfterMatch}         = $Row[4];
-
-        if ( $Row[0] eq 'Match' ) {
-            $Data{Not}->{ $Row[1] } = $Row[5];
-        }
-    }
-
-    return %Data;
-}
-</pre></div>
+<h2 id="FilterGet">FilterGet()</h2>
 
 <p>get filter properties, returns HASH ref Match and Set</p>
 
-<pre>    my %Data = $PMFilterObject-&gt;FilterGet(
-        Name =&gt; '132',
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<pre><code>    my %Data = $PMFilterObject-&gt;FilterGet(
+        Name =&gt; &#39;132&#39;,
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

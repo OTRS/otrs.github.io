@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::TemplateGenerator</title>
+<title>Kernel::System::CalendarTemplateGenerator &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,196 +48,55 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/CalendarTemplateGenerator.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#NotificationEvent">NotificationEvent()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#NotificationEvent">NotificationEvent()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::TemplateGenerator - signature lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All signature functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    $Self->{RichText} = $Kernel::OM->Get('Kernel::Config')->Get('Frontend::RichText');
-
-    return $Self;
-}
-</pre></div>
-
 <p>create an object. Do not use it directly, instead use:</p>
 
-<pre>    use Kernel::System::ObjectManager;
+<pre><code>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $TemplateGeneratorObject = $Kernel::OM-&gt;Get('Kernel::System::TemplateGenerator');
-</pre><h2 id="NotificationEvent">NotificationEvent()</h2>
+    my $TemplateGeneratorObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::TemplateGenerator&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_NotificationEvent');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_NotificationEvent">
-                                        <pre>
-
-sub NotificationEvent {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(Notification Recipient UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    if ( !IsHashRefWithData( $Param{Notification} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Notification is invalid!",
-        );
-        return;
-    }
-
-    my %Notification = %{ $Param{Notification} };
-
-    # get system default language
-    my $DefaultLanguage = $Kernel::OM->Get('Kernel::Config')->Get('DefaultLanguage') || 'en';
-
-    my $Languages = [ $Param{Recipient}->{UserLanguage}, $DefaultLanguage, 'en' ];
-
-    my $Language;
-    LANGUAGE:
-    for my $Item ( @{$Languages} ) {
-        next LANGUAGE if !$Item;
-        next LANGUAGE if !$Notification{Message}->{$Item};
-
-        # set language
-        $Language = $Item;
-        last LANGUAGE;
-    }
-
-    # if no language, then take the first one available
-    if ( !$Language ) {
-        my @NotificationLanguages = sort keys %{ $Notification{Message} };
-        $Language = $NotificationLanguages[0];
-    }
-
-    # copy the correct language message attributes to a flat structure
-    for my $Attribute (qw(Subject Body ContentType)) {
-        $Notification{$Attribute} = $Notification{Message}->{$Language}->{$Attribute};
-    }
-
-    my $Start = '<';
-    my $End   = '>';
-    if ( $Notification{ContentType} =~ m{text\/html} ) {
-        $Start = '&lt;';
-        $End   = '&gt;';
-    }
-
-    # get html utils object
-    my $HTMLUtilsObject = $Kernel::OM->Get('Kernel::System::HTMLUtils');
-
-    # do text/plain to text/html convert
-    if ( $Self->{RichText} && $Notification{ContentType} =~ /text\/plain/i ) {
-        $Notification{ContentType} = 'text/html';
-        $Notification{Body}        = $HTMLUtilsObject->ToHTML(
-            String => $Notification{Body},
-        );
-    }
-
-    # do text/html to text/plain convert
-    if ( !$Self->{RichText} && $Notification{ContentType} =~ /text\/html/i ) {
-        $Notification{ContentType} = 'text/plain';
-        $Notification{Body}        = $HTMLUtilsObject->ToAscii(
-            String => $Notification{Body},
-        );
-    }
-
-    # get notify texts
-    for my $Text (qw(Subject Body)) {
-        if ( !$Notification{$Text} ) {
-            $Notification{$Text} = "No Notification $Text for $Param{Type} found!";
-        }
-    }
-
-    # replace place holder stuff
-    $Notification{Body} = $Self->_Replace(
-        RichText      => $Self->{RichText},
-        Text          => $Notification{Body},
-        Recipient     => $Param{Recipient},
-        AppointmentID => $Param{AppointmentID},
-        CalendarID    => $Param{CalendarID},
-        UserID        => $Param{UserID},
-        Language      => $Language,
-    );
-
-    $Notification{Subject} = $Self->_Replace(
-        RichText      => 0,
-        Text          => $Notification{Subject},
-        Recipient     => $Param{Recipient},
-        AppointmentID => $Param{AppointmentID},
-        CalendarID    => $Param{CalendarID},
-        UserID        => $Param{UserID},
-        Language      => $Language,
-    );
-
-    # add URLs and verify to be full HTML document
-    if ( $Self->{RichText} ) {
-
-        $Notification{Body} = $HTMLUtilsObject->LinkQuote(
-            String => $Notification{Body},
-        );
-    }
-
-    return %Notification;
-}
-</pre></div>
+<h2 id="NotificationEvent">NotificationEvent()</h2>
 
 <p>replace all OTRS smart tags in the notification body and subject</p>
 
-<pre>    my %NotificationEvent = $CalendarTemplateGeneratorObject-&gt;NotificationEvent(
+<pre><code>    my %NotificationEvent = $CalendarTemplateGeneratorObject-&gt;NotificationEvent(
         AppointmentID =&gt; 123,
         Recipient     =&gt; $UserDataHashRef,          # Agent data get result
         Notification  =&gt; $NotificationDataHashRef,
         UserID        =&gt; 123,
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

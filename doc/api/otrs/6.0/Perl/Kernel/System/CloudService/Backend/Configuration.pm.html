@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::CloudService::Backend::Configuration</title>
+<title>Kernel::System::CloudService::Backend::Configuration &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,474 +48,116 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/CloudService/Backend/Configuration.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#CloudServiceAdd">CloudServiceAdd()</a></li>
-	<li><a href="#CloudServiceGet">CloudServiceGet()</a></li>
-	<li><a href="#CloudServiceUpdate">CloudServiceUpdate()</a></li>
-	<li><a href="#CloudServiceDelete">CloudServiceDelete()</a></li>
-	<li><a href="#CloudServiceList">CloudServiceList()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#CloudServiceAdd">CloudServiceAdd()</a></li>
+      <li><a href="#CloudServiceGet">CloudServiceGet()</a></li>
+      <li><a href="#CloudServiceUpdate">CloudServiceUpdate()</a></li>
+      <li><a href="#CloudServiceDelete">CloudServiceDelete()</a></li>
+      <li><a href="#CloudServiceList">CloudServiceList()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::CloudService::Backend::Configuration</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>CloudService configuration backend.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $CloudService, %Param ) = @_;
+<pre><code>    my $CloudServiceObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::GenericInterface::CloudService&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $CloudService );
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $CloudServiceObject = $Kernel::OM-&gt;Get('Kernel::System::GenericInterface::CloudService');
-</pre><h2 id="CloudServiceAdd">CloudServiceAdd()</h2>
-
-<p><a href="#" onclick="toggleCode('method_CloudServiceAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CloudServiceAdd">
-                                        <pre>
-
-sub CloudServiceAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Key (qw(Name Config ValidID UserID)) {
-        if ( !$Param{$Key} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Key!"
-            );
-            return;
-        }
-    }
-
-    # check config
-    if ( !IsHashRefWithData( $Param{Config} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "CloudService Config should be a non empty hash reference!",
-        );
-        return;
-    }
-
-    my %ExistingCloudServices = reverse %{ $Self->CloudServiceList( Valid => 0 ) };
-    if ( $ExistingCloudServices{ $Param{Name} } ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "A CloudService with the name $Param{Name} already exists.",
-        );
-        return;
-    }
-
-    # dump config as string
-    my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # sql
-    return if !$DBObject->Do(
-        SQL =>
-            'INSERT INTO cloud_service_config (name, config, valid_id, '
-            . ' create_time, create_by, change_time, change_by)'
-            . ' VALUES (?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-        Bind => [
-            \$Param{Name}, \$Config, \$Param{ValidID},
-            \$Param{UserID}, \$Param{UserID},
-        ],
-    );
-
-    return if !$DBObject->Prepare(
-        SQL  => 'SELECT id FROM cloud_service_config WHERE name = ?',
-        Bind => [ \$Param{Name} ],
-    );
-
-    my $ID;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $ID = $Row[0];
-    }
-
-    # delete cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'CloudService',
-    );
-
-    return $ID;
-}
-</pre></div>
+<h2 id="CloudServiceAdd">CloudServiceAdd()</h2>
 
 <p>add new CloudServices</p>
 
 <p>returns id of new CloudService if successful or undef otherwise</p>
 
-<pre>    my $ID = $CloudServiceObject-&gt;CloudServiceAdd(
-        Name    =&gt; 'some name',
+<pre><code>    my $ID = $CloudServiceObject-&gt;CloudServiceAdd(
+        Name    =&gt; &#39;some name&#39;,
         Config  =&gt; $ConfigHashRef,
         ValidID =&gt; 1,
         UserID  =&gt; 123,
-    );
-</pre><h2 id="CloudServiceGet">CloudServiceGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_CloudServiceGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CloudServiceGet">
-                                        <pre>
-
-sub CloudServiceGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ID} && !$Param{Name} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need ID or Name!'
-        );
-        return;
-    }
-
-    # get cache object
-    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
-
-    # check cache
-    my $CacheKey;
-    if ( $Param{ID} ) {
-        $CacheKey = 'CloudServiceGet::ID::' . $Param{ID};
-    }
-    else {
-        $CacheKey = 'CloudServiceGet::Name::' . $Param{Name};
-
-    }
-    my $Cache = $CacheObject->Get(
-        Type => 'CloudService',
-        Key  => $CacheKey,
-    );
-    return $Cache if $Cache;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # sql
-    if ( $Param{ID} ) {
-        return if !$DBObject->Prepare(
-            SQL => 'SELECT id, name, config, valid_id, create_time, change_time '
-                . 'FROM cloud_service_config WHERE id = ?',
-            Bind  => [ \$Param{ID} ],
-            Limit => 1,
-        );
-    }
-    else {
-        return if !$DBObject->Prepare(
-            SQL => 'SELECT id, name, config, valid_id, create_time, change_time '
-                . 'FROM cloud_service_config WHERE name = ?',
-            Bind  => [ \$Param{Name} ],
-            Limit => 1,
-        );
-    }
-
-    # get yaml object
-    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
-
-    my %Data;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-
-        my $Config = $YAMLObject->Load( Data => $Data[2] );
-
-        %Data = (
-            ID         => $Data[0],
-            Name       => $Data[1],
-            Config     => $Config,
-            ValidID    => $Data[3],
-            CreateTime => $Data[4],
-            ChangeTime => $Data[5],
-        );
-    }
-
-    # get the cache TTL (in seconds)
-    my $CacheTTL = int(
-        $Kernel::OM->Get('Kernel::Config')->Get('CloudServiceConfig::CacheTTL')
-            || 3600
-    );
-
-    # set cache
-    $CacheObject->Set(
-        Type  => 'CloudService',
-        Key   => $CacheKey,
-        Value => \%Data,
-        TTL   => $CacheTTL,
-    );
-
-    return \%Data;
-}
-</pre></div>
+<h2 id="CloudServiceGet">CloudServiceGet()</h2>
 
 <p>get CloudServices attributes</p>
 
-<pre>    my $CloudService = $CloudServiceObject-&gt;CloudServiceGet(
+<pre><code>    my $CloudService = $CloudServiceObject-&gt;CloudServiceGet(
         ID   =&gt; 123,            # ID or Name must be provided
-        Name =&gt; 'MyCloudService',
-    );
-</pre><p>Returns:</p>
+        Name =&gt; &#39;MyCloudService&#39;,
+    );</code></pre>
 
-<pre>    $CloudService = {
+<p>Returns:</p>
+
+<pre><code>    $CloudService = {
         ID         =&gt; 123,
-        Name       =&gt; 'some name',
+        Name       =&gt; &#39;some name&#39;,
         Config     =&gt; $ConfigHashRef,
         ValidID    =&gt; 123,
-        CreateTime =&gt; '2011-02-08 15:08:00',
-        ChangeTime =&gt; '2011-02-08 15:08:00',
-    };
-</pre><h2 id="CloudServiceUpdate">CloudServiceUpdate()</h2>
+        CreateTime =&gt; &#39;2011-02-08 15:08:00&#39;,
+        ChangeTime =&gt; &#39;2011-02-08 15:08:00&#39;,
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_CloudServiceUpdate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CloudServiceUpdate">
-                                        <pre>
-
-sub CloudServiceUpdate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Key (qw(ID Name Config ValidID UserID)) {
-        if ( !$Param{$Key} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Key!"
-            );
-            return;
-        }
-    }
-
-    # check config
-    if ( !IsHashRefWithData( $Param{Config} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "CloudService Config should be a non empty hash reference!",
-        );
-        return;
-    }
-
-    my %ExistingCloudServices = reverse %{ $Self->CloudServiceList( Valid => 0 ) };
-    if ( $ExistingCloudServices{ $Param{Name} } != $Param{ID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "A CloudService with the name $Param{Name} already exists.",
-        );
-        return;
-    }
-
-    # dump config as string
-    my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # check if config and valid_id is the same
-    return if !$DBObject->Prepare(
-        SQL   => 'SELECT config, valid_id, name FROM cloud_service_config WHERE id = ?',
-        Bind  => [ \$Param{ID} ],
-        Limit => 1,
-    );
-
-    my $ConfigCurrent;
-    my $ValidIDCurrent;
-    my $NameCurrent;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        $ConfigCurrent  = $Data[0];
-        $ValidIDCurrent = $Data[1];
-        $NameCurrent    = $Data[2];
-    }
-
-    return 1 if $ValidIDCurrent eq $Param{ValidID}
-        && $Config eq $ConfigCurrent
-        && $NameCurrent eq $Param{Name};
-
-    # sql
-    return if !$DBObject->Do(
-        SQL => 'UPDATE cloud_service_config SET name = ?, config = ?, '
-            . ' valid_id = ?, change_time = current_timestamp, '
-            . ' change_by = ? WHERE id = ?',
-        Bind => [
-            \$Param{Name}, \$Config, \$Param{ValidID}, \$Param{UserID},
-            \$Param{ID},
-        ],
-    );
-
-    # delete cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'CloudService',
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="CloudServiceUpdate">CloudServiceUpdate()</h2>
 
 <p>update CloudService attributes</p>
 
 <p>returns 1 if successful or undef otherwise</p>
 
-<pre>    my $Success = $CloudServiceObject-&gt;CloudServiceUpdate(
+<pre><code>    my $Success = $CloudServiceObject-&gt;CloudServiceUpdate(
         ID      =&gt; 123,
-        Name    =&gt; 'some name',
+        Name    =&gt; &#39;some name&#39;,
         Config  =&gt; $ConfigHashRef,
         ValidID =&gt; 1,
         UserID  =&gt; 123,
-    );
-</pre><h2 id="CloudServiceDelete">CloudServiceDelete()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_CloudServiceDelete');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CloudServiceDelete">
-                                        <pre>
-
-sub CloudServiceDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Key (qw(ID UserID)) {
-        if ( !$Param{$Key} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Key!"
-            );
-            return;
-        }
-    }
-
-    # check if exists
-    my $CloudService = $Self->CloudServiceGet(
-        ID => $Param{ID},
-    );
-    return if !IsHashRefWithData($CloudService);
-
-    # delete web service
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL  => 'DELETE FROM cloud_service_config WHERE id = ?',
-        Bind => [ \$Param{ID} ],
-    );
-
-    # delete cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'CloudService',
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="CloudServiceDelete">CloudServiceDelete()</h2>
 
 <p>delete a CloudService</p>
 
 <p>returns 1 if successful or undef otherwise</p>
 
-<pre>    my $Success = $CloudServiceObject-&gt;CloudServiceDelete(
+<pre><code>    my $Success = $CloudServiceObject-&gt;CloudServiceDelete(
         ID      =&gt; 123,
         UserID  =&gt; 123,
-    );
-</pre><h2 id="CloudServiceList">CloudServiceList()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_CloudServiceList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CloudServiceList">
-                                        <pre>
-
-sub CloudServiceList {
-    my ( $Self, %Param ) = @_;
-
-    # get cache object
-    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
-
-    # check cache
-    my $Valid = 1;
-    if ( !$Param{Valid} ) {
-        $Valid = '0';
-    }
-    my $CacheKey = 'CloudServiceList::Valid::' . $Valid;
-    my $Cache    = $CacheObject->Get(
-        Type => 'CloudService',
-        Key  => $CacheKey,
-    );
-    return $Cache if ref $Cache;
-
-    my $SQL = 'SELECT id, name FROM cloud_service_config';
-
-    if ( !defined $Param{Valid} || $Param{Valid} eq 1 ) {
-
-        # get valid object
-        my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
-
-        $SQL .= ' WHERE valid_id IN (' . join ', ', $ValidObject->ValidIDsGet() . ')';
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    return if !$DBObject->Prepare( SQL => $SQL );
-
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Data{ $Row[0] } = $Row[1];
-    }
-
-    # get the cache TTL (in seconds)
-    my $CacheTTL = int(
-        $Kernel::OM->Get('Kernel::Config')->Get('CloudServiceConfig::CacheTTL')
-            || 3600
-    );
-
-    # set cache
-    $CacheObject->Set(
-        Type  => 'CloudService',
-        Key   => $CacheKey,
-        Value => \%Data,
-        TTL   => $CacheTTL,
-    );
-
-    return \%Data;
-}
-</pre></div>
+<h2 id="CloudServiceList">CloudServiceList()</h2>
 
 <p>get CloudService list</p>
 
-<pre>    my $List = $CloudServiceObject-&gt;CloudServiceList();
+<pre><code>    my $List = $CloudServiceObject-&gt;CloudServiceList();
 
     or
 
     my $List = $CloudServiceObject-&gt;CloudServiceList(
         Valid =&gt; 0, # optional, defaults to 1
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

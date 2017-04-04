@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::PID</title>
+<title>Kernel::System::PID &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,302 +48,98 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/PID.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#PIDCreate">PIDCreate()</a></li>
-	<li><a href="#PIDGet">PIDGet()</a></li>
-	<li><a href="#PIDDelete">PIDDelete()</a></li>
-	<li><a href="#PIDUpdate">PIDUpdate()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#PIDCreate">PIDCreate()</a></li>
+      <li><a href="#PIDGet">PIDGet()</a></li>
+      <li><a href="#PIDDelete">PIDDelete()</a></li>
+      <li><a href="#PIDUpdate">PIDUpdate()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::PID - to manage PIDs</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All functions to manage process ids</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $PIDObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::PID&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # get fqdn
-    $Self->{Host} = $Kernel::OM->Get('Kernel::Config')->Get('FQDN');
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $PIDObject = $Kernel::OM-&gt;Get('Kernel::System::PID');
-</pre><h2 id="PIDCreate">PIDCreate()</h2>
-
-<p><a href="#" onclick="toggleCode('method_PIDCreate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PIDCreate">
-                                        <pre>
-
-sub PIDCreate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Name} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Name'
-        );
-        return;
-    }
-
-    # check if already exists
-    my %ProcessID = $Self->PIDGet(%Param);
-
-    if ( %ProcessID && !$Param{Force} ) {
-
-        my $TTL = $Param{TTL} || 3600;
-        if ( $ProcessID{Created} > ( time() - $TTL ) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'notice',
-                Message  => "Can't create PID $ProcessID{Name}, because it's already running "
-                    . "($ProcessID{Host}/$ProcessID{PID})!",
-            );
-            return;
-        }
-
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'notice',
-            Message  => "Removed PID ($ProcessID{Name}/$ProcessID{Host}/$ProcessID{PID}, "
-                . "because 1 hour old!",
-        );
-    }
-
-    # do nothing if PID is the same
-    my $PIDCurrent = $$;
-    return 1 if $ProcessID{PID} && $PIDCurrent eq $ProcessID{PID};
-
-    # delete if exists
-    $Self->PIDDelete(%Param);
-
-    # add new entry
-    my $Time = time();
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL => '
-            INSERT INTO process_id
-            (process_name, process_id, process_host, process_create, process_change)
-            VALUES (?, ?, ?, ?, ?)',
-        Bind => [ \$Param{Name}, \$PIDCurrent, \$Self->{Host}, \$Time, \$Time ],
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="PIDCreate">PIDCreate()</h2>
 
 <p>create a new process id lock</p>
 
-<pre>    $PIDObject-&gt;PIDCreate(
-        Name =&gt; 'PostMasterPOP3',
+<pre><code>    $PIDObject-&gt;PIDCreate(
+        Name =&gt; &#39;PostMasterPOP3&#39;,
     );
 
     or to create a new PID forced, without check if already exists (this will delete any process
     with the same name from any other host)
 
     $PIDObject-&gt;PIDCreate(
-        Name  =&gt; 'PostMasterPOP3',
+        Name  =&gt; &#39;PostMasterPOP3&#39;,
         Force =&gt; 1,
     );
 
     or to create a new PID with extra TTL time
 
     $PIDObject-&gt;PIDCreate(
-        Name  =&gt; 'PostMasterPOP3',
+        Name  =&gt; &#39;PostMasterPOP3&#39;,
         TTL   =&gt; 60 * 60 * 24 * 3, # for 3 days, per default 1h is used
-    );
-</pre><h2 id="PIDGet">PIDGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_PIDGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PIDGet">
-                                        <pre>
-
-sub PIDGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Name} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Name'
-        );
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # sql
-    return if !$DBObject->Prepare(
-        SQL => '
-            SELECT process_name, process_id, process_host, process_create, process_change
-            FROM process_id
-            WHERE process_name = ?',
-        Bind  => [ \$Param{Name} ],
-        Limit => 1,
-    );
-
-    # fetch the result
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        %Data = (
-            PID     => $Row[1],
-            Name    => $Row[0],
-            Host    => $Row[2],
-            Created => $Row[3],
-            Changed => $Row[4],
-        );
-    }
-
-    return %Data;
-}
-</pre></div>
+<h2 id="PIDGet">PIDGet()</h2>
 
 <p>get process id lock info</p>
 
-<pre>    my %PID = $PIDObject-&gt;PIDGet(
-        Name =&gt; 'PostMasterPOP3',
-    );
-</pre><h2 id="PIDDelete">PIDDelete()</h2>
+<pre><code>    my %PID = $PIDObject-&gt;PIDGet(
+        Name =&gt; &#39;PostMasterPOP3&#39;,
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_PIDDelete');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PIDDelete">
-                                        <pre>
-
-sub PIDDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Name} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Name'
-        );
-        return;
-    }
-
-    # set basic SQL statement
-    my $SQL = '
-        DELETE FROM process_id
-        WHERE process_name = ?';
-
-    my @Bind = ( \$Param{Name} );
-
-    # delete only processes from this host if Force option was not set
-    if ( !$Param{Force} ) {
-        $SQL .= '
-        AND process_host = ?';
-
-        push @Bind, \$Self->{Host}
-    }
-
-    # sql
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL  => $SQL,
-        Bind => \@Bind,
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="PIDDelete">PIDDelete()</h2>
 
 <p>delete the process id lock</p>
 
-<pre>    my $Success = $PIDObject-&gt;PIDDelete(
-        Name  =&gt; 'PostMasterPOP3',
+<pre><code>    my $Success = $PIDObject-&gt;PIDDelete(
+        Name  =&gt; &#39;PostMasterPOP3&#39;,
     );
 
     or to force delete even if the PID is registered by another host
     my $Success = $PIDObject-&gt;PIDDelete(
-        Name  =&gt; 'PostMasterPOP3',
+        Name  =&gt; &#39;PostMasterPOP3&#39;,
         Force =&gt; 1,
-    );
-</pre><h2 id="PIDUpdate">PIDUpdate()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_PIDUpdate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PIDUpdate">
-                                        <pre>
+<h2 id="PIDUpdate">PIDUpdate()</h2>
 
-sub PIDUpdate {
-    my ( $Self, %Param ) = @_;
+<p>update the process id change time. this might be useful as a keep alive signal.</p>
 
-    # check needed stuff
-    if ( !$Param{Name} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Name'
-        );
-        return;
-    }
+<pre><code>    my $Success = $PIDObject-&gt;PIDUpdate(
+        Name    =&gt; &#39;PostMasterPOP3&#39;,
+    );</code></pre>
 
-    my %PID = $Self->PIDGet( Name => $Param{Name} );
-
-    if ( !%PID ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Can not get PID'
-        );
-        return;
-    }
-
-    # sql
-    my $Time = time();
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL => '
-            UPDATE process_id
-            SET process_change = ?
-            WHERE process_name = ?',
-        Bind => [ \$Time, \$Param{Name} ],
-    );
-
-    return 1;
-}
-</pre></div>
-
-<p>update the process id change time.
-this might be useful as a keep alive signal.</p>
-
-<pre>    my $Success = $PIDObject-&gt;PIDUpdate(
-        Name    =&gt; 'PostMasterPOP3',
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

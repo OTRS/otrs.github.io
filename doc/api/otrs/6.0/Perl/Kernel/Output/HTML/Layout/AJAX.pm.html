@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::Output::HTML::Layout::AJAX</title>
+<title>Kernel::Output::HTML::Layout::AJAX &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,144 +48,41 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/Output/HTML/Layout/AJAX.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#BuildSelectionJSON">BuildSelectionJSON()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#BuildSelectionJSON">BuildSelectionJSON()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::Output::HTML::Layout::AJAX - all AJAX-related HTML functions</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All AJAX-related HTML functions</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="BuildSelectionJSON">BuildSelectionJSON()</h2>
 
-<p><a href="#" onclick="toggleCode('method_BuildSelectionJSON');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_BuildSelectionJSON">
-                                        <pre>
-
-sub BuildSelectionJSON {
-    my ( $Self, $Array ) = @_;
-    my %DataHash;
-
-    for my $Data ( @{$Array} ) {
-        my %Param = %{$Data};
-
-        # log object
-        my $LogObject = $Kernel::OM->Get('Kernel::System::Log');
-
-        # check needed stuff
-        for (qw(Name)) {
-            if ( !defined $Param{$_} ) {
-                $LogObject->Log(
-                    Priority => 'error',
-                    Message  => "Need $_!"
-                );
-                return;
-            }
-        }
-
-        if ( !defined( $Param{Data} ) ) {
-            if ( !$Param{PossibleNone} ) {
-                $LogObject->Log(
-                    Priority => 'error',
-                    Message  => "Need Data!"
-                );
-                return;
-            }
-            $DataHash{''} = '-';
-        }
-        elsif ( ref $Param{Data} eq '' ) {
-            $DataHash{ $Param{Name} } = $Param{Data};
-        }
-        elsif ( defined $Param{KeepData} && $Param{KeepData} ) {
-            $DataHash{ $Param{Name} } = $Param{Data};
-        }
-        else {
-
-            # create OptionRef
-            my $OptionRef = $Self->_BuildSelectionOptionRefCreate(
-                %Param,
-                HTMLQuote => 0,
-            );
-
-            # create AttributeRef
-            my $AttributeRef = $Self->_BuildSelectionAttributeRefCreate(%Param);
-
-            # create DataRef
-            my $DataRef = $Self->_BuildSelectionDataRefCreate(
-                Data         => $Param{Data},
-                AttributeRef => $AttributeRef,
-                OptionRef    => $OptionRef,
-            );
-
-            # create data structure
-            if ( $AttributeRef && $DataRef ) {
-                my @DataArray;
-                for my $Row ( @{$DataRef} ) {
-                    my $Key = '';
-                    if ( defined $Row->{Key} ) {
-                        $Key = $Row->{Key};
-                    }
-                    my $Value = '';
-                    if ( defined $Row->{Value} ) {
-                        $Value = $Row->{Value};
-                    }
-
-                    # DefaultSelected parameter for JavaScript New Option
-                    my $DefaultSelected = Kernel::System::JSON::False();
-
-                    # to set a disabled option (Disabled is not included in JavaScript New Option)
-                    my $Disabled = Kernel::System::JSON::False();
-
-                    if ( $Row->{Selected} ) {
-                        $DefaultSelected = Kernel::System::JSON::True();
-                    }
-                    elsif ( $Row->{Disabled} ) {
-                        $DefaultSelected = Kernel::System::JSON::False();
-                        $Disabled        = Kernel::System::JSON::True();
-                    }
-
-                    # Selected parameter for JavaScript NewOption
-                    my $Selected = $DefaultSelected;
-                    push @DataArray, [ $Key, $Value, $DefaultSelected, $Selected, $Disabled ];
-                }
-                $DataHash{ $AttributeRef->{name} } = \@DataArray;
-            }
-        }
-    }
-
-    return $Self->JSONEncode(
-        Data => \%DataHash,
-    );
-}
-</pre></div>
-
 <p>build a JSON output which can be used for e. g. data for pull downs</p>
 
-<pre>    my $JSON = $LayoutObject-&gt;BuildSelectionJSON(
+<pre><code>    my $JSON = $LayoutObject-&gt;BuildSelectionJSON(
         [
             Data          =&gt; $ArrayRef,      # use $HashRef, $ArrayRef or $ArrayHashRef (see below)
-            Name          =&gt; 'TheName',      # name of element
+            Name          =&gt; &#39;TheName&#39;,      # name of element
             SelectedID    =&gt; [1, 5, 3],      # (optional) use integer or arrayref (unable to use with ArrayHashRef)
-            SelectedValue =&gt; 'test',         # (optional) use string or arrayref (unable to use with ArrayHashRef)
-            Sort          =&gt; 'NumericValue', # (optional) (AlphanumericValue|NumericValue|AlphanumericKey|NumericKey|TreeView) unable to use with ArrayHashRef
+            SelectedValue =&gt; &#39;test&#39;,         # (optional) use string or arrayref (unable to use with ArrayHashRef)
+            Sort          =&gt; &#39;NumericValue&#39;, # (optional) (AlphanumericValue|NumericValue|AlphanumericKey|NumericKey|TreeView) unable to use with ArrayHashRef
             SortReverse   =&gt; 0,              # (optional) reverse the list
             Translation   =&gt; 1,              # (optional) default 1 (0|1) translate value
             PossibleNone  =&gt; 0,              # (optional) default 0 (0|1) add a leading empty selection
@@ -215,15 +91,13 @@ sub BuildSelectionJSON {
         [
             # ...
         ]
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::Time</title>
+<title>Kernel::System::Time &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,506 +48,126 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/Time.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#SystemTime">SystemTime()</a></li>
-	<li><a href="#SystemTime2TimeStamp">SystemTime2TimeStamp()</a></li>
-	<li><a href="#CurrentTimestamp">CurrentTimestamp()</a></li>
-	<li><a href="#SystemTime2Date">SystemTime2Date()</a></li>
-	<li><a href="#TimeStamp2SystemTime">TimeStamp2SystemTime()</a></li>
-	<li><a href="#Date2SystemTime">Date2SystemTime()</a></li>
-	<li><a href="#ServerLocalTimeOffsetSeconds">ServerLocalTimeOffsetSeconds()</a></li>
-	<li><a href="#MailTimeStamp">MailTimeStamp()</a></li>
-	<li><a href="#WorkingTime">WorkingTime()</a></li>
-	<li><a href="#DestinationTime">DestinationTime()</a></li>
-	<li><a href="#VacationCheck">VacationCheck()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#SystemTime">SystemTime()</a></li>
+      <li><a href="#SystemTime2TimeStamp">SystemTime2TimeStamp()</a></li>
+      <li><a href="#CurrentTimestamp">CurrentTimestamp()</a></li>
+      <li><a href="#SystemTime2Date">SystemTime2Date()</a></li>
+      <li><a href="#TimeStamp2SystemTime">TimeStamp2SystemTime()</a></li>
+      <li><a href="#Date2SystemTime">Date2SystemTime()</a></li>
+      <li><a href="#ServerLocalTimeOffsetSeconds">ServerLocalTimeOffsetSeconds()</a></li>
+      <li><a href="#MailTimeStamp">MailTimeStamp()</a></li>
+      <li><a href="#WorkingTime">WorkingTime()</a></li>
+      <li><a href="#DestinationTime">DestinationTime()</a></li>
+      <li><a href="#VacationCheck">VacationCheck()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::Time - time functions. DEPRECATED, for new code use Kernel::System::DateTime instead.</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>This module is managing time functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # 0=off; 1=on;
-    $Self->{Debug} = 0;
-
-    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
-
-    $Self->{TimeZone} = $Param{TimeZone}
-        || $Param{UserTimeZone}
-        || $DateTimeObject->OTRSTimeZoneGet();
-
-    # check if time zone is valid
-    if ( !$DateTimeObject->IsTimeZoneValid( TimeZone => $Self->{TimeZone} ) ) {
-
-        my $InvalidTimeZone = $Self->{TimeZone};
-
-        $Self->{TimeZone} = $Param{UserTimeZone}
-            ? $DateTimeObject->UserDefaultTimeZoneGet()
-            : $DateTimeObject->OTRSTimeZoneGet();
-
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Invalid time zone $InvalidTimeZone, using $Self->{TimeZone} as fallback.",
-        );
-    }
-
-    return $Self;
-}
-</pre></div>
-
 <p>create a time object. Do not use it directly, instead use:</p>
 
-<pre>    my $TimeObject = $Kernel::OM-&gt;Get('Kernel::System::Time');
-</pre><h2 id="SystemTime">SystemTime()</h2>
+<pre><code>    my $TimeObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Time&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SystemTime');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemTime">
-                                        <pre>
+<h2 id="SystemTime">SystemTime()</h2>
 
-sub SystemTime {
-    my $Self = shift;
+<p>returns the number of non-leap seconds since what ever time the system considers to be the epoch (that&#39;s 00:00:00, January 1, 1904 for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).</p>
 
-    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
-    my $SystemTime     = $DateTimeObject->ToEpoch();
+<pre><code>    my $SystemTime = $TimeObject-&gt;SystemTime();</code></pre>
 
-    return $SystemTime;
-}
-</pre></div>
-
-<p>returns the number of non-leap seconds since what ever time the
-system considers to be the epoch (that's 00:00:00, January 1, 1904
-for Mac OS, and 00:00:00 UTC, January 1, 1970 for most other systems).</p>
-
-<pre>    my $SystemTime = $TimeObject-&gt;SystemTime();
-</pre><h2 id="SystemTime2TimeStamp">SystemTime2TimeStamp()</h2>
-
-<p><a href="#" onclick="toggleCode('method_SystemTime2TimeStamp');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemTime2TimeStamp">
-                                        <pre>
-
-sub SystemTime2TimeStamp {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{SystemTime} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need SystemTime!',
-        );
-        return;
-    }
-
-    my ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $Self->SystemTime2Date(%Param);
-    if ( defined $Param{Type} && $Param{Type} eq 'Short' ) {
-        my ( $CSec, $CMin, $CHour, $CDay, $CMonth, $CYear ) = $Self->SystemTime2Date(
-            SystemTime => $Self->SystemTime(),
-        );
-        if ( $CYear == $Year && $CMonth == $Month && $CDay == $Day ) {
-            return "$Hour:$Min:$Sec";
-        }
-        return "$Year-$Month-$Day $Hour:$Min:$Sec";
-    }
-    return "$Year-$Month-$Day $Hour:$Min:$Sec";
-}
-</pre></div>
+<h2 id="SystemTime2TimeStamp">SystemTime2TimeStamp()</h2>
 
 <p>returns a time stamp for a given system time in <code>yyyy-mm-dd 23:59:59</code> format.</p>
 
-<pre>    my $TimeStamp = $TimeObject-&gt;SystemTime2TimeStamp(
+<pre><code>    my $TimeStamp = $TimeObject-&gt;SystemTime2TimeStamp(
         SystemTime =&gt; $SystemTime,
-    );
-</pre><p>If you need the short format &quot;23:59:59&quot; for dates that are &quot;today&quot;,
-pass the Type parameter like this:</p>
+    );</code></pre>
 
-<pre>    my $TimeStamp = $TimeObject-&gt;SystemTime2TimeStamp(
+<p>If you need the short format &quot;23:59:59&quot; for dates that are &quot;today&quot;, pass the Type parameter like this:</p>
+
+<pre><code>    my $TimeStamp = $TimeObject-&gt;SystemTime2TimeStamp(
         SystemTime =&gt; $SystemTime,
-        Type       =&gt; 'Short',
-    );
-</pre><h2 id="CurrentTimestamp">CurrentTimestamp()</h2>
+        Type       =&gt; &#39;Short&#39;,
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_CurrentTimestamp');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CurrentTimestamp">
-                                        <pre>
+<h2 id="CurrentTimestamp">CurrentTimestamp()</h2>
 
-sub CurrentTimestamp {
-    my ( $Self, %Param ) = @_;
+<p>returns a time stamp of the local system time (see <a href="http://search.cpan.org/perldoc?SystemTime()">SystemTime()</a>) in <code>yyyy-mm-dd 23:59:59</code> format.</p>
 
-    return $Self->SystemTime2TimeStamp( SystemTime => $Self->SystemTime() );
-}
-</pre></div>
+<pre><code>    my $TimeStamp = $TimeObject-&gt;CurrentTimestamp();</code></pre>
 
-<p>returns a time stamp of the local system time (see <a href="http://search.cpan.org/perldoc?SystemTime%28%29">SystemTime()</a>)
-in <code>yyyy-mm-dd 23:59:59</code> format.</p>
-
-<pre>    my $TimeStamp = $TimeObject-&gt;CurrentTimestamp();
-</pre><h2 id="SystemTime2Date">SystemTime2Date()</h2>
-
-<p><a href="#" onclick="toggleCode('method_SystemTime2Date');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemTime2Date">
-                                        <pre>
-
-sub SystemTime2Date {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{SystemTime} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need SystemTime!',
-        );
-        return;
-    }
-
-    my $DateTimeObject = $Kernel::OM->Create(
-        'Kernel::System::DateTime',
-        ObjectParams => {
-            Epoch => $Param{SystemTime},
-        },
-    );
-
-    $DateTimeObject->ToTimeZone( TimeZone => $Self->{TimeZone} );
-
-    my $DateTimeValues = $DateTimeObject->Get();
-
-    my $Year  = $DateTimeValues->{Year};
-    my $Month = sprintf "%02d", $DateTimeValues->{Month};
-    my $Day   = sprintf "%02d", $DateTimeValues->{Day};
-    my $Hour  = sprintf "%02d", $DateTimeValues->{Hour};
-    my $Min   = sprintf "%02d", $DateTimeValues->{Minute};
-    my $Sec   = sprintf "%02d", $DateTimeValues->{Second};
-
-    my $WDay = $DateTimeValues->{DayOfWeek} == 7 ? 0 : $DateTimeValues->{DayOfWeek};
-
-    return ( $Sec, $Min, $Hour, $Day, $Month, $Year, $WDay );
-}
-</pre></div>
+<h2 id="SystemTime2Date">SystemTime2Date()</h2>
 
 <p>converts a system time to a structured date array.</p>
 
-<pre>    my ($Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay) = $TimeObject-&gt;SystemTime2Date(
+<pre><code>    my ($Sec, $Min, $Hour, $Day, $Month, $Year, $WeekDay) = $TimeObject-&gt;SystemTime2Date(
         SystemTime =&gt; $TimeObject-&gt;SystemTime(),
-    );
-</pre><p>$WeekDay is the day of the week, with 0 indicating Sunday and 3 indicating Wednesday.</p>
+    );</code></pre>
+
+<p>$WeekDay is the day of the week, with 0 indicating Sunday and 3 indicating Wednesday.</p>
 
 <h2 id="TimeStamp2SystemTime">TimeStamp2SystemTime()</h2>
 
-<p><a href="#" onclick="toggleCode('method_TimeStamp2SystemTime');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_TimeStamp2SystemTime">
-                                        <pre>
-
-sub TimeStamp2SystemTime {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{String} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need String!',
-        );
-        return;
-    }
-
-    my $SystemTime = 0;
-
-    # match iso date format
-    if ( $Param{String} =~ /(\d{4})-(\d{1,2})-(\d{1,2})\s(\d{1,2}):(\d{1,2}):(\d{1,2})/ ) {
-        $SystemTime = $Self->Date2SystemTime(
-            Year   => $1,
-            Month  => $2,
-            Day    => $3,
-            Hour   => $4,
-            Minute => $5,
-            Second => $6,
-        );
-    }
-
-    # match iso date format (wrong format)
-    elsif ( $Param{String} =~ /(\d{1,2})-(\d{1,2})-(\d{4})\s(\d{1,2}):(\d{1,2}):(\d{1,2})/ ) {
-        $SystemTime = $Self->Date2SystemTime(
-            Year   => $3,
-            Month  => $2,
-            Day    => $1,
-            Hour   => $4,
-            Minute => $5,
-            Second => $6,
-        );
-    }
-
-    # match euro time format
-    elsif ( $Param{String} =~ /(\d{1,2})\.(\d{1,2})\.(\d{4})\s(\d{1,2}):(\d{1,2}):(\d{1,2})/ ) {
-        $SystemTime = $Self->Date2SystemTime(
-            Year   => $3,
-            Month  => $2,
-            Day    => $1,
-            Hour   => $4,
-            Minute => $5,
-            Second => $6,
-        );
-    }
-
-    # match yyyy-mm-ddThh:mm:ss+tt:zz time format
-    elsif (
-        $Param{String}
-        =~ /(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{1,2}):(\d{1,2})(\+|\-)((\d{1,2}):(\d{1,2}))/i
-        )
-    {
-        $SystemTime = $Self->Date2SystemTime(
-            Year   => $1,
-            Month  => $2,
-            Day    => $3,
-            Hour   => $4,
-            Minute => $5,
-            Second => $6,
-        );
-    }
-
-    # match mail time format
-    elsif (
-        $Param{String}
-        =~ /((...),\s+|)(\d{1,2})\s(...)\s(\d{4})\s(\d{1,2}):(\d{1,2}):(\d{1,2})\s((\+|\-)(\d{2})(\d{2})|...)/
-        )
-    {
-        my @MonthMap    = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
-        my $Month       = 1;
-        my $MonthString = $4;
-        for my $MonthCount ( 0 .. $#MonthMap ) {
-            if ( $MonthString =~ /$MonthMap[$MonthCount]/i ) {
-                $Month = $MonthCount + 1;
-            }
-        }
-        $SystemTime = $Self->Date2SystemTime(
-            Year   => $5,
-            Month  => $Month,
-            Day    => $3,
-            Hour   => $6,
-            Minute => $7,
-            Second => $8,
-        );    # + $Self->{TimeSecDiff};
-    }
-    elsif (    # match yyyy-mm-ddThh:mm:ssZ
-        $Param{String} =~ /(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{1,2}):(\d{1,2})Z$/
-        )
-    {
-        $SystemTime = $Self->Date2SystemTime(
-            Year   => $1,
-            Month  => $2,
-            Day    => $3,
-            Hour   => $4,
-            Minute => $5,
-            Second => $6,
-        );
-    }
-
-    # return error
-    if ( !defined $SystemTime ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Invalid Date '$Param{String}'!",
-        );
-    }
-
-    # return system time
-    return $SystemTime;
-
-}
-</pre></div>
-
 <p>converts a given time stamp to local system time.</p>
 
-<pre>    my $SystemTime = $TimeObject-&gt;TimeStamp2SystemTime(
-        String =&gt; '2004-08-14 22:45:00',
-    );
-</pre><h2 id="Date2SystemTime">Date2SystemTime()</h2>
+<pre><code>    my $SystemTime = $TimeObject-&gt;TimeStamp2SystemTime(
+        String =&gt; &#39;2004-08-14 22:45:00&#39;,
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Date2SystemTime');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Date2SystemTime">
-                                        <pre>
-
-sub Date2SystemTime {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Year Month Day Hour Minute Second)) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!",
-            );
-            return;
-        }
-    }
-
-    my $DateTimeObject = $Kernel::OM->Create(
-        'Kernel::System::DateTime',
-        ObjectParams => {
-            %Param,
-            TimeZone => $Self->{TimeZone},
-        },
-    );
-
-    if ( !$DateTimeObject ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message =>
-                "Invalid Date '$Param{Year}-$Param{Month}-$Param{Day} $Param{Hour}:$Param{Minute}:$Param{Second}'!",
-        );
-        return;
-    }
-
-    my $SystemTime = $DateTimeObject->ToEpoch();
-
-    return $SystemTime;
-}
-</pre></div>
+<h2 id="Date2SystemTime">Date2SystemTime()</h2>
 
 <p>converts a structured date array to system time of OTRS.</p>
 
-<pre>    my $SystemTime = $TimeObject-&gt;Date2SystemTime(
+<pre><code>    my $SystemTime = $TimeObject-&gt;Date2SystemTime(
         Year   =&gt; 2004,
         Month  =&gt; 8,
         Day    =&gt; 14,
         Hour   =&gt; 22,
         Minute =&gt; 45,
         Second =&gt; 0,
-    );
-</pre><h2 id="ServerLocalTimeOffsetSeconds">ServerLocalTimeOffsetSeconds()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ServerLocalTimeOffsetSeconds');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ServerLocalTimeOffsetSeconds">
-                                        <pre>
+<h2 id="ServerLocalTimeOffsetSeconds">ServerLocalTimeOffsetSeconds()</h2>
 
-sub ServerLocalTimeOffsetSeconds {
-    my ( $Self, %Param ) = @_;
-
-    return 0;
-}
-</pre></div>
-
-<p>All framework code that calls this method only uses it to check if the server runs in UTC
-and therefore user time zones are allowed. It's not needed any more in the future and is only
-in here to don't break code that has not been ported yet. It returns 0 to tell its callers
-that the server runs in UTC and so user time zones are allowed/active.</p>
+<p>All framework code that calls this method only uses it to check if the server runs in UTC and therefore user time zones are allowed. It&#39;s not needed any more in the future and is only in here to don&#39;t break code that has not been ported yet. It returns 0 to tell its callers that the server runs in UTC and so user time zones are allowed/active.</p>
 
 <p>( originally returned the computed difference in seconds between UTC time and local time. )</p>
 
-<pre>    my $ServerLocalTimeOffsetSeconds = $TimeObject-&gt;ServerLocalTimeOffsetSeconds(
+<pre><code>    my $ServerLocalTimeOffsetSeconds = $TimeObject-&gt;ServerLocalTimeOffsetSeconds(
         SystemTime =&gt; $SystemTime,  # optional, otherwise call time()
-    );
-</pre><h2 id="MailTimeStamp">MailTimeStamp()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_MailTimeStamp');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_MailTimeStamp">
-                                        <pre>
+<h2 id="MailTimeStamp">MailTimeStamp()</h2>
 
-sub MailTimeStamp {
-    my ( $Self, %Param ) = @_;
+<p>returns the current time stamp in RFC 2822 format to be used in email headers: &quot;Wed, 22 Sep 2014 16:30:57 +0200&quot;.</p>
 
-    my $DateTimeObject = $Kernel::OM->Create(
-        'Kernel::System::DateTime',
-        ObjectParams => {
-            TimeZone => $Self->{TimeZone},
-        },
-    );
+<pre><code>    my $MailTimeStamp = $TimeObject-&gt;MailTimeStamp();</code></pre>
 
-    my $EmailTimeStamp = $DateTimeObject->ToEmailTimeStamp();
-
-    return $EmailTimeStamp;
-}
-</pre></div>
-
-<p>returns the current time stamp in RFC 2822 format to be used in email headers:
-&quot;Wed, 22 Sep 2014 16:30:57 +0200&quot;.</p>
-
-<pre>    my $MailTimeStamp = $TimeObject-&gt;MailTimeStamp();
-</pre><h2 id="WorkingTime">WorkingTime()</h2>
-
-<p><a href="#" onclick="toggleCode('method_WorkingTime');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_WorkingTime">
-                                        <pre>
-
-sub WorkingTime {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(StartTime StopTime)) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!",
-            );
-            return;
-        }
-    }
-
-    return 0 if $Param{StartTime} >= $Param{StopTime};
-
-    my $StartDateTimeObject = $Kernel::OM->Create(
-        'Kernel::System::DateTime',
-        ObjectParams => {
-            Epoch    => $Param{StartTime},
-            TimeZone => $Self->{TimeZone},
-        },
-    );
-
-    my $StopDateTimeObject = $Kernel::OM->Create(
-        'Kernel::System::DateTime',
-        ObjectParams => {
-            Epoch    => $Param{StopTime},
-            TimeZone => $Self->{TimeZone},
-        },
-    );
-
-    my $Delta = $StartDateTimeObject->Delta(
-        DateTimeObject => $StopDateTimeObject,
-        ForWorkingTime => 1,
-        Calendar       => $Param{Calendar},
-    );
-
-    if ( !IsHashRefWithData($Delta) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Error calculating working time.',
-        );
-        return;
-    }
-
-    return $Delta->{AbsoluteSeconds};
-}
-</pre></div>
+<h2 id="WorkingTime">WorkingTime()</h2>
 
 <p>get the working time in seconds between these local system times.</p>
 
-<pre>    my $WorkingTime = $TimeObject-&gt;WorkingTime(
+<pre><code>    my $WorkingTime = $TimeObject-&gt;WorkingTime(
         StartTime =&gt; $Created,
         StopTime  =&gt; $TimeObject-&gt;SystemTime(),
     );
@@ -576,68 +175,20 @@ sub WorkingTime {
     my $WorkingTime = $TimeObject-&gt;WorkingTime(
         StartTime =&gt; $Created,
         StopTime  =&gt; $TimeObject-&gt;SystemTime(),
-        Calendar  =&gt; 3, # '' is default
-    );
-</pre><h2 id="DestinationTime">DestinationTime()</h2>
+        Calendar  =&gt; 3, # &#39;&#39; is default
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_DestinationTime');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_DestinationTime">
-                                        <pre>
+<h2 id="DestinationTime">DestinationTime()</h2>
 
-sub DestinationTime {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw( StartTime Time )) {
-        if ( !defined $Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!",
-            );
-            return;
-        }
-    }
-
-    return $Param{StartTime} if $Param{Time} <= 0;
-
-    my $DestinationDateTimeObject = $Kernel::OM->Create(
-        'Kernel::System::DateTime',
-        ObjectParams => {
-            Epoch    => $Param{StartTime},
-            TimeZone => $Self->{TimeZone},
-        },
-    );
-
-    $DestinationDateTimeObject->Add(
-        Seconds       => $Param{Time},
-        AsWorkingTime => 1,
-        Calendar      => $Param{Calendar},
-    );
-
-    my $DestinationTime = $DestinationDateTimeObject->ToEpoch();
-
-    return $DestinationTime;
-}
-</pre></div>
-
-<p>get the destination time based on the current calendar working time (fallback: default
-system working time) configuration.</p>
+<p>get the destination time based on the current calendar working time (fallback: default system working time) configuration.</p>
 
 <p>Returns a system time (integer time stamp).</p>
 
-<p>The algorithm roughly works as follows:
-    - Check if the start time is actually in the configured working time.
-        - If not, set it to the next working time second. Example: start time is
-            on a weekend, start time would be set to 8:00 on the following Monday.
-    - Then the diff time (in seconds) is added to the start time incrementally, only considering
-        the configured working times. So adding 24 hours could actually span multiple days because
-        they would be spread over the configured working hours. If we have 8-20, 24 hours would be
-        spread over 2 days (13/11 hours).</p>
+<p>The algorithm roughly works as follows: - Check if the start time is actually in the configured working time. - If not, set it to the next working time second. Example: start time is on a weekend, start time would be set to 8:00 on the following Monday. - Then the diff time (in seconds) is added to the start time incrementally, only considering the configured working times. So adding 24 hours could actually span multiple days because they would be spread over the configured working hours. If we have 8-20, 24 hours would be spread over 2 days (13/11 hours).</p>
 
-<p>NOTE: Currently, the implementation stops silently after 600 iterations, making it impossible to
-    specify longer escalation times, for example.</p>
+<p>NOTE: Currently, the implementation stops silently after 600 iterations, making it impossible to specify longer escalation times, for example.</p>
 
-<pre>    my $DestinationTime = $TimeObject-&gt;DestinationTime(
+<pre><code>    my $DestinationTime = $TimeObject-&gt;DestinationTime(
         StartTime =&gt; $Created,
         Time      =&gt; 60*60*24*2,
     );
@@ -645,67 +196,33 @@ system working time) configuration.</p>
     my $DestinationTime = $TimeObject-&gt;DestinationTime(
         StartTime =&gt; $Created,
         Time      =&gt; 60*60*24*2,
-        Calendar  =&gt; 3, # '' is default
-    );
-</pre><h2 id="VacationCheck">VacationCheck()</h2>
+        Calendar  =&gt; 3, # &#39;&#39; is default
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_VacationCheck');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_VacationCheck">
-                                        <pre>
+<h2 id="VacationCheck">VacationCheck()</h2>
 
-sub VacationCheck {
-    my ( $Self, %Param ) = @_;
+<p>check if the selected day is a vacation (it does not matter if you insert 01 or 1 for month or day in the function or in the SysConfig)</p>
 
-    # check required params
-    for (qw(Year Month Day)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "VacationCheck: Need $_!",
-            );
-            return;
-        }
-    }
+<p>returns (true) vacation day if exists, returns false if date is no vacation day</p>
 
-    my $DateTimeObject = $Kernel::OM->Create(
-        'Kernel::System::DateTime',
-        ObjectParams => {
-            %Param,
-            TimeZone => $Self->{TimeZone},
-        },
-    );
-    return $DateTimeObject->IsVacationDay(
-        Calendar => $Param{Calendar},
-    );
-}
-</pre></div>
-
-<p>check if the selected day is a vacation (it does not matter if you
-insert 01 or 1 for month or day in the function or in the SysConfig)</p>
-
-<p>returns (true) vacation day if exists, returns false if date is no
-vacation day</p>
-
-<pre>    $TimeObject-&gt;VacationCheck(
+<pre><code>    $TimeObject-&gt;VacationCheck(
         Year     =&gt; 2005,
-        Month    =&gt; 7 || '07',
+        Month    =&gt; 7 || &#39;07&#39;,
         Day      =&gt; 13,
     );
 
     $TimeObject-&gt;VacationCheck(
         Year     =&gt; 2005,
-        Month    =&gt; 7 || '07',
+        Month    =&gt; 7 || &#39;07&#39;,
         Day      =&gt; 13,
-        Calendar =&gt; 3, # '' is default; 0 is handled like ''
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+        Calendar =&gt; 3, # &#39;&#39; is default; 0 is handled like &#39;&#39;
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

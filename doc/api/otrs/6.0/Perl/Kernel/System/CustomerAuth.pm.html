@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::CustomerAuth</title>
+<title>Kernel::System::CustomerAuth &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,262 +48,73 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/CustomerAuth.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#GetOption">GetOption()</a></li>
-	<li><a href="#Auth">Auth()</a></li>
-	<li><a href="#GetLastErrorMessage">GetLastErrorMessage()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#GetOption">GetOption()</a></li>
+      <li><a href="#Auth">Auth()</a></li>
+      <li><a href="#GetLastErrorMessage">GetLastErrorMessage()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::CustomerAuth - customer authentication module.</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>The authentication module for the customer interface.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $CustomerAuthObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::CustomerAuth&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # get needed objects
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $MainObject   = $Kernel::OM->Get('Kernel::System::Main');
-
-    # load auth modules
-    SOURCE:
-    for my $Count ( '', 1 .. 10 ) {
-        my $GenericModule = $ConfigObject->Get("Customer::AuthModule$Count");
-        next SOURCE if !$GenericModule;
-
-        if ( !$MainObject->Require($GenericModule) ) {
-            $MainObject->Die("Can't load backend module $GenericModule! $@");
-        }
-        $Self->{"Backend$Count"} = $GenericModule->new( %{$Self}, Count => $Count );
-    }
-
-    # load 2factor auth modules
-    SOURCE:
-    for my $Count ( '', 1 .. 10 ) {
-        my $GenericModule = $ConfigObject->Get("Customer::AuthTwoFactorModule$Count");
-        next SOURCE if !$GenericModule;
-
-        if ( !$MainObject->Require($GenericModule) ) {
-            $MainObject->Die("Can't load backend module $GenericModule! $@");
-        }
-        $Self->{"AuthTwoFactorBackend$Count"} = $GenericModule->new( %{$Self}, Count => $Count );
-    }
-
-    # Initialize last error message
-    $Self->{LastErrorMessage} = '';
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $CustomerAuthObject = $Kernel::OM-&gt;Get('Kernel::System::CustomerAuth');
-</pre><h2 id="GetOption">GetOption()</h2>
-
-<p><a href="#" onclick="toggleCode('method_GetOption');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetOption">
-                                        <pre>
-
-sub GetOption {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{Backend}->GetOption(%Param);
-}
-</pre></div>
+<h2 id="GetOption">GetOption()</h2>
 
 <p>Get module options. Currently there is just one option, &quot;PreAuth&quot;.</p>
 
-<pre>    if ($AuthObject-&gt;GetOption(What =&gt; 'PreAuth')) {
+<pre><code>    if ($AuthObject-&gt;GetOption(What =&gt; &#39;PreAuth&#39;)) {
         print &quot;No login screen is needed. Authentication is based on other options. E. g. $ENV{REMOTE_USER}\n&quot;;
-    }
-</pre><h2 id="Auth">Auth()</h2>
+    }</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Auth');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Auth">
-                                        <pre>
-
-sub Auth {
-    my ( $Self, %Param ) = @_;
-
-    # get customer user object
-    my $ConfigObject       = $Kernel::OM->Get('Kernel::Config');
-    my $CustomerUserObject = $Kernel::OM->Get('Kernel::System::CustomerUser');
-
-    # use all 11 backends and return on first auth
-    my $User;
-    COUNT:
-    for ( '', 1 .. 10 ) {
-
-        # next on no config setting
-        next COUNT if !$Self->{"Backend$_"};
-
-        # check auth backend
-        $User = $Self->{"Backend$_"}->Auth(%Param);
-
-        # next on no success
-        next COUNT if !$User;
-
-        # check 2factor auth backends
-        my $TwoFactorAuth;
-        TWOFACTORSOURCE:
-        for my $Count ( '', 1 .. 10 ) {
-
-            # return on no config setting
-            next TWOFACTORSOURCE if !$Self->{"AuthTwoFactorBackend$Count"};
-
-            # 2factor backend
-            my $AuthOk = $Self->{"AuthTwoFactorBackend$Count"}->Auth(
-                TwoFactorToken => $Param{TwoFactorToken},
-                User           => $User,
-            );
-            $TwoFactorAuth = $AuthOk ? 'passed' : 'failed';
-
-            last TWOFACTORSOURCE if $AuthOk;
-        }
-
-        # if at least one 2factor auth backend was checked but none was successful,
-        # it counts as a failed login
-        if ( $TwoFactorAuth && $TwoFactorAuth ne 'passed' ) {
-            $User = undef;
-            last COUNT;
-        }
-
-        # remember auth backend
-        if ($User) {
-            $CustomerUserObject->SetPreferences(
-                Key    => 'UserAuthBackend',
-                Value  => $_,
-                UserID => $User,
-            );
-            last COUNT;
-        }
-    }
-
-    # check if record exists
-    if ( !$User ) {
-        my %CustomerData = $CustomerUserObject->CustomerUserDataGet( User => $Param{User} );
-        if (%CustomerData) {
-            my $Count = $CustomerData{UserLoginFailed} || 0;
-            $Count++;
-            $CustomerUserObject->SetPreferences(
-                Key    => 'UserLoginFailed',
-                Value  => $Count,
-                UserID => $CustomerData{UserLogin},
-            );
-        }
-        return;
-    }
-
-    # check if user is valid
-    my %CustomerData = $CustomerUserObject->CustomerUserDataGet( User => $User );
-    if ( defined $CustomerData{ValidID} && $CustomerData{ValidID} ne 1 ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'notice',
-            Message  => "CustomerUser: '$User' is set to invalid, can't login!",
-        );
-        return;
-    }
-
-    return $User if !%CustomerData;
-
-    # reset failed logins
-    $CustomerUserObject->SetPreferences(
-        Key    => 'UserLoginFailed',
-        Value  => 0,
-        UserID => $CustomerData{UserLogin},
-    );
-
-    # on system maintenance customers
-    # shouldn't be allowed get into the system
-    my $ActiveMaintenance = $Kernel::OM->Get('Kernel::System::SystemMaintenance')->SystemMaintenanceIsActive();
-
-    # check if system maintenance is active
-    if ($ActiveMaintenance) {
-
-        $Self->{LastErrorMessage} =
-            $ConfigObject->Get('SystemMaintenance::IsActiveDefaultLoginErrorMessage')
-            || Translatable("It is currently not possible to login due to a scheduled system maintenance.");
-
-        return;
-    }
-
-    # last login preferences update
-    $CustomerUserObject->SetPreferences(
-        Key    => 'UserLastLogin',
-        Value  => $Kernel::OM->Get('Kernel::System::Time')->SystemTime(),
-        UserID => $CustomerData{UserLogin},
-    );
-
-    return $User;
-}
-</pre></div>
+<h2 id="Auth">Auth()</h2>
 
 <p>The authentication function.</p>
 
-<pre>    if ($AuthObject-&gt;Auth(User =&gt; $User, Pw =&gt; $Pw)) {
+<pre><code>    if ($AuthObject-&gt;Auth(User =&gt; $User, Pw =&gt; $Pw)) {
         print &quot;Auth ok!\n&quot;;
     }
     else {
         print &quot;Auth invalid!\n&quot;;
-    }
-</pre><h2 id="GetLastErrorMessage">GetLastErrorMessage()</h2>
+    }</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_GetLastErrorMessage');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetLastErrorMessage">
-                                        <pre>
-
-sub GetLastErrorMessage {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{LastErrorMessage};
-}
-</pre></div>
+<h2 id="GetLastErrorMessage">GetLastErrorMessage()</h2>
 
 <p>Retrieve $Self-&gt;{LastErrorMessage} content.</p>
 
-<pre>    my $AuthErrorMessage = $AuthObject-&gt;GetLastErrorMessage();
+<pre><code>    my $AuthErrorMessage = $AuthObject-&gt;GetLastErrorMessage();
 
     Result:
 
-        $AuthErrorMessage = &quot;An error string message.&quot;;
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+        $AuthErrorMessage = &quot;An error string message.&quot;;</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

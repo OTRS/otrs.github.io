@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::TemplateGenerator</title>
+<title>Kernel::System::TemplateGenerator &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,808 +48,140 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/TemplateGenerator.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Salutation">Salutation()</a></li>
-	<li><a href="#Signature">Signature()</a></li>
-	<li><a href="#Sender">Sender()</a></li>
-	<li><a href="#Template">Template()</a></li>
-	<li><a href="#GenericAgentArticle">GenericAgentArticle()</a></li>
-	<li><a href="#Attributes">Attributes()</a></li>
-	<li><a href="#AutoResponse">AutoResponse()</a></li>
-	<li><a href="#NotificationEvent">NotificationEvent()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Salutation">Salutation()</a></li>
+      <li><a href="#Signature">Signature()</a></li>
+      <li><a href="#Sender">Sender()</a></li>
+      <li><a href="#Template">Template()</a></li>
+      <li><a href="#GenericAgentArticle">GenericAgentArticle()</a></li>
+      <li><a href="#Attributes">Attributes()</a></li>
+      <li><a href="#AutoResponse">AutoResponse()</a></li>
+      <li><a href="#NotificationEvent">NotificationEvent()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::TemplateGenerator - signature lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All signature functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $TemplateGeneratorObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::TemplateGenerator&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    $Self->{RichText} = $Kernel::OM->Get('Kernel::Config')->Get('Frontend::RichText');
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $TemplateGeneratorObject = $Kernel::OM-&gt;Get('Kernel::System::TemplateGenerator');
-</pre><h2 id="Salutation">Salutation()</h2>
-
-<p><a href="#" onclick="toggleCode('method_Salutation');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Salutation">
-                                        <pre>
-
-sub Salutation {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(TicketID Data UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # get  queue
-    my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    # get salutation
-    my %Queue = $Kernel::OM->Get('Kernel::System::Queue')->QueueGet(
-        ID => $Ticket{QueueID},
-    );
-    my %Salutation = $Kernel::OM->Get('Kernel::System::Salutation')->SalutationGet(
-        ID => $Queue{SalutationID},
-    );
-
-    # do text/plain to text/html convert
-    if ( $Self->{RichText} && $Salutation{ContentType} =~ /text\/plain/i ) {
-        $Salutation{ContentType} = 'text/html';
-        $Salutation{Text}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToHTML(
-            String => $Salutation{Text},
-        );
-    }
-
-    # do text/html to text/plain convert
-    if ( !$Self->{RichText} && $Salutation{ContentType} =~ /text\/html/i ) {
-        $Salutation{ContentType} = 'text/plain';
-        $Salutation{Text}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
-            String => $Salutation{Text},
-        );
-    }
-
-    # get list unsupported tags for standard template
-    my @ListOfUnSupportedTag = qw(OTRS_AGENT_SUBJECT OTRS_AGENT_BODY OTRS_CUSTOMER_BODY OTRS_CUSTOMER_SUBJECT);
-
-    my $SalutationText = $Self->_RemoveUnSupportedTag(
-        Text => $Salutation{Text} || '',
-        ListOfUnSupportedTag => \@ListOfUnSupportedTag,
-    );
-
-    # replace place holder stuff
-    $SalutationText = $Self->_Replace(
-        RichText => $Self->{RichText},
-        Text     => $SalutationText,
-        TicketID => $Param{TicketID},
-        Data     => $Param{Data},
-        UserID   => $Param{UserID},
-    );
-
-    # add urls
-    if ( $Self->{RichText} ) {
-        $SalutationText = $Kernel::OM->Get('Kernel::System::HTMLUtils')->LinkQuote(
-            String => $SalutationText,
-        );
-    }
-
-    return $SalutationText;
-}
-</pre></div>
+<h2 id="Salutation">Salutation()</h2>
 
 <p>generate salutation</p>
 
-<pre>    my $Salutation = $TemplateGeneratorObject-&gt;Salutation(
+<pre><code>    my $Salutation = $TemplateGeneratorObject-&gt;Salutation(
         TicketID =&gt; 123,
         UserID   =&gt; 123,
         Data     =&gt; $ArticleHashRef,
-    );
-</pre><p>returns
-    Text
-    ContentType</p>
+    );</code></pre>
+
+<p>returns Text ContentType</p>
 
 <h2 id="Signature">Signature()</h2>
 
-<p><a href="#" onclick="toggleCode('method_Signature');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Signature">
-                                        <pre>
-
-sub Signature {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Data UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # need ticket id or queue id
-    if ( !$Param{TicketID} && !$Param{QueueID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need TicketID or QueueID!'
-        );
-        return;
-    }
-
-    # get queue object
-    my $QueueObject = $Kernel::OM->Get('Kernel::System::Queue');
-
-    # get salutation ticket based
-    my %Queue;
-    if ( $Param{TicketID} ) {
-
-        my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
-            TicketID      => $Param{TicketID},
-            DynamicFields => 0,
-        );
-
-        %Queue = $QueueObject->QueueGet(
-            ID => $Ticket{QueueID},
-        );
-    }
-
-    # get salutation queue based
-    else {
-        %Queue = $QueueObject->QueueGet(
-            ID => $Param{QueueID},
-        );
-    }
-
-    # get signature
-    my %Signature = $Kernel::OM->Get('Kernel::System::Signature')->SignatureGet(
-        ID => $Queue{SignatureID},
-    );
-
-    # do text/plain to text/html convert
-    if ( $Self->{RichText} && $Signature{ContentType} =~ /text\/plain/i ) {
-        $Signature{ContentType} = 'text/html';
-        $Signature{Text}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToHTML(
-            String => $Signature{Text},
-        );
-    }
-
-    # do text/html to text/plain convert
-    if ( !$Self->{RichText} && $Signature{ContentType} =~ /text\/html/i ) {
-        $Signature{ContentType} = 'text/plain';
-        $Signature{Text}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
-            String => $Signature{Text},
-        );
-    }
-
-    # get list unsupported tags for standard template
-    my @ListOfUnSupportedTag = qw(OTRS_AGENT_SUBJECT OTRS_AGENT_BODY OTRS_CUSTOMER_BODY OTRS_CUSTOMER_SUBJECT);
-
-    my $SignatureText = $Self->_RemoveUnSupportedTag(
-        Text => $Signature{Text} || '',
-        ListOfUnSupportedTag => \@ListOfUnSupportedTag,
-    );
-
-    # replace place holder stuff
-    $SignatureText = $Self->_Replace(
-        RichText => $Self->{RichText},
-        Text     => $SignatureText,
-        TicketID => $Param{TicketID} || '',
-        Data     => $Param{Data},
-        QueueID  => $Param{QueueID},
-        UserID   => $Param{UserID},
-    );
-
-    # add urls
-    if ( $Self->{RichText} ) {
-        $SignatureText = $Kernel::OM->Get('Kernel::System::HTMLUtils')->LinkQuote(
-            String => $SignatureText,
-        );
-    }
-
-    return $SignatureText;
-}
-</pre></div>
-
 <p>generate salutation</p>
 
-<pre>    my $Signature = $TemplateGeneratorObject-&gt;Signature(
+<pre><code>    my $Signature = $TemplateGeneratorObject-&gt;Signature(
         TicketID =&gt; 123,
         UserID   =&gt; 123,
         Data     =&gt; $ArticleHashRef,
-    );
-</pre><p>or</p>
+    );</code></pre>
 
-<pre>    my $Signature = $TemplateGeneratorObject-&gt;Signature(
+<p>or</p>
+
+<pre><code>    my $Signature = $TemplateGeneratorObject-&gt;Signature(
         QueueID =&gt; 123,
         UserID  =&gt; 123,
         Data    =&gt; $ArticleHashRef,
-    );
-</pre><p>returns
-    Text
-    ContentType</p>
+    );</code></pre>
+
+<p>returns Text ContentType</p>
 
 <h2 id="Sender">Sender()</h2>
 
-<p><a href="#" onclick="toggleCode('method_Sender');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Sender">
-                                        <pre>
-
-sub Sender {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw( UserID QueueID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # get sender attributes
-    my %Address = $Kernel::OM->Get('Kernel::System::Queue')->GetSystemAddress(
-        QueueID => $Param{QueueID},
-    );
-
-    # get config object
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    # check config for agent real name
-    my $UseAgentRealName = $ConfigObject->Get('Ticket::DefineEmailFrom');
-    if ( $UseAgentRealName && $UseAgentRealName =~ /^(AgentName|AgentNameSystemAddressName)$/ ) {
-
-        # get data from current agent
-        my %UserData = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
-            UserID        => $Param{UserID},
-            NoOutOfOffice => 1,
-        );
-
-        # set real name with user name
-        if ( $UseAgentRealName eq 'AgentName' ) {
-
-            # check for user data
-            if ( $UserData{UserLastname} && $UserData{UserFirstname} ) {
-
-                # rewrite RealName
-                $Address{RealName} = "$UserData{UserFirstname} $UserData{UserLastname}";
-            }
-        }
-
-        # set real name with user name
-        if ( $UseAgentRealName eq 'AgentNameSystemAddressName' ) {
-
-            # check for user data
-            if ( $UserData{UserLastname} && $UserData{UserFirstname} ) {
-
-                # rewrite RealName
-                my $Separator = ' ' . $ConfigObject->Get('Ticket::DefineEmailFromSeparator')
-                    || '';
-                $Address{RealName} = $UserData{UserFirstname} . ' ' . $UserData{UserLastname}
-                    . $Separator . ' ' . $Address{RealName};
-            }
-        }
-    }
-
-    # prepare realname quote
-    if ( $Address{RealName} =~ /([.]|,|@|\(|\)|:)/ && $Address{RealName} !~ /^("|')/ ) {
-        $Address{RealName} =~ s/"//g;    # remove any quotes that are already present
-        $Address{RealName} = '"' . $Address{RealName} . '"';
-    }
-    my $Sender = "$Address{RealName} <$Address{Email}>";
-
-    return $Sender;
-}
-</pre></div>
-
 <p>generate sender address (FROM string) for emails</p>
 
-<pre>    my $Sender = $TemplateGeneratorObject-&gt;Sender(
+<pre><code>    my $Sender = $TemplateGeneratorObject-&gt;Sender(
         QueueID    =&gt; 123,
         UserID     =&gt; 123,
-    );
-</pre><p>returns:</p>
+    );</code></pre>
 
-<pre>    John Doe at Super Support &lt;service@example.com&gt;
-</pre><p>and it returns the quoted real name if necessary</p>
+<p>returns:</p>
 
-<pre>    &quot;John Doe, Support&quot; &lt;service@example.tld&gt;
-</pre><h2 id="Template">Template()</h2>
+<pre><code>    John Doe at Super Support &lt;service@example.com&gt;</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Template');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Template">
-                                        <pre>
+<p>and it returns the quoted real name if necessary</p>
 
-sub Template {
-    my ( $Self, %Param ) = @_;
+<pre><code>    &quot;John Doe, Support&quot; &lt;service@example.tld&gt;</code></pre>
 
-    # check needed stuff
-    for (qw(TemplateID UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    my %Template = $Kernel::OM->Get('Kernel::System::StandardTemplate')->StandardTemplateGet(
-        ID => $Param{TemplateID},
-    );
-
-    # do text/plain to text/html convert
-    if (
-        $Self->{RichText}
-        && $Template{ContentType} =~ /text\/plain/i
-        && $Template{Template}
-        )
-    {
-        $Template{ContentType} = 'text/html';
-        $Template{Template}    = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToHTML(
-            String => $Template{Template},
-        );
-    }
-
-    # do text/html to text/plain convert
-    if (
-        !$Self->{RichText}
-        && $Template{ContentType} =~ /text\/html/i
-        && $Template{Template}
-        )
-    {
-        $Template{ContentType} = 'text/plain';
-        $Template{Template}    = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
-            String => $Template{Template},
-        );
-    }
-
-    # get user language
-    my $Language;
-    if ( defined $Param{TicketID} ) {
-
-        # get ticket data
-        my %Ticket = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
-            TicketID => $Param{TicketID},
-        );
-
-        # get recipient
-        my %User = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
-            User => $Ticket{CustomerUserID},
-        );
-        $Language = $User{UserLanguage};
-    }
-
-    # if customer language is not defined, set default language
-    $Language //= $Kernel::OM->Get('Kernel::Config')->Get('DefaultLanguage') || 'en';
-
-    # get list unsupported tags for standard template
-    my @ListOfUnSupportedTag = qw(OTRS_AGENT_SUBJECT OTRS_AGENT_BODY OTRS_CUSTOMER_BODY OTRS_CUSTOMER_SUBJECT);
-
-    my $TemplateText = $Self->_RemoveUnSupportedTag(
-        Text => $Template{Template} || '',
-        ListOfUnSupportedTag => \@ListOfUnSupportedTag,
-    );
-
-    # replace place holder stuff
-    $TemplateText = $Self->_Replace(
-        RichText => $Self->{RichText},
-        Text     => $TemplateText || '',
-        TicketID => $Param{TicketID} || '',
-        Data     => $Param{Data} || {},
-        UserID   => $Param{UserID},
-        Language => $Language,
-    );
-
-    return $TemplateText;
-}
-</pre></div>
+<h2 id="Template">Template()</h2>
 
 <p>generate template</p>
 
-<pre>    my $Template = $TemplateGeneratorObject-&gt;Template(
+<pre><code>    my $Template = $TemplateGeneratorObject-&gt;Template(
         TemplateID =&gt; 123
         TicketID   =&gt; 123,                  # Optional
         Data       =&gt; $ArticleHashRef,      # Optional
         UserID     =&gt; 123,
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $Template =&gt;  'Some text';
-</pre><h2 id="GenericAgentArticle">GenericAgentArticle()</h2>
+<p>Returns:</p>
 
-<p><a href="#" onclick="toggleCode('method_GenericAgentArticle');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GenericAgentArticle">
-                                        <pre>
+<pre><code>    $Template =&gt;  &#39;Some text&#39;;</code></pre>
 
-sub GenericAgentArticle {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(TicketID Notification UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    my %Template = %{ $Param{Notification} };
-
-    # get ticket object
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-
-    # get ticket
-    my %Ticket = $TicketObject->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    # do text/plain to text/html convert
-    if (
-        $Self->{RichText}
-        && $Template{ContentType} =~ /text\/plain/i
-        && $Template{Body}
-        )
-    {
-        $Template{ContentType} = 'text/html';
-        $Template{Body}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToHTML(
-            String => $Template{Body},
-        );
-    }
-
-    # do text/html to text/plain convert
-    if (
-        !$Self->{RichText}
-        && $Template{ContentType} =~ /text\/html/i
-        && $Template{Body}
-        )
-    {
-        $Template{ContentType} = 'text/plain';
-        $Template{Body}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
-            String => $Template{Body},
-        );
-    }
-
-    # replace place holder stuff
-    $Template{Body} = $Self->_Replace(
-        RichText  => $Self->{RichText},
-        Text      => $Template{Body},
-        Recipient => $Param{Recipient},
-        Data      => $Param{Data} || {},
-        TicketID  => $Param{TicketID},
-        UserID    => $Param{UserID},
-    );
-    $Template{Subject} = $Self->_Replace(
-        RichText  => 0,
-        Text      => $Template{Subject},
-        Recipient => $Param{Recipient},
-        Data      => $Param{Data} || {},
-        TicketID  => $Param{TicketID},
-        UserID    => $Param{UserID},
-    );
-
-    $Template{Subject} = $TicketObject->TicketSubjectBuild(
-        TicketNumber => $Ticket{TicketNumber},
-        Subject      => $Template{Subject} || '',
-        Type         => 'New',
-    );
-
-    # add URLs and verify to be full HTML document
-    if ( $Self->{RichText} ) {
-
-        $Template{Body} = $Kernel::OM->Get('Kernel::System::HTMLUtils')->LinkQuote(
-            String => $Template{Body},
-        );
-    }
-
-    return %Template;
-}
-</pre></div>
+<h2 id="GenericAgentArticle">GenericAgentArticle()</h2>
 
 <p>generate internal or external notes</p>
 
-<pre>    my $GenericAgentArticle = $TemplateGeneratorObject-&gt;GenericAgentArticle(
+<pre><code>    my $GenericAgentArticle = $TemplateGeneratorObject-&gt;GenericAgentArticle(
         Notification    =&gt; $NotificationDataHashRef,
         TicketID        =&gt; 123,
         UserID          =&gt; 123,
         Data            =&gt; $ArticleHashRef,             # Optional
-    );
-</pre><h2 id="Attributes">Attributes()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Attributes');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Attributes">
-                                        <pre>
-
-sub Attributes {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(TicketID Data UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # get ticket object
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-
-    # get queue
-    my %Ticket = $TicketObject->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    # prepare subject ...
-    $Param{Data}->{Subject} = $TicketObject->TicketSubjectBuild(
-        TicketNumber => $Ticket{TicketNumber},
-        Subject      => $Param{Data}->{Subject} || '',
-        Action       => $Param{Action} || '',
-    );
-
-    # get sender address
-    $Param{Data}->{From} = $Self->Sender(
-        QueueID => $Ticket{QueueID},
-        UserID  => $Param{UserID},
-    );
-
-    return %{ $Param{Data} };
-}
-</pre></div>
+<h2 id="Attributes">Attributes()</h2>
 
 <p>generate attributes</p>
 
-<pre>    my %Attributes = $TemplateGeneratorObject-&gt;Attributes(
+<pre><code>    my %Attributes = $TemplateGeneratorObject-&gt;Attributes(
         TicketID   =&gt; 123,
         ArticleID  =&gt; 123,
         ResponseID =&gt; 123
         UserID     =&gt; 123,
-        Action     =&gt; 'Forward', # Possible values are Reply and Forward, Reply is default.
-    );
-</pre><p>returns
-    StandardResponse
-    Salutation
-    Signature</p>
+        Action     =&gt; &#39;Forward&#39;, # Possible values are Reply and Forward, Reply is default.
+    );</code></pre>
+
+<p>returns StandardResponse Salutation Signature</p>
 
 <h2 id="AutoResponse">AutoResponse()</h2>
 
-<p><a href="#" onclick="toggleCode('method_AutoResponse');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AutoResponse">
-                                        <pre>
-
-sub AutoResponse {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(TicketID AutoResponseType OrigHeader UserID)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # get ticket object
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-
-    # get ticket
-    my %Ticket = $TicketObject->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    # get auto default responses
-    my %AutoResponse = $Kernel::OM->Get('Kernel::System::AutoResponse')->AutoResponseGetByTypeQueueID(
-        QueueID => $Ticket{QueueID},
-        Type    => $Param{AutoResponseType},
-    );
-
-    return if !%AutoResponse;
-
-    # get old article for quoting
-    my %Article = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleLastCustomerArticle(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    for (qw(From To Cc Subject Body)) {
-        if ( !$Param{OrigHeader}->{$_} ) {
-            $Param{OrigHeader}->{$_} = $Article{$_} || '';
-        }
-        chomp $Param{OrigHeader}->{$_};
-    }
-
-    # format body (only if longer than 86 chars)
-    if ( $Param{OrigHeader}->{Body} ) {
-        if ( length $Param{OrigHeader}->{Body} > 86 ) {
-            my @Lines = split /\n/, $Param{OrigHeader}->{Body};
-            LINE:
-            for my $Line (@Lines) {
-                my $LineWrapped = $Line =~ s/(^>.+|.{4,86})(?:\s|\z)/$1\n/gm;
-
-                next LINE if $LineWrapped;
-
-                # if the regex does not match then we need
-                # to add the missing new line of the split
-                # else we will lose e.g. empty lines of the body.
-                # (bug#10679)
-                $Line .= "\n";
-            }
-            $Param{OrigHeader}->{Body} = join '', @Lines;
-        }
-    }
-
-    # fill up required attributes
-    for (qw(Subject Body)) {
-        if ( !$Param{OrigHeader}->{$_} ) {
-            $Param{OrigHeader}->{$_} = "No $_";
-        }
-    }
-
-    # get recipient
-    my %User = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerUserDataGet(
-        User => $Ticket{CustomerUserID},
-    );
-
-    # get user language
-    my $Language = $User{UserLanguage} || $Kernel::OM->Get('Kernel::Config')->Get('DefaultLanguage') || 'en';
-
-    # do text/plain to text/html convert
-    if ( $Self->{RichText} && $AutoResponse{ContentType} =~ /text\/plain/i ) {
-        $AutoResponse{ContentType} = 'text/html';
-        $AutoResponse{Text}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToHTML(
-            String => $AutoResponse{Text},
-        );
-    }
-
-    # do text/html to text/plain convert
-    if ( !$Self->{RichText} && $AutoResponse{ContentType} =~ /text\/html/i ) {
-        $AutoResponse{ContentType} = 'text/plain';
-        $AutoResponse{Text}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
-            String => $AutoResponse{Text},
-        );
-    }
-
-    # replace place holder stuff
-    $AutoResponse{Text} = $Self->_Replace(
-        RichText => $Self->{RichText},
-        Text     => $AutoResponse{Text},
-        Data     => {
-            %{ $Param{OrigHeader} },
-            From => $Param{OrigHeader}->{To},
-            To   => $Param{OrigHeader}->{From},
-        },
-        TicketID => $Param{TicketID},
-        UserID   => $Param{UserID},
-        Language => $Language,
-    );
-    $AutoResponse{Subject} = $Self->_Replace(
-        RichText => 0,
-        Text     => $AutoResponse{Subject},
-        Data     => {
-            %{ $Param{OrigHeader} },
-            From => $Param{OrigHeader}->{To},
-            To   => $Param{OrigHeader}->{From},
-        },
-        TicketID => $Param{TicketID},
-        UserID   => $Param{UserID},
-        Language => $Language,
-    );
-
-    $AutoResponse{Subject} = $TicketObject->TicketSubjectBuild(
-        TicketNumber => $Ticket{TicketNumber},
-        Subject      => $AutoResponse{Subject},
-        Type         => 'New',
-        NoCleanup    => 1,
-    );
-
-    # get sender attributes based on auto response type
-    if ( $AutoResponse{SystemAddressID} ) {
-
-        my %Address = $Kernel::OM->Get('Kernel::System::SystemAddress')->SystemAddressGet(
-            ID => $AutoResponse{SystemAddressID},
-        );
-
-        $AutoResponse{SenderAddress}  = $Address{Name};
-        $AutoResponse{SenderRealname} = $Address{Realname};
-    }
-
-    # get sender attributes based on queue
-    else {
-
-        my %Address = $Kernel::OM->Get('Kernel::System::Queue')->GetSystemAddress(
-            QueueID => $Ticket{QueueID},
-        );
-
-        $AutoResponse{SenderAddress}  = $Address{Email};
-        $AutoResponse{SenderRealname} = $Address{RealName};
-    }
-
-    # add urls and verify to be full html document
-    if ( $Self->{RichText} ) {
-
-        $AutoResponse{Text} = $Kernel::OM->Get('Kernel::System::HTMLUtils')->LinkQuote(
-            String => $AutoResponse{Text},
-        );
-
-        $AutoResponse{Text} = $Kernel::OM->Get('Kernel::System::HTMLUtils')->DocumentComplete(
-            Charset => 'utf-8',
-            String  => $AutoResponse{Text},
-        );
-    }
-
-    return %AutoResponse;
-}
-</pre></div>
-
 <p>generate response</p>
 
-<p>AutoResponse
-    TicketID
-        Owner
-        Responsible
-        CUSTOMER_DATA
-    ArticleID
-        CUSTOMER_SUBJECT
-        CUSTOMER_EMAIL
-    UserID</p>
+<p>AutoResponse TicketID Owner Responsible CUSTOMER_DATA ArticleID CUSTOMER_SUBJECT CUSTOMER_EMAIL UserID</p>
 
-<pre>    To
+<pre><code>    To
     Cc
     Bcc
     Subject
@@ -880,256 +191,27 @@ sub AutoResponse {
     my %AutoResponse = $TemplateGeneratorObject-&gt;AutoResponse(
         TicketID         =&gt; 123,
         OrigHeader       =&gt; {},
-        AutoResponseType =&gt; 'auto reply',
+        AutoResponseType =&gt; &#39;auto reply&#39;,
         UserID           =&gt; 123,
-    );
-</pre><h2 id="NotificationEvent">NotificationEvent()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_NotificationEvent');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_NotificationEvent">
-                                        <pre>
-
-sub NotificationEvent {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(TicketID Notification Recipient UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    if ( !IsHashRefWithData( $Param{Notification} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Notification is invalid!",
-        );
-        return;
-    }
-
-    my %Notification = %{ $Param{Notification} };
-
-    # exchanging original reference prevent it to grow up
-    if ( ref $Param{CustomerMessageParams} && ref $Param{CustomerMessageParams} eq 'HASH' ) {
-        my %LocalCustomerMessageParams = %{ $Param{CustomerMessageParams} };
-        $Param{CustomerMessageParams} = \%LocalCustomerMessageParams;
-    }
-
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-
-    # get ticket
-    my %Ticket = $TicketObject->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
-
-    # get last article from customer
-    my %Article = $ArticleObject->ArticleLastCustomerArticle(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 0,
-    );
-
-    # get last article from agent
-    my @ArticleBoxAgent = $ArticleObject->ArticleGet(
-        TicketID      => $Param{TicketID},
-        UserID        => $Param{UserID},
-        DynamicFields => 0,
-    );
-
-    my %ArticleAgent;
-
-    ARTICLE:
-    for my $Article ( reverse @ArticleBoxAgent ) {
-
-        next ARTICLE if $Article->{SenderType} ne 'agent';
-
-        %ArticleAgent = %{$Article};
-
-        last ARTICLE;
-    }
-
-    # get  HTMLUtils object
-    my $HTMLUtilsObject = $Kernel::OM->Get('Kernel::System::HTMLUtils');
-
-    # set the accounted time as part of the articles information
-    ARTICLE:
-    for my $ArticleData ( \%Article, \%ArticleAgent ) {
-
-        next ARTICLE if !$ArticleData->{ArticleID};
-
-        # get accounted time
-        my $AccountedTime = $ArticleObject->ArticleAccountedTimeGet(
-            ArticleID => $ArticleData->{ArticleID},
-        );
-
-        $ArticleData->{TimeUnit} = $AccountedTime;
-    }
-
-    # get system default language
-    my $DefaultLanguage = $Kernel::OM->Get('Kernel::Config')->Get('DefaultLanguage') || 'en';
-
-    my $Languages = [ $Param{Recipient}->{UserLanguage}, $DefaultLanguage, 'en' ];
-
-    my $Language;
-    LANGUAGE:
-    for my $Item ( @{$Languages} ) {
-        next LANGUAGE if !$Item;
-        next LANGUAGE if !$Notification{Message}->{$Item};
-
-        # set language
-        $Language = $Item;
-        last LANGUAGE;
-    }
-
-    # if no language, then take the first one available
-    if ( !$Language ) {
-        my @NotificationLanguages = sort keys %{ $Notification{Message} };
-        $Language = $NotificationLanguages[0];
-    }
-
-    # copy the correct language message attributes to a flat structure
-    for my $Attribute (qw(Subject Body ContentType)) {
-        $Notification{$Attribute} = $Notification{Message}->{$Language}->{$Attribute};
-    }
-
-    for my $Key (qw(From To Cc Subject Body ContentType ArticleType)) {
-        if ( !$Param{CustomerMessageParams}->{$Key} ) {
-            $Param{CustomerMessageParams}->{$Key} = $Article{$Key} || '';
-        }
-        chomp $Param{CustomerMessageParams}->{$Key};
-    }
-
-    # format body (only if longer the 86 chars)
-    if ( $Param{CustomerMessageParams}->{Body} ) {
-        if ( length $Param{CustomerMessageParams}->{Body} > 86 ) {
-            my @Lines = split /\n/, $Param{CustomerMessageParams}->{Body};
-            LINE:
-            for my $Line (@Lines) {
-                my $LineWrapped = $Line =~ s/(^>.+|.{4,86})(?:\s|\z)/$1\n/gm;
-
-                next LINE if $LineWrapped;
-
-                # if the regex does not match then we need
-                # to add the missing new line of the split
-                # else we will lose e.g. empty lines of the body.
-                # (bug#10679)
-                $Line .= "\n";
-            }
-            $Param{CustomerMessageParams}->{Body} = join '', @Lines;
-        }
-    }
-
-    # fill up required attributes
-    for my $Text (qw(Subject Body)) {
-        if ( !$Param{CustomerMessageParams}->{$Text} ) {
-            $Param{CustomerMessageParams}->{$Text} = "No $Text";
-        }
-    }
-
-    my $Start = '<';
-    my $End   = '>';
-    if ( $Notification{ContentType} =~ m{text\/html} ) {
-        $Start = '&lt;';
-        $End   = '&gt;';
-    }
-
-    # replace <OTRS_CUSTOMER_DATA_*> tags early from CustomerMessageParams, the rests will be replaced
-    # by ticket customer user
-    KEY:
-    for my $Key ( sort keys %{ $Param{CustomerMessageParams} || {} } ) {
-
-        next KEY if !$Param{CustomerMessageParams}->{$Key};
-
-        $Notification{Body} =~ s/${Start}OTRS_CUSTOMER_DATA_$Key${End}/$Param{CustomerMessageParams}->{$Key}/gi;
-        $Notification{Subject} =~ s/<OTRS_CUSTOMER_DATA_$Key>/$Param{CustomerMessageParams}->{$Key}{$_}/gi;
-    }
-
-    # do text/plain to text/html convert
-    if ( $Self->{RichText} && $Notification{ContentType} =~ /text\/plain/i ) {
-        $Notification{ContentType} = 'text/html';
-        $Notification{Body}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToHTML(
-            String => $Notification{Body},
-        );
-    }
-
-    # do text/html to text/plain convert
-    if ( !$Self->{RichText} && $Notification{ContentType} =~ /text\/html/i ) {
-        $Notification{ContentType} = 'text/plain';
-        $Notification{Body}        = $Kernel::OM->Get('Kernel::System::HTMLUtils')->ToAscii(
-            String => $Notification{Body},
-        );
-    }
-
-    # get notify texts
-    for my $Text (qw(Subject Body)) {
-        if ( !$Notification{$Text} ) {
-            $Notification{$Text} = "No Notification $Text for $Param{Type} found!";
-        }
-    }
-
-    # replace place holder stuff
-    $Notification{Body} = $Self->_Replace(
-        RichText  => $Self->{RichText},
-        Text      => $Notification{Body},
-        Recipient => $Param{Recipient},
-        Data      => $Param{CustomerMessageParams},
-        DataAgent => \%ArticleAgent,
-        TicketID  => $Param{TicketID},
-        UserID    => $Param{UserID},
-        Language  => $Language,
-    );
-    $Notification{Subject} = $Self->_Replace(
-        RichText  => 0,
-        Text      => $Notification{Subject},
-        Recipient => $Param{Recipient},
-        Data      => $Param{CustomerMessageParams},
-        DataAgent => \%ArticleAgent,
-        TicketID  => $Param{TicketID},
-        UserID    => $Param{UserID},
-        Language  => $Language,
-    );
-
-    $Notification{Subject} = $TicketObject->TicketSubjectBuild(
-        TicketNumber => $Ticket{TicketNumber},
-        Subject      => $Notification{Subject} || '',
-        Type         => 'New',
-    );
-
-    # add URLs and verify to be full HTML document
-    if ( $Self->{RichText} ) {
-
-        $Notification{Body} = $Kernel::OM->Get('Kernel::System::HTMLUtils')->LinkQuote(
-            String => $Notification{Body},
-        );
-    }
-
-    return %Notification;
-}
-</pre></div>
+<h2 id="NotificationEvent">NotificationEvent()</h2>
 
 <p>replace all OTRS smart tags in the notification body and subject</p>
 
-<pre>    my %NotificationEvent = $TemplateGeneratorObject-&gt;NotificationEvent(
+<pre><code>    my %NotificationEvent = $TemplateGeneratorObject-&gt;NotificationEvent(
         TicketID              =&gt; 123,
         Recipient             =&gt; $UserDataHashRef,          # Agent or Customer data get result
         Notification          =&gt; $NotificationDataHashRef,
         CustomerMessageParams =&gt; $ArticleHashRef,           # optional
         UserID                =&gt; 123,
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

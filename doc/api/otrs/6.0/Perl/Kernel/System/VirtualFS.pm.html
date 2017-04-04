@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::VirtualFS</title>
+<title>Kernel::System::VirtualFS &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,489 +48,140 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/VirtualFS.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Read">Read()</a></li>
-	<li><a href="#Write">Write()</a></li>
-	<li><a href="#Delete">Delete()</a></li>
-	<li><a href="#Find">Find()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Read">Read()</a></li>
+      <li><a href="#Write">Write()</a></li>
+      <li><a href="#Delete">Delete()</a></li>
+      <li><a href="#Find">Find()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::VirtualFS - virtual filesystem lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All virtual filesystem functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $VirtualFSObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::VirtualFS&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # load backend
-    $Self->{BackendDefault} = $Kernel::OM->Get('Kernel::Config')->Get('VirtualFS::Backend')
-        || 'Kernel::System::VirtualFS::DB';
-
-    if ( !$Kernel::OM->Get('Kernel::System::Main')->Require( $Self->{BackendDefault} ) ) {
-        return;
-    }
-
-    $Self->{Backend}->{ $Self->{BackendDefault} } = $Self->{BackendDefault}->new();
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $VirtualFSObject = $Kernel::OM-&gt;Get('Kernel::System::VirtualFS');
-</pre><h2 id="Read">Read()</h2>
-
-<p><a href="#" onclick="toggleCode('method_Read');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Read">
-                                        <pre>
-
-sub Read {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Filename Mode)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # lookup
-    my ( $FileID, $BackendKey, $Backend ) = $Self->_FileLookup( $Param{Filename} );
-    if ( !$BackendKey ) {
-        if ( !$Param{DisableWarnings} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "No such file '$Param{Filename}'!",
-            );
-        }
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # get preferences
-    my %Preferences;
-    return if !$DBObject->Prepare(
-        SQL => 'SELECT preferences_key, preferences_value FROM '
-            . 'virtual_fs_preferences WHERE virtual_fs_id = ?',
-        Bind => [ \$FileID ],
-    );
-
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Preferences{ $Row[0] } = $Row[1];
-    }
-
-    # load backend (if not default)
-    if ( !$Self->{Backend}->{$Backend} ) {
-
-        return if !$Kernel::OM->Get('Kernel::System::Main')->Require($Backend);
-
-        $Self->{Backend}->{$Backend} = $Backend->new();
-
-        return if !$Self->{Backend}->{$Backend};
-    }
-
-    # get file
-    my $Content = $Self->{Backend}->{$Backend}->Read(
-        %Param,
-        BackendKey => $BackendKey,
-    );
-    return if !$Content;
-
-    return (
-        Preferences => \%Preferences,
-        Content     => $Content,
-    );
-}
-</pre></div>
+<h2 id="Read">Read()</h2>
 
 <p>read a file from virtual file system</p>
 
-<pre>    my %File = $VirtualFSObject-&gt;Read(
-        Filename =&gt; '/Object/some/name.txt',
-        Mode     =&gt; 'utf8',
+<pre><code>    my %File = $VirtualFSObject-&gt;Read(
+        Filename =&gt; &#39;/Object/some/name.txt&#39;,
+        Mode     =&gt; &#39;utf8&#39;,
 
         # optional
         DisableWarnings =&gt; 1,
-    );
-</pre><p>returns</p>
+    );</code></pre>
 
-<pre>    my %File = (
+<p>returns</p>
+
+<pre><code>    my %File = (
         Content  =&gt; $ContentSCALAR,
 
         # preferences data
         Preferences =&gt; {
 
             # generated automatically
-            Filesize           =&gt; '12.4 KBytes',
+            Filesize           =&gt; &#39;12.4 KBytes&#39;,
             FilesizeRaw        =&gt; 12345,
 
             # optional
-            ContentType        =&gt; 'text/plain',
-            ContentID          =&gt; '&lt;some_id@example.com&gt;',
+            ContentType        =&gt; &#39;text/plain&#39;,
+            ContentID          =&gt; &#39;&lt;some_id@example.com&gt;&#39;,
             ContentAlternative =&gt; 1,
-            SomeCustomParams   =&gt; 'with our own value',
+            SomeCustomParams   =&gt; &#39;with our own value&#39;,
         },
-    );
-</pre><h2 id="Write">Write()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Write');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Write">
-                                        <pre>
-
-sub Write {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Filename Content Mode)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # lookup
-    my ($FileID) = $Self->_FileLookup( $Param{Filename} );
-    if ($FileID) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "File already exists '$Param{Filename}'!",
-        );
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # insert
-    return if !$DBObject->Do(
-        SQL => 'INSERT INTO virtual_fs (filename, backend_key, backend, create_time)'
-            . ' VALUES ( ?, \'TMP\', ?, current_timestamp)',
-        Bind => [ \$Param{Filename}, \$Self->{BackendDefault} ],
-    );
-
-    ($FileID) = $Self->_FileLookup( $Param{Filename} );
-
-    if ( !$FileID ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Unable to store '$Param{Filename}'!",
-        );
-        return;
-    }
-
-    # size calculation
-    $Param{Preferences}->{FilesizeRaw} = bytes::length( ${ $Param{Content} } );
-    my $Filesize = $Param{Preferences}->{FilesizeRaw};
-    if ( $Filesize > ( 1024 * 1024 ) ) {
-        $Filesize = sprintf "%.1f MBytes", ( $Filesize / ( 1024 * 1024 ) );
-    }
-    elsif ( $Filesize > 1024 ) {
-        $Filesize = sprintf "%.1f KBytes", ( $Filesize / 1024 );
-    }
-    else {
-        $Filesize = $Filesize . ' Bytes';
-    }
-    $Param{Preferences}->{Filesize} = $Filesize;
-
-    # insert preferences
-    for my $Key ( sort keys %{ $Param{Preferences} } ) {
-        return if !$DBObject->Do(
-            SQL => 'INSERT INTO virtual_fs_preferences '
-                . '(virtual_fs_id, preferences_key, preferences_value) VALUES ( ?, ?, ?)',
-            Bind => [ \$FileID, \$Key, \$Param{Preferences}->{$Key} ],
-        );
-    }
-
-    # store file
-    my $BackendKey = $Self->{Backend}->{ $Self->{BackendDefault} }->Write(%Param);
-    return if !$BackendKey;
-
-    # update backend key
-    return if !$DBObject->Do(
-        SQL  => 'UPDATE virtual_fs SET backend_key = ? WHERE id = ?',
-        Bind => [ \$BackendKey, \$FileID ],
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="Write">Write()</h2>
 
 <p>write a file to virtual file system</p>
 
-<pre>    my $Success = $VirtualFSObject-&gt;Write(
+<pre><code>    my $Success = $VirtualFSObject-&gt;Write(
         Content  =&gt; \$Content,
-        Filename =&gt; '/Object/SomeFileName.txt',
-        Mode     =&gt; 'binary'            # (binary|utf8)
+        Filename =&gt; &#39;/Object/SomeFileName.txt&#39;,
+        Mode     =&gt; &#39;binary&#39;            # (binary|utf8)
 
         # optional, preferences data
         Preferences =&gt; {
-            ContentType        =&gt; 'text/plain',
-            ContentID          =&gt; '&lt;some_id@example.com&gt;',
+            ContentType        =&gt; &#39;text/plain&#39;,
+            ContentID          =&gt; &#39;&lt;some_id@example.com&gt;&#39;,
             ContentAlternative =&gt; 1,
-            SomeCustomParams   =&gt; 'with our own value',
+            SomeCustomParams   =&gt; &#39;with our own value&#39;,
         },
-    );
-</pre><h2 id="Delete">Delete()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Delete');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Delete">
-                                        <pre>
-
-sub Delete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Filename)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!"
-            );
-            return;
-        }
-    }
-
-    # lookup
-    my ( $FileID, $BackendKey, $Backend ) = $Self->_FileLookup( $Param{Filename} );
-    if ( !$FileID ) {
-        if ( !$Param{DisableWarnings} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "No such file '$Param{Filename}'!",
-            );
-        }
-        return;
-    }
-
-    # load backend (if not default)
-    if ( !$Self->{Backend}->{$Backend} ) {
-
-        return if !$Kernel::OM->Get('Kernel::System::Main')->Require($Backend);
-
-        $Self->{Backend}->{$Backend} = $Backend->new();
-
-        return if !$Self->{Backend}->{$Backend};
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # delete preferences
-    return if !$DBObject->Do(
-        SQL  => 'DELETE FROM virtual_fs_preferences WHERE virtual_fs_id = ?',
-        Bind => [ \$FileID ],
-    );
-
-    # delete
-    return if !$DBObject->Do(
-        SQL  => 'DELETE FROM virtual_fs WHERE id = ?',
-        Bind => [ \$FileID ],
-    );
-
-    # delete file
-    return $Self->{Backend}->{$Backend}->Delete(
-        %Param,
-        BackendKey => $BackendKey,
-    );
-}
-</pre></div>
+<h2 id="Delete">Delete()</h2>
 
 <p>delete a file from virtual file system</p>
 
-<pre>    my $Success = $VirtualFSObject-&gt;Delete(
-        Filename =&gt; '/Object/SomeFileName.txt',
+<pre><code>    my $Success = $VirtualFSObject-&gt;Delete(
+        Filename =&gt; &#39;/Object/SomeFileName.txt&#39;,
 
         # optional
         DisableWarnings =&gt; 1,
-    );
-</pre><h2 id="Find">Find()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Find');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Find">
-                                        <pre>
-
-sub Find {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{Filename} && !$Param{Preferences} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Filename or/and Preferences!',
-        );
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # get like escape string needed for some databases (e.g. oracle)
-    my $LikeEscapeString = $DBObject->GetDatabaseFunction('LikeEscapeString');
-
-    # prepare file name search
-    my $SQLResult = 'vfs.filename';
-    my $SQLTable  = 'virtual_fs vfs ';
-    my $SQLWhere  = '';
-    my @SQLBind;
-    if ( $Param{Filename} ) {
-        my $Like = $Param{Filename};
-        $Like =~ s/\*/%/g;
-        $Like = $DBObject->Quote( $Like, 'Like' );
-        $SQLWhere .= "vfs.filename LIKE '$Like' $LikeEscapeString";
-    }
-
-    # prepare preferences search
-    if ( $Param{Preferences} ) {
-        $SQLResult = 'vfs.filename, vfsp.preferences_key, vfsp.preferences_value';
-        $SQLTable .= ', virtual_fs_preferences vfsp';
-        if ($SQLWhere) {
-            $SQLWhere .= ' AND ';
-        }
-        $SQLWhere .= 'vfs.id = vfsp.virtual_fs_id ';
-        my $SQL = '';
-        for my $Key ( sort keys %{ $Param{Preferences} } ) {
-            if ($SQL) {
-                $SQL .= ' OR ';
-            }
-            $SQL .= '(vfsp.preferences_key = ? AND ';
-            push @SQLBind, \$Key;
-
-            my $Value = $Param{Preferences}->{$Key};
-            if ( $Value =~ /(\*|\%)/ ) {
-                $Value =~ s/\*/%/g;
-                $Value = $DBObject->Quote( $Value, 'Like' );
-                $SQL .= "vfsp.preferences_value LIKE '$Value' $LikeEscapeString";
-            }
-            else {
-                $SQL .= 'vfsp.preferences_value = ?';
-                push @SQLBind, \$Value;
-            }
-            $SQL .= ')';
-        }
-
-        $SQLWhere .= " AND ($SQL)";
-    }
-
-    # search
-    return if !$DBObject->Prepare(
-        SQL  => "SELECT $SQLResult FROM $SQLTable WHERE $SQLWhere",
-        Bind => \@SQLBind,
-    );
-    my @List;
-    my %Result;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        if ( $Param{Preferences} ) {
-            for my $Key ( sort keys %{ $Param{Preferences} } ) {
-                $Result{ $Row[0] }->{ $Row[1] } = $Row[2];
-            }
-        }
-        else {
-            push @List, $Row[0];
-        }
-    }
-
-    # check preferences search
-    if ( $Param{Preferences} ) {
-        FILE:
-        for my $File ( sort keys %Result ) {
-            for my $Key ( sort keys %{ $Param{Preferences} } ) {
-                my $DB    = $Result{$File}->{$Key};
-                my $Given = $Param{Preferences}->{$Key};
-                next FILE if defined $DB  && !defined $Given;
-                next FILE if !defined $DB && defined $Given;
-                if ( $Given =~ /\*/ ) {
-                    $Given =~ s/\*/.\*/g;
-                    $Given =~ s/\//\\\//g;
-                    next FILE if $DB !~ /$Given/;
-                }
-                else {
-                    next FILE if $DB ne $Given;
-                }
-            }
-            push @List, $File;
-        }
-    }
-
-    # return result
-    return @List;
-}
-</pre></div>
+<h2 id="Find">Find()</h2>
 
 <p>find files in virtual file system</p>
 
 <p>only for file name</p>
 
-<pre>    my @List = $VirtualFSObject-&gt;Find(
-        Filename =&gt; '/Object/some_what/*.txt',
-    );
-</pre><p>only for preferences</p>
+<pre><code>    my @List = $VirtualFSObject-&gt;Find(
+        Filename =&gt; &#39;/Object/some_what/*.txt&#39;,
+    );</code></pre>
 
-<pre>    my @List = $VirtualFSObject-&gt;Find(
+<p>only for preferences</p>
+
+<pre><code>    my @List = $VirtualFSObject-&gt;Find(
         Preferences =&gt; {
-            ContentType =&gt; 'text/plain',
+            ContentType =&gt; &#39;text/plain&#39;,
         },
-    );
-</pre><p>for file name and for preferences</p>
+    );</code></pre>
 
-<pre>    my @List = $VirtualFSObject-&gt;Find(
-        Filename    =&gt; '/Object/some_what/*.txt',
+<p>for file name and for preferences</p>
+
+<pre><code>    my @List = $VirtualFSObject-&gt;Find(
+        Filename    =&gt; &#39;/Object/some_what/*.txt&#39;,
         Preferences =&gt; {
-            ContentType =&gt; 'text/plain',
+            ContentType =&gt; &#39;text/plain&#39;,
         },
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    my @List = (
-      '/Object/some/file.txt',
-      '/Object/my.pdf',
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<p>Returns:</p>
+
+<pre><code>    my @List = (
+      &#39;/Object/some/file.txt&#39;,
+      &#39;/Object/my.pdf&#39;,
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+<div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs"">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>
