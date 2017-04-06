@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::ProcessManagement::DB::Entity</title>
+<title>Kernel::System::ProcessManagement::DB::Entity &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,469 +48,144 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/ProcessManagement/DB/Entity.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#EntityIDGenerate">EntityIDGenerate()</a></li>
-	<li><a href="#EntitySyncStateSet">EntitySyncStateSet()</a></li>
-	<li><a href="#EntitySyncStateGet">EntitySyncStateGet()</a></li>
-	<li><a href="#EntitySyncStateDelete">EntitySyncStateDelete()</a></li>
-	<li><a href="#EntitySyncStatePurge">EntitySyncStatePurge()</a></li>
-	<li><a href="#EntitySyncStateList">EntitySyncStateList()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#EntityIDGenerate">EntityIDGenerate()</a></li>
+      <li><a href="#EntitySyncStateSet">EntitySyncStateSet()</a></li>
+      <li><a href="#EntitySyncStateGet">EntitySyncStateGet()</a></li>
+      <li><a href="#EntitySyncStateDelete">EntitySyncStateDelete()</a></li>
+      <li><a href="#EntitySyncStatePurge">EntitySyncStatePurge()</a></li>
+      <li><a href="#EntitySyncStateList">EntitySyncStateList()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::ProcessManagement::DB::Entity</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>Process Management DB Entity backend</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $EntityObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ProcessManagement::DB::Entity&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    $Self->{ValidEntities} = {
-        'Process'          => 1,
-        'Activity'         => 1,
-        'ActivityDialog'   => 1,
-        'Transition'       => 1,
-        'TransitionAction' => 1,
-    };
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $EntityObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::DB::Entity');
-</pre><h2 id="EntityIDGenerate">EntityIDGenerate()</h2>
-
-<p><a href="#" onclick="toggleCode('method_EntityIDGenerate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_EntityIDGenerate">
-                                        <pre>
-
-sub EntityIDGenerate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Key (qw(EntityType UserID)) {
-        if ( !$Param{$Key} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Key!",
-            );
-            return;
-        }
-    }
-
-    # check entity type
-    if ( !$Self->{ValidEntities}->{ $Param{EntityType} } ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "The EntityType:$Param{EntityType} is invalid!"
-        );
-        return;
-
-    }
-
-    # this is not a 'proper' GUID as defined in RFC 4122 but it's close enough for
-    # our purposes and we can replace it later if needed
-    my $GUID = $Kernel::OM->Get('Kernel::System::Main')->GenerateRandomString(
-        Length     => 32,
-        Dictionary => [ 0 .. 9, 'a' .. 'f' ],    # hexadecimal
-    );
-
-    my $EntityID = $Param{EntityType} . '-' . $GUID;
-
-    return $EntityID;
-}
-</pre></div>
+<h2 id="EntityIDGenerate">EntityIDGenerate()</h2>
 
 <p>generate unique Entity ID</p>
 
-<pre>    my $EntityID = $EntityObject-&gt;EntityIDGenerate(
-        EntityType     =&gt; 'Process',       # mandatory, 'Process' || 'Activity' || 'ActivityDialog'
-                                           #    || 'Transition' || 'TransitionAction'
+<pre><code>    my $EntityID = $EntityObject-&gt;EntityIDGenerate(
+        EntityType     =&gt; &#39;Process&#39;,       # mandatory, &#39;Process&#39; || &#39;Activity&#39; || &#39;ActivityDialog&#39;
+                                           #    || &#39;Transition&#39; || &#39;TransitionAction&#39;
         UserID         =&gt; 123,             # mandatory
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $EntityID = 'P1';
-</pre><h2 id="EntitySyncStateSet">EntitySyncStateSet()</h2>
+<p>Returns:</p>
 
-<p><a href="#" onclick="toggleCode('method_EntitySyncStateSet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_EntitySyncStateSet">
-                                        <pre>
+<pre><code>    $EntityID = &#39;P1&#39;;</code></pre>
 
-sub EntitySyncStateSet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(EntityType EntityID SyncState UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!"
-            );
-            return;
-        }
-    }
-
-    # check entity type
-    if ( !$Self->{ValidEntities}->{ $Param{EntityType} } ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "The EntityType:$Param{EntityType} is invalid!"
-        );
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # create new
-    if ( !%{ $Self->EntitySyncStateGet(%Param) || {} } ) {
-        return if !$DBObject->Do(
-            SQL => '
-                INSERT INTO pm_entity_sync
-                    (entity_type, entity_id, sync_state, create_time, change_time)
-                VALUES (?, ?, ?, current_timestamp, current_timestamp)',
-            Bind => [
-                \$Param{EntityType}, \$Param{EntityID}, \$Param{SyncState},
-            ],
-        );
-    }
-    else {    # update existing
-
-        return if !$DBObject->Do(
-            SQL => '
-                UPDATE pm_entity_sync
-                SET sync_state = ?, change_time = current_timestamp
-                WHERE entity_type = ?
-                    AND entity_id = ?',
-            Bind => [
-                \$Param{SyncState}, \$Param{EntityType}, \$Param{EntityID},
-            ],
-        );
-    }
-
-    return 1;
-}
-</pre></div>
+<h2 id="EntitySyncStateSet">EntitySyncStateSet()</h2>
 
 <p>set sync state for an entity.</p>
 
-<pre>    my $Success = $EntityObject-&gt;EntitySyncStateSet(
-        EntityType       =&gt; 'Process',      # 'Process' || 'Activity' || 'ActivityDialog'
-                                            #   || 'Transition' || 'TransitionAction', type of the
+<pre><code>    my $Success = $EntityObject-&gt;EntitySyncStateSet(
+        EntityType       =&gt; &#39;Process&#39;,      # &#39;Process&#39; || &#39;Activity&#39; || &#39;ActivityDialog&#39;
+                                            #   || &#39;Transition&#39; || &#39;TransitionAction&#39;, type of the
                                             #   entity
-        EntityID         =&gt; 'P1',
-        SyncState        =&gt; 'not_sync',     # the sync state to set
+        EntityID         =&gt; &#39;P1&#39;,
+        SyncState        =&gt; &#39;not_sync&#39;,     # the sync state to set
         UserID           =&gt; 123,
-    );
-</pre><h2 id="EntitySyncStateGet">EntitySyncStateGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_EntitySyncStateGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_EntitySyncStateGet">
-                                        <pre>
-
-sub EntitySyncStateGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(EntityType EntityID UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!"
-            );
-            return;
-        }
-    }
-
-    # check entity type
-    if ( !$Self->{ValidEntities}->{ $Param{EntityType} } ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "The EntityType:$Param{EntityType} is invalid!"
-        );
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    return if !$DBObject->Prepare(
-        SQL => '
-            SELECT entity_type, entity_id, sync_state, create_time, change_time
-            FROM pm_entity_sync
-            WHERE entity_type =?
-                AND entity_id = ?',
-        Bind => [
-            \$Param{EntityType}, \$Param{EntityID},
-        ],
-    );
-
-    my %Result;
-
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-
-        %Result = (
-            EntityType => $Data[0],
-            EntityID   => $Data[1],
-            SyncState  => $Data[2],
-            CreateTime => $Data[3],
-            ChangeTime => $Data[4],
-        );
-    }
-
-    return if !IsHashRefWithData( \%Result );
-
-    return \%Result;
-}
-</pre></div>
+<h2 id="EntitySyncStateGet">EntitySyncStateGet()</h2>
 
 <p>gets the sync state of an entity</p>
 
-<pre>    my $EntitySyncState = $EntityObject-&gt;EntitySyncStateGet(
-        EntityType       =&gt; 'Process',      # 'Process' || 'Activity' || 'ActivityDialog'
-                                            #   || 'Transition' || 'TransitionAction', type of the
+<pre><code>    my $EntitySyncState = $EntityObject-&gt;EntitySyncStateGet(
+        EntityType       =&gt; &#39;Process&#39;,      # &#39;Process&#39; || &#39;Activity&#39; || &#39;ActivityDialog&#39;
+                                            #   || &#39;Transition&#39; || &#39;TransitionAction&#39;, type of the
                                             #   entity
-        EntityID         =&gt; 'P1',
+        EntityID         =&gt; &#39;P1&#39;,
         UserID           =&gt; 123,
-    );
-</pre><p>If sync state was found, returns:</p>
+    );</code></pre>
 
-<pre>    $EntitySyncState = {
-        EntityType       =&gt; 'Process',
-        EntityID         =&gt; 'P1',
-        SyncState        =&gt; 'not_sync',
-        CreateTime       =&gt; '2011-02-08 15:08:00',
-        ChangeTime       =&gt; '2011-02-08 15:08:00',
-    };
-</pre><p>If no sync state was found, returns undef.</p>
+<p>If sync state was found, returns:</p>
+
+<pre><code>    $EntitySyncState = {
+        EntityType       =&gt; &#39;Process&#39;,
+        EntityID         =&gt; &#39;P1&#39;,
+        SyncState        =&gt; &#39;not_sync&#39;,
+        CreateTime       =&gt; &#39;2011-02-08 15:08:00&#39;,
+        ChangeTime       =&gt; &#39;2011-02-08 15:08:00&#39;,
+    };</code></pre>
+
+<p>If no sync state was found, returns undef.</p>
 
 <h2 id="EntitySyncStateDelete">EntitySyncStateDelete()</h2>
 
-<p><a href="#" onclick="toggleCode('method_EntitySyncStateDelete');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_EntitySyncStateDelete">
-                                        <pre>
-
-sub EntitySyncStateDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Key (qw(EntityType EntityID UserID)) {
-        if ( !$Param{$Key} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Key!"
-            );
-            return;
-        }
-    }
-
-    # check entity type
-    if ( !$Self->{ValidEntities}->{ $Param{EntityType} } ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "The EntityType:$Param{EntityType} is invalid!"
-        );
-        return;
-    }
-
-    return if ( !%{ $Self->EntitySyncStateGet(%Param) || {} } );
-
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL => '
-            DELETE FROM pm_entity_sync
-            WHERE entity_type = ?
-                AND entity_id = ?',
-        Bind => [
-            \$Param{EntityType}, \$Param{EntityID},
-        ],
-    );
-
-    return 1;
-}
-</pre></div>
-
 <p>deletes sync state of an entity.</p>
 
-<pre>    my $Success = $EntityObject-&gt;EntitySyncStateDelete(
-        EntityType       =&gt; 'Process',      # 'Process' || 'Activity' || 'ActivityDialog'
-                                            #   || 'Transition' || 'TransitionAction', type of the
+<pre><code>    my $Success = $EntityObject-&gt;EntitySyncStateDelete(
+        EntityType       =&gt; &#39;Process&#39;,      # &#39;Process&#39; || &#39;Activity&#39; || &#39;ActivityDialog&#39;
+                                            #   || &#39;Transition&#39; || &#39;TransitionAction&#39;, type of the
                                             #   entity
-        EntityID         =&gt; 'P1',
+        EntityID         =&gt; &#39;P1&#39;,
         UserID           =&gt; 123,
-    );
-</pre><h2 id="EntitySyncStatePurge">EntitySyncStatePurge()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_EntitySyncStatePurge');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_EntitySyncStatePurge">
-                                        <pre>
-
-sub EntitySyncStatePurge {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!"
-            );
-            return;
-        }
-    }
-
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL => '
-            DELETE FROM pm_entity_sync',
-        Bind => [],
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="EntitySyncStatePurge">EntitySyncStatePurge()</h2>
 
 <p>deletes all entries .</p>
 
-<pre>    my $Success = $EntityObject-&gt;EntitySyncStatePurge(
+<pre><code>    my $Success = $EntityObject-&gt;EntitySyncStatePurge(
         UserID           =&gt; 123,
-    );
-</pre><h2 id="EntitySyncStateList">EntitySyncStateList()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_EntitySyncStateList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_EntitySyncStateList">
-                                        <pre>
-
-sub EntitySyncStateList {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!"
-            );
-            return;
-        }
-    }
-
-    if ( $Param{EntityType} ) {
-
-        # check entity type
-        if ( !$Self->{ValidEntities}->{ $Param{EntityType} } ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "The EntityType:$Param{EntityType} is invalid!"
-            );
-            return;
-        }
-    }
-
-    my $SQL = '
-        SELECT entity_type, entity_id, sync_state, create_time, change_time
-        FROM pm_entity_sync';
-
-    my @Bind;
-
-    if ( $Param{EntityType} ) {
-        $SQL .= ' WHERE entity_type = ?';
-        push @Bind, \$Param{EntityType};
-
-        if ( $Param{SyncState} ) {
-            $SQL .= ' AND sync_state = ?';
-            push @Bind, \$Param{SyncState};
-        }
-    }
-    elsif ( $Param{SyncState} ) {
-        $SQL .= ' WHERE sync_state = ?';
-        push @Bind, \$Param{SyncState};
-    }
-
-    $SQL .= ' ORDER BY entity_id ASC';
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    return if !$DBObject->Prepare(
-        SQL  => $SQL,
-        Bind => \@Bind,
-    );
-
-    my @Result;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-
-        push @Result, {
-            EntityType => $Data[0],
-            EntityID   => $Data[1],
-            SyncState  => $Data[2],
-            CreateTime => $Data[3],
-            ChangeTime => $Data[4],
-        };
-    }
-
-    return \@Result;
-}
-</pre></div>
+<h2 id="EntitySyncStateList">EntitySyncStateList()</h2>
 
 <p>gets a list of sync states.</p>
 
-<pre>    my $EntitySyncStateList = $EntityObject-&gt;EntitySyncStateList(
-        EntityType       =&gt; 'Process',      # optional, 'Process' || 'Activity' || 'ActivityDialog'
-                                            #   || 'Transition' || 'TransitionAction', type of the
+<pre><code>    my $EntitySyncStateList = $EntityObject-&gt;EntitySyncStateList(
+        EntityType       =&gt; &#39;Process&#39;,      # optional, &#39;Process&#39; || &#39;Activity&#39; || &#39;ActivityDialog&#39;
+                                            #   || &#39;Transition&#39; || &#39;TransitionAction&#39;, type of the
                                             #   entity
-        SyncState        =&gt; 'not_sync',     # optional, only entries with this sync state
+        SyncState        =&gt; &#39;not_sync&#39;,     # optional, only entries with this sync state
         UserID           =&gt; 123,
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $EntitySyncStateList = [
+<p>Returns:</p>
+
+<pre><code>    $EntitySyncStateList = [
         {
-            EntityType       =&gt; 'Process',
-            EntityID         =&gt; 'P1',
-            SyncState        =&gt; 'sync_started',
-            CreateTime       =&gt; '2011-02-08 15:08:00',
-            ChangeTime       =&gt; '2011-02-08 15:08:00',
+            EntityType       =&gt; &#39;Process&#39;,
+            EntityID         =&gt; &#39;P1&#39;,
+            SyncState        =&gt; &#39;sync_started&#39;,
+            CreateTime       =&gt; &#39;2011-02-08 15:08:00&#39;,
+            ChangeTime       =&gt; &#39;2011-02-08 15:08:00&#39;,
         },
         ...
-    ];
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+    ];</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

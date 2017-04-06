@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::GenericInterface::Operation::Ticket::TicketUpdate</title>
+<title>Kernel::GenericInterface::Operation::Ticket::TicketUpdate &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,469 +48,70 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/GenericInterface/Operation/Ticket/TicketUpdate.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Run">Run()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Run">Run()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::GenericInterface::Operation::Ticket::TicketUpdate - GenericInterface Ticket TicketUpdate Operation backend</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # check needed objects
-    for my $Needed (qw( DebuggerObject WebserviceID )) {
-        if ( !$Param{$Needed} ) {
-            return {
-                Success      => 0,
-                ErrorMessage => "Got no $Needed!"
-            };
-        }
-
-        $Self->{$Needed} = $Param{$Needed};
-    }
-
-    $Self->{Config} = $Kernel::OM->Get('Kernel::Config')->Get('GenericInterface::Operation::TicketUpdate');
-
-    return $Self;
-}
-</pre></div>
-
-<p>usually, you want to create an instance of this
-by using Kernel::GenericInterface::Operation-&gt;new();</p>
+<p>usually, you want to create an instance of this by using Kernel::GenericInterface::Operation-&gt;new();</p>
 
 <h2 id="Run">Run()</h2>
 
-<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Run">
-                                        <pre>
+<p>perform TicketUpdate Operation. This will return the updated TicketID and if applicable the created ArticleID.</p>
 
-sub Run {
-    my ( $Self, %Param ) = @_;
-
-    my $Result = $Self->Init(
-        WebserviceID => $Self->{WebserviceID},
-    );
-
-    if ( !$Result->{Success} ) {
-        $Self->ReturnError(
-            ErrorCode    => 'Webservice.InvalidConfiguration',
-            ErrorMessage => $Result->{ErrorMessage},
-        );
-    }
-
-    # check needed stuff
-    if ( !IsHashRefWithData( $Param{Data} ) ) {
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketUpdate.EmptyRequest',
-            ErrorMessage => "TicketUpdate: The request data is invalid!",
-        );
-    }
-
-    if ( !$Param{Data}->{TicketID} && !$Param{Data}->{TicketNumber} ) {
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketUpdate.MissingParameter',
-            ErrorMessage => "TicketUpdate: TicketID or TicketNumber is required!",
-        );
-    }
-
-    if (
-        !$Param{Data}->{UserLogin}
-        && !$Param{Data}->{CustomerUserLogin}
-        && !$Param{Data}->{SessionID}
-        )
-    {
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketUpdate.MissingParameter',
-            ErrorMessage => "TicketUpdate: UserLogin, CustomerUserLogin or SessionID is required!",
-        );
-    }
-
-    if ( $Param{Data}->{UserLogin} || $Param{Data}->{CustomerUserLogin} ) {
-
-        if ( !$Param{Data}->{Password} )
-        {
-            return $Self->ReturnError(
-                ErrorCode    => 'TicketUpdate.MissingParameter',
-                ErrorMessage => "TicketUpdate: Password or SessionID is required!",
-            );
-        }
-    }
-
-    # authenticate user
-    my ( $UserID, $UserType ) = $Self->Auth(%Param);
-
-    if ( !$UserID ) {
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketUpdate.AuthFail',
-            ErrorMessage => "TicketUpdate: User could not be authenticated!",
-        );
-    }
-
-    my $PermissionUserID = $UserID;
-
-    if ( $UserType eq 'Customer' ) {
-        $UserID = $Kernel::OM->Get('Kernel::Config')->Get('CustomerPanelUserID')
-    }
-
-    # get ticket object
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-
-    # check TicketID
-    my $TicketID;
-    if ( $Param{Data}->{TicketNumber} ) {
-        $TicketID = $TicketObject->TicketIDLookup(
-            TicketNumber => $Param{Data}->{TicketNumber},
-            UserID       => $UserID,
-        );
-
-    }
-    else {
-        $TicketID = $Param{Data}->{TicketID};
-    }
-
-    if ( !($TicketID) ) {
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketUpdate.AccessDenied',
-            ErrorMessage => "TicketUpdate: User does not have access to the ticket!",
-        );
-    }
-
-    my %TicketData = $TicketObject->TicketGet(
-        TicketID      => $TicketID,
-        DynamicFields => 0,
-        UserID        => $UserID,
-    );
-
-    if ( !IsHashRefWithData( \%TicketData ) ) {
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketUpdate.AccessDenied',
-            ErrorMessage => "TicketUpdate: User does not have access to the ticket!",
-        );
-    }
-
-    # check basic needed permissions
-    my $Access = $Self->CheckAccessPermissions(
-        TicketID => $TicketID,
-        UserID   => $PermissionUserID,
-        UserType => $UserType,
-    );
-
-    if ( !$Access ) {
-        return $Self->ReturnError(
-            ErrorCode    => 'TicketUpdate.AccessDenied',
-            ErrorMessage => "TicketUpdate: User does not have access to the ticket!",
-        );
-    }
-
-    # check optional hashes
-    for my $Optional (qw(Ticket Article)) {
-        if (
-            defined $Param{Data}->{$Optional}
-            && !IsHashRefWithData( $Param{Data}->{$Optional} )
-            )
-        {
-            return $Self->ReturnError(
-                ErrorCode    => 'TicketUpdate.InvalidParameter',
-                ErrorMessage => "TicketUpdate: $Optional parameter is not valid!",
-            );
-        }
-    }
-
-    # check optional array/hashes
-    for my $Optional (qw(DynamicField Attachment)) {
-        if (
-            defined $Param{Data}->{$Optional}
-            && !IsHashRefWithData( $Param{Data}->{$Optional} )
-            && !IsArrayRefWithData( $Param{Data}->{$Optional} )
-            )
-        {
-            return $Self->ReturnError(
-                ErrorCode    => 'TicketUpdate.MissingParameter',
-                ErrorMessage => "TicketUpdate: $Optional parameter is missing or not valid!",
-            );
-        }
-    }
-
-    my $Ticket;
-    if ( defined $Param{Data}->{Ticket} ) {
-
-        # isolate ticket parameter
-        $Ticket = $Param{Data}->{Ticket};
-
-        $Ticket->{UserID} = $UserID;
-
-        # remove leading and trailing spaces
-        for my $Attribute ( sort keys %{$Ticket} ) {
-            if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' ) {
-
-                #remove leading spaces
-                $Ticket->{$Attribute} =~ s{\A\s+}{};
-
-                #remove trailing spaces
-                $Ticket->{$Attribute} =~ s{\s+\z}{};
-            }
-        }
-        if ( IsHashRefWithData( $Ticket->{PendingTime} ) ) {
-            for my $Attribute ( sort keys %{ $Ticket->{PendingTime} } ) {
-                if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' ) {
-
-                    #remove leading spaces
-                    $Ticket->{PendingTime}->{$Attribute} =~ s{\A\s+}{};
-
-                    #remove trailing spaces
-                    $Ticket->{PendingTime}->{$Attribute} =~ s{\s+\z}{};
-                }
-            }
-        }
-
-        # check Ticket attribute values
-        my $TicketCheck = $Self->_CheckTicket(
-            Ticket    => $Ticket,
-            OldTicket => \%TicketData,
-        );
-
-        if ( !$TicketCheck->{Success} ) {
-            return $Self->ReturnError( %{$TicketCheck} );
-        }
-    }
-
-    my $Article;
-    if ( defined $Param{Data}->{Article} ) {
-
-        # isolate Article parameter
-        $Article = $Param{Data}->{Article};
-
-        # add UserType to Validate ArticleType
-        $Article->{UserType} = $UserType;
-
-        # remove leading and trailing spaces
-        for my $Attribute ( sort keys %{$Article} ) {
-            if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' ) {
-
-                #remove leading spaces
-                $Article->{$Attribute} =~ s{\A\s+}{};
-
-                #remove trailing spaces
-                $Article->{$Attribute} =~ s{\s+\z}{};
-            }
-        }
-        if ( IsHashRefWithData( $Article->{OrigHeader} ) ) {
-            for my $Attribute ( sort keys %{ $Article->{OrigHeader} } ) {
-                if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' ) {
-
-                    #remove leading spaces
-                    $Article->{OrigHeader}->{$Attribute} =~ s{\A\s+}{};
-
-                    #remove trailing spaces
-                    $Article->{OrigHeader}->{$Attribute} =~ s{\s+\z}{};
-                }
-            }
-        }
-
-        # check attributes that can be gather by sysconfig
-        if ( !$Article->{AutoResponseType} ) {
-            $Article->{AutoResponseType} = $Self->{Config}->{AutoResponseType} || '';
-        }
-        if ( !$Article->{ArticleTypeID} && !$Article->{ArticleType} ) {
-            $Article->{ArticleType} = $Self->{Config}->{ArticleType} || '';
-        }
-        if ( !$Article->{SenderTypeID} && !$Article->{SenderType} ) {
-            $Article->{SenderType} = $UserType eq 'User' ? 'agent' : 'customer';
-        }
-        if ( !$Article->{HistoryType} ) {
-            $Article->{HistoryType} = $Self->{Config}->{HistoryType} || '';
-        }
-        if ( !$Article->{HistoryComment} ) {
-            $Article->{HistoryComment} = $Self->{Config}->{HistoryComment} || '';
-        }
-
-        # check Article attribute values
-        my $ArticleCheck = $Self->_CheckArticle( Article => $Article );
-
-        if ( !$ArticleCheck->{Success} ) {
-            if ( !$ArticleCheck->{ErrorCode} ) {
-                return {
-                    Success => 0,
-                    %{$ArticleCheck},
-                    }
-            }
-            return $Self->ReturnError( %{$ArticleCheck} );
-        }
-    }
-
-    my $DynamicField;
-    my @DynamicFieldList;
-    if ( defined $Param{Data}->{DynamicField} ) {
-
-        # isolate DynamicField parameter
-        $DynamicField = $Param{Data}->{DynamicField};
-
-        # homogenate input to array
-        if ( ref $DynamicField eq 'HASH' ) {
-            push @DynamicFieldList, $DynamicField;
-        }
-        else {
-            @DynamicFieldList = @{$DynamicField};
-        }
-
-        # check DynamicField internal structure
-        for my $DynamicFieldItem (@DynamicFieldList) {
-            if ( !IsHashRefWithData($DynamicFieldItem) ) {
-                return {
-                    ErrorCode => 'TicketUpdate.InvalidParameter',
-                    ErrorMessage =>
-                        "TicketUpdate: Ticket->DynamicField parameter is invalid!",
-                };
-            }
-
-            # remove leading and trailing spaces
-            for my $Attribute ( sort keys %{$DynamicFieldItem} ) {
-                if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' ) {
-
-                    #remove leading spaces
-                    $DynamicFieldItem->{$Attribute} =~ s{\A\s+}{};
-
-                    #remove trailing spaces
-                    $DynamicFieldItem->{$Attribute} =~ s{\s+\z}{};
-                }
-            }
-
-            # check DynamicField attribute values
-            my $DynamicFieldCheck = $Self->_CheckDynamicField(
-                DynamicField => $DynamicFieldItem,
-                Article      => $Article,
-            );
-
-            if ( !$DynamicFieldCheck->{Success} ) {
-                return $Self->ReturnError( %{$DynamicFieldCheck} );
-            }
-        }
-    }
-
-    my $Attachment;
-    my @AttachmentList;
-    if ( defined $Param{Data}->{Attachment} ) {
-
-        # isolate Attachment parameter
-        $Attachment = $Param{Data}->{Attachment};
-
-        # homogenate input to array
-        if ( ref $Attachment eq 'HASH' ) {
-            push @AttachmentList, $Attachment;
-        }
-        else {
-            @AttachmentList = @{$Attachment};
-        }
-
-        # check Attachment internal structure
-        for my $AttachmentItem (@AttachmentList) {
-            if ( !IsHashRefWithData($AttachmentItem) ) {
-                return {
-                    ErrorCode => 'TicketUpdate.InvalidParameter',
-                    ErrorMessage =>
-                        "TicketUpdate: Ticket->Attachment parameter is invalid!",
-                };
-            }
-
-            # remove leading and trailing spaces
-            for my $Attribute ( sort keys %{$AttachmentItem} ) {
-                if ( ref $Attribute ne 'HASH' && ref $Attribute ne 'ARRAY' ) {
-
-                    #remove leading spaces
-                    $AttachmentItem->{$Attribute} =~ s{\A\s+}{};
-
-                    #remove trailing spaces
-                    $AttachmentItem->{$Attribute} =~ s{\s+\z}{};
-                }
-            }
-
-            # check Attachment attribute values
-            my $AttachmentCheck = $Self->_CheckAttachment(
-                Attachment => $AttachmentItem,
-                Article    => $Article,
-            );
-
-            if ( !$AttachmentCheck->{Success} ) {
-                return $Self->ReturnError( %{$AttachmentCheck} );
-            }
-        }
-    }
-
-    return $Self->_TicketUpdate(
-        TicketID         => $TicketID,
-        Ticket           => $Ticket,
-        Article          => $Article,
-        DynamicFieldList => \@DynamicFieldList,
-        AttachmentList   => \@AttachmentList,
-        UserID           => $UserID,
-        UserType         => $UserType,
-    );
-}
-</pre></div>
-
-<p>perform TicketUpdate Operation. This will return the updated TicketID and
-if applicable the created ArticleID.</p>
-
-<pre>    my $Result = $OperationObject-&gt;Run(
+<pre><code>    my $Result = $OperationObject-&gt;Run(
         Data =&gt; {
-            UserLogin         =&gt; 'some agent login',                            # UserLogin or CustomerUserLogin or SessionID is
+            UserLogin         =&gt; &#39;some agent login&#39;,                            # UserLogin or CustomerUserLogin or SessionID is
                                                                                 #   required
-            CustomerUserLogin =&gt; 'some customer login',
+            CustomerUserLogin =&gt; &#39;some customer login&#39;,
             SessionID         =&gt; 123,
 
-            Password  =&gt; 'some password',                                       # if UserLogin or customerUserLogin is sent then
+            Password  =&gt; &#39;some password&#39;,                                       # if UserLogin or customerUserLogin is sent then
                                                                                 #   Password is required
 
             TicketID     =&gt; 123,                                                # TicketID or TicketNumber is required
-            TicketNumber =&gt; '2004040510440485',
+            TicketNumber =&gt; &#39;2004040510440485&#39;,
 
             Ticket {                                                            # optional
-                Title      =&gt; 'some ticket title',
+                Title      =&gt; &#39;some ticket title&#39;,
 
                 QueueID       =&gt; 123,                                           # Optional
-                Queue         =&gt; 'some queue name',                             # Optional
+                Queue         =&gt; &#39;some queue name&#39;,                             # Optional
                 LockID        =&gt; 123,                                           # optional
-                Lock          =&gt; 'some lock name',                              # optional
+                Lock          =&gt; &#39;some lock name&#39;,                              # optional
                 TypeID        =&gt; 123,                                           # optional
-                Type          =&gt; 'some type name',                              # optional
+                Type          =&gt; &#39;some type name&#39;,                              # optional
                 ServiceID     =&gt; 123,                                           # optional
-                Service       =&gt; 'some service name',                           # optional
+                Service       =&gt; &#39;some service name&#39;,                           # optional
                 SLAID         =&gt; 123,                                           # optional
-                SLA           =&gt; 'some SLA name',                               # optional
+                SLA           =&gt; &#39;some SLA name&#39;,                               # optional
                 StateID       =&gt; 123,                                           # optional
-                State         =&gt; 'some state name',                             # optional
+                State         =&gt; &#39;some state name&#39;,                             # optional
                 PriorityID    =&gt; 123,                                           # optional
-                Priority      =&gt; 'some priority name',                          # optional
+                Priority      =&gt; &#39;some priority name&#39;,                          # optional
                 OwnerID       =&gt; 123,                                           # optional
-                Owner         =&gt; 'some user login',                             # optional
+                Owner         =&gt; &#39;some user login&#39;,                             # optional
                 ResponsibleID =&gt; 123,                                           # optional
-                Responsible   =&gt; 'some user login',                             # optional
-                CustomerUser  =&gt; 'some customer user login',
+                Responsible   =&gt; &#39;some user login&#39;,                             # optional
+                CustomerUser  =&gt; &#39;some customer user login&#39;,
 
                 PendingTime {       # optional
                     Year   =&gt; 2011,
@@ -547,20 +127,20 @@ if applicable the created ArticleID.</p>
             },
             Article =&gt; {                                                          # optional
                 ArticleTypeID                   =&gt; 123,                        # optional
-                ArticleType                     =&gt; 'some article type name',   # optional
+                ArticleType                     =&gt; &#39;some article type name&#39;,   # optional
                 SenderTypeID                    =&gt; 123,                        # optional
-                SenderType                      =&gt; 'some sender type name',    # optional
-                AutoResponseType                =&gt; 'some auto response type',  # optional
-                From                            =&gt; 'some from string',         # optional
-                Subject                         =&gt; 'some subject',
-                Body                            =&gt; 'some body',
+                SenderType                      =&gt; &#39;some sender type name&#39;,    # optional
+                AutoResponseType                =&gt; &#39;some auto response type&#39;,  # optional
+                From                            =&gt; &#39;some from string&#39;,         # optional
+                Subject                         =&gt; &#39;some subject&#39;,
+                Body                            =&gt; &#39;some body&#39;,
 
-                ContentType                     =&gt; 'some content type',        # ContentType or MimeType and Charset is required
-                MimeType                        =&gt; 'some mime type',
-                Charset                         =&gt; 'some charset',
+                ContentType                     =&gt; &#39;some content type&#39;,        # ContentType or MimeType and Charset is required
+                MimeType                        =&gt; &#39;some mime type&#39;,
+                Charset                         =&gt; &#39;some charset&#39;,
 
-                HistoryType                     =&gt; 'some history type',        # optional
-                HistoryComment                  =&gt; 'Some  history comment',    # optional
+                HistoryType                     =&gt; &#39;some history type&#39;,        # optional
+                HistoryComment                  =&gt; &#39;Some  history comment&#39;,    # optional
                 TimeUnit                        =&gt; 123,                        # optional
                 NoAgentNotify                   =&gt; 1,                          # optional
                 ForceNotificationToUserID       =&gt; [1, 2, 3]                   # optional
@@ -570,54 +150,52 @@ if applicable the created ArticleID.</p>
 
             DynamicField =&gt; [                                                  # optional
                 {
-                    Name   =&gt; 'some name',
+                    Name   =&gt; &#39;some name&#39;,
                     Value  =&gt; $Value,                                          # value type depends on the dynamic field
                 },
                 # ...
             ],
             # or
             # DynamicField {
-            #    Name   =&gt; 'some name',
+            #    Name   =&gt; &#39;some name&#39;,
             #    Value  =&gt; $Value,
             #},
 
             Attachment [
                 {
-                    Content     =&gt; 'content'                                 # base64 encoded
-                    ContentType =&gt; 'some content type'
-                    Filename    =&gt; 'some fine name'
+                    Content     =&gt; &#39;content&#39;                                 # base64 encoded
+                    ContentType =&gt; &#39;some content type&#39;
+                    Filename    =&gt; &#39;some fine name&#39;
                 },
                 # ...
             ],
             #or
             #Attachment {
-            #    Content     =&gt; 'content'
-            #    ContentType =&gt; 'some content type'
-            #    Filename    =&gt; 'some fine name'
+            #    Content     =&gt; &#39;content&#39;
+            #    ContentType =&gt; &#39;some content type&#39;
+            #    Filename    =&gt; &#39;some fine name&#39;
             #},
         },
     );
 
     $Result = {
         Success         =&gt; 1,                       # 0 or 1
-        ErrorMessage    =&gt; '',                      # in case of error
+        ErrorMessage    =&gt; &#39;&#39;,                      # in case of error
         Data            =&gt; {                        # result data payload after Operation
             TicketID    =&gt; 123,                     # Ticket  ID number in OTRS (help desk system)
             ArticleID   =&gt; 43,                      # Article ID number in OTRS (help desk system)
             Error =&gt; {                              # should not return errors
-                    ErrorCode    =&gt; 'TicketUpdate.ErrorCode'
-                    ErrorMessage =&gt; 'Error Description'
+                    ErrorCode    =&gt; &#39;TicketUpdate.ErrorCode&#39;
+                    ErrorMessage =&gt; &#39;Error Description&#39;
             },
         },
-    };
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+    };</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

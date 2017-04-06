@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::ProcessManagement::Process</title>
+<title>Kernel::System::ProcessManagement::Process &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,581 +48,127 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/ProcessManagement/Process.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#ProcessGet">ProcessGet()</a></li>
-	<li><a href="#ProcessList">ProcessList()</a></li>
-	<li><a href="#ProcessStartpointGet">ProcessStartpointGet()</a></li>
-	<li><a href="#ProcessTransition">ProcessTransition()</a></li>
-	<li><a href="#ProcessTicketActivitySet">ProcessTicketActivitySet()</a></li>
-	<li><a href="#ProcessTicketProcessSet">ProcessTicketProcessSet()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#ProcessGet">ProcessGet()</a></li>
+      <li><a href="#ProcessList">ProcessList()</a></li>
+      <li><a href="#ProcessStartpointGet">ProcessStartpointGet()</a></li>
+      <li><a href="#ProcessTransition">ProcessTransition()</a></li>
+      <li><a href="#ProcessTicketActivitySet">ProcessTicketActivitySet()</a></li>
+      <li><a href="#ProcessTicketProcessSet">ProcessTicketProcessSet()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::ProcessManagement::Process - process lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All ProcessManagement Process functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $ProcessObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ProcessManagement::Process&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
+<h2 id="ProcessGet">ProcessGet()</h2>
 
-    # 0=off; 1=on;
-    $Self->{Debug} = $Param{Debug} || 0;
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $ProcessObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::Process');
-</pre><h2 id="ProcessGet">ProcessGet()</h2>
-
-<p><a href="#" onclick="toggleCode('method_ProcessGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessGet">
-                                        <pre>
-
-sub ProcessGet {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ProcessEntityID)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    my $Process = $Kernel::OM->Get('Kernel::Config')->Get('Process');
-
-    if ( !IsHashRefWithData($Process) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need Process config!',
-        );
-        return;
-    }
-
-    if ( !IsHashRefWithData( $Process->{ $Param{ProcessEntityID} } ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No Data for Process '$Param{ProcessEntityID}' found!",
-        );
-        return;
-    }
-
-    return $Process->{ $Param{ProcessEntityID} };
-}
-</pre></div>
-
-<pre>    Get process info
+<pre><code>    Get process info
 
     my $Process = $ProcessObject-&gt;ProcessGet(
-        ProcessEntityID =&gt; 'P1',
+        ProcessEntityID =&gt; &#39;P1&#39;,
     );
 
     Returns:
 
     $Process = {
-        'Name' =&gt; 'Process1',
-        'CreateBy'            =&gt; '1',
-        'CreateTime'          =&gt; '16-02-2012 13:37:00',
-        'ChangeBy'            =&gt; '1',
-        'ChangeTime'          =&gt; '17-02-2012 13:37:00',
-        'State'               =&gt; 'Active',
-        'StartActivityDialog' =&gt; 'AD1',
-        'StartActivity'       =&gt; 'A1',
-        'Path' =&gt; {
-            'A2' =&gt; {
-                'T3' =&gt; {
-                    ActivityEntityID =&gt; 'A4',
+        &#39;Name&#39; =&gt; &#39;Process1&#39;,
+        &#39;CreateBy&#39;            =&gt; &#39;1&#39;,
+        &#39;CreateTime&#39;          =&gt; &#39;16-02-2012 13:37:00&#39;,
+        &#39;ChangeBy&#39;            =&gt; &#39;1&#39;,
+        &#39;ChangeTime&#39;          =&gt; &#39;17-02-2012 13:37:00&#39;,
+        &#39;State&#39;               =&gt; &#39;Active&#39;,
+        &#39;StartActivityDialog&#39; =&gt; &#39;AD1&#39;,
+        &#39;StartActivity&#39;       =&gt; &#39;A1&#39;,
+        &#39;Path&#39; =&gt; {
+            &#39;A2&#39; =&gt; {
+                &#39;T3&#39; =&gt; {
+                    ActivityEntityID =&gt; &#39;A4&#39;,
                 },
             },
-            'A1' =&gt; {
-                'T1' =&gt; {
-                    ActivityEntityID =&gt; 'A2',
+            &#39;A1&#39; =&gt; {
+                &#39;T1&#39; =&gt; {
+                    ActivityEntityID =&gt; &#39;A2&#39;,
                 },
-                'T2' =&gt; {
-                    ActivityEntityID =&gt; 'A3',
+                &#39;T2&#39; =&gt; {
+                    ActivityEntityID =&gt; &#39;A3&#39;,
                 },
             },
         },
-    };
-</pre><h2 id="ProcessList">ProcessList()</h2>
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessList">
-                                        <pre>
+<h2 id="ProcessList">ProcessList()</h2>
 
-sub ProcessList {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ProcessState)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    if ( !IsArrayRefWithData( $Param{ProcessState} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need at least one ProcessState!',
-        );
-        return;
-    }
-
-    my $Processes = $Kernel::OM->Get('Kernel::Config')->Get('Process');
-    if ( !IsHashRefWithData($Processes) ) {
-
-        if ( !$Param{Silent} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => 'Need Process config!',
-            );
-        }
-
-        return;
-    }
-
-    # get only processes with the requested ProcessState(s)
-    my %ProcessList;
-    for my $ProcessEntityID ( sort keys %{$Processes} ) {
-        if ( grep { $_ eq $Processes->{$ProcessEntityID}->{State} } @{ $Param{ProcessState} } ) {
-            $ProcessList{$ProcessEntityID} = $Processes->{$ProcessEntityID}->{Name} || '';
-        }
-    }
-
-    # set Interface parameter to 'all' by default if parameter was not set
-    if ( !defined $Param{Interface} ) {
-        $Param{Interface} = 'all';
-    }
-
-    # if Interface is 'all' return all processes without interface restrictions
-    if ( $Param{Interface} eq 'all' ) {
-        return \%ProcessList;
-    }
-
-    # get activity dialog object
-    my $ActivityDialogObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::ActivityDialog');
-
-    # otherwise return only processes where the initial activity dialog matches given interface
-    my %ReducedProcessList;
-    PROCESS:
-    for my $ProcessEntityID ( sort keys %ProcessList ) {
-
-        # get process start point for each process we already got
-        my $Start = $Self->ProcessStartpointGet( ProcessEntityID => $ProcessEntityID );
-
-        # skip processes if they does not have a valid start point
-        next PROCESS if !IsHashRefWithData($Start);
-        next PROCESS if !IsStringWithData( $Start->{ActivityDialog} );
-
-        # try to get the start ActivityDialog for the given interface
-        my $ActivityDialog = $ActivityDialogObject->ActivityDialogGet(
-            ActivityDialogEntityID => $Start->{ActivityDialog},
-            Interface              => $Param{Interface},
-            Silent                 => 1,
-        );
-
-        # skip process if first activity dialog could not be got for the given interface
-        next PROCESS if !IsHashRefWithData($ActivityDialog);
-
-        $ReducedProcessList{$ProcessEntityID} = $ProcessList{$ProcessEntityID};
-    }
-
-    return \%ReducedProcessList;
-}
-</pre></div>
-
-<pre>    Get a list of all Processes
+<pre><code>    Get a list of all Processes
 
     my $ProcessList = $ProcessObject-&gt;ProcessList(
-        ProcessState =&gt; ['Active'],           # Active, FadeAway, Inactive
-        Interface    =&gt; ['AgentInterface'],   # optional, ['AgentInterface'] or ['CustomerInterface'] or ['AgentInterface', 'CustomerInterface'] or 'all'
+        ProcessState =&gt; [&#39;Active&#39;],           # Active, FadeAway, Inactive
+        Interface    =&gt; [&#39;AgentInterface&#39;],   # optional, [&#39;AgentInterface&#39;] or [&#39;CustomerInterface&#39;] or [&#39;AgentInterface&#39;, &#39;CustomerInterface&#39;] or &#39;all&#39;
         Silent       =&gt; 1                     # optional, 1 || 0, default 0, if set to 1 does not log errors if there are no processes configured
     );
 
     Returns:
 
     $ProcessList = {
-        'P1' =&gt; 'Process 1',
-        'P2' =&gt; 'Process 2',
-        'P3' =&gt; '',
-    };
-</pre><h2 id="ProcessStartpointGet">ProcessStartpointGet()</h2>
+        &#39;P1&#39; =&gt; &#39;Process 1&#39;,
+        &#39;P2&#39; =&gt; &#39;Process 2&#39;,
+        &#39;P3&#39; =&gt; &#39;&#39;,
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessStartpointGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessStartpointGet">
-                                        <pre>
+<h2 id="ProcessStartpointGet">ProcessStartpointGet()</h2>
 
-sub ProcessStartpointGet {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ProcessEntityID)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    my $Process = $Self->ProcessGet( ProcessEntityID => $Param{ProcessEntityID} );
-
-    # include FadeAway processes so they will be listed as available processes to continue working
-    #    with them
-    if ( $Process->{State} ne 'Active' && $Process->{State} ne 'FadeAway' ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't get 'StartActivity' for Process '$Param{ProcessEntityID}', State"
-                . " is '$Process->{State}'!",
-        );
-        return;
-    }
-
-    if ( !$Process->{StartActivity} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No 'StartActivity' for Process '$Param{ProcessEntityID}' found!",
-        );
-        return;
-    }
-
-    if ( !$Process->{StartActivity} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No 'StartActivity' for Process '$Param{ProcessEntityID}' found!",
-        );
-        return;
-    }
-
-    if ( !$Process->{StartActivityDialog} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "No 'StartActivityDialog' for Process '$Param{ProcessEntityID}' found!",
-        );
-        return;
-    }
-    return {
-        Activity       => $Process->{StartActivity},
-        ActivityDialog => $Process->{StartActivityDialog}
-    };
-}
-</pre></div>
-
-<pre>    Get process startpoint
+<pre><code>    Get process startpoint
 
     my $Start = $ProcessObject-&gt;ProcessStartpointGet(
-        ProcessEntityID =&gt; 'P1',
+        ProcessEntityID =&gt; &#39;P1&#39;,
     );
 
     Returns:
 
     $Start = {
-        Activity        =&gt; 'A1',
-        ActivityDialog  =&gt; 'AD1',
-    };
-</pre><h2 id="ProcessTransition">ProcessTransition()</h2>
+        Activity        =&gt; &#39;A1&#39;,
+        ActivityDialog  =&gt; &#39;AD1&#39;,
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessTransition');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessTransition">
-                                        <pre>
+<h2 id="ProcessTransition">ProcessTransition()</h2>
 
-sub ProcessTransition {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ProcessEntityID ActivityEntityID TicketID UserID)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    my %Data;
-
-    # Get Ticket object
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
-
-    # Get Ticket Data
-    %Data = $TicketObject->TicketGet(
-        TicketID      => $Param{TicketID},
-        DynamicFields => 1,
-        UserID        => $Param{UserID},
-    );
-
-    # Check if we got a Ticket
-    if ( !IsHashRefWithData( \%Data ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Invalid TicketID: $Param{TicketID}!",
-        );
-        return;
-    }
-
-    # If we have Data lay it over the current %Data
-    # to check Ticket + Additional Data
-    if ( $Param{Data} ) {
-        %Data = ( %Data, %{ $Param{Data} } );
-    }
-
-    my $Process = $Self->ProcessGet( ProcessEntityID => $Param{ProcessEntityID} );
-
-    if ( !$Process->{State} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't process Transition for Process '$Param{ProcessEntityID}', can't"
-                . " get State out of the config!",
-        );
-        return;
-    }
-
-    if ( $Process->{State} eq 'Inactive' ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't process Transition for Process '$Param{ProcessEntityID}',"
-                . " ProcessState is '$Process->{State}'!",
-        );
-        return;
-    }
-
-    # We need the Processes Config
-    # and the Config for the process the Ticket is in
-    # and the Process has to have the 'Path' Hash set
-    if (
-        !IsHashRefWithData($Process)
-        || !IsHashRefWithData( $Process->{Path} )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need Path for ProcessEntityID $Param{ProcessEntityID}!",
-        );
-        return;
-    }
-
-    # Check if our ActivitySet has a path configured
-    # if it hasn't we got nothing to do -> print debuglog if desired and return
-    if ( !IsHashRefWithData( $Process->{Path}->{ $Param{ActivityEntityID} } ) ) {
-        if ( $Self->{Debug} > 0 ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'debug',
-                Message  => 'No Path configured for Process with ID: '
-                    . "$Param{ProcessEntityID} and ActivityEntityID: $Param{ActivityEntityID}!",
-            );
-        }
-        return;
-    }
-
-    # %Transitions Hash for easier reading
-    # contains all possible Transitions for the current Activity
-    my %Transitions = %{ $Process->{Path}->{ $Param{ActivityEntityID} } };
-
-    # get transition object
-    my $TransitionObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::Transition');
-
-    # Handle all possible TransitionEntityID's for the Process->Path's->ActivityEntityID down to
-    # Transition.pm's TransitionCheck for validation
-    # will return undef if nothing matched or the first matching TransitionEntityID
-    my $TransitionEntityID = $TransitionObject->TransitionCheck(
-        TransitionEntityID => [ sort { $a cmp $b } keys %Transitions ],
-        Data               => \%Data,
-    );
-
-    # if we didn't get a TransitionEntityID
-    # no check was successful -> return nothing
-    if ( !$TransitionEntityID || !length $TransitionEntityID ) {
-        if ( $Self->{Debug} > 0 ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'debug',
-                Message  => 'No Transition matched for TicketID: '
-                    . "$Param{TicketID} ProcessEntityID: $Param{ProcessEntityID} "
-                    . "ActivityEntityID: $Param{ActivityEntityID}!",
-            );
-        }
-        return;
-    }
-
-    # get activity object
-    my $ActivityObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::Activity');
-
-    # If we have a Transition without valid FutureActivitySet we have to complain
-    if (
-        !IsHashRefWithData( $Transitions{$TransitionEntityID} )
-        || !$Transitions{$TransitionEntityID}->{ActivityEntityID}
-        || !IsHashRefWithData(
-            $ActivityObject->ActivityGet(
-                Interface        => 'all',
-                ActivityEntityID => $Transitions{$TransitionEntityID}->{ActivityEntityID}
-                )
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need Target Activity for Process with "
-                . "ProcessEntityID: $Param{ProcessEntityID} ActivityEntityID:"
-                . " $Param{ActivityEntityID} TransitionEntityID: $TransitionEntityID!",
-        );
-        return;
-    }
-
-    # If we should just check what Transition matched
-    # return a hash containing
-    # { TransitionEntityID => FutureActivityEntityID }
-    if ( $Param{CheckOnly} ) {
-        if ( $Self->{Debug} > 0 ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'debug',
-                Message  => "Transition with ID $TransitionEntityID matched for "
-                    . "TicketID: $Param{TicketID} ProcessEntityID: $Param{ProcessEntityID} "
-                    . "ActivityEntityID: $Param{ActivityEntityID}!",
-            );
-        }
-        return { $TransitionEntityID => $Transitions{$TransitionEntityID} };
-    }
-
-    # Set the new ActivityEntityID on the Ticket
-    my $Success = $Self->ProcessTicketActivitySet(
-        ProcessEntityID  => $Param{ProcessEntityID},
-        ActivityEntityID => $Transitions{$TransitionEntityID}->{ActivityEntityID},
-        TicketID         => $Param{TicketID},
-        UserID           => $Param{UserID},
-    );
-
-    if ( !$Success ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Failed setting ActivityEntityID of Ticket: $Param{TicketID} to "
-                . $Transitions{$TransitionEntityID}->{ActivityEntityID}
-                . " after successful Transition: $TransitionEntityID!",
-        );
-        return;
-    }
-
-    # if we don't have Transition Actions on that transition,
-    # return 1 for successful transition
-    if (
-        !$Transitions{$TransitionEntityID}->{TransitionAction}
-        || (
-            ref $Transitions{$TransitionEntityID}->{TransitionAction} eq 'ARRAY'
-            && !@{ $Transitions{$TransitionEntityID}->{TransitionAction} }
-        )
-        )
-    {
-        return 1;
-    }
-
-    # if we have Transition Action and it isn't an array return
-    if ( !IsArrayRefWithData( $Transitions{$TransitionEntityID}->{TransitionAction} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Defective Process configuration: 'TrasitionAction' must be an array in "
-                . "Process: $Param{ProcessEntityID} -> Path -> "
-                . "ActivityEntityID: $Param{ActivityEntityID} -> Transition: $TransitionEntityID!",
-        );
-        return;
-    }
-
-    # get transition action object
-    my $TransitionActionObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::TransitionAction');
-
-    my $TransitionActions = $TransitionActionObject->TransitionActionList(
-        TransitionActionEntityID => $Transitions{$TransitionEntityID}->{TransitionAction},
-    );
-
-    if ( !IsArrayRefWithData($TransitionActions) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Getting TransitionActionList for Process: $Param{ProcessEntityID},"
-                . " Transition: $TransitionEntityID failed.",
-        );
-        return;
-    }
-
-    for my $TransitionAction ( @{$TransitionActions} ) {
-
-        # Refresh ticket data, as transition actions could already had modified the ticket
-        #   e.g TicketServiceSet -> TicketSLASet, SLA needs to already have a Service,
-        #   see bug#12147.
-        %Data = $TicketObject->TicketGet(
-            TicketID      => $Param{TicketID},
-            DynamicFields => 1,
-            UserID        => $Param{UserID},
-        );
-
-        my $TransitionActionModuleObject = $TransitionAction->{Module}->new();
-
-        # Transition actions could replace configuration tags with actual ticket values,
-        #   copying the configuration prevents unwanted results if same Transition action is called
-        #   for multiple tickets, see bug#12179
-        my %Config = %{ $TransitionAction->{Config} || {} };
-
-        my $Success = $TransitionActionModuleObject->Run(
-            UserID                   => $Param{UserID},
-            Ticket                   => \%Data,
-            ProcessEntityID          => $Param{ProcessEntityID},
-            ActivityEntityID         => $Param{ActivityEntityID},
-            TransitionEntityID       => $TransitionEntityID,
-            TransitionActionEntityID => $TransitionAction->{TransitionActionEntityID},
-            Config                   => \%Config,
-        );
-    }
-
-    return 1;
-
-}
-</pre></div>
-
-<pre>    Check valid Transitions and Change Ticket's Activity
+<pre><code>    Check valid Transitions and Change Ticket&#39;s Activity
     if a Transition was positively checked
 
     my $ProcessTransition = $ProcessObject-&gt;ProcessTransition(
-        ProcessEntityID  =&gt; 'P1',
-        ActivityEntityID =&gt; 'A1',
+        ProcessEntityID  =&gt; &#39;P1&#39;,
+        ActivityEntityID =&gt; &#39;A1&#39;,
         TicketID         =&gt; 123,
         UserID           =&gt; 123,
         CheckOnly        =&gt; 1,             # optional
         Data             =&gt; {              # optional
-            Queue         =&gt; 'Raw',
-            DynamicField1 =&gt; 'Value',
-            Subject       =&gt; 'Testsubject',
+            Queue         =&gt; &#39;Raw&#39;,
+            DynamicField1 =&gt; &#39;Value&#39;,
+            Subject       =&gt; &#39;Testsubject&#39;,
             #...
         },
     );
@@ -654,129 +179,23 @@ sub ProcessTransition {
     undef if no Transition matched or check failed otherwise
 
     $ProcessTransition = {  # if option &quot;CheckOnly&quot; is set
-        'T1' =&gt; {
-            ActivityEntityID =&gt; 'A1',
+        &#39;T1&#39; =&gt; {
+            ActivityEntityID =&gt; &#39;A1&#39;,
             TransitionAction =&gt; [
-                'TA1',
-                'TA2',
-                'TA3',
+                &#39;TA1&#39;,
+                &#39;TA2&#39;,
+                &#39;TA3&#39;,
             ],
         },
-    };
-</pre><h2 id="ProcessTicketActivitySet">ProcessTicketActivitySet()</h2>
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessTicketActivitySet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessTicketActivitySet">
-                                        <pre>
+<h2 id="ProcessTicketActivitySet">ProcessTicketActivitySet()</h2>
 
-sub ProcessTicketActivitySet {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ProcessEntityID ActivityEntityID TicketID UserID)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    # get activity object
-    my $ActivityObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::Activity');
-
-    # check on valid ActivityEntityID
-    my $Success = $ActivityObject->ActivityGet(
-        Interface        => 'all',
-        ActivityEntityID => $Param{ActivityEntityID},
-    );
-
-    if ( !$Success ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Process->ProcessTicketActivitySet called on "
-                . "non existing ActivityEntityID: $Param{ActivityEntityID}!",
-        );
-        return;
-    }
-
-    # Check on valid State
-    my $Process = $Self->ProcessGet( ProcessEntityID => $Param{ProcessEntityID} );
-
-    if ( !$Process->{State} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't set ActivitySet for Process '$Param{ProcessEntityID}', cat get"
-                . " State out of the config!",
-        );
-        return;
-    }
-
-    if ( $Process->{State} eq 'Inactive' ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't set ActivitySet for Process '$Param{ProcessEntityID}', State is"
-                . " '$Process->{State}'!",
-        );
-        return;
-    }
-
-    # Get DynamicField Name that's used for storing the ActivityEntityID per ticket
-    my $DynamicFieldTicketActivityEntityID
-        = $Kernel::OM->Get('Kernel::Config')->Get('Process::DynamicFieldProcessManagementActivityID');
-    if ( !$DynamicFieldTicketActivityEntityID ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need DynamicFieldProcessManagementActivityID config "
-                . "for storing of ActivityEntityID on TicketID: $Param{TicketID}!",
-        );
-        return;
-    }
-
-    # get dynamic field objects
-    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
-    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
-
-    # get the dynamic fields for this screen
-    my $DynamicFieldList = $DynamicFieldObject->DynamicFieldListGet(
-        Valid      => 1,
-        ObjectType => 'Ticket',
-    );
-
-    # Grep the Field out of the config of all Ticket DynamicFields
-    my @DynamicFieldConfig = grep { $_->{Name} eq $DynamicFieldTicketActivityEntityID } @{$DynamicFieldList};
-
-    # if the DynamicField isn't there, return 0 and log
-    if ( !IsHashRefWithData( $DynamicFieldConfig[0] ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "DynamicField: $DynamicFieldTicketActivityEntityID not configured!",
-        );
-        return;
-    }
-
-    # If Ticket Update to the new ActivityEntityID was successful return 1
-    if (
-        $DynamicFieldBackendObject->ValueSet(
-            DynamicFieldConfig => $DynamicFieldConfig[0],
-            ObjectID           => $Param{TicketID},
-            Value              => $Param{ActivityEntityID},
-            UserID             => $Param{UserID}
-        )
-        )
-    {
-        return 1;
-    }
-
-    return;
-}
-</pre></div>
-
-<pre>    Set Ticket's ActivityEntityID
+<pre><code>    Set Ticket&#39;s ActivityEntityID
 
     my $Success = $ProcessObject-&gt;ProcessTicketActivitySet(
-        ProcessEntityID  =&gt; 'P1',
-        ActivityEntityID =&gt; 'A1',
+        ProcessEntityID  =&gt; &#39;P1&#39;,
+        ActivityEntityID =&gt; &#39;A1&#39;,
         TicketID         =&gt; 123,
         UserID           =&gt; 123,
     );
@@ -784,103 +203,14 @@ sub ProcessTicketActivitySet {
     Returns:
     $Success = 1; # undef
     1 if setting the Activity was executed
-    undef if setting failed
-</pre><h2 id="ProcessTicketProcessSet">ProcessTicketProcessSet()</h2>
+    undef if setting failed</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ProcessTicketProcessSet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ProcessTicketProcessSet">
-                                        <pre>
+<h2 id="ProcessTicketProcessSet">ProcessTicketProcessSet()</h2>
 
-sub ProcessTicketProcessSet {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ProcessEntityID TicketID UserID)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    # Check on valid ProcessEntityID
-    my $Process = $Self->ProcessGet( ProcessEntityID => $Param{ProcessEntityID} );
-
-    if ( !$Process->{State} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't set Process '$Param{ProcessEntityID}' for TicketID"
-                . " '$Param{TicketID}', cat get State out of the config!",
-        );
-        return;
-    }
-
-    if ( $Process->{State} ne 'Active' ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Can't set Process '$Param{ProcessEntityID}' for TicketID"
-                . " '$Param{TicketID}', State is '$Process->{State}'!",
-        );
-        return;
-    }
-
-    # Get DynamicField Name that's used for storing the ActivityEntityID per ticket
-    my $DynamicFieldTicketProcessID
-        = $Kernel::OM->Get('Kernel::Config')->Get('Process::DynamicFieldProcessManagementProcessID');
-
-    if ( !$DynamicFieldTicketProcessID ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need DynamicFieldProcessManagementProcessID config "
-                . "for storing of ProcesID on TicketID: $Param{TicketID}!",
-        );
-        return;
-    }
-
-    # get dynamic field objects
-    my $DynamicFieldObject        = $Kernel::OM->Get('Kernel::System::DynamicField');
-    my $DynamicFieldBackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
-
-    # get the dynamic fields for this screen
-    my $DynamicFieldList = $DynamicFieldObject->DynamicFieldListGet(
-        Valid      => 1,
-        ObjectType => 'Ticket',
-    );
-
-    # Grep the Field out of the config of all Ticket DynamicFields
-    my @DynamicFieldConfig = grep { $_->{Name} eq $DynamicFieldTicketProcessID } @{$DynamicFieldList};
-
-    # if the DynamicField isn't there, return 0 and log
-    if ( !IsHashRefWithData( $DynamicFieldConfig[0] ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "DynamicField: $DynamicFieldTicketProcessID not configured!",
-        );
-        return;
-    }
-
-    # If Ticket Update to the new ActivityEntityID was successful return 1
-    if (
-        $DynamicFieldBackendObject->ValueSet(
-            DynamicFieldConfig => $DynamicFieldConfig[0],
-            ObjectID           => $Param{TicketID},
-            Value              => $Param{ProcessEntityID},
-            UserID             => $Param{UserID},
-        )
-        )
-    {
-        return 1;
-    }
-
-    return;
-}
-</pre></div>
-
-<pre>    Set Ticket's ProcessEntityID
+<pre><code>    Set Ticket&#39;s ProcessEntityID
 
     my $Success = $ProcessObject-&gt;ProcessTicketProcessSet(
-        ProcessEntityID =&gt; 'P1',
+        ProcessEntityID =&gt; &#39;P1&#39;,
         TicketID        =&gt; 123,
         UserID          =&gt; 123,
     );
@@ -888,15 +218,13 @@ sub ProcessTicketProcessSet {
     Returns:
     $Success = 1; # undef
     1 if setting the Activity was executed
-    undef if setting failed
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+    undef if setting failed</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

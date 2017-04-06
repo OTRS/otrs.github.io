@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::Calendar::Plugin</title>
+<title>Kernel::System::Calendar::Plugin &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,278 +48,92 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/Calendar/Plugin.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#PluginList">PluginList()</a></li>
-	<li><a href="#PluginKeys">PluginKeys()</a></li>
-	<li><a href="#PluginLinkAdd">PluginLinkAdd()</a></li>
-	<li><a href="#PluginLinkList">PluginLinkList()</a></li>
-	<li><a href="#PluginLinkDelete">PluginLinkDelete()</a></li>
-	<li><a href="#PluginSearch">PluginSearch()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#PluginList">PluginList()</a></li>
+      <li><a href="#PluginKeys">PluginKeys()</a></li>
+      <li><a href="#PluginLinkAdd">PluginLinkAdd()</a></li>
+      <li><a href="#PluginLinkList">PluginLinkList()</a></li>
+      <li><a href="#PluginLinkDelete">PluginLinkDelete()</a></li>
+      <li><a href="#PluginSearch">PluginSearch()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::Calendar::Plugin - Plugin lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>Abstraction layer for appointment plugins.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # get registered plugin modules
-    my $PluginConfig = $Kernel::OM->Get('Kernel::Config')->Get("AppointmentCalendar::Plugin");
-
-    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
-
-    # load plugin modules
-    PLUGIN:
-    for my $PluginKey ( sort keys %{$PluginConfig} ) {
-
-        my $GenericModule = $PluginConfig->{$PluginKey}->{Module};
-        next PLUGIN if !$GenericModule;
-
-        if ( !$MainObject->Require($GenericModule) ) {
-            $MainObject->Die("Can't load plugin module $GenericModule! $@");
-        }
-
-        $Self->{Plugins}->{$PluginKey}->{PluginName} = $PluginConfig->{$PluginKey}->{Name} // $GenericModule;
-        $Self->{Plugins}->{$PluginKey}->{PluginModule} = $GenericModule->new( %{$Self} );
-
-        my $PluginURL = $PluginConfig->{$PluginKey}->{URL};
-        $PluginURL =~ s{<OTRS_CONFIG_(.+?)>}{$Kernel::OM->Get('Kernel::Config')->Get($1)}egx;
-        $Self->{Plugins}->{$PluginKey}->{PluginURL} = $PluginURL;
-    }
-
-    return $Self;
-}
-</pre></div>
-
 <p>create an object. Do not use it directly, instead use:</p>
 
-<pre>    use Kernel::System::ObjectManager;
+<pre><code>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $TeamObject = $Kernel::OM-&gt;Get('Kernel::System::Calendar::Plugin');
-</pre><h2 id="PluginList">PluginList()</h2>
+    my $TeamObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Calendar::Plugin&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_PluginList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PluginList">
-                                        <pre>
-
-sub PluginList {
-    my ( $Self, %Param ) = @_;
-
-    my %PluginList = map {
-        $_ => {
-            PluginName => $Self->{Plugins}->{$_}->{PluginName},
-            PluginURL  => $Self->{Plugins}->{$_}->{PluginURL},
-            }
-    } keys %{ $Self->{Plugins} };
-
-    return \%PluginList;
-}
-</pre></div>
+<h2 id="PluginList">PluginList()</h2>
 
 <p>returns the hash of registered plugins</p>
 
-<pre>    my $PluginList = $PluginObject-&gt;PluginList();
-</pre><h2 id="PluginKeys">PluginKeys()</h2>
+<pre><code>    my $PluginList = $PluginObject-&gt;PluginList();</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_PluginKeys');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PluginKeys">
-                                        <pre>
-
-sub PluginKeys {
-    my ( $Self, %Param ) = @_;
-
-    my %PluginKeys = map {
-        lc $_ => $_
-    } keys %{ $Self->{Plugins} };
-
-    return \%PluginKeys;
-}
-</pre></div>
+<h2 id="PluginKeys">PluginKeys()</h2>
 
 <p>returns the hash of proper plugin keys for lowercase matching</p>
 
-<pre>    my $PluginKeys = $PluginObject-&gt;PluginKeys();
-</pre><h2 id="PluginLinkAdd">PluginLinkAdd()</h2>
+<pre><code>    my $PluginKeys = $PluginObject-&gt;PluginKeys();</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_PluginLinkAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PluginLinkAdd">
-                                        <pre>
-
-sub PluginLinkAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(AppointmentID PluginKey PluginData UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-    my $Success = $Self->{Plugins}->{ $Param{PluginKey} }->{PluginModule}->LinkAdd(
-        %Param,
-    );
-
-    return $Success;
-}
-</pre></div>
+<h2 id="PluginLinkAdd">PluginLinkAdd()</h2>
 
 <p>link appointment by plugin</p>
 
-<pre>    my $Success = $PluginObject-&gt;PluginLinkAdd(
+<pre><code>    my $Success = $PluginObject-&gt;PluginLinkAdd(
         AppointmentID =&gt; 1,
-        PluginKey     =&gt; '0100-Ticket',
-        PluginData    =&gt; '42',
+        PluginKey     =&gt; &#39;0100-Ticket&#39;,
+        PluginData    =&gt; &#39;42&#39;,
         UserID        =&gt; 1,
-    );
-</pre><h2 id="PluginLinkList">PluginLinkList()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_PluginLinkList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PluginLinkList">
-                                        <pre>
-
-sub PluginLinkList {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(AppointmentID PluginKey UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    $Param{PluginURL} = $Self->{Plugins}->{ $Param{PluginKey} }->{PluginURL};
-
-    my $LinkList = $Self->{Plugins}->{ $Param{PluginKey} }->{PluginModule}->LinkList(%Param);
-
-    return $LinkList;
-}
-</pre></div>
+<h2 id="PluginLinkList">PluginLinkList()</h2>
 
 <p>returns list of links for supplied appointment</p>
 
-<pre>    my $LinkList = $PluginObject-&gt;PluginLinkList(
+<pre><code>    my $LinkList = $PluginObject-&gt;PluginLinkList(
         AppointmentID =&gt; 1,
-        PluginKey     =&gt; '0100-Ticket',
+        PluginKey     =&gt; &#39;0100-Ticket&#39;,
         UserID        =&gt; 1,
-    );
-</pre><h2 id="PluginLinkDelete">PluginLinkDelete()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_PluginLinkDelete');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PluginLinkDelete">
-                                        <pre>
-
-sub PluginLinkDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(AppointmentID UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    my $Success = $Kernel::OM->Get('Kernel::System::LinkObject')->LinkDeleteAll(
-        Object => 'Appointment',
-        Key    => $Param{AppointmentID},
-        UserID => $Param{UserID},
-    );
-
-    if ( !$Success ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Unable to delete plugin links!",
-        );
-    }
-
-    return $Success;
-}
-</pre></div>
+<h2 id="PluginLinkDelete">PluginLinkDelete()</h2>
 
 <p>removes all links for an appointment</p>
 
-<pre>    my $Success = $PluginObject-&gt;PluginLinkDelete(
+<pre><code>    my $Success = $PluginObject-&gt;PluginLinkDelete(
         AppointmentID =&gt; 1,
         UserID        =&gt; 1,
-    );
-</pre><h2 id="PluginSearch">PluginSearch()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_PluginSearch');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_PluginSearch">
-                                        <pre>
-
-sub PluginSearch {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(PluginKey UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-    if ( !$Param{Search} && !$Param{ObjectID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need either Search or ObjectID!',
-        );
-        return;
-    }
-
-    my $ResultList = $Self->{Plugins}->{ $Param{PluginKey} }->{PluginModule}->Search(
-        %Param,
-    );
-
-    return $ResultList;
-}
-</pre></div>
+<h2 id="PluginSearch">PluginSearch()</h2>
 
 <p>search for plugin objects</p>
 
-<pre>    my $ResultList = $PluginObject-&gt;PluginSearch(
+<pre><code>    my $ResultList = $PluginObject-&gt;PluginSearch(
         PluginKey =&gt; $PluginKey,        # (required)
 
         Search    =&gt; $Search,           # (required) Search string
@@ -348,15 +141,13 @@ sub PluginSearch {
         ObjectID  =&gt; $ObjectID          # (required) Object ID
 
         UserID    =&gt; $Self-&gt;{UserID},   # (required)
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::SystemAddress</title>
+<title>Kernel::System::SystemAddress &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,495 +48,146 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/SystemAddress.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#SystemAddressAdd">SystemAddressAdd()</a></li>
-	<li><a href="#SystemAddressGet">SystemAddressGet()</a></li>
-	<li><a href="#SystemAddressUpdate">SystemAddressUpdate()</a></li>
-	<li><a href="#SystemAddressList">SystemAddressList()</a></li>
-	<li><a href="#SystemAddressIsLocalAddress">SystemAddressIsLocalAddress()</a></li>
-	<li><a href="#SystemAddressQueueID">SystemAddressQueueID()</a></li>
-	<li><a href="#SystemAddressQueueList">SystemAddressQueueList()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#SystemAddressAdd">SystemAddressAdd()</a></li>
+      <li><a href="#SystemAddressGet">SystemAddressGet()</a></li>
+      <li><a href="#SystemAddressUpdate">SystemAddressUpdate()</a></li>
+      <li><a href="#SystemAddressList">SystemAddressList()</a></li>
+      <li><a href="#SystemAddressIsLocalAddress">SystemAddressIsLocalAddress()</a></li>
+      <li><a href="#SystemAddressQueueID">SystemAddressQueueID()</a></li>
+      <li><a href="#SystemAddressQueueList">SystemAddressQueueList()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::SystemAddress - all system address functions</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>Global module to add/edit/update system addresses.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    $Self->{CacheType} = 'SystemAddress';
-    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
-
-    return $Self;
-}
-</pre></div>
-
 <p>create an object</p>
 
-<pre>    my $SystemAddressObject = $Kernel::OM-&gt;Get('Kernel::System::SystemAddress');
-</pre><h2 id="SystemAddressAdd">SystemAddressAdd()</h2>
+<pre><code>    my $SystemAddressObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SystemAddress&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SystemAddressAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemAddressAdd">
-                                        <pre>
-
-sub SystemAddressAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(Name ValidID Realname QueueID UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # insert new system address
-    return if !$DBObject->Do(
-        SQL => 'INSERT INTO system_address (value0, value1, valid_id, comments, queue_id, '
-            . ' create_time, create_by, change_time, change_by)'
-            . ' VALUES (?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-        Bind => [
-            \$Param{Name}, \$Param{Realname}, \$Param{ValidID}, \$Param{Comment},
-            \$Param{QueueID}, \$Param{UserID}, \$Param{UserID},
-        ],
-    );
-
-    # get system address id
-    $DBObject->Prepare(
-        SQL   => 'SELECT id FROM system_address WHERE value0 = ? AND value1 = ?',
-        Bind  => [ \$Param{Name}, \$Param{Realname}, ],
-        Limit => 1,
-    );
-
-    # fetch the result
-    my $ID;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $ID = $Row[0];
-    }
-
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => $Self->{CacheType},
-    );
-
-    return $ID;
-}
-</pre></div>
+<h2 id="SystemAddressAdd">SystemAddressAdd()</h2>
 
 <p>add system address with attributes</p>
 
-<pre>    my $ID = $SystemAddressObject-&gt;SystemAddressAdd(
-        Name     =&gt; 'info@example.com',
-        Realname =&gt; 'Hotline',
+<pre><code>    my $ID = $SystemAddressObject-&gt;SystemAddressAdd(
+        Name     =&gt; &#39;info@example.com&#39;,
+        Realname =&gt; &#39;Hotline&#39;,
         ValidID  =&gt; 1,
         QueueID  =&gt; 123,
-        Comment  =&gt; 'some comment',
+        Comment  =&gt; &#39;some comment&#39;,
         UserID   =&gt; 123,
-    );
-</pre><h2 id="SystemAddressGet">SystemAddressGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SystemAddressGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemAddressGet">
-                                        <pre>
-
-sub SystemAddressGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need ID!",
-        );
-        return;
-    }
-
-    my $CacheKey = 'SystemAddressGet::' . $Param{ID};
-
-    my $Cached = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => $CacheKey,
-    );
-
-    return %{$Cached} if ref $Cached eq 'HASH';
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # get system address
-    return if !$DBObject->Prepare(
-        SQL => 'SELECT value0, value1, comments, valid_id, queue_id, change_time, create_time '
-            . ' FROM system_address WHERE id = ?',
-        Bind  => [ \$Param{ID} ],
-        Limit => 1,
-    );
-
-    # fetch the result
-    my %Data;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        %Data = (
-            ID         => $Param{ID},
-            Name       => $Data[0],
-            Realname   => $Data[1],
-            Comment    => $Data[2],
-            ValidID    => $Data[3],
-            QueueID    => $Data[4],
-            ChangeTime => $Data[5],
-            CreateTime => $Data[6],
-        );
-    }
-
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => $CacheKey,
-        Value => \%Data,
-    );
-
-    return %Data;
-}
-</pre></div>
+<h2 id="SystemAddressGet">SystemAddressGet()</h2>
 
 <p>get system address with attributes</p>
 
-<pre>    my %SystemAddress = $SystemAddressObject-&gt;SystemAddressGet(
+<pre><code>    my %SystemAddress = $SystemAddressObject-&gt;SystemAddressGet(
         ID =&gt; 1,
-    );
-</pre><p>returns:</p>
+    );</code></pre>
 
-<pre>    %SystemAddress = (
+<p>returns:</p>
+
+<pre><code>    %SystemAddress = (
         ID         =&gt; 1,
-        Name       =&gt; 'info@example.com'
-        Realname   =&gt; 'Hotline',
+        Name       =&gt; &#39;info@example.com&#39;
+        Realname   =&gt; &#39;Hotline&#39;,
         QueueID    =&gt; 123,
-        Comment    =&gt; 'some comment',
+        Comment    =&gt; &#39;some comment&#39;,
         ValidID    =&gt; 1,
-        CreateTime =&gt; '2010-11-29 11:04:04',
-        ChangeTime =&gt; '2010-12-07 12:33:56',
-    )
-</pre><h2 id="SystemAddressUpdate">SystemAddressUpdate()</h2>
+        CreateTime =&gt; &#39;2010-11-29 11:04:04&#39;,
+        ChangeTime =&gt; &#39;2010-12-07 12:33:56&#39;,
+    )</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SystemAddressUpdate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemAddressUpdate">
-                                        <pre>
-
-sub SystemAddressUpdate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(ID Name ValidID Realname QueueID UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    # update system address
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL => 'UPDATE system_address SET value0 = ?, value1 = ?, comments = ?, valid_id = ?, '
-            . ' change_time = current_timestamp, change_by = ?, queue_id = ? WHERE id = ?',
-        Bind => [
-            \$Param{Name}, \$Param{Realname}, \$Param{Comment}, \$Param{ValidID},
-            \$Param{UserID}, \$Param{QueueID}, \$Param{ID},
-        ],
-    );
-
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => $Self->{CacheType},
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="SystemAddressUpdate">SystemAddressUpdate()</h2>
 
 <p>update system address with attributes</p>
 
-<pre>    $SystemAddressObject-&gt;SystemAddressUpdate(
+<pre><code>    $SystemAddressObject-&gt;SystemAddressUpdate(
         ID       =&gt; 1,
-        Name     =&gt; 'info@example.com',
-        Realname =&gt; 'Hotline',
+        Name     =&gt; &#39;info@example.com&#39;,
+        Realname =&gt; &#39;Hotline&#39;,
         ValidID  =&gt; 1,
         QueueID  =&gt; 123,
-        Comment  =&gt; 'some comment',
+        Comment  =&gt; &#39;some comment&#39;,
         UserID   =&gt; 123,
-    );
-</pre><h2 id="SystemAddressList">SystemAddressList()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SystemAddressList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemAddressList">
-                                        <pre>
-
-sub SystemAddressList {
-    my ( $Self, %Param ) = @_;
-
-    my $Valid = 1;
-    if ( !$Param{Valid} && defined $Param{Valid} ) {
-        $Valid = 0;
-    }
-
-    my $CacheKey = 'SystemAddressList::' . $Valid;
-
-    my $Cached = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => $CacheKey,
-    );
-
-    return %{$Cached} if ref $Cached eq 'HASH';
-
-    my $ValidSQL = '';
-    if ($Valid) {
-        my $ValidIDs = join ',', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet();
-        $ValidSQL = " WHERE valid_id IN ($ValidIDs)";
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # get system address
-    return if !$DBObject->Prepare(
-        SQL => "
-            SELECT id, value0
-            FROM system_address
-            $ValidSQL",
-    );
-
-    my %List;
-
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-        $List{ $Data[0] } = $Data[1];
-    }
-
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => $CacheKey,
-        Value => \%List,
-    );
-
-    return %List;
-}
-</pre></div>
+<h2 id="SystemAddressList">SystemAddressList()</h2>
 
 <p>get a list of system addresses</p>
 
-<pre>    my %List = $SystemAddressObject-&gt;SystemAddressList(
+<pre><code>    my %List = $SystemAddressObject-&gt;SystemAddressList(
         Valid =&gt; 0,  # optional, defaults to 1
-    );
-</pre><p>returns:</p>
+    );</code></pre>
 
-<pre>    %List = (
-        '1' =&gt; 'sales@example.com',
-        '2' =&gt; 'purchasing@example.com',
-        '3' =&gt; 'service@example.com',
-    );
-</pre><h2 id="SystemAddressIsLocalAddress">SystemAddressIsLocalAddress()</h2>
+<p>returns:</p>
 
-<p><a href="#" onclick="toggleCode('method_SystemAddressIsLocalAddress');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemAddressIsLocalAddress">
-                                        <pre>
+<pre><code>    %List = (
+        &#39;1&#39; =&gt; &#39;sales@example.com&#39;,
+        &#39;2&#39; =&gt; &#39;purchasing@example.com&#39;,
+        &#39;3&#39; =&gt; &#39;service@example.com&#39;,
+    );</code></pre>
 
-sub SystemAddressIsLocalAddress {
-    my ( $Self, %Param ) = @_;
+<h2 id="SystemAddressIsLocalAddress">SystemAddressIsLocalAddress()</h2>
 
-    # check needed stuff
-    for my $Needed (qw(Address)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
+<p>Checks if the given address is a local (system) address. Returns true for local addresses.</p>
 
-    return $Self->SystemAddressQueueID(%Param);
-}
-</pre></div>
-
-<p>Checks if the given address is a local (system) address. Returns true
-for local addresses.</p>
-
-<pre>    if ( $SystemAddressObject-&gt;SystemAddressIsLocalAddress( Address =&gt; 'info@example.com' ) ) {
+<pre><code>    if ( $SystemAddressObject-&gt;SystemAddressIsLocalAddress( Address =&gt; &#39;info@example.com&#39; ) ) {
         # is local
     }
     else {
         # is not local
-    }
-</pre><h2 id="SystemAddressQueueID">SystemAddressQueueID()</h2>
+    }</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SystemAddressQueueID');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemAddressQueueID">
-                                        <pre>
-
-sub SystemAddressQueueID {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(Address)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    # remove spaces
-    $Param{Address} =~ s/\s+//g;
-
-    my $CacheKey = 'SystemAddressQueueID::' . $Param{Address};
-    my $Cached   = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => $CacheKey,
-    );
-
-    return ${$Cached} if ref $Cached eq 'SCALAR';
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    if ( $DBObject->GetDatabaseFunction('CaseSensitive') ) {
-
-        return if !$DBObject->Prepare(
-            SQL => "SELECT queue_id FROM system_address WHERE "
-                . "valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} ) "
-                . "AND LOWER(value0) = LOWER(?)",
-            Bind  => [ \$Param{Address} ],
-            Limit => 1,
-        );
-    }
-    else {
-        return if !$DBObject->Prepare(
-            SQL => "SELECT queue_id FROM system_address WHERE "
-                . "valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} ) "
-                . "AND value0 = ?",
-            Bind  => [ \$Param{Address} ],
-            Limit => 1,
-        );
-    }
-
-    # fetch the result
-    my $QueueID;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $QueueID = $Row[0];
-    }
-
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => $CacheKey,
-        Value => \$QueueID,
-    );
-
-    return $QueueID;
-}
-</pre></div>
+<h2 id="SystemAddressQueueID">SystemAddressQueueID()</h2>
 
 <p>find dispatching queue id of email address</p>
 
-<pre>    my $QueueID = $SystemAddressObject-&gt;SystemAddressQueueID( Address =&gt; 'info@example.com' );
-</pre><h2 id="SystemAddressQueueList">SystemAddressQueueList()</h2>
+<pre><code>    my $QueueID = $SystemAddressObject-&gt;SystemAddressQueueID( Address =&gt; &#39;info@example.com&#39; );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SystemAddressQueueList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SystemAddressQueueList">
-                                        <pre>
-
-sub SystemAddressQueueList {
-    my ( $Self, %Param ) = @_;
-
-    # set default value
-    my $Valid = $Param{Valid} // 1;
-
-    # create the valid list
-    my $ValidIDs = join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet();
-
-    # build SQL
-    my $SQL = 'SELECT queue_id, id FROM system_address';
-
-    # add WHERE statement in case Valid param is set to '1', for valid system address
-    if ($Valid) {
-        $SQL .= ' WHERE valid_id IN (' . $ValidIDs . ')';
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # get data from database
-    return if !$DBObject->Prepare(
-        SQL => $SQL,
-    );
-
-    # fetch the result
-    my %SystemAddressQueueList;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $SystemAddressQueueList{ $Row[0] } = $Row[1];
-    }
-
-    return %SystemAddressQueueList;
-
-}
-</pre></div>
+<h2 id="SystemAddressQueueList">SystemAddressQueueList()</h2>
 
 <p>get a list of the queues and their system addresses IDs</p>
 
-<pre>    my %List = $SystemAddressObject-&gt;SystemAddressQueueList(
+<pre><code>    my %List = $SystemAddressObject-&gt;SystemAddressQueueList(
         Valid =&gt; 0,  # optional, defaults to 1
-    );
-</pre><p>returns:</p>
+    );</code></pre>
 
-<pre>    %List = (
-        '5' =&gt; 3,
-        '7' =&gt; 1,
-        '9' =&gt; 2,
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<p>returns:</p>
+
+<pre><code>    %List = (
+        &#39;5&#39; =&gt; 3,
+        &#39;7&#39; =&gt; 1,
+        &#39;9&#39; =&gt; 2,
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

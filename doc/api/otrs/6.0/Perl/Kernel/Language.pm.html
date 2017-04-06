@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::Language</title>
+<title>Kernel::Language &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,562 +48,142 @@ $(document).ready(function() {
 <div>
 <a href="../src/Kernel/Language.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Translatable">Translatable()</a></li>
-	<li><a href="#Translate">Translate()</a></li>
-	<li><a href="#FormatTimeString">FormatTimeString()</a></li>
-	<li><a href="#GetRecommendedCharset">GetRecommendedCharset()</a></li>
-	<li><a href="#GetPossibleCharsets">GetPossibleCharsets()</a></li>
-	<li><a href="#Time">Time()</a></li>
-	<li><a href="#LanguageChecksum">LanguageChecksum()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Translatable">Translatable()</a></li>
+      <li><a href="#Translate">Translate()</a></li>
+      <li><a href="#FormatTimeString">FormatTimeString()</a></li>
+      <li><a href="#GetRecommendedCharset">GetRecommendedCharset()</a></li>
+      <li><a href="#GetPossibleCharsets">GetPossibleCharsets()</a></li>
+      <li><a href="#Time">Time()</a></li>
+      <li><a href="#LanguageChecksum">LanguageChecksum()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::Language - global language interface</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All language functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
-
-    # 0=off; 1=on; 2=get all not translated words; 3=get all requests
-    $Self->{Debug} = 0;
-
-    # get needed object
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $MainObject   = $Kernel::OM->Get('Kernel::System::Main');
-
-    # check if LanguageDebug is configured
-    if ( $ConfigObject->Get('LanguageDebug') ) {
-        $Self->{LanguageDebug} = 1;
-    }
-
-    # user language
-    $Self->{UserLanguage} = $Param{UserLanguage}
-        || $ConfigObject->Get('DefaultLanguage')
-        || 'en';
-
-    # check if language is configured
-    my %Languages = %{ $ConfigObject->Get('DefaultUsedLanguages') };
-    if ( !$Languages{ $Self->{UserLanguage} } ) {
-        $Self->{UserLanguage} = 'en';
-    }
-
-    # take time zone
-    $Self->{TimeZone} = $Param{UserTimeZone} || $Param{TimeZone} || OTRSTimeZoneGet();
-
-    # Debug
-    if ( $Self->{Debug} > 0 ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'Debug',
-            Message  => "UserLanguage = $Self->{UserLanguage}",
-        );
-    }
-
-    # load text catalog ...
-    if ( !$MainObject->Require("Kernel::Language::$Self->{UserLanguage}") ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'Error',
-            Message  => "Sorry, can't locate or load Kernel::Language::$Self->{UserLanguage} "
-                . "translation! Check the Kernel/Language/$Self->{UserLanguage}.pm (perl -cw)!",
-        );
-    }
-
-    # add module to ISA
-    @ISA = ("Kernel::Language::$Self->{UserLanguage}");
-
-    # execute translation map
-    if ( eval { $Self->Data() } ) {
-
-        # debug info
-        if ( $Self->{Debug} > 0 ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'Debug',
-                Message  => "Kernel::Language::$Self->{UserLanguage} load ... done.",
-            );
-        }
-    }
-
-    # load action text catalog ...
-    my $CustomTranslationModule = '';
-
-    # do not include addition translation files, a new translation file gets created
-    if ( !$Param{TranslationFile} ) {
-
-        # looking to addition translation files
-        my $Home  = $ConfigObject->Get('Home') . '/';
-        my @Files = $MainObject->DirectoryRead(
-            Directory => $Home . "Kernel/Language/",
-            Filter    => "$Self->{UserLanguage}_*.pm",
-        );
-        FILE:
-        for my $File (@Files) {
-
-            # get module name based on file name
-            $File =~ s/^$Home(.*)\.pm$/$1/g;
-            $File =~ s/\/\//\//g;
-            $File =~ s/\//::/g;
-
-            # ignore language translation files like (en_GB, en_CA, ...)
-            next FILE if $File =~ /.._..$/;
-
-            # remember custom files to load at least
-            if ( $File =~ /_Custom$/ ) {
-                $CustomTranslationModule = $File;
-                next FILE;
-            }
-
-            # load translation module
-            if ( !$MainObject->Require($File) ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'Error',
-                    Message  => "Sorry, can't load $File! " . "Check the $File (perl -cw)!",
-                );
-                next FILE;
-            }
-
-            # add module to ISA
-            @ISA = ($File);
-
-            # execute translation map
-            if ( eval { $Self->Data() } ) {
-
-                # debug info
-                if ( $Self->{Debug} > 0 ) {
-                    $Kernel::OM->Get('Kernel::System::Log')->Log(
-                        Priority => 'Debug',
-                        Message  => "$File load ... done.",
-                    );
-                }
-            }
-        }
-
-        # load custom text catalog ...
-        if ( $CustomTranslationModule && $MainObject->Require($CustomTranslationModule) ) {
-
-            # add module to ISA
-            @ISA = ($CustomTranslationModule);
-
-            # execute translation map
-            if ( eval { $Self->Data() } ) {
-
-                # debug info
-                if ( $Self->{Debug} > 0 ) {
-                    $Kernel::OM->Get('Kernel::System::Log')->Log(
-                        Priority => 'Debug',
-                        Message  => "Kernel::Language::$Self->{UserLanguage}_Custom load ... done.",
-                    );
-                }
-            }
-        }
-    }
-
-    # if no return charset is given, use recommended return charset
-    if ( !$Self->{ReturnCharset} ) {
-        $Self->{ReturnCharset} = $Self->GetRecommendedCharset();
-    }
-
-    # get source file charset
-    # what charset should I use (take it from translation file)!
-    if ( $Self->{Charset} && ref $Self->{Charset} eq 'ARRAY' ) {
-        $Self->{TranslationCharset} = $Self->{Charset}->[-1];
-    }
-
-    return $Self;
-}
-</pre></div>
-
 <p>create a language object. Do not use it directly, instead use:</p>
 
-<pre>    use Kernel::System::ObjectManager;
+<pre><code>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
-        'Kernel::Language' =&gt; {
-            UserLanguage =&gt; 'de',
+        &#39;Kernel::Language&#39; =&gt; {
+            UserLanguage =&gt; &#39;de&#39;,
         },
     );
-    my $LanguageObject = $Kernel::OM-&gt;Get('Kernel::Language');
-</pre><h2 id="Translatable">Translatable()</h2>
+    my $LanguageObject = $Kernel::OM-&gt;Get(&#39;Kernel::Language&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Translatable');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Translatable">
-                                        <pre>
-
-sub Translatable {
-    return shift;
-}
-</pre></div>
+<h2 id="Translatable">Translatable()</h2>
 
 <p>this is a no-op to mark a text as translatable in the Perl code.</p>
 
 <h2 id="Translate">Translate()</h2>
 
-<p><a href="#" onclick="toggleCode('method_Translate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Translate">
-                                        <pre>
-
-sub Translate {
-    my ( $Self, $Text, @Parameters ) = @_;
-
-    $Text //= '';
-
-    $Text = $Self->{Translation}->{$Text} || $Text;
-
-    return $Text if !@Parameters;
-
-    for ( 0 .. $#Parameters ) {
-        return $Text if !defined $Parameters[$_];
-        $Text =~ s/\%(s|d)/$Parameters[$_]/;
-    }
-
-    return $Text;
-}
-</pre></div>
-
 <p>translate a text with placeholders.</p>
 
-<pre>        my $Text = $LanguageObject-&gt;Translate('Hello %s!', 'world');
-</pre><h2 id="FormatTimeString">FormatTimeString()</h2>
+<pre><code>        my $Text = $LanguageObject-&gt;Translate(&#39;Hello %s!&#39;, &#39;world&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_FormatTimeString');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_FormatTimeString">
-                                        <pre>
+<h2 id="FormatTimeString">FormatTimeString()</h2>
 
-sub FormatTimeString {
-    my ( $Self, $String, $Config, $Short ) = @_;
+<p>formats a timestamp according to the specified date format for the current language (locale).</p>
 
-    return '' if !$String;
-
-    $Config ||= 'DateFormat';
-    $Short  ||= 0;
-
-    # Valid timestamp
-    if ( $String =~ /(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})/ ) {
-        my $ReturnString = $Self->{$Config} || "$Config needs to be translated!";
-
-        my $DateTimeObject = $Kernel::OM->Create(
-            'Kernel::System::DateTime',
-            ObjectParams => {
-                String => $String,
-            },
-        );
-
-        if ( !$DateTimeObject ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Invalid date/time string $String.",
-            );
-
-            return $String;
-        }
-
-        # Convert to time zone, but only if we actually display the time!
-        # Otherwise the date might be off by one day because of the TimeZone diff.
-        if ( $Self->{TimeZone} && $Config ne 'DateFormatShort' ) {
-            $DateTimeObject->ToTimeZone( TimeZone => $Self->{TimeZone} );
-        }
-
-        my $DateTimeValues = $DateTimeObject->Get();
-
-        my $Year      = $DateTimeValues->{Year};
-        my $Month     = sprintf "%02d", $DateTimeValues->{Month};
-        my $MonthAbbr = $DateTimeValues->{MonthAbbr};
-        my $Day       = sprintf "%02d", $DateTimeValues->{Day};
-        my $DayAbbr   = $DateTimeValues->{DayAbbr};
-        my $Hour      = sprintf "%02d", $DateTimeValues->{Hour};
-        my $Minute    = sprintf "%02d", $DateTimeValues->{Minute};
-        my $Second    = sprintf "%02d", $DateTimeValues->{Second};
-
-        if ($Short) {
-            $ReturnString =~ s/\%T/$Hour:$Minute/g;
-        }
-        else {
-            $ReturnString =~ s/\%T/$Hour:$Minute:$Second/g;
-        }
-        $ReturnString =~ s/\%D/$Day/g;
-        $ReturnString =~ s/\%M/$Month/g;
-        $ReturnString =~ s/\%Y/$Year/g;
-
-        $ReturnString =~ s{(\%A)}{$Self->Translate($DayAbbr);}egx;
-        $ReturnString
-            =~ s{(\%B)}{$Self->Translate($MonthAbbr);}egx;
-
-        # output time zone only if it differs from OTRS' time zone
-        if (
-            $Config ne 'DateFormatShort'
-            && $Self->{TimeZone}
-            && $Self->{TimeZone} ne OTRSTimeZoneGet()
-            )
-        {
-            return $ReturnString . " ($Self->{TimeZone})";
-        }
-
-        return $ReturnString;
-    }
-
-    # Invalid string passed? (don't log for ISO dates)
-    if ( $String !~ /^(\d{2}:\d{2}:\d{2})$/ ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'notice',
-            Message  => "No FormatTimeString() translation found for '$String' string!",
-        );
-    }
-
-    return $String;
-
-}
-</pre></div>
-
-<p>formats a timestamp according to the specified date format for the current
-language (locale).</p>
-
-<pre>    my $Date = $LanguageObject-&gt;FormatTimeString(
-        '2009-12-12 12:12:12',  # timestamp
-        'DateFormat',           # which date format to use, e. g. DateFormatLong
+<pre><code>    my $Date = $LanguageObject-&gt;FormatTimeString(
+        &#39;2009-12-12 12:12:12&#39;,  # timestamp
+        &#39;DateFormat&#39;,           # which date format to use, e. g. DateFormatLong
         0,                      # optional, hides the seconds from the time output
-    );
-</pre><p>Please note that the TimeZone will not be applied in the case of DateFormatShort (date only)
-to avoid switching to another date.</p>
+    );</code></pre>
 
-<p>If you only pass an ISO date ('2009-12-12'), it will be returned unchanged.
-Invalid strings will also be returned with an error logged.</p>
+<p>Please note that the TimeZone will not be applied in the case of DateFormatShort (date only) to avoid switching to another date.</p>
+
+<p>If you only pass an ISO date (&#39;2009-12-12&#39;), it will be returned unchanged. Invalid strings will also be returned with an error logged.</p>
 
 <h2 id="GetRecommendedCharset">GetRecommendedCharset()</h2>
 
-<p><a href="#" onclick="toggleCode('method_GetRecommendedCharset');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetRecommendedCharset">
-                                        <pre>
+<p>DEPRECATED. Don&#39;t use this function any more, &#39;utf-8&#39; is always the internal charset.</p>
 
-sub GetRecommendedCharset {
-    my $Self = shift;
+<p>Returns the recommended charset for frontend (based on translation file or utf-8).</p>
 
-    return 'utf-8';
-}
-</pre></div>
+<pre><code>    my $Charset = $LanguageObject-&gt;GetRecommendedCharset().</code></pre>
 
-<p>DEPRECATED. Don't use this function any more, 'utf-8' is always the internal charset.</p>
-
-<p>Returns the recommended charset for frontend (based on translation
-file or utf-8).</p>
-
-<pre>    my $Charset = $LanguageObject-&gt;GetRecommendedCharset().
-</pre><h2 id="GetPossibleCharsets">GetPossibleCharsets()</h2>
-
-<p><a href="#" onclick="toggleCode('method_GetPossibleCharsets');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetPossibleCharsets">
-                                        <pre>
-
-sub GetPossibleCharsets {
-    my $Self = shift;
-
-    return @{ $Self->{Charset} } if $Self->{Charset};
-    return;
-}
-</pre></div>
+<h2 id="GetPossibleCharsets">GetPossibleCharsets()</h2>
 
 <p>Returns an array of possible charsets (based on translation file).</p>
 
-<pre>    my @Charsets = $LanguageObject-&gt;GetPossibleCharsets().
-</pre><h2 id="Time">Time()</h2>
+<pre><code>    my @Charsets = $LanguageObject-&gt;GetPossibleCharsets().</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Time');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Time">
-                                        <pre>
-
-sub Time {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for (qw(Action Format)) {
-        if ( !$Param{$_} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $_!",
-            );
-            return;
-        }
-    }
-    my $ReturnString = $Self->{ $Param{Format} } || 'Need to be translated!';
-    my ( $Year, $Month, $MonthAbbr, $Day, $DayAbbr, $Hour, $Minute, $Second );
-
-    # set or get time
-    if ( lc $Param{Action} eq 'get' ) {
-
-        my $DateTimeObject = $Kernel::OM->Create(
-            'Kernel::System::DateTime',
-            ObjectParams => {
-                TimeZone => $Self->{TimeZone},
-            },
-        );
-        my $DateTimeValues = $DateTimeObject->Get();
-
-        $Year      = $DateTimeValues->{Year};
-        $Month     = sprintf "%02d", $DateTimeValues->{Month};
-        $MonthAbbr = $DateTimeValues->{MonthAbbr};
-        $Day       = sprintf "%02d", $DateTimeValues->{Day};
-        $DayAbbr   = $DateTimeValues->{DayAbbr};
-        $Hour      = sprintf "%02d", $DateTimeValues->{Hour};
-        $Minute    = sprintf "%02d", $DateTimeValues->{Minute};
-        $Second    = sprintf "%02d", $DateTimeValues->{Second};
-    }
-    elsif ( lc $Param{Action} eq 'return' ) {
-        $Year   = $Param{Year}   || 0;
-        $Month  = $Param{Month}  || 0;
-        $Day    = $Param{Day}    || 0;
-        $Hour   = $Param{Hour}   || 0;
-        $Minute = $Param{Minute} || 0;
-        $Second = $Param{Second} || 0;
-
-        my @MonthAbbrs = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
-        $MonthAbbr = defined $Month && $Month =~ m/^\d+$/ ? $MonthAbbrs[ $Month - 1 ] : '';
-    }
-
-    # do replace
-    if ( ( lc $Param{Action} eq 'get' ) || ( lc $Param{Action} eq 'return' ) ) {
-        my $Time = '';
-        if ( $Param{Mode} && $Param{Mode} =~ /^NotNumeric$/i ) {
-            if ( !$Second ) {
-                $Time = "$Hour:$Minute";
-            }
-            else {
-                $Time = "$Hour:$Minute:$Second";
-            }
-        }
-        else {
-            $Time  = sprintf( "%02d:%02d:%02d", $Hour, $Minute, $Second );
-            $Day   = sprintf( "%02d",           $Day );
-            $Month = sprintf( "%02d",           $Month );
-        }
-        $ReturnString =~ s/\%T/$Time/g;
-        $ReturnString =~ s/\%D/$Day/g;
-        $ReturnString =~ s/\%M/$Month/g;
-        $ReturnString =~ s/\%Y/$Year/g;
-        $ReturnString =~ s{(\%A)}{defined $DayAbbr ? $Self->Translate($DayAbbr) : '';}egx;
-        $ReturnString
-            =~ s{(\%B)}{defined $MonthAbbr ? $Self->Translate($MonthAbbr) : '';}egx;
-        return $ReturnString;
-    }
-
-    return $ReturnString;
-}
-</pre></div>
+<h2 id="Time">Time()</h2>
 
 <p>Returns a time string in language format (based on translation file).</p>
 
-<pre>    $Time = $LanguageObject-&gt;Time(
-        Action =&gt; 'GET',
-        Format =&gt; 'DateFormat',
+<pre><code>    $Time = $LanguageObject-&gt;Time(
+        Action =&gt; &#39;GET&#39;,
+        Format =&gt; &#39;DateFormat&#39;,
     );
 
     $TimeLong = $LanguageObject-&gt;Time(
-        Action =&gt; 'GET',
-        Format =&gt; 'DateFormatLong',
+        Action =&gt; &#39;GET&#39;,
+        Format =&gt; &#39;DateFormatLong&#39;,
     );
 
     $TimeLong = $LanguageObject-&gt;Time(
-        Action =&gt; 'RETURN',
-        Format =&gt; 'DateFormatLong',
+        Action =&gt; &#39;RETURN&#39;,
+        Format =&gt; &#39;DateFormatLong&#39;,
         Year   =&gt; 1977,
         Month  =&gt; 10,
         Day    =&gt; 27,
         Hour   =&gt; 20,
         Minute =&gt; 10,
         Second =&gt; 05,
-    );
-</pre><p>These tags are supported: %A=WeekDay;%B=LongMonth;%T=Time;%D=Day;%M=Month;%Y=Year;</p>
+    );</code></pre>
+
+<p>These tags are supported: %A=WeekDay;%B=LongMonth;%T=Time;%D=Day;%M=Month;%Y=Year;</p>
 
 <p>Note that %A only works correctly with Action GET, it might be dropped otherwise.</p>
 
 <p>Also note that it is also possible to pass HTML strings for date input:</p>
 
-<pre>    $TimeLong = $LanguageObject-&gt;Time(
-        Action =&gt; 'RETURN',
-        Format =&gt; 'DateInputFormatLong',
-        Mode   =&gt; 'NotNumeric',
-        Year   =&gt; '&lt;input value=&quot;2014&quot;/&gt;',
-        Month  =&gt; '&lt;input value=&quot;1&quot;/&gt;',
-        Day    =&gt; '&lt;input value=&quot;10&quot;/&gt;',
-        Hour   =&gt; '&lt;input value=&quot;11&quot;/&gt;',
-        Minute =&gt; '&lt;input value=&quot;12&quot;/&gt;',
-        Second =&gt; '&lt;input value=&quot;13&quot;/&gt;',
-    );
-</pre><p>Note that %B may not work in NonNumeric mode.</p>
+<pre><code>    $TimeLong = $LanguageObject-&gt;Time(
+        Action =&gt; &#39;RETURN&#39;,
+        Format =&gt; &#39;DateInputFormatLong&#39;,
+        Mode   =&gt; &#39;NotNumeric&#39;,
+        Year   =&gt; &#39;&lt;input value=&quot;2014&quot;/&gt;&#39;,
+        Month  =&gt; &#39;&lt;input value=&quot;1&quot;/&gt;&#39;,
+        Day    =&gt; &#39;&lt;input value=&quot;10&quot;/&gt;&#39;,
+        Hour   =&gt; &#39;&lt;input value=&quot;11&quot;/&gt;&#39;,
+        Minute =&gt; &#39;&lt;input value=&quot;12&quot;/&gt;&#39;,
+        Second =&gt; &#39;&lt;input value=&quot;13&quot;/&gt;&#39;,
+    );</code></pre>
+
+<p>Note that %B may not work in NonNumeric mode.</p>
 
 <h2 id="LanguageChecksum">LanguageChecksum()</h2>
 
-<p><a href="#" onclick="toggleCode('method_LanguageChecksum');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_LanguageChecksum">
-                                        <pre>
+<p>This function returns an MD5 sum that is generated from all loaded language files and their modification timestamps. Whenever a file is changed, added or removed, this checksum will change.</p>
 
-sub LanguageChecksum {
-    my $Self = shift;
-
-    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home');
-
-    my @Files;
-    for my $Class (@ISA) {
-        my $File = "$Home/$Class.pm";
-        $File =~ s{::}{/}smxg;
-        push @Files, $File;
-    }
-
-    # Create a string with filenames and file mtimes of the config files
-    my $LanguageString;
-    for my $File (@Files) {
-
-        # get file metadata
-        my $Stat = stat($File);
-
-        if ( !$Stat ) {
-            print STDERR "Error: cannot stat file '$File': $!";
-            return;
-        }
-
-        $LanguageString .= $File . $Stat->mtime();
-    }
-
-    return Digest::MD5::md5_hex($LanguageString);
-}
-</pre></div>
-
-<p>This function returns an MD5 sum that is generated from all loaded language files and their modification timestamps.
-Whenever a file is changed, added or removed, this checksum will change.</p>
-
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../up.gif" /></a></h1>
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

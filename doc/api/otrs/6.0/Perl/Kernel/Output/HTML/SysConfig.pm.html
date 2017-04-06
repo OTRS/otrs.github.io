@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::Output::HTML::SysConfig::</title>
+<title>Kernel::Output::HTML::SysConfig &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,124 +48,48 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/Output/HTML/SysConfig.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#SettingRender">SettingRender()</a></li>
-	<li><a href="#SettingAddItem">SettingAddItem()</a></li>
-</ul>
-</li>
-	<li><a href="#PRIVATE_INTERFACE">PRIVATE INTERFACE</a><br />
-<ul>
-	<li><a href="#SettingRender-2">_SettingRender()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#SettingRender">SettingRender()</a></li>
+      <li><a href="#SettingAddItem">SettingAddItem()</a></li>
+    </ul>
+  </li>
+  <li><a href="#PRIVATE-INTERFACE">PRIVATE INTERFACE</a>
+    <ul>
+      <li><a href="#SettingRender1">_SettingRender()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::Output::HTML::SysConfig:: - Manage HTML representation of SysConfig settings.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    return $Self;
-}
-</pre></div>
-
 <p>Create an object. Do not use it directly, instead use:</p>
 
-<pre>    use Kernel::System::ObjectManager;
+<pre><code>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $SysConfigHTMLObject = $Kernel::OM-&gt;Get('Kernel::Output::HTML::SysConfig');
-</pre><h2 id="SettingRender">SettingRender()</h2>
+    my $SysConfigHTMLObject = $Kernel::OM-&gt;Get(&#39;Kernel::Output::HTML::SysConfig&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SettingRender');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SettingRender">
-                                        <pre>
-
-sub SettingRender {
-    my ( $Self, %Param ) = @_;
-
-    # Check needed stuff.
-    for my $Needed (qw(Setting UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-    if ( !IsHashRefWithData( $Param{Setting} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Setting is invalid!",
-        );
-    }
-
-    my $Result = $Self->_SettingRender(
-        %{ $Param{Setting} },
-        Value                   => $Param{Setting}->{XMLContentParsed}->{Value},
-        RW                      => $Param{RW},
-        IsAjax                  => $Param{IsAjax},
-        SkipEffectiveValueCheck => $Param{SkipEffectiveValueCheck},
-        UserID                  => $Param{UserID},
-    );
-
-    my $HTML = <<"EOF";
-                        <div class="Setting" data-change-time="$Param{Setting}->{ChangeTime}">
-                            $Result
-                        </div>
-EOF
-
-    if ( $Param{RW} ) {
-        my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
-
-        my $SaveText   = $LanguageObject->Translate('Save this setting');
-        my $CancelText = $LanguageObject->Translate('Cancel editing and unlock this setting');
-        my $ResetText  = $LanguageObject->Translate('Reset this setting to its default value.');
-
-        $HTML .= "
-                                <div class='SettingUpdateBox'>
-                                    <button class='CallForAction Update' aria-controls='fieldset$Param{Setting}->{DefaultID}' type='button' value='$SaveText' title='$SaveText'>
-                                        <span><i class='fa fa-check'></i></span>
-                                    </button>
-                                    <button class='CallForAction Cancel' aria-controls='fieldset$Param{Setting}->{DefaultID}' type='button' value='$CancelText' title='$CancelText'>
-                                        <span><i class='fa fa-times'></i></span>
-                                    </button>
-                                </div>\n";
-    }
-
-    return $HTML;
-}
-</pre></div>
+<h2 id="SettingRender">SettingRender()</h2>
 
 <p>Returns the specific HTML for the setting.</p>
 
-<pre>    my $HTMLStr = $SysConfigHTMLObject-&gt;SettingRender(
+<pre><code>    my $HTMLStr = $SysConfigHTMLObject-&gt;SettingRender(
         Setting   =&gt; {
-            Name             =&gt; 'Setting Name',
+            Name             =&gt; &#39;Setting Name&#39;,
             XMLContentParsed =&gt; $XMLParsedToPerl,
             EffectiveValue   =&gt; &quot;Product 6&quot;,        # or a complex structure
             DefaultValue     =&gt; &quot;Product 5&quot;,        # or a complex structure
@@ -195,316 +98,35 @@ EOF
         },
         RW     =&gt; 1,                                # (optional) Allow editing. Default 0.
         UserID =&gt; 1,                                # (required) UserID
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $HTMLStr = '&lt;div class=&quot;Setting&quot;&gt;&lt;div class &quot;Field&quot;...&lt;/div&gt;&lt;/div&gt;'        # or false in case of an error
-</pre><h2 id="SettingAddItem">SettingAddItem()</h2>
+<p>Returns:</p>
 
-<p><a href="#" onclick="toggleCode('method_SettingAddItem');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SettingAddItem">
-                                        <pre>
+<pre><code>    $HTMLStr = &#39;&lt;div class=&quot;Setting&quot;&gt;&lt;div class &quot;Field&quot;...&lt;/div&gt;&lt;/div&gt;&#39;        # or false in case of an error</code></pre>
 
-sub SettingAddItem {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(SettingStructure Setting UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-    $Param{Key} //= '';
-
-    my @SettingStructure = @{ $Param{SettingStructure} };
-
-    $Param{IDSuffix} //= '';
-    my %Setting = %{ $Param{Setting} };
-
-    my $DefaultItem;
-    my %Result;
-
-    my $Value = $Param{Value};
-
-    if ( $Value->{Item} && $Value->{Item}->[0]->{ValueType} ) {
-        my $ValueType = $Value->{Item}->[0]->{ValueType};
-
-        my $Loaded = $Kernel::OM->Get('Kernel::System::Main')->Require(
-            "Kernel::System::SysConfig::ValueType::$ValueType",
-        );
-
-        if ( !$Loaded ) {
-            $Result{Error} = $Kernel::OM->Get('Kernel::Language')->Translate(
-                "Unable to load %s!",
-                "Kernel::System::SysConfig::ValueType::$ValueType"
-            );
-            return %Result;
-        }
-
-        my $BackendObject = $Kernel::OM->Get(
-            "Kernel::System::SysConfig::ValueType::$ValueType",
-        );
-
-        $DefaultItem = $BackendObject->DefaultItemAdd();
-
-    }
-    elsif ( $Value->{Item} && $Value->{Item}->[0]->{ValueType} eq 'VacationDaysOneTime' ) {
-        $DefaultItem = {
-            Item => {
-                Content => '',
-            },
-            ValueType => 'VacationDaysOneTime',
-        };
-    }
-    elsif ( $Value->{Array} && $Value->{Array}->[0]->{DefaultItem} ) {
-        $DefaultItem = $Value->{Array}->[0]->{DefaultItem}->[0];
-    }
-    elsif ( $Value->{Hash} && $Value->{Hash}->[0]->{DefaultItem} ) {
-        $DefaultItem = $Value->{Hash}->[0]->{DefaultItem}->[0];
-    }
-
-    if ( !$DefaultItem && $Value->{Array} ) {
-        my $DedicatedDefaultItem = $Value->{Array}->[0];
-
-        my @Structure = split m{_Array|_Hash\#\#\#}smx, $Param{IDSuffix};
-        shift @Structure;
-
-        my $Index = 0;
-
-        for my $StructureItem (@SettingStructure) {
-            if ( $StructureItem eq 'Hash' ) {
-                my $HashKey = $Structure[$Index];
-
-                my ($Item) = grep { $HashKey eq $_->{Key} } @{ $DedicatedDefaultItem->{Item} };
-                last STRUCTURE if !$Item;
-
-                $DedicatedDefaultItem = $Item->{Hash}->[0];
-            }
-            else {
-                my $ArrayIndex = $Structure[$Index];
-                last STRUCTURE if !$DedicatedDefaultItem->{Item}->{$ArrayIndex};
-
-                $DedicatedDefaultItem = $DedicatedDefaultItem->{Item}->[$ArrayIndex]->{Array}->[0];
-            }
-
-            $Index++;
-        }
-
-        if ( $DedicatedDefaultItem->{DefaultItem} ) {
-            $DefaultItem      = $DedicatedDefaultItem->{DefaultItem}->[0];
-            @SettingStructure = ();
-        }
-        else {
-
-            # Simple item
-            $DefaultItem = {
-                Item => {
-                    Content => '',
-                },
-            };
-        }
-    }
-    elsif ( !$DefaultItem && $Value->{Hash} ) {
-
-        my $DedicatedDefaultItem = $Value->{Hash}->[0];
-
-        my @Structure = split m{_Array|_Hash\#\#\#}smx, $Param{IDSuffix};
-        shift @Structure;
-
-        my $Index = 0;
-
-        STRUCTURE:
-        for my $StructureItem (@SettingStructure) {
-            if ( $StructureItem eq 'Hash' ) {
-                my $HashKey = $Structure[$Index];
-
-                my ($Item) = grep { $HashKey eq $_->{Key} } @{ $DedicatedDefaultItem->{Item} };
-                last STRUCTURE if !$Item;
-
-                $DedicatedDefaultItem = $Item->{Hash}->[0];
-            }
-            else {
-                my $ArrayIndex = $Structure[$Index];
-
-                last STRUCTURE if !$DedicatedDefaultItem->{Item}->{$ArrayIndex};
-                $DedicatedDefaultItem = $DedicatedDefaultItem->{Item}->[$ArrayIndex]->{Array}->[0];
-            }
-
-            $Index++;
-        }
-
-        if ( $DedicatedDefaultItem->{DefaultItem} ) {
-            $DefaultItem      = $DedicatedDefaultItem->{DefaultItem}->[0];
-            @SettingStructure = ();
-        }
-        else {
-
-            # Simple item
-            $DefaultItem = {
-                Item => {
-                    Content => '',
-                },
-            };
-        }
-    }
-
-    for my $StructureItem ( reverse @SettingStructure ) {
-        if ( $StructureItem eq 'Array' ) {
-            $DefaultItem = $DefaultItem->{Array}->[0]->{DefaultItem}->[0];
-
-            if ( !$DefaultItem ) {
-                $DefaultItem = {
-                    Item => {
-                        Content => '',
-                    },
-                };
-            }
-        }
-        else {
-            $DefaultItem = $DefaultItem->{Hash}->[0]->{DefaultItem}->[0];
-
-            if ( !$DefaultItem ) {
-                $DefaultItem = {
-                    Item => {
-                        Content => '',
-                    },
-                };
-            }
-        }
-    }
-
-    # Default fallback
-    if ( !$DefaultItem ) {
-        $DefaultItem = {
-            Item => {
-                Content => '',
-            },
-        };
-    }
-
-    if ( $DefaultItem->{Item} || $DefaultItem->{ValueType} ) {
-        my $ValueType = $DefaultItem->{ValueType} || 'String';
-
-        my $Loaded = $Kernel::OM->Get('Kernel::System::Main')->Require(
-            "Kernel::System::SysConfig::ValueType::$ValueType",
-        );
-
-        if ( !$Loaded ) {
-            $Result{Error} = $Kernel::OM->Get('Kernel::Language')->Translate(
-                "Unable to load %s!",
-                "Kernel::System::SysConfig::ValueType::$ValueType"
-            );
-            return %Result;
-        }
-
-        my $BackendObject = $Kernel::OM->Get(
-            "Kernel::System::SysConfig::ValueType::$ValueType",
-        );
-
-        $Result{Item} = "<div class='SettingContent'>\n";
-        $Result{Item} .= $BackendObject->AddItem(
-            Name        => $Setting{Name},
-            DefaultItem => $DefaultItem,
-            IDSuffix    => $Param{IDSuffix},
-            UserID      => $Param{UserID},
-        );
-        $Result{Item} .= '</div>';
-    }
-    else {
-        $Result{Item} //= '';
-
-        if ( $DefaultItem->{Array} ) {
-            pop @SettingStructure;
-            $Param{SettingStructure} = \@SettingStructure;
-
-            # new array item
-            my %SubResult = $Self->SettingAddItem(
-                %Param,
-                Value             => $DefaultItem,
-                IDSuffix          => $Param{IDSuffix} . '_Array1',
-                AddSettingContent => 0,
-                UserID            => $Param{UserID},
-            );
-            return %SubResult if $SubResult{Error};
-
-            if ( $Param{AddSettingContent} ) {
-                $Result{Item} .= "<div class=\"SettingContent\">\n";
-            }
-            $Result{Item} .= '<div class="Array">';
-            $Result{Item} .= '<div class="ArrayItem">';
-            $Result{Item} .= $SubResult{Item};
-
-            $Result{Item} .= "</div>\n";
-            $Result{Item} .= "</div>\n";
-            if ( $Param{AddSettingContent} ) {
-                $Result{Item} .= "</div>\n";
-            }
-        }
-        elsif ( $DefaultItem->{Hash} ) {
-            my $AddKey = $Kernel::OM->Get('Kernel::Language')->Translate("Add key");
-
-            pop @SettingStructure;
-            $Param{SettingStructure} = \@SettingStructure;
-
-            # new hash item
-            my %SubResult = $Self->SettingAddItem(
-                %Param,
-                Value             => $DefaultItem,
-                IDSuffix          => $Param{IDSuffix} . "_Hash###$Param{Key}",
-                AddSettingContent => 0,
-                UserID            => $Param{UserID},
-            );
-            return %SubResult if $SubResult{Error};
-
-            if ( $Param{AddSettingContent} ) {
-                $Result{Item} .= "<div class=\"SettingContent\">\n";
-            }
-
-            $Result{Item} .= "
-            <div class=\"Hash\">
-                <div class=\"HashItem\">
-                    <input type=\"text\" class=\"Key\" data-suffix=\"$Param{IDSuffix}_Hash###\">
-                    <button class=\"AddKey\" value=\"$AddKey\" type=\"button\" title=\"$AddKey\">
-                        <i class=\"fa fa-plus-circle\"></i>
-                        <span class=\"InvisibleText\">$AddKey</span>
-                    </button>
-                </div>
-            </div>";
-
-            if ( $Param{AddSettingContent} ) {
-                $Result{Item} .= "</div>\n";
-            }
-        }
-    }
-
-    return %Result;
-}
-</pre></div>
+<h2 id="SettingAddItem">SettingAddItem()</h2>
 
 <p>Returns response that is sent when user adds new array/hash item.</p>
 
-<pre>    my %Result = $SysConfigHTMLObject-&gt;SettingAddItem(
+<pre><code>    my %Result = $SysConfigHTMLObject-&gt;SettingAddItem(
         SettingStructure  =&gt; [],         # (required) array that contains structure
                                          #  where a new item should be inserted (can be empty)
         Setting           =&gt; {           # (required) Setting hash (from SettingGet())
-            'DefaultID' =&gt; '8905',
-            'DefaultValue' =&gt; [ 'Item 1', 'Item 2' ],
-            'Description' =&gt; 'Simple array item(Min 1, Max 3).',
-            'Name' =&gt; 'TestArray',
+            &#39;DefaultID&#39; =&gt; &#39;8905&#39;,
+            &#39;DefaultValue&#39; =&gt; [ &#39;Item 1&#39;, &#39;Item 2&#39; ],
+            &#39;Description&#39; =&gt; &#39;Simple array item(Min 1, Max 3).&#39;,
+            &#39;Name&#39; =&gt; &#39;TestArray&#39;,
             ...
         },
-        Key               =&gt; 'HashKey',  # (optional) hash key
-        IDSuffix          =&gt; '_Array3,   # (optional) suffix that will be added to all input/select fields
+        Key               =&gt; &#39;HashKey&#39;,  # (optional) hash key
+        IDSuffix          =&gt; &#39;_Array3,   # (optional) suffix that will be added to all input/select fields
                                          #    (it is used in the JS on Update, during EffectiveValue calculation)
         Value             =&gt; [           # (optional) Perl structure
             {
-                'Array' =&gt; [
-                    'Item' =&gt; [
+                &#39;Array&#39; =&gt; [
+                    &#39;Item&#39; =&gt; [
                         {
-                        'Content' =&gt; 'Item 1',
+                        &#39;Content&#39; =&gt; &#39;Item 1&#39;,
                         },
                         ...
                     ],
@@ -513,542 +135,30 @@ sub SettingAddItem {
         ],
         AddSettingContent =&gt; 0,          # (optional) if enabled, result will be inside of div with class &quot;SettingContent&quot;
         UserID            =&gt; 1,          # (required) UserID
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    %Result = (
-        'Item' =&gt; '&lt;div class=\'SettingContent\'&gt;
-&lt;input type=\'text\' id=\'TestArray_Array4\'
-        value=\'Default value\' name=\'TestArray\' class=\' Entry\'/&gt;&lt;/div&gt;',
+<p>Returns:</p>
+
+<pre><code>    %Result = (
+        &#39;Item&#39; =&gt; &#39;&lt;div class=\&#39;SettingContent\&#39;&gt;
+&lt;input type=\&#39;text\&#39; id=\&#39;TestArray_Array4\&#39;
+        value=\&#39;Default value\&#39; name=\&#39;TestArray\&#39; class=\&#39; Entry\&#39;/&gt;&lt;/div&gt;&#39;,
     );
 
     or
 
     %Result = (
-        'Error' =&gt; 'Error description',
-    );
-</pre><h1 id="PRIVATE_INTERFACE">PRIVATE INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+        &#39;Error&#39; =&gt; &#39;Error description&#39;,
+    );</code></pre>
 
-<h2 id="SettingRender-2">_SettingRender()</h2>
+<h1 id="PRIVATE-INTERFACE">PRIVATE INTERFACE</h1>
 
-<p><a href="#" onclick="toggleCode('method__SettingRender');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method__SettingRender">
-                                        <pre>
-
-sub _SettingRender {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(Value EffectiveValue UserID)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-
-            return;
-        }
-    }
-    $Param{IDSuffix} //= '';
-
-    my $Result = $Param{Result} || '';
-    my %Objects;
-    if ( $Param{Objects} ) {
-        %Objects = %{ $Param{Objects} };
-    }
-
-    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
-
-    # Make sure structure is correct.
-    return $Result if !IsArrayRefWithData( $Param{Value} );
-    return $Result if !IsHashRefWithData( $Param{Value}->[0] );
-
-    if ( $Param{Value}->[0]->{Item} ) {
-
-        # Make sure structure is correct.
-        return $Result if !IsArrayRefWithData( $Param{Value}->[0]->{Item} );
-        return $Result if !IsHashRefWithData( $Param{Value}->[0]->{Item}->[0] );
-
-        # Set default ValueType.
-        my $ValueType = "String";
-
-        if ( $Param{Value}->[0]->{Item}->[0]->{ValueType} ) {
-            $ValueType = $Param{Value}->[0]->{Item}->[0]->{ValueType};
-        }
-
-        if ( !$Objects{$ValueType} ) {
-
-            # Load required class.
-            my $Loaded = $Kernel::OM->Get('Kernel::System::Main')->Require(
-                "Kernel::System::SysConfig::ValueType::$ValueType",
-            );
-
-            return $Result if !$Loaded;
-
-            # Create object instance.
-            $Objects{$ValueType} = $Kernel::OM->Get(
-                "Kernel::System::SysConfig::ValueType::$ValueType",
-            );
-        }
-
-        $Result = $Objects{$ValueType}->SettingRender(
-            %Param,
-            Item => $Param{Value}->[0]->{Item},
-        );
-    }
-
-    elsif ( $Param{Value}->[0]->{Hash} ) {
-
-        # Make sure structure is correct.
-        return {} if !IsArrayRefWithData( $Param{Value}->[0]->{Hash} );
-        return {} if ref $Param{Value}->[0]->{Hash}->[0] ne 'HASH';
-
-        if ( !$Param{Value}->[0]->{Hash}->[0]->{Item} ) {
-            $Param{Value}->[0]->{Hash}->[0]->{Item} = [];
-            delete $Param{Value}->[0]->{Content};
-        }
-
-        return {} if ref $Param{Value}->[0]->{Hash}->[0]->{Item} ne 'ARRAY';
-
-        my $ModifiedXMLParsed = $Self->SettingModifiedXMLContentParsedGet(
-            ModifiedSetting => {
-                EffectiveValue => $Param{EffectiveValue},
-            },
-            DefaultSetting => {
-                XMLContentParsed => {
-                    Value => $Param{Value},
-                },
-            },
-        );
-        my @Items;
-
-        my $RemoveThisEntry = $LanguageObject->Translate("Remove this entry");
-        $Result .= "<div class='Hash' ";
-        if ( $ModifiedXMLParsed->[0]->{Hash}->[0]->{MinItems} ) {
-            $Result .= "data-min-items='" . $ModifiedXMLParsed->[0]->{Hash}->[0]->{MinItems} . "' ";
-        }
-
-        if ( $ModifiedXMLParsed->[0]->{Hash}->[0]->{MaxItems} ) {
-            $Result .= "data-max-items='" . $ModifiedXMLParsed->[0]->{Hash}->[0]->{MaxItems} . "' ";
-        }
-        $Result .= ">";
-
-        my $Index = 0;
-
-        ITEM:
-        for my $Item ( @{ $ModifiedXMLParsed->[0]->{Hash}->[0]->{Item} } ) {
-            next ITEM if !IsHashRefWithData($Item);
-
-            $Index++;
-
-            # check attributes
-            if ( $Param{Value}->[0]->{Hash}->[0]->{Item} ) {
-
-                my ($HashItem) = grep { defined $_->{Key} && $_->{Key} eq $Item->{Key} }
-                    @{ $Param{Value}->[0]->{Hash}->[0]->{Item} };
-
-                if ($HashItem) {
-                    ATTRIBUTE:
-                    for my $Attribute ( sort keys %{$HashItem} ) {
-                        next ATTRIBUTE if grep { $Attribute eq $_ } qw(Content DefaultItem Hash Array Key);
-
-                        if ( $Attribute eq 'Item' ) {
-                            if (
-                                !$HashItem->{Item}->[0]->{ValueType}
-                                || $HashItem->{Item}->[0]->{ValueType} ne 'Option'
-                                )
-                            {
-                                next ATTRIBUTE;
-                            }
-                        }
-
-                        $Item->{$Attribute} = $HashItem->{$Attribute};
-                    }
-                }
-            }
-
-            my $DefaultValueType;
-            if ( $Param{Value}->[0]->{Hash}->[0]->{DefaultItem} ) {
-                $DefaultValueType = $Param{Value}->[0]->{Hash}->[0]->{DefaultItem}->[0]->{ValueType};
-            }
-
-            if ( $Item->{Hash} || $Item->{Array} ) {
-
-                # Complex structure - HoA or HoH
-
-                my $Key = $Item->{Hash} ? 'Hash' : 'Array';
-
-                $Result .= "<div class='HashItem'>\n";
-
-                # Gather the value type from the default item, from a previous call
-                #   or string as default.
-                my $ValueType = $DefaultValueType
-                    || $Param{ValueType}
-                    || 'String';
-
-                my $HTMLKey = '';
-
-                # Check if complex structure has a key element.
-                if ( defined $Item->{Key} ) {
-                    $HTMLKey = $Kernel::OM->Get('Kernel::Output::HTML::Layout')->Ascii2Html(
-                        Text => $Item->{Key},
-                        Type => 'Normal',
-                    );
-                    $Result .= "
-                        <input class=\"Key\" type=\"text\" name=\"$Param{Name}Key\" value=\"$HTMLKey\"/>";
-                }
-                $Result .= "<div class=\"SettingContent\">\n";
-
-                my $IDSuffix = $Param{IDSuffix} . "_Hash###$HTMLKey";
-
-                if ( $Param{Value}->[0]->{Hash}->[0]->{DefaultItem} ) {
-                    if ( $Param{Value}->[0]->{Hash}->[0]->{DefaultItem}->[0]->{Array} ) {
-                        my $DefaultItem
-                            = $Param{Value}->[0]->{Hash}->[0]->{DefaultItem}->[0]->{Array}->[0]->{DefaultItem};
-
-                        if ($DefaultItem) {
-
-                            # Append default item parameters.
-                            $Item->{Array}->[0] = {
-                                %{ $Item->{Array}->[0] },
-                                DefaultItem => $DefaultItem,
-                            };
-                        }
-                    }
-                    elsif ( $Param{Value}->[0]->{Hash}->[0]->{DefaultItem}->[0]->{Hash} ) {
-                        my $DefaultItem
-                            = $Param{Value}->[0]->{Hash}->[0]->{DefaultItem}->[0]->{Hash}->[0]->{DefaultItem};
-
-                        if ($DefaultItem) {
-
-                            # Append default item parameters.
-                            $Item->{Hash}->[0] = {
-                                %{ $Item->{Hash}->[0] },
-                                DefaultItem => $DefaultItem,
-                            };
-                        }
-                    }
-                }
-
-                # Start recursion.
-                $Result .= $Self->_SettingRender(
-                    %Param,
-                    EffectiveValue => $Param{EffectiveValue}->{ $Item->{Key} },
-                    Value          => [$Item],
-                    Objects        => \%Objects,
-                    ValueType      => $ValueType,
-                    IDSuffix       => $IDSuffix,
-                );
-                $Result .= "</div>\n";
-
-                if ( $Param{RW} ) {
-                    $Result
-                        .= "<button value=\"$RemoveThisEntry\" title=\"$RemoveThisEntry\" type=\"button\" class=\"RemoveButton\">
-        <i class=\"fa fa-minus-circle\"></i>
-        <span class=\"InvisibleText\">$RemoveThisEntry</span>
-    </button>";
-                }
-
-                $Result .= "</div>\n";
-            }
-            else {
-                my $HashItem = "<div class='HashItem'>\n";
-
-                # Gather the Value type from parent, from item, from previous call
-                #   or use string as default.
-                my $ValueType = $Item->{ValueType}
-                    || $DefaultValueType
-                    || $Param{ValueType}
-                    || 'String';
-
-                # Output key element.
-                $HashItem .= "<input class=\"Key\" type=\"text\" name=\"$Param{Name}Key\" value=\"$Item->{Key}\" ";
-                if ( !$Param{RW} ) {
-                    $HashItem .= "disabled=\"disabled\" ";
-                }
-
-                $HashItem .= "readonly=\"readonly\" ";
-                $HashItem .= "/>\n";
-
-                if ( !$Objects{$ValueType} ) {
-
-                    # Make sure the ValueType backed is present and is syntactically correct.
-                    my $Loaded = $Kernel::OM->Get('Kernel::System::Main')->Require(
-                        "Kernel::System::SysConfig::ValueType::$ValueType",
-                    );
-
-                    return $Result if !$Loaded;
-
-                    # Create object instance
-                    $Objects{$ValueType} = $Kernel::OM->Get(
-                        "Kernel::System::SysConfig::ValueType::$ValueType",
-                    );
-                }
-
-                my $IDSuffix = $Param{IDSuffix} || '';
-                $IDSuffix .= "_Hash###$Item->{Key}";
-
-                my $ValueAttribute = $Objects{$ValueType}->ValueAttributeGet();
-
-                my $EffectiveValue = $Item->{$ValueAttribute} || '';
-
-                # Output item.
-                $HashItem .= $Objects{$ValueType}->SettingRender(
-                    %Param,
-                    Name           => $Param{Name},
-                    EffectiveValue => $EffectiveValue,
-                    Class          => 'Content',
-                    Item           => [$Item],
-                    IsAjax         => $Param{IsAjax},
-                    IsHash         => 1,
-                    Key            => $Item->{Key},
-                    IDSuffix       => $IDSuffix,
-                );
-
-                if ( $Param{RW} ) {
-
-                    # Check if item is removable
-                    if ( $ValueType eq ( $DefaultValueType || 'String' ) ) {
-
-                        $HashItem .= "
-    <button value=\"$RemoveThisEntry\" title=\"$RemoveThisEntry\" type=\"button\" class=\"RemoveButton\">
-        <i class=\"fa fa-minus-circle\"></i>
-        <span class=\"InvisibleText\">$RemoveThisEntry</span>
-    </button>";
-                    }
-                }
-                $HashItem .= "</div>\n";
-
-                $Result .= $HashItem;
-            }
-        }
-
-        my $KeyTranslation     = $LanguageObject->Translate('Key');
-        my $ContentTranslation = $LanguageObject->Translate('Content');
-
-        my $AddNewEntry = $LanguageObject->Translate("Add new entry");
-        $Result .= "
-    <button data-suffix=\"$Param{IDSuffix}_Hash###\" value=\"$AddNewEntry\" title=\"$AddNewEntry\" type=\"button\" class=\"AddHashKey";
-        if ( !$Param{RW} ) {
-            $Result .= " Hidden";
-        }
-        $Result .= "\">
-        <i class=\"fa fa-plus-circle\"></i>
-        <span class=\"InvisibleText\">$AddNewEntry</span>
-    </button>";
-
-        $Result .= "</div>";
-    }
-
-    elsif ( $Param{Value}->[0]->{Array} ) {
-
-        # Make sure structure is correct.
-        return [] if !IsArrayRefWithData( $Param{Value}->[0]->{Array} );
-        return [] if ref $Param{Value}->[0]->{Array}->[0] ne 'HASH';
-
-        if ( !$Param{Value}->[0]->{Array}->[0]->{Item} ) {
-            $Param{Value}->[0]->{Array}->[0]->{Item} = [];
-        }
-
-        return [] if ref $Param{Value}->[0]->{Array}->[0]->{Item} ne 'ARRAY';
-
-        my $ModifiedXMLParsed = $Self->SettingModifiedXMLContentParsedGet(
-            ModifiedSetting => {
-                EffectiveValue => $Param{EffectiveValue},
-            },
-            DefaultSetting => {
-                XMLContentParsed => {
-                    Value => $Param{Value},
-                },
-            },
-        );
-
-        my @Items;
-
-        my $RemoveThisEntry = $LanguageObject->Translate("Remove this entry");
-
-        $Result .= "<div class='Array' ";
-        if ( $ModifiedXMLParsed->[0]->{Array}->[0]->{MinItems} ) {
-            $Result .= "data-min-items='" . $ModifiedXMLParsed->[0]->{Array}->[0]->{MinItems} . "' ";
-        }
-
-        if ( $ModifiedXMLParsed->[0]->{Array}->[0]->{MaxItems} ) {
-            $Result .= "data-max-items='" . $ModifiedXMLParsed->[0]->{Array}->[0]->{MaxItems} . "' ";
-        }
-        $Result .= ">";
-
-        my $Index = 0;
-
-        ITEM:
-        for my $Item ( @{ $ModifiedXMLParsed->[0]->{Array}->[0]->{Item} } ) {
-            next ITEM if !IsHashRefWithData($Item);
-
-            $Index++;
-
-            # check attributes
-            if ( $Param{Value}->[0]->{Array}->[0]->{Item} ) {
-
-                ATTRIBUTE:
-                for my $Attribute ( sort keys %{ $Param{Value}->[0]->{Array}->[0]->{Item}->[0] } ) {
-                    next ATTRIBUTE if grep { $Attribute eq $_ } qw(Content Item DefaultItem Hash Array);
-
-                    $Item->{$Attribute} = $Param{Value}->[0]->{Array}->[0]->{Item}->[0]->{$Attribute};
-                }
-            }
-
-            my $DefaultValueType;
-            if ( $Param{Value}->[0]->{Array}->[0]->{DefaultItem} ) {
-                $DefaultValueType = $Param{Value}->[0]->{Array}->[0]->{DefaultItem}->[0]->{ValueType};
-            }
-
-            if ( $Item->{Hash} || $Item->{Array} ) {
-
-                # Complex structure - AoA or AoH
-
-                my $Key = $Item->{Hash} ? 'Hash' : 'Array';
-
-                $Result .= "<div class='ArrayItem'>";
-
-                my $IDSuffix = $Param{IDSuffix} || '';
-                $IDSuffix .= "_Array$Index";
-
-                if ( $Param{Value}->[0]->{Array}->[0]->{DefaultItem} ) {
-
-                    if ( $Param{Value}->[0]->{Array}->[0]->{DefaultItem}->[0]->{Array} ) {
-                        my $DefaultItem
-                            = $Param{Value}->[0]->{Array}->[0]->{DefaultItem}->[0]->{Array}->[0]->{DefaultItem};
-
-                        if ($DefaultItem) {
-
-                            # Append default item parameters.
-                            $Item->{Array}->[0] = {
-                                %{ $Item->{Array}->[0] },
-                                DefaultItem => $DefaultItem,
-                            };
-                        }
-                    }
-                    elsif ( $Param{Value}->[0]->{Array}->[0]->{DefaultItem}->[0]->{Hash} ) {
-                        my $DefaultItem
-                            = $Param{Value}->[0]->{Array}->[0]->{DefaultItem}->[0]->{Hash}->[0]->{DefaultItem};
-
-                        if ($DefaultItem) {
-
-                            # Append default item parameters.
-                            $Item->{Hash}->[0] = {
-                                %{ $Item->{Hash}->[0] },
-                                DefaultItem => $DefaultItem,
-                            };
-                        }
-                    }
-                }
-
-                # Start recursion.
-                $Result .= $Self->_SettingRender(
-                    %Param,
-                    Value          => [$Item],
-                    EffectiveValue => $Param{EffectiveValue}->[ $Index - 1 ],
-                    IDSuffix       => $IDSuffix,
-                );
-                if ( $Param{RW} ) {
-                    $Result .= "
-    <button value=\"$RemoveThisEntry\" title=\"$RemoveThisEntry\" type=\"button\" class=\"RemoveButton\">
-        <i class=\"fa fa-minus-circle\"></i>
-        <span class=\"InvisibleText\">$RemoveThisEntry</span>
-    </button>";
-                }
-                $Result .= "</div>";
-            }
-            else {
-
-                # Gather the value type from the default item, from the item, from a previous call
-                #   or string as default.
-                my $ValueType = $DefaultValueType
-                    || $Item->{ValueType}
-                    || $Param{ValueType}
-                    || 'String';
-
-                if ( !$Objects{$ValueType} ) {
-
-                    # Make sure the ValueType backed is present and is syntactically correct.
-                    my $Loaded = $Kernel::OM->Get('Kernel::System::Main')->Require(
-                        "Kernel::System::SysConfig::ValueType::$ValueType",
-                    );
-
-                    return $Result if !$Loaded;
-
-                    # Create object instance
-                    $Objects{$ValueType} = $Kernel::OM->Get(
-                        "Kernel::System::SysConfig::ValueType::$ValueType",
-                    );
-                }
-
-                my $RenderItem;
-
-                if ( $Item->{Content} ) {
-                    $RenderItem = [$Item];
-                }
-                else {
-                    $RenderItem = $Item->{Item};
-                }
-
-                my $ValueAttribute = $Objects{$ValueType}->ValueAttributeGet();
-                my $EffectiveValue = $RenderItem->[0]->{$ValueAttribute} || '';
-
-                my $IDSuffix = $Param{IDSuffix} || '';
-                $IDSuffix .= "_Array$Index";
-
-                my $ArrayItem = "<div class='ArrayItem'>";
-                $ArrayItem .= $Objects{$ValueType}->SettingRender(
-                    %Param,
-                    Name           => $Param{Name},
-                    EffectiveValue => $EffectiveValue || '',
-                    Class          => 'Entry',
-                    Item           => $RenderItem,
-                    IsAjax         => $Param{IsAjax},
-                    IsArray        => 1,
-                    IDSuffix       => $IDSuffix,
-                );
-
-                if ( $Param{RW} ) {
-
-                    $ArrayItem .= "
-    <button value=\"$RemoveThisEntry\" title=\"$RemoveThisEntry\" type=\"button\" class=\"RemoveButton\">
-        <i class=\"fa fa-minus-circle\"></i>
-        <span class=\"InvisibleText\">$RemoveThisEntry</span>
-    </button>";
-                }
-
-                $ArrayItem .= "</div>\n";
-
-                $Result .= $ArrayItem;
-            }
-        }
-
-        my $Size = @{ $ModifiedXMLParsed->[0]->{Array}->[0]->{Item} } + 1;
-        $Param{IDSuffix} //= '';
-
-        my $AddNewEntry = $LanguageObject->Translate("Add new entry");
-
-        $Result .= "
-    <button value=\"$AddNewEntry\" title=\"$AddNewEntry\" type=\"button\" data-suffix=\"$Param{IDSuffix}_Array$Size\" class=\"AddArrayItem";
-        if ( !$Param{RW} ) {
-            $Result .= " Hidden";
-        }
-        $Result .= "\">
-        <i class=\"fa fa-plus-circle\"></i>
-        <span class=\"InvisibleText\">$AddNewEntry</span>
-    </button>\n";
-
-        $Result .= "</div>";
-    }
-
-    return $Result;
-}
-</pre></div>
+<h2 id="SettingRender1">_SettingRender()</h2>
 
 <p>Recursive helper for SettingRender().</p>
 
-<pre>    my $HTMLStr = $SysConfigObject-&gt;_SettingRender(
-        Name             =&gt; 'Setting Name',
+<pre><code>    my $HTMLStr = $SysConfigObject-&gt;_SettingRender(
+        Name             =&gt; &#39;Setting Name&#39;,
         DefaultID        =&gt; 123,
         Value            =&gt; $XMLParsedToPerlValue,
         EffectiveValue   =&gt; &quot;Product 6&quot;,            # or a complex structure
@@ -1059,22 +169,21 @@ sub _SettingRender {
         RW =&gt; 1,                                    # (optional) Allow editing. Default 0.
         IsArray =&gt; 1,                               # (optional) Item is part of the array
         IsHash  =&gt; 1,                               # (optional) Item is part of the hash
-        Key     =&gt; 'Key',                           # (optional) Hash key (if available)
+        Key     =&gt; &#39;Key&#39;,                           # (optional) Hash key (if available)
         SkipEffectiveValueCheck =&gt; 1,               # (optional) If enabled, system will not perform effective value check.
                                                     #            Default: 1.
         UserID =&gt; 1,                                # (required) UserID
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $HTMLStr = '&lt;div class &quot;Field&quot;...&lt;/div&gt;'        # or false in case of an error
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<p>Returns:</p>
+
+<pre><code>    $HTMLStr = &#39;&lt;div class &quot;Field&quot;...&lt;/div&gt;&#39;        # or false in case of an error</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

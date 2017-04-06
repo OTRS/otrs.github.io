@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::ProcessManagement::TransitionAction::TicketSLASet</title>
+<title>Kernel::System::ProcessManagement::TransitionAction::TicketSLASet &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,274 +48,67 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/ProcessManagement/TransitionAction/TicketSLASet.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Run">Run()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Run">Run()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::ProcessManagement::TransitionAction::TicketSLASet - A module to set the ticket SLA</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All TicketSLASet functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $TicketSLASetObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ProcessManagement::TransitionAction::TicketSLASet&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
+<h2 id="Run">Run()</h2>
 
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $TicketSLASetObject = $Kernel::OM-&gt;Get('Kernel::System::ProcessManagement::TransitionAction::TicketSLASet');
-</pre><h2 id="Run">Run()</h2>
-
-<p><a href="#" onclick="toggleCode('method_Run');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Run">
-                                        <pre>
-
-sub Run {
-    my ( $Self, %Param ) = @_;
-
-    # define a common message to output in case of any error
-    my $CommonMessage = "Process: $Param{ProcessEntityID} Activity: $Param{ActivityEntityID}"
-        . " Transition: $Param{TransitionEntityID}"
-        . " TransitionAction: $Param{TransitionActionEntityID} - ";
-
-    # check for missing or wrong params
-    my $Success = $Self->_CheckParams(
-        %Param,
-        CommonMessage => $CommonMessage,
-    );
-    return if !$Success;
-
-    # override UserID if specified as a parameter in the TA config
-    $Param{UserID} = $Self->_OverrideUserID(%Param);
-
-    # use ticket attributes if needed
-    $Self->_ReplaceTicketAttributes(%Param);
-
-    if ( !$Param{Config}->{SLAID} && !$Param{Config}->{SLA} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "No SLA or SLAID configured!",
-        );
-        return;
-    }
-
-    if ( !$Param{Ticket}->{ServiceID} && !$Param{Ticket}->{Service} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => $CommonMessage . "To set a SLA the ticket requires a service!",
-        );
-        return;
-    }
-
-    $Success = 0;
-
-    # If Ticket's SLAID is already the same as the Value we
-    # should set it to, we got nothing to do and return success
-    if (
-        defined $Param{Config}->{SLAID}
-        && defined $Param{Ticket}->{SLAID}
-        && $Param{Config}->{SLAID} eq $Param{Ticket}->{SLAID}
-        )
-    {
-        return 1;
-    }
-
-    # If Ticket's SLAID is not the same as the Value we
-    # should set it to, set the SLAID
-    elsif (
-        (
-            defined $Param{Config}->{SLAID}
-            && defined $Param{Ticket}->{SLAID}
-            && $Param{Config}->{SLAID} ne $Param{Ticket}->{SLAID}
-        )
-        || !defined $Param{Ticket}->{SLAID}
-        )
-    {
-
-        # check if serivce is assigned to Service otherwise return
-        $Success = $Self->_CheckSLA(
-            ServiceID => $Param{Ticket}->{ServiceID},
-            SLAID     => $Param{Config}->{SLAID},
-        );
-
-        if ( !$Success ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => $CommonMessage
-                    . 'SLAID '
-                    . $Param{Config}->{SLAID}
-                    . ' is not assigned to Service '
-                    . $Param{Ticket}->{Service}
-            );
-            return;
-        }
-
-        # set ticket SLA
-        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSLASet(
-            TicketID => $Param{Ticket}->{TicketID},
-            SLAID    => $Param{Config}->{SLAID},
-            UserID   => $Param{UserID},
-        );
-
-        if ( !$Success ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => $CommonMessage
-                    . 'Ticket SLAID '
-                    . $Param{Config}->{SLAID}
-                    . ' could not be updated for Ticket: '
-                    . $Param{Ticket}->{TicketID} . '!',
-            );
-        }
-    }
-
-    # If Ticket's SLA is already the same as the Value we
-    # should set it to, we got nothing to do and return success
-    elsif (
-        defined $Param{Config}->{SLA}
-        && defined $Param{Ticket}->{SLA}
-        && $Param{Config}->{SLA} eq $Param{Ticket}->{SLA}
-        )
-    {
-        return 1;
-    }
-
-    # If Ticket's SLA is not the same as the Value we
-    # should set it to, set the SLA
-    elsif (
-        (
-            defined $Param{Config}->{SLA}
-            && defined $Param{Ticket}->{SLA}
-            && $Param{Config}->{SLA} ne $Param{Ticket}->{SLA}
-        )
-        || !defined $Param{Ticket}->{SLA}
-        )
-    {
-
-        my $SLAID = $Kernel::OM->Get('Kernel::System::SLA')->SLALookup(
-            Name => $Param{Config}->{SLA},
-        );
-
-        if ( !$SLAID ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => $CommonMessage
-                    . 'SLA '
-                    . $Param{Config}->{SLA}
-                    . ' is invalid!'
-            );
-            return;
-        }
-
-        # check if SLA is assigned to Service, otherwise return
-        $Success = $Self->_CheckSLA(
-            ServiceID => $Param{Ticket}->{ServiceID},
-            SLAID     => $SLAID,
-        );
-
-        if ( !$Success ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => $CommonMessage
-                    . 'SLA '
-                    . $Param{Config}->{SLA}
-                    . ' is not assigned to Service '
-                    . $Param{Ticket}->{Service}
-            );
-            return;
-        }
-
-        # set ticket SLA
-        $Success = $Kernel::OM->Get('Kernel::System::Ticket')->TicketSLASet(
-            TicketID => $Param{Ticket}->{TicketID},
-            SLA      => $Param{Config}->{SLA},
-            UserID   => $Param{UserID},
-        );
-
-        if ( !$Success ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => $CommonMessage
-                    . 'Ticket SLA '
-                    . $Param{Config}->{SLA}
-                    . ' could not be updated for Ticket: '
-                    . $Param{Ticket}->{TicketID} . '!',
-            );
-        }
-    }
-    else {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => $CommonMessage
-                . "Couldn't update Ticket SLA - can't find valid SLA parameter!",
-        );
-        return;
-    }
-
-    return $Success;
-}
-</pre></div>
-
-<pre>    Run Data
+<pre><code>    Run Data
 
     my $TicketSLASetResult = $TicketSLASetActionObject-&gt;Run(
         UserID                   =&gt; 123,
         Ticket                   =&gt; \%Ticket,   # required
-        ProcessEntityID          =&gt; 'P123',
-        ActivityEntityID         =&gt; 'A123',
-        TransitionEntityID       =&gt; 'T123',
-        TransitionActionEntityID =&gt; 'TA123',
+        ProcessEntityID          =&gt; &#39;P123&#39;,
+        ActivityEntityID         =&gt; &#39;A123&#39;,
+        TransitionEntityID       =&gt; &#39;T123&#39;,
+        TransitionActionEntityID =&gt; &#39;TA123&#39;,
         Config                   =&gt; {
-            SLA =&gt; 'MySLA',
+            SLA =&gt; &#39;MySLA&#39;,
             # or
             SLAID  =&gt; 123,
             UserID =&gt; 123,                      # optional, to override the UserID from the logged user
         }
     );
     Ticket contains the result of TicketGet including DynamicFields
-    Config is the Config Hash stored in a Process::TransitionAction's  Config key
+    Config is the Config Hash stored in a Process::TransitionAction&#39;s  Config key
     Returns:
 
-    $TicketSLASetResult = 1; # 0
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+    $TicketSLASetResult = 1; # 0</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

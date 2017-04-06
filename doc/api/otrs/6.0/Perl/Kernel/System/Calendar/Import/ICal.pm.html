@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::Calendar::Import::ICal</title>
+<title>Kernel::System::Calendar::Import::ICal &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,722 +48,68 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/Calendar/Import/ICal.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Import">Import()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Import">Import()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::Calendar::Import::ICal - <code>iCalendar</code> import lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>Import functions for <code>iCalendar</code> format.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {%Param};
-    bless( $Self, $Type );
-
-    return $Self;
-}
-</pre></div>
-
 <p>create an object. Do not use it directly, instead use:</p>
 
-<pre>    use Kernel::System::ObjectManager;
+<pre><code>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $ImportObject = $Kernel::OM-&gt;Get('Kernel::System::Calendar::Export::ICal');
-</pre><h2 id="Import">Import()</h2>
+    my $ImportObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Calendar::Export::ICal&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Import');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Import">
-                                        <pre>
-
-sub Import {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Needed (qw(CalendarID ICal UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    my $UntilLimitedTimestamp = $Param{UntilLimit} || '';
-
-    if ( !$UntilLimitedTimestamp ) {
-
-        # Calculate until time which will be used if there is any recurring Appointment without end
-        #   time defined.
-        my $UntilTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
-        my $RecurringMonthsLimit
-            = $Kernel::OM->Get('Kernel::Config')->Get("AppointmentCalendar::Import::RecurringMonthsLimit")
-            || '12';    # default 12 months
-
-        $UntilTimeObject->Add(
-            Months => $RecurringMonthsLimit,
-        );
-        $UntilLimitedTimestamp = $UntilTimeObject->ToString();
-    }
-
-    # Turn on UTF8 flag on supplied string for correct encoding in PostgreSQL backend.
-    $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$Param{ICal} );
-
-    my $Calendar = Data::ICal->new( data => $Param{ICal} );
-
-    # If external library encountered an error while parsing the ICS file, log the received message
-    #   at this time and return.
-    if ( $Calendar->{errno} ) {
-        my $ErrorMessage = $Calendar->{error_message} // '';
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "[Data::ICal] $ErrorMessage",
-        );
-        return;
-    }
-
-    my @Entries              = @{ $Calendar->entries() };
-    my $AppointmentsImported = 0;
-
-    my $PluginObject      = $Kernel::OM->Get('Kernel::System::Calendar::Plugin');
-    my $AppointmentObject = $Kernel::OM->Get('Kernel::System::Calendar::Appointment');
-
-    ENTRY:
-    for my $Entry (@Entries) {
-        my $Properties = $Entry->properties();
-
-        my %Parameters;
-        my %LinkedObjects;
-
-        # get uid
-        if (
-            IsArrayRefWithData( $Properties->{'uid'} )
-            && ref $Properties->{'uid'}->[0] eq 'Data::ICal::Property'
-            && $Properties->{'uid'}->[0]->{'value'}
-            )
-        {
-            $Parameters{UniqueID} = $Properties->{'uid'}->[0]->{'value'};
-        }
-
-        # get title
-        if (
-            IsArrayRefWithData( $Properties->{'summary'} )
-            && ref $Properties->{'summary'}->[0] eq 'Data::ICal::Property'
-            && $Properties->{'summary'}->[0]->{'value'}
-            )
-        {
-            $Parameters{Title} = $Properties->{'summary'}->[0]->{'value'};
-        }
-
-        # get description
-        if (
-            IsArrayRefWithData( $Properties->{'description'} )
-            && ref $Properties->{'description'}->[0] eq 'Data::ICal::Property'
-            && $Properties->{'description'}->[0]->{'value'}
-            )
-        {
-            $Parameters{Description} = $Properties->{'description'}->[0]->{'value'};
-        }
-
-        # get start time
-        if (
-            IsArrayRefWithData( $Properties->{'dtstart'} )
-            && ref $Properties->{'dtstart'}->[0] eq 'Data::ICal::Property'
-            && $Properties->{'dtstart'}->[0]->{'value'}
-            )
-        {
-
-            my $TimezoneID;
-
-            if ( ref $Properties->{'dtstart'}->[0]->{'_parameters'} eq 'HASH' ) {
-
-                # check if it's an all day event
-                # 1) there is no time component for the date value
-                # 2) there is an explicit value parameter set to DATE
-                if (
-                    length $Properties->{'dtstart'}->[0]->{'value'} == 8
-                    ||
-                    (
-                        $Properties->{'dtstart'}->[0]->{'_parameters'}->{'VALUE'}
-                        && $Properties->{'dtstart'}->[0]->{'_parameters'}->{'VALUE'} eq 'DATE'
-                    )
-                    )
-                {
-                    $Parameters{AllDay} = 1;
-                }
-
-                # check timezone
-                if ( $Properties->{'dtstart'}->[0]->{'_parameters'}->{'TZID'} ) {
-                    $TimezoneID = $Properties->{'dtstart'}->[0]->{'_parameters'}->{'TZID'};
-                }
-            }
-
-            my $StartTimeICal = $Self->_FormatTime(
-                Time => $Properties->{'dtstart'}->[0]->{'value'},
-            );
-            my $StartTimeObject = $Kernel::OM->Create(
-                'Kernel::System::DateTime',
-                ObjectParams => {
-                    String   => $StartTimeICal,
-                    TimeZone => $TimezoneID,
-                },
-            );
-
-            if ( !$Parameters{AllDay} ) {
-                $StartTimeObject->ToOTRSTimeZone();
-            }
-
-            $Parameters{StartTime} = $StartTimeObject->ToString();
-        }
-
-        # get end time
-        if (
-            IsArrayRefWithData( $Properties->{'dtend'} )
-            && ref $Properties->{'dtend'}->[0] eq 'Data::ICal::Property'
-            && $Properties->{'dtend'}->[0]->{'value'}
-            )
-        {
-            my $TimezoneID;
-
-            if ( ref $Properties->{'dtend'}->[0]->{'_parameters'} eq 'HASH' ) {
-
-                # check timezone
-                if ( $Properties->{'dtend'}->[0]->{'_parameters'}->{'TZID'} ) {
-                    $TimezoneID = $Properties->{'dtend'}->[0]->{'_parameters'}->{'TZID'};
-                }
-            }
-
-            my $EndTimeICal = $Self->_FormatTime(
-                Time => $Properties->{'dtend'}->[0]->{'value'},
-            );
-            my $EndTimeObject = $Kernel::OM->Create(
-                'Kernel::System::DateTime',
-                ObjectParams => {
-                    String   => $EndTimeICal,
-                    TimeZone => $TimezoneID,
-                },
-            );
-
-            if ( !$Parameters{AllDay} ) {
-                $EndTimeObject->ToOTRSTimeZone();
-            }
-
-            $Parameters{EndTime} = $EndTimeObject->ToString();
-        }
-
-        # Some iCalendar implementations (looking at you icalendar-ruby) do not require nor include
-        #   end time for appointments. In this case, prevent failing and use start time instead.
-        else {
-            $Parameters{EndTime} = $Parameters{StartTime};
-        }
-
-        # get location
-        if (
-            IsArrayRefWithData( $Properties->{'location'} )
-            && ref $Properties->{'location'}->[0] eq 'Data::ICal::Property'
-            && $Properties->{'location'}->[0]->{'value'}
-            )
-        {
-            $Parameters{Location} = $Properties->{'location'}->[0]->{'value'};
-        }
-
-        # get rrule
-        if (
-            IsArrayRefWithData( $Properties->{'rrule'} )
-            && ref $Properties->{'rrule'}->[0] eq 'Data::ICal::Property'
-            && $Properties->{'rrule'}->[0]->{'value'}
-            )
-        {
-            my ( $Frequency, $Until, $Interval, $Count, $DayNames, $MonthDay, $Months );
-
-            my @Rules = split ';', $Properties->{'rrule'}->[0]->{'value'};
-
-            RULE:
-            for my $Rule (@Rules) {
-
-                if ( $Rule =~ /FREQ=(.*?)$/i ) {
-                    $Frequency = $1;
-                }
-                elsif ( $Rule =~ /UNTIL=(.*?)$/i ) {
-                    $Until = $1;
-                }
-                elsif ( $Rule =~ /INTERVAL=(\d+?)$/i ) {
-                    $Interval = $1;
-                }
-                elsif ( $Rule =~ /COUNT=(\d+?)$/i ) {
-                    $Count = $1;
-                }
-                elsif ( $Rule =~ /BYDAY=(.*?)$/i ) {
-                    $DayNames = $1;
-                }
-                elsif ( $Rule =~ /BYMONTHDAY=(.*?)$/i ) {
-                    $MonthDay = $1;
-                }
-                elsif ( $Rule =~ /BYMONTH=(.*?)$/i ) {
-                    $Months = $1;
-                }
-            }
-
-            $Interval ||= 1;    # default value
-
-            # this appointment is repeating
-            if ( $Frequency eq "DAILY" ) {
-                $Parameters{Recurring}          = 1;
-                $Parameters{RecurrenceType}     = $Interval == 1 ? "Daily" : "CustomDaily";
-                $Parameters{RecurrenceInterval} = $Interval;
-
-            }
-            elsif ( $Frequency eq "WEEKLY" ) {
-                if ($DayNames) {
-
-                    # custom
-
-                    my @Days;
-
-                    # SU,MO,TU,WE,TH,FR,SA
-                    for my $DayName ( split( ',', $DayNames ) ) {
-
-                        if ( uc $DayName eq 'MO' ) {
-                            push @Days, 1;
-                        }
-                        elsif ( uc $DayName eq 'TU' ) {
-                            push @Days, 2;
-                        }
-                        elsif ( uc $DayName eq 'WE' ) {
-                            push @Days, 3;
-                        }
-                        elsif ( uc $DayName eq 'TH' ) {
-                            push @Days, 4;
-                        }
-                        elsif ( uc $DayName eq 'FR' ) {
-                            push @Days, 5;
-                        }
-                        elsif ( uc $DayName eq 'SA' ) {
-                            push @Days, 6;
-                        }
-                        elsif ( uc $DayName eq 'SU' ) {
-                            push @Days, 7;
-                        }
-                    }
-
-                    if ( scalar @Days > 0 ) {
-
-                        $Parameters{Recurring}           = 1;
-                        $Parameters{RecurrenceType}      = "CustomWeekly";
-                        $Parameters{RecurrenceInterval}  = $Interval;
-                        $Parameters{RecurrenceFrequency} = \@Days;
-                    }
-                }
-                else {
-                    # each n days
-                    $Parameters{Recurring}          = 1;
-                    $Parameters{RecurrenceType}     = "Weekly";
-                    $Parameters{RecurrenceInterval} = $Interval;
-                }
-            }
-            elsif ( $Frequency eq "MONTHLY" ) {
-
-                # Skip unsupported custom monthly recurring rules:
-                #   - FREQ=MONTHLY;BYDAY=2SA
-                if ($DayNames) {
-                    $Kernel::OM->Get('Kernel::System::Log')->Log(
-                        Priority => 'error',
-                        Message  => "Skip import of unsupported recurring rule: "
-                            . $Properties->{'rrule'}->[0]->{'value'},
-                    );
-                    next ENTRY;
-                }
-
-                if ($MonthDay) {
-
-                    # Custom
-                    # FREQ=MONTHLY;UNTIL=20170101T080000Z;BYMONTHDAY=16,31'
-                    my @Days = split( ',', $MonthDay );
-
-                    $Parameters{Recurring}           = 1;
-                    $Parameters{RecurrenceType}      = "CustomMonthly";
-                    $Parameters{RecurrenceFrequency} = \@Days;
-                    $Parameters{RecurrenceInterval}  = $Interval;
-                }
-                else {
-                    $Parameters{Recurring}          = 1;
-                    $Parameters{RecurrenceType}     = "Monthly";
-                    $Parameters{RecurrenceInterval} = $Interval;
-                }
-            }
-            elsif ( $Frequency eq "YEARLY" ) {
-
-                # Skip unsupported custom yearly recurring rules:
-                #   - FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
-                #   - FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
-                if ($DayNames) {
-                    $Kernel::OM->Get('Kernel::System::Log')->Log(
-                        Priority => 'error',
-                        Message  => "Skip import of unsupported recurring rule: "
-                            . $Properties->{'rrule'}->[0]->{'value'},
-                    );
-                    next ENTRY;
-                }
-
-                my @Months = split( ',', $Months || '' );
-
-                my $StartTimeObject = $Kernel::OM->Create(
-                    'Kernel::System::DateTime',
-                    ObjectParams => {
-                        String => $Parameters{StartTime},
-                    },
-                );
-
-                if (
-                    scalar @Months > 1
-                    || (
-                        scalar @Months == 1
-                        && $StartTimeObject->Get()->{Day} != $Months[0]
-                    )
-                    )
-                {
-                    $Parameters{Recurring}           = 1;
-                    $Parameters{RecurrenceType}      = "CustomYearly";
-                    $Parameters{RecurrenceFrequency} = \@Months;
-                    $Parameters{RecurrenceInterval}  = $Interval;
-                }
-                else {
-                    $Parameters{Recurring}          = 1;
-                    $Parameters{RecurrenceType}     = "Yearly";
-                    $Parameters{RecurrenceInterval} = $Interval;
-                }
-            }
-
-            # FREQ=YEARLY;INTERVAL=2;BYMONTH=1,2,12
-            # FREQ=MONTHLY;UNTIL=20170302T121500Z'
-            # FREQ=MONTHLY;UNTIL=20170202T090000Z;INTERVAL=2;BYMONTHDAY=31',
-            # FREQ=WEEKLY;INTERVAL=2;BYDAY=TU
-            # FREQ=YEARLY;UNTIL=20200602T080000Z;INTERVAL=2;BYMONTHDAY=1;BYMONTH=4';
-
-            # FREQ=DAILY;COUNT=3
-
-            if ($Until) {
-                $Parameters{RecurrenceUntil} = $Self->_FormatTime(
-                    Time => $Until,
-                );
-            }
-            elsif ($Count) {
-                $Parameters{RecurrenceCount} = $Count;
-            }
-            else {
-                # default value
-                $Parameters{RecurrenceUntil} = $UntilLimitedTimestamp;
-            }
-
-            # excluded dates
-            if ( IsArrayRefWithData( $Properties->{'exdate'} ) ) {
-                my @RecurrenceExclude;
-                for my $Exclude ( @{ $Properties->{'exdate'} } ) {
-                    if (
-                        ref $Exclude eq 'Data::ICal::Property'
-                        && $Exclude->{'value'}
-                        )
-                    {
-                        my $TimezoneID;
-                        if ( ref $Exclude->{'_parameters'} eq 'HASH' ) {
-
-                            # check timezone
-                            if ( $Exclude->{'_parameters'}->{'TZID'} ) {
-                                $TimezoneID = $Exclude->{'_parameters'}->{'TZID'};
-                            }
-                        }
-
-                        my $ExcludeTimeICal = $Self->_FormatTime(
-                            Time => $Exclude->{'value'},
-                        );
-                        my $ExcludeTimeObject = $Kernel::OM->Create(
-                            'Kernel::System::DateTime',
-                            ObjectParams => {
-                                String   => $ExcludeTimeICal,
-                                TimeZone => $TimezoneID,
-                            },
-                        );
-
-                        if ( !$Parameters{AllDay} ) {
-                            $ExcludeTimeObject->ToOTRSTimeZone();
-                        }
-
-                        push @RecurrenceExclude, $ExcludeTimeObject->ToString();
-                    }
-                }
-                $Parameters{RecurrenceExclude} = \@RecurrenceExclude;
-            }
-        }
-
-        # check if team object is registered
-        if ( $Kernel::OM->Get('Kernel::System::Main')->Require( 'Kernel::System::Calendar::Team', Silent => 1 ) ) {
-
-            # get team
-            if (
-                IsArrayRefWithData( $Properties->{'x-otrs-team'} )
-                && ref $Properties->{'x-otrs-team'}->[0] eq 'Data::ICal::Property'
-                && $Properties->{'x-otrs-team'}->[0]->{'value'}
-                )
-            {
-                my @Teams = split( ",", $Properties->{'x-otrs-team'}->[0]->{'value'} );
-
-                if (@Teams) {
-                    my @TeamIDs;
-
-                    # get team ids
-                    for my $TeamName (@Teams) {
-                        my %Team = $Kernel::OM->Get('Kernel::System::Calendar::Team')->TeamGet(
-                            Name   => $TeamName,
-                            UserID => $Param{UserID},
-                        );
-                        push @TeamIDs, $Team{ID} if $Team{ID};
-                    }
-                    $Parameters{TeamID} = \@TeamIDs if @TeamIDs;
-                }
-            }
-
-            # get resource
-            if (
-                IsArrayRefWithData( $Properties->{'x-otrs-resource'} )
-                && ref $Properties->{'x-otrs-resource'}->[0] eq 'Data::ICal::Property'
-                && $Properties->{'x-otrs-resource'}->[0]->{'value'}
-                )
-            {
-                my @Resources = split( ",", $Properties->{'x-otrs-resource'}->[0]->{'value'} );
-
-                if (@Resources) {
-                    my @Users;
-
-                    # get user ids
-                    for my $UserLogin (@Resources) {
-                        my $UserID = $Kernel::OM->Get('Kernel::System::User')->UserLookup(
-                            UserLogin => $UserLogin,
-                        );
-                        push @Users, $UserID if $UserID;
-                    }
-                    $Parameters{ResourceID} = \@Users if @Users;
-                }
-            }
-        }
-
-        # get available plugin keys suitable for lowercase search
-        my $PluginKeys = $PluginObject->PluginKeys();
-
-        # plugin fields (start with 'x-otrs-plugin-')
-        my @PluginFields = grep { $_ =~ /x-otrs-plugin-/i } keys %{$Properties};
-
-        PLUGINFIELD:
-        for my $PluginField (@PluginFields) {
-            if (
-                IsArrayRefWithData( $Properties->{$PluginField} )
-                && ref $Properties->{$PluginField}->[0] eq 'Data::ICal::Property'
-                && $Properties->{$PluginField}->[0]->{'value'}
-                )
-            {
-                # extract lowercase plugin key
-                $PluginField =~ /x-otrs-plugin-(.*)$/;
-                my $PluginKeyLC = $1;
-
-                # get proper plugin key
-                my $PluginKey = $PluginKeys->{$PluginKeyLC};
-                next PLUGINFIELD if !$PluginKey;
-
-                my @PluginData = split( ",", $Properties->{$PluginField}->[0]->{'value'} );
-                $LinkedObjects{$PluginKey} = \@PluginData;
-            }
-        }
-
-        next ENTRY if !$Parameters{Title};
-
-        my %Appointment;
-
-        # get recurrence id
-        if (
-            IsArrayRefWithData( $Properties->{'recurrence-id'} )
-            && ref $Properties->{'recurrence-id'}->[0] eq 'Data::ICal::Property'
-            && $Properties->{'recurrence-id'}->[0]->{'value'}
-            )
-        {
-            # get parent id
-            my %ParentAppointment = $AppointmentObject->AppointmentGet(
-                UniqueID   => $Parameters{UniqueID},
-                CalendarID => $Param{CalendarID},
-            );
-            next ENTRY if !%ParentAppointment;
-
-            $Parameters{ParentID} = $ParentAppointment{AppointmentID};
-
-            my $TimezoneID;
-            if ( ref $Properties->{'recurrence-id'}->[0]->{'_parameters'} eq 'HASH' ) {
-
-                # check timezone
-                if ( $Properties->{'recurrence-id'}->[0]->{'_parameters'}->{'TZID'} ) {
-                    $TimezoneID = $Properties->{'recurrence-id'}->[0]->{'_parameters'}->{'TZID'};
-                }
-            }
-
-            my $RecurrenceIDICal = $Self->_FormatTime(
-                Time => $Properties->{'recurrence-id'}->[0]->{'value'},
-            );
-            my $RecurrenceIDObject = $Kernel::OM->Create(
-                'Kernel::System::DateTime',
-                ObjectParams => {
-                    String   => $RecurrenceIDICal,
-                    TimeZone => $TimezoneID,
-                },
-            );
-
-            if ( !$Parameters{AllDay} ) {
-                $RecurrenceIDObject->ToOTRSTimeZone();
-            }
-
-            $Param{RecurrenceID} = $RecurrenceIDObject->ToString();
-
-            # delete existing overridden occurrence
-            $AppointmentObject->AppointmentDeleteOccurrence(
-                UniqueID     => $Parameters{UniqueID},
-                CalendarID   => $Param{CalendarID},
-                RecurrenceID => $Param{RecurrenceID},
-                UserID       => $Param{UserID},
-            );
-        }
-
-        # Check if appointment with same UniqueID in the same calendar already exists.
-        else {
-            %Appointment = $AppointmentObject->AppointmentGet(
-                UniqueID   => $Parameters{UniqueID},
-                CalendarID => $Param{CalendarID},
-            );
-
-            if (
-                $Appointment{CalendarID}
-                && ( !$Param{UpdateExisting} || $Appointment{CalendarID} != $Param{CalendarID} )
-                )
-            {
-                # If overwrite option isn't activated, create new appointment by clearing the
-                #   UniqueID.
-                if (%Appointment) {
-                    delete $Parameters{UniqueID};
-                }
-                %Appointment = ();
-            }
-        }
-
-        my $Success;
-
-        # appointment exists in same Calendar, update it
-        if (
-            %Appointment
-            && $Appointment{AppointmentID}
-            && $Param{CalendarID} == $Appointment{CalendarID}
-            )
-        {
-            $Success = $AppointmentObject->AppointmentUpdate(
-                CalendarID    => $Param{CalendarID},
-                AppointmentID => $Appointment{AppointmentID},
-                UserID        => $Param{UserID},
-                %Parameters,
-            );
-        }
-
-        # there is no appointment, create new one
-        else {
-            $Success = $AppointmentObject->AppointmentCreate(
-                CalendarID => $Param{CalendarID},
-                UserID     => $Param{UserID},
-                %Parameters,
-            );
-        }
-
-        if ($Success) {
-
-            PLUGINKEY:
-            for my $PluginKey ( sort keys %LinkedObjects ) {
-                next PLUGINKEY if !IsArrayRefWithData( $LinkedObjects{$PluginKey} );
-
-                # add links
-                for my $PluginData ( @{ $LinkedObjects{$PluginKey} } ) {
-                    my $LinkSuccess = $PluginObject->PluginLinkAdd(
-                        AppointmentID => $Success,
-                        PluginKey     => $PluginKey,
-                        PluginData    => $PluginData,
-                        UserID        => $Param{UserID},
-                    );
-
-                    if ( !$LinkSuccess ) {
-                        $Kernel::OM->Get('Kernel::System::Log')->Log(
-                            Priority => 'error',
-                            Message =>
-                                "Unable to create object link (AppointmentID=$Success - $PluginKey=$PluginData) during calendar import!"
-                        );
-                    }
-                }
-            }
-
-            $AppointmentsImported++;
-        }
-    }
-
-    return $AppointmentsImported;
-}
-</pre></div>
+<h2 id="Import">Import()</h2>
 
 <p>Import calendar in <code>iCalendar</code> format.</p>
 
-<pre>    my $Success = $ImportObject-&gt;Import(
+<pre><code>    my $Success = $ImportObject-&gt;Import(
         CalendarID     =&gt; 123,
         ICal           =&gt;                         # (required) iCal string
-            '
+            &#39;
                 BEGIN:VCALENDAR
                 PRODID:Zimbra-Calendar-Provider
                 VERSION:2.0
                 METHOD:REQUEST
                 ...
-            ',
+            &#39;,
         UserID         =&gt; 1,                      # (required) UserID
         UpdateExisting =&gt; 0,                      # (optional) Delete existing Appointments within same Calendar if UniqueID matches
-        UntilLimit     =&gt; '2017-01-01 00:00:00',  # (optional) If provided, system will use this value for limiting recurring Appointments without defined end date
+        UntilLimit     =&gt; &#39;2017-01-01 00:00:00&#39;,  # (optional) If provided, system will use this value for limiting recurring Appointments without defined end date
                                                   # instead of AppointmentCalendar::Import::RecurringMonthsLimit to do the calculation
                                                   # NOTE: PLEASE USE THIS PARAMETER FOR UNIT TESTS ONLY
-    );
-</pre><p>Returns number of imported appointments if successful, otherwise 0.</p>
+    );</code></pre>
 
-<h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<p>Returns number of imported appointments if successful, otherwise 0.</p>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

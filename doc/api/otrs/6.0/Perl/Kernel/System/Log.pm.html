@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::Log</title>
+<title>Kernel::System::Log &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,361 +48,125 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/Log.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#Log">Log()</a></li>
-	<li><a href="#GetLogEntry">GetLogEntry()</a></li>
-	<li><a href="#GetLog">GetLog()</a></li>
-	<li><a href="#CleanUp">CleanUp()</a></li>
-	<li><a href="#Dumper">Dumper()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Log">Log()</a></li>
+      <li><a href="#GetLogEntry">GetLogEntry()</a></li>
+      <li><a href="#GetLog">GetLog()</a></li>
+      <li><a href="#CleanUp">CleanUp()</a></li>
+      <li><a href="#Dumper">Dumper()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::Log - global log interface</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All log functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    if ( !$Kernel::OM ) {
-        Carp::confess('$Kernel::OM is not defined, please initialize your object manager')
-    }
-
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    $Self->{ProductVersion} = $ConfigObject->Get('Product') . ' ';
-    $Self->{ProductVersion} .= $ConfigObject->Get('Version');
-
-    # get system id
-    my $SystemID = $ConfigObject->Get('SystemID');
-
-    # check log prefix
-    $Self->{LogPrefix} = $Param{LogPrefix} || '?LogPrefix?';
-    $Self->{LogPrefix} .= '-' . $SystemID;
-
-    # configured log level (debug by default)
-    $Self->{MinimumLevel}    = $ConfigObject->Get('MinimumLogLevel') || 'debug';
-    $Self->{MinimumLevel}    = lc $Self->{MinimumLevel};
-    $Self->{MinimumLevelNum} = $LogLevel{ $Self->{MinimumLevel} };
-
-    # load log backend
-    my $GenericModule = $ConfigObject->Get('LogModule') || 'Kernel::System::Log::SysLog';
-    if ( !eval "require $GenericModule" ) {    ## no critic
-        die "Can't load log backend module $GenericModule! $@";
-    }
-
-    # create backend handle
-    $Self->{Backend} = $GenericModule->new(
-        %Param,
-    );
-
-    return $Self if !eval "require IPC::SysV";    ## no critic
-
-    # Setup IPC for shared access to the last log entries.
-    $Self->{IPCKey} = '444423' . $SystemID;       # This name is used to identify the shared memory segment.
-    $Self->{IPCSize} = $ConfigObject->Get('LogSystemCacheSize') || 32 * 1024;
-
-    # Create/access shared memory segment.
-    if ( !eval { $Self->{IPCSHMKey} = shmget( $Self->{IPCKey}, $Self->{IPCSize}, oct(1777) ) } ) {
-
-        # If direct creation fails, try more gently, allocate a small segment first and the reset/resize it.
-        $Self->{IPCSHMKey} = shmget( $Self->{IPCKey}, 1, oct(1777) );
-        if ( !shmctl( $Self->{IPCSHMKey}, 0, 0 ) ) {
-            $Self->Log(
-                Priority => 'error',
-                Message  => "Can't remove shm for log: $!",
-            );
-            return;
-        }
-
-        # Re-initialize SHM segment.
-        $Self->{IPCSHMKey} = shmget( $Self->{IPCKey}, $Self->{IPCSize}, oct(1777) );
-    }
-
-    return if !$Self->{IPCSHMKey};
-
-    # Only flag IPC as active if everything worked well.
-    $Self->{IPC} = 1;
-
-    return $Self;
-}
-</pre></div>
-
 <p>create a log object. Do not use it directly, instead use:</p>
 
-<pre>    use Kernel::System::ObjectManager;
+<pre><code>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
-        'Kernel::System::Log' =&gt; {
-            LogPrefix =&gt; 'InstallScriptX',  # not required, but highly recommend
+        &#39;Kernel::System::Log&#39; =&gt; {
+            LogPrefix =&gt; &#39;InstallScriptX&#39;,  # not required, but highly recommend
         },
     );
-    my $LogObject = $Kernel::OM-&gt;Get('Kernel::System::Log');
-</pre><h2 id="Log">Log()</h2>
+    my $LogObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Log&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Log');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Log">
-                                        <pre>
+<h2 id="Log">Log()</h2>
 
-sub Log {
-    my ( $Self, %Param ) = @_;
-
-    my $Priority    = lc $Param{Priority}  || 'debug';
-    my $PriorityNum = $LogLevel{$Priority} || $LogLevel{debug};
-
-    return 1 if $PriorityNum < $Self->{MinimumLevelNum};
-
-    my $Message = $Param{MSG} || $Param{Message} || '???';
-    my $Caller = $Param{Caller} || 0;
-
-    # returns the context of the current subroutine and sub-subroutine!
-    my ( $Package1, $Filename1, $Line1, $Subroutine1 ) = caller( $Caller + 0 );
-    my ( $Package2, $Filename2, $Line2, $Subroutine2 ) = caller( $Caller + 1 );
-
-    $Subroutine2 ||= $0;
-
-    # log backend
-    $Self->{Backend}->Log(
-        Priority  => $Priority,
-        Message   => $Message,
-        LogPrefix => $Self->{LogPrefix},
-        Module    => $Subroutine2,
-        Line      => $Line1,
-    );
-
-    # if error, write it to STDERR
-    if ( $Priority =~ /^error/i ) {
-
-        ## no critic
-        my $Error = sprintf "ERROR: $Self->{LogPrefix} Perl: %vd OS: $^O Time: "
-            . localtime() . "\n\n", $^V;
-        ## use critic
-
-        $Error .= " Message: $Message\n\n";
-
-        if ( %ENV && ( $ENV{REMOTE_ADDR} || $ENV{REQUEST_URI} ) ) {
-
-            my $RemoteAddress = $ENV{REMOTE_ADDR} || '-';
-            my $RequestURI    = $ENV{REQUEST_URI} || '-';
-
-            $Error .= " RemoteAddress: $RemoteAddress\n";
-            $Error .= " RequestURI: $RequestURI\n\n";
-        }
-
-        $Error .= " Traceback ($$): \n";
-
-        COUNT:
-        for ( my $Count = 0; $Count < 30; $Count++ ) {
-
-            my ( $Package1, $Filename1, $Line1, $Subroutine1 ) = caller( $Caller + $Count );
-
-            last COUNT if !$Line1;
-
-            my ( $Package2, $Filename2, $Line2, $Subroutine2 ) = caller( $Caller + 1 + $Count );
-
-            # if there is no caller module use the file name
-            $Subroutine2 ||= $0;
-
-            # print line if upper caller module exists
-            my $VersionString = '';
-
-            eval { $VersionString = $Package1->VERSION || ''; };    ## no critic
-
-            # version is present
-            if ($VersionString) {
-                $VersionString = ' (v' . $VersionString . ')';
-            }
-
-            $Error .= "   Module: $Subroutine2$VersionString Line: $Line1\n";
-
-            last COUNT if !$Line2;
-        }
-
-        $Error .= "\n";
-        print STDERR $Error;
-
-        # store data (for the frontend)
-        $Self->{error}->{Message}   = $Message;
-        $Self->{error}->{Traceback} = $Error;
-    }
-
-    # remember to info and notice messages
-    elsif ( lc $Priority eq 'info' || lc $Priority eq 'notice' ) {
-        $Self->{ lc $Priority }->{Message} = $Message;
-    }
-
-    # write shm cache log
-    if ( lc $Priority ne 'debug' && $Self->{IPC} ) {
-
-        $Priority = lc $Priority;
-
-        my $Data   = localtime() . ";;$Priority;;$Self->{LogPrefix};;$Message\n";    ## no critic
-        my $String = $Self->GetLog();
-
-        shmwrite( $Self->{IPCSHMKey}, $Data . $String, 0, $Self->{IPCSize} ) || die $!;
-    }
-
-    return 1;
-}
-</pre></div>
-
-<p>log something. log priorities are 'debug', 'info', 'notice' and 'error'.</p>
+<p>log something. log priorities are &#39;debug&#39;, &#39;info&#39;, &#39;notice&#39; and &#39;error&#39;.</p>
 
 <p>These are mapped to the SysLog priorities. Please use the appropriate priority level:</p>
 
 <dl>
-	<dt>debug</dt>
-		<dd><p>Debug-level messages; info useful for debugging the application, not useful during operations.</p></dd>
-	<dt>info</dt>
-		<dd><p>Informational messages; normal operational messages - may be used for reporting etc, no action required.</p></dd>
-	<dt>notice</dt>
-		<dd><p>Normal but significant condition; events that are unusual but not error conditions, no immediate action required.</p></dd>
-	<dt>error</dt>
-		<dd><p>Error conditions. Non-urgent failures, should be relayed to developers or administrators, each item must be resolved.</p></dd>
+
+<dt id="debug">debug</dt>
+<dd>
+
+<p>Debug-level messages; info useful for debugging the application, not useful during operations.</p>
+
+</dd>
+<dt id="info">info</dt>
+<dd>
+
+<p>Informational messages; normal operational messages - may be used for reporting etc, no action required.</p>
+
+</dd>
+<dt id="notice">notice</dt>
+<dd>
+
+<p>Normal but significant condition; events that are unusual but not error conditions, no immediate action required.</p>
+
+</dd>
+<dt id="error">error</dt>
+<dd>
+
+<p>Error conditions. Non-urgent failures, should be relayed to developers or administrators, each item must be resolved.</p>
+
+</dd>
 </dl>
+
 <p>See for more info <a href="http://en.wikipedia.org/wiki/Syslog#Severity_levels">http://en.wikipedia.org/wiki/Syslog#Severity_levels</a></p>
 
-<pre>    $LogObject-&gt;Log(
-        Priority =&gt; 'error',
+<pre><code>    $LogObject-&gt;Log(
+        Priority =&gt; &#39;error&#39;,
         Message  =&gt; &quot;Need something!&quot;,
-    );
-</pre><h2 id="GetLogEntry">GetLogEntry()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_GetLogEntry');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetLogEntry">
-                                        <pre>
-
-sub GetLogEntry {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{ lc $Param{Type} }->{ $Param{What} } || '';
-}
-</pre></div>
+<h2 id="GetLogEntry">GetLogEntry()</h2>
 
 <p>to get the last log info back</p>
 
-<pre>    my $Message = $LogObject-&gt;GetLogEntry(
-        Type =&gt; 'error', # error|info|notice
-        What =&gt; 'Message', # Message|Traceback
-    );
-</pre><h2 id="GetLog">GetLog()</h2>
+<pre><code>    my $Message = $LogObject-&gt;GetLogEntry(
+        Type =&gt; &#39;error&#39;, # error|info|notice
+        What =&gt; &#39;Message&#39;, # Message|Traceback
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_GetLog');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetLog">
-                                        <pre>
-
-sub GetLog {
-    my ( $Self, %Param ) = @_;
-
-    my $String = '';
-    if ( $Self->{IPC} ) {
-        shmread( $Self->{IPCSHMKey}, $String, 0, $Self->{IPCSize} ) || die "$!";
-    }
-
-    # Remove \0 bytes that shmwrite adds for padding.
-    $String =~ s{\0}{}smxg;
-
-    # encode the string
-    $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$String );
-
-    return $String;
-}
-</pre></div>
+<h2 id="GetLog">GetLog()</h2>
 
 <p>to get the tmp log data (from shared memory - ipc) in csv form</p>
 
-<pre>    my $CSVLog = $LogObject-&gt;GetLog();
-</pre><h2 id="CleanUp">CleanUp()</h2>
+<pre><code>    my $CSVLog = $LogObject-&gt;GetLog();</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_CleanUp');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CleanUp">
-                                        <pre>
-
-sub CleanUp {
-    my ( $Self, %Param ) = @_;
-
-    return 1 if !$Self->{IPC};
-
-    shmwrite( $Self->{IPCSHMKey}, '', 0, $Self->{IPCSize} ) || die $!;
-
-    return 1;
-}
-</pre></div>
+<h2 id="CleanUp">CleanUp()</h2>
 
 <p>to clean up tmp log data from shared memory (ipc)</p>
 
-<pre>    $LogObject-&gt;CleanUp();
-</pre><h2 id="Dumper">Dumper()</h2>
+<pre><code>    $LogObject-&gt;CleanUp();</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_Dumper');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_Dumper">
-                                        <pre>
-
-sub Dumper {
-    my ( $Self, @Data ) = @_;
-
-    require Data::Dumper;    ## no critic
-
-    # returns the context of the current subroutine and sub-subroutine!
-    my ( $Package1, $Filename1, $Line1, $Subroutine1 ) = caller(0);
-    my ( $Package2, $Filename2, $Line2, $Subroutine2 ) = caller(1);
-
-    $Subroutine2 ||= $0;
-
-    # log backend
-    $Self->{Backend}->Log(
-        Priority  => 'debug',
-        Message   => substr( Data::Dumper::Dumper(@Data), 0, 600600600 ),    ## no critic
-        LogPrefix => $Self->{LogPrefix},
-        Module    => $Subroutine2,
-        Line      => $Line1,
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="Dumper">Dumper()</h2>
 
 <p>dump a perl variable to log</p>
 
-<pre>    $LogObject-&gt;Dumper(@Array);
+<pre><code>    $LogObject-&gt;Dumper(@Array);
 
     or
 
-    $LogObject-&gt;Dumper(%Hash);
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+    $LogObject-&gt;Dumper(%Hash);</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

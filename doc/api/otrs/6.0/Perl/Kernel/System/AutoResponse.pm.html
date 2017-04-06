@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::AutoResponse</title>
+<title>Kernel::System::AutoResponse &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,573 +48,180 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/AutoResponse.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#AutoResponseAdd">AutoResponseAdd()</a></li>
-	<li><a href="#AutoResponseGet">AutoResponseGet()</a></li>
-	<li><a href="#AutoResponseUpdate">AutoResponseUpdate()</a></li>
-	<li><a href="#AutoResponseGetByTypeQueueID">AutoResponseGetByTypeQueueID()</a></li>
-	<li><a href="#AutoResponseWithoutQueue">AutoResponseWithoutQueue()</a></li>
-	<li><a href="#AutoResponseList">AutoResponseList()</a></li>
-	<li><a href="#AutoResponseTypeList">AutoResponseTypeList()</a></li>
-	<li><a href="#AutoResponseQueue">AutoResponseQueue()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#AutoResponseAdd">AutoResponseAdd()</a></li>
+      <li><a href="#AutoResponseGet">AutoResponseGet()</a></li>
+      <li><a href="#AutoResponseUpdate">AutoResponseUpdate()</a></li>
+      <li><a href="#AutoResponseGetByTypeQueueID">AutoResponseGetByTypeQueueID()</a></li>
+      <li><a href="#AutoResponseWithoutQueue">AutoResponseWithoutQueue()</a></li>
+      <li><a href="#AutoResponseList">AutoResponseList()</a></li>
+      <li><a href="#AutoResponseTypeList">AutoResponseTypeList()</a></li>
+      <li><a href="#AutoResponseQueue">AutoResponseQueue()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::AutoResponse - auto response lib</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All auto response functions. E. g. to add auto response or other functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    return $Self;
-}
-</pre></div>
-
 <p>create an object</p>
 
-<pre>    my $AutoResponseObject = $Kernel::OM-&gt;Get('Kernel::System::AutoResponse');
-</pre><h2 id="AutoResponseAdd">AutoResponseAdd()</h2>
+<pre><code>    my $AutoResponseObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::AutoResponse&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_AutoResponseAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AutoResponseAdd">
-                                        <pre>
-
-sub AutoResponseAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Argument (qw(Name ValidID Response ContentType AddressID TypeID UserID Subject)) {
-        if ( !$Param{$Argument} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Argument!",
-            );
-            return;
-        }
-    }
-
-    # check if a auto-response with this name already exits
-    return if !$Self->_NameExistsCheck( Name => $Param{Name} );
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # insert into database
-    return if !$DBObject->Do(
-        SQL => '
-            INSERT INTO auto_response
-                (name, valid_id, comments, text0, text1, type_id, system_address_id,
-                content_type, create_time, create_by, change_time, change_by)
-            VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
-        Bind => [
-            \$Param{Name}, \$Param{ValidID}, \$Param{Comment}, \$Param{Response},
-            \$Param{Subject},     \$Param{TypeID}, \$Param{AddressID},
-            \$Param{ContentType}, \$Param{UserID}, \$Param{UserID},
-        ],
-    );
-
-    # get id
-    return if !$DBObject->Prepare(
-        SQL => '
-            SELECT id
-            FROM auto_response
-            WHERE name = ?
-                AND type_id = ?
-                AND system_address_id = ?
-                AND content_type = ?
-                AND create_by = ?',
-        Bind => [
-            \$Param{Name}, \$Param{TypeID}, \$Param{AddressID},
-            \$Param{ContentType}, \$Param{UserID},
-        ],
-        Limit => 1,
-    );
-
-    # fetch the result
-    my $ID;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $ID = $Row[0];
-    }
-
-    return $ID;
-}
-</pre></div>
+<h2 id="AutoResponseAdd">AutoResponseAdd()</h2>
 
 <p>add auto response with attributes</p>
 
-<pre>    $AutoResponseObject-&gt;AutoResponseAdd(
-        Name        =&gt; 'Some::AutoResponse',
+<pre><code>    $AutoResponseObject-&gt;AutoResponseAdd(
+        Name        =&gt; &#39;Some::AutoResponse&#39;,
         ValidID     =&gt; 1,
-        Subject     =&gt; 'Some Subject..',
-        Response    =&gt; 'Auto Response Test....',
-        ContentType =&gt; 'text/plain',
+        Subject     =&gt; &#39;Some Subject..&#39;,
+        Response    =&gt; &#39;Auto Response Test....&#39;,
+        ContentType =&gt; &#39;text/plain&#39;,
         AddressID   =&gt; 1,
         TypeID      =&gt; 1,
         UserID      =&gt; 123,
-    );
-</pre><h2 id="AutoResponseGet">AutoResponseGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_AutoResponseGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AutoResponseGet">
-                                        <pre>
-
-sub AutoResponseGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !$Param{ID} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need ID!',
-        );
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # select
-    return if !$DBObject->Prepare(
-        SQL => '
-            SELECT id, name, valid_id, comments, text0, text1, type_id, system_address_id,
-                content_type, create_time, create_by, change_time, change_by
-            FROM auto_response WHERE id = ?',
-        Bind  => [ \$Param{ID} ],
-        Limit => 1,
-    );
-
-    my %Data;
-    while ( my @Data = $DBObject->FetchrowArray() ) {
-
-        %Data = (
-            ID          => $Data[0],
-            Name        => $Data[1],
-            ValidID     => $Data[2],
-            Comment     => $Data[3],
-            Response    => $Data[4],
-            Subject     => $Data[5],
-            TypeID      => $Data[6],
-            AddressID   => $Data[7],
-            ContentType => $Data[8] || 'text/plain',
-            CreateTime  => $Data[9],
-            CreateBy    => $Data[10],
-            ChangeTime  => $Data[11],
-            ChangeBy    => $Data[12],
-        );
-    }
-
-    my %Types = $Self->AutoResponseTypeList();
-    $Data{Type} = $Types{ $Data{TypeID} };
-
-    return %Data;
-}
-</pre></div>
+<h2 id="AutoResponseGet">AutoResponseGet()</h2>
 
 <p>get auto response with attributes</p>
 
-<pre>    my %Data = $AutoResponseObject-&gt;AutoResponseGet(
+<pre><code>    my %Data = $AutoResponseObject-&gt;AutoResponseGet(
         ID =&gt; 123,
-    );
-</pre><h2 id="AutoResponseUpdate">AutoResponseUpdate()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_AutoResponseUpdate');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AutoResponseUpdate">
-                                        <pre>
-
-sub AutoResponseUpdate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Argument (qw(ID Name ValidID Response AddressID ContentType UserID Subject)) {
-        if ( !$Param{$Argument} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Argument!",
-            );
-            return;
-        }
-    }
-
-    # check if a auto-response with this name already exits
-    return if !$Self->_NameExistsCheck(
-        Name => $Param{Name},
-        ID   => $Param{ID},
-    );
-
-    # update the database
-    return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
-        SQL => '
-            UPDATE auto_response
-            SET name = ?, text0 = ?, comments = ?, text1 = ?, type_id = ?,
-                system_address_id = ?, content_type = ?, valid_id = ?,
-                change_time = current_timestamp, change_by = ?
-            WHERE id = ?',
-        Bind => [
-            \$Param{Name}, \$Param{Response}, \$Param{Comment}, \$Param{Subject}, \$Param{TypeID},
-            \$Param{AddressID}, \$Param{ContentType}, \$Param{ValidID},
-            \$Param{UserID}, \$Param{ID},
-        ],
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="AutoResponseUpdate">AutoResponseUpdate()</h2>
 
 <p>update auto response with attributes</p>
 
-<pre>    $AutoResponseObject-&gt;AutoResponseUpdate(
+<pre><code>    $AutoResponseObject-&gt;AutoResponseUpdate(
         ID          =&gt; 123,
-        Name        =&gt; 'Some::AutoResponse',
+        Name        =&gt; &#39;Some::AutoResponse&#39;,
         ValidID     =&gt; 1,
-        Subject     =&gt; 'Some Subject..',
-        Response    =&gt; 'Auto Response Test....',
-        ContentType =&gt; 'text/plain',
+        Subject     =&gt; &#39;Some Subject..&#39;,
+        Response    =&gt; &#39;Auto Response Test....&#39;,
+        ContentType =&gt; &#39;text/plain&#39;,
         AddressID   =&gt; 1,
         TypeID      =&gt; 1,
         UserID      =&gt; 123,
-    );
-</pre><h2 id="AutoResponseGetByTypeQueueID">AutoResponseGetByTypeQueueID()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_AutoResponseGetByTypeQueueID');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AutoResponseGetByTypeQueueID">
-                                        <pre>
+<h2 id="AutoResponseGetByTypeQueueID">AutoResponseGetByTypeQueueID()</h2>
 
-sub AutoResponseGetByTypeQueueID {
-    my ( $Self, %Param ) = @_;
+<p>get a hash with data from Auto Response and it&#39;s corresponding System Address</p>
 
-    # check needed stuff
-    for my $Argument (qw(QueueID Type)) {
-        if ( !$Param{$Argument} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Argument!",
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # SQL query
-    return if !$DBObject->Prepare(
-        SQL => "
-            SELECT ar.text0, ar.text1, ar.content_type, ar.system_address_id, ar.id
-            FROM auto_response_type art, auto_response ar, queue_auto_response qar
-            WHERE ar.valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )
-                AND qar.queue_id = ?
-                AND art.id = ar.type_id
-                AND qar.auto_response_id = ar.id
-                AND art.name = ?",
-        Bind => [
-            \$Param{QueueID},
-            \$Param{Type},
-        ],
-        Limit => 1,
-    );
-
-    # fetch the result
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Data{Text}            = $Row[0];
-        $Data{Subject}         = $Row[1];
-        $Data{ContentType}     = $Row[2] || 'text/plain';
-        $Data{SystemAddressID} = $Row[3];
-        $Data{AutoResponseID}  = $Row[4];
-    }
-
-    # return if no auto response is configured
-    return if !%Data;
-
-    # get sender attributes
-    my %Address = $Kernel::OM->Get('Kernel::System::SystemAddress')->SystemAddressGet(
-        ID => $Data{SystemAddressID},
-    );
-
-    # COMPAT: 2.1
-    $Data{Address} = $Address{Name};
-
-    # return both, sender attributes and auto response attributes
-    return ( %Address, %Data );
-}
-</pre></div>
-
-<p>get a hash with data from Auto Response and it's corresponding System Address</p>
-
-<pre>    my %QueueAddressData = $AutoResponseObject-&gt;AutoResponseGetByTypeQueueID(
+<pre><code>    my %QueueAddressData = $AutoResponseObject-&gt;AutoResponseGetByTypeQueueID(
         QueueID =&gt; 3,
-        Type    =&gt; 'auto reply/new ticket',
-    );
-</pre><p>Return example:</p>
+        Type    =&gt; &#39;auto reply/new ticket&#39;,
+    );</code></pre>
 
-<pre>    %QueueAddressData(
+<p>Return example:</p>
+
+<pre><code>    %QueueAddressData(
         #Auto Response Data
-        'Text'            =&gt; 'Your OTRS TeamOTRS! answered by a human asap.',
-        'Subject'         =&gt; 'New ticket has been created! (RE: &lt;OTRS_CUSTOMER_SUBJECT[24]&gt;)',
-        'ContentType'     =&gt; 'text/plain',
-        'SystemAddressID' =&gt; '1',
-        'AutoResponseID'  =&gt; '1'
+        &#39;Text&#39;            =&gt; &#39;Your OTRS TeamOTRS! answered by a human asap.&#39;,
+        &#39;Subject&#39;         =&gt; &#39;New ticket has been created! (RE: &lt;OTRS_CUSTOMER_SUBJECT[24]&gt;)&#39;,
+        &#39;ContentType&#39;     =&gt; &#39;text/plain&#39;,
+        &#39;SystemAddressID&#39; =&gt; &#39;1&#39;,
+        &#39;AutoResponseID&#39;  =&gt; &#39;1&#39;
 
         #System Address Data
-        'ID'              =&gt; '1',
-        'Name'            =&gt; 'otrs@localhost',
-        'Address'         =&gt; 'otrs@localhost',  #Compatibility with OTRS 2.1
-        'Realname'        =&gt; 'OTRS System',
-        'Comment'         =&gt; 'Standard Address.',
-        'ValidID'         =&gt; '1',
-        'QueueID'         =&gt; '1',
-        'CreateTime'      =&gt; '2010-03-16 21:24:03',
-        'ChangeTime'      =&gt; '2010-03-16 21:24:03',
-    );
-</pre><h2 id="AutoResponseWithoutQueue">AutoResponseWithoutQueue()</h2>
+        &#39;ID&#39;              =&gt; &#39;1&#39;,
+        &#39;Name&#39;            =&gt; &#39;otrs@localhost&#39;,
+        &#39;Address&#39;         =&gt; &#39;otrs@localhost&#39;,  #Compatibility with OTRS 2.1
+        &#39;Realname&#39;        =&gt; &#39;OTRS System&#39;,
+        &#39;Comment&#39;         =&gt; &#39;Standard Address.&#39;,
+        &#39;ValidID&#39;         =&gt; &#39;1&#39;,
+        &#39;QueueID&#39;         =&gt; &#39;1&#39;,
+        &#39;CreateTime&#39;      =&gt; &#39;2010-03-16 21:24:03&#39;,
+        &#39;ChangeTime&#39;      =&gt; &#39;2010-03-16 21:24:03&#39;,
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_AutoResponseWithoutQueue');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AutoResponseWithoutQueue">
-                                        <pre>
-
-sub AutoResponseWithoutQueue {
-    my ( $Self, %Param ) = @_;
-
-    # get DB object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    my %QueueData;
-
-    # SQL query
-    return if !$DBObject->Prepare(
-        SQL =>
-            'SELECT q.id, q.name
-             FROM queue q
-             LEFT OUTER JOIN queue_auto_response qar on q.id = qar.queue_id
-             WHERE qar.queue_id IS NULL '
-            . "AND q.valid_id IN (${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())})"
-    );
-
-    # fetch the result
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $QueueData{ $Row[0] } = $Row[1];
-    }
-
-    return %QueueData;
-}
-</pre></div>
+<h2 id="AutoResponseWithoutQueue">AutoResponseWithoutQueue()</h2>
 
 <p>get a list of the Queues that do not have Auto Response</p>
 
-<pre>    my %AutoResponseWithoutQueue = $AutoResponseObject-&gt;AutoResponseWithoutQueue();
-</pre><p>Return example:</p>
+<pre><code>    my %AutoResponseWithoutQueue = $AutoResponseObject-&gt;AutoResponseWithoutQueue();</code></pre>
 
-<pre>    %Queues = (
-        1 =&gt; 'Some Name',
-        2 =&gt; 'Some Name',
-    );
-</pre><h2 id="AutoResponseList">AutoResponseList()</h2>
+<p>Return example:</p>
 
-<p><a href="#" onclick="toggleCode('method_AutoResponseList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AutoResponseList">
-                                        <pre>
+<pre><code>    %Queues = (
+        1 =&gt; &#39;Some Name&#39;,
+        2 =&gt; &#39;Some Name&#39;,
+    );</code></pre>
 
-sub AutoResponseList {
-    my ( $Self, %Param ) = @_;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    my $Valid = $Param{Valid} // 1;
-
-    # create sql
-    my $SQL = "SELECT ar.id, ar.name FROM auto_response ar";
-    my ( @SQLWhere, @Bind );
-
-    if ($Valid) {
-        push @SQLWhere, "ar.valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
-    }
-
-    # if there is TypeID, select only AutoResponses by that AutoResponse type
-    if ( defined $Param{TypeID} ) {
-        push @SQLWhere, "ar.type_id = ?";
-        push @Bind,     \$Param{TypeID};
-    }
-
-    if (@SQLWhere) {
-        $SQL .= " WHERE " . join( ' AND ', @SQLWhere );
-    }
-
-    # select
-    return if !$DBObject->Prepare(
-        SQL  => $SQL,
-        Bind => \@Bind,
-    );
-
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Data{ $Row[0] } = $Row[1];
-    }
-
-    return %Data;
-}
-</pre></div>
+<h2 id="AutoResponseList">AutoResponseList()</h2>
 
 <p>get a list of the Auto Responses</p>
 
-<pre>    my %AutoResponse = $AutoResponseObject-&gt;AutoResponseList(
+<pre><code>    my %AutoResponse = $AutoResponseObject-&gt;AutoResponseList(
         Valid   =&gt; 1,                 # (optional) default 1
         TypeID  =&gt; 1,                 # (optional) Auto Response type ID
-    );
-</pre><p>Return example:</p>
+    );</code></pre>
 
-<pre>    %AutoResponse = (
-        '1' =&gt; 'default reply (after new ticket has been created)',
-        '2' =&gt; 'default reject (after follow up and rejected of a closed ticket)',
-        '3' =&gt; 'default follow up (after a ticket follow up has been added)',
-    );
-</pre><h2 id="AutoResponseTypeList">AutoResponseTypeList()</h2>
+<p>Return example:</p>
 
-<p><a href="#" onclick="toggleCode('method_AutoResponseTypeList');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AutoResponseTypeList">
-                                        <pre>
+<pre><code>    %AutoResponse = (
+        &#39;1&#39; =&gt; &#39;default reply (after new ticket has been created)&#39;,
+        &#39;2&#39; =&gt; &#39;default reject (after follow up and rejected of a closed ticket)&#39;,
+        &#39;3&#39; =&gt; &#39;default follow up (after a ticket follow up has been added)&#39;,
+    );</code></pre>
 
-sub AutoResponseTypeList {
-    my ( $Self, %Param ) = @_;
-
-    my $Valid = $Param{Valid} // 1;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # create sql
-    my $SQL = 'SELECT id, name FROM auto_response_type ';
-    if ($Valid) {
-        $SQL
-            .= "WHERE valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
-    }
-
-    # select
-    return if !$DBObject->Prepare( SQL => $SQL );
-
-    my %Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        $Data{ $Row[0] } = $Row[1];
-    }
-
-    return %Data;
-}
-</pre></div>
+<h2 id="AutoResponseTypeList">AutoResponseTypeList()</h2>
 
 <p>get a list of the Auto Response Types</p>
 
-<pre>    my %AutoResponseType = $AutoResponseObject-&gt;AutoResponseTypeList(
+<pre><code>    my %AutoResponseType = $AutoResponseObject-&gt;AutoResponseTypeList(
         Valid =&gt; 1,     # (optional) default 1
-    );
-</pre><p>Return example:</p>
+    );</code></pre>
 
-<pre>    %AutoResponseType = (
-        '1' =&gt; 'auto reply',
-        '2' =&gt; 'auto reject',
-        '3' =&gt; 'auto follow up',
-        '4' =&gt; 'auto reply/new ticket',
-        '5' =&gt; 'auto remove',
-    );
-</pre><h2 id="AutoResponseQueue">AutoResponseQueue()</h2>
+<p>Return example:</p>
 
-<p><a href="#" onclick="toggleCode('method_AutoResponseQueue');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AutoResponseQueue">
-                                        <pre>
+<pre><code>    %AutoResponseType = (
+        &#39;1&#39; =&gt; &#39;auto reply&#39;,
+        &#39;2&#39; =&gt; &#39;auto reject&#39;,
+        &#39;3&#39; =&gt; &#39;auto follow up&#39;,
+        &#39;4&#39; =&gt; &#39;auto reply/new ticket&#39;,
+        &#39;5&#39; =&gt; &#39;auto remove&#39;,
+    );</code></pre>
 
-sub AutoResponseQueue {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    for my $Argument (qw(QueueID AutoResponseIDs UserID)) {
-        if ( !$Param{$Argument} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Argument!",
-            );
-            return;
-        }
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # store queue:auto response relations
-    return if !$DBObject->Do(
-        SQL  => 'DELETE FROM queue_auto_response WHERE queue_id = ?',
-        Bind => [ \$Param{QueueID} ],
-    );
-
-    NEWID:
-    for my $NewID ( @{ $Param{AutoResponseIDs} } ) {
-
-        next NEWID if !$NewID;
-
-        $DBObject->Do(
-            SQL => '
-                INSERT INTO queue_auto_response (queue_id, auto_response_id,
-                    create_time, create_by, change_time, change_by)
-                VALUES
-                    (?, ?, current_timestamp, ?, current_timestamp, ?)',
-            Bind => [
-                \$Param{QueueID},
-                \$NewID,
-                \$Param{UserID},
-                \$Param{UserID},
-            ],
-        );
-    }
-
-    return 1;
-}
-</pre></div>
+<h2 id="AutoResponseQueue">AutoResponseQueue()</h2>
 
 <p>assigns a list of auto-responses to a queue</p>
 
-<pre>    my @AutoResponseIDs = (1,2,3);
+<pre><code>    my @AutoResponseIDs = (1,2,3);
 
     $AutoResponseObject-&gt;AutoResponseQueue (
         QueueID         =&gt; 1,
         AutoResponseIDs =&gt; \@AutoResponseIDs,
         UserID          =&gt; 1,
-    );
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+    );</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

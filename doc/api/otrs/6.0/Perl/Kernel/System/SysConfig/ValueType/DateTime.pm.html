@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::SysConfig::ValueType::DateTime</title>
+<title>Kernel::System::SysConfig::ValueType::DateTime &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,340 +48,76 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/SysConfig/ValueType/DateTime.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
-	<li><a href="#SettingRender">SettingRender()</a></li>
-	<li><a href="#AddItem">AddItem()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#SettingEffectiveValueCheck">SettingEffectiveValueCheck()</a></li>
+      <li><a href="#SettingRender">SettingRender()</a></li>
+      <li><a href="#AddItem">AddItem()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::SysConfig::ValueType::DateTime - System configuration date-time value type backed.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # Allocate new hash for object.
-    my $Self = {};
-    bless( $Self, $Type );
-
-    return $Self;
-}
-</pre></div>
-
 <p>Create an object. Do not use it directly, instead use:</p>
 
-<pre>    use Kernel::System::ObjectManager;
+<pre><code>    use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $ValueTypeObject = $Kernel::OM-&gt;Get('Kernel::System::SysConfig::ValueType::DateTime');
-</pre><h2 id="SettingEffectiveValueCheck">SettingEffectiveValueCheck()</h2>
+    my $ValueTypeObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SysConfig::ValueType::DateTime&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SettingEffectiveValueCheck');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SettingEffectiveValueCheck">
-                                        <pre>
-
-sub SettingEffectiveValueCheck {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(XMLContentParsed UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!"
-            );
-
-            return;
-        }
-    }
-
-    my %Result = (
-        Success => 0,
-    );
-
-    # Data should be scalar.
-    if ( ref $Param{EffectiveValue} ) {
-        $Result{Error} = 'EffectiveValue for DateTime must be a scalar!';
-        return %Result;
-    }
-
-    if ( $Param{EffectiveValue} !~ m{\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}} ) {
-        $Result{Error} = 'EffectiveValue for DateTime must be in format YYYY-MM-DD hh:mm:ss!';
-        return %Result;
-    }
-
-    my %Preferences = $Kernel::OM->Get('Kernel::System::User')->GetPreferences(
-        UserID => $Param{UserID},
-    );
-
-    my $OTRSTimeZone = $Kernel::OM->Get('Kernel::Config')->Get("OTRSTimeZone");
-    my $DateTimeObject;
-
-    if ( !$Preferences{UserTimeZone} || $Preferences{UserTimeZone} eq $OTRSTimeZone ) {
-        $DateTimeObject = $Kernel::OM->Create(
-            'Kernel::System::DateTime',
-            ObjectParams => {
-                TimeZone => $OTRSTimeZone,
-            },
-        );
-
-        my $SetSuccess = $DateTimeObject->Set( String => $Param{EffectiveValue} );
-
-        if ( !$SetSuccess ) {
-            $Result{Error} = $Kernel::OM->Get('Kernel::Language')->Translate(
-                "EffectiveValue for DateTime($Param{EffectiveValue}) must be in format YYYY-MM-DD hh:mm:ss!",
-            );
-            return %Result;
-        }
-
-        $Result{EffectiveValue} = $Param{EffectiveValue};
-    }
-    else {
-        $DateTimeObject = $Kernel::OM->Create(
-            'Kernel::System::DateTime',
-            ObjectParams => {
-                TimeZone => $Preferences{UserTimeZone},
-            },
-        );
-
-        my $SetSuccess = $DateTimeObject->Set( String => $Param{EffectiveValue} );
-
-        if ( !$SetSuccess ) {
-            $Result{Error} = $Kernel::OM->Get('Kernel::Language')->Translate(
-                "EffectiveValue for DateTime($Param{EffectiveValue}) must be in format YYYY-MM-DD hh:mm:ss!",
-            );
-            return %Result;
-        }
-
-        my $Success = $DateTimeObject->ToTimeZone(
-            TimeZone => $OTRSTimeZone,
-        );
-
-        if ($Success) {
-            $Result{EffectiveValue} = $DateTimeObject->ToString();
-        }
-        else {
-            $Result{Error} = $Kernel::OM->Get('Kernel::Language')->Translate(
-                "System was not able to calculate user DateTime in OTRSTimeZone!"
-            );
-
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "System was not able to calculate user DateTime in OTRSTimeZone!"
-            );
-        }
-    }
-
-    if ( !$DateTimeObject ) {
-        $Result{Error} = $Kernel::OM->Get('Kernel::Language')->Translate(
-            "EffectiveValue for DateTime($Param{EffectiveValue}) must be in format YYYY-MM-DD hh:mm:ss!",
-        );
-        return %Result;
-    }
-
-    $Result{Success} = 1;
-
-    return %Result;
-}
-</pre></div>
+<h2 id="SettingEffectiveValueCheck">SettingEffectiveValueCheck()</h2>
 
 <p>Check if provided EffectiveValue matches structure defined in XMLContentParsed.</p>
 
-<pre>    my %Result = $SysConfigObject-&gt;SettingEffectiveValueCheck(
+<pre><code>    my %Result = $SysConfigObject-&gt;SettingEffectiveValueCheck(
         XMLContentParsed =&gt; {                                       # (required)
             Value =&gt; [
                 {
-                    'Item' =&gt; [
+                    &#39;Item&#39; =&gt; [
                         {
-                            'Content'   =&gt; '2016-01-01 00:00:00',
-                            'ValueType' =&gt; 'DateTime',
+                            &#39;Content&#39;   =&gt; &#39;2016-01-01 00:00:00&#39;,
+                            &#39;ValueType&#39; =&gt; &#39;DateTime&#39;,
                         },
                     ],
                 },
             ],
         },
-        EffectiveValue =&gt; '2016-02-02 01:12:22',                    # (optional)
+        EffectiveValue =&gt; &#39;2016-02-02 01:12:22&#39;,                    # (optional)
         UserID         =&gt; 1,                                        # (required)
-    );
-</pre><p>Result:
-    %Result = (
-        EffectiveValue =&gt; '2016-02-02 03:12:22',                    # Note that EffectiveValue can be modified
-        Success =&gt; 1,
-        Error   =&gt; undef,
-    );</p>
+    );</code></pre>
+
+<p>Result: %Result = ( EffectiveValue =&gt; &#39;2016-02-02 03:12:22&#39;, # Note that EffectiveValue can be modified Success =&gt; 1, Error =&gt; undef, );</p>
 
 <h2 id="SettingRender">SettingRender()</h2>
 
-<p><a href="#" onclick="toggleCode('method_SettingRender');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SettingRender">
-                                        <pre>
-
-sub SettingRender {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(Name EffectiveValue UserID)) {
-        if ( !defined $Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed",
-            );
-            return;
-        }
-    }
-
-    $Param{Class} //= '';
-    $Param{Class} .= ' DateTime';
-    $Param{DefaultValue} //= '';
-
-    my $IDSuffix = $Param{IDSuffix} || '';
-
-    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
-
-    my $EffectiveValue = $Param{EffectiveValue};
-    if (
-        !$EffectiveValue
-        && $Param{Item}
-        && $Param{Item}->[0]->{Content}
-        )
-    {
-        $EffectiveValue = $Param{Item}->[0]->{Content};
-    }
-
-    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    my $Name = $Param{Name} . $IDSuffix;
-
-    my %EffectiveValueCheck = (
-        Success => 1,
-    );
-
-    if ( !$Param{SkipEffectiveValueCheck} ) {
-        %EffectiveValueCheck = $Self->SettingEffectiveValueCheck(
-            EffectiveValue   => $EffectiveValue,
-            XMLContentParsed => {
-                Value => [
-                    {
-                        Item => $Param{Item},
-                    },
-                ],
-            },
-            UserID => $Param{UserID},
-        );
-    }
-
-    my $TimeZone = $Kernel::OM->Get('Kernel::Config')->Get("OTRSTimeZone");
-
-    my $DateTimeObject = $Kernel::OM->Create(
-        'Kernel::System::DateTime',
-        ObjectParams => {
-            String   => $EffectiveValue,
-            TimeZone => $TimeZone,
-        },
-    );
-
-    my %Preferences = $Kernel::OM->Get('Kernel::System::User')->GetPreferences(
-        UserID => $Param{UserID},
-    );
-
-    if ( $Preferences{UserTimeZone} ) {
-        my $Success = $DateTimeObject->ToTimeZone(
-            TimeZone => $Preferences{UserTimeZone},
-        );
-        $TimeZone = $Preferences{UserTimeZone};
-
-        if ( !$Success ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "System was not able to calculate DateTime in user timezone!"
-            );
-        }
-    }
-
-    my @Date = split m{-|\s|:}, $DateTimeObject->ToString();
-
-    my $HTML = "<div class='SettingContent'>\n";
-    $HTML .= $LayoutObject->BuildDateSelection(
-        Prefix           => $Name,
-        $Name . "Class"  => $Param{Class},
-        $Name . "Year"   => $Date[0],
-        $Name . "Month"  => $Date[1],
-        $Name . "Day"    => $Date[2],
-        $Name . "Hour"   => $Date[3],
-        $Name . "Minute" => $Date[4],
-        $Name . "Second" => $Date[5],
-        YearDiff         => 10,
-        Format           => 'DateInputFormatLong',
-        Validate         => 1,
-        Disabled         => $Param{RW} ? 0 : 1,
-        OverrideTimeZone => 1,
-    );
-
-    my $TimeZoneText = $Kernel::OM->Get('Kernel::Language')->Translate("Time Zone");
-    $HTML .= "<span class='TimeZoneText'>$TimeZoneText: $TimeZone</span>\n";
-
-    if ( !$EffectiveValueCheck{Success} ) {
-        my $Message = $LanguageObject->Translate("Value is not correct! Please, consider updating this field.");
-
-        $HTML .= "<div class='BadEffectiveValue'>\n";
-        $HTML .= "<p>* $Message</p>\n";
-        $HTML .= "</div>\n";
-    }
-
-    $HTML .= "</div>\n";
-
-    if ( !$Param{IsArray} && !$Param{IsHash} ) {
-        my $DefaultText = $Kernel::OM->Get('Kernel::Language')->Translate('Default');
-
-        $HTML .= <<"EOF";
-                                <div class=\"WidgetMessage Bottom\">
-                                    $DefaultText: $Param{DefaultValue}
-                                </div>
-EOF
-    }
-
-    if ( $Param{IsAjax} && $LayoutObject->{_JSOnDocumentComplete} && $Param{RW} ) {
-        for my $JS ( @{ $LayoutObject->{_JSOnDocumentComplete} } ) {
-            $HTML .= "<script>$JS</script>";
-        }
-    }
-
-    return $HTML;
-}
-</pre></div>
-
 <p>Extracts the effective value from a XML parsed setting.</p>
 
-<pre>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
-        Name           =&gt; 'SettingName',
+<pre><code>    my $SettingHTML = $ValueTypeObject-&gt;SettingRender(
+        Name           =&gt; &#39;SettingName&#39;,
         DefaultID      =&gt;  123,             # (required)
-        EffectiveValue =&gt; '2016-02-02 01:00:59',
-        DefaultValue   =&gt; 'Product 5',      # (optional)
-        Class          =&gt; 'My class'        # (optional)
+        EffectiveValue =&gt; &#39;2016-02-02 01:00:59&#39;,
+        DefaultValue   =&gt; &#39;Product 5&#39;,      # (optional)
+        Class          =&gt; &#39;My class&#39;        # (optional)
         RW             =&gt; 1,                # (optional) Allow editing. Default 0.
         Item           =&gt; [                 # (optional) XML parsed item
             {
-                'ValueType' =&gt; 'Date',
-                'Content' =&gt; '2016-02-02 01:00:59',
-                'ValueRegex' =&gt; '',
+                &#39;ValueType&#39; =&gt; &#39;Date&#39;,
+                &#39;Content&#39; =&gt; &#39;2016-02-02 01:00:59&#39;,
+                &#39;ValueRegex&#39; =&gt; &#39;&#39;,
             },
         ],
         IsArray                 =&gt; 1,       # (optional) Item is part of the array
@@ -410,137 +125,34 @@ EOF
         SkipEffectiveValueCheck =&gt; 1,       # (optional) If enabled, system will not perform effective value check.
                                             #            Default: 1.
         UserID                  =&gt; 1,       # (required) UserID
-    );
-</pre><p>Returns:</p>
+    );</code></pre>
 
-<pre>    $SettingHTML = '&lt;div class &quot;Field&quot;...&lt;/div&gt;';
-</pre><h2 id="AddItem">AddItem()</h2>
+<p>Returns:</p>
 
-<p><a href="#" onclick="toggleCode('method_AddItem');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_AddItem">
-                                        <pre>
+<pre><code>    $SettingHTML = &#39;&lt;div class &quot;Field&quot;...&lt;/div&gt;&#39;;</code></pre>
 
-sub AddItem {
-    my ( $Self, %Param ) = @_;
-
-    # Check needed stuff.
-    for my $Needed (qw(Name)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    my $IDSuffix = $Param{IDSuffix} || '';
-    my $Class    = $Param{Class}    || '';
-    $Class .= ' DateTime Entry';
-
-    my $Name = $Param{Name} . $IDSuffix;
-
-    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-    my $TimeZone     = $Kernel::OM->Get('Kernel::Config')->Get("OTRSTimeZone");
-
-    my %Preferences = $Kernel::OM->Get('Kernel::System::User')->GetPreferences(
-        UserID => $Param{UserID},
-    );
-
-    my $DefaultValue;
-    if ( $Param{DefaultItem} ) {
-
-        my $DateTimeObject = $Kernel::OM->Create(
-            'Kernel::System::DateTime',
-            ObjectParams => {
-                String   => $Param{DefaultItem}->{Content},
-                TimeZone => $TimeZone,
-            },
-        );
-
-        if ( $Preferences{UserTimeZone} ) {
-            my $Success = $DateTimeObject->ToTimeZone(
-                TimeZone => $Preferences{UserTimeZone},
-            );
-
-            if ( !$Success ) {
-                $Kernel::OM->Get('Kernel::System::Log')->Log(
-                    Priority => 'error',
-                    Message  => "System was not able to calculate DateTime in user timezone!"
-                );
-            }
-        }
-
-        $DefaultValue = $DateTimeObject->ToString();
-    }
-
-    if ( $Preferences{UserTimeZone} ) {
-        $TimeZone = $Preferences{UserTimeZone};
-    }
-
-    my $Result;
-
-    if ($DefaultValue) {
-        $DefaultValue =~ m{(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})};
-
-        $Result = $LayoutObject->BuildDateSelection(
-            Prefix           => $Name,
-            $Name . "Year"   => $1,
-            $Name . "Month"  => $2,
-            $Name . "Day"    => $3,
-            $Name . "Hour"   => $4,
-            $Name . "Minute" => $5,
-            $Name . "Second" => $6,
-            $Name . "Class"  => $Class,
-            YearDiff         => 10,
-            Format           => 'DateInputFormatLong',
-            Validate         => 1,
-            OverrideTimeZone => 1,
-        );
-    }
-    else {
-        $Result = $LayoutObject->BuildDateSelection(
-            Prefix           => $Name,
-            $Name . "Class"  => $Class,
-            YearDiff         => 10,
-            Format           => 'DateInputFormatLong',
-            Validate         => 1,
-            OverrideTimeZone => 1,
-        );
-    }
-
-    my $TimeZoneText = $Kernel::OM->Get('Kernel::Language')->Translate("Time Zone");
-    $Result .= "<span class='TimeZoneText'>$TimeZoneText: $TimeZone</span>\n";
-
-    for my $JS ( @{ $LayoutObject->{_JSOnDocumentComplete} } ) {
-        $Result .= "<script>$JS</script>";
-    }
-
-    return $Result;
-}
-</pre></div>
+<h2 id="AddItem">AddItem()</h2>
 
 <p>Generate HTML for new array/hash item.</p>
 
-<pre>    my $HTML = $ValueTypeObject-&gt;AddItem(
-        Name           =&gt; 'SettingName',    (required) Name
+<pre><code>    my $HTML = $ValueTypeObject-&gt;AddItem(
+        Name           =&gt; &#39;SettingName&#39;,    (required) Name
         DefaultItem    =&gt; {                 (optional) DefaultItem hash, if available
-            Content =&gt; '2017-01-01 01:45:00',
-            ValueType =&gt; 'DateTime',
+            Content =&gt; &#39;2017-01-01 01:45:00&#39;,
+            ValueType =&gt; &#39;DateTime&#39;,
         },
-        IDSuffix       =&gt; '_Array1',        (optional) IDSuffix is needed for arrays and hashes.
-    );
-</pre><p>Returns:</p>
+        IDSuffix       =&gt; &#39;_Array1&#39;,        (optional) IDSuffix is needed for arrays and hashes.
+    );</code></pre>
 
-<pre>    $HTML = '&lt;select class=&quot;Validate_DateMonth  Date&quot; id=&quot;SettingName_Array1Month&quot; ...';
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<p>Returns:</p>
+
+<pre><code>    $HTML = &#39;&lt;select class=&quot;Validate_DateMonth  Date&quot; id=&quot;SettingName_Array1Month&quot; ...&#39;;</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

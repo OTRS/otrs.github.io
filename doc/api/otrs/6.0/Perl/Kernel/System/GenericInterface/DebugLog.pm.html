@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::GenericInterface::DebugLog</title>
+<title>Kernel::System::GenericInterface::DebugLog &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,754 +48,155 @@ $(document).ready(function() {
 <div>
 <a href="../../../src/Kernel/System/GenericInterface/DebugLog.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#LogAdd">LogAdd()</a></li>
-	<li><a href="#LogGet">LogGet()</a></li>
-	<li><a href="#LogGetWithData">LogGetWithData()</a></li>
-	<li><a href="#LogDelete">LogDelete()</a></li>
-	<li><a href="#LogSearch">LogSearch()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#LogAdd">LogAdd()</a></li>
+      <li><a href="#LogGet">LogGet()</a></li>
+      <li><a href="#LogGetWithData">LogGetWithData()</a></li>
+      <li><a href="#LogDelete">LogDelete()</a></li>
+      <li><a href="#LogSearch">LogSearch()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::GenericInterface::DebugLog - log interface for generic interface</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All log functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
-
-sub new {
-    my ( $Type, %Param ) = @_;
-
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    $Self->{CacheType} = 'GenericInterfaceDebugLog';
-    $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
-
-    return $Self;
-}
-</pre></div>
-
 <p>create a debug log object. Do not use it directly, instead use:</p>
 
-<pre>    my $DebugLogObject = $Kernel::OM-&gt;Get('Kernel::System::GenericInterface::DebugLog');
-</pre><h2 id="LogAdd">LogAdd()</h2>
+<pre><code>    my $DebugLogObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::GenericInterface::DebugLog&#39;);</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_LogAdd');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_LogAdd">
-                                        <pre>
+<h2 id="LogAdd">LogAdd()</h2>
 
-sub LogAdd {
-    my ( $Self, %Param ) = @_;
-
-    # check needed params
-    NEEDED:
-    for my $Needed (qw(CommunicationID CommunicationType DebugLevel Summary WebserviceID))
-    {
-        next NEEDED if IsStringWithData( $Param{$Needed} );
-
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need $Needed as a string!",
-        );
-        return;
-    }
-
-    # param syntax check
-    if ( !IsMD5Sum( $Param{CommunicationID} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'CommunicationID is not an md5sum!',
-        );
-        return;
-    }
-    if ( $Param{CommunicationType} !~ m{ \A (?: Provider | Requester ) \z }xms ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "CommunicationType '$Param{CommunicationType}' is not valid!",
-        );
-        return;
-    }
-    if (
-        defined $Param{RemoteIP} &&
-        $Param{RemoteIP} ne ''
-        )
-    {
-        if ( !IsStringWithData( $Param{RemoteIP} ) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "RemoteIP '$Param{RemoteIP}' is not a valid IPv4 or IPv6 address!",
-            );
-            return;
-        }
-        if ( !IsIPv4Address( $Param{RemoteIP} ) && !IsIPv6Address( $Param{RemoteIP} ) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "RemoteIP '$Param{RemoteIP}' is not a valid IPv4 or IPv6 address!",
-            );
-            return;
-        }
-    }
-    if ( !IsPositiveInteger( $Param{WebserviceID} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'WebserviceID is not a positive integer!',
-        );
-        return;
-    }
-    KEY:
-    for my $Key (qw(Data DebugLevel Summary)) {
-        next KEY if !defined $Param{$Key};
-        if ( !IsString( $Param{$Key} ) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "$Key is not a string!",
-            );
-            return;
-        }
-    }
-
-    # check if we have a communication chain already
-    my $LogData = $Self->LogGet(
-        CommunicationID => $Param{CommunicationID},
-    );
-    if ( !IsHashRefWithData($LogData) ) {
-
-        # no entry yet, create one
-        return if !$Self->_LogAddChain(
-            CommunicationID   => $Param{CommunicationID},
-            CommunicationType => $Param{CommunicationType},
-            RemoteIP          => $Param{RemoteIP},
-            WebserviceID      => $Param{WebserviceID},
-        );
-        $LogData = $Self->LogGet(
-            CommunicationID => $Param{CommunicationID},
-        );
-    }
-    else {
-
-        # match param against existing chain
-        KEY:
-        for my $Key (qw(CommunicationType RemoteIP WebserviceID)) {
-            next KEY if !defined $Param{$Key};
-            next KEY if $Param{$Key} eq $LogData->{$Key};
-
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "$Key does not match current value for this CommunicationID!",
-            );
-            return;
-        }
-    }
-
-    # create entry
-    if (
-        !$Kernel::OM->Get('Kernel::System::DB')->Do(
-            SQL =>
-                'INSERT INTO gi_debugger_entry_content'
-                . ' (content, create_time, debug_level, gi_debugger_entry_id, subject)'
-                . ' VALUES (?, current_timestamp, ?, ?, ?)',
-            Bind => [
-                \$Param{Data}, \$Param{DebugLevel}, \$LogData->{LogID}, \$Param{Summary},
-            ],
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Could not create debug entry in db!',
-        );
-        return;
-    }
-
-    return 1;
-}
-</pre></div>
-
-<p>add a communication bit to database
-if we don't already have a communication chain, create it</p>
+<p>add a communication bit to database if we don&#39;t already have a communication chain, create it</p>
 
 <p>returns 1 on success or undef on error</p>
 
-<pre>    my $Success = $DebugLogObject-&gt;LogAdd(
-        CommunicationID   =&gt; '6f1ed002ab5595859014ebf0951522d9',
-        CommunicationType =&gt; 'Provider',        # 'Provider' or 'Requester'
-        Data              =&gt; 'additional data' # optional
-        DebugLevel        =&gt; 'info',           # 'debug', 'info', 'notice', 'error'
-        RemoteIP          =&gt; '192.168.0.1',    # optional, must be valid IPv4 or IPv6 address
-        Summary           =&gt; 'description of log entry',
+<pre><code>    my $Success = $DebugLogObject-&gt;LogAdd(
+        CommunicationID   =&gt; &#39;6f1ed002ab5595859014ebf0951522d9&#39;,
+        CommunicationType =&gt; &#39;Provider&#39;,        # &#39;Provider&#39; or &#39;Requester&#39;
+        Data              =&gt; &#39;additional data&#39; # optional
+        DebugLevel        =&gt; &#39;info&#39;,           # &#39;debug&#39;, &#39;info&#39;, &#39;notice&#39;, &#39;error&#39;
+        RemoteIP          =&gt; &#39;192.168.0.1&#39;,    # optional, must be valid IPv4 or IPv6 address
+        Summary           =&gt; &#39;description of log entry&#39;,
         WebserviceID      =&gt; 1,
-    );
-</pre><h2 id="LogGet">LogGet()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_LogGet');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_LogGet">
-                                        <pre>
-
-sub LogGet {
-    my ( $Self, %Param ) = @_;
-
-    # check needed param
-    if ( !IsMD5Sum( $Param{CommunicationID} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'CommunicationID is not an md5sum!',
-        );
-        return;
-    }
-
-    # check cache
-    my $Cache = $Kernel::OM->Get('Kernel::System::Cache')->Get(
-        Type => $Self->{CacheType},
-        Key  => 'LogGet::' . $Param{CommunicationID},
-    );
-    return $Cache if $Cache;
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # prepare db request
-    if (
-        !$DBObject->Prepare(
-            SQL =>
-                'SELECT communication_id, communication_type, create_time, id, remote_ip,'
-                . ' webservice_id FROM gi_debugger_entry WHERE communication_id = ?',
-            Bind  => [ \$Param{CommunicationID} ],
-            Limit => 1,
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Could not prepare db query!',
-        );
-        return;
-    }
-
-    # read data
-    my %LogData;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        %LogData = (
-            CommunicationID   => $Row[0],
-            CommunicationType => $Row[1],
-            Created           => $Row[2],
-            LogID             => $Row[3],
-            RemoteIP          => $Row[4] || '',
-            WebserviceID      => $Row[5],
-        );
-    }
-
-    return if !%LogData;
-
-    # set cache
-    $Kernel::OM->Get('Kernel::System::Cache')->Set(
-        Type  => $Self->{CacheType},
-        TTL   => $Self->{CacheTTL},
-        Key   => 'LogGet::' . $Param{CommunicationID},
-        Value => \%LogData,
-    );
-
-    return \%LogData;
-}
-</pre></div>
+<h2 id="LogGet">LogGet()</h2>
 
 <p>get communication chain data</p>
 
-<pre>    my $LogData = $DebugLogObject-&gt;LogGet(
-        CommunicationID =&gt; '6f1ed002ab5595859014ebf0951522d9',
+<pre><code>    my $LogData = $DebugLogObject-&gt;LogGet(
+        CommunicationID =&gt; &#39;6f1ed002ab5595859014ebf0951522d9&#39;,
     );
 
     $LogData = {
-        CommunicationID   =&gt; '6f1ed002ab5595859014ebf0951522d9',
-        CommunicationType =&gt; 'Provider',
-        Created           =&gt; '2011-02-15 16:47:28',
+        CommunicationID   =&gt; &#39;6f1ed002ab5595859014ebf0951522d9&#39;,
+        CommunicationType =&gt; &#39;Provider&#39;,
+        Created           =&gt; &#39;2011-02-15 16:47:28&#39;,
         LogID             =&gt; 1,
-        RemoteIP          =&gt; '192.168.0.1', # optional
+        RemoteIP          =&gt; &#39;192.168.0.1&#39;, # optional
         WebserviceID      =&gt; 1,
-    };
-</pre><h2 id="LogGetWithData">LogGetWithData()</h2>
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_LogGetWithData');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_LogGetWithData">
-                                        <pre>
-
-sub LogGetWithData {
-    my ( $Self, %Param ) = @_;
-
-    # check needed param
-    if ( !IsMD5Sum( $Param{CommunicationID} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'CommunicationID is not an md5sum!',
-        );
-        return;
-    }
-
-    # check if we have data for this communication id
-    my $LogData = $Self->LogGet(
-        CommunicationID => $Param{CommunicationID},
-    );
-    if ( !IsHashRefWithData($LogData) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Could not get communication chain!',
-        );
-        return;
-    }
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # prepare db request
-    if (
-        !$DBObject->Prepare(
-            SQL =>
-                'SELECT create_time, content, debug_level, subject'
-                . ' FROM gi_debugger_entry_content WHERE gi_debugger_entry_id = ?'
-                . ' ORDER BY create_time ASC',
-            Bind => [ \$LogData->{LogID} ],
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Could not prepare db query!',
-        );
-        return;
-    }
-
-    # read data
-    my @LogDataEntries;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        my %SingleEntry = (
-            Created    => $Row[0],
-            Data       => $Row[1] || '',
-            DebugLevel => $Row[2],
-            Summary    => $Row[3],
-        );
-        push @LogDataEntries, \%SingleEntry;
-    }
-
-    $LogData->{Data} = \@LogDataEntries;
-    return $LogData;
-}
-</pre></div>
+<h2 id="LogGetWithData">LogGetWithData()</h2>
 
 <p>get all individual entries for a communication chain</p>
 
-<pre>    my $LogData = $DebugLogObject-&gt;LogGetWithData(
-        CommunicationID =&gt; '6f1ed002ab5595859014ebf0951522d9',
+<pre><code>    my $LogData = $DebugLogObject-&gt;LogGetWithData(
+        CommunicationID =&gt; &#39;6f1ed002ab5595859014ebf0951522d9&#39;,
     );
 
     $LogData = {
-        CommunicationID   =&gt; '6f1ed002ab5595859014ebf0951522d9',
-        CommunicationType =&gt; 'Provider',
-        Created           =&gt; '2011-02-15 16:47:28',
+        CommunicationID   =&gt; &#39;6f1ed002ab5595859014ebf0951522d9&#39;,
+        CommunicationType =&gt; &#39;Provider&#39;,
+        Created           =&gt; &#39;2011-02-15 16:47:28&#39;,
         LogID             =&gt; 1,
-        RemoteIP          =&gt; '192.168.0.1', # optional
+        RemoteIP          =&gt; &#39;192.168.0.1&#39;, # optional
         WebserviceID      =&gt; 1,
         Data              =&gt; [
             {
-                Created    =&gt; '2011-02-15 17:00:06',
-                Data       =&gt; 'some logging specific data or structure', # optional
-                DebugLevel =&gt; 'info',
-                Summary    =&gt; 'a log bit',
+                Created    =&gt; &#39;2011-02-15 17:00:06&#39;,
+                Data       =&gt; &#39;some logging specific data or structure&#39;, # optional
+                DebugLevel =&gt; &#39;info&#39;,
+                Summary    =&gt; &#39;a log bit&#39;,
             },
             ...
         ],
-    };
-</pre><h2 id="LogDelete">LogDelete()</h2>
+    };</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_LogDelete');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_LogDelete">
-                                        <pre>
-
-sub LogDelete {
-    my ( $Self, %Param ) = @_;
-
-    # check needed params
-    my $CommunicationIDValid = IsMD5Sum( $Param{CommunicationID} );
-    if ( $Param{CommunicationID} && !$CommunicationIDValid ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'CommunicationID is not an md5sum!',
-        );
-        return;
-    }
-    my $WebserviceIDValid = IsPositiveInteger( $Param{WebserviceID} );
-    if ( $Param{WebserviceID} && !$WebserviceIDValid ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'WebserviceID is not a positive integer!',
-        );
-        return;
-    }
-    if (
-        ( !$CommunicationIDValid && !$WebserviceIDValid )
-        ||
-        ( $CommunicationIDValid && $WebserviceIDValid )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need exactly one of CommunicationID or WebserviceID!',
-        );
-        return;
-    }
-
-    # check if we have data for this param
-    if ($CommunicationIDValid) {
-        my $LogData = $Self->LogGet(
-            CommunicationID => $Param{CommunicationID},
-        );
-        if ( !IsHashRefWithData($LogData) ) {
-            return 1 if $Param{NoErrorIfEmpty};
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => 'Communication chain does not exist!',
-            );
-            return;
-        }
-    }
-    else {
-        my $LogData = $Self->LogSearch(
-            Limit        => 1,
-            WebserviceID => $Param{WebserviceID},
-        );
-        if ( !IsArrayRefWithData($LogData) ) {
-            return 1 if $Param{NoErrorIfEmpty};
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => 'Communication chain does not exist!',
-            );
-            return;
-        }
-    }
-
-    # delete individual entries first
-    my $SQLIndividual =
-        'DELETE FROM gi_debugger_entry_content
-        WHERE gi_debugger_entry_id in( SELECT id FROM gi_debugger_entry ';
-    my @BindIndividual;
-    if ($CommunicationIDValid) {
-        $SQLIndividual .= 'WHERE communication_id = ?';
-        push @BindIndividual, \$Param{CommunicationID};
-    }
-    else {
-        $SQLIndividual .= 'WHERE  webservice_id = ?';
-        push @BindIndividual, \$Param{WebserviceID};
-    }
-    $SQLIndividual .= ' )';
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    if (
-        !$DBObject->Do(
-            SQL  => $SQLIndividual,
-            Bind => \@BindIndividual,
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Could not remove entries of communication chain in db!',
-        );
-        return;
-    }
-
-    # delete main entry
-    my $SQLMain = 'DELETE FROM gi_debugger_entry WHERE';
-    my @BindMain;
-    if ($CommunicationIDValid) {
-        $SQLMain .= ' communication_id = ?';
-        push @BindMain, \$Param{CommunicationID};
-    }
-    else {
-        $SQLMain .= ' webservice_id = ?';
-        push @BindMain, \$Param{WebserviceID};
-    }
-    if (
-        !$DBObject->Do(
-            SQL  => $SQLMain,
-            Bind => \@BindMain,
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Could not remove communication chain in db!',
-        );
-        return;
-    }
-
-    # clean cache
-    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => $Self->{CacheType},
-    );
-
-    return 1;
-}
-</pre></div>
+<h2 id="LogDelete">LogDelete()</h2>
 
 <p>delete a complete communication chain</p>
 
 <p>returns 1 if successful or undef otherwise</p>
 
-<pre>    my $Success = $DebugLogObject-&gt;LogDelete(
+<pre><code>    my $Success = $DebugLogObject-&gt;LogDelete(
         NoErrorIfEmpty  =&gt; 1,                                  # optional
-        CommunicationID =&gt; '6f1ed002ab5595859014ebf0951522d9', # optional
+        CommunicationID =&gt; &#39;6f1ed002ab5595859014ebf0951522d9&#39;, # optional
         WebserviceID    =&gt; 1,                                  # optional
                                                                # exactly one id parameter required
-    );
-</pre><h2 id="LogSearch">LogSearch()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_LogSearch');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_LogSearch">
-                                        <pre>
+<h2 id="LogSearch">LogSearch()</h2>
 
-sub LogSearch {
-    my ( $Self, %Param ) = @_;
+<p>search for log chains based on several criteria when the parameter &#39;WithData&#39; is set, the complete communication chains will be returned</p>
 
-    # param check
-    KEY:
-    for my $Key (
-        qw(CommunicationID CommunicationType CreatedAtOrAfter CreatedAtOrBefore Limit RemoteIP WebserviceID WithData)
-        )
-    {
-        next KEY if !defined $Param{$Key};
-        next KEY if IsStringWithData( $Param{$Key} );
-
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Need $Key as a string!",
-        );
-        return;
-    }
-
-    # param syntax check
-    if ( $Param{CommunicationID} && !IsMD5Sum( $Param{CommunicationID} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'CommunicationID is not an md5sum!',
-        );
-        return;
-    }
-    if (
-        $Param{CommunicationType}
-        && $Param{CommunicationType} !~ m{ \A (?: Provider | Requester ) \z }xms
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "CommunicationType '$Param{CommunicationType}' is not valid!",
-        );
-        return;
-    }
-    KEY:
-    for my $Key (qw(CreatedAtOrAfter CreatedAtOrBefore)) {
-        next KEY if !$Param{$Key};
-        next KEY if $Param{$Key} =~ m{
-                \A \d{4} - \d{2} - \d{2} [ ] \d{2} : \d{2} : \d{2} \z
-            }xms;
-
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "$Key '$Param{$Key}' is not valid!",
-        );
-        return;
-    }
-    if ( $Param{Limit} && !IsPositiveInteger( $Param{Limit} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Limit is not a positive integer!',
-        );
-        return;
-    }
-    if (
-        defined $Param{RemoteIP} &&
-        $Param{RemoteIP} ne ''
-        )
-    {
-        if ( !IsStringWithData( $Param{RemoteIP} ) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "RemoteIP '$Param{RemoteIP}' is not a valid IPv4 or IPv6 address!",
-            );
-            return;
-        }
-        if ( !IsIPv4Address( $Param{RemoteIP} ) && !IsIPv6Address( $Param{RemoteIP} ) ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "RemoteIP '$Param{RemoteIP}' is not a valid IPv4 or IPv6 address!",
-            );
-            return;
-        }
-    }
-    if ( $Param{WebserviceID} && !IsPositiveInteger( $Param{WebserviceID} ) ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'WebserviceID is not a positive integer!',
-        );
-        return;
-    }
-    if ( $Param{WithData} && $Param{WithData} !~ m{ \A [01] \z }xms ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'WebserviceID is not a positive integer!',
-        );
-        return;
-    }
-
-    # prepare db request
-    my $SQL =
-        'SELECT communication_id, communication_type, id, remote_ip, webservice_id, create_time'
-        . ' FROM gi_debugger_entry';
-    my @Bind     = ();
-    my $SQLExt   = '';
-    my %NameToDB = (
-        CommunicationID   => 'communication_id',
-        CommunicationType => 'communication_type',
-        RemoteIP          => 'remote_ip',
-        WebserviceID      => 'webservice_id',
-    );
-
-    OPTION:
-    for my $Option (qw(CommunicationID CommunicationType RemoteIP WebserviceID)) {
-        next OPTION if !$Param{$Option};
-        my $Type = $SQLExt ? 'AND' : 'WHERE';
-        $SQLExt .= " $Type $NameToDB{$Option} = ?";
-        push @Bind, \$Param{$Option};
-    }
-
-    if ( $Param{CreatedAtOrAfter} ) {
-        my $Type = $SQLExt ? 'AND' : 'WHERE';
-        $SQLExt .= " $Type create_time >= ?";
-        push @Bind, \$Param{CreatedAtOrAfter};
-    }
-
-    if ( $Param{CreatedAtOrBefore} ) {
-        my $Type = $SQLExt ? 'AND' : 'WHERE';
-        $SQLExt .= " $Type create_time <= ?";
-        push @Bind, \$Param{CreatedAtOrBefore};
-    }
-
-    $SQLExt .= ' ORDER BY create_time ASC';
-
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    if (
-        !$DBObject->Prepare(
-            SQL   => $SQL . $SQLExt,
-            Bind  => \@Bind,
-            Limit => $Param{Limit} || 100,
-        )
-        )
-    {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Could not prepare db query!',
-        );
-        return;
-    }
-
-    # read data
-    my @LogEntries;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        my %SingleEntry = (
-            CommunicationID   => $Row[0],
-            CommunicationType => $Row[1],
-            LogID             => $Row[2],
-            RemoteIP          => $Row[3] || '',
-            WebserviceID      => $Row[4],
-            Created           => $Row[5],
-        );
-        push @LogEntries, \%SingleEntry;
-    }
-
-    # done if we only need main entries
-    return \@LogEntries if !$Param{WithData};
-
-    # we need individual entries
-    my @LogEntriesWithData;
-    for my $Entry (@LogEntries) {
-        my $LogData = $Self->LogGetWithData(
-            CommunicationID => $Entry->{CommunicationID},
-        );
-        return if !$LogData;
-        push @LogEntriesWithData, $LogData;
-    }
-
-    return \@LogEntriesWithData;
-}
-</pre></div>
-
-<p>search for log chains based on several criteria
-when the parameter 'WithData' is set, the complete communication chains will be returned</p>
-
-<pre>    my $LogData = $DebugLogObject-&gt;LogSearch(
-        CommunicationID   =&gt; '6f1ed002ab5595859014ebf0951522d9', # optional
-        CommunicationType =&gt; 'Provider',     # optional, 'Provider' or 'Requester'
-        CreatedAtOrAfter  =&gt; '2011-01-01 00:00:00', # optional
-        CreatedAtOrBefore =&gt; '2011-12-31 23:59:59', # optional
+<pre><code>    my $LogData = $DebugLogObject-&gt;LogSearch(
+        CommunicationID   =&gt; &#39;6f1ed002ab5595859014ebf0951522d9&#39;, # optional
+        CommunicationType =&gt; &#39;Provider&#39;,     # optional, &#39;Provider&#39; or &#39;Requester&#39;
+        CreatedAtOrAfter  =&gt; &#39;2011-01-01 00:00:00&#39;, # optional
+        CreatedAtOrBefore =&gt; &#39;2011-12-31 23:59:59&#39;, # optional
         Limit             =&gt; 1000, # optional, default 100
-        RemoteIP          =&gt; '192.168.0.1', # optional, must be valid IPv4 or IPv6 address
+        RemoteIP          =&gt; &#39;192.168.0.1&#39;, # optional, must be valid IPv4 or IPv6 address
         WebserviceID      =&gt; 1, # optional
         WithData          =&gt; 0, # optional
     );
 
     $LogData = [
         {
-            CommunicationID   =&gt; '6f1ed002ab5595859014ebf0951522d9',
-            CommunicationType =&gt; 'Provider',
-            Created           =&gt; '2011-02-15 16:47:28',
+            CommunicationID   =&gt; &#39;6f1ed002ab5595859014ebf0951522d9&#39;,
+            CommunicationType =&gt; &#39;Provider&#39;,
+            Created           =&gt; &#39;2011-02-15 16:47:28&#39;,
             LogID             =&gt; 1,
-            RemoteIP          =&gt; '192.168.0.1', # optional
+            RemoteIP          =&gt; &#39;192.168.0.1&#39;, # optional
             WebserviceID      =&gt; 1,
-            Data              =&gt; [ # only when 'WithData' is set
+            Data              =&gt; [ # only when &#39;WithData&#39; is set
                 {
-                    Created    =&gt; '2011-02-15 17:00:06',
-                    Data       =&gt; 'some logging specific data or structure', # optional
-                    DebugLevel =&gt; 'info',
-                    Summary    =&gt; 'a log bit',
+                    Created    =&gt; &#39;2011-02-15 17:00:06&#39;,
+                    Data       =&gt; &#39;some logging specific data or structure&#39;, # optional
+                    DebugLevel =&gt; &#39;info&#39;,
+                    Summary    =&gt; &#39;a log bit&#39;,
                 },
                 ...
             ],
         },
         ...
-    ];
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../up.gif" /></a></h1>
+    ];</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

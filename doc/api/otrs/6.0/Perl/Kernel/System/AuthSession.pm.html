@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::AuthSession</title>
+<title>Kernel::System::AuthSession &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,484 +48,158 @@ $(document).ready(function() {
 <div>
 <a href="../../src/Kernel/System/AuthSession.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#new">new()</a></li>
-	<li><a href="#CheckSessionID">CheckSessionID()</a></li>
-	<li><a href="#CheckAgentSessionLimitPriorWarning">CheckAgentSessionLimitPriorWarning()</a></li>
-	<li><a href="#SessionIDErrorMessage">SessionIDErrorMessage()</a></li>
-	<li><a href="#GetSessionIDData">GetSessionIDData()</a></li>
-	<li><a href="#CreateSessionID">CreateSessionID()</a></li>
-	<li><a href="#RemoveSessionID">RemoveSessionID()</a></li>
-	<li><a href="#UpdateSessionID">UpdateSessionID()</a></li>
-	<li><a href="#GetExpiredSessionIDs">GetExpiredSessionIDs()</a></li>
-	<li><a href="#GetAllSessionIDs">GetAllSessionIDs()</a></li>
-	<li><a href="#GetActiveSessions">GetActiveSessions()</a></li>
-	<li><a href="#CleanUp">CleanUp()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#CheckSessionID">CheckSessionID()</a></li>
+      <li><a href="#CheckAgentSessionLimitPriorWarning">CheckAgentSessionLimitPriorWarning()</a></li>
+      <li><a href="#SessionIDErrorMessage">SessionIDErrorMessage()</a></li>
+      <li><a href="#GetSessionIDData">GetSessionIDData()</a></li>
+      <li><a href="#CreateSessionID">CreateSessionID()</a></li>
+      <li><a href="#RemoveSessionID">RemoveSessionID()</a></li>
+      <li><a href="#UpdateSessionID">UpdateSessionID()</a></li>
+      <li><a href="#GetExpiredSessionIDs">GetExpiredSessionIDs()</a></li>
+      <li><a href="#GetAllSessionIDs">GetAllSessionIDs()</a></li>
+      <li><a href="#GetActiveSessions">GetActiveSessions()</a></li>
+      <li><a href="#CleanUp">CleanUp()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::AuthSession - global session interface</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All session functions.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="new">new()</h2>
 
-<p><a href="#" onclick="toggleCode('method_new');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_new">
-                                        <pre>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-sub new {
-    my ( $Type, %Param ) = @_;
+<pre><code>    my $SessionObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::AuthSession&#39;);</code></pre>
 
-    # allocate new hash for object
-    my $Self = {};
-    bless( $Self, $Type );
-
-    # get configured session backend
-    my $GenericModule = $Kernel::OM->Get('Kernel::Config')->Get('SessionModule');
-    $GenericModule ||= 'Kernel::System::AuthSession::DB';
-
-    # get main object
-    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
-
-    # load session backend module
-    if ( !$MainObject->Require($GenericModule) ) {
-        $MainObject->Die("Can't load backend module $GenericModule! $@");
-    }
-
-    $Self->{Backend} = $GenericModule->new();
-
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-
-    for my $SessionLimitConfigKey (
-        qw(AgentSessionLimitPriorWarning AgentSessionLimit AgentSessionPerUserLimit CustomerSessionLimit CustomerSessionPerUserLimit)
-        )
-    {
-        $Self->{$SessionLimitConfigKey} = $ConfigObject->Get($SessionLimitConfigKey);
-    }
-
-    return $Self;
-}
-</pre></div>
-
-<p>Don't use the constructor directly, use the ObjectManager instead:</p>
-
-<pre>    my $SessionObject = $Kernel::OM-&gt;Get('Kernel::System::AuthSession');
-</pre><h2 id="CheckSessionID">CheckSessionID()</h2>
-
-<p><a href="#" onclick="toggleCode('method_CheckSessionID');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CheckSessionID">
-                                        <pre>
-
-sub CheckSessionID {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{Backend}->CheckSessionID(%Param);
-}
-</pre></div>
+<h2 id="CheckSessionID">CheckSessionID()</h2>
 
 <p>checks a session, returns true (session ok) or false (session invalid)</p>
 
-<pre>    my $Ok = $SessionObject-&gt;CheckSessionID(
-        SessionID =&gt; '1234567890123456',
-    );
-</pre><h2 id="CheckAgentSessionLimitPriorWarning">CheckAgentSessionLimitPriorWarning()</h2>
+<pre><code>    my $Ok = $SessionObject-&gt;CheckSessionID(
+        SessionID =&gt; &#39;1234567890123456&#39;,
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_CheckAgentSessionLimitPriorWarning');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CheckAgentSessionLimitPriorWarning">
-                                        <pre>
-
-sub CheckAgentSessionLimitPriorWarning {
-    my ( $Self, %Param ) = @_;
-
-    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
-    my $Cache       = $CacheObject->Get(
-        Type => 'AuthSession',
-        Key  => 'AgentSessionLimitPriorWarningMessage',
-    );
-    return $Cache if defined $Cache;
-
-    my %OTRSBusinessSystemData = $Kernel::OM->Get('Kernel::System::SystemData')->SystemDataGroupGet(
-        Group => 'OTRSBusiness',
-    );
-
-    my $SessionLimitPriorWarning = $OTRSBusinessSystemData{AgentSessionLimitPriorWarning};
-    if (
-        !$SessionLimitPriorWarning
-        || (
-            $Self->{AgentSessionLimitPriorWarning}
-            && $Self->{AgentSessionLimitPriorWarning} < $SessionLimitPriorWarning
-        )
-        )
-    {
-        $SessionLimitPriorWarning = $Self->{AgentSessionLimitPriorWarning};
-    }
-
-    my $PriorWarningMessage = '';
-    if ($SessionLimitPriorWarning) {
-
-        my %ActiveSessions = $Self->GetActiveSessions(
-            UserType => 'User',
-        );
-
-        if ( defined $ActiveSessions{Total} && $ActiveSessions{Total} > $SessionLimitPriorWarning ) {
-
-            if (
-                $OTRSBusinessSystemData{AgentSessionLimitPriorWarning}
-                && $OTRSBusinessSystemData{AgentSessionLimitPriorWarning} == $SessionLimitPriorWarning
-                )
-            {
-                $PriorWarningMessage
-                    = Translatable('You have exceeded the number of concurrent agents - contact sales@otrs.com.');
-            }
-            else {
-                $PriorWarningMessage = Translatable('Please note that the session limit is almost reached.');
-            }
-        }
-    }
-
-    $CacheObject->Set(
-        Type  => 'AuthSession',
-        TTL   => 60 * 15,
-        Key   => 'AgentSessionLimitPriorWarningMessage',
-        Value => $PriorWarningMessage,
-    );
-
-    return $PriorWarningMessage;
-}
-</pre></div>
+<h2 id="CheckAgentSessionLimitPriorWarning">CheckAgentSessionLimitPriorWarning()</h2>
 
 <p>Get the agent session limit prior warning message, if the limit is reached.</p>
 
-<pre>    my $PriorMessage = $SessionObject-&gt;CheckAgentSessionLimitPriorWarning();
+<pre><code>    my $PriorMessage = $SessionObject-&gt;CheckAgentSessionLimitPriorWarning();
 
- returns the prior warning message (AgentSessionLimitPriorWarning reached) or false (AgentSessionLimitPriorWarning not reached)
-</pre><h2 id="SessionIDErrorMessage">SessionIDErrorMessage()</h2>
+ returns the prior warning message (AgentSessionLimitPriorWarning reached) or false (AgentSessionLimitPriorWarning not reached)</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_SessionIDErrorMessage');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_SessionIDErrorMessage">
-                                        <pre>
-
-sub SessionIDErrorMessage {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{SessionIDErrorMessage} || $Self->{Backend}->SessionIDErrorMessage(%Param);
-}
-</pre></div>
+<h2 id="SessionIDErrorMessage">SessionIDErrorMessage()</h2>
 
 <p>returns an error in the session handling</p>
 
-<pre>    my $Message = $SessionObject-&gt;SessionIDErrorMessage();
-</pre><h2 id="GetSessionIDData">GetSessionIDData()</h2>
+<pre><code>    my $Message = $SessionObject-&gt;SessionIDErrorMessage();</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_GetSessionIDData');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetSessionIDData">
-                                        <pre>
-
-sub GetSessionIDData {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{Backend}->GetSessionIDData(%Param);
-}
-</pre></div>
+<h2 id="GetSessionIDData">GetSessionIDData()</h2>
 
 <p>get session data in a hash</p>
 
-<pre>    my %Data = $SessionObject-&gt;GetSessionIDData(
-        SessionID =&gt; '1234567890123456',
-    );
-</pre><p>Returns:</p>
+<pre><code>    my %Data = $SessionObject-&gt;GetSessionIDData(
+        SessionID =&gt; &#39;1234567890123456&#39;,
+    );</code></pre>
 
-<pre>    %Data = (
-        UserSessionStart    =&gt; '1293801801',
-        UserRemoteAddr      =&gt; '127.0.0.1',
-        UserRemoteUserAgent =&gt; 'Some User Agent x.x',
-        UserLastname        =&gt; 'SomeLastName',
-        UserFirstname       =&gt; 'SomeFirstname',
+<p>Returns:</p>
+
+<pre><code>    %Data = (
+        UserSessionStart    =&gt; &#39;1293801801&#39;,
+        UserRemoteAddr      =&gt; &#39;127.0.0.1&#39;,
+        UserRemoteUserAgent =&gt; &#39;Some User Agent x.x&#39;,
+        UserLastname        =&gt; &#39;SomeLastName&#39;,
+        UserFirstname       =&gt; &#39;SomeFirstname&#39;,
         # and all other preferences values
-    );
-</pre><h2 id="CreateSessionID">CreateSessionID()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_CreateSessionID');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CreateSessionID">
-                                        <pre>
-
-sub CreateSessionID {
-    my ( $Self, %Param ) = @_;
-
-    if ( !$Param{UserType} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Got no UserType!'
-        );
-        return;
-    }
-
-    if ( $Param{UserType} ne 'User' && $Param{UserType} ne 'Customer' ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Got wrong UserType!'
-        );
-        return;
-    }
-
-    my %OTRSBusinessSystemData = $Kernel::OM->Get('Kernel::System::SystemData')->SystemDataGroupGet(
-        Group => 'OTRSBusiness',
-    );
-
-    my $SessionLimit;
-    if ( $Param{UserType} eq 'User' ) {
-
-        $SessionLimit = $OTRSBusinessSystemData{AgentSessionLimit};
-        if ( !$SessionLimit || ( $Self->{AgentSessionLimit} && $Self->{AgentSessionLimit} < $SessionLimit ) ) {
-            $SessionLimit = $Self->{AgentSessionLimit};
-        }
-    }
-    elsif ( $Param{UserType} eq 'Customer' && $Self->{CustomerSessionLimit} ) {
-        $SessionLimit = $Self->{CustomerSessionLimit};
-    }
-
-    # get session per user limit config
-    my $SessionPerUserLimit;
-    if ( $Param{UserType} eq 'User' && $Self->{AgentSessionPerUserLimit} ) {
-        $SessionPerUserLimit = $Self->{AgentSessionPerUserLimit};
-    }
-    elsif ( $Param{UserType} eq 'Customer' && $Self->{CustomerSessionPerUserLimit} ) {
-        $SessionPerUserLimit = $Self->{CustomerSessionPerUserLimit};
-    }
-
-    if ( $SessionLimit || $SessionPerUserLimit ) {
-
-        my %ActiveSessions = $Self->GetActiveSessions(%Param);
-
-        if ( $SessionLimit && defined $ActiveSessions{Total} && $ActiveSessions{Total} >= $SessionLimit ) {
-
-            if (
-                $Param{UserType} eq 'User'
-                && $OTRSBusinessSystemData{AgentSessionLimit}
-                && $OTRSBusinessSystemData{AgentSessionLimit} == $SessionLimit
-                )
-            {
-                $Self->{SessionIDErrorMessage} = Translatable(
-                    'Login rejected! You have exceeded the maximum number of concurrent Agents! Contact sales@otrs.com immediately!'
-                );
-            }
-            else {
-                $Self->{SessionIDErrorMessage} = Translatable('Session limit reached! Please try again later.');
-            }
-            return;
-        }
-
-        if (
-            $SessionPerUserLimit
-            && $Param{UserLogin}
-            && defined $ActiveSessions{PerUser}->{ $Param{UserLogin} }
-            && $ActiveSessions{PerUser}->{ $Param{UserLogin} } >= $SessionPerUserLimit
-            )
-        {
-
-            $Self->{SessionIDErrorMessage} = Translatable('Session per user limit reached!');
-
-            return;
-        }
-    }
-
-    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
-        Type => 'AuthSession',
-        Key  => 'AgentSessionLimitPriorWarningMessage',
-    );
-
-    return $Self->{Backend}->CreateSessionID(%Param);
-}
-</pre></div>
+<h2 id="CreateSessionID">CreateSessionID()</h2>
 
 <p>create a new session with given data</p>
 
-<pre>    my $SessionID = $SessionObject-&gt;CreateSessionID(
-        UserLogin =&gt; 'root',
-        UserEmail =&gt; 'root@example.com',
-    );
-</pre><h2 id="RemoveSessionID">RemoveSessionID()</h2>
+<pre><code>    my $SessionID = $SessionObject-&gt;CreateSessionID(
+        UserLogin =&gt; &#39;root&#39;,
+        UserEmail =&gt; &#39;root@example.com&#39;,
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_RemoveSessionID');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_RemoveSessionID">
-                                        <pre>
+<h2 id="RemoveSessionID">RemoveSessionID()</h2>
 
-sub RemoveSessionID {
-    my ( $Self, %Param ) = @_;
+<p>removes a session and returns true (session deleted), false (if session can&#39;t get deleted)</p>
 
-    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
-        Type => 'AuthSession',
-        Key  => 'AgentSessionLimitPriorWarningMessage',
-    );
+<pre><code>    $SessionObject-&gt;RemoveSessionID(SessionID =&gt; &#39;1234567890123456&#39;);</code></pre>
 
-    return $Self->{Backend}->RemoveSessionID(%Param);
-}
-</pre></div>
+<h2 id="UpdateSessionID">UpdateSessionID()</h2>
 
-<p>removes a session and returns true (session deleted), false (if
-session can't get deleted)</p>
+<p>update session info by key and value, returns true (if ok) and false (if can&#39;t update)</p>
 
-<pre>    $SessionObject-&gt;RemoveSessionID(SessionID =&gt; '1234567890123456');
-</pre><h2 id="UpdateSessionID">UpdateSessionID()</h2>
+<pre><code>    $SessionObject-&gt;UpdateSessionID(
+        SessionID =&gt; &#39;1234567890123456&#39;,
+        Key       =&gt; &#39;LastScreenOverview&#39;,
+        Value     =&gt; &#39;SomeInfo&#39;,
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_UpdateSessionID');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_UpdateSessionID">
-                                        <pre>
+<h2 id="GetExpiredSessionIDs">GetExpiredSessionIDs()</h2>
 
-sub UpdateSessionID {
-    my ( $Self, %Param ) = @_;
+<p>returns a array of an array of session ids that have expired, and one array of session ids that have been idle for too long.</p>
 
-    if ( $Param{Key} ) {
-
-        my @Parts = split /:/, $Param{Key};
-
-        if ( defined $Parts[1] ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Can't update key: '$Param{Key}' because ':' is not allowed!",
-            );
-            return;
-        }
-    }
-
-    return $Self->{Backend}->UpdateSessionID(%Param);
-}
-</pre></div>
-
-<p>update session info by key and value, returns true (if ok) and
-false (if can't update)</p>
-
-<pre>    $SessionObject-&gt;UpdateSessionID(
-        SessionID =&gt; '1234567890123456',
-        Key       =&gt; 'LastScreenOverview',
-        Value     =&gt; 'SomeInfo',
-    );
-</pre><h2 id="GetExpiredSessionIDs">GetExpiredSessionIDs()</h2>
-
-<p><a href="#" onclick="toggleCode('method_GetExpiredSessionIDs');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetExpiredSessionIDs">
-                                        <pre>
-
-sub GetExpiredSessionIDs {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{Backend}->GetExpiredSessionIDs(%Param);
-}
-</pre></div>
-
-<p>returns a array of an array of session ids that have expired,
-and one array of session ids that have been idle for too long.</p>
-
-<pre>    my @Sessions = $SessionObject-&gt;GetExpiredSessionIDs();
+<pre><code>    my @Sessions = $SessionObject-&gt;GetExpiredSessionIDs();
 
     my @ExpiredSession = @{$Session[0]};
-    my @ExpiredIdle    = @{$Session[1]};
-</pre><h2 id="GetAllSessionIDs">GetAllSessionIDs()</h2>
+    my @ExpiredIdle    = @{$Session[1]};</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_GetAllSessionIDs');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetAllSessionIDs">
-                                        <pre>
-
-sub GetAllSessionIDs {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{Backend}->GetAllSessionIDs(%Param);
-}
-</pre></div>
+<h2 id="GetAllSessionIDs">GetAllSessionIDs()</h2>
 
 <p>returns an array with all session ids</p>
 
-<pre>    my @Sessions = $SessionObject-&gt;GetAllSessionIDs();
-</pre><h2 id="GetActiveSessions">GetActiveSessions()</h2>
+<pre><code>    my @Sessions = $SessionObject-&gt;GetAllSessionIDs();</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_GetActiveSessions');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_GetActiveSessions">
-                                        <pre>
-
-sub GetActiveSessions {
-    my ( $Self, %Param ) = @_;
-
-    if ( !$Param{UserType} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Got no UserType!'
-        );
-        return;
-    }
-
-    if ( $Param{UserType} ne 'User' && $Param{UserType} ne 'Customer' ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Got wrong UserType!'
-        );
-        return;
-    }
-
-    return $Self->{Backend}->GetActiveSessions(%Param);
-}
-</pre></div>
+<h2 id="GetActiveSessions">GetActiveSessions()</h2>
 
 <p>Get the current active sessions for the given UserType.</p>
 
-<pre>    my %Result = $SessionObject-&gt;GetActiveSessions(
-        UserType =&gt; '(User|Customer)',
-    );
-</pre><p>returns</p>
+<pre><code>    my %Result = $SessionObject-&gt;GetActiveSessions(
+        UserType =&gt; &#39;(User|Customer)&#39;,
+    );</code></pre>
 
-<pre>    %Result = (
+<p>returns</p>
+
+<pre><code>    %Result = (
         Total =&gt; 8,
         PerUser =&gt; {
             UserID1 =&gt; 2,
             UserID2 =&gt; 1,
         },
-    );
-</pre><h2 id="CleanUp">CleanUp()</h2>
+    );</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_CleanUp');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_CleanUp">
-                                        <pre>
-
-sub CleanUp {
-    my ( $Self, %Param ) = @_;
-
-    $Kernel::OM->Get('Kernel::System::Cache')->Delete(
-        Type => 'AuthSession',
-        Key  => 'AgentSessionLimitPriorWarningMessage',
-    );
-
-    return $Self->{Backend}->CleanUp(%Param);
-}
-</pre></div>
+<h2 id="CleanUp">CleanUp()</h2>
 
 <p>clean-up of sessions in your system</p>
 
-<pre>    $SessionObject-&gt;CleanUp();
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../up.gif" /></a></h1>
+<pre><code>    $SessionObject-&gt;CleanUp();</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>

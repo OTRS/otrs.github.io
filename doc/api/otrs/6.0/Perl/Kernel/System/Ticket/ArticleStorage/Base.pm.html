@@ -1,5 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <!-- otrs.github.io -->
 <link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
@@ -28,32 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-	<title>Kernel::System::Ticket::ArticleStorage::Base</title>
+<title>Kernel::System::Ticket::ArticleStorage::Base &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <script type="text/javascript">
 
-  function toggleCode( id ) {
-    if ( document.getElementById )
-      elem = document.getElementById( id );
-    else if ( document.all )
-      elem = eval( "document.all." + id );
-    else
-      return false;
-
-    elemStyle = elem.style;
-
-    if ( elemStyle.display != "block" ) {
-      elemStyle.display = "block"
-    } else {
-      elemStyle.display = "none"
-    }
-
-    return true;
-  }
-  document.writeln( "<style type=\"text/css\">div.method-source-code { display: none }</style>" )
-  </script></head>
-<body>
-<div class="box">
+</head>
+<body><div class="box">
   <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
@@ -69,266 +48,104 @@ $(document).ready(function() {
 <div>
 <a href="../../../../src/Kernel/System/Ticket/ArticleStorage/Base.pm">Source</a>
 </div>
-<div class="pod">
-<!-- INDEX START -->
-<h3 id="TOP">Index</h3>
-<ul>
-	<li><a href="#NAME">NAME</a></li>
-	<li><a href="#DESCRIPTION">DESCRIPTION</a></li>
-	<li><a href="#PUBLIC_INTERFACE">PUBLIC INTERFACE</a><br />
-<ul>
-	<li><a href="#BuildArticleContentPath">BuildArticleContentPath()</a></li>
-	<li><a href="#ArticleAttachmentIndex">ArticleAttachmentIndex()</a></li>
-</ul>
-</li>
-	<li><a href="#TERMS_AND_CONDITIONS">TERMS AND CONDITIONS</a></li>
-</ul>
-<hr />
-<!-- INDEX END -->
 
-<h1 id="NAME">NAME <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#BuildArticleContentPath">BuildArticleContentPath()</a></li>
+      <li><a href="#ArticleAttachmentIndex">ArticleAttachmentIndex()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
 
 <p>Kernel::System::Ticket::ArticleStorage::Base - base class for article storage modules</p>
 
-<h1 id="DESCRIPTION">DESCRIPTION <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>This is a base class for article storage backends and should not be instantiated directly.</p>
 
-<h1 id="PUBLIC_INTERFACE">PUBLIC INTERFACE <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
 <h2 id="BuildArticleContentPath">BuildArticleContentPath()</h2>
 
-<p><a href="#" onclick="toggleCode('method_BuildArticleContentPath');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_BuildArticleContentPath">
-                                        <pre>
-
-sub BuildArticleContentPath {
-    my ( $Self, %Param ) = @_;
-
-    return $Self->{ArticleContentPath} if $Self->{ArticleContentPath};
-
-    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-    my ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $TimeObject->SystemTime2Date(
-        SystemTime => $TimeObject->SystemTime(),
-    );
-    $Self->{ArticleContentPath} = $Year . '/' . $Month . '/' . $Day;
-
-    return $Self->{ArticleContentPath};
-}
-</pre></div>
-
 <p>generate a base article content path for article storage in the file system.</p>
 
-<pre>    my $ArticleContentPath = $ArticleObject-&gt;BuildArticleContentPath();
-</pre><h2 id="ArticleAttachmentIndex">ArticleAttachmentIndex()</h2>
+<pre><code>    my $ArticleContentPath = $ArticleObject-&gt;BuildArticleContentPath();</code></pre>
 
-<p><a href="#" onclick="toggleCode('method_ArticleAttachmentIndex');return false;">[Source]</a></p>
-                                        <div class="method-source-code" id="method_ArticleAttachmentIndex">
-                                        <pre>
-
-sub ArticleAttachmentIndex {
-    my ( $Self, %Param ) = @_;
-
-    for my $Needed (qw(ArticleID UserID)) {
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!"
-            );
-            return;
-        }
-    }
-
-    # get attachment index from backend
-    my %Attachments = $Self->ArticleAttachmentIndexRaw(%Param);
-
-    # stript plain attachments and e. g. html attachments
-    if ( $Param{StripPlainBodyAsAttachment} && $Param{Article} ) {
-
-        # plain attachment mime type vs. html attachment mime type check
-        # remove plain body, rename html attachment
-        my $AttachmentIDPlain = 0;
-        my $AttachmentIDHTML  = 0;
-        for my $AttachmentID ( sort keys %Attachments ) {
-            my %File = %{ $Attachments{$AttachmentID} };
-
-            # find plain attachment
-            if (
-                !$AttachmentIDPlain
-                &&
-                $File{Filename} eq 'file-1'
-                && $File{ContentType} =~ /text\/plain/i
-                && $File{Disposition} eq 'inline'
-                )
-            {
-                $AttachmentIDPlain = $AttachmentID;
-            }
-
-            # find html attachment
-            #  o file-[12], is plain+html attachment
-            #  o file-1.html, is only html attachment
-            if (
-                !$AttachmentIDHTML
-                &&
-                ( $File{Filename} =~ /^file-[12]$/ || $File{Filename} eq 'file-1.html' )
-                && $File{ContentType} =~ /text\/html/i
-                && $File{Disposition} eq 'inline'
-                )
-            {
-                $AttachmentIDHTML = $AttachmentID;
-            }
-        }
-        if ($AttachmentIDHTML) {
-            delete $Attachments{$AttachmentIDPlain};
-
-            # remove any files with content-id from attachment list and listed in html body
-            if ( $Param{StripPlainBodyAsAttachment} eq 1 ) {
-
-                # get html body
-                my %Attachment = $Self->ArticleAttachment(
-                    ArticleID => $Param{ArticleID},
-                    FileID    => $AttachmentIDHTML,
-                    UserID    => $Param{UserID},
-                );
-
-                ATTACHMENT:
-                for my $AttachmentID ( sort keys %Attachments ) {
-                    my %File = %{ $Attachments{$AttachmentID} };
-                    next ATTACHMENT if !$File{ContentID};
-
-                    # content id cleanup
-                    $File{ContentID} =~ s/^<//;
-                    $File{ContentID} =~ s/>$//;
-                    if (
-                        $File{ContentID}
-                        && $Attachment{Content} =~ /\Q$File{ContentID}\E/i
-                        && $File{Disposition} eq 'inline'
-                        )
-                    {
-                        delete $Attachments{$AttachmentID};
-                    }
-                }
-            }
-
-            # only strip html body attachment by "1" or "3"
-            if (
-                $Param{StripPlainBodyAsAttachment} eq 1
-                || $Param{StripPlainBodyAsAttachment} eq 3
-                )
-            {
-                delete $Attachments{$AttachmentIDHTML};
-            }
-            $Param{Article}->{AttachmentIDOfHTMLBody} = $AttachmentIDHTML;
-        }
-
-        # plain body size vs. attched body size check
-        # and remove attachment if it's email body
-        if ( !$AttachmentIDHTML ) {
-            my $AttachmentIDPlain = 0;
-            my %AttachmentFilePlain;
-            ATTACHMENT_ID:
-            for my $AttachmentID ( sort keys %Attachments ) {
-                my %File = %{ $Attachments{$AttachmentID} };
-
-                # remember, file-1 got defined by parsing if no filename was given
-                if (
-                    $File{Filename} eq 'file-1'
-                    && $File{ContentType} =~ /text\/plain/i
-                    )
-                {
-                    $AttachmentIDPlain   = $AttachmentID;
-                    %AttachmentFilePlain = %File;
-                    last ATTACHMENT_ID;
-                }
-            }
-
-            # plain attachment detected and remove it from attachment index
-            if (%AttachmentFilePlain) {
-
-                # check body size vs. attachment size to be sure
-                my $BodySize = bytes::length( $Param{Article}->{Body} );
-
-                # check size by tolerance of 1.1 factor (because of charset difs)
-                if (
-                    $BodySize / 1.1 < $AttachmentFilePlain{FilesizeRaw}
-                    && $BodySize * 1.1 > $AttachmentFilePlain{FilesizeRaw}
-                    )
-                {
-                    delete $Attachments{$AttachmentIDPlain};
-                }
-            }
-        }
-    }
-
-    return %Attachments;
-}
-</pre></div>
+<h2 id="ArticleAttachmentIndex">ArticleAttachmentIndex()</h2>
 
 <p>get article attachment index as hash</p>
 
-<pre> (ID =&gt; hashref (Filename, Filesize, ContentID (if exists), ContentAlternative(if exists) ))
+<pre><code> (ID =&gt; hashref (Filename, Filesize, ContentID (if exists), ContentAlternative(if exists) ))
 
     my %Index = $ArticleObject-&gt;ArticleAttachmentIndex(
         ArticleID =&gt; 123,
         UserID    =&gt; 123,
-    );
-</pre><p>or with &quot;StripPlainBodyAsAttachment =&gt; 1&quot; feature to not include first
-attachment (not include text body, html body as attachment and inline attachments)</p>
+    );</code></pre>
 
-<pre>    my %Index = $ArticleObject-&gt;ArticleAttachmentIndex(
+<p>or with &quot;StripPlainBodyAsAttachment =&gt; 1&quot; feature to not include first attachment (not include text body, html body as attachment and inline attachments)</p>
+
+<pre><code>    my %Index = $ArticleObject-&gt;ArticleAttachmentIndex(
         ArticleID                  =&gt; 123,
         UserID                     =&gt; 123,
         Article                    =&gt; \%Article,
         StripPlainBodyAsAttachment =&gt; 1,
-    );
-</pre><p>or with &quot;StripPlainBodyAsAttachment =&gt; 2&quot; feature to not include first
-attachment (not include text body as attachment)</p>
+    );</code></pre>
 
-<pre>    my %Index = $ArticleObject-&gt;ArticleAttachmentIndex(
+<p>or with &quot;StripPlainBodyAsAttachment =&gt; 2&quot; feature to not include first attachment (not include text body as attachment)</p>
+
+<pre><code>    my %Index = $ArticleObject-&gt;ArticleAttachmentIndex(
         ArticleID                  =&gt; 123,
         UserID                     =&gt; 123,
         Article                    =&gt; \%Article,
         StripPlainBodyAsAttachment =&gt; 2,
-    );
-</pre><p>or with &quot;StripPlainBodyAsAttachment =&gt; 3&quot; feature to not include first
-attachment (not include text body and html body as attachment)</p>
+    );</code></pre>
 
-<pre>    my %Index = $ArticleObject-&gt;ArticleAttachmentIndex(
+<p>or with &quot;StripPlainBodyAsAttachment =&gt; 3&quot; feature to not include first attachment (not include text body and html body as attachment)</p>
+
+<pre><code>    my %Index = $ArticleObject-&gt;ArticleAttachmentIndex(
         ArticleID                  =&gt; 123,
         UserID                     =&gt; 123,
         Article                    =&gt; \%Article,
         StripPlainBodyAsAttachment =&gt; 3,
-    );
-</pre><p>returns:</p>
+    );</code></pre>
 
-<pre>    my %Index = {
-        '1' =&gt; {
-            ContentAlternative =&gt; '',
-            ContentID          =&gt; '',
-            Filesize           =&gt; '4.6 KBytes',
-            ContentType        =&gt; 'application/pdf',
-            Filename           =&gt; 'StdAttachment-Test1.pdf',
+<p>returns:</p>
+
+<pre><code>    my %Index = {
+        &#39;1&#39; =&gt; {
+            ContentAlternative =&gt; &#39;&#39;,
+            ContentID          =&gt; &#39;&#39;,
+            Filesize           =&gt; &#39;4.6 KBytes&#39;,
+            ContentType        =&gt; &#39;application/pdf&#39;,
+            Filename           =&gt; &#39;StdAttachment-Test1.pdf&#39;,
             FilesizeRaw        =&gt; 4722,
             Disposition        =&gt; attachment,
         },
-        '2' =&gt; {
-            ContentAlternative =&gt; '',
-            ContentID          =&gt; '',
-            Filesize           =&gt; '183 Bytes',
-            ContentType        =&gt; 'text/html; charset=&quot;utf-8&quot;',
-            Filename           =&gt; 'file-2',
+        &#39;2&#39; =&gt; {
+            ContentAlternative =&gt; &#39;&#39;,
+            ContentID          =&gt; &#39;&#39;,
+            Filesize           =&gt; &#39;183 Bytes&#39;,
+            ContentType        =&gt; &#39;text/html; charset=&quot;utf-8&quot;&#39;,
+            Filename           =&gt; &#39;file-2&#39;,
             FilesizeRaw        =&gt; 183,
             Disposition        =&gt; attachment,
         },
-    };
-</pre><h1 id="TERMS_AND_CONDITIONS">TERMS AND CONDITIONS <a href="#TOP" class="toplink"><img alt="^" src="../../../../up.gif" /></a></h1>
+    };</code></pre>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
 <p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
 
-<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see
-the enclosed file COPYING for license information (AGPL). If you
-did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
 
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
-</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod%3A%3AProjectDocs">Pod::ProjectDocs</a></div></body>
-</html>
