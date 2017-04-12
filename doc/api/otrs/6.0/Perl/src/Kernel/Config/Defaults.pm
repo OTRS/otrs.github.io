@@ -927,7 +927,7 @@ sub LoadDefaults {
     $Self->{TempDir} = '<OTRS_CONFIG_Home>/var/tmp';
 
     # article dir
-    $Self->{ArticleDir} = '<OTRS_CONFIG_Home>/var/article';
+    $Self->{'Ticket::Article::Backend::MIMEBase'}->{'ArticleDataDir'} = '<OTRS_CONFIG_Home>/var/article';
 
     # html template dirs
     $Self->{TemplateDir}       = '<OTRS_CONFIG_Home>/Kernel/Output';
@@ -1061,6 +1061,8 @@ sub LoadDefaults {
         'Core.Agent.js',
         'Core.Agent.Search.js',
         'Core.Agent.CustomerInformationCenterSearch.js',
+        'Core.Agent.CustomerSearch.js',
+        'Core.Agent.CustomerUserInformationCenterSearch.js',
         'Core.Agent.Header.js',
         'Core.UI.Notification.js',
         'Core.Agent.Responsive.js',

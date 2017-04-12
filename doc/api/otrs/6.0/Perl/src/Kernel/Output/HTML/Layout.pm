@@ -1534,10 +1534,6 @@ sub Footer {
             = $Self->{LanguageObject}->Translate( $AutocompleteConfig->{$ConfigElement}->{ButtonText} );
     }
 
-    my $AutocompleteConfigJSON = $Self->JSONEncode(
-        Data => $AutocompleteConfig,
-    );
-
     # Search frontend (JavaScript)
     my $SearchFrontendConfig = $ConfigObject->Get('Frontend::Search::JavaScript');
 
@@ -1603,7 +1599,7 @@ sub Footer {
                 )
             ) ? 1 : 0,
         SearchFrontend => $JSCall,
-        Autocomplete   => $AutocompleteConfigJSON,
+        Autocomplete   => $AutocompleteConfig,
     );
 
     for my $Config ( sort keys %JSConfig ) {
@@ -4516,7 +4512,7 @@ but a message will be shown allowing the user to reload the page showing the ext
             Content     => $HTMLBodyRef,
             ContentType => 'text/html; charset="iso-8859-1"',
         },
-        URL               => 'AgentTicketAttachment;Subaction=HTMLView;ArticleID=123;FileID=',
+        URL               => 'AgentTicketAttachment;Subaction=HTMLView;TicketID=123;ArticleID=123;FileID=',
         Attachments       => \%AttachmentListOfInlineAttachments,
 
         LoadInlineContent => 0,     # Serve the document including all inline content. WARNING: This might be dangerous.

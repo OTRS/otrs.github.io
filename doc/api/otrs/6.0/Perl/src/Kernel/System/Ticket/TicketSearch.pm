@@ -11,6 +11,8 @@ package Kernel::System::Ticket::TicketSearch;
 use strict;
 use warnings;
 
+use Kernel::System::VariableCheck qw(IsArrayRefWithData);
+
 our $ObjectManagerDisabled = 1;
 
 =head1 NAME
@@ -490,19 +492,19 @@ sub TicketSearch {
     if (
         $Param{AttachmentName}
         && (
-            $Kernel::OM->Get('Kernel::Config')->Get('Ticket::StorageModule') eq
-            'Kernel::System::Ticket::ArticleStorageDB'
+            $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Article::Backend::MIMEBase')->{'ArticleStorage'} eq
+            'Kernel::System::Ticket::Article::Backend::MIMEBase::ArticleStorageDB'
         )
         )
     {
 
-        # joins to article and article_attachments are needed, it can not use existing article joins
+        # joins to article and article_data_mime_attachment are needed, it can not use existing article joins
         # otherwise the search will be limited to already matching articles
         my $AttachmentJoinSQL = '
         INNER JOIN article art_for_att ON st.id = art_for_att.ticket_id
-        INNER JOIN article_attachment att ON att.article_id = art_for_att.id ';
+        INNER JOIN article_data_mime_attachment att ON att.article_id = art_for_att.id ';
 
-        # SQL, use also article_attachment table if needed
+        # SQL, use also article_data_mime_attachment table if needed
         $SQLFrom .= $AttachmentJoinSQL;
     }
 
@@ -937,10 +939,13 @@ sub TicketSearch {
 
         # return if we have no permissions
         return if !%GroupList;
+
+        # add groups to query
+        $SQLExt .= ' AND sq.group_id IN (' . join( ',', sort keys %GroupList ) . ') ';
     }
 
     # customer groups
-    elsif ( $Param{CustomerUserID} ) {
+    if ( $Param{CustomerUserID} ) {
 
         %GroupList = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupMemberList(
             UserID => $Param{CustomerUserID},
@@ -952,45 +957,137 @@ sub TicketSearch {
         return if !%GroupList;
 
         # get all customer ids
-        $SQLExt .= ' AND (';
         my @CustomerIDs = $Kernel::OM->Get('Kernel::System::CustomerUser')->CustomerIDs(
             User => $Param{CustomerUserID},
         );
 
-        if (@CustomerIDs) {
+        # prepare combination of customer<->group access
 
-            my $Lower = '';
-            if ( $DBObject->GetDatabaseFunction('CaseSensitive') ) {
-                $Lower = 'LOWER';
+        # add default combination first ( CustomerIDs + CustomerUserID <-> rw access groups )
+        # this group will always be added (ensures previous behavior)
+        my @CustomerGroupPermission;
+        push @CustomerGroupPermission, {
+            CustomerIDs    => \@CustomerIDs,
+            CustomerUserID => $Param{CustomerUserID},
+            GroupIDs       => [ sort keys %GroupList ],
+        };
+
+        # add all combinations based on group access for other CustomerIDs (if available)
+        # only active if customer group support and extra permission context are enabled
+        my $CustomerGroupObject    = $Kernel::OM->Get('Kernel::System::CustomerGroup');
+        my $ExtraPermissionContext = $CustomerGroupObject->GroupContextNameGet(
+            SysConfigName => '100-CustomerID-other',
+        );
+        if ( $Kernel::OM->Get('Kernel::Config')->Get('CustomerGroupSupport') && $ExtraPermissionContext ) {
+
+            # add lookup for CustomerID
+            my %CustomerIDsLookup = map { $_ => $_ } @CustomerIDs;
+
+            # for all CustomerIDs get groups with access to other CustomerIDs
+            my %ExtraPermissionGroups;
+            CUSTOMERID:
+            for my $CustomerID (@CustomerIDs) {
+                my %CustomerIDExtraPermissionGroups = $CustomerGroupObject->GroupCustomerList(
+                    CustomerID => $CustomerID,
+                    Type       => $Param{Permission} || 'ro',
+                    Context    => $ExtraPermissionContext,
+                    Result     => 'HASH',
+                );
+                next CUSTOMERID if !%CustomerIDExtraPermissionGroups;
+
+                # add to groups
+                %ExtraPermissionGroups = (
+                    %ExtraPermissionGroups,
+                    %CustomerIDExtraPermissionGroups,
+                );
             }
 
-            $SQLExt .= "$Lower(st.customer_id) IN (";
-            my $Exists = 0;
+            # add all unique accessible Group<->Customer combinations to query
+            # for performance reasons all groups corresponsing with a unique customer id combination
+            #   will be combined into one part
+            my %CustomerIDCombinations;
+            GROUPID:
+            for my $GroupID ( sort keys %ExtraPermissionGroups ) {
+                my @ExtraCustomerIDs = $CustomerGroupObject->GroupCustomerList(
+                    GroupID => $GroupID,
+                    Type    => $Param{Permission} || 'ro',
+                    Result  => 'ID',
+                );
+                next GROUPID if !@ExtraCustomerIDs;
 
-            for (@CustomerIDs) {
+                # exclude own CustomerIDs for performance reasons
+                my @MergedCustomerIDs = grep { !$CustomerIDsLookup{$_} } @ExtraCustomerIDs;
+                next GROUPID if !@MergedCustomerIDs;
 
-                if ($Exists) {
-                    $SQLExt .= ', ';
+                # remember combination
+                my $CustomerIDString = join ',', sort @MergedCustomerIDs;
+                if ( !$CustomerIDCombinations{$CustomerIDString} ) {
+                    $CustomerIDCombinations{$CustomerIDString} = {
+                        CustomerIDs => \@MergedCustomerIDs,
+                    };
                 }
-                else {
-                    $Exists = 1;
-                }
-                $SQLExt .= "$Lower('" . $DBObject->Quote($_) . "')";
+                push @{ $CustomerIDCombinations{$CustomerIDString}->{GroupIDs} }, $GroupID;
             }
-            $SQLExt .= ') OR ';
+
+            # add to query combinations
+            push @CustomerGroupPermission, sort values %CustomerIDCombinations;
         }
 
-        # get all own tickets
-        my $CustomerUserIDQuoted = $DBObject->Quote( $Param{CustomerUserID} );
-        $SQLExt .= "st.customer_user_id = '$CustomerUserIDQuoted') ";
-    }
+        # prepare LOWER call depending on database
+        my $Lower = '';
+        if ( $DBObject->GetDatabaseFunction('CaseSensitive') ) {
+            $Lower = 'LOWER';
+        }
 
-    # add group ids to sql string
-    if (%GroupList) {
+        # now add all combinations to query:
+        # this will compile a search restriction based on customer_id/customer_user_id and group
+        #   and will match if any of the permission combination is met
+        # a permission combination could be:
+        #     ( <CustomerUserID> OR <CUSTOMERID1> ) AND ( <GROUPID1> )
+        # or
+        #     ( <CustomerID1> OR <CUSTOMERID2> OR <CUSTOMERID3> ) AND ( <GROUPID1> OR <GROUPID2> )
+        $SQLExt .= ' AND (';
+        my $CustomerGroupSQL = '';
+        ENTRY:
+        for my $Entry (@CustomerGroupPermission) {
+            $CustomerGroupSQL .= $CustomerGroupSQL ? ' OR (' : '(';
 
-        my $GroupIDString = join ',', sort keys %GroupList;
+            my $CustomerIDsSQL;
+            if ( IsArrayRefWithData( $Entry->{CustomerIDs} ) ) {
+                $CustomerIDsSQL =
+                    $Lower . '(st.customer_id) IN ('
+                    . join(
+                    ',',
+                    map {
+                        "$Lower('" . $DBObject->Quote($_) . "')"
+                        } @{
+                        $Entry->{CustomerIDs}
+                        }
+                    )
+                    . ')';
+            }
 
-        $SQLExt .= " AND sq.group_id IN ($GroupIDString) ";
+            my $CustomerUserIDSQL;
+            if ( $Entry->{CustomerUserID} ) {
+                $CustomerUserIDSQL = 'st.customer_user_id = ' . "'" . $DBObject->Quote( $Param{CustomerUserID} ) . "'";
+            }
+
+            if ( $CustomerIDsSQL && $CustomerUserIDSQL ) {
+                $CustomerGroupSQL .= '( ' . $CustomerIDsSQL . ' OR ' . $CustomerUserIDSQL . ' )';
+            }
+            elsif ($CustomerIDsSQL) {
+                $CustomerGroupSQL .= $CustomerIDsSQL;
+            }
+            elsif ($CustomerUserIDSQL) {
+                $CustomerGroupSQL .= $CustomerUserIDSQL;
+            }
+            else {
+                next ENTRY;
+            }
+
+            $CustomerGroupSQL .= ' AND sq.group_id IN (' . join( ',', @{ $Entry->{GroupIDs} } ) . ') )';
+        }
+        $SQLExt .= $CustomerGroupSQL . ') ';
     }
 
     # current priority lookup
@@ -1276,33 +1373,17 @@ sub TicketSearch {
     my $ArticleIndexSQLExt = $ArticleObject->_ArticleIndexQuerySQLExt( Data => \%Param );
     $SQLExt .= $ArticleIndexSQLExt;
 
-    my %CustomerArticleTypes;
-    my @CustomerArticleTypeIDs;
-    if ( $Param{CustomerUserID} ) {
-        %CustomerArticleTypes = $ArticleObject->ArticleTypeList(
-            Result => 'HASH',
-            Type   => 'Customer',
-        );
-        @CustomerArticleTypeIDs = keys %CustomerArticleTypes;
-    }
-
     # restrict search from customers to only customer articles
     if ( $Param{CustomerUserID} && $ArticleIndexSQLExt ) {
-        my $SQLQueryInCondition = $Kernel::OM->Get('Kernel::System::DB')->QueryInCondition(
-            Key       => 'art.article_type_id',
-            Values    => \@CustomerArticleTypeIDs,
-            QuoteType => 'Integer',
-            BindMode  => 0,
-        );
-        $SQLExt .= ' AND ( ' . $SQLQueryInCondition . ' ) ';
+        $SQLExt .= ' AND sa.is_visible_for_customer = 1 ';
     }
 
     # only search for attachment name if Article Storage is set to DB
     if (
         $Param{AttachmentName}
         && (
-            $Kernel::OM->Get('Kernel::Config')->Get('Ticket::StorageModule') eq
-            'Kernel::System::Ticket::ArticleStorageDB'
+            $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Article::Backend::MIMEBase')->{'ArticleStorage'} eq
+            'Kernel::System::Ticket::Article::Backend::MIMEBase::ArticleStorageDB'
         )
         )
     {
@@ -1323,13 +1404,7 @@ sub TicketSearch {
 
         # restrict search from customers to only customer articles
         if ( $Param{CustomerUserID} ) {
-            my $SQLQueryInCondition = $Kernel::OM->Get('Kernel::System::DB')->QueryInCondition(
-                Key       => 'art_for_att.article_type_id',
-                Values    => \@CustomerArticleTypeIDs,
-                QuoteType => 'Integer',
-                BindMode  => 0,
-            );
-            $SQLExt .= ' AND ( ' . $SQLQueryInCondition . ' ) ';
+            $SQLExt .= ' AND art_for_att.is_visible_for_customer = 1 ';
         }
     }
 
