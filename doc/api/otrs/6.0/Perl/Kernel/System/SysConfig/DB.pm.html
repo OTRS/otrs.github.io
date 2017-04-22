@@ -59,6 +59,7 @@ $(document).ready(function() {
       <li><a href="#new">new()</a></li>
       <li><a href="#DefaultSettingAdd">DefaultSettingAdd()</a></li>
       <li><a href="#DefaultSettingGet">DefaultSettingGet()</a></li>
+      <li><a href="#DefaultSettingLookup">DefaultSettingLookup()</a></li>
       <li><a href="#DefaultSettingDelete">DefaultSettingDelete()</a></li>
       <li><a href="#DefaultSettingUpdate">DefaultSettingUpdate()</a></li>
       <li><a href="#DefaultSettingSearch">DefaultSettingSearch()</a></li>
@@ -144,6 +145,8 @@ $(document).ready(function() {
         EffectiveValue           =&gt; $SettingEffectiveValue,        # (required) the value as will be stored in the Perl configuration file
         ExclusiveLockExpiryTime  =&gt; &#39;2017-02-01 12:23:13&#39;,         # (optional) If not provided, method will calculate it.
         UserID                   =&gt; 123,
+        NoCleanup                =&gt; 0,                             # (optional) Default 0. If enabled, system WILL NOT DELETE CACHE. In this case, it must be done manually.
+                                                                   #    USE IT CAREFULLY.
     );</code></pre>
 
 <p>Returns:</p>
@@ -155,9 +158,10 @@ $(document).ready(function() {
 <p>Get SysConfig default entry.</p>
 
 <pre><code>    my %DefaultSetting = $SysConfigDBObject-&gt;DefaultSettingGet(
-        DefaultID   =&gt; 123,     # (optional)
-                                # or
-        Name =&gt; &quot;TheName&quot;,      # (optional)
+        Name        =&gt; &quot;TheName&quot;, # (required) Setting name - prefered parameter.
+                                  # or
+        DefaultID   =&gt; 4,         # (required) DefaultID. Slightly slower execution.
+        NoCache     =&gt; 0,         # (optional) Default 0. If 1, cache will not be created.
     );</code></pre>
 
 <p>Returns:</p>
@@ -187,6 +191,24 @@ $(document).ready(function() {
         CreateBy                 =&gt; 1,
         ChangeTime               =&gt; &quot;2016-05-29 11:04:04&quot;,
         ChangeBy                 =&gt; 1,
+    );</code></pre>
+
+<h2 id="DefaultSettingLookup">DefaultSettingLookup()</h2>
+
+<p>Default setting lookup.</p>
+
+<pre><code>    my %Result = $SysConfigDBObject-&gt;DefaultSettingLookup(
+        Name        =&gt; &quot;TheName&quot;, # (required)
+                                  # or
+        DefaultID   =&gt; 4,         # (required)
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    %Result = (
+        DefaultID      =&gt; 1,
+        Name           =&gt; &#39;TheName&#39;,
+        XMLContentRaw  =&gt; &#39;&#39;,           # XML Data
     );</code></pre>
 
 <h2 id="DefaultSettingDelete">DefaultSettingDelete()</h2>
@@ -283,6 +305,7 @@ $(document).ready(function() {
         Locked                   =&gt; 1, # check for locked settings
         Category                 =&gt; &#39;OTRSFree&#39;,                         # optional (requires CategoryFiles)
         CategoryFiles            =&gt; [&#39;Framework.xml&#39;, &#39;Ticket.xml&#39;, ],  # optional (requires Category)
+        NoCache                  =&gt; 0,                                  # (optional) Default 0. If set, system will not generate cache.
     );</code></pre>
 
 <p>Returns:</p>
@@ -326,13 +349,26 @@ $(document).ready(function() {
 
 <p>Get list of all settings.</p>
 
-<pre><code>    my %DefaultSettings = $SysConfigDBObject-&gt;DefaultSettingList();</code></pre>
+<pre><code>    my @DefaultSettings = $SysConfigDBObject-&gt;DefaultSettingList(
+        IsDirty =&gt; 0,       # (optional) Filter settings by IsDirty. If not provided, returns all settings.
+        Locked  =&gt; 0,       # (optional) Filter locked settings.
+    );</code></pre>
 
 <p>Returns:</p>
 
-<pre><code>    %DefaultSettings = (
-        &#39;123&#39; =&gt; &#39;SettingName1&#39;,
-        &#39;124&#39; =&gt; &#39;SettingName2&#39;,
+<pre><code>    @DefaultSettings = (
+        {
+            DefaultID         =&gt; &#39;123&#39;,
+            Name              =&gt; &#39;SettingName1&#39;,
+            IsDirty           =&gt; 1,
+            ExclusiveLockGUID =&gt; 0,
+        },
+        {
+            DefaultID         =&gt; &#39;124&#39;,
+            Name              =&gt; &#39;SettingName2&#39;,
+            IsDirty           =&gt; 0,
+            ExclusiveLockGUID =&gt; &#39;fjewifjowj...&#39;,
+        },
         ...
     );</code></pre>
 
@@ -439,6 +475,8 @@ $(document).ready(function() {
         XMLFilename              =&gt; &#39;Framework.xml&#39;                # the name of the XML file
         EffectiveValue           =&gt; $SettingEffectiveValue,        # the value as will be stored in the Perl configuration file
         UserID                   =&gt; 1,
+        NoCleanup                =&gt; 0,                             # (optional) Default 0. If enabled, system WILL NOT DELETE CACHE. In this case, it must be done manually.
+                                                                   #    USE IT CAREFULLY.
     );</code></pre>
 
 <p>Returns:</p>

@@ -57,8 +57,7 @@ $(document).ready(function() {
   <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
     <ul>
       <li><a href="#new">new()</a></li>
-      <li><a href="#SettingParse">SettingParse()</a></li>
-      <li><a href="#SettingListGet">SettingListGet()</a></li>
+      <li><a href="#SettingListParse">SettingListParse()</a></li>
     </ul>
   </li>
   <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -78,57 +77,11 @@ $(document).ready(function() {
     local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
     my $SysConfigXMLObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SysConfig::XML&#39;);</code></pre>
 
-<h2 id="SettingParse">SettingParse()</h2>
+<h2 id="SettingListParse">SettingListParse()</h2>
 
-<p>Parses XML Setting into Perl structure.</p>
+<p>Parses XML files into a list of perl structures and meta data.</p>
 
-<pre><code>    my $PerlStructure = $SysConfigXMLObject-&gt;SettingParse(
-        SettingXML =&gt; &#39;
-            &lt;Setting Name=&quot;Test&quot; Required=&quot;1&quot; Valid=&quot;1&quot;&gt;
-                &lt;Description Translatable=&quot;1&quot;&gt;Test.&lt;/Description&gt;
-                &lt;Navigation&gt;Core::Ticket&lt;/Navigation&gt;
-                &lt;Value&gt;
-                    &lt;Item ValueType=&quot;String&quot; ValueRegex=&quot;.*&quot;&gt;123&lt;/Item&gt;
-                &lt;/Value&gt;
-            &lt;/Setting&gt;
-        &#39;,
-    );</code></pre>
-
-<p>Returns:</p>
-
-<pre><code>    my $PerlStructure = {
-        Description =&gt; [
-            {
-                Content      =&gt; &#39;Test.&#39;,
-                Translatable =&gt; &#39;1&#39;,
-            },
-        ],
-        Name  =&gt; &#39;Test&#39;,
-        Required =&gt; &#39;1&#39;,
-        Value =&gt; [
-            {
-                Item =&gt; [
-                    {
-                        ValueRegex =&gt; &#39;.*&#39;,
-                        ValueType  =&gt; &#39;String&#39;,
-                        Content    =&gt; &#39;123&#39;,
-                    },
-                ],
-            },
-        ],
-        Navigation =&gt; [
-            {
-                Content =&gt; &#39;Core::Ticket&#39;,
-            },
-        ],
-        Valid =&gt; &#39;1&#39;,
-    };</code></pre>
-
-<h2 id="SettingListGet">SettingListGet()</h2>
-
-<p>Fetches Setting list from XML.</p>
-
-<pre><code>    my $SettingList = $SysConfigXMLObject-&gt;SettingListGet(
+<pre><code>    my $PerlStructure = $SysConfigXMLObject-&gt;SettingListParse(
         XMLInput =&gt; &#39;
             &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
             &lt;otrs_config version=&quot;2.0&quot; init=&quot;Application&quot;&gt;
@@ -148,14 +101,57 @@ $(document).ready(function() {
                 &lt;/Setting&gt;
             &lt;/otrs_config&gt;
         &#39;,
-    );</code></pre>
+        XMLFilename =&gt; &#39;Test.xml&#39;
+    );
+
+    push @ParsedSettings, {
+        SettingName      =&gt; $SettingName,
+        XMLContentParsed =&gt; $PerlStructure-&gt;{Setting}-&gt;[0],
+        XMLContentRaw    =&gt; $RawSetting,
+        XMLFilename      =&gt; $Param{XMLFilename},
+    };</code></pre>
 
 <p>Returns:</p>
 
-<pre><code>    my $SettingList = {
-        Test1 =&gt; &#39;&lt;Setting...&gt;...&lt;/Setting&gt;&#39;,
-        Test2 =&gt; &#39;&lt;Setting...&gt;...&lt;/Setting&gt;&#39;,
-    };</code></pre>
+<pre><code>    [
+        {
+            XMLContentParsed =&gt; {
+                Description =&gt; [
+                    {
+                        Content      =&gt; &#39;Test.&#39;,
+                        Translatable =&gt; &#39;1&#39;,
+                    },
+                ],
+                Name  =&gt; &#39;Test&#39;,
+                Required =&gt; &#39;1&#39;,
+                Value =&gt; [
+                    {
+                        Item =&gt; [
+                            {
+                                ValueRegex =&gt; &#39;.*&#39;,
+                                ValueType  =&gt; &#39;String&#39;,
+                                Content    =&gt; &#39;123&#39;,
+                            },
+                        ],
+                    },
+                ],
+                Navigation =&gt; [
+                    {
+                        Content =&gt; &#39;Core::Ticket&#39;,
+                    },
+                ],
+                Valid =&gt; &#39;1&#39;,
+            },
+            XMLContentRaw =&gt; &#39;&lt;Setting Name=&quot;Test1&quot; Required=&quot;1&quot; Valid=&quot;1&quot;&gt;
+                &lt;Description Translatable=&quot;1&quot;&gt;Test 1.&lt;/Description&gt;
+                &lt;Navigation&gt;Core::Ticket&lt;/Navigation&gt;
+                &lt;Value&gt;
+                    &lt;Item ValueType=&quot;String&quot; ValueRegex=&quot;.*&quot;&gt;123&lt;/Item&gt;
+                &lt;/Value&gt;
+            &lt;/Setting&gt;&#39;,
+            XMLFilename =&gt; &#39;Test.xml&#39;
+        },
+    ]</code></pre>
 
 <h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
