@@ -155,7 +155,7 @@ sub BackendForChannel {
                 Priority => 'error',
                 Message  => "Need $Needed!",
             );
-            return;
+            return $Kernel::OM->Get('Kernel::System::Ticket::Article::Backend::Invalid');
         }
     }
 
@@ -696,8 +696,6 @@ sub ArticleSenderTypeLookup {
     return { reverse %SenderTypes }->{ $Param{SenderType} };
 }
 
-# TODO: check / fix
-# article search index methods
 sub ArticleIndexBuild {
     my ( $Self, %Param ) = @_;
 
@@ -716,16 +714,57 @@ sub ArticleIndexDeleteTicket {
     return $Kernel::OM->Get( $Self->{ArticleSearchIndexModule} )->ArticleIndexDeleteTicket(%Param);
 }
 
-sub _ArticleIndexQuerySQL {
+sub ArticleSearchIndexNeeded {
     my ( $Self, %Param ) = @_;
 
-    return $Kernel::OM->Get( $Self->{ArticleSearchIndexModule} )->_ArticleIndexQuerySQL(%Param);
+    return $Kernel::OM->Get( $Self->{ArticleSearchIndexModule} )->ArticleSearchIndexNeeded(%Param);
 }
 
-sub _ArticleIndexQuerySQLExt {
+sub ArticleSearchIndexJoin {
     my ( $Self, %Param ) = @_;
 
-    return $Kernel::OM->Get( $Self->{ArticleSearchIndexModule} )->_ArticleIndexQuerySQLExt(%Param);
+    return $Kernel::OM->Get( $Self->{ArticleSearchIndexModule} )->ArticleSearchIndexJoin(%Param);
+}
+
+sub ArticleSearchIndexCondition {
+    my ( $Self, %Param ) = @_;
+
+    return $Kernel::OM->Get( $Self->{ArticleSearchIndexModule} )->ArticleSearchIndexCondition(%Param);
+}
+
+sub SearchStringStopWordsFind {
+    my ( $Self, %Param ) = @_;
+
+    return $Kernel::OM->Get( $Self->{ArticleSearchIndexModule} )->SearchStringStopWordsFind(%Param);
+}
+
+sub SearchStringStopWordsUsageWarningActive {
+    my ( $Self, %Param ) = @_;
+
+    return $Kernel::OM->Get( $Self->{ArticleSearchIndexModule} )->SearchStringStopWordsUsageWarningActive(%Param);
+}
+
+sub SearchableFieldsList {
+    my ( $Self, %Param ) = @_;
+
+    my @CommunicationChannels = $Kernel::OM->Get('Kernel::System::CommunicationChannel')->ChannelList(
+        ValidID => 1,
+    );
+
+    my %SearchableFields;
+
+    for my $Channel (@CommunicationChannels) {
+
+        my $CurrentArticleBackendObject = $Self->BackendForChannel(
+            ChannelName => $Channel->{ChannelName},
+        );
+
+        my %BackendSearchableFields = $CurrentArticleBackendObject->BackendSearchableFieldsGet();
+
+        %SearchableFields = ( %SearchableFields, %BackendSearchableFields );
+    }
+
+    return %SearchableFields;
 }
 
 =head1 PRIVATE FUNCTIONS

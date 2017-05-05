@@ -14,6 +14,7 @@ use warnings;
 use parent 'Kernel::System::Ticket::Article::Backend::Base';
 
 use Kernel::System::EmailParser;
+use Kernel::System::VariableCheck qw(:all);
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -70,11 +71,6 @@ sub new {
 
     # 0=off; 1=on;
     $Self->{Debug} = $Param{Debug} || 0;
-
-    # init of event handler
-    $Self->EventHandlerInit(
-        Config => 'Ticket::EventModulePost',
-    );
 
     # Persistent for this object's lifetime so that we can have article objects with different storage modules.
     $Self->{ArticleStorageModule} = $Param{ArticleStorageModule}
@@ -1429,6 +1425,229 @@ Returns:
 sub ArticleAttachmentIndex {
     my $Self = shift;
     return $Kernel::OM->Get( $Self->{ArticleStorageModule} )->ArticleAttachmentIndex(@_);
+}
+
+=head2 BackendSearchableFieldsGet()
+
+Get the definition of the searchable fields as a hash.
+
+    my %SearchableFields = $BackendObject->BackendSearchableFieldsGet();
+
+Returns:
+
+    my %SearchableFields = (
+        'MIMEBase_From' => {
+            Label      => 'From',
+            Key        => 'MIMEBase_From',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+        'MIMEBase_To' => {
+            Label      => 'To',
+            Key        => 'MIMEBase_To',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+        'MIMEBase_Cc' => {
+            Label      => 'Cc',
+            Key        => 'MIMEBase_Cc',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+        'MIMEBase_Subject' => {
+            Label      => 'Subject',
+            Key        => 'MIMEBase_Subject',
+            Type       => 'Text',
+            Filterable => 1,
+        },
+        'MIMEBase_Body' => {
+            Label      => 'Body',
+            Key        => 'MIMEBase_Body',
+            Type       => 'Text',
+            Filterable => 1,
+        },
+        'MIMEBase_AttachmentName' => {
+            Label      => 'Attachment Name',
+            Key        => 'MIMEBase_AttachmentName',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+    );
+
+=cut
+
+sub BackendSearchableFieldsGet {
+    my ( $Self, %Param ) = @_;
+
+    my %SearchableFields = (
+        'MIMEBase_From' => {
+            Label      => 'From',
+            Key        => 'MIMEBase_From',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+        'MIMEBase_To' => {
+            Label      => 'To',
+            Key        => 'MIMEBase_To',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+        'MIMEBase_Cc' => {
+            Label      => 'Cc',
+            Key        => 'MIMEBase_Cc',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+        'MIMEBase_Subject' => {
+            Label      => 'Subject',
+            Key        => 'MIMEBase_Subject',
+            Type       => 'Text',
+            Filterable => 1,
+        },
+        'MIMEBase_Body' => {
+            Label      => 'Body',
+            Key        => 'MIMEBase_Body',
+            Type       => 'Text',
+            Filterable => 1,
+        },
+    );
+
+    if (
+        $Kernel::OM->Get('Kernel::Config')->Get('Ticket::Article::Backend::MIMEBase')->{IndexAttachmentNames}
+        )
+    {
+        $SearchableFields{'MIMEBase_AttachmentName'} = {
+            Label      => 'Attachment Name',
+            Key        => 'MIMEBase_AttachmentName',
+            Type       => 'Text',
+            Filterable => 0,
+        };
+    }
+
+    return %SearchableFields;
+}
+
+=head2 ArticleSearchableContentGet()
+
+Get article attachment index as hash.
+
+    my %Index = $BackendObject->ArticleSearchableContentGet(
+        TicketID       => 123,   # (required)
+        ArticleID      => 123,   # (required)
+        DynamicFields  => 1,     # (optional) To include the dynamic field values for this article on the return structure.
+        RealNames      => 1,     # (optional) To include the From/To/Cc fields with real names.
+        UserID         => 123,   # (required)
+    );
+
+Returns:
+
+    my %ArticleSearchData = {
+        'From'    => {
+            String     => 'Test User1 <testuser1@example.com>',
+            Key        => 'From',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+        'To'    => {
+            String     => 'Test User2 <testuser2@example.com>',
+            Key        => 'To',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+        'Cc'    => {
+            String     => 'Test User3 <testuser3@example.com>',
+            Key        => 'Cc',
+            Type       => 'Text',
+            Filterable => 0,
+        },
+        'Subject'    => {
+            String     => 'This is a test subject!',
+            Key        => 'Subject',
+            Type       => 'Text',
+            Filterable => 1,
+        },
+        'Body'    => {
+            String     => 'This is a body text!',
+            Key        => 'Body',
+            Type       => 'Text',
+            Filterable => 1,
+        }
+    };
+
+=cut
+
+sub ArticleSearchableContentGet {
+    my ( $Self, %Param ) = @_;
+
+    for (qw(TicketID ArticleID UserID)) {
+        if ( !$Param{$_} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $_!"
+            );
+            return;
+        }
+    }
+
+    my %DataKeyMap = (
+        'MIMEBase_From'    => 'From',
+        'MIMEBase_To'      => 'To',
+        'MIMEBase_Cc'      => 'Cc',
+        'MIMEBase_Subject' => 'Subject',
+        'MIMEBase_Body'    => 'Body',
+    );
+
+    my %ArticleData = $Self->ArticleGet(
+        TicketID      => $Param{TicketID},
+        ArticleID     => $Param{ArticleID},
+        UserID        => $Param{UserID},
+        DynamicFields => 0,
+    );
+
+    my %BackendSearchableFields = $Self->BackendSearchableFieldsGet();
+
+    my %ArticleSearchData;
+
+    FIELDKEY:
+    for my $FieldKey ( sort keys %BackendSearchableFields ) {
+
+        my $IndexString;
+
+        # scan available attachment names and append the information
+        if ( $FieldKey eq 'MIMEBase_AttachmentName' ) {
+
+            my %AttachmentIndex = $Self->ArticleAttachmentIndex(
+                ArticleID        => $Param{ArticleID},
+                UserID           => $Param{UserID},
+                ExcludePlainText => 1,
+                ExcludeHTMLBody  => 1,
+                ExcludeInline    => 1,
+            );
+
+            next FIELDKEY if !%AttachmentIndex;
+
+            my @AttachmentNames;
+
+            for my $AttachmentKey ( sort keys %AttachmentIndex ) {
+                push @AttachmentNames, $AttachmentIndex{$AttachmentKey}->{Filename};
+            }
+
+            $IndexString = join ' ', @AttachmentNames;
+        }
+
+        $IndexString //= $ArticleData{ $DataKeyMap{$FieldKey} };
+
+        next FIELDKEY if !IsStringWithData($IndexString);
+
+        $ArticleSearchData{$FieldKey} = {
+            String     => $IndexString,
+            Key        => $BackendSearchableFields{$FieldKey}->{Key},
+            Type       => $BackendSearchableFields{$FieldKey}->{Type} // 'Text',
+            Filterable => $BackendSearchableFields{$FieldKey}->{Filterable} // 0,
+        };
+    }
+
+    return %ArticleSearchData;
 }
 
 1;
