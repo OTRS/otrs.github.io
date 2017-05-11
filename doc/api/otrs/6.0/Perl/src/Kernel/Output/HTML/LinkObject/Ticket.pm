@@ -21,6 +21,7 @@ our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::Language',
     'Kernel::Output::HTML::Layout',
+    'Kernel::System::CustomerCompany',
     'Kernel::System::CustomerUser',
     'Kernel::System::DynamicField',
     'Kernel::System::DynamicField::Backend',
@@ -435,22 +436,25 @@ sub TableCreateComplex {
                     }
                     elsif ( $Column eq 'EscalationSolutionTime' ) {
 
-                        $Hash{'Content'} = $Self->{LayoutObject}->CustomerAgeInHours(
+                        $Hash{'Content'} = $Self->{LayoutObject}->CustomerAge(
                             Age => $Ticket->{SolutionTime} || 0,
-                            Space => ' ',
+                            TimeShowAlwaysLong => 1,
+                            Space              => ' ',
                         );
                     }
                     elsif ( $Column eq 'EscalationResponseTime' ) {
 
-                        $Hash{'Content'} = $Self->{LayoutObject}->CustomerAgeInHours(
+                        $Hash{'Content'} = $Self->{LayoutObject}->CustomerAge(
                             Age => $Ticket->{FirstResponseTime} || 0,
-                            Space => ' ',
+                            TimeShowAlwaysLong => 1,
+                            Space              => ' ',
                         );
                     }
                     elsif ( $Column eq 'EscalationUpdateTime' ) {
-                        $Hash{'Content'} = $Self->{LayoutObject}->CustomerAgeInHours(
+                        $Hash{'Content'} = $Self->{LayoutObject}->CustomerAge(
                             Age => $Ticket->{UpdateTime} || 0,
-                            Space => ' ',
+                            TimeShowAlwaysLong => 1,
+                            Space              => ' ',
                         );
                     }
                     elsif ( $Column eq 'PendingTime' ) {
@@ -486,6 +490,12 @@ sub TableCreateComplex {
                             );
                         }
                         $Hash{'Content'} = $CustomerName;
+                    }
+                    elsif ( $Column eq 'CustomerCompanyName' ) {
+                        my %CustomerCompany = $Kernel::OM->Get('Kernel::System::CustomerCompany')->CustomerCompanyGet(
+                            CustomerID => $Ticket->{CustomerID},
+                        );
+                        $Hash{'Content'} = $CustomerCompany{CustomerCompanyName};
                     }
                     elsif ( $Column eq 'State' || $Column eq 'Priority' || $Column eq 'Lock' ) {
                         $Hash{'Content'} = $LanguageObject->Translate( $Ticket->{$Column} );
