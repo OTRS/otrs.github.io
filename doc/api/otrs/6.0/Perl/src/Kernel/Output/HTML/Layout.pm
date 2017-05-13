@@ -1817,8 +1817,6 @@ sub Ascii2Html {
         ${$Text} =~ s/(\n\r|\r\r\n|\r\n)/\n/g;
         ${$Text} =~ s/\r/\n/g;
         ${$Text} =~ s/(.{4,$Param{NewLine}})(?:\s|\z)/$1\n/gm;
-        my $ForceNewLine = $Param{NewLine} + 10;
-        ${$Text} =~ s/(.{$ForceNewLine})(.+?)/$1\n$2/g;
     }
 
     # remove tabs
@@ -3528,6 +3526,67 @@ sub BuildDateSelection {
     $Self->{HasDatepicker} = 1;    # Call some Datepicker init code.
 
     return $Output;
+}
+
+=head2 HumanReadableDataSize()
+
+Produces human readable data size.
+
+    my $SizeStr = $MainObject->HumanReadableDataSize(
+        Size => 123,  # size in bytes
+    );
+
+Returns
+
+    '123 B'
+
+=cut
+
+sub HumanReadableDataSize {
+    my ( $Self, %Param ) = @_;
+
+    if ( !defined( $Param{Size} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need Size!',
+        );
+        return;
+    }
+
+    if ( $Param{Size} !~ /^\d+$/ )  {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Size must be integer!',
+        );
+        return;
+    }
+
+    my $SizeStr = '';
+    my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
+
+    # Use convention described on https://en.wikipedia.org/wiki/File_size
+    #   We cannot use floating point output as OTRS has no locale informatin for the decimal mark.
+    if ( $Param{Size} > ( 1024 ** 4 ) ) {
+        my $ReadableSize = int $Param{Size} / ( 1024 ** 4 );
+        $SizeStr = $LanguageObject->Translate('%s TB', $ReadableSize);
+    }
+    elsif ( $Param{Size} > ( 1024 ** 3 ) ) {
+        my $ReadableSize = int $Param{Size} / ( 1024 ** 3 );
+        $SizeStr = $LanguageObject->Translate('%s GB', $ReadableSize);
+    }
+    elsif ( $Param{Size} > ( 1024 ** 2 ) ) {
+        my $ReadableSize = int $Param{Size} / ( 1024 ** 2 );
+        $SizeStr = $LanguageObject->Translate('%s MB', $ReadableSize);
+    }
+    elsif ( $Param{Size} > 1024 ) {
+        my $ReadableSize = int $Param{Size} / ( 1024 );
+        $SizeStr = $LanguageObject->Translate('%s KB', $ReadableSize);
+    }
+    else {
+        $SizeStr = $LanguageObject->Translate('%s B', $Param{Size});
+    }
+
+    return $SizeStr;
 }
 
 sub CustomerLogin {
