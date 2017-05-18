@@ -68,6 +68,14 @@ $(document).ready(function() {
       <li><a href="#ArticleAccountedTimeDelete">ArticleAccountedTimeDelete()</a></li>
       <li><a href="#ArticleSenderTypeList">ArticleSenderTypeList()</a></li>
       <li><a href="#ArticleSenderTypeLookup">ArticleSenderTypeLookup()</a></li>
+      <li><a href="#ArticleSearchIndexBuild">ArticleSearchIndexBuild()</a></li>
+      <li><a href="#ArticleSearchIndexDelete">ArticleSearchIndexDelete()</a></li>
+      <li><a href="#ArticleSearchIndexSQLJoinNeeded">ArticleSearchIndexSQLJoinNeeded()</a></li>
+      <li><a href="#ArticleSearchIndexSQLJoin">ArticleSearchIndexSQLJoin()</a></li>
+      <li><a href="#ArticleSearchIndexWhereCondition">ArticleSearchIndexWhereCondition()</a></li>
+      <li><a href="#SearchStringStopWordsFind">SearchStringStopWordsFind()</a></li>
+      <li><a href="#SearchStringStopWordsUsageWarningActive">SearchStringStopWordsUsageWarningActive()</a></li>
+      <li><a href="#ArticleSearchableFieldsList">ArticleSearchableFieldsList()</a></li>
     </ul>
   </li>
   <li><a href="#PRIVATE-FUNCTIONS">PRIVATE FUNCTIONS</a>
@@ -267,6 +275,157 @@ $(document).ready(function() {
 
     my $SenderType = $ArticleObject-&gt;ArticleSenderTypeLookup(
         SenderTypeID =&gt; 1,
+    );</code></pre>
+
+<h2 id="ArticleSearchIndexBuild">ArticleSearchIndexBuild()</h2>
+
+<p>Rebuilds the current article search index table content. Existing article entries will be replaced.</p>
+
+<pre><code>    my $Success = $ArticleObject-&gt;ArticleSearchIndexBuild(
+        TicketID  =&gt; 123,
+        ArticleID =&gt; 123,
+        UserID    =&gt; 1,
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    True if indexing process was successfully finished, False if not.</code></pre>
+
+<h2 id="ArticleSearchIndexDelete">ArticleSearchIndexDelete()</h2>
+
+<p>Deletes entries from the article search index table base on supplied <code>ArticleID</code> or <code>TicketID</code>.</p>
+
+<pre><code>    my $Success = $ArticleObject-&gt;ArticleSearchIndexDelete(
+        ArticleID =&gt; 123,   # required, deletes search index for single article
+                            # or
+        TicketID  =&gt; 123,   # required, deletes search index for all ticket articles
+
+        UserID    =&gt; 1,     # required
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    True if delete process was successfully finished, False if not.</code></pre>
+
+<h2 id="ArticleSearchIndexSQLJoinNeeded">ArticleSearchIndexSQLJoinNeeded()</h2>
+
+<p>Checks the given search parameters for used article backend fields.</p>
+
+<pre><code>    my $Needed = $ArticleObject-&gt;ArticleSearchIndexSQLJoinNeeded(
+        SearchParams =&gt; {
+            ...
+            ConditionInline         =&gt; 1,
+            ContentSearchPrefix     =&gt; &#39;*&#39;,
+            ContentSearchSuffix     =&gt; &#39;*&#39;,
+            MIMEBase_From           =&gt; &#39;%spam@example.com%&#39;,
+            MIMEBase_To             =&gt; &#39;%service@example.com%&#39;,
+            MIMEBase_Cc             =&gt; &#39;%client@example.com%&#39;,
+            MIMEBase_Subject        =&gt; &#39;%VIRUS 32%&#39;,
+            MIMEBase_Body           =&gt; &#39;%VIRUS 32%&#39;,
+            MIMEBase_AttachmentName =&gt; &#39;%anyfile.txt%&#39;,
+            Chat_ChatterName        =&gt; &#39;%Some Chatter Name%&#39;,
+            Chat_MessageText        =&gt; &#39;%Some Message Text%&#39;
+            ...
+        },
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    True if article search index usage is needed, False if not.</code></pre>
+
+<h2 id="ArticleSearchIndexSQLJoin">ArticleSearchIndexSQLJoin()</h2>
+
+<p>Generates SQL string extensions, including the needed table joins for the article index search.</p>
+
+<pre><code>    my $SQLExtenion = $ArticleObject-&gt;ArticleSearchIndexSQLJoin(
+        SearchParams =&gt; {
+            ...
+            ConditionInline         =&gt; 1,
+            ContentSearchPrefix     =&gt; &#39;*&#39;,
+            ContentSearchSuffix     =&gt; &#39;*&#39;,
+            MIMEBase_From           =&gt; &#39;%spam@example.com%&#39;,
+            MIMEBase_To             =&gt; &#39;%service@example.com%&#39;,
+            MIMEBase_Cc             =&gt; &#39;%client@example.com%&#39;,
+            MIMEBase_Subject        =&gt; &#39;%VIRUS 32%&#39;,
+            MIMEBase_Body           =&gt; &#39;%VIRUS 32%&#39;,
+            MIMEBase_AttachmentName =&gt; &#39;%anyfile.txt%&#39;,
+            Chat_ChatterName        =&gt; &#39;%Some Chatter Name%&#39;,
+            Chat_MessageText        =&gt; &#39;%Some Message Text%&#39;
+            ...
+        },
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $SQLExtension = &#39;LEFT JOIN article_search_index ArticleFulltext ON art.id = ArticleFulltext.article_id &#39;;</code></pre>
+
+<h2 id="ArticleSearchIndexWhereCondition">ArticleSearchIndexWhereCondition()</h2>
+
+<p>Generates SQL query conditions for the used article fields, that may be used in the WHERE clauses of main SQL queries to the database.</p>
+
+<pre><code>    my $SQLExtenion = $ArticleObject-&gt;ArticleSearchIndexWhereCondition(
+        SearchParams =&gt; {
+            ...
+            ConditionInline         =&gt; 1,
+            ContentSearchPrefix     =&gt; &#39;*&#39;,
+            ContentSearchSuffix     =&gt; &#39;*&#39;,
+            MIMEBase_From           =&gt; &#39;%spam@example.com%&#39;,
+            MIMEBase_To             =&gt; &#39;%service@example.com%&#39;,
+            MIMEBase_Cc             =&gt; &#39;%client@example.com%&#39;,
+            MIMEBase_Subject        =&gt; &#39;%VIRUS 32%&#39;,
+            MIMEBase_Body           =&gt; &#39;%VIRUS 32%&#39;,
+            MIMEBase_AttachmentName =&gt; &#39;%anyfile.txt%&#39;,
+            Chat_ChatterName        =&gt; &#39;%Some Chatter Name%&#39;,
+            Chat_MessageText        =&gt; &#39;%Some Message Text%&#39;
+            ...
+        },
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $SQLConditions = &quot; AND (MIMEBase_From.article_value LIKE &#39;%spam@example.com%&#39;) &quot;;</code></pre>
+
+<h2 id="SearchStringStopWordsFind">SearchStringStopWordsFind()</h2>
+
+<p>Find stop words within given search string.</p>
+
+<pre><code>    my $StopWords = $ArticleObject-&gt;SearchStringStopWordsFind(
+        SearchStrings =&gt; {
+            &#39;Fulltext&#39;      =&gt; &#39;(this AND is) OR test&#39;,
+            &#39;MIMEBase_From&#39; =&gt; &#39;myself&#39;,
+        },
+    );
+
+    Returns Hashref with found stop words.</code></pre>
+
+<h2 id="SearchStringStopWordsUsageWarningActive">SearchStringStopWordsUsageWarningActive()</h2>
+
+<p>Checks if warnings for stop words in search strings are active or not.</p>
+
+<pre><code>    my $WarningActive = $ArticleObject-&gt;SearchStringStopWordsUsageWarningActive();</code></pre>
+
+<h2 id="ArticleSearchableFieldsList">ArticleSearchableFieldsList()</h2>
+
+<p>Get list of searchable fields across all article backends.</p>
+
+<pre><code>    my %SearchableFields = $ArticleObject-&gt;ArticleSearchableFieldsList();</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    %SearchableFields = (
+        &#39;MIMEBase_Body&#39; =&gt; {
+            Filterable =&gt; 1,
+            Key        =&gt; &#39;MIMEBase_Body&#39;,
+            Label      =&gt; &#39;Body&#39;,
+            Type       =&gt; &#39;Text&#39;,
+        },
+        &#39;MIMEBase_Subject&#39; =&gt; {
+            Filterable =&gt; 1,
+            Key        =&gt; &#39;MIMEBase_Subject&#39;,
+            Label      =&gt; &#39;Subject&#39;,
+            Type       =&gt; &#39;Text&#39;,
+        },
+        ...
     );</code></pre>
 
 <h1 id="PRIVATE-FUNCTIONS">PRIVATE FUNCTIONS</h1>
