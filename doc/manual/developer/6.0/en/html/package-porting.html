@@ -319,7 +319,7 @@ Type      =&gt; 'move_into',
                 Following methods related to articles have been moved to
                 <code class="literal">Kernel::System::Ticket::Article</code> object:
             </p><p>
-                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="literal">ArticleFlagSet()</code></p></li><li class="listitem"><p><code class="literal">ArticleFlagDelete()</code></p></li><li class="listitem"><p><code class="literal">ArticleFlagGet()</code></p></li><li class="listitem"><p><code class="literal">ArticleFlagsOfTicketGet()</code></p></li><li class="listitem"><p><code class="literal">ArticleAccountedTimeGet()</code></p></li><li class="listitem"><p><code class="literal">ArticleAccountedTimeDelete()</code></p></li><li class="listitem"><p><code class="literal">ArticleSenderTypeList()</code></p></li><li class="listitem"><p><code class="literal">ArticleSenderTypeLookup()</code></p></li></ul></div><p>
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="literal">ArticleFlagSet()</code></p></li><li class="listitem"><p><code class="literal">ArticleFlagDelete()</code></p></li><li class="listitem"><p><code class="literal">ArticleFlagGet()</code></p></li><li class="listitem"><p><code class="literal">ArticleFlagsOfTicketGet()</code></p></li><li class="listitem"><p><code class="literal">ArticleAccountedTimeGet()</code></p></li><li class="listitem"><p><code class="literal">ArticleAccountedTimeDelete()</code></p></li><li class="listitem"><p><code class="literal">ArticleSenderTypeList()</code></p></li><li class="listitem"><p><code class="literal">ArticleSenderTypeLookup()</code></p></li><li class="listitem"><p><code class="literal">SearchStringStopWordsFind()</code></p></li><li class="listitem"><p><code class="literal">SearchStringStopWordsUsageWarningActive()</code></p></li></ul></div><p>
             </p><p>
                 If you are referencing any of these methods via <code class="literal">Kernel::System::Ticket</code> object in your
                 code, please switch to Article object and use it instead. For example:
@@ -394,7 +394,12 @@ my $ArticleBackendObject = $ArticleObject-&gt;BackendForChannel( ChannelName =&g
                 <code class="literal">SenderType</code> and <code class="literal">IsVisibleForCustomer</code> parameter combination. In
                 addition, all these methods now also require <code class="literal">TicketID</code> and <code class="literal">UserID</code>
                 parameters.
-            </p><p>
+            </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+                    Since changes in article API are system-wide, any code using the old API must be ported for OTRS 6.
+                    This includes any web service definitions which leverage these methods directly via GenericInterface
+                    for example. They will need to be re-assessed and adapted to provide all required parameters to the
+                    new API during requests and manage subsequent responses in new format.
+                </p></div><p>
                 Please note that returning hash of <code class="literal">ArticleGet()</code> has changed, and some things (like
                 ticket data) might be missing. Utilize parameters like <code class="literal">DynamicFields =&gt; 1</code> and
                 <code class="literal">RealNames =&gt; 1</code> to get more information.
@@ -467,10 +472,10 @@ for my $Article (@Articles) {
                 </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col><col></colgroup><thead><tr><th>Old parameter</th><th>New parameter</th></tr></thead><tbody><tr><td><code class="literal">From</code></td><td><code class="literal">MIMEBase_From</code></td></tr><tr><td><code class="literal">To</code></td><td><code class="literal">MIMEBase_To</code></td></tr><tr><td><code class="literal">Cc</code></td><td><code class="literal">MIMEBase_Cc</code></td></tr><tr><td><code class="literal">Subject</code></td><td><code class="literal">MIMEBase_Subject</code></td></tr><tr><td><code class="literal">Body</code></td><td><code class="literal">MIMEBase_Body</code></td></tr><tr><td><code class="literal">AttachmentName</code></td><td><code class="literal">MIMEBase_AttachmentName</code></td></tr></tbody></table></div><p>
             </p><p>
                 Additionally, article search indexing will be done in an async call now, in order to off-load index
-                calculation to a separate task. While this is fine in production systems, it might create new problems
+                calculation to a separate task. While this is fine for production systems, it might create new problems
                 in certain situations, i.e. unit tests. If you are manually creating articles in your unit test, but
-                expect it to be searchable when created, make sure to manually call
-                <code class="literal">ArticleIndexBuild()</code> method on article object.
+                expect it to be searchable immediately after created, make sure to manually call the new
+                <code class="literal">ArticleSearchIndexBuild()</code> method on article object.
             </p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="package-porting-4-to-5"></a>From OTRS 4 to 5</h3></div></div></div><p>
         This section lists changes that you need to examine when porting your package from OTRS 4 to 5.
     </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.4.3"></a><code class="filename">Kernel/Output/HTML</code> restructured</h4></div></div></div><p>
