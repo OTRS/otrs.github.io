@@ -99,6 +99,10 @@ sub new {
 
     }
 
+    if ( $Param{DisableAsyncCalls} ) {
+        $Self->DisableAsyncCalls();
+    }
+
     return $Self;
 }
 
@@ -396,6 +400,7 @@ sub FixedTimeSet {
     #   to get a hold of the overrides.
     my @Objects = (
         'Kernel::System::Time',
+        'Kernel::System::DB',
         'Kernel::System::Cache::FileStorable',
         'Kernel::System::PID',
     );
@@ -485,6 +490,13 @@ sub DESTROY {
     FixedTimeUnset();
 
     # FixedDateTimeObjectUnset();
+
+    if ( $Self->{DestroyLog} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Helper is destroyed!"
+        );
+    }
 
     # Cleanup temporary database if it was set up.
     $Self->TestDatabaseCleanup() if $Self->{ProvideTestDatabase};
@@ -754,6 +766,24 @@ sub UseTmpArticleDir {
     );
 
     $Self->{TmpArticleDir} = $TmpArticleDir;
+
+    return 1;
+}
+
+=head2 DisableAsyncCalls()
+
+Disable scheduling of asynchronous tasks using C<AsynchronousExecutor> component of OTRS daemon.
+
+=cut
+
+sub DisableAsyncCalls {
+    my ( $Self, %Param ) = @_;
+
+    $Self->ConfigSettingChange(
+        Valid => 1,
+        Key   => 'DisableAsyncCalls',
+        Value => 1,
+    );
 
     return 1;
 }
