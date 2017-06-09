@@ -1875,7 +1875,7 @@ sub ConfigurationTranslatedGet {
     my $LanguageObject = $Kernel::OM->Get('Kernel::Language');
     my $CacheObject    = $Kernel::OM->Get('Kernel::System::Cache');
 
-    my $CacheType = 'ConfigurationTranslatedGet';
+    my $CacheType = 'SysConfigConfigurationTranslatedGet';
     my $CacheKey  = "ConfigurationTranslatedGet::$LanguageObject->{UserLanguage}";
 
     # Return cache.
@@ -1892,7 +1892,7 @@ sub ConfigurationTranslatedGet {
 
     for my $Setting (@SettingList) {
 
-        my %SettingTranslated = $Self->_ConfigurationTranslatedGet(
+        my %SettingTranslated = $Self->_SettingTranslatedGet(
             Language => $LanguageObject->{UserLanguage},
             Name     => $Setting->{Name},
         );
@@ -2226,8 +2226,8 @@ sub ConfigurationXML2DB {
         $Filename =~ s{\A .+ Kernel/Config/Files/XML/ (.+)\.xml\z}{$1}msx;
         $Filename =~ s{\A .+ scripts/test/sample/SysConfig/XML/ (.+)\.xml\z}{$1}msx;
 
+        my $CacheType = 'SysConfigConfigurationXML2DB';
         my $CacheKey  = "ConfigurationXML2DB::${Filename}::${MD5Sum}";
-        my $CacheType = "SysConfig_ConfigurationXML2DB";
 
         my $Cache = $CacheObject->Get(
             Type => $CacheType,
@@ -2483,10 +2483,10 @@ sub ConfigurationXML2DB {
         # IMPORTANT - Since NoCleanup parameter is used, cache is not cleared,
         # so we need to do it here (we do it here once and not 1800+ times).
         $CacheObject->CleanUp(
-            Type => 'DefaultSettingListGet',
+            Type => 'SysConfigDefaultListGet',
         );
         $CacheObject->Delete(
-            Type => 'DefaultSettingList',
+            Type => 'SysConfigDefaultList',
             Key  => 'DefaultSettingList',
         );
         $CacheObject->CleanUp(
@@ -3902,8 +3902,8 @@ Returns:
 sub ConfigurationCategoriesGet {
     my ( $Self, %Param ) = @_;
 
-    my $CacheKey  = 'ConfigurationCategoriesGet';
     my $CacheType = 'SysConfig';
+    my $CacheKey  = 'ConfigurationCategoriesGet';
 
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
@@ -3995,8 +3995,8 @@ Returns:
 sub ForbiddenValueTypesGet {
     my ( $Self, %Param ) = @_;
 
-    my $CacheKey  = 'ForbiddenValueTypesGet';
     my $CacheType = 'SysConfig';
+    my $CacheKey  = 'ForbiddenValueTypesGet';
 
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
@@ -4061,8 +4061,8 @@ sub ValueAttributeList {
 
     my ( $Self, %Param ) = @_;
 
-    my $CacheKey  = 'ValueAttributeList';
     my $CacheType = 'SysConfig';
+    my $CacheKey  = 'ValueAttributeList';
 
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
@@ -5078,11 +5078,11 @@ sub _HandleSettingsToDeploy {
     return 1;
 }
 
-=head2 _ConfigurationTranslatedGet()
+=head2 _SettingTranslatedGet()
 
 Helper method for ConfigurationTranslatedGet().
 
-    my %Result = $SysConfigObject->_ConfigurationTranslatedGet(
+    my %Result = $SysConfigObject->_SettingTranslatedGet(
         Language => 'de',               # (required) User language
         Name     => 'SettingName',      # (required) Setting name
         Silent   => 1,                  # (optional) Default 1
@@ -5100,7 +5100,7 @@ Cache-Zeit in Sekunden f\x{fc}r Datenbank ACL-Backends.",
 
 =cut
 
-sub _ConfigurationTranslatedGet {
+sub _SettingTranslatedGet {
     my ( $Self, %Param ) = @_;
 
     # Check needed stuff.
@@ -5116,8 +5116,8 @@ sub _ConfigurationTranslatedGet {
 
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
-    my $CacheType = '_ConfigurationTranslatedGet';
-    my $CacheKey  = "_ConfigurationTranslatedGet::$Param{Language}::$Param{Name}";
+    my $CacheType = 'SysConfigSettingTranslatedGet';
+    my $CacheKey  = "SettingTranslatedGet::$Param{Language}::$Param{Name}";
 
     # Return cache.
     my $Cache = $CacheObject->Get(
