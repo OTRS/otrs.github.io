@@ -1724,7 +1724,7 @@ $Self-&gt;{'Process::TransitionAction'} = {
                         The values of the fields (<code class="literal">Master</code> and <code class="literal">1</code>) will be set by this
                         TransitionAction.
                     </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.7.3.5.6.8.4"></a>TicketArticleCreate</h6></div></div></div><p>
-                        Creates an article and can be used to create notes or email replies. Example:
+                        Creates an article, the %DataPayload parameters depends on the given communication channel, by default <code class="literal">Internal</code> is used. Example:
                     </p><p>
                         </p><pre class="screen">
 $Self-&gt;{'Process::TransitionAction'} = {
@@ -1732,8 +1732,23 @@ $Self-&gt;{'Process::TransitionAction'} = {
         Name   =&gt; 'Article Create Note Internal',
         Module =&gt; 'Kernel::System::ProcessManagement::TransitionAction::TicketArticleCreate',
         Config =&gt; {
-            ArticleType      =&gt; 'note-internal',                                        # note-external|phone|fax|sms|...
-                                                                                        #   excluding any email type
+
+        Config                   =&gt; {
+            SenderType           =&gt; 'agent',            # (required) agent|system|customer
+            IsVisibleForCustomer =&gt; 1,                  # 0 or 1
+            CommunicationChannel =&gt; 'Internal',         # Internal|Phone|Email|..., default: Internal
+
+            %DataPayload,                               # some parameters depending of each communication channel
+        },
+    },
+};
+                        </pre><p>
+                    </p><p>
+                        The following is the %DataPayload for MIME based Communication channels
+                        (<code class="literal">Email</code>,<code class="literal">Internal</code> and
+                        <code class="literal">Phone</code>).
+                    </p><p>
+                        </p><pre class="screen">
             SenderType       =&gt; 'agent',                                                # agent|system|customer
             ContentType      =&gt; 'text/plain; charset=ISO-8859-15',                      # or optional Charset &amp; MimeType (e.g. 'text/html; charset=UTF-8')
             Subject          =&gt; 'some short description',                               # required
@@ -1749,29 +1764,27 @@ $Self-&gt;{'Process::TransitionAction'} = {
             NoAgentNotify    =&gt; 0,                                                      # if you don't want to send agent notifications
             AutoResponseType =&gt; 'auto reply',                                           # auto reject|auto follow up|auto reply/new ticket|auto remove
 
-            ForceNotificationToUserID   =&gt; [ 1, 43, 56 ],                               # if you want to force somebody
-            ExcludeNotificationToUserID =&gt; [ 43, 56 ],
+            ForceNotificationToUserID   =&gt; '1,43,56',                                    # if you want to force somebody
+            ExcludeNotificationToUserID =&gt; '43,56',
                  # if you want full exclude somebody from notifications,
                  # will also be removed in To: line of article,
                  # higher prio as ForceNotificationToUserID
-            ExcludeMuteNotificationToUserID =&gt; [ 43, 56 ],
+            ExcludeMuteNotificationToUserID =&gt; '43,56',
                  # the same as ExcludeNotificationToUserID but only the
                  # sending gets muted, agent will still shown in To:
                  # line of article
-        },
-    },
-};
                         </pre><p>
                     </p><p>
                         <code class="literal">Name</code> specifies the name of the configured TransitionAction. It can be
                         freely chosen, but should reflect the purpose of the configured action.
                     </p><p>
-                        <code class="literal">ArticleType</code> defines the type of the article to be created. Possible
-                        values: phone, fax, sms, webrequest, note-internal, note-external and
-                        note-report.
-                    </p><p>
                         <code class="literal">SenderType</code> defines the sender type of the article. Possible values: agent,
                         system, customer.
+                    </p><p>
+                        <code class="literal">IsVisibeforCustomers</code> defines if the article should be displayed in the customer interface.
+                    </p><p>
+                        <code class="literal">CommunicationChannel</code> defines the type of the article to be created. Possible
+                        values: Email, Internal and Phone, this list could be extended by installing new communication channels via an OTRS Package.
                     </p><p>
                         <code class="literal">ContentType</code> defines the content type of the article. Possible values:
                         <code class="literal">text/plain; charset=ISO-8859-15</code> or any other valid charset and mime type.
