@@ -99,17 +99,15 @@ CustomerValid =&gt; 'valid_id',
 #    ReadOnly =&gt; 1,
     Map =&gt; [
         # note: Login, Email and CustomerID needed!
-        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
         [ 'UserTitle',      'Title',      'title',      1, 0, 'var', '', 0 ],
         [ 'UserFirstname',  'Firstname',  'first_name', 1, 1, 'var', '', 0 ],
         [ 'UserLastname',   'Lastname',   'last_name',  1, 1, 'var', '', 0 ],
         [ 'UserLogin',      'Username',   'login',      1, 1, 'var', '', 0 ],
         [ 'UserPassword',   'Password',   'pw',         0, 0, 'var', '', 0 ],
         [ 'UserEmail',      'Email',      'email',      1, 1, 'var', '', 0 ],
-
-#        [ 'UserEmail',      'Email', 'email',           1, 1, 'var', '[% Env("CGIHandle") %]?Action=AgentTicketCompose&amp;ResponseID=1&amp;TicketID=[% Data.TicketID %]&amp;ArticleID=[% Data.ArticleID %]', 0 ],
+#        [ 'UserEmail',      Translatable('Email'), 'email',           1, 1, 'var', '[% Env("CGIHandle") %]?Action=AgentTicketCompose;ResponseID=1;TicketID=[% Data.TicketID | uri %];ArticleID=[% Data.ArticleID | uri %]', 0, '', 'AsPopup OTRSPopup_TicketAction' ],
         [ 'UserCustomerID', 'CustomerID', 'customer_id', 0, 1, 'var', '', 0 ],
-
 #        [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
         [ 'UserPhone',        'Phone',       'phone',        1, 0, 'var', '', 0 ],
         [ 'UserFax',          'Fax',         'fax',          1, 0, 'var', '', 0 ],
@@ -120,6 +118,9 @@ CustomerValid =&gt; 'valid_id',
         [ 'UserCountry',      'Country',     'country',      1, 0, 'var', '', 0 ],
         [ 'UserComment',      'Comment',     'comments',     1, 0, 'var', '', 0 ],
         [ 'ValidID',          'Valid',       'valid_id',     0, 1, 'int', '', 0 ],
+
+        # Dynamic field example
+#        [ 'DynamicField_Name_X', undef, 'Name_X', 0, 0, 'dynamic_field', undef, 0, undef, undef, ],
     ],
     # default selections
     Selections =&gt; {
@@ -160,7 +161,7 @@ linux:~#
 现在添加新列到文件<code class="filename">Kernel/Config.pm</code>中的MAP数组，如下面的脚本所示。
 </p><p>
 </p><pre class="programlisting">
-    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
     [...]
     [ 'UserRoom',      'Room',      'room',       0, 1, 'var', '', 0 ],
 </pre><p>
@@ -168,7 +169,13 @@ linux:~#
 <span class="emphasis"><em>脚本：添加一个房间列到Kernel/Config.pm文件。</em></span>
 </p><p>
 还可以在服务人员界面通过客户链接编辑所有的客户联系人信息。
-</p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="multi-customer-ids-db"></a>多ID的客户联系人（公司工单）</h5></div></div></div><p>
+</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+        Please note that you may omit <code class="literal">http-link-target</code> and
+<code class="literal">link class</code> keys in map array elements, if they are not to
+be used. These keys add <code class="literal">target=""</code> and
+<code class="literal">class=""</code> attributes to the HTTP link element,
+respectively. They are ignored if <code class="literal">http-link</code> is not set.
+    </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="multi-customer-ids-db"></a>多ID的客户联系人（公司工单）</h5></div></div></div><p>
 给一个客户联系人分配多个ID是可能的。这在一个客户联系人必须访问另一个客户联系人的工单时很有用，例如：一名主管想关注他的助手的工单。如果一个客户联系人能够访问另一个客户联系人的工单，需要使用OTRS的公司工单功能。可通过客户界面的“公司工单”链接来访问公司工单。
 </p><p>
 要使用公司工单，必须给OTRS数据库中的customer_user表添加一个新列，以保存一个客户联系人的ID。
@@ -200,7 +207,7 @@ linux:~#
 现在必须将新列添加到文件<code class="filename">Kernel/Config.pm</code>中的MAP数组，如下面的脚本所示。
 </p><p>
 </p><pre class="programlisting">
-    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
     [...]
     [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
 </pre><p>
@@ -273,7 +280,7 @@ $Self-&gt;{CustomerUser} = {
 #    CacheTTL =&gt; 0,
     Map =&gt; [
         # note: Login, Email and CustomerID are mandatory!
-        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
         [ 'UserTitle',      'Title',      'title',           1, 0, 'var', '', 0 ],
         [ 'UserFirstname',  'Firstname',  'givenname',       1, 1, 'var', '', 0 ],
         [ 'UserLastname',   'Lastname',   'sn',              1, 1, 'var', '', 0 ],
@@ -291,7 +298,7 @@ $Self-&gt;{CustomerUser} = {
 如果你的LDAP目录存储有附加的客户信息如经理的姓名、手机号或部分，并且你想在OTRS中显示这些信息，只需用这些属性条目扩展文件<code class="filename">Kernel/Config.pm</code>中的MAP数组即可，如下面的脚本所示。
 </p><p>
 </p><pre class="programlisting">
-    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
     [...]
     [ 'UserPhone',      'Phone',      'telephonenumber', 1, 0, 'var', '', 0 ],
 </pre><p>
@@ -462,7 +469,15 @@ $Self-&gt;{CustomerUser2} = {
     </p><p>
         当创建一个工单或修改了工单的客户联系人时设置动态字段的值。动态字段的值来源于客户联系人数据，这适用于所有的客户数据后端，但对LDAP后端特别有用。
     </p><p>
-        要激活这个可选的OTRS功能，请激活设置“Ticket::EventModulePost###930-DynamicFieldFromCustomerUser”和“DynamicFieldFromCustomerUser::Mapping”。后一个设置包含了哪一个客户联系人字段会存储到哪个工单的动态字段中。这个字段必须存在于系统中且被启用为AgentTicketFreeText，这样可以手动设置它们。不能启用为AgentTicketPhone、AgentTicketEmail和AgentTicketCustomer，如果设置为这几种，就会优先使用自动设置值。
+        To activate this optional feature of OTRS, please activate the settings
+"Ticket::EventModulePost###950-DynamicFieldFromCustomerUser" and
+"DynamicFieldFromCustomerUser::Mapping". The latter setting contains the
+configuration of which CustomerUser field entry should be stored in which
+ticket dynamic field. The fields must be present in the system and should be
+enabled for AgentTicketFreeText, so that they can be set manually. They
+mustn't be enabled for AgentTicketPhone, AgentTicketEmail and
+AgentTicketCustomer. If they were, they would have precedence over the
+automatically set values.
     </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="auth-backends"></a>服务人员和客户联系人身份认证后端</h3></div></div></div><p>
 OTRS提供了不同的服务人员和客户联系人身份认证后端。
 </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="agent-auth-backends"></a>服务人员身份认证后端</h4></div></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-db"></a>数据库认证(默认)</h5></div></div></div><p>
