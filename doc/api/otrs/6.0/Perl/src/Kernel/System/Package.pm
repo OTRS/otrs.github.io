@@ -30,6 +30,7 @@ our @ObjectDependencies = (
     'Kernel::System::DateTime',
     'Kernel::System::DB',
     'Kernel::System::Encode',
+    'Kernel::System::Environment',
     'Kernel::System::JSON',
     'Kernel::System::Loader',
     'Kernel::System::Log',
@@ -2822,7 +2823,7 @@ Compare a framework array with the current framework.
     );
 
     %CheckOK = (
-        Success                     => 1,           # 1 || 0
+        Success                     => 1,           # 1 || 0
         RequiredFramework           => '5.0.x',
         RequiredFrameworkMinimum    => '5.0.10',
         RequiredFrameworkMaximum    => '5.0.16',
@@ -3363,24 +3364,24 @@ sub _CheckModuleRequired {
     # check required perl modules
     if ( $Param{ModuleRequired} && ref $Param{ModuleRequired} eq 'ARRAY' ) {
 
-        # get main object
-        my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+        my $EnvironmentObject = $Kernel::OM->Get('Kernel::System::Environment');
 
         MODULE:
         for my $Module ( @{ $Param{ModuleRequired} } ) {
 
             next MODULE if !$Module;
 
+            # Check if module is installed by querying its version number via environment object.
+            #   Some required modules might already be loaded by existing process, and might not support reloading.
+            #   Because of this, opt not to use the main object an its Require() method at this point.
             my $Installed        = 0;
-            my $InstalledVersion = 0;
-
-            # check if module is installed
-            if ( $MainObject->Require( $Module->{Content} ) ) {
+            my $InstalledVersion = $EnvironmentObject->ModuleVersionGet(
+                Module => $Module->{Content},
+            );
+            if ($InstalledVersion) {
                 $Installed = 1;
-
-                # check version if installed module
-                $InstalledVersion = $Module->{Content}->VERSION;    ## no critic
             }
+
             if ( !$Installed ) {
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'error',
