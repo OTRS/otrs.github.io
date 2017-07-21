@@ -346,7 +346,7 @@ sub TicketCheckNumber {
         HISTORYLINE:
         for my $Data ( reverse @Lines ) {
             next HISTORYLINE if $Data->{HistoryType} ne 'Merged';
-            if ( $Data->{Name} =~ /^.*\(\d+?\/(\d+?)\)$/ ) {
+            if ( $Data->{Name} =~ /^.*%%\d+?%%(\d+?)$/ ) {
                 $TicketID = $1;
                 $Count++;
                 next MERGELOOP if ( $Count <= $Limit );
@@ -5995,8 +5995,8 @@ sub TicketMerge {
     $Self->HistoryAdd(
         TicketID    => $Param{MergeTicketID},
         HistoryType => 'Merged',
-        Name =>
-            "Merged Ticket ($MergeTicket{TicketNumber}/$Param{MergeTicketID}) to ($MainTicket{TicketNumber}/$Param{MainTicketID})",
+        Name        => "\%\%$MergeTicket{TicketNumber}\%\%$Param{MergeTicketID}"
+            . "\%\%$MainTicket{TicketNumber}\%\%$Param{MainTicketID}",
         CreateUserID => $Param{UserID},
     );
 
@@ -6004,8 +6004,8 @@ sub TicketMerge {
     $Self->HistoryAdd(
         TicketID    => $Param{MainTicketID},
         HistoryType => 'Merged',
-        Name =>
-            "Merged Ticket ($MergeTicket{TicketNumber}/$Param{MergeTicketID}) to ($MainTicket{TicketNumber}/$Param{MainTicketID})",
+        Name        => "\%\%$MergeTicket{TicketNumber}\%\%$Param{MergeTicketID}"
+            . "\%\%$MainTicket{TicketNumber}\%\%$Param{MainTicketID}",
         CreateUserID => $Param{UserID},
     );
 
