@@ -774,7 +774,7 @@ sub ProcessList {
     if ( $StateEntityIDsStrg ne 'ALL' ) {
 
         my $StateEntityIDsStrgDB =
-            join ',', map "'" . $DBObject->Quote($_) . "'", @{ $Param{StateEntityIDs} };
+            join ',', map { "'" . $DBObject->Quote($_) . "'" } @{ $Param{StateEntityIDs} };
 
         $SQL .= "WHERE state_entity_id IN ($StateEntityIDsStrgDB)";
     }
@@ -1435,13 +1435,14 @@ sub ProcessDump {
 package Kernel::Config::Files::ZZZProcessManagement;
 use strict;
 use warnings;
-no warnings 'redefine';
+no warnings 'redefine'; ## no critic
 use utf8;
 sub Load {
     my ($File, $Self) = @_;
 EOF
 
             my $FileEnd = <<'EOF';
+    return;
 }
 1;
 EOF
