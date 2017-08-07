@@ -1,0 +1,230 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>The Dynamic Field "Web Service"</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS Business Solution™ 5 Manual"><link rel="up" href="otrs-business-solution-features.html" title="Chapter 3. Features of OTRS Business Solution™"><link rel="prev" href="dynamicfield-database.html" title='The Dynamic Field "Database"'><link rel="next" href="import-example-process.html" title="Import ready-to-run process"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">The Dynamic Field "Web Service"</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="dynamicfield-database.html">Prev</a> </td><th width="60%" align="center">Chapter 3. Features of <span class="bold"><strong>OTRS Business Solution</strong></span>™</th><td width="20%" align="right"> <a accesskey="n" href="import-example-process.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="dynamicfield-webservice"></a>The Dynamic Field "Web Service"</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.6.3">Description</a></span></dt><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.6.4">Configuration</a></span></dt><dd><dl><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.6.4.3">A web service (at least configured as requester)</a></span></dt><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.6.4.4">A web service dynamic Field definition</a></span></dt><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.6.4.5">Screen Configuration</a></span></dt></dl></dd><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.6.5">Usage</a></span></dt></dl></div><p>
+        This feature implements a dynamic field of the type "Web Service".
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.6.3"></a>Description</h3></div></div></div><p>
+            This feature implements a generic dynamic field type that gathers its selectable options from an external system using a web service. The response from the external system defines the possible options to be displayed, and they could vary depending on the data that is sent in the request.
+        </p><p>
+            Normally when a field is changed in a screen (e.g. The ticket priority in the New Phone Ticket Screen) the values of other fields could be updated, that is the case of this type of dynamic fields, as they could also include all screen field values in the request and the remote server could return totally different values depending on its input.
+        </p><p>
+             Additionally if the object where they belong is already created (e.g. a Ticket, and the field is set in the Free Fields screen), the details of the already created ticket are also included in the request.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.6.4"></a>Configuration</h3></div></div></div><p>
+            To make this feature work is necessary to have the following components:
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.6.4.3"></a>A web service (at least configured as requester)</h4></div></div></div><p>
+                To create a new web service dynamic field is necessary to have already a working web service, it requires to have at least one invoker of the type <code class="literal">Generic::PassThrough</code>. This invoker will be called
+                to fetch the data from the remote server.
+            </p><p>
+                The original data that its sent in a request is similar to the following example.
+                    </p><pre class="screen">
+{
+  DynamicFieldID    =&gt; 123,
+  DynamicFieldLabel =&gt; 'NameX',
+  DynamicFieldName  =&gt; 'NameX',
+  DynamicFieldValue =&gt; 'Value',
+  Form =&gt; {
+    # Form fields
+    # ...
+  },
+  Ticket =&gt; {
+    # Ticket attributes
+    # ...
+  },
+  DynamicField =&gt; {
+    NameX =&gt; 'Value'
+    MameY =&gt; [  ‘Value’ ],
+  },
+  UserID =&gt; 123,
+},
+                    </pre><p>
+            </p><p>
+                The form section contains the fields in the current from in the web browser. this information changes as the screen is filled.
+            </p><p>
+                Ticket section (could be other object, e.g. CustomerUser), contains the attributes of the object where the dynamic field belongs. for example in New Phone Ticket screen the section is empty as the ticket is not created yet, but in Free Fields screen it contains the information of the current ticket.
+            </p><p>
+                DynamicField section contains all non empty values of all configured dynamic fields for the current object.
+            </p><p>
+                In most cases the data that the remote server requires will be very different from the data provided, so it is highly recommended to use a mapping module for the outgoing data, to format it specifically for the remote server call.
+            </p><p>
+                The following example shows an XSLT mapping that discards any data and sets a fixed 'UserLogin', 'Password' and 'TicketID' (as needed for a TicketGet operation)
+
+                </p><div class="figure"><a name="id-1.4.6.4.3.8.1"></a><p class="title"><b>Figure 3.34. Dynamic Field Web Service - Outgoing mapping example</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/dynamicfield-webservice/OutgoingMapping.png" alt="Dynamic Field Web Service - Outgoing mapping example"></div></div></div></div><p><br class="figure-break">
+            </p><p>
+                The response from the server might also be very different, so in this case is also very recommended to use a mapping module for the incoming data as to be able to process the information the response must be a list of
+                Key and Value elements.
+            </p><p>
+                The following example shows an XSLT mapping that converts the results from a TicketGet operation response form the remote server, extracting and formatting the State and Queue as needed to be used as options for the dynamic field.
+
+                </p><div class="figure"><a name="id-1.4.6.4.3.10.1"></a><p class="title"><b>Figure 3.35. Dynamic Field Web Service - Incoming mapping example</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/dynamicfield-webservice/IncomingMapping.png" alt="Dynamic Field Web Service - Incoming mapping example"></div></div></div></div><p><br class="figure-break">
+            </p><p>
+                The following web service definition (importable YAML file) can be used for testing the field, the endpoint must be adapted to match current system. This web service acts as requester and provider and it always returns the State and Queue from TicketID 1, as possible values to the field.
+                    </p><pre class="screen">
+---
+Debugger:
+  DebugThreshold: debug
+  TestMode: '0'
+Description: Dynamic Field Web Service Test
+FrameworkVersion: 6.0.x git
+Provider:
+  ErrorHandling: {}
+  ErrorHandlingPriority: []
+  Operation:
+    TicketGet:
+      Description: ''
+      IncludeTicketData: ''
+      MappingInbound: {}
+      MappingOutbound: {}
+      Type: Ticket::TicketGet
+  Transport:
+    Config:
+      AdditionalHeaders: ~
+      MaxLength: '100000000'
+      NameSpace: http://www.otrs.org/TicketConnector/
+      RequestNameFreeText: ''
+      RequestNameScheme: Plain
+      ResponseNameFreeText: ''
+      ResponseNameScheme: Response
+    Type: HTTP::SOAP
+RemoteSystem: ''
+Requester:
+  ErrorHandling: {}
+  ErrorHandlingPriority: []
+  Invoker:
+    TicketGet:
+      Description: Get possible values from the other side.
+      Events: []
+      MappingInbound:
+        Config:
+          Template: "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\r\n&lt;!--\r\nCopyright
+            (C) 2001-2017 OTRS AG, http://otrs.com/\r\nThis software comes with ABSOLUTELY
+            NO WARRANTY. For details, see\r\nthe enclosed file COPYING for license
+            information (AGPL). If you\r\ndid not receive this file, see http://www.gnu.org/licenses/agpl.txt.\r\n--&gt;\r\n\r\n&lt;!--
+            DOCUMENTATION\r\n\r\n* Example XML Input *\r\n&lt;RootElement&gt;\r\n    ...\r\n&lt;/RootElement&gt;\r\n\r\n\r\n*
+            Example XML Output *\r\n&lt;RootElement&gt;\r\n    &lt;PossibleValues&gt;\r\n        &lt;Key&gt;???&lt;/Key&gt;\r\n
+            \       &lt;Value&gt;???&lt;/Value&gt;\r\n    &lt;/PossibleValues&gt;\r\n    &lt;PossibleValues&gt;\r\n
+            \       &lt;Key&gt;???&lt;/Key&gt;\r\n        &lt;Value&gt;???&lt;/Value&gt;\r\n    &lt;/PossibleValues&gt;\r\n
+            \   ...\r\n&lt;/RootElement&gt;\r\n\r\n--&gt;\r\n\r\n\r\n&lt;xsl:transform\r\n    xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"\r\n
+            \   xmlns:date=\"http://exslt.org/dates-and-times\"\r\n    version=\"1.0\"\r\n
+            \   extension-element-prefixes=\"date\"&gt;\r\n    \r\n    &lt;xsl:output method=\"xml\"
+            encoding=\"utf-8\" indent=\"yes\" /&gt;\r\n    \r\n    &lt;!-- Don't return
+            unmatched tags --&gt;\r\n    &lt;xsl:template match=\"text()\" /&gt;\r\n    \r\n
+            \   &lt;!-- Remove empty elements --&gt;\r\n    &lt;xsl:template match=\"*[not(node())]\"
+            /&gt;\r\n    \r\n    &lt;!-- Root template --&gt;\r\n    &lt;xsl:template match=\"/\"&gt;\r\n
+            \       &lt;RootElement&gt;\r\n            &lt;xsl:apply-templates /&gt;\r\n        &lt;/RootElement&gt;\r\n
+            \   &lt;/xsl:template&gt;\r\n\r\n    &lt;xsl:template match=\"/*/Ticket\"&gt;\r\n
+            \       &lt;PossibleValue&gt;\r\n            &lt;Key&gt;State&lt;/Key&gt;\r\n            &lt;Value&gt;&lt;xsl:value-of
+            select=\"/*/Ticket/State\"/&gt;&lt;/Value&gt;\r\n        &lt;/PossibleValue&gt;\r\n        &lt;PossibleValue&gt;\r\n
+            \           &lt;Key&gt;Queue&lt;/Key&gt;\r\n            &lt;Value&gt;&lt;xsl:value-of select=\"/*/Ticket/Queue\"/&gt;&lt;/Value&gt;\r\n
+            \       &lt;/PossibleValue&gt;\r\n    &lt;/xsl:template&gt;\r\n    \r\n&lt;/xsl:transform&gt;"
+        Type: XSLT
+      MappingOutbound:
+        Config:
+          Template: "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\r\n&lt;!--\r\nCopyright
+            (C) 2001-2017 OTRS AG, http://otrs.com/\r\n\r\nThis software comes with
+            ABSOLUTELY NO WARRANTY. For details, see\r\nthe enclosed file COPYING
+            for license information (AGPL). If you\r\ndid not receive this file, see
+            http://www.gnu.org/licenses/agpl.txt.\r\n--&gt;\r\n\r\n&lt;!-- DOCUMENTATION\r\n\r\n*
+            Example XML Input *\r\n&lt;RootElement&gt;\r\n    ...\r\n&lt;/RootElement&gt;\r\n\r\n\r\n*
+            Example XML Output *\r\n&lt;RootElement&gt;\r\n    &lt;PossibleValues&gt;\r\n        &lt;Key&gt;???&lt;/Key&gt;\r\n
+            \       &lt;Value&gt;???&lt;/Value&gt;\r\n    &lt;/PossibleValues&gt;\r\n    &lt;PossibleValues&gt;\r\n
+            \       &lt;Key&gt;???&lt;/Key&gt;\r\n        &lt;Value&gt;???&lt;/Value&gt;\r\n    &lt;/PossibleValues&gt;\r\n
+            \   ...\r\n&lt;/RootElement&gt;\r\n\r\n--&gt;\r\n\r\n&lt;xsl:transform\r\n    xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"\r\n
+            \   xmlns:date=\"http://exslt.org/dates-and-times\"\r\n    version=\"1.0\"\r\n
+            \   extension-element-prefixes=\"date\"&gt;\r\n    &lt;xsl:output method=\"xml\"
+            encoding=\"utf-8\" indent=\"yes\" /&gt;\r\n\r\n    &lt;!-- Don't return unmatched
+            tags --&gt;\r\n    &lt;xsl:template match=\"text()\" /&gt;\r\n\r\n    &lt;!-- Remove
+            empty elements --&gt;\r\n    &lt;xsl:template match=\"*[not(node())]\" /&gt;\r\n\r\n
+            \   &lt;!-- Root template --&gt;\r\n    &lt;xsl:template match=\"/\"&gt;\r\n        &lt;RootElement&gt;\r\n
+            \           &lt;UserLogin&gt;someuser&lt;/UserLogin&gt;\r\n            &lt;Password&gt;somepassword&lt;/Password&gt;\r\n
+            \           &lt;TicketID&gt;1&lt;/TicketID&gt;\r\n        &lt;/RootElement&gt;\r\n    &lt;/xsl:template&gt;\r\n\r\n&lt;/xsl:transform&gt;"
+        Type: XSLT
+      Type: Generic::PassThrough
+  Transport:
+    Config:
+      Encoding: ''
+      Endpoint: http://localhost/otrs/nph-genericinterface.pl/Webservice/GenericConfigItemConnectorSOAP
+      NameSpace: http://www.otrs.org/TicketConnector/
+      RequestNameFreeText: ''
+      RequestNameScheme: Plain
+      ResponseNameFreeText: ''
+      ResponseNameScheme: Response
+      SOAPAction: Yes
+      SOAPActionSeparator: '#'
+      SSL:
+        SSLProxy: ''
+        SSLProxyPassword: ''
+        SSLProxyUser: ''
+    Type: HTTP::SOAP
+  UseMappedData: '1'
+                    </pre><p>
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.6.4.4"></a>A web service dynamic Field definition</h4></div></div></div><p>
+                After the proper configuration of web services, it is possible to configure dynamic fields, that uses such web services.
+
+                </p><div class="figure"><a name="id-1.4.6.4.4.2.1"></a><p class="title"><b>Figure 3.36. Dynamic Field Web Service - Definition Example</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/dynamicfield-webservice/IncomingMapping.png" alt="Dynamic Field Web Service - Definition Example"></div></div></div></div><p><br class="figure-break">
+            </p><p>
+                Enclosed a description of the dynamic field options:
+
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                            Web service: The configured web service, to use invokers to trigger, when a dynamic field is displayed.
+                        </p></li><li class="listitem"><p>
+                            Invoker: The invoker that is used to send requests to external systems. Within this field, just invokers of type 'Generic::PassThrough' will be displayed.
+                        </p></li><li class="listitem"><p>
+                            Multiselect: A drop-down menu to define, if the displayed dynamic field should act as a multiselect field, instead of a drop-down field.
+                        </p></li><li class="listitem"><p>
+                            Cache TTL: A cache time to live value, that contains a value (in minutes). If the value is 0 or empty,
+                            no caching will be active.
+                        </p><p>
+                            This cache is to prevent unnecessary request to the remote server using the same values.
+                        </p></li><li class="listitem"><p>
+                            Add empty value: Defines if it is possible, to save an empty possible value.
+                        </p></li><li class="listitem"><p>
+                            Tree view: This option activates the tree view of possible values, if they are available in the correct format.
+                        </p></li><li class="listitem"><p>
+                            Translatable values: Defines if the displayed possible values shall be translated to the current user language.
+                        </p></li></ul></div><p>
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.6.4.5"></a>Screen Configuration</h4></div></div></div><p>
+                Dynamic fields of type 'Web Service' have to be activated for the several masks in which they should be displayed like the other types of dynamic fields, the following covers the cases for Ticket based Dynamic Fields.
+            </p><p>
+                This can be done through Admin → Administration Overview → System Configuration, then navigate to Frontend → Agent → View
+            </p><p>
+                For every Ticket* option, in which the dynamic field of type 'Web Service' should be displayed, the admin
+                has to configure it to fit his needs. Examples:
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                            TicketZoom for the ticket zoom view.
+                        </p></li><li class="listitem"><p>
+                            TicketPhoneNew for new phone tickets.
+                        </p></li><li class="listitem"><p>
+                            TicketEmailNew for new email tickets.
+                        </p></li><li class="listitem"><p>
+                            The dynamic field can be added if exists an entry called
+                            "Ticket::Frontend::AgentTicket*###DynamicField"
+                            This configuration defines which dynamic field(s) should get displayed in this view. To add a dynamic field, the internal name of the field has to be filled in the first field. After confirmation a second filed is show with the display options, choose <code class="literal">1 Enabled</code>
+                            to just show the field or <code class="literal">1 Enabled and required</code> to make it mandatory.
+                        </p></li></ul></div><p>
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.6.5"></a>Usage</h3></div></div></div><p>
+            The use of the 'Web Service' dynamic field is similar to other dynamic fields like Dropdown or Multiselect, but users could expect to have different options to choose even without active ACLs due to the change of parameters in the web request as other fields are changed.
+        </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="dynamicfield-database.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="otrs-business-solution-features.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="import-example-process.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">The Dynamic Field "Database" </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Import ready-to-run process</td></tr></table></div></body></html>
