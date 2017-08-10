@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::CommunicationLog::LogModule::Base &mdash; OTRS 6.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../../index.html">OTRS 6.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::CommunicationLog::LogModule::Base
+</div>
+<div>
+<a href="../../../../src/Kernel/System/CommunicationLog/LogModule/Base.pm">Source</a>
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#ObjectLogStart">ObjectLogStart()</a></li>
+      <li><a href="#ObjectLogStop">ObjectLogStop()</a></li>
+      <li><a href="#ObjectLog">ObjectLog()</a></li>
+      <li><a href="#ObjectLogList">ObjectLogList()</a></li>
+      <li><a href="#ObjectGet">ObjectGet()</a></li>
+      <li><a href="#ObjectLogDelete">ObjectLogDelete()</a></li>
+      <li><a href="#ObjectList">ObjectList()</a></li>
+      <li><a href="#ObjectLookupSet">ObjectLookupSet()</a></li>
+      <li><a href="#ObjectLookupSearch">ObjectLookupSearch()</a></li>
+      <li><a href="#ObjectLookupGet">ObjectLookupGet()</a></li>
+      <li><a href="#GetConnectionsObjectsAndCommunications">GetConnectionsObjectsAndCommunications()</a></li>
+      <li><a href="#PRIVATE-INTERFACE">PRIVATE INTERFACE</a></li>
+      <li><a href="#IsValidStatus">_IsValidStatus()</a></li>
+      <li><a href="#NormalizeDuration">_NormalizeDuration()</a></li>
+    </ul>
+  </li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::CommunicationLog::LogModule::Base - base class for communication log modules</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>This is a base class for communication log modules and should not be instantiated directly.</p>
+
+<pre><code>    package Kernel::System::CommunicationLog::LogModule::MyLogModule;
+    use strict;
+    use warnings;
+
+    use parent qw(Kernel::System::CommunicationLog::LogModule::Base);
+
+    # methods go here</code></pre>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>Do not instantiate this class, instead use the real communication log classes. Also, don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+
+<pre><code>    my $SpecificLogModuleObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::CommunicationLog::LogModule::MyLogModule&#39;);</code></pre>
+
+<h2 id="ObjectLogStart">ObjectLogStart()</h2>
+
+<p>Start the logging for a specific communication object.</p>
+
+<pre><code>    my $ObjectID = $LogModuleObject-&gt;ObjectLogStart(
+        CommunicationID =&gt; 123,          # (required) The CommunicationID of the related ongoing communication.
+        ObjectType      =&gt; &#39;Connection&#39;, # (required) Must be &#39;Connection&#39; or &#39;Message&#39;.
+        Status          =&gt; &#39;Processing&#39;, # (optional) Needs to be either &#39;Successful&#39;, &#39;Processing&#39; or &#39;Failed&#39;
+    );</code></pre>
+
+<h2 id="ObjectLogStop">ObjectLogStop()</h2>
+
+<p>Stop the logging for a specific communication object.</p>
+
+<pre><code>    my $Result = $LogModuleObject-&gt;ObjectLogStop(
+        CommunicationID =&gt; 123,  # (required) The CommunicationID of the related ongoing communication.
+        ObjectID        =&gt; 234,  # (required) The ObjectID to be used
+        ObjectType      =&gt; &#39;Connection&#39;,                        # (required) Must be &#39;Connection&#39; or &#39;Message&#39;.
+        Status          =&gt; &#39;Processing&#39;,                        # (optional) Needs to be either &#39;Successful&#39;, &#39;Processing&#39; or &#39;Failed&#39;
+    );</code></pre>
+
+<h2 id="ObjectLog">ObjectLog()</h2>
+
+<p>Create a log entry for the specific communication object.</p>
+
+<pre><code>    my $Result = $LogModuleObject-&gt;ObjectLog(
+        CommunicationID =&gt; &#39;...&#39;,
+        ObjectID        =&gt; &#39;...&#39;,
+        Key             =&gt; &#39;...&#39;,
+        Value           =&gt; &#39;...&#39;,
+        Priority        =&gt; &#39;...&#39;,
+    );</code></pre>
+
+<h2 id="ObjectLogList">ObjectLogList()</h2>
+
+<p>Get the logging list for a specific communication.</p>
+
+<pre><code>    my $Result = $LogModuleObject-&gt;ObjectLogList(
+        CommunicationID  =&gt; &#39;...&#39;,
+        ObjectID         =&gt; &#39;...&#39;,   # optional
+        ObjectType       =&gt; &#39;...&#39;,   # optional
+        ObjectStartTime  =&gt; &#39;...&#39;,   # optional
+        ObjectEndTime    =&gt; &#39;...&#39;,   # optional
+        ObjectStatus     =&gt; &#39;...&#39;,   # optional
+        LogID            =&gt; &#39;...&#39;,   # optional
+        LogKey           =&gt; &#39;...&#39;,   # optional
+        LogValue         =&gt; &#39;...&#39;,   # optional
+        LogPriority      =&gt; &#39;...&#39;,   # optional
+        LogCreateTime    =&gt; &#39;...&#39;,   # optional
+        OrderBy          =&gt; &#39;Down&#39;,  # (optional) Down|Up; Default: Down
+        SortBy           =&gt; &#39;LogID&#39;,    # (optional) ObjectID|ObjectType|ObjectStartTime|ObjectEndTime|ObjectStatus|LogID|LogKey|LogPriority|LogCreateTime; Default: LogID
+    );</code></pre>
+
+<h2 id="ObjectGet">ObjectGet()</h2>
+
+<p>Returns the Communication Object by ID</p>
+
+<pre><code>    my $Result = $LogModuleObject-&gt;ObjectGet(
+        CommunicationID  =&gt; &#39;...&#39;,
+        ID               =&gt; &#39;...&#39;,
+    );</code></pre>
+
+<h2 id="ObjectLogDelete">ObjectLogDelete()</h2>
+
+<p>Delete the logging for a specific communication.</p>
+
+<pre><code>    my $Result = $LogModuleObject-&gt;ObjectLogDelete(
+        CommunicationID =&gt; &#39;...&#39;,
+        ObjectID        =&gt; &#39;...&#39;,    # optional
+        Status          =&gt; &#39;...&#39;,    # optional
+        Key             =&gt; &#39;...&#39;,    # optional
+    );</code></pre>
+
+<h2 id="ObjectList">ObjectList()</h2>
+
+<p>Get the object list for a specific communication.</p>
+
+<pre><code>    my $Result = $LogModuleObject-&gt;ObjectList(
+        CommunicationID  =&gt; &#39;123&#39;,         # (optional)
+        ID               =&gt; &#39;123&#39;,         # (optional)
+        Type             =&gt; &#39;Connection&#39;,  # (optional)
+        StartDate        =&gt; &#39;2017-07-03&#39;,  # (optional) List communications starting from the given date.
+        StartTime        =&gt; &#39;2017-07-03&#39;,  # (optional)
+        EndTime          =&gt; &#39;2017-07-03&#39;,  # (optional)
+        Status           =&gt; &#39;Successful&#39;,  # (optional)
+        OrderBy          =&gt; &#39;Down&#39;,        # (optional) Down|Up; Default: Down
+        SortBy           =&gt; &#39;ID&#39;,          # (optional) ID|CommunicationID|ObjectType|StartTime|EndTime|Status|Duration, default: ID
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $Result = [
+        {
+            ID              =&gt; &#39;19&#39;,
+            CommunicationID =&gt; &#39;11&#39;,
+            Status          =&gt; &#39;Successful&#39;,
+            ObjectType      =&gt; &#39;Connection&#39;,
+            StartTime       =&gt; &#39;2017-07-20 10:50:22&#39;,
+            EndTime         =&gt; &#39;2017-07-20 10:50:22&#39;,
+            Duration        =&gt; &#39;0&#39;,
+        },
+        {
+            ID              =&gt; &#39;18&#39;,
+            CommunicationID =&gt; &#39;11&#39;,
+            ObjectType      =&gt; &#39;Message&#39;,
+            Status          =&gt; &#39;Successful&#39;,
+            StartTime       =&gt; &#39;2017-07-20 10:50:21&#39;,
+            EndTime         =&gt; &#39;2017-07-20 10:50:22&#39;,
+            Duration        =&gt; &#39;1&#39;,
+        },
+    ];</code></pre>
+
+<h2 id="ObjectLookupSet">ObjectLookupSet()</h2>
+
+<p>Inserts or updates a lookup information.</p>
+
+<pre><code>    my $Result = $LogModuleObject-&gt;ObjectLookupSet(
+        ObjectID         =&gt; &#39;123&#39;,     # (required)
+        TargetObjectType =&gt; &#39;Article&#39;, # (required)
+        TargetObjectID   =&gt; &#39;123&#39;,     # (required)
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    1 in case of success, &lt;undef&gt; in case of errors</code></pre>
+
+<h2 id="ObjectLookupSearch">ObjectLookupSearch()</h2>
+
+<p>Get a list of the objects lookup information.</p>
+
+<pre><code>    my $List = $LogModuleObject-&gt;ObjectLookupSearch(
+        ObjectID         =&gt; &#39;123&#39;,     # (optional)
+        ObjectType       =&gt; &#39;Message&#39;, # (optional)
+        TargetObjectType =&gt; &#39;Article&#39;, # (optional)
+        TargetObjectID   =&gt; &#39;123&#39;,     # (optional)
+        CommunicationID  =&gt; &#39;123&#39;,     # (optional)
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    &lt;undef&gt; - if any error occur
+    An arrayref of object lookup - in case of success
+    $List = [
+        {
+            ObjectID         =&gt; &#39;...&#39;,
+            TargetObjectType =&gt; &#39;...&#39;,
+            TargetObjectID   =&gt; &#39;...&#39;,
+        },
+        ...
+    ];</code></pre>
+
+<h2 id="ObjectLookupGet">ObjectLookupGet()</h2>
+
+<p>Gets the object lookup information.</p>
+
+<pre><code>    my $Result = $LogModuleObject-&gt;ObjectLookupGet(
+        ObjectID         =&gt; &#39;123&#39;,         # (optional)
+        TargetObjectID   =&gt; &#39;123&#39;,         # (optional)
+        TargetObjectType =&gt; &#39;123&#39;,         # (optional)
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $Result = {
+        ObjectID         =&gt; &#39;...&#39;,
+        TargetObjectType =&gt; &#39;...&#39;,
+        TargetObjectID   =&gt; &#39;...&#39;,
+    }
+
+    &lt;undef&gt; - if any error occur
+    An hashref with object lookup information - in case info exists
+    An empty hasref                           - in case info doesn&#39;t exists</code></pre>
+
+<h2 id="GetConnectionsObjectsAndCommunications">GetConnectionsObjectsAndCommunications()</h2>
+
+<p>Method specifically created for optimization purposes for the Support Data Collector. Joins the Communication Log Object and Communications.</p>
+
+<p>Must be given a Start Date.</p>
+
+<p>Returns Array of Hashes.</p>
+
+<h2 id="PRIVATE-INTERFACE">PRIVATE INTERFACE</h2>
+
+<p>Private methods</p>
+
+<h2 id="IsValidStatus">_IsValidStatus()</h2>
+
+<p>Check if the given status is valid.</p>
+
+<pre><code>    my $Result = $LogModuleObject-&gt;_IsValidStatus(
+        Status =&gt; &#39;...&#39;,
+    );</code></pre>
+
+<h2 id="NormalizeDuration">_NormalizeDuration()</h2>
+
+<p>Normalize formatted duration string such as <code>HH:MM:SS</code> in seconds.</p>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+</div><div class="footer">generated by <a href="http://search.cpan.org/perldoc?Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+
