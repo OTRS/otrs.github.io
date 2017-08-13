@@ -797,9 +797,11 @@ $(document).ready(function() {
                     Event triggers are events within OTRS such as "TicketCreate", "ArticleSend",
                     etc. These can act as triggers to execute the invoker. Each invoker needs to
                     have at least one event trigger registered, or the invoker will be useless,
-                    because it will never be called. The asynchronous property of the event triggers
-                    define if the OTRS process will handle the invoker or if it will be delegated to
-                    the OTRS Daemon.
+                    because it will never be called. Additionally a set of rules (conditions) for
+                    each event can be defined to have more control over the triggering of the events,
+                    This rules depends on the data of the object associated with the event.
+                    The asynchronous property of the event triggers define if the OTRS process will
+                    handle the invoker or if it will be delegated to the OTRS Daemon.
                 </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
                         The OTRS Daemon is a separate set of process that executes tasks in the
                         background. Using this the OTRS process itself will not be affected if the
@@ -814,6 +816,10 @@ $(document).ready(function() {
                     click on the plus button. A new event trigger will be created and it will be
                     listed on the invoker "Event Triggers" list.
                 </p><p>
+                    From the "Event Triggers" list each events shows if it contains conditions or not.
+                    The edit button next to the condition property allows to add or edit the current
+                    conditions of the event.
+                </p><p>
                     To delete an Event trigger, simply locate the event trigger to be deleted in the
                     "Event Triggers" list and click on the trash icon at the end of the row. This
                     will open a dialog that asks you if you are sure to delete the event trigger.
@@ -826,7 +832,38 @@ $(document).ready(function() {
                     remove the invoker. Click on the "Delete" button to confirm the removal of the
                     invoker and its configuration or "Cancel" to close the delete dialog.
                 </p><p>
-                    </p><div class="figure"><a name="id-1.6.12.7.7.11.12.11.1"></a><p class="title"><b>Figure 4.124. Web service invoker</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/genericinterface/genericinterface-webservice-invoker.png" alt="Web service invoker"></div></div></div></div><p><br class="figure-break">
+                    </p><div class="figure"><a name="id-1.6.12.7.7.11.12.12.1"></a><p class="title"><b>Figure 4.124. Web service invoker</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/genericinterface/genericinterface-webservice-invoker.png" alt="Web service invoker"></div></div></div></div><p><br class="figure-break">
+                </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="webservice-invoker-event"></a>Web Service Invoker Event</h6></div></div></div><p>
+                    Sometimes defining an event to trigger an invoker could result in many
+                    unnecessary or wrong request to a remote server. Event conditions could be set
+                    to restrict the triggering of the invoker in such cases.
+                </p><p>
+                    To access the event settings screen where the conditions can be defined is
+                    necessary to be in the invoker screen and from there click on the edit icon next
+                    to the condition status on the event where this conditions should take effect.
+                </p><p>
+                    Within the event settings screen in the action bar there is a button to go back
+                    to the invoker screen as well as a button to remove all the event conditions.
+                    By default the screen is pre-populated with the first condition. Update the
+                    Type of linkings between conditions if more than one condition is planned,
+                    then change the Type of linking from 'Condition 1' if more than one field is
+                    planned. Both linking fields accepts 'and' 'or' or 'xor' as values.
+                </p><p>
+                    Fill the Field name, set the matching type (String for exact match, Regexp for
+                    regular expression or Validation Module) and set Value to match (in case of
+                    Validation Module the full class name like:
+                    Kernel::GenericInterface::Event::Validation::ValidateDemo).
+                </p><p>
+                    To add more fields to the condition, click on the '+' button in the fields
+                    header. To remove a field, click on the '-' button in the field row. It is
+                    necessary to keep at least one field per condition.
+                </p><p>
+                    To add more conditions clock on the button below the last condition box.
+                    To remove remove a condition, click on the '-' button in the condition header.
+                    It is necessary to keep at least one condition in the set. To remove all
+                    conditions use the button in the sidebar.
+                </p><p>
+                    </p><div class="figure"><a name="id-1.6.12.7.7.11.13.8.1"></a><p class="title"><b>Figure 4.125. Web service invoker event</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/genericinterface/genericinterface-webservice-invoker-event.png" alt="Web service invoker event"></div></div></div></div><p><br class="figure-break">
                 </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="webservice-mapping"></a>Web Service Mapping</h6></div></div></div><p>
                     There are cases where you need to transform the data from
                     one format to another (map or change data structure), because normally a web
@@ -894,7 +931,7 @@ $(document).ready(function() {
                     you select before and set its value to "-", and save the configuration to apply
                     changes.
                 </p><p>
-                    </p><div class="figure"><a name="id-1.6.12.7.7.11.13.13.1"></a><p class="title"><b>Figure 4.125. Web service mapping</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/genericinterface/genericinterface-webservice-mapping.png" alt="Web service mapping"></div></div></div></div><p><br class="figure-break">
+                    </p><div class="figure"><a name="id-1.6.12.7.7.11.14.13.1"></a><p class="title"><b>Figure 4.126. Web service mapping</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/genericinterface/genericinterface-webservice-mapping.png" alt="Web service mapping"></div></div></div></div><p><br class="figure-break">
                 </p></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="webservice_cli"></a>Web Service Command Line Interface</h3></div></div></div><p>
         The <code class="filename">bin/otrs.Console.pl Admin::WebService::*</code> commands were developed
         in order to create basic, but fast and powerful tools to work with web service
@@ -988,6 +1025,15 @@ Requester:
       Description: This is a test invoker
       Events:
         - Asynchronous: 1
+        Condition:
+          Condition:
+            '1':
+              Fields:
+                Queue:
+                  Match: Raw
+                  Type: String
+              Type: and
+          ConditionLinking: and
           Event: TicketCreate
         - Asynchronous: 0
           Event: ArticleUpdate
@@ -1183,6 +1229,10 @@ Requester:
                                                 </p></li><li class="listitem"><p>
                                                     1: handled by the OTRS Daemon.
                                                 </p></li></ul></div></li><li class="listitem"><p>
+                                            Condition: Container for event conditions to trigger the
+                                            invoker, if there are no conditions, event will always
+                                            trigger the invoker.
+                                        </p></li><li class="listitem"><p>
                                             Event: the name of the event trigger.
                                         </p><div class="itemizedlist"><p class="title"><b>Possible Values (for ticket events)</b></p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
                                                     TicketCreate
@@ -1256,7 +1306,43 @@ Requester:
                                                     ArticleFlagSet
                                                 </p></li><li class="listitem"><p>
                                                     ArticleFlagDelete
-                                                </p></li></ul></div></li></ul></div></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.6.12.9.7.5.3.3.5"></a>MappingInbound</h6></div></div></div><p>
+                                                </p></li></ul></div></li></ul></div></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.6.12.9.7.5.3.3.4.3"></a>Condition</h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                        Condition: Container to actual event conditions.
+                                    </p></li><li class="listitem"><p>
+                                        ConditionLinking: Defines how multiple condition
+                                        interacts with each other.
+                                    </p><div class="itemizedlist"><p class="title"><b>Possible Values (for condition linking)</b></p><ul class="itemizedlist" type="disc"><li class="listitem"><p>and</p></li><li class="listitem"><p>or</p></li><li class="listitem"><p>xor</p></li></ul></div></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.6.12.9.7.5.3.3.4.3.3"></a>Condition -&gt; Condition</h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                            &lt;ConditionName&gt;: Container for the condition
+                                            elements.
+                                        </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.6.12.9.7.5.3.3.4.3.3.3"></a>&lt;ConditionName&gt;</h6></div></div></div><p>
+                                        Unique name for the condition within the invoker and event
+                                        the GUI assigns consecutive integer condition names starting
+                                        from 1.
+                                    </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                Fields: Container for field conditions.
+                                            </p></li><li class="listitem"><p>
+                                                Type: Define how multiple fields interact within its
+                                                condition.
+                                            </p><div class="itemizedlist"><p class="title"><b>Possible Values (for condition linking)</b></p><ul class="itemizedlist" type="disc"><li class="listitem"><p>and</p></li><li class="listitem"><p>or</p></li><li class="listitem"><p>xor</p></li></ul></div></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.6.12.9.7.5.3.3.4.3.3.3.4"></a>Fields</h6></div></div></div><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                    &lt;FieldName&gt;: Container field attributes.
+                                                </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.6.12.9.7.5.3.3.4.3.3.3.4.3"></a>&lt;FieldName&gt;</h6></div></div></div><p>
+                                                The name of a field from the event object (e.g.
+                                                for Ticket Events, the fields could be Queue
+                                                Priority Type, etc).
+                                            </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                                                        Match: The value to match from the selected
+                                                        against the event object using the
+                                                        Type modifier.
+                                                    </p></li><li class="listitem"><p>
+                                                        Type: Modifier to the Match value.
+                                                    </p><div class="itemizedlist"><p class="title"><b>Possible Values (for type modifier)</b></p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                                                String: Direct compare between object field value and <code class="literal">Match</code> value.
+                                                            </p></li><li class="listitem"><p>
+                                                                Regexp: Compare object field value with the regular expression defined in the <code class="literal">Match</code> value.
+                                                            </p></li><li class="listitem"><p>
+                                                                Module: Use the module defined in the <code class="literal">Match</code> with
+                                                                the object data.
+                                                            </p></li></ul></div></li></ul></div></div></div></div></div></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.6.12.9.7.5.3.3.5"></a>MappingInbound</h6></div></div></div><p>
                             Same as Operation MappingInbound.
                         </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="id-1.6.12.9.7.5.3.3.6"></a>MappingOutbound</h6></div></div></div><p>
                             Same as Operation MappingInbound.
