@@ -197,13 +197,19 @@ $(document).ready(function() {
 
 <h2 id="ChannelSync">ChannelSync()</h2>
 
-<p>Synchronize communication channels in database with registered channels.</p>
+<p>Synchronize communication channels in the database with channel registration in configuration.</p>
 
-<pre><code>    my @ChannelsAdded = $CommunicationChannelObject-&gt;ChannelSync(
+<pre><code>    my $Result = $CommunicationChannelObject-&gt;ChannelSync(
         UserID =&gt; 1,
     );</code></pre>
 
-<p>Returns: @ChannelsAdded = [ &#39;Email&#39;, &#39;Phone&#39;, ...]; # Normally, this array should be empty.</p>
+<p>Returns:</p>
+
+<pre><code>    $Result = {
+        ChannelsUpdated =&gt; [ &#39;Email&#39;, &#39;Phone&#39; ],
+        ChannelsAdded   =&gt; [ &#39;Chat&#39; ],
+        ChannelsInvalid =&gt; [ &#39;Internal&#39; ],
+    };</code></pre>
 
 <h2 id="ChannelObjectGet">ChannelObjectGet()</h2>
 
@@ -221,12 +227,14 @@ $(document).ready(function() {
 
 <h2 id="ChannelDrop">ChannelDrop()</h2>
 
-<p>Drop communication channel.</p>
+<p>Drop an invalid communication channel (that only exists in the database, but not in the configuration). By default, this will only drop channels that have no associated article data; use <code>DropArticleData</code> to force article data removal as well. Channels provided by the OTRS framework can never be dropped.</p>
 
 <pre><code>    my $Success = $CommunicationChannelObject-&gt;ChannelDrop(
-        ChannelID   =&gt; 1,       # (optional) ChannelID
-                                # or
-        ChannelName =&gt; &#39;Email&#39;, # (optional) Delete by Channel name
+        ChannelID   =&gt; 1,               # (required) Delete by channel ID
+                                        # or
+        ChannelName =&gt; &#39;SomeChannel&#39;,   # (required) Delete by channel name
+
+        DropArticleData =&gt; 1,           # (optional) Also drop article data if possible, default: 0
     );</code></pre>
 
 <p>Returns:</p>
@@ -235,7 +243,7 @@ $(document).ready(function() {
 
 <h2 id="ChannelDelete">ChannelDelete()</h2>
 
-<p>Delete communication channel.</p>
+<p>Delete communication channel record from the database.</p>
 
 <pre><code>    my $Success = $CommunicationChannelObject-&gt;ChannelDelete(
         ChannelID   =&gt; 1,       # (optional) Delete by ChannelID
