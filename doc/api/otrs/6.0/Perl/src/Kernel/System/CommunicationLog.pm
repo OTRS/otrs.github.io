@@ -278,15 +278,40 @@ sub ObjectLog {
         return $Self->_LogError("Need ObjectLogType.");
     }
 
-    if ( !$Self->{Current}->{ $Param{ObjectLogType} } ) {
+    my $ObjectLogID = $Self->{Current}->{ $Param{ObjectLogType} };
+    if ( !$ObjectLogID ) {
         return $Self->_LogError("Object Log needs to have an open Log Type.");
+    }
+
+    $Param{Priority} //= 'Info';
+
+    # In case of error also add it to the system log.
+    if ( $Param{Priority} eq 'Error' ) {
+        my @Identification = (
+            'ID:' . $Self->CommunicationIDGet(),
+            'AccountType:' . ( $Self->{AccountType} || '-' ),
+            'AccountID:' .   ( $Self->{AccountID}   || '-' ),
+            'Direction:' . $Self->{Direction},
+            'Transport:' . $Self->{Transport},
+            'ObjectLogType:' . $Param{ObjectLogType},
+            'ObjectLogID:' . $ObjectLogID,
+        );
+
+        $Self->_LogError(
+            sprintf(
+                'CommunicationLog(%s)' . '::%s => %s',
+                join( ',', @Identification, ),
+                $Param{Key},
+                $Param{Value},
+            ),
+        );
     }
 
     my $CommunicationDBObject = $Kernel::OM->Get('Kernel::System::CommunicationLog::DB');
 
     return $CommunicationDBObject->ObjectLogEntryCreate(
         CommunicationID => $Self->{CommunicationID},
-        ObjectLogID     => $Self->{Current}->{ $Param{ObjectLogType} },
+        ObjectLogID     => $ObjectLogID,
         Key             => $Param{Key},
         Value           => $Param{Value},
         Priority        => $Param{Priority},
@@ -479,10 +504,6 @@ sub _RecoverCommunicationObject {
         );
     }
 
-    return if !$Self->_GetTransportModule(
-        Transport => $CommunicationData->{Transport},
-    );
-
     $Self->{CommunicationID} = $CommunicationData->{CommunicationID};
     $Self->{Transport}       = $CommunicationData->{Transport};
     $Self->{Direction}       = $CommunicationData->{Direction};
@@ -503,31 +524,6 @@ sub _RecoverCommunicationObject {
     }
 
     return $Self;
-}
-
-=head2 _GetTransportModule()
-
-Lookup for the transport module.
-
-Returns:
-    undef  - case not found
-    module - case found
-
-=cut
-
-sub _GetTransportModule {
-    my ( $Self, %Param ) = @_;
-
-    # Get the communication log module (driver) configuration.
-    my $ModuleConfigs = $Kernel::OM->Get('Kernel::Config')->Get('CommunicationLog::LogModule');
-    my $Transport     = $Param{Transport};
-    my $Module        = $ModuleConfigs->{$Transport};
-
-    if ( !$Module || !$Module->{Module} ) {
-        return $Self->_LogError("Couldn't create a backend object for log module '${ Transport }'!");
-    }
-
-    return $Module->{Module};
 }
 
 =head2 _LogError()
