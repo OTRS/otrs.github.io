@@ -60,51 +60,50 @@ my $CommunicationLogObject = $Kernel::OM-&gt;Create(
     ObjectParams =&gt; {
         Transport   =&gt; 'Email',     # Transport log module
         Direction   =&gt; 'Incoming',  # Incoming|Outgoing
-        Start       =&gt; 1,           # Put communication log in 'Processing' state immediately
         AccountType =&gt; 'POP3',      # Mail account type
         AccountID   =&gt; 1,           # Mail account ID
     },
 );
             </pre><p>
         </p><p>
-            When you have a communication log object instance, you can create an object log for logging individual
+            When you have a communication log object instance, you can start an object log for logging individual
             messages. There are two object logs currently implemented: <code class="literal">Connection</code> and
             <code class="literal">Message</code>.
         </p><p>
             <code class="literal">Connection</code> object log should be used for logging any connection related messages (for
             example: authenticating on server or retrieving incoming messages).
         </p><p>
-            Simply, create the object log and you can start using it immediately:
+            Simply, start the object log by declaring its type, and you can use it immediately:
         </p><p>
             </p><pre class="programlisting">
-my $ConnectionID = $CommunicationLogObject-&gt;ObjectLogStart(
-    ObjectType =&gt; 'Connection',
+$CommunicationLogObject-&gt;ObjectLogStart(
+    ObjectLogType =&gt; 'Connection',
 );
 
 $CommunicationLogObject-&gt;ObjectLog(
-    ObjectType =&gt; 'Connection',
-    ObjectID   =&gt; $ConnectionID,
-    Priority   =&gt; 'Debug',                              # Trace, Debug, Info, Notice, Warning or Error
-    Key        =&gt; 'Kernel::System::MailAccount::POP3',
-    Value      =&gt; "Open connection to 'host.example.com' (user-1).",
+    ObjectLogType =&gt; 'Connection',
+    Priority      =&gt; 'Debug',                              # Trace, Debug, Info, Notice, Warning or Error
+    Key           =&gt; 'Kernel::System::MailAccount::POP3',
+    Value         =&gt; "Open connection to 'host.example.com' (user-1).",
 );
             </pre><p>
+        </p><p>
+            The communication log object instance handles the current started object logs, so you don't need to
+            remember and bring them around everywhere, but it also means that you can only start one object per type.
         </p><p>
             If you encounter an unrecoverable error, you can choose to close the object log and mark it as failed:
         </p><p>
             </p><pre class="programlisting">
 $CommunicationLogObject-&gt;ObjectLog(
-    ObjectType =&gt; 'Connection',
-    ObjectID   =&gt; $ConnectionID,
-    Priority   =&gt; 'Error',
-    Key        =&gt; 'Kernel::System::MailAccount::POP3',
-    Value      =&gt; 'Something went wrong!',
+    ObjectLogType =&gt; 'Connection',
+    Priority      =&gt; 'Error',
+    Key           =&gt; 'Kernel::System::MailAccount::POP3',
+    Value         =&gt; 'Something went wrong!',
 );
 
 $CommunicationLogObject-&gt;ObjectLogStop(
-    ObjectType =&gt; 'Connection',
-    ObjectID   =&gt; $ConnectionID,
-    Status     =&gt; 'Failed',
+    ObjectLogType =&gt; 'Connection',
+    Status        =&gt; 'Failed',
 );
             </pre><p>
         </p><p>
@@ -116,21 +115,19 @@ $CommunicationLogObject-&gt;CommunicationStop(
 );
             </pre><p>
         </p><p>
-            Otherwise, close the object and communication log as success:
+            Otherwise, stop the object log and in turn communication log as success:
         </p><p>
             </p><pre class="programlisting">
 $CommunicationLogObject-&gt;ObjectLog(
-    ObjectType =&gt; 'Connection',
-    ObjectID   =&gt; $ConnectionID,
-    Priority   =&gt; 'Debug',
-    Key        =&gt; 'Kernel::System::MailAccount::POP3',
-    Value      =&gt; "Connection to 'host.example.com' closed.",
+    ObjectLogType =&gt; 'Connection',
+    Priority      =&gt; 'Debug',
+    Key           =&gt; 'Kernel::System::MailAccount::POP3',
+    Value         =&gt; "Connection to 'host.example.com' closed.",
 );
 
 $CommunicationLogObject-&gt;ObjectLogStop(
-    ObjectType =&gt; 'Connection',
-    ObjectID   =&gt; $ConnectionID,
-    Status     =&gt; 'Successful',
+    ObjectLogType =&gt; 'Connection',
+    Status        =&gt; 'Successful',
 );
 
 $CommunicationLogObject-&gt;CommunicationStop(
@@ -142,22 +139,20 @@ $CommunicationLogObject-&gt;CommunicationStop(
             their processing. It is used in a similar way, just make sure to start it before using it:
         </p><p>
             </p><pre class="programlisting">
-my $MessageID = $CommunicationLogObject-&gt;ObjectLogStart(
-    ObjectType =&gt; 'Message',
+$CommunicationLogObject-&gt;ObjectLogStart(
+    ObjectLogType =&gt; 'Message',
 );
 
 $CommunicationLogObject-&gt;ObjectLog(
-    ObjectType =&gt; 'Message',
-    ObjectID   =&gt; $MessageID,
-    Priority   =&gt; 'Error',
-    Key        =&gt; 'Kernel::System::MailAccount::POP3',
-    Value      =&gt; "Could not process message. Raw mail saved (report it on http://bugs.otrs.org/)!",
+    ObjectLogType =&gt; 'Message',
+    Priority      =&gt; 'Error',
+    Key           =&gt; 'Kernel::System::MailAccount::POP3',
+    Value         =&gt; "Could not process message. Raw mail saved (report it on http://bugs.otrs.org/)!",
 );
 
 $CommunicationLogObject-&gt;ObjectLogStop(
-    ObjectType =&gt; 'Message',
-    ObjectID   =&gt; $MessageID,
-    Status     =&gt; 'Failed',
+    ObjectLogType =&gt; 'Message',
+    Status        =&gt; 'Failed',
 );
 
 $CommunicationLogObject-&gt;CommunicationStop(
@@ -170,7 +165,7 @@ $CommunicationLogObject-&gt;CommunicationStop(
         </p><p>
             </p><pre class="programlisting">
 $CommunicationLogObject-&gt;ObjectLookupSet(
-    ObjectID         =&gt; $MessageID,
+    ObjectLogType    =&gt; 'Message',
     TargetObjectType =&gt; 'Article',
     TargetObjectID   =&gt; 2,
 );
@@ -185,23 +180,33 @@ my $LookupInfo = $CommunicationLogObject-&gt;ObjectLookupGet(
             This will allow administrators to see failed communications in the overview, and take any action if needed.
         </p><p>
             It's important to preserve the communication log for duration of a single process. If your work is spanning
-            over multiple objects and any of them can benefit from logging, make sure to pass the existing communication
-            log around so all methods can use the same one. With this approach, you will make sure any log entries
-            spawned for the same process are contained in a single communication.
+            over multiple modules and any of them can benefit from logging, make sure to pass the existing communication
+            log instance around so all methods can use the same one. With this approach, you will make sure any log
+            entries spawned for the same process are contained in a single communication.
         </p><p>
             If passing the communication log instance is not an option (async tasks!), you can also choose to recreate
-            the communication log object in the same state as in previous step. Just pass the communication ID to the
-            new code, and get the object via this parameter:
+            the communication log object in the same state as in previous step. Just get the communication ID and pass
+            it to the new code, and then create the instance with this parameter supplied:
         </p><p>
             </p><pre class="programlisting">
+# Get communication ID in parent code.
+my $CommunicationID = $CommunicationLogObject-&gt;CommunicationIDGet();
+
+# Somehow pass communication ID to child code.
+# ...
+
+# Recreate the instance in child code by using same communication ID.
 my $CommunicationLogObject = $Kernel::OM-&gt;Create(
     'Kernel::System::CommunicationLog',
     ObjectParams =&gt; {
-        CommunicationID =&gt; 123,
+        CommunicationID =&gt; $CommunicationID,
     },
 );
             </pre><p>
         </p><p>
-            You can then continue to use this instance as previously stated, create any object logs if needed, adding
+            You can then continue to use this instance as previously stated, start any object logs if needed, adding
             entries and setting status in the end.
+        </p><p>
+            If you need to retrieve the communication log data or do something else with it, please also take a look at
+            <code class="literal">Kernel::System::CommunicationLog::DB.pm</code>
         </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02s02.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="how-it-works.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ch02s04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Database Mechanism </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Date and Time</td></tr></table></div></body></html>
