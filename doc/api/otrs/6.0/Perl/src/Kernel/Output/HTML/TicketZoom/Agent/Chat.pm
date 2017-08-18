@@ -32,6 +32,7 @@ Returns article html.
         TicketID       => 123,   # (required)
         ArticleID      => 123,   # (required)
         ArticleActions => [],    # (optional)
+        UserID         => 123,   # (optional)
     );
 
 Result:
@@ -121,9 +122,10 @@ sub ArticleRender {
             ChannelIcon          => $CommunicationChannel{DisplayIcon},
             SenderImage          => $Self->_ArticleSenderImage(
                 Sender => $ArticleFields{Sender}->{Value},
+                UserID => $Param{UserID},
             ),
-            SenderInitials => $Self->_ArticleSenderInitials(
-                Sender => $ArticleFields{Sender}->{Realname},
+            SenderInitials => $LayoutObject->UserInitialsGet(
+                Fullname => $ArticleFields{Sender}->{Realname},
             ),
         },
     );

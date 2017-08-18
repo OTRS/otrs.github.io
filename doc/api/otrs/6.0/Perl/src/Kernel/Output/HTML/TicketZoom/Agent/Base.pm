@@ -23,6 +23,7 @@ our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::SystemAddress',
     'Kernel::System::Ticket::Article',
+    'Kernel::System::User',
 );
 
 sub new {
@@ -183,7 +184,7 @@ Get URL used for article sender image.
 
 Returns:
 
-    $SenderImage = 'https://gravatar.com/avatar/28a58af1db24962e81212115e7cac685?s=80';
+    $SenderImage = '//gravatar.com/avatar/28a58af1db24962e81212115e7cac685?s=80';
 
 =cut
 
@@ -205,49 +206,21 @@ sub _ArticleSenderImage {
     if (@Addresses) {
         my $Email = $EmailParser->GetEmailAddress( Email => $Addresses[0] );
         if ($Email) {
-            my $IsLocal = $Kernel::OM->Get('Kernel::System::SystemAddress')->SystemAddressIsLocalAddress(
-                Address => $Email,
-            );
-            if ( !$IsLocal ) {
-                $Result = 'https://www.gravatar.com/avatar/' . md5_hex( lc $Email ) . '?s=' . $Size . '&d=identicon';
+            my $DefaultIcon = 'identicon';    # a geometric pattern based on an email hash
+
+            # Get current user's email and compare it to the sender's email.
+            if ( $Param{UserID} ) {
+                my %CurrentUserData = $Kernel::OM->Get('Kernel::System::User')->GetUserData( UserID => $Param{UserID} );
+                if ( $Email eq $CurrentUserData{UserEmail} ) {
+                    $DefaultIcon = 'mm';      # 'mystery man'
+                }
             }
+
+            $Result = '//www.gravatar.com/avatar/' . md5_hex( lc $Email ) . '?s=' . $Size . '&d=' . $DefaultIcon;
         }
     }
 
     return $Result;
-}
-
-=head2 _ArticleSenderInitials()
-
-Get sender initials.
-
-    my $SenderInitials = $ArticleBaseObject->_ArticleSenderInitials(
-        Sender => 'John Doe',
-    );
-
-Returns:
-
-    $SenderInitials = 'JD';
-
-=cut
-
-sub _ArticleSenderInitials {
-    my ( $Self, %Param ) = @_;
-
-    my $SenderInitials = 'O';
-
-    return $SenderInitials if !$Param{Sender};
-
-    # Split sender name by whitespace.
-    my @Sender = split /\s+/, $Param{Sender};
-    if (@Sender) {
-        $SenderInitials = uc substr $Sender[0], 0, 1;
-        if ( @Sender > 1 ) {
-            $SenderInitials .= uc substr $Sender[-1], 0, 1;
-        }
-    }
-
-    return $SenderInitials;
 }
 
 sub _ArticleModuleMeta {
