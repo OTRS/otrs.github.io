@@ -1938,8 +1938,10 @@ sub new {
                 next FILE;
             }
 
+            my $RelativeFile = $File =~ s{\Q$Self->{Home}\E/*}{}gr;
+
             # Extract package name and load it.
-            my $Package = $File =~ s/\Q$Self->{Home}\E//gr;
+            my $Package = $RelativeFile;
             $Package =~ s/^\///g;
             $Package =~ s/\/{2,}/\//g;
             $Package =~ s/\//::/g;
@@ -1947,7 +1949,7 @@ sub new {
 
             eval {
                 # Try to load file.
-                if ( !require $File ) {
+                if ( !require $RelativeFile ) {
                     die "ERROR: Could not load $File: $!\n";
                 }
                 # Check if package has loaded and has a Load() method.
@@ -2010,6 +2012,8 @@ sub new {
             }
         }
     }
+
+    $Self->AutoloadPerlPackages();
 
     return $Self;
 }
@@ -2102,6 +2106,39 @@ sub ConfigChecksum {
     }
 
     return Digest::MD5::md5_hex($ConfigString);
+}
+
+sub AutoloadPerlPackages {
+    my ($Self) = @_;
+
+    return 1 if !$Self->{AutoloadPerlPackages};
+    return 1 if ref $Self->{AutoloadPerlPackages} ne 'HASH';
+    my %AutoloadConfiguration = %{ $Self->{AutoloadPerlPackages} };
+    return 1 if !%AutoloadConfiguration;
+
+    CONFIGKEY:
+    for my $ConfigKey (sort keys %AutoloadConfiguration) {
+        my $ConfigValue = $AutoloadConfiguration{$ConfigKey};
+        next CONFIGKEY if ref $ConfigValue ne 'ARRAY';
+
+        PACKAGE:
+        for my $Package (@{$ConfigValue}) {
+            next PACKAGE if !$Package;
+            if (substr($Package, 0, 16) ne 'Kernel::Autoload') {
+                print STDERR "Error: Autoload packages must be located in Kernel/Autoload, skipping $Package\n";
+                next PACKAGE;
+            }
+
+            # Don't use the MainObject here to load the file.
+            eval {
+                my $FileName = $Package =~ s{::}{/}smxgr;
+                require $FileName . '.pm'; ## nofilter(TidyAll::Plugin::OTRS::Perl::Require)
+            };
+        }
+
+    }
+
+    return 1;
 }
 
 1;
