@@ -22,6 +22,12 @@ $(document).ready(function() {
             Path: 'admin',
             Versions: [
                 {
+                    Version:  '6.0',
+                    HTMLPath: '6.0',
+                    Name:     'OTRS 6 (beta)',
+                    Languages: ['en']
+                },
+                {
                     Version:  '5.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 5',
@@ -106,6 +112,12 @@ $(document).ready(function() {
             Type: 'manual',
             Path: 'developer',
             Versions: [
+                {
+                    Version:  '6.0',
+                    HTMLPath: '6.0',
+                    Name:     'OTRS 6 (beta)',
+                    Languages: ['en']
+                },
                 {
                     Version:  '5.0',
                     HTMLPath: 'stable',
