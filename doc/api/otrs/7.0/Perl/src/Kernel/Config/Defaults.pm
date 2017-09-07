@@ -105,7 +105,7 @@ sub LoadDefaults {
 
     # ProductName
     # (Application name displayed in frontend.)
-    $Self->{ProductName} = 'OTRS 6';
+    $Self->{ProductName} = 'OTRS 7';
 
     # --------------------------------------------------- #
     # database settings                                   #
@@ -1169,6 +1169,7 @@ sub LoadDefaults {
         'Block'   => 'Input',
         'PreferenceGroup' => 'Miscellaneous',
         'Data'    => '[% Env("UserComment") %]',
+        'Desc' => 'Add a comment.',
         'Key'     => 'Comment',
         'Label'   => 'Comment',
         'Module'  => 'Kernel::Output::HTML::Preferences::Generic',
