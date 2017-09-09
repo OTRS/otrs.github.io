@@ -1137,7 +1137,7 @@ sub CompletenessCheck {
             CheckAlreadyUsedStaticObject => $Param{StatNew},
         );
 
-        if (!$ObjectModuleCheck) {
+        if ( !$ObjectModuleCheck ) {
             push @IndexArray, 2;
         }
     }
@@ -1632,11 +1632,11 @@ sub ObjectModuleCheck {
     return if $Param{StatType} ne 'static' && $Param{StatType} ne 'dynamic';
 
     my $CheckFileLocation = 'Kernel::System::Stats::' . ucfirst $Param{StatType};
-    return if $Param{ObjectModule} !~ m{ \A $CheckFileLocation }xms;
+    my $CheckPackageName  = '[A-Z_a-z][0-9A-Z_a-z]*';
+    return if $Param{ObjectModule} !~ m{ \A $CheckFileLocation (?: ::$CheckPackageName)+ \z }xms;
 
     my $ObjectName = [ split( m{::}, $Param{ObjectModule} ) ]->[-1];
     return if !$ObjectName;
-    return if $ObjectName !~ m{[A-Z_a-z][0-9A-Z_a-z]*}xms;
 
     my @RequiredObjectFunctions;
 
@@ -3887,6 +3887,10 @@ sub _MonthArray {
 
 sub _AutomaticSampleImport {
     my ( $Self, %Param ) = @_;
+
+    # Prevent deep recursions.
+    local $Self->{InAutomaticSampleImport} = $Self->{InAutomaticSampleImport};
+    return if $Self->{InAutomaticSampleImport}++;
 
     my $Language  = $Kernel::OM->Get('Kernel::Config')->Get('DefaultLanguage');
     my $Directory = $Self->{StatsTempDir};
