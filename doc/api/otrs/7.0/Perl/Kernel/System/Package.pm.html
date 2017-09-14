@@ -80,6 +80,10 @@ $(document).ready(function() {
       <li><a href="#PackageInstallDefaultFiles">PackageInstallDefaultFiles()</a></li>
       <li><a href="#PackageFileGetMD5Sum">PackageFileGetMD5Sum()</a></li>
       <li><a href="#AnalyzePackageFrameworkRequirements">AnalyzePackageFrameworkRequirements()</a></li>
+      <li><a href="#PackageUpgradeAll">PackageUpgradeAll()</a></li>
+      <li><a href="#PackageInstallOrderListGet">PackageInstallOrderListGet()</a></li>
+      <li><a href="#PackageUpgradeAllDataDelete">PackageUpgradeAllDataDelete()</a></li>
+      <li><a href="#PackageUpgradeAllIsRunning">PackageUpgradeAllIsRunning()</a></li>
     </ul>
   </li>
   <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -152,6 +156,7 @@ $(document).ready(function() {
 
 <pre><code>    $PackageObject-&gt;PackageInstall(
         String    =&gt; $FileString,
+        Force     =&gt; 1,             # optional 1 or 0, for to install package even if validation fails
         FromCloud =&gt; 1,             # optional 1 or 0, it indicates if package&#39;s origin is Cloud or not
     );</code></pre>
 
@@ -165,7 +170,10 @@ $(document).ready(function() {
 
 <p>upgrade a package</p>
 
-<pre><code>    $PackageObject-&gt;PackageUpgrade( String =&gt; $FileString );</code></pre>
+<pre><code>    $PackageObject-&gt;PackageUpgrade(
+        String =&gt; $FileString,
+        Force  =&gt; 1,             # optional 1 or 0, for to install package even if validation fails
+    );</code></pre>
 
 <h2 id="PackageUninstall">PackageUninstall()</h2>
 
@@ -184,11 +192,12 @@ $(document).ready(function() {
 <p>returns a list of available on-line packages</p>
 
 <pre><code>    my @List = $PackageObject-&gt;PackageOnlineList(
-        URL  =&gt; &#39;&#39;,
-        Lang =&gt; &#39;en&#39;,
-        Cache =&gt; 0,   # (optional) do not use cached data
-        FromCloud =&gt; 1, # optional 1 or 0, it indicates if a Cloud Service
-                        # should be used for getting the packages list
+        URL                =&gt; &#39;&#39;,
+        Lang               =&gt; &#39;en&#39;,
+        Cache              =&gt; 0,    # (optional) do not use cached data
+        FromCloud          =&gt; 1,    # optional 1 or 0, it indicates if a Cloud Service
+                                    #  should be used for getting the packages list
+        IncludeSameVersion =&gt; 1,    # (optional) to also get packages already installed and with the same version
     );</code></pre>
 
 <h2 id="PackageOnlineGet">PackageOnlineGet()</h2>
@@ -357,6 +366,99 @@ $(document).ready(function() {
         RequiredFrameworkMinimum    =&gt; &#39;5.0.10&#39;,
         RequiredFrameworkMaximum    =&gt; &#39;5.0.16&#39;,
     );</code></pre>
+
+<h2 id="PackageUpgradeAll">PackageUpgradeAll()</h2>
+
+<p>Updates installed packages to their latest version. Also updates OTRS Business Solution™ if system is entitled and there is an update.</p>
+
+<pre><code>    my %Result = $PackageObject-&gt;PackageUpgradeAll(
+        Force =&gt; 1,     # optional 1 or 0, Upgrades packages even if validation fails.
+    );
+
+    %Result = (
+        Updated =&gt; {                # updated packages to the latest on-line repository version
+            PackageA =&gt; 1,
+            PackageB =&gt; 1,
+            PackageC =&gt; 1,
+            # ...
+        },
+        Installed =&gt; {              # packages installed as a result of missing dependencies
+            PackageD =&gt; 1,
+            # ...
+        },
+        AlreadyInstalled {          # packages that are already installed with the latest version
+            PackageE =&gt; 1,
+        }
+        Failed =&gt; {                 # or {} if no failures
+            Cyclic =&gt; {             # packages with cyclic dependencies
+                PackageF =&gt; 1,
+                # ...
+            },
+            NotFound =&gt; {           # packages not listed in the on-line repositories
+                PackageG =&gt; 1,
+                # ...
+            },
+            WrongVersion =&gt; {       # packages that requires a mayor version that the available in the on-line repositories
+                PackageH =&gt; 1,
+                # ...
+            },
+            DependencyFail =&gt; {     # packages with dependencies that fail on any of the above reasons
+                PackageI =&gt; 1,
+                # ...
+            },
+        },
+    );</code></pre>
+
+<h2 id="PackageInstallOrderListGet">PackageInstallOrderListGet()</h2>
+
+<p>Gets a list of packages and its corresponding install order including is package dependencies. Higher install order means to install first.</p>
+
+<pre><code>    my %Result = $PackageObject-&gt;PackageInstallOrderListGet(
+        InstalledPackages =&gt; \@PakageList,      # as returned from RepositoryList(Result =&gt; &#39;short&#39;)
+        OnlinePackages    =&gt; \@PakageList,      # as returned from PackageOnlineList()
+    );
+
+    %Result = (
+        InstallOrder =&gt; {
+            PackageA =&gt; 3,
+            PackageB =&gt; 2,
+            PackageC =&gt; 1,
+            PackageD =&gt; 1,
+            # ...
+        },
+        Failed =&gt; {                 # or {} if no failures
+            Cyclic =&gt; {             # packages with cyclic dependencies
+                PackageE =&gt; 1,
+                # ...
+            },
+            NotFound =&gt; {           # packages not listed in the on-line repositories
+                PackageF =&gt; 1,
+                # ...
+            },
+            WrongVersion =&gt; {        # packages that requires a mayor version that the available in the on-line repositories
+                PackageG =&gt; 1,
+                # ...
+            },
+            DependencyFail =&gt; {     # packages with dependencies that fail on any of the above reasons
+                PackageH =&gt; 1,
+                # ...
+            }
+        },
+    );</code></pre>
+
+<h2 id="PackageUpgradeAllDataDelete">PackageUpgradeAllDataDelete()</h2>
+
+<p>Removes all Package Upgrade All data from the database.</p>
+
+<pre><code>    my $Success = $PackageObject-&gt;PackageUpgradeAllDataDelete();</code></pre>
+
+<h2 id="PackageUpgradeAllIsRunning">PackageUpgradeAllIsRunning()</h2>
+
+<p>Check if there is a Package Upgrade All process running by checking the scheduler tasks and the system data.</p>
+
+<pre><code>    my %Result = $PackageObject-&gt;PackageUpgradeAllIsRunning();</code></pre>
+
+<p>Returns: %Result = ( IsRunning =&gt; 1, # or 0 if it is not running UpgradeStatus =&gt; &#39;Running&#39; # (optional) &#39;Running&#39; or &#39;Finished&#39; or &#39;TimedOut&#39;, UpgradeSuccess =&gt; 1, # (optional) 1 or 0, );</p>
 
 <h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
