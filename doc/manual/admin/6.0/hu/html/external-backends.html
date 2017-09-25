@@ -66,28 +66,29 @@ A lenti példa egy olyan DB ügyfél-háttérprogram beállítását jeleníti m
 amely az OTRS adatbázisban tárolt ügyféladatokat használja.
 </p><div class="example"><a name="db-customer-backend"></a><p class="title"><b>4.7. példa - Egy DB ügyfél-háttérprogram beállítása</b></p><div class="example-contents"><p>
 </p><pre class="programlisting">
-# CustomerUser (customer database backend and settings)
+# CustomerUser (ügyféladatbázis háttérprogram és beállítások)
 $Self-&gt;{CustomerUser} = {
-    Name =&gt; 'Database Datasource',
+    Name =&gt; 'Adatbázis adatforrás',
     Module =&gt; 'Kernel::System::CustomerUser::DB',
     Params =&gt; {
-        # if you want to use an external database, add the required settings
+        # ha egy külső adatbázis szeretne használni, akkor adja hozzá a szükséges beállításokat
 #            DSN =&gt; 'DBI:odbc:yourdsn',
-#            Type =&gt; 'mssql', # only for ODBC connections
+#            Type =&gt; 'mssql', # csak ODBC kapcsolatoknál
 #            DSN =&gt; 'DBI:mysql:database=customerdb;host=customerdbhost',
 #            User =&gt; '',
 #            Password =&gt; '',
             Table =&gt; 'customer_user',
 
-            # CaseSensitive will control if the SQL statements need LOWER()
-            #   function calls to work case insensitively. Setting this to
-            #   1 will improve performance dramatically on large databases.
-            CaseSensitive =&gt; 0,
+            # A CaseSensitive azt fogja vezérelni, hogy az SQL-utasítások
+            #   igényelnek-e LOWER() függvényhívásokat a kis- és nagybetű-
+            #   érzéketlen működéshez. Ennek 1-re állítása drámaian növelni
+            #   fogja a teljesítményt nagy adatbázisoknál.
+             CaseSensitive =&gt; 0,
         },
-# customer unique id
+# egyedi ügyfél-azonosító
 CustomerKey =&gt; 'login',
 
-# customer #
+# ügyfél #
 CustomerID =&gt; 'customer_id',
 CustomerValid =&gt; 'valid_id',
     CustomerUserListFields =&gt; ['first_name', 'last_name', 'email'],
@@ -98,43 +99,44 @@ CustomerValid =&gt; 'valid_id',
     CustomerUserPostMasterSearchFields =&gt; ['email'],
     CustomerUserNameFields =&gt; ['title','first_name','last_name'],
     CustomerUserEmailUniqCheck =&gt; 1,
-#    # show not own tickets in customer panel, CompanyTickets
+#    # a saját jegyeket nem jeleníti meg az ügyfélpanelen, CompanyTickets
 #    CustomerUserExcludePrimaryCustomerID =&gt; 0,
-#    # generate auto logins
+#    # automatikus bejelentkezések előállítása
 #    AutoLoginCreation =&gt; 0,
 #    AutoLoginCreationPrefix =&gt; 'auto',
-#    # admin can change customer preferences
+#    # az adminisztrátor megváltoztathatja az ügyfél beállításait
 #    AdminSetPreferences =&gt; 1,
-#    # cache time to live in sec. - cache any database queries
+#    # gyorsítótáridő élettartam másodpercben - bármely adatbázis-lekérdezés gyorsítótárazása
 #    CacheTTL =&gt; 0,
-#    # just a read only source
+#    # egy csak olvasható forrás
 #    ReadOnly =&gt; 1,
     Map =&gt; [
-        # note: Login, Email and CustomerID needed!
-        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
-        [ 'UserTitle',      'Title',      'title',      1, 0, 'var', '', 0 ],
-        [ 'UserFirstname',  'Firstname',  'first_name', 1, 1, 'var', '', 0 ],
-        [ 'UserLastname',   'Lastname',   'last_name',  1, 1, 'var', '', 0 ],
-        [ 'UserLogin',      'Username',   'login',      1, 1, 'var', '', 0 ],
-        [ 'UserPassword',   'Password',   'pw',         0, 0, 'var', '', 0 ],
-        [ 'UserEmail',      'Email',      'email',      1, 1, 'var', '', 0 ],
+        # megjegyzés: a bejelentkezés, az e-mail és az ügyfélazonosító szükséges!
+        # változó, előtétprogram, tároló, látható (1=mindig,2=lite), kötelező, tárolótípus,
+        #   HTTP-hivatkozás, csak olvasható, HTTP-hivatkozás célja, hivatkozás osztályok
+        [ 'UserTitle',      'Titulus',    'title',      1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Keresztnév', 'first_name', 1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Vezetéknév', 'last_name',  1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Felhasználó','login',      1, 1, 'var', '', 0 ],
+        [ 'UserPassword',   'Jelszó',     'pw',         0, 0, 'var', '', 0 ],
+        [ 'UserEmail',      'E-mail',     'email',      1, 1, 'var', '', 0 ],
 #        [ 'UserEmail',      Translatable('Email'), 'email',           1, 1, 'var', '[% Env("CGIHandle") %]?Action=AgentTicketCompose;ResponseID=1;TicketID=[% Data.TicketID | uri %];ArticleID=[% Data.ArticleID | uri %]', 0, '', 'AsPopup OTRSPopup_TicketAction' ],
-        [ 'UserCustomerID', 'CustomerID', 'customer_id', 0, 1, 'var', '', 0 ],
-#        [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
-        [ 'UserPhone',        'Phone',       'phone',        1, 0, 'var', '', 0 ],
+        [ 'UserCustomerID',   'ÜgyfélID',    'customer_id', 0, 1, 'var', '', 0 ],
+#        [ 'UserCustomerIDs', 'ÜgyfélID-k',  'customer_ids', 1, 0, 'var', '', 0 ],
+        [ 'UserPhone',        'Telefon',     'phone',        1, 0, 'var', '', 0 ],
         [ 'UserFax',          'Fax',         'fax',          1, 0, 'var', '', 0 ],
-        [ 'UserMobile',       'Mobile',      'mobile',       1, 0, 'var', '', 0 ],
-        [ 'UserStreet',       'Street',      'street',       1, 0, 'var', '', 0 ],
-        [ 'UserZip',          'Zip',         'zip',          1, 0, 'var', '', 0 ],
-        [ 'UserCity',         'City',        'city',         1, 0, 'var', '', 0 ],
-        [ 'UserCountry',      'Country',     'country',      1, 0, 'var', '', 0 ],
-        [ 'UserComment',      'Comment',     'comments',     1, 0, 'var', '', 0 ],
-        [ 'ValidID',          'Valid',       'valid_id',     0, 1, 'int', '', 0 ],
-
-        # Dynamic field example
-#        [ 'DynamicField_Name_X', undef, 'Name_X', 0, 0, 'dynamic_field', undef, 0, undef, undef, ],
+        [ 'UserMobile',       'Mobil',       'mobile',       1, 0, 'var', '', 0 ],
+        [ 'UserStreet',       'Utca',        'street',       1, 0, 'var', '', 0 ],
+        [ 'UserZip',          'Irányítószám','zip',          1, 0, 'var', '', 0 ],
+        [ 'UserCity',         'Település',   'city',         1, 0, 'var', '', 0 ],
+        [ 'UserCountry',      'Ország',      'country',      1, 0, 'var', '', 0 ],
+        [ 'UserComment',      'Megjegyzés',  'comments',     1, 0, 'var', '', 0 ],
+        [ 'ValidID',          'Érvényes',    'valid_id',     0, 1, 'int', '', 0 ],
     ],
-    # default selections
+
+        # Dinamikus mező példa
+#        [ 'DynamicField_Név_X', undef, 'Név_X', 0, 0, 'dynamic_field', undef, 0, undef, undef, ],
+    # alapértelmezett kijelölések
     Selections =&gt; {
         UserTitle =&gt; {
             'Mr.' =&gt; 'Mr.',
@@ -178,7 +180,9 @@ Most adja hozzá az új oszlopot a <code class="filename">Kernel/Config.pm</code
 fájlban lévő MAP tömbhöz, ahogy a következő parancsfájlban látható.
 </p><p>
 </p><pre class="programlisting">
-    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+    # változó, előtétprogram, tároló, látható (1=mindig,2=lite), kötelező,
+    #   tárolótípus, HTTP-hivatkozás, csak olvasható, HTTP-hivatkozás cél,
+    #   hivatkozás osztályok
     [...]
     [ 'UserRoom',      'Room',      'room',       0, 1, 'var', '', 0 ],
 </pre><p>
@@ -189,11 +193,12 @@ fájlhoz.</em></span>
 Lehetséges az összes ügyfélinformáció szerkesztése az adminisztrációs
 felületen lévő Ügyfelek hivatkozáson keresztül is.
 </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
-        Please note that you may omit <code class="literal">http-link-target</code> and
-<code class="literal">link class</code> keys in map array elements, if they are not to
-be used. These keys add <code class="literal">target=""</code> and
-<code class="literal">class=""</code> attributes to the HTTP link element,
-respectively. They are ignored if <code class="literal">http-link</code> is not set.
+        Ne feledje, hogy elhagyhatja a <code class="literal">http-link-target</code> és a
+<code class="literal">link class</code> kulcsokat a leképezési tömb elemeiben, ha azok
+nincsenek használva. Ezek a kulcsok rendre a <code class="literal">target=""</code> és
+a <code class="literal">class=""</code> attribútumokat adják a HTTP hivatkozás
+elemhez. Figyelmen kívül lesznek hagyva, ha a <code class="literal">http-link</code>
+nincs beállítva.
     </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="multi-customer-ids-db"></a>Egy ügyfél több azonosítóval (vállalati jegyek)</h5></div></div></div><p>
 Lehetséges egynél több ügyfél-azonosítót hozzárendelni egy ügyfélhez. Ez
 akkor lehet hasznos, ha egy ügyfélnek hozzá kell férnie más ügyfelek
@@ -236,7 +241,9 @@ Most az új oszlopot hozzá kell adni a <code class="filename">Kernel/Config.pm<
 fájlban lévő MAP tömbhöz, ahogy a lenti parancsfájlban látható.
 </p><p>
 </p><pre class="programlisting">
-    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+    # változó, előtétprogram, tároló, látható (1=mindig,2=lite), kötelező,
+    #   tárolótípus, HTTP-hivatkozás, csak olvasható, HTTP-hivatkozás cél,
+    #   hivatkozás osztályok
     [...]
     [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
 </pre><p>
@@ -268,28 +275,30 @@ Ha egy LDAP könyvtára van az ügyféladatokkal, akkor használhatja azt
 </p><div class="example"><a name="ldap-customer-backend"></a><p class="title"><b>4.9. példa - Egy LDAP ügyfél-háttérprogram beállítása</b></p><div class="example-contents"><p>
 </p><pre class="programlisting">
 # CustomerUser
-# (customer ldap backend and settings)
+# (ügyfél LDAP háttérprogram és beállítások)
 $Self-&gt;{CustomerUser} = {
-    Name =&gt; 'LDAP Data Source',
+    Name =&gt; 'LDAP adatforrás',
     Module =&gt; 'Kernel::System::CustomerUser::LDAP',
     Params =&gt; {
-        # ldap host
+        # LDAP kiszolgáló
         Host =&gt; 'bay.csuhayward.edu',
-        # ldap base dn
+        # LDAP bázis dn
         BaseDN =&gt; 'ou=seas,o=csuh',
-        # search scope (one|sub)
+        # keresési hatáskör (one|sub)
         SSCOPE =&gt; 'sub',
-        # The following is valid but would only be necessary if the
-        # anonymous user does NOT have permission to read from the LDAP tree
+        # A következő érvényes, de csak akkor lenne szükséges, ha a névtelen
+        #   felhasználónak NEM lenne jogosultsága az LDAP-fából olvasni
         UserDN =&gt; '',
         UserPw =&gt; '',
-        # in case you want to add always one filter to each ldap query, use
-        # this option. e. g. AlwaysFilter =&gt; '(mail=*)' or AlwaysFilter =&gt; '(objectclass=user)'
+        # Abban az esetben, ha mindig egy szűrőt szeretne hozzáadni az egyes
+        #   LDAP lekérdezésekhez, akkor használja ezt a beállítást. Például:
+        #   AlwaysFilter =&gt; '(mail=*)' vagy AlwaysFilter =&gt; '(objectclass=user)'
         AlwaysFilter =&gt; '',
-            # if the charset of your ldap server is iso-8859-1, use this:
-#            SourceCharset =&gt; 'iso-8859-1',
+            # ha az LDAP-kiszolgáló karakterkészlete iso-8859-2, akkor használja ezt:
+#            SourceCharset =&gt; 'iso-8859-2',
 
-            # Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
+            # Net::LDAP új paraméterek (ha szükséges - további
+            #   információkért nézze meg: perldoc Net::LDAP)
             Params =&gt; {
                 port =&gt; 389,
                 timeout =&gt; 120,
@@ -297,9 +306,9 @@ $Self-&gt;{CustomerUser} = {
                 version =&gt; 3,
             },
     },
-    # customer unique id
+    # egyedi ügyfél-azonosító
     CustomerKey =&gt; 'uid',
-    # customer #
+    # ügyfél #
     CustomerID =&gt; 'mail',
     CustomerUserListFields =&gt; ['cn', 'mail'],
     CustomerUserSearchFields =&gt; ['uid', 'cn', 'mail'],
@@ -308,27 +317,28 @@ $Self-&gt;{CustomerUser} = {
     CustomerUserSearchListLimit =&gt; 250,
     CustomerUserPostMasterSearchFields =&gt; ['mail'],
     CustomerUserNameFields =&gt; ['givenname', 'sn'],
-    # show not own tickets in customer panel, CompanyTickets
+    # a saját jegyeket nem jeleníti meg az ügyfélpanelen, CompanyTickets
     CustomerUserExcludePrimaryCustomerID =&gt; 0,
-    # add an ldap filter for valid users (expert setting)
+    # egy LDAP-szűrő hozzáadása az érvényes felhasználókhoz (szakértő beállítások)
 #    CustomerUserValidFilter =&gt; '(!(description=locked))',
-    # administrator can't change customer preferences
+    # az adminisztrátor nem változtathatja meg az ügyfél beállításait
     AdminSetPreferences =&gt; 0,
-#    # cache time to live in sec. - cache any database queries
+#    # gyorsítótáridő élettartam másodpercben - bármely adatbázis-lekérdezés gyorsítótárazása
 #    CacheTTL =&gt; 0,
     Map =&gt; [
-        # note: Login, Email and CustomerID are mandatory!
-        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
-        [ 'UserTitle',      'Title',      'title',           1, 0, 'var', '', 0 ],
-        [ 'UserFirstname',  'Firstname',  'givenname',       1, 1, 'var', '', 0 ],
-        [ 'UserLastname',   'Lastname',   'sn',              1, 1, 'var', '', 0 ],
-        [ 'UserLogin',      'Username',   'uid',             1, 1, 'var', '', 0 ],
-        [ 'UserEmail',      'Email',      'mail',            1, 1, 'var', '', 0 ],
-        [ 'UserCustomerID', 'CustomerID', 'mail',            0, 1, 'var', '', 0 ],
-#        [ 'UserCustomerIDs', 'CustomerIDs', 'second_customer_ids', 1, 0, 'var', '', 0 ],
-        [ 'UserPhone',      'Phone',      'telephonenumber', 1, 0, 'var', '', 0 ],
-        [ 'UserAddress',    'Address',    'postaladdress',   1, 0, 'var', '', 0 ],
-        [ 'UserComment',    'Comment',    'description',     1, 0, 'var', '', 0 ],
+        # megjegyzés: a bejelentkezés, az e-mail és az ügyfélazonosító kötelezők!
+        # változó, előtétprogram, tároló, látható (1=mindig,2=lite), kötelező, tárolótípus,
+        #   HTTP-hivatkozás, csak olvasható, HTTP-hivatkozás cél, hivatkozás osztályok
+        [ 'UserTitle',      'Titulus',    'title',           1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Keresztnév', 'givenname',       1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Vezetéknév', 'sn',              1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Felhasználó','uid',             1, 1, 'var', '', 0 ],
+        [ 'UserEmail',      'E-mail',     'mail',            1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'ÜgyfélID',   'mail',            0, 1, 'var', '', 0 ],
+#        [ 'UserCustomerIDs', 'ÜgyfélID-k', 'second_customer_ids', 1, 0, 'var', '', 0 ],
+        [ 'UserPhone',      'Telefon',    'telephonenumber', 1, 0, 'var', '', 0 ],
+        [ 'UserAddress',    'Cím',        'postaladdress',   1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Megjegyzés', 'description',     1, 0, 'var', '', 0 ],
     ],
 };
 </pre><p>
@@ -340,7 +350,9 @@ ki a <code class="filename">Kernel/Config.pm</code> fájlban lévő MAP tömböt
 jellemzőknek a bejegyzéseivel, amint a következő parancsfájlban látható.
 </p><p>
 </p><pre class="programlisting">
-    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+    # változó, előtétprogram, tároló, látható (1=mindig,2=lite), kötelező,
+    #   tárolótípus, HTTP-hivatkozás, csak olvasható, HTTP-hivatkozás cél,
+    #   hivatkozás osztályok
     [...]
     [ 'UserPhone',      'Phone',      'telephonenumber', 1, 0, 'var', '', 0 ],
 </pre><p>
@@ -545,14 +557,16 @@ vagy amikor egy jegy ügyfelét megváltoztatják. A dinamikus mezők értékeit
 LDAP-háttérprogramoknál hasznos.
     </p><p>
         To activate this optional feature of OTRS, please activate the settings
-"Ticket::EventModulePost###950-DynamicFieldFromCustomerUser" and
-"DynamicFieldFromCustomerUser::Mapping". The latter setting contains the
-configuration of which CustomerUser field entry should be stored in which
-ticket dynamic field. The fields must be present in the system and should be
-enabled for AgentTicketFreeText, so that they can be set manually. They
-mustn't be enabled for AgentTicketPhone, AgentTicketEmail and
-AgentTicketCustomer. If they were, they would have precedence over the
-automatically set values.
+<code class="literal">Ticket::EventModulePost###950-DynamicFieldFromCustomerUser</code>
+and <code class="literal">DynamicFieldFromCustomerUser::Mapping</code>. The latter
+setting contains the configuration of which <code class="literal">CustomerUser</code>
+field entry should be stored in which ticket dynamic field. The fields must
+be present in the system and should be enabled for
+<code class="literal">AgentTicketFreeText</code>, so that they can be set
+manually. They mustn't be enabled for <code class="literal">AgentTicketPhone</code>,
+<code class="literal">AgentTicketEmail</code> and
+<code class="literal">AgentTicketCustomer</code>. If they were, they would have
+precedence over the automatically set values.
     </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="auth-backends"></a>Háttérprogramok ügyintézők és ügyfelek hitelesítéséhez</h3></div></div></div><p>
 Az OTRS felkínálja az ügyintézők és az ügyfelek hitelesítésének lehetőségét
 különböző háttérprogramokkal.
@@ -833,11 +847,12 @@ A következő példa azt mutatja be, hogy hogyan adhat meg egy kötelező mezőt
 az ügyféladatbázisban, ebben az esetben egy ügyfél szobaszámának
 eltárolásához.
 </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-self-registration-tt"></a>A webes felület személyre szabása</h4></div></div></div><p>
-To display the new field for the room number in the customer.pl web
-interface, the .tt file responsible for the layout in this interface has to
-be modified. Edit the
+Az új mezőnek a customer.pl webes felületén való megjelenítéséhez a
+szobaszám esetén a .tt fájlt kell módosítani, mivel ez a fájl felelős ezen a
+felületen az elrendezésért. Szerkessze a
 <code class="filename">Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt</code>
-file, adding the new field around line 130 (see Script below).
+fájlt, adja hozzá az új mezőt a 130. sor környékén (lásd a lenti
+parancsfájlt).
 </p><p>
 </p><pre class="programlisting">
 [...]
