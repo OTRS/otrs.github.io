@@ -59,6 +59,14 @@ $(document).ready(function() {
             Path: 'otrs-business-solution',
             Versions: [
                 {
+                    Version:     '6.0',
+                    HTMLPath:    '6.0',
+                    Name:        'OTRS 6 (Beta)',
+                    Languages:   ['en'],
+                    PDFPath:     'doc-otrsbusiness',
+                    PDFFileName: 'otrs_business_solution_book.pdf'
+                },
+                {
                     Version:     '5.0',
                     HTMLPath:    'stable',
                     Name:        'OTRS 5',
