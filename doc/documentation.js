@@ -82,6 +82,12 @@ $(document).ready(function() {
             Path: 'itsm',
             Versions: [
                 {
+                    Version:  '6.0',
+                    HTMLPath: '6.0',
+                    Name:     'OTRS::ITSM 6 (beta)',
+                    Languages: ['en']
+                },
+                {
                     Version:  '5.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS::ITSM 5',
