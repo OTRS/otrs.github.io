@@ -61,7 +61,7 @@ $(document).ready(function() {
                 {
                     Version:     '6.0',
                     HTMLPath:    '6.0',
-                    Name:        'OTRS 6 (Beta)',
+                    Name:        'OTRS 6 (beta)',
                     Languages:   ['en'],
                     PDFPath:     'doc-otrsbusiness',
                     PDFFileName: 'otrs_business_solution_book.pdf'
