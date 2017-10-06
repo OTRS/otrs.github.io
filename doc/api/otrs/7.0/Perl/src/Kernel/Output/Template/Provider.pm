@@ -17,6 +17,7 @@ use parent qw (Template::Provider);
 
 use Scalar::Util qw();
 use Template::Constants;
+use Kernel::System::VariableCheck qw(IsStringWithData);
 
 use Kernel::Output::Template::Document;
 
@@ -330,12 +331,17 @@ sub _PreProcessTemplateContent {
                 # Load the template via the provider.
                 # We'll use SUPER::load here because we don't need the preprocessing twice.
                 my $TemplateContent = ($Self->SUPER::load($1))[0];
-                $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput(\$TemplateContent);
+                if ( IsStringWithData($TemplateContent) ) {
+                    $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput(\$TemplateContent);
 
-                # Remove commented lines already here because of problems when the InsertTemplate tag
-                #   is not on the beginning of the line.
-                $TemplateContent =~ s/^#.*\n//gm;
-                $TemplateContent;
+                    # Remove commented lines already here because of problems when the InsertTemplate tag
+                    #   is not on the beginning of the line.
+                    $TemplateContent =~ s/^#.*\n//gm;
+                    $TemplateContent;
+                }
+                else {
+                    "";
+                }
             }esmxg;
 
     } until ( !$Replaced || ++$ReplaceCounter > 100 );
