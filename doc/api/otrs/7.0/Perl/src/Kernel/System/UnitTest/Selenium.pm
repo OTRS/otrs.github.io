@@ -232,7 +232,7 @@ sub get_alert_text {    ## no critic
 
     my $AlertText = $Self->SUPER::get_alert_text();
 
-    return if ref $AlertText eq 'HASH';    # Chrome returns HASH when there is no alert text.
+    die "Alert dialog is not present" if ref $AlertText eq 'HASH';    # Chrome returns HASH when there is no alert text.
 
     return $AlertText;
 }
