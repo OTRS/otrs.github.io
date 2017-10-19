@@ -3395,9 +3395,13 @@ sub _GenerateDynamicStats {
         TimeZone => $Param{TimeZone},
     );
 
-    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
-
-    my $CheckTimeStopObject = $DateTimeObject->Clone()->Set( String => $CheckTimeStop );
+    my $DateTimeObject      = $Kernel::OM->Create('Kernel::System::DateTime');
+    my $CheckTimeStopObject = $Kernel::OM->Create(
+        'Kernel::System::DateTime',
+        ObjectParams => {
+            String => $CheckTimeStop,
+        },
+    );
 
     if ( $CheckTimeStopObject > $DateTimeObject ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
