@@ -25,12 +25,12 @@ $(document).ready(function() {
     });
 });</script>
 <!-- otrs.github.io -->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>从源码安装OTRS（Linux、Unix）</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Admin Manual"><link rel="up" href="installation.html" title="第 2 章 安装"><link rel="prev" href="installation.html" title="第 2 章 安装"><link rel="next" href="web-installer.html" title="使用Web安装器"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">从源码安装OTRS（Linux、Unix）</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">上一页</a> </td><th width="60%" align="center">第 2 章 安装</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">下一页</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>从源码安装OTRS（Linux、Unix）</h2></div></div></div><div class="toc"><dl class="toc"></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-disable-selinux"></a>准备：禁用SELinux</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>从源码安装OTRS（Linux、Unix）</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - 系统管理手册"><link rel="up" href="installation.html" title="第 2 章 安装"><link rel="prev" href="installation.html" title="第 2 章 安装"><link rel="next" href="web-installer.html" title="使用Web安装器"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">从源码安装OTRS（Linux、Unix）</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">上一页</a> </td><th width="60%" align="center">第 2 章 安装</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">下一页</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>从源码安装OTRS（Linux、Unix）</h2></div></div></div><div class="toc"><dl class="toc"></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-disable-selinux"></a>准备：禁用SELinux</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
                 如果你的系统使用了SELinux，你需要禁用它，否则OTRS无法正常工作。
             </p></div><p>
             下面是如何在RHEL/CentOS/Fedora中禁用SELinux：
             </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
-                        在文件/etc/selinux/config中配置SELINUX=disabled
+                        在文件/etc/selinux/config中配置SELINUX=disabled：
                     </p><p>
                         </p><pre class="screen">
 # This file controls the state of SELinux on the system.
@@ -158,23 +158,28 @@ shell&gt; perl -cw /opt/otrs/bin/otrs.Console.pl
 /opt/otrs/bin/otrs.Console.pl syntax OK
             </pre><p>
         </p><p>
-             “syntax OK”表示所有必须的模块都已安装。
+            “syntax OK”表示所有必须的模块都已安装。
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="web-server-configuration"></a>步骤6：配置Apache WEB服务器</h3></div></div></div><p>
             首先，你得安装Apache2
 WEB服务器和mod_perl模块；一般都通过系统的软件包管理器来安装。下面你可以找到主流Linux分支安装Apache需要的命令。
         </p><p>
             </p><pre class="screen">
-# rhel / centos:
+# RHEL / CentOS:
 shell&gt; yum install httpd mod_perl
 
-# suse:
+# SuSE:
 shell&gt; zypper install apache2-mod_perl
 
-# debian/ubuntu:
+# Debian/Ubuntu:
 shell&gt; apt-get install apache2 libapache2-mod-perl2
         </pre><p>
         </p><p>
             大部分的<span class="application">Apache</span>安装都会包括一个<code class="filename">conf.d</code>目录。在Linux系统中这个目录一般在<code class="filename">/etc/apache</code>或<code class="filename">/etc/apache2</code>目录下。以root用户登录，进入<code class="filename">conf.d</code>目录，并在Apache配置目录创建一个到<code class="filename">/opt/otrs/scripts/apache2-httpd.include.conf</code>的软链接<code class="filename">zzz_otrs.conf</code>（确保载入其它配置之后再载入OTRS配置）。
+        </p><p>
+            </p><pre class="screen">
+# Debian/Ubuntu:
+shell&gt; ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-enabled/zzz_otrs.conf
+        </pre><p>
         </p><p>
             OTRS需要激活一些Apache模块来达到最佳运行状态。在大多数平台上你可以通过<code class="filename">a2enmod</code>工具来确认已经激活了这些模块。
         </p><p>
@@ -189,37 +194,19 @@ shell&gt; a2enmod headers
             现在你可以重启WEB服务器来载入新的配置设置了。在大多数系统你可以用<span class="command"><strong>systemctl restart
 apache2.service</strong></span>命令来重启Apache。
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.9"></a>步骤7：文件权限</h3></div></div></div><p>
-            文件权限根据需要调整，以允许OTRS读取和写入文件：
+            请以root用户身份执行以下命令，以设置OTRS的文件和目录权限。 它将尝试检测你的安装所需的正确的用户和组设置。
         </p><p>
-            </p><div class="cmdsynopsis"><p><code class="command">otrs.SetPermissions.pl</code>  [
---otrs-user=<em class="replaceable"><code>OTRS用户，默认为'otrs'</code></em> ] { --web-group= <em class="replaceable"><code>WEB服务器用户所属的组</code></em> }</p></div><p>
-        </p><p>
-            例如：
-        </p><p>
-            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>以OTRS用户运行WEB服务器：</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-user=otrs
-                </pre><p>
-                </p></li><li class="listitem"><p>以wwwrun用户运行WEB服务器（如SUSE）：</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-group=wwwrun
-                </pre><p>
-                </p></li><li class="listitem"><p>以apache用户运行WEB服务器（如Red Hat、CentOS）：</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-group=apache
-                </pre><p>
-                </p></li><li class="listitem"><p>以www-data用户运行WEB服务器（如RDebian、 Ubuntu）：</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-group=www-data
-                </pre><p>
-                </p></li></ul></div><p>
+        </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.SetPermissions.pl
+        </pre><p>
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="database-configuration"></a>步骤8：数据库设置和系统基本配置</h3></div></div></div><p>
             请使用WEB安装器 <a class="ulink" href="http://localhost/otrs/installer.pl" target="_top">http://localhost/otrs/installer.pl</a>（用你的OTRS主机名或IP地址替换“localhost”）来设置数据库和系统基本配置如邮件帐户。
         </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
                 下面的推荐配置设置是针对MySQL的。请添加下列行到文件 <code class="filename">/etc/my.cnf</code> 的[mysqld]部分：
             </p><p>
                 </p><pre class="screen">
-max_allowed_packet   = 20M
+max_allowed_packet   = 64M
 query_cache_size     = 32M
 innodb_log_file_size = 256M
                 </pre><p>

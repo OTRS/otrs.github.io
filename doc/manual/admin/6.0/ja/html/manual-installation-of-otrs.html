@@ -25,7 +25,7 @@ $(document).ready(function() {
     });
 });</script>
 <!-- otrs.github.io -->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Installation From Source (Linux, Unix)</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Admin Manual"><link rel="up" href="installation.html" title="第2章 インストール"><link rel="prev" href="installation.html" title="第2章 インストール"><link rel="next" href="web-installer.html" title="ウェブ・インストーラの使用"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Installation From Source (Linux, Unix)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">戻る</a> </td><th width="60%" align="center">第2章 インストール</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">次へ</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>Installation From Source (Linux, Unix)</h2></div></div></div><div class="toc"><dl class="toc"></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-disable-selinux"></a>Preparation: Disable SELinux</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Installation From Source (Linux, Unix)</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - 管理マニュアル"><link rel="up" href="installation.html" title="第2章 インストール"><link rel="prev" href="installation.html" title="第2章 インストール"><link rel="next" href="web-installer.html" title="ウェブ・インストーラの使用"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Installation From Source (Linux, Unix)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">戻る</a> </td><th width="60%" align="center">第2章 インストール</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">次へ</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>Installation From Source (Linux, Unix)</h2></div></div></div><div class="toc"><dl class="toc"></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-disable-selinux"></a>Preparation: Disable SELinux</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
                 If your system uses SELinux, you should disable it, otherwise OTRS will not
 work correctly.
             </p></div><p>
@@ -180,13 +180,13 @@ shell&gt; perl -cw /opt/otrs/bin/otrs.Console.pl
             第一に、Apache2ウェブサーバおよびmod_perlをインストールするべきです;典型的にはシステム・パッケージ・マネージャーからこれをします。以下の、最も人気のあるLinuxディストリビューション上でApacheを設定するために必要なコマンドをご覧ください。
         </p><p>
             </p><pre class="screen">
-# rhel / centos:
+# RHEL / CentOS:
 shell&gt; yum install httpd mod_perl
 
-# suse:
+# SuSE:
 shell&gt; zypper install apache2-mod_perl
 
-# debian/ubuntu:
+# Debian/Ubuntu:
 shell&gt; apt-get install apache2 libapache2-mod-perl2
         </pre><p>
         </p><p>
@@ -198,6 +198,11 @@ usually find this directory under <code class="filename">/etc/apache</code> or
 <code class="filename">/opt/otrs/scripts/apache2-httpd.include.conf</code> to a file
 called <code class="filename">zzz_otrs.conf</code> in the Apache configuration
 directory (to make sure it is loaded after the other configurations).
+        </p><p>
+            </p><pre class="screen">
+# Debian/Ubuntu:
+shell&gt; ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-enabled/zzz_otrs.conf
+        </pre><p>
         </p><p>
             OTRS requires a few Apache modules to be active for optimal operation. On
 most platforms you can make sure they are active via the tool
@@ -215,31 +220,14 @@ shell&gt; a2enmod headers
 On most systems you can do that with the command <span class="command"><strong>systemctl restart
 apache2.service</strong></span>.
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.9"></a>ステップ7：ファイル権限</h3></div></div></div><p>
-            File permissions need to be adjusted to allow OTRS to read and write files:
+            Please execute the following command as root user to set the file and
+directory permissions for OTRS.  It will try to detect the correct user and
+group settings needed for your setup.
         </p><p>
-            </p><div class="cmdsynopsis"><p><code class="command">otrs.SetPermissions.pl</code>  [ --otrs-user=
-<em class="replaceable"><code>OTRS user, defaults to 'otrs'</code></em> ] { --web-group= <em class="replaceable"><code>group of the web server
-user</code></em> }</p></div><p>
-        </p><p>
-            For example:
-        </p><p>
-            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>Web server which runs as the OTRS user:</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-user=otrs
-                </pre><p>
-                </p></li><li class="listitem"><p>Webserver with wwwrun user (e. g. SUSE):</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-group=wwwrun
-                </pre><p>
-                </p></li><li class="listitem"><p>Webserver with apache user (e. g. Red Hat, CentOS):</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-group=apache
-                </pre><p>
-                </p></li><li class="listitem"><p>Webserver with www-data user (e. g. Debian, Ubuntu):</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-group=www-data
-                </pre><p>
-                </p></li></ul></div><p>
+        </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.SetPermissions.pl
+        </pre><p>
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="database-configuration"></a>ステップ8：データベースのセットアップとシステムの基本設定</h3></div></div></div><p>
             Please use the web installer at <a class="ulink" href="http://localhost/otrs/installer.pl" target="_top">http://localhost/otrs/installer.pl</a>
 (replace "localhost" with your OTRS hostname) to setup your database and
@@ -250,7 +238,7 @@ setups. Please add the following lines to <code class="filename">/etc/my.cnf</co
 under the [mysqld] section:
             </p><p>
                 </p><pre class="screen">
-max_allowed_packet   = 20M
+max_allowed_packet   = 64M
 query_cache_size     = 32M
 innodb_log_file_size = 256M
                 </pre><p>

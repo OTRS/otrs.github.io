@@ -188,13 +188,13 @@ fogja megtalálni az Apache beállításához szükséges parancsokat a
 legnépszerűbb Linux disztribúciókon.
         </p><p>
             </p><pre class="screen">
-# rhel / centos:
+# RHEL / CentOS:
 shell&gt; yum install httpd mod_perl
 
-# suse:
+# SuSE:
 shell&gt; zypper install apache2-mod_perl
 
-# debian/ubuntu:
+# Debian/Ubuntu:
 shell&gt; apt-get install apache2 libapache2-mod-perl2
         </pre><p>
         </p><p>
@@ -208,6 +208,11 @@ kapcsolja hozzá az
 található megfelelő sablont egy <code class="filename">zzz_otrs.conf</code> nevű
 fájlhoz az Apache beállítási könyvtárában (hogy meggyőződhessen arról, hogy
 betöltődik az egyéb beállítások után).
+        </p><p>
+            </p><pre class="screen">
+# Debian/Ubuntu:
+shell&gt; ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-enabled/zzz_otrs.conf
+        </pre><p>
         </p><p>
             Az OTRS azt igényli, hogy néhány Apache modul be legyen kapcsolva az
 optimális működéshez. A legtöbb platformon az <code class="filename">a2enmod</code>
@@ -225,32 +230,14 @@ shell&gt; a2enmod headers
 betöltéséhez. A legtöbb rendszeren ezt a <span class="command"><strong>systemctl restart
 apache2.service</strong></span> paranccsal teheti meg.
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.9"></a>7. lépés: fájljogosultságok</h3></div></div></div><p>
-            A fájljogosultságokat be kell állítani, hogy az OTRS képes legyen olvasni és
-írni a fájlokat:
+            Hajtsa végre a következő parancsot root felhasználóként az OTRS fájl- és
+könyvtárjogosultságainak beállításához. Megpróbálja felismerni a
+beállításhoz szükséges helyes felhasználó- és csoportbeállításokat.
         </p><p>
-            </p><div class="cmdsynopsis"><p><code class="command">otrs.SetPermissions.pl</code>  [ --otrs-user=
-<em class="replaceable"><code>OTRS felhasználó, alapértelmezetten „otrs”</code></em> ] { --web-group= <em class="replaceable"><code>a webkiszolgáló
-felhasználójának csoportja</code></em> }</p></div><p>
-        </p><p>
-            Például:
-        </p><p>
-            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>Olyan webkiszolgálónál, amely az OTRS felhasználóként fut:</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-user=otrs
-                </pre><p>
-                </p></li><li class="listitem"><p>A wwwrun felhasználóval futó webkiszolgálónál (például SUSE):</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-group=wwwrun
-                </pre><p>
-                </p></li><li class="listitem"><p>Apache felhasználóval futó webkiszolgálónál (például Red Hat, CentOS):</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-group=apache
-                </pre><p>
-                </p></li><li class="listitem"><p>A www-data felhasználóval futó webkiszolgálónál (például Debian, Ubuntu):</p><p>
-                </p><pre class="screen">
-shell&gt; bin/otrs.SetPermissions.pl --web-group=www-data
-                </pre><p>
-                </p></li></ul></div><p>
+        </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.SetPermissions.pl
+        </pre><p>
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="database-configuration"></a>8. lépés: adatbázis-beállítás és alapvető rendszerbeállítás</h3></div></div></div><p>
             Használja a <a class="ulink" href="http://localhost/otrs/installer.pl" target="_top">http://localhost/otrs/installer.pl</a>
 címen elérhető webes telepítőt (cserélje ki a „localhost” nevet az OTRS
@@ -262,7 +249,7 @@ hozzá a következő sorokat az <code class="filename">/etc/my.cnf</code> fájlb
 [mysqld] szakasz alá:
             </p><p>
                 </p><pre class="screen">
-max_allowed_packet   = 20M
+max_allowed_packet   = 64M
 query_cache_size     = 32M
 innodb_log_file_size = 256M
                 </pre><p>
