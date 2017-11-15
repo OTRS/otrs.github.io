@@ -25,7 +25,7 @@ $(document).ready(function() {
                     Version:  '6.0',
                     HTMLPath: '6.0',
                     Name:     'OTRS 6 (beta)',
-                    Languages: ['en']
+                    Languages: ['en', 'hu', 'zh_CN']
                 },
                 {
                     Version:  '5.0',
@@ -93,7 +93,7 @@ $(document).ready(function() {
                     Version:  '6.0',
                     HTMLPath: '6.0',
                     Name:     'OTRS::ITSM 6 (beta)',
-                    Languages: ['en']
+                    Languages: ['en', 'hu', 'ru', 'zh_CN']
                 },
                 {
                     Version:  '5.0',
