@@ -24,7 +24,7 @@ $(document).ready(function() {
                 {
                     Version:  '6.0',
                     HTMLPath: '6.0',
-                    Name:     'OTRS 6 (beta)',
+                    Name:     'OTRS 6',
                     Languages: ['en', 'hu', 'zh_CN']
                 },
                 {
@@ -61,7 +61,7 @@ $(document).ready(function() {
                 {
                     Version:     '6.0',
                     HTMLPath:    '6.0',
-                    Name:        'OTRS 6 (beta)',
+                    Name:        'OTRS 6',
                     Languages:   ['en'],
                     PDFPath:     'doc-otrsbusiness',
                     PDFFileName: 'otrs_business_solution_book.pdf'
@@ -92,7 +92,7 @@ $(document).ready(function() {
                 {
                     Version:  '6.0',
                     HTMLPath: '6.0',
-                    Name:     'OTRS::ITSM 6 (beta)',
+                    Name:     'OTRS::ITSM 6',
                     Languages: ['en', 'hu', 'ru', 'zh_CN']
                 },
                 {
@@ -129,7 +129,7 @@ $(document).ready(function() {
                 {
                     Version:  '6.0',
                     HTMLPath: '6.0',
-                    Name:     'OTRS 6 (beta)',
+                    Name:     'OTRS 6',
                     Languages: ['en']
                 },
                 {
@@ -173,7 +173,7 @@ $(document).ready(function() {
                     Version:  '6.0',
                     HTMLPath: '6.0',
                     Types:    ['Perl', 'JavaScript'],
-                    Name:     'OTRS 6 (beta)'
+                    Name:     'OTRS 6'
                 },
                 {
                     Version:  '5.0',
