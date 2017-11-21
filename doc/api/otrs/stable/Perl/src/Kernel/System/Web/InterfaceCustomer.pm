@@ -11,8 +11,9 @@ package Kernel::System::Web::InterfaceCustomer;
 use strict;
 use warnings;
 
+use Kernel::System::DateTime;
 use Kernel::System::Email;
-use Kernel::System::VariableCheck qw(IsArrayRefWithData);
+use Kernel::System::VariableCheck qw(IsArrayRefWithData IsHashRefWithData);
 use Kernel::Language qw(Translatable);
 
 our @ObjectDependencies = (
@@ -23,10 +24,11 @@ our @ObjectDependencies = (
     'Kernel::System::CustomerGroup',
     'Kernel::System::CustomerUser',
     'Kernel::System::DB',
+    'Kernel::System::Group',
     'Kernel::System::Log',
     'Kernel::System::Main',
     'Kernel::System::Scheduler',
-    'Kernel::System::Time',
+    'Kernel::System::DateTime',
     'Kernel::System::Web::Request',
     'Kernel::System::Valid',
 );
@@ -35,17 +37,13 @@ our @ObjectDependencies = (
 
 Kernel::System::Web::InterfaceCustomer - the customer web interface
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 the global customer web interface (authentication, session handling, ...)
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create customer web interface object
 
@@ -92,7 +90,7 @@ sub new {
     return $Self;
 }
 
-=item Run()
+=head2 Run()
 
 execute the object
 
@@ -103,18 +101,41 @@ execute the object
 sub Run {
     my $Self = shift;
 
-    # get common framework params
-    my %Param;
-
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my $QueryString = $ENV{QUERY_STRING} || '';
+
+    # Check if https forcing is active, and redirect if needed.
+    if ( $ConfigObject->Get('HTTPSForceRedirect') ) {
+
+        # Some web servers do not set HTTPS environment variable, so it's not possible to easily know if we are using
+        #   https protocol. Look also for similarly named keys in environment hash, since this should prevent loops in
+        #   certain cases.
+        if (
+            (
+                !defined $ENV{HTTPS}
+                && !grep {/^HTTPS(?:_|$)/} keys %ENV
+            )
+            || $ENV{HTTPS} ne 'on'
+            )
+        {
+            my $Host = $ENV{HTTP_HOST} || $ConfigObject->Get('FQDN');
+
+            # Redirect with 301 code. Add two new lines at the end, so HTTP headers are validated correctly.
+            print "Status: 301 Moved Permanently\nLocation: https://$Host$ENV{REQUEST_URI}\n\n";
+            return;
+        }
+    }
+
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my %Param;
 
     # get session id
     $Param{SessionName} = $ConfigObject->Get('CustomerPanelSessionName') || 'CSID';
     $Param{SessionID} = $ParamObject->GetParam( Param => $Param{SessionName} ) || '';
 
     # drop old session id (if exists)
-    my $QueryString = $ENV{QUERY_STRING} || '';
     $QueryString =~ s/(\?|&|;|)$Param{SessionName}(=&|=;|=.+?&|=.+?$)/;/g;
 
     # define framework params
@@ -324,27 +345,13 @@ sub Run {
             return;
         }
 
-        # get groups rw/ro
-        for my $Type (qw(rw ro)) {
-            my %GroupData = $Kernel::OM->Get('Kernel::System::CustomerGroup')->GroupMemberList(
-                Result => 'HASH',
-                Type   => $Type,
-                UserID => $UserData{UserID},
-            );
-            for ( sort keys %GroupData ) {
-                if ( $Type eq 'rw' ) {
-                    $UserData{"UserIsGroup[$GroupData{$_}]"} = 'Yes';
-                }
-                else {
-                    $UserData{"UserIsGroupRo[$GroupData{$_}]"} = 'Yes';
-                }
-            }
-        }
+        # create datetime object
+        my $SessionDTObject = $Kernel::OM->Create('Kernel::System::DateTime');
 
         # create new session id
         my $NewSessionID = $SessionObject->CreateSessionID(
             %UserData,
-            UserLastRequest => $Kernel::OM->Get('Kernel::System::Time')->SystemTime(),
+            UserLastRequest => $SessionDTObject->ToEpoch(),
             UserType        => 'Customer',
             SessionSource   => 'CustomerInterface',
         );
@@ -368,17 +375,13 @@ sub Run {
             return;
         }
 
-        # get time object
-        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-
         # execution in 20 seconds
-        my $ExecutionTime = $TimeObject->SystemTime2TimeStamp(
-            SystemTime => ( $TimeObject->SystemTime() + 20 ),
-        );
+        my $ExecutionTimeObj = $Kernel::OM->Create('Kernel::System::DateTime');
+        $ExecutionTimeObj->Add( Seconds => 20 );
 
         # add a asynchronous executor scheduler task to count the concurrent user
         $Kernel::OM->Get('Kernel::System::Scheduler')->TaskAdd(
-            ExecutionTime            => $ExecutionTime,
+            ExecutionTime            => $ExecutionTimeObj->ToString(),
             Type                     => 'AsynchronousExecutor',
             Name                     => 'PluginAsynchronous::ConcurrentUser',
             MaximumParallelInstances => 1,
@@ -388,31 +391,35 @@ sub Run {
             },
         );
 
-        # set time zone offset if TimeZoneFeature is active
-        if (
-            $ConfigObject->Get('TimeZoneUser')
-            && $ConfigObject->Get('TimeZoneUserBrowserAutoOffset')
-            )
-        {
-            my $TimeOffset = $ParamObject->GetParam( Param => 'TimeOffset' ) || 0;
-            if ( $TimeOffset > 0 ) {
-                $TimeOffset = '-' . ( $TimeOffset / 60 );
-            }
-            else {
-                $TimeOffset = ( $TimeOffset / 60 );
-                $TimeOffset =~ s/-/+/;
-            }
-            $UserObject->SetPreferences(
-                UserID => $UserData{UserID},
-                Key    => 'UserTimeZone',
-                Value  => $TimeOffset,
-            );
-            $SessionObject->UpdateSessionID(
-                SessionID => $NewSessionID,
-                Key       => 'UserTimeZone',
-                Value     => $TimeOffset,
-            );
-        }
+        # get time zone
+        my $UserTimeZone = $UserData{UserTimeZone} || Kernel::System::DateTime->UserDefaultTimeZoneGet();
+        $SessionObject->UpdateSessionID(
+            SessionID => $NewSessionID,
+            Key       => 'UserTimeZone',
+            Value     => $UserTimeZone,
+        );
+
+        # check if the time zone offset reported by the user's browser differs from that
+        # of the OTRS user's time zone offset
+        my $DateTimeObject = $Kernel::OM->Create(
+            'Kernel::System::DateTime',
+            ObjectParams => {
+                TimeZone => $UserTimeZone,
+            },
+        );
+        my $OTRSUserTimeZoneOffset = $DateTimeObject->Format( Format => '%{offset}' ) / 60;
+        my $BrowserTimeZoneOffset = ( $ParamObject->GetParam( Param => 'TimeZoneOffset' ) || 0 ) * -1;
+
+        # TimeZoneOffsetDifference contains the difference of the time zone offset between
+        # the user's OTRS time zone setting and the one reported by the user's browser.
+        # If there is a difference it can be evaluated later to e. g. show a message
+        # for the user to check his OTRS time zone setting.
+        my $UserTimeZoneOffsetDifference = abs( $OTRSUserTimeZoneOffset - $BrowserTimeZoneOffset );
+        $SessionObject->UpdateSessionID(
+            SessionID => $NewSessionID,
+            Key       => 'UserTimeZoneOffsetDifference',
+            Value     => $UserTimeZoneOffsetDifference,
+        );
 
         $Kernel::OM->ObjectParamAdd(
             'Kernel::Output::HTML::Layout' => {
@@ -626,7 +633,7 @@ sub Run {
                 MimeType => 'text/plain',
                 Body     => $Body
             );
-            if ( !$Sent ) {
+            if ( !$Sent->{Success} ) {
                 $LayoutObject->FatalError(
                     Comment => Translatable('Please contact the administrator.'),
                 );
@@ -696,7 +703,7 @@ sub Run {
             MimeType => 'text/plain',
             Body     => $Body
         );
-        if ( !$Sent ) {
+        if ( !$Sent->{Success} ) {
             $LayoutObject->CustomerFatalError(
                 Comment => Translatable('Please contact the administrator.')
             );
@@ -758,7 +765,13 @@ sub Run {
         # get user data
         my %UserData = $UserObject->CustomerUserDataGet( User => $GetParams{UserLogin} );
         if ( $UserData{UserID} || !$GetParams{UserLogin} ) {
-            $LayoutObject->Block( Name => 'SignupError' );
+
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'SignupError',
+                Value => 1,
+            );
+
             $LayoutObject->Print(
                 Output => \$LayoutObject->CustomerLogin(
                     Title => 'Login',
@@ -815,7 +828,13 @@ sub Run {
         }
 
         if ( ( @Whitelist && !$WhitelistMatched ) || ( @Blacklist && $BlacklistMatched ) ) {
-            $LayoutObject->Block( Name => 'SignupError' );
+
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'SignupError',
+                Value => 1,
+            );
+
             $LayoutObject->Print(
                 Output => \$LayoutObject->CustomerLogin(
                     Title => 'Login',
@@ -832,9 +851,10 @@ sub Run {
         }
 
         # create account
-        my $Now = $Kernel::OM->Get('Kernel::System::Time')->SystemTime2TimeStamp(
-            SystemTime => $Kernel::OM->Get('Kernel::System::Time')->SystemTime(),
-        );
+        my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+
+        my $Now = $DateTimeObject->ToString();
+
         my $Add = $UserObject->CustomerUserAdd(
             %GetParams,
             Comment => $LayoutObject->{LanguageObject}->Translate( 'Added via Customer Panel (%s)', $Now ),
@@ -842,7 +862,13 @@ sub Run {
             UserID  => $ConfigObject->Get('CustomerPanelUserID'),
         );
         if ( !$Add ) {
-            $LayoutObject->Block( Name => 'SignupError' );
+
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'SignupError',
+                Value => 1,
+            );
+
             $LayoutObject->Print(
                 Output => \$LayoutObject->CustomerLogin(
                     Title         => 'Login',
@@ -874,7 +900,7 @@ sub Run {
             MimeType => 'text/plain',
             Body     => $Body
         );
-        if ( !$Sent ) {
+        if ( !$Sent->{Success} ) {
             my $Output = $LayoutObject->CustomerHeader(
                 Area  => 'Core',
                 Title => 'Error'
@@ -1064,7 +1090,13 @@ sub Run {
         }
 
         # module permission check for action
-        if ( !$ModuleReg->{GroupRo} && !$ModuleReg->{Group} ) {
+        if (
+            ref $ModuleReg->{GroupRo} eq 'ARRAY'
+            && !scalar @{ $ModuleReg->{GroupRo} }
+            && ref $ModuleReg->{Group} eq 'ARRAY'
+            && !scalar @{ $ModuleReg->{Group} }
+            )
+        {
             $Param{AccessRo} = 1;
             $Param{AccessRw} = 1;
         }
@@ -1091,41 +1123,76 @@ sub Run {
 
         }
 
+        my $NavigationConfig = $ConfigObject->Get('CustomerFrontend::Navigation')->{ $Param{Action} };
+
         # module permission check for submenu item
-        if ( IsArrayRefWithData( $ModuleReg->{NavBar} ) ) {
-            LINKCHECK:
-            for my $ModuleReg ( @{ $ModuleReg->{NavBar} } ) {
-                next LINKCHECK if $Param{RequestedURL} !~ m/Subaction/i;
-                if ( $ModuleReg->{Link} =~ m/Subaction=/i && $ModuleReg->{Link} !~ m/$Param{Subaction}/i ) {
-                    next LINKCHECK;
-                }
-                $Param{AccessRo} = 0;
-                $Param{AccessRw} = 0;
+        if ( IsHashRefWithData($NavigationConfig) ) {
 
-                # module permission check for submenu item
-                if ( !$ModuleReg->{GroupRo} && !$ModuleReg->{Group} ) {
-                    $Param{AccessRo} = 1;
-                    $Param{AccessRw} = 1;
+            KEY:
+            for my $Key ( sort keys %{$NavigationConfig} ) {
+                next KEY if $Key !~ m/^\d+/i;
+                next KEY if $Param{RequestedURL} !~ m/Subaction/i;
+
+                my @ModuleNavigationConfigs;
+
+                # FIXME: Support both old (HASH) and new (ARRAY of HASH) navigation configurations, for reasons of
+                #   backwards compatibility. Once we are sure everything has been migrated correctly, support for
+                #   HASH-only configuration can be dropped in future major release.
+                if ( IsHashRefWithData( $NavigationConfig->{$Key} ) ) {
+                    push @ModuleNavigationConfigs, $NavigationConfig->{$Key};
                 }
+                elsif ( IsArrayRefWithData( $NavigationConfig->{$Key} ) ) {
+                    push @ModuleNavigationConfigs, @{ $NavigationConfig->{$Key} };
+                }
+
+                # Skip incompatible configuration.
                 else {
+                    next KEY;
+                }
 
-                    ( $Param{AccessRo}, $Param{AccessRw} ) = $Self->_CheckModulePermission(
-                        ModuleReg => $ModuleReg,
-                        %UserData,
-                    );
+                ITEM:
+                for my $Item (@ModuleNavigationConfigs) {
+                    if (
+                        $Item->{Link} =~ m/Subaction=/i
+                        && $Item->{Link} !~ m/$Param{Subaction}/i
+                        )
+                    {
+                        next ITEM;
+                    }
+                    $Param{AccessRo} = 0;
+                    $Param{AccessRw} = 0;
 
-                    if ( !$Param{AccessRo} ) {
+                    # module permission check for submenu item
+                    if (
+                        ref $Item->{GroupRo} eq 'ARRAY'
+                        && !scalar @{ $Item->{GroupRo} }
+                        && ref $Item->{Group} eq 'ARRAY'
+                        && !scalar @{ $Item->{Group} }
+                        )
+                    {
+                        $Param{AccessRo} = 1;
+                        $Param{AccessRw} = 1;
+                    }
+                    else {
 
-                        # new layout object
-                        my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-                        $Kernel::OM->Get('Kernel::System::Log')->Log(
-                            Priority => 'error',
-                            Message  => 'No Permission to use this frontend subaction module!'
+                        ( $Param{AccessRo}, $Param{AccessRw} ) = $Self->_CheckModulePermission(
+                            ModuleReg => $Item,
+                            %UserData,
                         );
-                        $LayoutObject->CustomerFatalError(
-                            Comment => Translatable('Please contact the administrator.')
-                        );
-                        return;
+
+                        if ( !$Param{AccessRo} ) {
+
+                            # new layout object
+                            my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+                            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                                Priority => 'error',
+                                Message  => 'No Permission to use this frontend subaction module!'
+                            );
+                            $LayoutObject->CustomerFatalError(
+                                Comment => Translatable('Please contact the administrator.')
+                            );
+                            return;
+                        }
                     }
                 }
             }
@@ -1149,10 +1216,12 @@ sub Run {
             || $Param{Action} eq 'CustomerVideoChat'
             )
         {
+            my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+
             $SessionObject->UpdateSessionID(
                 SessionID => $Param{SessionID},
                 Key       => 'UserLastRequest',
-                Value     => $Kernel::OM->Get('Kernel::System::Time')->SystemTime(),
+                Value     => $DateTimeObject->ToEpoch(),
             );
         }
 
@@ -1271,7 +1340,7 @@ sub Run {
 
 =begin Internal:
 
-=item _CheckModulePermission()
+=head2 _CheckModulePermission()
 
 module permission check
 
@@ -1293,21 +1362,31 @@ sub _CheckModulePermission {
         my $AccessOk = 0;
         my $Group    = $Param{ModuleReg}->{$Permission};
 
-        my $Key = "UserIs$Permission";
         next PERMISSION if !$Group;
+
+        my $GroupObject = $Kernel::OM->Get('Kernel::System::CustomerGroup');
+
         if ( IsArrayRefWithData($Group) ) {
             GROUP:
             for my $Item ( @{$Group} ) {
                 next GROUP if !$Item;
-                next GROUP if !$Param{ $Key . "[$Item]" };
-                next GROUP if $Param{ $Key . "[$Item]" } ne 'Yes';
+                next GROUP if !$GroupObject->PermissionCheck(
+                    UserID    => $Param{UserID},
+                    GroupName => $Item,
+                    Type      => $Permission eq 'GroupRo' ? 'ro' : 'rw',
+                );
+
                 $AccessOk = 1;
                 last GROUP;
             }
         }
         else {
-            if ( $Param{ $Key . "[$Group]" } && $Param{ $Key . "[$Group]" } eq 'Yes' )
-            {
+            my $HasPermission = $GroupObject->PermissionCheck(
+                UserID    => $Param{UserID},
+                GroupName => $Group,
+                Type      => $Permission eq 'GroupRo' ? 'ro' : 'rw',
+            );
+            if ($HasPermission) {
                 $AccessOk = 1;
             }
         }
@@ -1342,8 +1421,6 @@ sub DESTROY {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

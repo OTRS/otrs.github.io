@@ -21,17 +21,15 @@ our @ObjectDependencies = (
 
 Kernel::System::Daemon::DaemonModules::BaseTaskWorker - scheduler task worker base class
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Base class for scheduler daemon task worker modules.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=begin Internal:
 
-=cut
-
-=item _HandleError()
+=head2 _HandleError()
 
 Creates a system error message and sends an email with the error messages form a task execution.
 
@@ -71,13 +69,14 @@ sub _HandleError {
             Body     => $Param{ErrorMessage},
         );
 
-        return $Sent;
+        return 1 if $Sent->{Success};
+        return;
     }
 
     return;
 }
 
-=item _CheckTaskParams()
+=head2 _CheckTaskParams()
 
 Performs basic checks for common task parameters.
 
@@ -147,7 +146,7 @@ sub _CheckTaskParams {
 }
 1;
 
-=back
+=end Internal:
 
 =head1 TERMS AND CONDITIONS
 

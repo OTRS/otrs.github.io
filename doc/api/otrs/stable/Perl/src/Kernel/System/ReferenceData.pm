@@ -22,23 +22,17 @@ our @ObjectDependencies = (
 
 Kernel::System::ReferenceData - ReferenceData lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Contains reference data. For now, this is limited to just a list of ISO country
 codes.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $ReferenceDataObject = $Kernel::OM->Get('Kernel::System::ReferenceData');
 
 =cut
@@ -53,7 +47,7 @@ sub new {
     return $Self;
 }
 
-=item CountryList()
+=head2 CountryList()
 
 return a list of countries as a hash reference. The countries are based on ISO
 3166-2 and are provided by the Perl module Locale::Code::Country, or optionally
@@ -112,8 +106,6 @@ sub CountryList {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

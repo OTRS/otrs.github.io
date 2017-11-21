@@ -11,14 +11,16 @@ package Kernel::System::LinkObject;
 use strict;
 use warnings;
 
+use parent qw( Kernel::System::EventHandler );
+
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Cache',
     'Kernel::System::CheckItem',
+    'Kernel::System::DateTime',
     'Kernel::System::DB',
     'Kernel::System::Log',
     'Kernel::System::Main',
-    'Kernel::System::Time',
     'Kernel::System::Valid',
 );
 
@@ -26,22 +28,16 @@ our @ObjectDependencies = (
 
 Kernel::System::LinkObject - to link objects like tickets, faq entries, ...
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All functions to link objects like tickets, faq entries, ...
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $LinkObject = $Kernel::OM->Get('Kernel::System::LinkObject');
 
 =cut
@@ -49,9 +45,13 @@ create an object. Do not use it directly, instead use:
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
+
+    # Initialize event handler.
+    $Self->EventHandlerInit(
+        Config => 'LinkObject::EventModulePost',
+    );
 
     $Self->{CacheType} = 'LinkObject';
     $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
@@ -59,7 +59,7 @@ sub new {
     return $Self;
 }
 
-=item PossibleTypesList()
+=head2 PossibleTypesList()
 
 return a hash of all possible types
 
@@ -138,7 +138,7 @@ sub PossibleTypesList {
     return %PossibleTypesList;
 }
 
-=item PossibleObjectsList()
+=head2 PossibleObjectsList()
 
 return a hash of all possible objects
 
@@ -194,7 +194,7 @@ sub PossibleObjectsList {
     return %PossibleObjectsList;
 }
 
-=item PossibleLinkList()
+=head2 PossibleLinkList()
 
 return a 2 dimensional hash list of all possible links
 
@@ -310,7 +310,7 @@ sub PossibleLinkList {
     return %PossibleLinkList;
 }
 
-=item LinkAdd()
+=head2 LinkAdd()
 
 add a new link between two elements
 
@@ -545,6 +545,20 @@ sub LinkAdd {
         ],
     );
 
+    # delete affected caches (both directions)
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+    for my $Direction (qw(Source Target)) {
+        my $CacheKey =
+            'Cache::LinkListRaw'
+            . '::Direction' . $Direction
+            . '::ObjectID' . $Param{ $Direction . 'ObjectID' }
+            . '::StateID' . $StateID;
+        $CacheObject->Delete(
+            Type => $Self->{CacheType},
+            Key  => $CacheKey,
+        );
+    }
+
     # run post event module of source object
     $BackendSourceObject->LinkAddPost(
         Key          => $Param{SourceKey},
@@ -565,10 +579,24 @@ sub LinkAdd {
         UserID       => $Param{UserID},
     );
 
+    # Run event handlers.
+    $Self->EventHandler(
+        Event => 'LinkObjectLinkAdd',
+        Data  => {
+            SourceObject => $Param{SourceObject},
+            SourceKey    => $Param{SourceKey},
+            TargetObject => $Param{TargetObject},
+            TargetKey    => $Param{TargetKey},
+            Type         => $Param{Type},
+            State        => $Param{State},
+        },
+        UserID => $Param{UserID},
+    );
+
     return 1;
 }
 
-=item LinkCleanup()
+=head2 LinkCleanup()
 
 deletes old links from database
 
@@ -603,15 +631,11 @@ sub LinkCleanup {
     return if !$StateID;
 
     # get time object
-    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-
-    # get current time
-    my $Now = $TimeObject->SystemTime();
+    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
 
     # calculate delete time
-    my $DeleteTime = $TimeObject->SystemTime2TimeStamp(
-        SystemTime => ( $Now - $Param{Age} ),
-    );
+    $DateTimeObject->Subtract( Seconds => $Param{Age} );
+    my $DeleteTime = $DateTimeObject->ToString();
 
     # delete the link
     return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
@@ -624,10 +648,15 @@ sub LinkCleanup {
         ],
     );
 
+    # delete cache
+    $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
+        Type => $Self->{CacheType},
+    );
+
     return 1;
 }
 
-=item LinkDelete()
+=head2 LinkDelete()
 
 deletes a link
 
@@ -797,6 +826,25 @@ sub LinkDelete {
         ],
     );
 
+    # delete affected caches (both directions, all states, with/without type)
+    my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
+    my %StateList   = $Self->StateList();
+    for my $Direction (qw(Source Target)) {
+        for my $DirectionNumber (qw(1 2)) {
+            for my $StateID ( sort keys %StateList ) {
+                my $CacheKey =
+                    'Cache::LinkListRaw'
+                    . '::Direction' . $Direction
+                    . '::ObjectID' . $Param{ 'Object' . $DirectionNumber . 'ID' }
+                    . '::StateID' . $StateID;
+                $CacheObject->Delete(
+                    Type => $Self->{CacheType},
+                    Key  => $CacheKey,
+                );
+            }
+        }
+    }
+
     # run post event module of source object
     $BackendSourceObject->LinkDeletePost(
         Key          => $Existing{SourceKey},
@@ -817,10 +865,24 @@ sub LinkDelete {
         UserID       => $Param{UserID},
     );
 
+    # Run event handlers.
+    $Self->EventHandler(
+        Event => 'LinkObjectLinkDelete',
+        Data  => {
+            SourceObject => $Existing{SourceObject},
+            SourceKey    => $Existing{SourceKey},
+            TargetObject => $Existing{TargetObject},
+            TargetKey    => $Existing{TargetKey},
+            Type         => $Param{Type},
+            State        => $Existing{State},
+        },
+        UserID => $Param{UserID},
+    );
+
     return 1;
 }
 
-=item LinkDeleteAll()
+=head2 LinkDeleteAll()
 
 delete all links of an object
 
@@ -898,7 +960,7 @@ sub LinkDeleteAll {
     return 1;
 }
 
-=item LinkList()
+=head2 LinkList()
 
 get all existing links for a given object
 
@@ -963,7 +1025,6 @@ sub LinkList {
     my $ObjectID = $Self->ObjectLookup(
         Name => $Param{Object},
     );
-
     return if !$ObjectID;
 
     # lookup state id
@@ -971,167 +1032,118 @@ sub LinkList {
         Name => $Param{State},
     );
 
-    # prepare SQL statement
-    my $TypeSQL = '';
-    my @Bind = ( \$ObjectID, \$Param{Key}, \$StateID );
-
     # add type id to SQL statement
+    my $TypeID;
     if ( $Param{Type} ) {
 
         # lookup type id
-        my $TypeID = $Self->TypeLookup(
+        $TypeID = $Self->TypeLookup(
             Name   => $Param{Type},
             UserID => $Param{UserID},
         );
-
-        $TypeSQL = 'AND type_id = ? ';
-        push @Bind, \$TypeID;
     }
 
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    # get links where the given object is the source
-    return if !$DBObject->Prepare(
-        SQL => '
-            SELECT target_object_id, target_key, type_id
-            FROM link_relation
-            WHERE source_object_id = ?
-                AND source_key = ?
-                AND state_id = ? '
-            . $TypeSQL,
-        Bind => \@Bind,
+    # get complete list for both directions (or only one if restricted)
+    my $SourceLinks = {};
+    my $TargetLinks = {};
+    my $Direction   = $Param{Direction} || 'Both';
+    if ( $Direction ne 'Target' ) {
+        $SourceLinks = $Self->_LinkListRaw(
+            Direction => 'Target',
+            ObjectID  => $ObjectID,
+            Key       => $Param{Key},
+            StateID   => $StateID,
+            TypeID    => $TypeID,
+        );
+    }
+    $TargetLinks = $Self->_LinkListRaw(
+        Direction => 'Source',
+        ObjectID  => $ObjectID,
+        Key       => $Param{Key},
+        StateID   => $StateID,
+        TypeID    => $TypeID,
     );
 
-    # fetch results
-    my @Data;
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        my %LinkData;
-        $LinkData{TargetObjectID} = $Row[0];
-        $LinkData{TargetKey}      = $Row[1];
-        $LinkData{TypeID}         = $Row[2];
-        push @Data, \%LinkData;
+    # get names for used objects
+    # consider restriction for Object2
+    my %ObjectNameLookup;
+    OBJECTID:
+    for my $ObjectID ( sort keys %{$SourceLinks}, sort keys %{$TargetLinks} ) {
+        next OBJECTID if $ObjectNameLookup{$ObjectID};
+
+        # get object name
+        my $ObjectName = $Self->ObjectLookup(
+            ObjectID => $ObjectID,
+        );
+
+        # add to lookup unless restricted
+        next OBJECTID if $Param{Object2} && $Param{Object2} ne $ObjectName;
+        $ObjectNameLookup{$ObjectID} = $ObjectName;
     }
 
-    # store results
+    # shortcut: we have a restriction for Object2 but no matching links
+    return {} if !%ObjectNameLookup;
+
+    # get names and pointed info for used types
+    my %TypeNameLookup;
+    my %TypePointedLookup;
+    for my $ObjectID ( sort keys %ObjectNameLookup ) {
+        TYPEID:
+        for my $TypeID (
+            sort keys %{ $SourceLinks->{$ObjectID} },
+            sort keys %{ $TargetLinks->{$ObjectID} }
+            )
+        {
+            next TYPEID if $TypeNameLookup{$TypeID};
+
+            # get type name
+            my %TypeData = $Self->TypeGet(
+                TypeID => $TypeID,
+            );
+            $TypeNameLookup{$TypeID}    = $TypeData{Name};
+            $TypePointedLookup{$TypeID} = $TypeData{Pointed};
+        }
+    }
+
+    # merge lists, move target keys to source keys for unpointed link types
     my %Links;
-    my %TypePointedList;
-    for my $LinkData (@Data) {
+    for my $ObjectID ( sort keys %ObjectNameLookup ) {
+        my $ObjectName = $ObjectNameLookup{$ObjectID};
+        TYPEID:
+        for my $TypeID ( sort keys %TypeNameLookup ) {
+            my $HaveSourceLinks = $SourceLinks->{$ObjectID}->{$TypeID} ? 1 : 0;
+            my $HaveTargetLinks = $TargetLinks->{$ObjectID}->{$TypeID} ? 1 : 0;
+            my $IsPointed       = $TypePointedLookup{$TypeID};
+            my $TypeName        = $TypeNameLookup{$TypeID};
 
-        # lookup object name
-        my $TargetObject = $Self->ObjectLookup(
-            ObjectID => $LinkData->{TargetObjectID},
-        );
-
-        # get type data
-        my %TypeData = $Self->TypeGet(
-            TypeID => $LinkData->{TypeID},
-        );
-
-        $TypePointedList{ $TypeData{Name} } = $TypeData{Pointed};
-
-        # store the result
-        $Links{$TargetObject}->{ $TypeData{Name} }->{Target}->{ $LinkData->{TargetKey} } = 1;
-    }
-
-    # get links where the given object is the target
-    return if !$DBObject->Prepare(
-        SQL => '
-            SELECT source_object_id, source_key, type_id
-            FROM link_relation
-            WHERE target_object_id = ?
-                AND target_key = ?
-                AND state_id = ? '
-            . $TypeSQL,
-        Bind => \@Bind,
-    );
-
-    # fetch the result
-    @Data = ();
-    while ( my @Row = $DBObject->FetchrowArray() ) {
-        my %LinkData;
-        $LinkData{SourceObjectID} = $Row[0];
-        $LinkData{SourceKey}      = $Row[1];
-        $LinkData{TypeID}         = $Row[2];
-        push @Data, \%LinkData;
-    }
-
-    # store results
-    for my $LinkData (@Data) {
-
-        # lookup object name
-        my $SourceObject = $Self->ObjectLookup(
-            ObjectID => $LinkData->{SourceObjectID},
-        );
-
-        # get type data
-        my %TypeData = $Self->TypeGet(
-            TypeID => $LinkData->{TypeID},
-        );
-
-        $TypePointedList{ $TypeData{Name} } = $TypeData{Pointed};
-
-        # store the result
-        $Links{$SourceObject}->{ $TypeData{Name} }->{Source}->{ $LinkData->{SourceKey} } = 1;
-    }
-
-    # merge source target pairs into source for unpointed link types
-    for my $Object ( sort keys %Links ) {
-
-        TYPE:
-        for my $Type ( sort keys %{ $Links{$Object} } ) {
-
-            next TYPE if $TypePointedList{$Type};
-
-            # extract source target pair
-            my $SourceTarget = $Links{$Object}->{$Type};
-
-            next TYPE if !$SourceTarget->{Target};
-
-            # set empty hash reference as default
-            $SourceTarget->{Source} ||= {};
-
-            # merge the data
-            my %MergedIDs = ( %{ $SourceTarget->{Source} }, %{ $SourceTarget->{Target} } );
-            $SourceTarget->{Source} = \%MergedIDs;
-
-            # delete target hash
-            delete $SourceTarget->{Target};
-        }
-    }
-
-    return \%Links if !$Param{Object2} && !$Param{Direction};
-
-    # removed not needed elements
-    OBJECT:
-    for my $Object ( sort keys %Links ) {
-
-        # removed not needed object
-        if ( $Param{Object2} && $Param{Object2} ne $Object ) {
-            delete $Links{$Object};
-            next OBJECT;
-        }
-
-        next OBJECT if !$Param{Direction};
-
-        # removed not needed direction
-        for my $Type ( sort keys %{ $Links{$Object} } ) {
-
-            DIRECTION:
-            for my $Direction ( sort keys %{ $Links{$Object}->{$Type} } ) {
-
-                next DIRECTION if $Param{Direction} eq $Direction;
-                next DIRECTION if $Param{Direction} ne 'Source' && $Param{Direction} ne 'Target';
-
-                delete $Links{$Object}->{$Type}->{$Direction};
+            # add target links as target
+            if ( $Direction ne 'Source' && $HaveTargetLinks && $IsPointed ) {
+                $Links{$ObjectName}->{$TypeName}->{Target} = $TargetLinks->{$ObjectID}->{$TypeID};
             }
+
+            next TYPEID if $Direction eq 'Target';
+
+            # add source links as source
+            if ($HaveSourceLinks) {
+                $Links{$ObjectName}->{$TypeName}->{Source} = $SourceLinks->{$ObjectID}->{$TypeID};
+            }
+
+            # add target links as source for non-pointed links
+            if ( !$IsPointed && $HaveTargetLinks ) {
+                $Links{$ObjectName}->{$TypeName}->{Source} //= {};
+                $Links{$ObjectName}->{$TypeName}->{Source} = {
+                    %{ $Links{$ObjectName}->{$TypeName}->{Source} },
+                    %{ $TargetLinks->{$ObjectID}->{$TypeID} },
+                };
+            }
+
         }
     }
 
     return \%Links;
 }
 
-=item LinkListWithData()
+=head2 LinkListWithData()
 
 get all existing links for a given object with data of the other objects
 
@@ -1275,7 +1287,7 @@ sub LinkListWithData {
     return $LinkList;
 }
 
-=item LinkKeyList()
+=head2 LinkKeyList()
 
 return a hash with all existing links of a given object
 
@@ -1348,7 +1360,7 @@ sub LinkKeyList {
     return %LinkKeyList;
 }
 
-=item LinkKeyListWithData()
+=head2 LinkKeyListWithData()
 
 return a hash with all existing links of a given object
 
@@ -1421,7 +1433,7 @@ sub LinkKeyListWithData {
     return %LinkKeyList;
 }
 
-=item ObjectLookup()
+=head2 ObjectLookup()
 
 lookup a link object
 
@@ -1568,7 +1580,7 @@ sub ObjectLookup {
     }
 }
 
-=item TypeLookup()
+=head2 TypeLookup()
 
 lookup a link type
 
@@ -1732,7 +1744,7 @@ sub TypeLookup {
     }
 }
 
-=item TypeGet()
+=head2 TypeGet()
 
 get a link type
 
@@ -1851,7 +1863,7 @@ sub TypeGet {
     return %Type;
 }
 
-=item TypeList()
+=head2 TypeList()
 
 return a 2 dimensional hash list of all valid link types
 
@@ -1911,7 +1923,7 @@ sub TypeList {
     return %TypeList;
 }
 
-=item TypeGroupList()
+=head2 TypeGroupList()
 
 return a 2 dimensional hash list of all type groups
 
@@ -2010,7 +2022,7 @@ sub TypeGroupList {
     return %TypeGroupList;
 }
 
-=item PossibleType()
+=head2 PossibleType()
 
 return true if both types are NOT together in a type group
 
@@ -2051,7 +2063,7 @@ sub PossibleType {
     return 1;
 }
 
-=item StateLookup()
+=head2 StateLookup()
 
 lookup a link state
 
@@ -2177,7 +2189,7 @@ sub StateLookup {
     }
 }
 
-=item StateList()
+=head2 StateList()
 
 return a hash list of all valid link states
 
@@ -2228,7 +2240,7 @@ sub StateList {
     return %StateList;
 }
 
-=item ObjectPermission()
+=head2 ObjectPermission()
 
 checks read permission for a given object and UserID.
 
@@ -2265,7 +2277,7 @@ sub ObjectPermission {
     );
 }
 
-=item ObjectDescriptionGet()
+=head2 ObjectDescriptionGet()
 
 return a hash of object descriptions
 
@@ -2310,7 +2322,7 @@ sub ObjectDescriptionGet {
     return %Description;
 }
 
-=item ObjectSearch()
+=head2 ObjectSearch()
 
 return a hash reference of the search results.
 
@@ -2367,9 +2379,98 @@ sub ObjectSearch {
     return \%ObjectList;
 }
 
-1;
+sub _LinkListRaw {
+    my ( $Self, %Param ) = @_;
 
-=back
+    # check needed stuff
+    for my $Argument (qw(Direction ObjectID Key StateID)) {
+        if ( !$Param{$Argument} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Argument!",
+            );
+            return;
+        }
+    }
+
+    # check cache
+    my $CacheKey =
+        'Cache::LinkListRaw'
+        . '::Direction' . $Param{Direction}
+        . '::ObjectID' . $Param{ObjectID}
+        . '::StateID' . $Param{StateID};
+    my $CachedLinks = $Kernel::OM->Get('Kernel::System::Cache')->Get(
+        Type => $Self->{CacheType},
+        Key  => $CacheKey,
+    );
+
+    my @Links;
+    if ( ref $CachedLinks eq 'ARRAY' ) {
+        @Links = @{$CachedLinks};
+    }
+    else {
+
+        # prepare SQL statement
+        my $TypeSQL = '';
+        my @Bind = ( \$Param{ObjectID}, \$Param{StateID} );
+
+        # get fields based on type
+        my $SQL;
+        if ( $Param{Direction} eq 'Source' ) {
+            $SQL =
+                'SELECT target_object_id, target_key, type_id, source_key'
+                . ' FROM link_relation'
+                . ' WHERE source_object_id = ?';
+        }
+        else {
+            $SQL =
+                'SELECT source_object_id, source_key, type_id, target_key'
+                . ' FROM link_relation'
+                . ' WHERE target_object_id = ?';
+        }
+        $SQL .= ' AND state_id = ?' . $TypeSQL;
+
+        # get all links for object/state/type (for better caching)
+        my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+        return if !$DBObject->Prepare(
+            SQL  => $SQL,
+            Bind => \@Bind,
+        );
+
+        # fetch results
+        while ( my @Row = $DBObject->FetchrowArray() ) {
+            push @Links, {
+                ObjectID    => $Row[0],
+                ResponseKey => $Row[1],
+                TypeID      => $Row[2],
+                RequestKey  => $Row[3],
+            };
+        }
+
+        # set cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Set(
+            Type => $Self->{CacheType},
+            TTL  => $Self->{CacheTTL},
+            Key  => $CacheKey,
+
+            # make a local copy of the data to avoid it being altered in-memory later
+            Value => [@Links],
+        );
+    }
+
+    # fill result hash and if necessary filter by specified key and/or type id
+    my %List;
+    LINK:
+    for my $Link (@Links) {
+        next LINK if $Link->{RequestKey} ne $Param{Key};
+        next LINK if $Param{TypeID} && $Link->{TypeID} ne $Param{TypeID};
+        $List{ $Link->{ObjectID} }->{ $Link->{TypeID} }->{ $Link->{ResponseKey} } = 1;
+    }
+
+    return \%List;
+}
+
+1;
 
 =head1 TERMS AND CONDITIONS
 

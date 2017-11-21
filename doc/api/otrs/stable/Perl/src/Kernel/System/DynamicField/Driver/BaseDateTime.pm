@@ -14,13 +14,13 @@ use warnings;
 use Kernel::System::VariableCheck qw(:all);
 use Kernel::Language qw(Translatable);
 
-use base qw(Kernel::System::DynamicField::Driver::Base);
+use parent qw(Kernel::System::DynamicField::Driver::Base);
 
 our @ObjectDependencies = (
+    'Kernel::System::DateTime',
     'Kernel::System::DB',
     'Kernel::System::DynamicFieldValue',
     'Kernel::System::Log',
-    'Kernel::System::Time',
 );
 
 =head1 NAME
@@ -29,13 +29,11 @@ Kernel::System::DynamicField::Driver::BaseDateTime - sub module of
 Kernel::System::DynamicField::Driver::Date and
 Kernel::System::DynamicField::Driver::DateTime
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Date common functions.
 
 =head1 PUBLIC INTERFACE
-
-=over 4
 
 =cut
 
@@ -87,12 +85,14 @@ sub ValueValidate {
     if ($DateRestriction) {
 
         # get time object
-        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+        my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
 
-        my $ValueSystemTime = $TimeObject->TimeStamp2SystemTime(
+        my $SystemTime = $DateTimeObject->ToEpoch();
+
+        my $ValueSystemTime = $DateTimeObject->Set(
             String => $Param{Value},
         );
-        my $SystemTime = $TimeObject->SystemTime();
+        $ValueSystemTime = $ValueSystemTime ? $DateTimeObject->ToEpoch() : undef;
 
         if ( $DateRestriction eq 'DisableFutureDates' && $ValueSystemTime > $SystemTime ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -126,18 +126,25 @@ sub SearchSQLGet {
         SmallerThanEquals => '<=',
     );
 
-    if ( $Operators{ $Param{Operator} } ) {
-        my $SQL = " $Param{TableAlias}.value_date $Operators{$Param{Operator}} '";
-        $SQL .= $Kernel::OM->Get('Kernel::System::DB')->Quote( $Param{SearchTerm} ) . "' ";
-        return $SQL;
+    if ( $Param{Operator} eq 'Empty' ) {
+        if ( $Param{SearchTerm} ) {
+            return " $Param{TableAlias}.value_date IS NULL ";
+        }
+        else {
+            return " $Param{TableAlias}.value_date IS NOT NULL ";
+        }
+    }
+    elsif ( !$Operators{ $Param{Operator} } ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            'Priority' => 'error',
+            'Message'  => "Unsupported Operator $Param{Operator}",
+        );
+        return;
     }
 
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        'Priority' => 'error',
-        'Message'  => "Unsupported Operator $Param{Operator}",
-    );
-
-    return;
+    my $SQL = " $Param{TableAlias}.value_date $Operators{ $Param{Operator} } '";
+    $SQL .= $Kernel::OM->Get('Kernel::System::DB')->Quote( $Param{SearchTerm} ) . "' ";
+    return $SQL;
 }
 
 sub SearchSQLOrderFieldGet {
@@ -164,6 +171,7 @@ sub EditFieldRender {
     if ( defined $Param{Value} ) {
         $Value = $Param{Value};
     }
+
     if ($Value) {
         my ( $Year, $Month, $Day, $Hour, $Minute, $Second ) = $Value =~
             m{ \A ( \d{4} ) - ( \d{2} ) - ( \d{2} ) \s ( \d{2} ) : ( \d{2} ) : ( \d{2} ) \z }xms;
@@ -179,7 +187,7 @@ sub EditFieldRender {
         $FieldConfig->{ $FieldName . 'Minute' } = $Minute;
     }
 
-    # extract the dynamic field value form the web request
+    # extract the dynamic field value from the web request
     # TransformDates is always needed from EditFieldRender Bug#8452
     my $FieldValues = $Self->EditFieldValueGet(
         TransformDates       => 1,
@@ -430,12 +438,14 @@ sub EditFieldValueValidate {
             . $Hour . ':' . $Minute . ':' . $Second;
 
         # get time object
-        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+        my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
 
-        my $ValueSystemTime = $TimeObject->TimeStamp2SystemTime(
+        my $SystemTime = $DateTimeObject->ToEpoch();
+
+        my $ValueSystemTime = $DateTimeObject->Set(
             String => $ManualTimeStamp,
         );
-        my $SystemTime = $TimeObject->SystemTime();
+        $ValueSystemTime = $ValueSystemTime ? $DateTimeObject->ToEpoch() : undef;
 
         if ( $DateRestriction eq 'DisableFutureDates' && $ValueSystemTime > $SystemTime ) {
             $ServerError  = 1;
@@ -957,13 +967,11 @@ sub SearchFieldParameterBuild {
             }
 
             # get time object
-            my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+            my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
 
             # get the current time in epoch seconds and as time-stamp
-            my $Now          = $TimeObject->SystemTime();
-            my $NowTimeStamp = $TimeObject->SystemTime2TimeStamp(
-                SystemTime => $Now,
-            );
+            my $Now          = $DateTimeObject->ToEpoch();
+            my $NowTimeStamp = $DateTimeObject->ToString();
 
             # calculate difference time seconds
             my $DiffTimeSeconds = $DiffTimeMinutes * 60;
@@ -974,56 +982,68 @@ sub SearchFieldParameterBuild {
             if ( $Start eq 'Before' ) {
 
                 # we must subtract the difference because it is in the past
-                my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
-                    SystemTime => $Now - $DiffTimeSeconds,
+                my $DateTimeObjectBefore = $Kernel::OM->Create(
+                    'Kernel::System::DateTime',
+                    ObjectParams => {
+                        Epoch => $Now - $DiffTimeSeconds,
+                        }
                 );
 
                 # only search dates in the past (before the time stamp)
-                $Parameter{SmallerThanEquals} = $TimeStamp;
+                $Parameter{SmallerThanEquals} = $DateTimeObjectBefore->ToString();
 
                 # set the display value
-                $DisplayValue = '<= ' . $TimeStamp;
+                $DisplayValue = '<= ' . $DateTimeObjectBefore->ToString();
             }
             elsif ( $Start eq 'Last' ) {
 
                 # we must subtract the differences because it is in the past
-                my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
-                    SystemTime => $Now - $DiffTimeSeconds,
+                my $DateTimeObjectLast = $Kernel::OM->Create(
+                    'Kernel::System::DateTime',
+                    ObjectParams => {
+                        Epoch => $Now - $DiffTimeSeconds,
+                        }
                 );
 
                 # search dates in the past (after the time stamp and up to now)
-                $Parameter{GreaterThanEquals} = $TimeStamp;
+                $Parameter{GreaterThanEquals} = $DateTimeObjectLast->ToString();
                 $Parameter{SmallerThanEquals} = $NowTimeStamp;
 
                 # set the display value
-                $DisplayValue = $TimeStamp . ' - ' . $NowTimeStamp;
+                $DisplayValue = $DateTimeObjectLast->ToString() . ' - ' . $NowTimeStamp;
             }
             elsif ( $Start eq 'Next' ) {
 
                 # we must add the difference because it is in the future
-                my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
-                    SystemTime => $Now + $DiffTimeSeconds,
+                my $DateTimeObjectNext = $Kernel::OM->Create(
+                    'Kernel::System::DateTime',
+                    ObjectParams => {
+                        Epoch => $Now + $DiffTimeSeconds,
+                        }
                 );
 
                 # search dates in the future (after now and up to the time stamp)
                 $Parameter{GreaterThanEquals} = $NowTimeStamp;
-                $Parameter{SmallerThanEquals} = $TimeStamp;
+                $Parameter{SmallerThanEquals} = $DateTimeObjectNext->ToString();
 
                 # set the display value
-                $DisplayValue = $NowTimeStamp . ' - ' . $TimeStamp;
+                $DisplayValue = $NowTimeStamp . ' - ' . $DateTimeObjectNext->ToString();
             }
             elsif ( $Start eq 'After' ) {
 
                 # we must add the difference because it is in the future
-                my $TimeStamp = $TimeObject->SystemTime2TimeStamp(
-                    SystemTime => $Now + $DiffTimeSeconds,
+                my $DateTimeObjectAfter = $Kernel::OM->Create(
+                    'Kernel::System::DateTime',
+                    ObjectParams => {
+                        Epoch => $Now + $DiffTimeSeconds,
+                        }
                 );
 
                 # only search dates in the future (after the time stamp)
-                $Parameter{GreaterThanEquals} = $TimeStamp;
+                $Parameter{GreaterThanEquals} = $DateTimeObjectAfter->ToString();
 
                 # set the display value
-                $DisplayValue = '>= ' . $TimeStamp;
+                $DisplayValue = '>= ' . $DateTimeObjectAfter->ToString();
             }
 
             # return search parameter structure
@@ -1203,8 +1223,6 @@ sub ValueLookup {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

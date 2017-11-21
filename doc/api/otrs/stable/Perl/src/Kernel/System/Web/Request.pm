@@ -15,27 +15,27 @@ use CGI ();
 use CGI::Carp;
 use File::Path qw();
 
+use Kernel::System::VariableCheck qw(:all);
+
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::CheckItem',
     'Kernel::System::Encode',
+    'Kernel::System::Web::UploadCache',
+    'Kernel::System::FormDraft',
 );
 
 =head1 NAME
 
 Kernel::System::Web::Request - global CGI interface
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All cgi param functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create param object. Do not use it directly, instead use:
 
@@ -78,7 +78,7 @@ sub new {
     return $Self;
 }
 
-=item Error()
+=head2 Error()
 
 to get the error back
 
@@ -103,7 +103,7 @@ sub Error {
     ## use critic
 }
 
-=item GetParam()
+=head2 GetParam()
 
 to get single request parameters. By default, trimming is performed on the data.
 
@@ -144,7 +144,7 @@ sub GetParam {
     return $Value;
 }
 
-=item GetParamNames()
+=head2 GetParamNames()
 
 to get names of all parameters passed to the script.
 
@@ -152,7 +152,7 @@ to get names of all parameters passed to the script.
 
 Example:
 
-Called URL: index.pl?Action=AdminSysConfig;Subaction=Save;Name=Config::Option::Valid
+Called URL: index.pl?Action=AdminSystemConfiguration;Subaction=Save;Name=Config::Option::Valid
 
     my @ParamNames = $ParamObject->GetParamNames();
     print join " :: ", @ParamNames;
@@ -186,7 +186,7 @@ sub GetParamNames {
     return @ParamNames;
 }
 
-=item GetArray()
+=head2 GetArray()
 
 to get array request parameters.
 By default, trimming is performed on the data.
@@ -235,7 +235,7 @@ sub GetArray {
     return @Values;
 }
 
-=item GetUploadAll()
+=head2 GetUploadAll()
 
 gets file upload data.
 
@@ -269,14 +269,11 @@ sub GetUploadAll {
     $NewFileName =~ s/.*\\(.+?)/$1/g;
 
     # return a string
-    my $Content;
+    my $Content = '';
     while (<$Upload>) {
         $Content .= $_;
     }
     close $Upload;
-
-    # Check if content is there, IE is always sending file uploads without content.
-    return if !$Content;
 
     my $ContentType = $Self->_GetUploadInfo(
         Filename => $UploadFilenameOrig,
@@ -306,7 +303,7 @@ sub _GetUploadInfo {
     return $FileInfo->{ $Param{Header} };
 }
 
-=item SetCookie()
+=head2 SetCookie()
 
 set a cookie
 
@@ -336,7 +333,7 @@ sub SetCookie {
     );
 }
 
-=item GetCookie()
+=head2 GetCookie()
 
 get a cookie
 
@@ -352,7 +349,7 @@ sub GetCookie {
     return $Self->{Query}->cookie( $Param{Key} );
 }
 
-=item IsAJAXRequest()
+=head2 IsAJAXRequest()
 
 checks if the current request was sent by AJAX
 
@@ -366,9 +363,200 @@ sub IsAJAXRequest {
     return ( $Self->{Query}->http('X-Requested-With') // '' ) eq 'XMLHttpRequest' ? 1 : 0;
 }
 
-1;
+=head2 LoadFormDraft()
 
-=back
+Load specified draft.
+This will read stored draft data and inject it into the param object
+for transparent use by frontend module.
+
+    my $FormDraftID = $ParamObject->LoadFormDraft(
+        FormDraftID => 123,
+        UserID  => 1,
+    );
+
+=cut
+
+sub LoadFormDraft {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{FormDraftID} || !$Param{UserID};
+
+    # get draft data
+    my $FormDraft = $Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftGet(
+        FormDraftID => $Param{FormDraftID},
+        UserID      => $Param{UserID},
+    );
+    return if !IsHashRefWithData($FormDraft);
+
+    # Verify action.
+    my $Action = $Self->GetParam( Param => 'Action' );
+    return if $FormDraft->{Action} ne $Action;
+
+    # add draft name to form data
+    $FormDraft->{FormData}->{FormDraftTitle} = $FormDraft->{Title};
+
+    # create FormID and add to form data
+    my $FormID = $Kernel::OM->Get('Kernel::System::Web::UploadCache')->FormIDCreate();
+    $FormDraft->{FormData}->{FormID} = $FormID;
+
+    # set form data to param object, depending on type
+    KEY:
+    for my $Key ( sort keys %{ $FormDraft->{FormData} } ) {
+        my $Value = $FormDraft->{FormData}->{$Key} // '';
+
+        # array value
+        if ( IsArrayRefWithData($Value) ) {
+            $Self->{Query}->param(
+                -name   => $Key,
+                -values => $Value,
+            );
+            next KEY;
+        }
+
+        # scalar value
+        $Self->{Query}->param(
+            -name  => $Key,
+            -value => $Value,
+        );
+    }
+
+    # add UploadCache data
+    my $UploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
+    for my $File ( @{ $FormDraft->{FileData} } ) {
+        return if !$UploadCacheObject->FormIDAddFile(
+            %{$File},
+            FormID => $FormID,
+        );
+    }
+
+    return $Param{FormDraftID};
+}
+
+=head2 SaveFormDraft()
+
+Create or replace draft using data from param object and upload cache.
+Specified params can be overwritten if necessary.
+
+    my $FormDraftID = $ParamObject->SaveFormDraft(
+        UserID         => 1
+        ObjectType     => 'Ticket',
+        ObjectID       => 123,
+        OverrideParams => {               # optional, can contain strings and array references
+            Subaction   => undef,
+            UserID      => 1,
+            CustomParam => [ 1, 2, 3, ],
+            ...
+        },
+    );
+
+=cut
+
+sub SaveFormDraft {
+    my ( $Self, %Param ) = @_;
+
+    # check params
+    return if !$Param{UserID} || !$Param{ObjectType} || !IsInteger( $Param{ObjectID} );
+
+    # gather necessary data for backend
+    my %MetaParams;
+    for my $Param (qw(Action FormDraftID FormDraftTitle FormID)) {
+        $MetaParams{$Param} = $Self->GetParam(
+            Param => $Param,
+        );
+    }
+    return if !$MetaParams{Action};
+
+    # determine session name param (SessionUseCookie = 0) for exclusion
+    my $SessionName = $Kernel::OM->Get('Kernel::Config')->Get('SessionName') || 'SessionID';
+
+    # compile override list
+    my %OverrideParams = IsHashRefWithData( $Param{OverrideParams} ) ? %{ $Param{OverrideParams} } : ();
+
+    # these params must always be excluded for safety, they take precedence
+    for my $Name (
+        qw(Action ChallengeToken FormID FormDraftID FormDraftTitle FormDraftAction LoadFormDraftID),
+        $SessionName
+        )
+    {
+        $OverrideParams{$Name} = undef;
+    }
+
+    # Gather all params.
+    #   Exclude, add or override by using OverrideParams if necessary.
+    my @ParamNames = $Self->GetParamNames();
+    my %ParamSeen;
+    my %FormData;
+    PARAM:
+    for my $Param ( @ParamNames, sort keys %OverrideParams ) {
+        next PARAM if $ParamSeen{$Param}++;
+        my $Value;
+
+        # check for overrides first
+        if ( exists $OverrideParams{$Param} ) {
+
+            # allow only strings and array references as value
+            if (
+                IsStringWithData( $OverrideParams{$Param} )
+                || IsArrayRefWithData( $OverrideParams{$Param} )
+                )
+            {
+                $Value = $OverrideParams{$Param};
+            }
+
+            # skip all other parameters (including those specified to be excluded by using 'undef')
+            else {
+                next PARAM;
+            }
+        }
+
+        # get other values from param object
+        if ( !defined $Value ) {
+            my @Values = $Self->GetArray( Param => $Param );
+            next PARAM if !IsArrayRefWithData( \@Values );
+
+            # store single occurances as string
+            if ( scalar @Values == 1 ) {
+                $Value = $Values[0];
+            }
+
+            # store multiple occurances as array reference
+            else {
+                $Value = \@Values;
+            }
+        }
+
+        $FormData{$Param} = $Value;
+    }
+
+    # get files from upload cache
+    my @FileData = $Kernel::OM->Get('Kernel::System::Web::UploadCache')->FormIDGetAllFilesData(
+        FormID => $MetaParams{FormID},
+    );
+
+    # prepare data to add or update draft
+    my %FormDraft = (
+        FormData    => \%FormData,
+        FileData    => \@FileData,
+        FormDraftID => $MetaParams{FormDraftID},
+        ObjectType  => $Param{ObjectType},
+        ObjectID    => $Param{ObjectID},
+        Action      => $MetaParams{Action},
+        Title       => $MetaParams{FormDraftTitle},
+        UserID      => $Param{UserID},
+    );
+
+    # update draft
+    if ( $MetaParams{FormDraftID} ) {
+        return if !$Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftUpdate(%FormDraft);
+        return 1;
+    }
+
+    # create new draft
+    return if !$Kernel::OM->Get('Kernel::System::FormDraft')->FormDraftAdd(%FormDraft);
+    return 1;
+}
+
+1;
 
 =head1 TERMS AND CONDITIONS
 

@@ -21,22 +21,16 @@ our @ObjectDependencies = (
 
 Kernel::System::PID - to manage PIDs
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All functions to manage process ids
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $PIDObject = $Kernel::OM->Get('Kernel::System::PID');
 
 =cut
@@ -54,7 +48,7 @@ sub new {
     return $Self;
 }
 
-=item PIDCreate()
+=head2 PIDCreate()
 
 create a new process id lock
 
@@ -133,7 +127,7 @@ sub PIDCreate {
     return 1;
 }
 
-=item PIDGet()
+=head2 PIDGet()
 
 get process id lock info
 
@@ -183,7 +177,7 @@ sub PIDGet {
     return %Data;
 }
 
-=item PIDDelete()
+=head2 PIDDelete()
 
 delete the process id lock
 
@@ -235,7 +229,7 @@ sub PIDDelete {
     return 1;
 }
 
-=item PIDUpdate()
+=head2 PIDUpdate()
 
 update the process id change time.
 this might be useful as a keep alive signal.
@@ -282,8 +276,6 @@ sub PIDUpdate {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

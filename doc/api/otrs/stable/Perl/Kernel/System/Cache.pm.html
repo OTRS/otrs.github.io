@@ -28,11 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::Cache &mdash; OTRS 5.0 API Reference Perl</title>
+<title>Kernel::System::Cache &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body><div class="box">
-  <h1 class="t1">OTRS 5.0 API Reference Perl</h1>
+  <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -41,7 +41,7 @@ $(document).ready(function() {
   </table>
 </div>
 <div class="path">
-  <a href="../../index.html">OTRS 5.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  <a href="../../index.html">OTRS 6.0 API Reference Perl</a> &gt; Perl Modules &gt;
   Kernel::System::Cache
 </div>
 <div>
@@ -53,8 +53,24 @@ $(document).ready(function() {
 
 <ul id="index">
   <li><a href="#NAME">NAME</a></li>
-  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#CACHING-STRATEGY">CACHING STRATEGY</a>
+    <ul>
+      <li><a href="#CACHE-TYPES">CACHE TYPES</a></li>
+      <li><a href="#CACHE-KEYS">CACHE KEYS</a></li>
+      <li><a href="#CACHING-A-BACKEND-MODULE">CACHING A BACKEND MODULE</a></li>
+    </ul>
+  </li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Configure">Configure()</a></li>
+      <li><a href="#Set">Set()</a></li>
+      <li><a href="#Get">Get()</a></li>
+      <li><a href="#Delete">Delete()</a></li>
+      <li><a href="#CleanUp">CleanUp()</a></li>
+    </ul>
+  </li>
   <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 
@@ -62,28 +78,81 @@ $(document).ready(function() {
 
 <p>Kernel::System::Cache - Key/value based data cache for OTRS</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS</h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>This is a simple data cache. It can store key/value data both in memory and in a configured cache backend for persistent caching.</p>
 
 <p>This can be controlled via the config settings <code>Cache::InMemory</code> and <code>Cache::InBackend</code>. The backend can also be selected with the config setting <code>Cache::Module</code> and defaults to file system based storage for permanent caching.</p>
 
-<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+<h1 id="CACHING-STRATEGY">CACHING STRATEGY</h1>
+
+<p>Caching works based on <code>CacheType</code>s and <code>CacheKey</code>s.</p>
+
+<h2 id="CACHE-TYPES">CACHE TYPES</h2>
+
+<p>For file based caching, a <code>CacheType</code> groups all contained entries in a top level directory like <code>var/tmp/CacheFileStorable/MyCacheType</code>. This means also that all entries of a specific <code>CacheType</code> can be deleted with one function call, <a href="#CleanUp">&quot;CleanUp()&quot;</a>.</p>
+
+<p>Typically, every backend module like <a href="Valid.pm.html">Kernel::System::Valid</a> has its own CacheType that is stored in <code>$Self</code> for consistent use. There could be exceptions when modules have much cached data that needs to be cleaned up together. In this case additional <code>CacheType</code>s could be used, but this should be avoided.</p>
+
+<h2 id="CACHE-KEYS">CACHE KEYS</h2>
+
+<p>A <code>CacheKey</code> is used to identify a single cached entry within a <code>CacheType</code>. The specified cache key will be internally hashed to a file name that is used to fetch/store that particular cache entry, like <code>var/tmp/CacheFileStorable/Valid/2/1/217727036cc9b1804f7c0f4f7777ef86</code>.</p>
+
+<p>It is important that all variables that lead to the output of different results of a function must be part of the <code>CacheKey</code> if the entire function result is to be stored in a separate cache entry. For example, <a href="State.pm.html#StateGet">&quot;StateGet()&quot; in Kernel::System::State</a> allows fetching of <code>State</code>s by <code>Name</code> or by <code>ID</code>. So there are different cache keys for both cases:</p>
+
+<pre><code>    my $CacheKey;
+    if ( $Param{Name} ) {
+        $CacheKey = &#39;StateGet::Name::&#39; . $Param{Name};
+    }
+    else {
+        $CacheKey = &#39;StateGet::ID::&#39; . $Param{ID};
+    }</code></pre>
+
+<p>Please avoid the creation of too many different cache keys, as this can be a burden for storage and performance of the system. Sometimes it can be helpful to implement a function like the one presented above in another way: <code>StateGet()</code> could call the cached <code>StateList()</code> internally and fetch the requested entry from its result. This depends on the amount of data, of course.</p>
+
+<h2 id="CACHING-A-BACKEND-MODULE">CACHING A BACKEND MODULE</h2>
 
 <dl>
 
-<dt id="new">new()</dt>
+<dt id="Define-a-CacheType-and-a-CacheTTL">Define a <code>CacheType</code> and a <code>CacheTTL</code>.</dt>
 <dd>
 
-<p>create an object. Do not use it directly, instead use:</p>
-
-<pre><code>    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $CacheObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Cache&#39;);</code></pre>
+<p>Every module should have its own <code>CacheType</code> which typically resembles the module name. The <code>CacheTTL</code> defines how long a cache is valid. This depends on the data, but a value of 30 days is considered a good default choice.</p>
 
 </dd>
-<dt id="Configure">Configure()</dt>
+<dt id="Add-caching-to-methods-fetching-data">Add caching to methods fetching data.</dt>
 <dd>
+
+<p>All functions that list and fetch entities can potentially get caches.</p>
+
+</dd>
+<dt id="Implement-cache-cleanup">Implement cache cleanup.</dt>
+<dd>
+
+<p>All functions that add, modify or delete entries need to make sure that the cache stays consistent. All of these operations typically need to cleanup list method caches, while only modify and delete affect individual cache entries that need to be deleted.</p>
+
+<p>Whenever possible, avoid calling <a href="#CleanUp">&quot;CleanUp()&quot;</a> for an entire cache type, but instead delete individual cache entries with <a href="#Delete">&quot;Delete()&quot;</a> to keep as much cached data as possible.</p>
+
+<p>It is recommendable to implement a <code>_CacheCleanup()</code> method in the module that centralizes cache cleanup.</p>
+
+</dd>
+<dt id="Extend-module-tests">Extend module tests.</dt>
+<dd>
+
+<p>Please also extend the module tests to work on non-cached and cached values (e. g. calling a method more than one time) to ensure consistency of both cached and non-cached data, and proper cleanup on deleting entities.</p>
+
+</dd>
+</dl>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+
+<pre><code>    my $CacheObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Cache&#39;);</code></pre>
+
+<h2 id="Configure">Configure()</h2>
 
 <p>change cache configuration settings at runtime. You can use this to disable the cache in environments where it is not desired, such as in long running scripts.</p>
 
@@ -94,9 +163,7 @@ $(document).ready(function() {
         CacheInBackend =&gt; 1,    # optional
     );</code></pre>
 
-</dd>
-<dt id="Set">Set()</dt>
-<dd>
+<h2 id="Set">Set()</h2>
 
 <p>store a value in the cache.</p>
 
@@ -125,9 +192,7 @@ $(document).ready(function() {
         CacheInBackend =&gt; 1,                 # optional, defaults to 1
     );</code></pre>
 
-</dd>
-<dt id="Get">Get()</dt>
-<dd>
+<h2 id="Get">Get()</h2>
 
 <p>fetch a value from the cache.</p>
 
@@ -146,9 +211,7 @@ $(document).ready(function() {
         CacheInBackend =&gt; 1,    # optional, defaults to 1
     );</code></pre>
 
-</dd>
-<dt id="Delete">Delete()</dt>
-<dd>
+<h2 id="Delete">Delete()</h2>
 
 <p>deletes a single value from the cache.</p>
 
@@ -159,9 +222,7 @@ $(document).ready(function() {
 
 <p>Please note that despite the cache configuration, Delete and CleanUp will always be executed both in memory and in the backend to avoid inconsistent cache states.</p>
 
-</dd>
-<dt id="CleanUp">CleanUp()</dt>
-<dd>
+<h2 id="CleanUp">CleanUp()</h2>
 
 <p>delete parts of the cache or the full cache data.</p>
 
@@ -190,9 +251,6 @@ $(document).ready(function() {
 <p>Type/KeepTypes and Expired can be combined to only delete expired data of a single type or of all types except the types to keep.</p>
 
 <p>Please note that despite the cache configuration, Delete and CleanUp will always be executed both in memory and in the backend to avoid inconsistent cache states.</p>
-
-</dd>
-</dl>
 
 <h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 

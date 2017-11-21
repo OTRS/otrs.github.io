@@ -26,22 +26,16 @@ our @ObjectDependencies = (
 
 Kernel::System::NotificationEvent - to manage the notifications
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All functions to manage the notification and the notification jobs.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $NotificationEventObject = $Kernel::OM->Get('Kernel::System::NotificationEvent');
 
 =cut
@@ -55,11 +49,10 @@ sub new {
 
     $Self->{CacheType} = 'NotificationEvent';
     $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
-
     return $Self;
 }
 
-=item NotificationList()
+=head2 NotificationList()
 
 returns a hash of all notifications
 
@@ -134,7 +127,7 @@ sub NotificationList {
     return %Result;
 }
 
-=item NotificationGet()
+=head2 NotificationGet()
 
 returns a hash of the notification data
 
@@ -265,7 +258,7 @@ sub NotificationGet {
     return %Data;
 }
 
-=item NotificationAdd()
+=head2 NotificationAdd()
 
 adds a new notification to the database
 
@@ -316,7 +309,7 @@ sub NotificationAdd {
     if (%Check) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Can't add notification '$Param{Name}', notification already exists!",
+            Message  => "A notification with the name '$Param{Name}' already exists.",
         );
         return;
     }
@@ -430,7 +423,7 @@ sub NotificationAdd {
     return $ID;
 }
 
-=item NotificationUpdate()
+=head2 NotificationUpdate()
 
 update a notification in database
 
@@ -581,7 +574,7 @@ sub NotificationUpdate {
     return 1;
 }
 
-=item NotificationDelete()
+=head2 NotificationDelete()
 
 deletes an notification from the database
 
@@ -679,7 +672,7 @@ sub NotificationDelete {
     return 1;
 }
 
-=item NotificationEventCheck()
+=head2 NotificationEventCheck()
 
 returns array of notification affected by event
 
@@ -728,7 +721,7 @@ sub NotificationEventCheck {
     return @IDs;
 }
 
-=item NotificationImport()
+=head2 NotificationImport()
 
 import an Notification YAML file/content
 
@@ -802,6 +795,7 @@ sub NotificationImport {
     my @NotificationErrors;
 
     my %CurrentNotifications = $Self->NotificationList(
+        %Param,
         UserID => $Param{UserID},
     );
     my %ReverseCurrentNotifications = reverse %CurrentNotifications;
@@ -825,7 +819,6 @@ sub NotificationImport {
             else {
                 push @NotificationErrors, $Notification->{Name};
             }
-
         }
         else {
 
@@ -897,8 +890,6 @@ sub NotificationBodyCheck {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

@@ -75,6 +75,15 @@ Core.UI = Core.UI || {};
  *      Contains the code for the different dialogs.
  */
 Core.UI.Dialog = (function (TargetNS) {
+    /**
+     * @private
+     * @name DialogCounter
+     * @memberof Core.UI.Dialog
+     * @member {Number}
+     * @description
+     *      Number of used/opened dialogs on a page. Used to restore the correct HTML backup after dialog is closed.
+     */
+    var DialogCounter = 1;
 
     /*
      * check dependencies first
@@ -140,7 +149,7 @@ Core.UI.Dialog = (function (TargetNS) {
                 .filter(':first'),
             $FocusField;
 
-        if (!$FirstElement) {
+        if (!$FirstElement || !$FirstElement.length || $('div.Dialog:visible').find('.OTRSBusinessRequiredDialog').length) {
             return;
         }
 
@@ -175,13 +184,13 @@ Core.UI.Dialog = (function (TargetNS) {
          * to prevent the default action for the special keys.
          * See http://www.quirksmode.org/dom/events/keys.html for details
          */
-        $(document).unbind('keypress.Dialog').bind('keypress.Dialog', function (Event) {
+        $(document).off('keypress.Dialog').on('keypress.Dialog', function (Event) {
             if ($.browser.opera &amp;&amp; (Event.keyCode === 9 || (Event.keyCode === 27 &amp;&amp; CloseOnEscape))) {
                 Event.preventDefault();
                 Event.stopPropagation();
                 return false;
             }
-        }).unbind('keydown.Dialog').bind('keydown.Dialog', function (Event) {
+        }).off('keydown.Dialog').on('keydown.Dialog', function (Event) {
             var $Tabbables, $First, $Last;
 
             // Tab pressed
@@ -256,6 +265,8 @@ Core.UI.Dialog = (function (TargetNS) {
      * @param {Boolean} Params.CloseOnClickOutside - If true, clicking outside the dialog closes the dialog (default: false).
      * @param {Boolean} Params.CloseOnEscape - If true, pressing escape key closes the dialog (default: false).
      * @param {Boolean} Params.AllowAutoGrow - If true, the InnerContent of the dialog can resize until the max window height is reached, if false (default), InnerContent of small dialogs does not resize over 200px.
+     * @param {Boolean} Params.HideHeader - Hide the header by setting this to true
+     * @param {Boolean} Params.HideFooter - Hide the footer by setting this to true
      * @param {Object} Params.Buttons - Array of Hashes with the following properties (buttons are placed in a div "footer" of the dialog):
      * @param {String} Params.Buttons.Label - Text of the button.
      * @param {String} Params.Buttons.Type - 'Submit'|'Close' (default: none) Special type of the button - invokes a standard function.
@@ -267,8 +278,18 @@ Core.UI.Dialog = (function (TargetNS) {
     TargetNS.ShowDialog = function(Params) {
 
         var $Dialog, $Content, $ButtonFooter, HTMLBackup, DialogCopy, DialogCopySelector,
-            DialogHTML = '&lt;div class="Dialog">&lt;div class="Header">&lt;a class="Close" title="' + Core.Config.Get('DialogCloseMsg') + '" href="#">&lt;i class="fa fa-times">&lt;/i>&lt;/a>&lt;/div>&lt;div class="Content">&lt;/div>&lt;div class="Footer">&lt;/div>&lt;/div>',
+            DialogHTML,
             FullsizeMode = false;
+
+        DialogHTML = '&lt;div class="Dialog">';
+        if (!Params.HideHeader) {
+            DialogHTML += '&lt;div class="Header">&lt;a class="Close" title="' + Core.Language.Translate('Close this dialog') + '" href="#">&lt;i class="fa fa-times">&lt;/i>&lt;/a>&lt;/div>';
+        }
+        DialogHTML += '&lt;div class="Content">&lt;/div>';
+        if (!Params.HideFooter) {
+            DialogHTML += '&lt;div class="Footer">&lt;/div>';
+        }
+        DialogHTML += '&lt;/div>';
 
         /**
          * @private
@@ -394,11 +415,13 @@ Core.UI.Dialog = (function (TargetNS) {
                 // First get the data structure, ehich is (perhaps) already saved
                 // If the data does not exists Core.Data.Get returns an empty hash
                 DialogCopy = Core.Data.Get($('body'), 'DialogCopy');
+                DialogCopySelector = Core.Data.Get($('body'), 'DialogCopySelector');
                 HTMLBackup = (Params.HTML)[0].innerHTML;
-                DialogCopySelector = Params.HTML.selector;
                 // Add the new HTML data to the data structure and save it to the document
-                DialogCopy[DialogCopySelector] = HTMLBackup;
+                DialogCopy[DialogCounter] = HTMLBackup;
+                DialogCopySelector[DialogCounter] = Params.HTML;
                 Core.Data.Set($('body'), 'DialogCopy', DialogCopy);
+                Core.Data.Set($('body'), 'DialogSelector', DialogCopySelector);
                 // Additionally, we save the selector as data on the dialog itself for later restoring
                 // Remove the original dialog template content from the page
                 Params.HTML.empty();
@@ -424,7 +447,7 @@ Core.UI.Dialog = (function (TargetNS) {
                 Type: 'Close',
                 Function: Params.OnClose
             }];
-            $Content.append('&lt;div class="Center Spacing">&lt;button type="button" id="DialogButton1" class="CallForAction Close">&lt;span>OK&lt;/span>&lt;/button>&lt;/div>');
+            $Content.append('&lt;div class="Center Spacing">&lt;button type="button" id="DialogButton1" class="CallForAction Close">&lt;span>' + Core.Language.Translate('OK') + '&lt;/span>&lt;/button>&lt;/div>');
         }
         // Define different other types here...
         else if (Params.Type === 'Search') {
@@ -464,7 +487,7 @@ Core.UI.Dialog = (function (TargetNS) {
 
         // If Title is defined, add dialog title
         if (Params.Title) {
-            $Dialog.find('div.Header').append('&lt;h1>' + Params.Title + '&lt;/h1>');
+            $Dialog.children('div.Header').append('&lt;h1>' + Params.Title + '&lt;/h1>');
         }
 
         // Add Dialog to page
@@ -476,10 +499,11 @@ Core.UI.Dialog = (function (TargetNS) {
             $Dialog.find('.Footer').addClass('ContentFooter');
         }
 
-        // Now add the selector for the original dialog template content to the dialog, if it exists
-        if (DialogCopySelector &amp;&amp; DialogCopySelector.length) {
-            Core.Data.Set($Dialog, 'DialogCopySelector', DialogCopySelector);
-        }
+        // Now add the dialog number to the dialog data to restore the HTML later
+        Core.Data.Set($Dialog, 'DialogCounter', DialogCounter);
+        // Increase the dialog number for the next possible dialog
+        DialogCounter++;
+
 
         // Set position for Dialog
         if (Params.Type === 'Alert') {
@@ -578,7 +602,7 @@ Core.UI.Dialog = (function (TargetNS) {
 
         // Add CloseOnClickOutside functionality
         if (Params.CloseOnClickOutside) {
-            $(document).unbind('click.Dialog').bind('click.Dialog', function (event) {
+            $(document).off('click.Dialog').on('click.Dialog', function (event) {
                 // If target element is removed before this event triggers, the enclosing div.Dialog can't be found anymore
                 // We check, if we can find a parent HTML element to be sure, that the element is not removed
                 if ($(event.target).parents('html').length &amp;&amp; $(event.target).closest('div.Dialog').length === 0) {
@@ -588,7 +612,7 @@ Core.UI.Dialog = (function (TargetNS) {
         }
 
         // Add resize event handler for calculating the scroll height
-        $(window).unbind('resize.Dialog').bind('resize.Dialog', function () {
+        $(window).off('resize.Dialog').on('resize.Dialog', function () {
             AdjustScrollableHeight(Params.AllowAutoGrow);
         });
 
@@ -639,6 +663,47 @@ Core.UI.Dialog = (function (TargetNS) {
     };
 
     /**
+     * @name ShowWaitingDialog
+     * @memberof Core.UI.Dialog
+     * @function
+     * @param {String} Title - The title of the dialog.
+     * @param {String} Text - The text of the dialog.
+     * @description
+     *      Shows a waiting dialog (with spinner icon) and customizable title and text
+     */
+    TargetNS.ShowWaitingDialog = function (Title, Text) {
+
+        var DialogTemplate = Core.Template.Render('Dialog/Waiting', {
+            Text: Text
+        });
+
+        TargetNS.ShowDialog({
+            HTML: DialogTemplate,
+            Title: Title,
+            Modal: true,
+            CloseOnClickOutside: false,
+            CloseOnEscape: false,
+            PositionTop: '20%',
+            PositionLeft: 'Center',
+            AllowAutoGrow: true,
+            HideHeader: true,
+            HideFooter: true
+        });
+    };
+
+    /**
+     * @name MakeDialogWait
+     * @memberof Core.UI.Dialog
+     * @function
+     * @description
+     *      Shows a spinner overlay on the currently visible modal dialog. Is meant for showing the user that something is about
+     *      to happen, e.g. if changing a field within a dialog causes a page reload.
+     */
+    TargetNS.MakeDialogWait = function () {
+        $('.Dialog:visible .InnerContent').prepend('&lt;div class="Waiting">&lt;i class="fa fa-spinner fa-spin">&lt;/i>&lt;/div>').find('.Waiting').fadeIn();
+    };
+
+    /**
      * @name ShowAlert
      * @memberof Core.UI.Dialog
      * @function
@@ -668,11 +733,11 @@ Core.UI.Dialog = (function (TargetNS) {
      *      Closes all dialogs specified.
      */
     TargetNS.CloseDialog = function (Object) {
-        var $Dialog, DialogCopy, DialogCopySelector, BackupHTML;
+        var $Dialog, $DialogSelector, DialogCopy, DialogSelectorData, InternalDialogCounter, BackupHTML;
         $Dialog = $(Object).closest('.Dialog:visible');
 
-        // Get the original selector for the content template
-        DialogCopySelector = Core.Data.Get($Dialog, 'DialogCopySelector');
+        // Get the original dialog number for the content template
+        InternalDialogCounter = Core.Data.Get($Dialog, 'DialogCounter');
 
         // publish close event
         Core.App.Publish('Event.UI.Dialog.CloseDialog.Close', [$Dialog]);
@@ -687,19 +752,22 @@ Core.UI.Dialog = (function (TargetNS) {
         $('body').css('min-height', 'auto');
 
         // Revert orignal html
-        if (DialogCopySelector.length) {
+        if (InternalDialogCounter) {
             DialogCopy = Core.Data.Get($('body'), 'DialogCopy');
+            DialogSelectorData = Core.Data.Get($('body'), 'DialogSelector');
             // Get saved HTML
             if (typeof DialogCopy !== 'undefined') {
-                BackupHTML = DialogCopy[DialogCopySelector];
+                BackupHTML = DialogCopy[InternalDialogCounter];
+                $DialogSelector = DialogSelectorData[InternalDialogCounter];
 
                 // If HTML could be restored, write it back into the page
                 if (BackupHTML &amp;&amp; BackupHTML.length) {
-                    $(DialogCopySelector).append(BackupHTML);
+                    $DialogSelector.append(BackupHTML);
                 }
 
                 // delete this variable from the object
-                delete DialogCopy[DialogCopySelector];
+                delete DialogCopy[InternalDialogCounter];
+                delete DialogSelectorData[InternalDialogCounter];
             }
 
             // write the new DialogCopy back
@@ -719,7 +787,7 @@ Core.UI.Dialog = (function (TargetNS) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingSimple.html">Core.Agent.Admin.GenericInterfaceMappingSimple</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.SysConfig.html">Core.Agent.Admin.SysConfig</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.Attachment.html">Core.Agent.Admin.Attachment</a></li><li><a href="Core.Agent.Admin.AutoResponse.html">Core.Agent.Admin.AutoResponse</a></li><li><a href="Core.Agent.Admin.CommunicationLog.html">Core.Agent.Admin.CommunicationLog</a></li><li><a href="Core.Agent.Admin.Core.Agent.Admin.html">Core.Agent.Admin.Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.Core.Agent.TicketFormDraft.html">Core.Agent.Admin.Core.Agent.TicketFormDraft</a></li><li><a href="Core.Agent.Admin.CustomerCompany.html">Core.Agent.Admin.CustomerCompany</a></li><li><a href="Core.Agent.Admin.CustomerGroup.html">Core.Agent.Admin.CustomerGroup</a></li><li><a href="Core.Agent.Admin.CustomerUser.html">Core.Agent.Admin.CustomerUser</a></li><li><a href="Core.Agent.Admin.CustomerUserService.html">Core.Agent.Admin.CustomerUserService</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldCheckbox.html">Core.Agent.Admin.DynamicFieldCheckbox</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandling.html">Core.Agent.Admin.GenericInterfaceErrorHandling</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry.html">Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvokerEvent.html">Core.Agent.Admin.GenericInterfaceInvokerEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMapping.html">Core.Agent.Admin.GenericInterfaceMapping</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingXSLT.html">Core.Agent.Admin.GenericInterfaceMappingXSLT</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPREST.html">Core.Agent.Admin.GenericInterfaceTransportHTTPREST</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP.html">Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.Group.html">Core.Agent.Admin.Group</a></li><li><a href="Core.Agent.Admin.Log.html">Core.Agent.Admin.Log</a></li><li><a href="Core.Agent.Admin.MailAccount.html">Core.Agent.Admin.MailAccount</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.PackageManager.html">Core.Agent.Admin.PackageManager</a></li><li><a href="Core.Agent.Admin.PostMasterFilter.html">Core.Agent.Admin.PostMasterFilter</a></li><li><a href="Core.Agent.Admin.Priority.html">Core.Agent.Admin.Priority</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.Queue.html">Core.Agent.Admin.Queue</a></li><li><a href="Core.Agent.Admin.QueueAutoResponse.html">Core.Agent.Admin.QueueAutoResponse</a></li><li><a href="Core.Agent.Admin.QueueTemplates.html">Core.Agent.Admin.QueueTemplates</a></li><li><a href="Core.Agent.Admin.Registration.html">Core.Agent.Admin.Registration</a></li><li><a href="Core.Agent.Admin.Role.html">Core.Agent.Admin.Role</a></li><li><a href="Core.Agent.Admin.RoleGroup.html">Core.Agent.Admin.RoleGroup</a></li><li><a href="Core.Agent.Admin.RoleUser.html">Core.Agent.Admin.RoleUser</a></li><li><a href="Core.Agent.Admin.Salutation.html">Core.Agent.Admin.Salutation</a></li><li><a href="Core.Agent.Admin.SelectBox.html">Core.Agent.Admin.SelectBox</a></li><li><a href="Core.Agent.Admin.Service.html">Core.Agent.Admin.Service</a></li><li><a href="Core.Agent.Admin.Session.html">Core.Agent.Admin.Session</a></li><li><a href="Core.Agent.Admin.Signature.html">Core.Agent.Admin.Signature</a></li><li><a href="Core.Agent.Admin.SLA.html">Core.Agent.Admin.SLA</a></li><li><a href="Core.Agent.Admin.SMIME.html">Core.Agent.Admin.SMIME</a></li><li><a href="Core.Agent.Admin.State.html">Core.Agent.Admin.State</a></li><li><a href="Core.Agent.Admin.SupportDataCollector.html">Core.Agent.Admin.SupportDataCollector</a></li><li><a href="Core.Agent.Admin.SysConfig.Entity.html">Core.Agent.Admin.SysConfig.Entity</a></li><li><a href="Core.Agent.Admin.SystemAddress.html">Core.Agent.Admin.SystemAddress</a></li><li><a href="Core.Agent.Admin.SystemConfiguration.html">Core.Agent.Admin.SystemConfiguration</a></li><li><a href="Core.Agent.Admin.SystemMaintenance.html">Core.Agent.Admin.SystemMaintenance</a></li><li><a href="Core.Agent.Admin.Template.html">Core.Agent.Admin.Template</a></li><li><a href="Core.Agent.Admin.TemplateAttachment.html">Core.Agent.Admin.TemplateAttachment</a></li><li><a href="Core.Agent.Admin.Type.html">Core.Agent.Admin.Type</a></li><li><a href="Core.Agent.Admin.UserGroup.html">Core.Agent.Admin.UserGroup</a></li><li><a href="Core.Agent.AppointmentCalendar.html">Core.Agent.AppointmentCalendar</a></li><li><a href="Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage.html">Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage</a></li><li><a href="Core.Agent.CustomerInformationCenter.html">Core.Agent.CustomerInformationCenter</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.CustomerSearchAutoComplete.html">Core.Agent.CustomerSearchAutoComplete</a></li><li><a href="Core.Agent.CustomerUserAddressBook.html">Core.Agent.CustomerUserAddressBook</a></li><li><a href="Core.Agent.CustomerUserInformationCenter.html">Core.Agent.CustomerUserInformationCenter</a></li><li><a href="Core.Agent.CustomerUserInformationCenterSearch.html">Core.Agent.CustomerUserInformationCenterSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.Header.html">Core.Agent.Header</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.LinkObject.SearchForm.html">Core.Agent.LinkObject.SearchForm</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Overview.html">Core.Agent.Overview</a></li><li><a href="Core.Agent.Preferences.html">Core.Agent.Preferences</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Statistics.ParamsWidget.html">Core.Agent.Statistics.ParamsWidget</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketActionCommon.html">Core.Agent.TicketActionCommon</a></li><li><a href="Core.Agent.TicketBounce.html">Core.Agent.TicketBounce</a></li><li><a href="Core.Agent.TicketBulk.html">Core.Agent.TicketBulk</a></li><li><a href="Core.Agent.TicketCompose.html">Core.Agent.TicketCompose</a></li><li><a href="Core.Agent.TicketEmail.html">Core.Agent.TicketEmail</a></li><li><a href="Core.Agent.TicketEmailOutbound.html">Core.Agent.TicketEmailOutbound</a></li><li><a href="Core.Agent.TicketEmailResend.html">Core.Agent.TicketEmailResend</a></li><li><a href="Core.Agent.TicketForward.html">Core.Agent.TicketForward</a></li><li><a href="Core.Agent.TicketHistory.html">Core.Agent.TicketHistory</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketMove.html">Core.Agent.TicketMove</a></li><li><a href="Core.Agent.TicketPhone.html">Core.Agent.TicketPhone</a></li><li><a href="Core.Agent.TicketPhoneCommon.html">Core.Agent.TicketPhoneCommon</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketSplit.html">Core.Agent.TicketSplit</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketMessage.html">Core.Customer.TicketMessage</a></li><li><a href="Core.Customer.TicketProcess.html">Core.Customer.TicketProcess</a></li><li><a href="Core.Customer.TicketSearch.html">Core.Customer.TicketSearch</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Init.html">Core.Init</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.Language.html">Core.Language</a></li><li><a href="Core.SystemConfiguration.html">Core.SystemConfiguration</a></li><li><a href="Core.Template.html">Core.Template</a></li><li><a href="Core.TicketProcess.html">Core.TicketProcess</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul><h3>Global</h3><ul><li><a href="global.html#EditAppointment">EditAppointment</a></li></ul>
 </nav>
 
 <br clear="both">

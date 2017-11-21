@@ -13,7 +13,7 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
 
-use base qw(Kernel::System::DynamicField::Driver::Base);
+use parent qw(Kernel::System::DynamicField::Driver::Base);
 
 our @ObjectDependencies = (
     'Kernel::System::DB',
@@ -28,13 +28,11 @@ Kernel::System::DynamicField::Driver::BaseSelect - sub module of
 Kernel::System::DynamicField::Driver::Dropdown and
 Kernel::System::DynamicField::Driver::Multiselect
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Date common functions.
 
 =head1 PUBLIC INTERFACE
-
-=over 4
 
 =cut
 
@@ -95,6 +93,15 @@ sub ValueValidate {
 sub SearchSQLGet {
     my ( $Self, %Param ) = @_;
 
+    if ( $Param{Operator} eq 'Like' ) {
+        my $SQL = $Kernel::OM->Get('Kernel::System::DB')->QueryCondition(
+            Key   => "$Param{TableAlias}.value_text",
+            Value => $Param{SearchTerm},
+        );
+
+        return $SQL;
+    }
+
     my %Operators = (
         Equals            => '=',
         GreaterThan       => '>',
@@ -103,31 +110,31 @@ sub SearchSQLGet {
         SmallerThanEquals => '<=',
     );
 
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    if ( $Operators{ $Param{Operator} } ) {
-        my $SQL = " $Param{TableAlias}.value_text $Operators{$Param{Operator}} '";
-        $SQL .= $DBObject->Quote( $Param{SearchTerm} ) . "' ";
-        return $SQL;
+    if ( $Param{Operator} eq 'Empty' ) {
+        if ( $Param{SearchTerm} ) {
+            return " $Param{TableAlias}.value_text IS NULL OR $Param{TableAlias}.value_text = '' ";
+        }
+        else {
+            my $DatabaseType = $Kernel::OM->Get('Kernel::System::DB')->{'DB::Type'};
+            if ( $DatabaseType eq 'oracle' ) {
+                return " $Param{TableAlias}.value_text IS NOT NULL ";
+            }
+            else {
+                return " $Param{TableAlias}.value_text <> '' ";
+            }
+        }
     }
-
-    if ( $Param{Operator} eq 'Like' ) {
-
-        my $SQL = $DBObject->QueryCondition(
-            Key   => "$Param{TableAlias}.value_text",
-            Value => $Param{SearchTerm},
+    elsif ( !$Operators{ $Param{Operator} } ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            'Priority' => 'error',
+            'Message'  => "Unsupported Operator $Param{Operator}",
         );
-
-        return $SQL;
+        return;
     }
 
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        'Priority' => 'error',
-        'Message'  => "Unsupported Operator $Param{Operator}",
-    );
-
-    return;
+    my $SQL = " $Param{TableAlias}.value_text $Operators{ $Param{Operator} } '";
+    $SQL .= $Kernel::OM->Get('Kernel::System::DB')->Quote( $Param{SearchTerm} ) . "' ";
+    return $SQL;
 }
 
 sub SearchSQLOrderFieldGet {
@@ -162,7 +169,7 @@ sub EditFieldRender {
         $Value = $Param{Template}->{$FieldName};
     }
 
-    # extract the dynamic field value form the web request
+    # extract the dynamic field value from the web request
     my $FieldValue = $Self->EditFieldValueGet(
         %Param,
     );
@@ -389,7 +396,7 @@ sub EditFieldValueValidate {
 sub DisplayValueRender {
     my ( $Self, %Param ) = @_;
 
-    # set HTMLOuput as default if not specified
+    # set HTMLOutput as default if not specified
     if ( !defined $Param{HTMLOutput} ) {
         $Param{HTMLOutput} = 1;
     }
@@ -414,7 +421,7 @@ sub DisplayValueRender {
     # set title as value after update and before limit
     my $Title = $Value;
 
-    # HTMLOuput transformations
+    # HTMLOutput transformations
     if ( $Param{HTMLOutput} ) {
         $Value = $Param{LayoutObject}->Ascii2Html(
             Text => $Value,
@@ -998,8 +1005,6 @@ sub ColumnFilterValuesGet {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

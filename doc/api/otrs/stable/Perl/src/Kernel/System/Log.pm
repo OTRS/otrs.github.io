@@ -26,17 +26,13 @@ our @ObjectDependencies = (
 
 Kernel::System::Log - global log interface
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All log functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create a log object. Do not use it directly, instead use:
 
@@ -126,7 +122,7 @@ sub new {
     return $Self;
 }
 
-=item Log()
+=head2 Log()
 
 log something. log priorities are 'debug', 'info', 'notice' and 'error'.
 
@@ -262,7 +258,7 @@ sub Log {
     return 1;
 }
 
-=item GetLogEntry()
+=head2 GetLogEntry()
 
 to get the last log info back
 
@@ -279,7 +275,7 @@ sub GetLogEntry {
     return $Self->{ lc $Param{Type} }->{ $Param{What} } || '';
 }
 
-=item GetLog()
+=head2 GetLog()
 
 to get the tmp log data (from shared memory - ipc) in csv form
 
@@ -304,7 +300,7 @@ sub GetLog {
     return $String;
 }
 
-=item CleanUp()
+=head2 CleanUp()
 
 to clean up tmp log data from shared memory (ipc)
 
@@ -322,7 +318,7 @@ sub CleanUp {
     return 1;
 }
 
-=item Dumper()
+=head2 Dumper()
 
 dump a perl variable to log
 
@@ -358,8 +354,6 @@ sub Dumper {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

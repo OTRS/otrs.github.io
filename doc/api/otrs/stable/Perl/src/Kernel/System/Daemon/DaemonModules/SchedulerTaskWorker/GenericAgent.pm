@@ -11,34 +11,28 @@ package Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericAgent
 use strict;
 use warnings;
 
-use base qw(Kernel::System::Daemon::DaemonModules::BaseTaskWorker);
+use parent qw(Kernel::System::Daemon::DaemonModules::BaseTaskWorker);
 
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Daemon::SchedulerDB',
+    'Kernel::System::DateTime',
     'Kernel::System::GenericAgent',
     'Kernel::System::Log',
-    'Kernel::System::Time',
 );
 
 =head1 NAME
 
 Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericAgent - Scheduler daemon task handler module for GenericAgent
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 This task handler executes generic agent jobs
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
-
-=item new()
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $TaskHandlerObject = $Kernel::OM-Get('Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::GenericAgent');
 
 =cut
@@ -55,7 +49,7 @@ sub new {
     return $Self;
 }
 
-=item Run()
+=head2 Run()
 
 Performs the selected task.
 
@@ -92,7 +86,7 @@ sub Run {
 
     my %Job = %{ $Param{Data} };
 
-    my $StartSystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
+    my $StartSystemTime = $Kernel::OM->Create('Kernel::System::DateTime')->ToEpoch();
 
     # Check if last run was less than 1 minute ago.
     if (
@@ -141,7 +135,7 @@ sub Run {
     };
 
     # Get current system time (as soon as the job finish to run).
-    my $EndSystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
+    my $EndSystemTime = $Kernel::OM->Create('Kernel::System::DateTime')->ToEpoch();
 
     if ( !$Success ) {
 
@@ -166,8 +160,6 @@ sub Run {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

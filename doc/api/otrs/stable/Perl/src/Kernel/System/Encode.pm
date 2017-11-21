@@ -15,28 +15,25 @@ use Encode;
 use Encode::Locale;
 use IO::Interactive qw(is_interactive);
 
+our %ObjectManagerFlags = (
+    IsSingleton => 1,
+);
 our @ObjectDependencies = ();
 
 =head1 NAME
 
 Kernel::System::Encode - character encodings
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 This module will use Perl's Encode module (Perl 5.8.0 or higher is required).
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
 
 =cut
@@ -52,14 +49,15 @@ sub new {
     $Self->{Debug} = 0;
 
     # use "locale" as an arg to encode/decode
-    @ARGV = map { decode( locale => $_, 1 ) } @ARGV;
+    @ARGV = map { decode( locale => $_, 1 ) } @ARGV;    ## no critic
 
     # check if the encodeobject is used from the command line
     # if so, we need to decode @ARGV
     if ( !is_interactive() ) {
 
         # encode STDOUT and STDERR
-        $Self->SetIO( \*STDOUT, \*STDERR );
+        $Self->ConfigureOutputFileHandle( FileHandle => \*STDOUT );
+        $Self->ConfigureOutputFileHandle( FileHandle => \*STDERR );
     }
     else {
 
@@ -74,7 +72,7 @@ sub new {
     return $Self;
 }
 
-=item Convert()
+=head2 Convert()
 
 Convert a string from one charset to another charset.
 
@@ -130,19 +128,6 @@ sub Convert {
         # check if string is valid utf-8
         if ( $Param{Check} && !eval { Encode::is_utf8( $Param{Text}, 1 ) } ) {
             Encode::_utf8_off( $Param{Text} );
-
-            # We should not output error messages about invalid strings by default, as this happens regularly
-            #   with certain input data from SPAM mails and such.
-            if ( $Self->{Debug} ) {
-
-                # truncate text for error messages
-                my $TruncatedText = $Param{Text};
-                if ( length($TruncatedText) > 65 ) {
-                    $TruncatedText = substr( $TruncatedText, 0, 65 ) . '[...]';
-                }
-
-                print STDERR "No valid '$Param{To}' string: '$TruncatedText'!\n";
-            }
 
             # strip invalid chars / 0 = will put a substitution character in
             # place of a malformed character
@@ -241,7 +226,7 @@ sub Convert {
     return $Param{Text};
 }
 
-=item Convert2CharsetInternal()
+=head2 Convert2CharsetInternal()
 
 Convert given charset into the internal used charset (utf-8).
 Should be used on all I/O interfaces.
@@ -267,7 +252,7 @@ sub Convert2CharsetInternal {
     return $Self->Convert( %Param, To => 'utf-8' );
 }
 
-=item EncodeInput()
+=head2 EncodeInput()
 
 Convert internal used charset (e. g. utf-8) into given charset (utf-8).
 
@@ -305,7 +290,7 @@ sub EncodeInput {
     return $What;
 }
 
-=item EncodeOutput()
+=head2 EncodeOutput()
 
 Convert utf-8 to a sequence of bytes. All possible characters have
 a UTF-8 representation so this function cannot fail.
@@ -344,31 +329,28 @@ sub EncodeOutput {
     return $What;
 }
 
-=item SetIO()
+=head2 ConfigureOutputFileHandle()
 
-Set array of file handles to utf-8 output.
+switch output file handle to utf-8 output.
 
-    $EncodeObject->SetIO( \*STDOUT, \*STDERR );
+    $EncodeObject->ConfigureOutputFileHandle( FileHandle => \*STDOUT );
 
 =cut
 
-sub SetIO {
-    my ( $Self, @Array ) = @_;
+sub ConfigureOutputFileHandle {
+    my ( $Self, %Param ) = @_;
 
-    ROW:
-    for my $Row (@Array) {
-        next ROW if !defined $Row;
-        next ROW if ref $Row ne 'GLOB';
+    return if !defined $Param{FileHandle};
+    return if ref $Param{FileHandle} ne 'GLOB';
 
-        # http://www.perlmonks.org/?node_id=644786
-        # http://bugs.otrs.org/show_bug.cgi?id=12100
-        binmode( $Row, ':utf8' );    ## no critic
-    }
+    # http://www.perlmonks.org/?node_id=644786
+    # http://bugs.otrs.org/show_bug.cgi?id=12100
+    binmode( $Param{FileHandle}, ':utf8' );    ## no critic
 
-    return;
+    return 1;
 }
 
-=item EncodingIsAsciiSuperset()
+=head2 EncodingIsAsciiSuperset()
 
 Checks if an encoding is a super-set of ASCII, that is, encodes the
 codepoints from 0 to 127 the same way as ASCII.
@@ -389,12 +371,12 @@ sub EncodingIsAsciiSuperset {
         print STDERR "Unsupported Encoding $Param{Encoding}!\n";
         return;
     }
-    my $Test = join '', map chr, 0 .. 127;
+    my $Test = join '', map {chr} 0 .. 127;
     return Encode::encode( $Param{Encoding}, $Test )
         eq Encode::encode( 'ASCII',          $Test );
 }
 
-=item FindAsciiSupersetEncoding()
+=head2 FindAsciiSupersetEncoding()
 
 From a list of character encodings, returns the first that
 is a super-set of ASCII. If none matches, C<ASCII> is returned.
@@ -422,8 +404,6 @@ sub FindAsciiSupersetEncoding {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

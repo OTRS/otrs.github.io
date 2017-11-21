@@ -28,11 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::System::CustomerUser &mdash; OTRS 5.0 API Reference Perl</title>
+<title>Kernel::System::CustomerUser &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body><div class="box">
-  <h1 class="t1">OTRS 5.0 API Reference Perl</h1>
+  <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -41,7 +41,7 @@ $(document).ready(function() {
   </table>
 </div>
 <div class="path">
-  <a href="../../index.html">OTRS 5.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  <a href="../../index.html">OTRS 6.0 API Reference Perl</a> &gt; Perl Modules &gt;
   Kernel::System::CustomerUser
 </div>
 <div>
@@ -53,8 +53,34 @@ $(document).ready(function() {
 
 <ul id="index">
   <li><a href="#NAME">NAME</a></li>
-  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
-  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#CustomerSourceList">CustomerSourceList()</a></li>
+      <li><a href="#CustomerSearch">CustomerSearch()</a></li>
+      <li><a href="#CustomerSearchDetail">CustomerSearchDetail()</a></li>
+      <li><a href="#CustomerUserSearchFields">CustomerUserSearchFields()</a></li>
+      <li><a href="#GetFieldConfig">GetFieldConfig()</a></li>
+      <li><a href="#GetFieldSelections">GetFieldSelections()</a></li>
+      <li><a href="#CustomerIDList">CustomerIDList()</a></li>
+      <li><a href="#CustomerName">CustomerName()</a></li>
+      <li><a href="#CustomerIDs">CustomerIDs()</a></li>
+      <li><a href="#CustomerUserDataGet">CustomerUserDataGet()</a></li>
+      <li><a href="#CustomerUserAdd">CustomerUserAdd()</a></li>
+      <li><a href="#CustomerUserUpdate">CustomerUserUpdate()</a></li>
+      <li><a href="#SetPassword">SetPassword()</a></li>
+      <li><a href="#GenerateRandomPassword">GenerateRandomPassword()</a></li>
+      <li><a href="#SetPreferences">SetPreferences()</a></li>
+      <li><a href="#GetPreferences">GetPreferences()</a></li>
+      <li><a href="#SearchPreferences">SearchPreferences()</a></li>
+      <li><a href="#TokenGenerate">TokenGenerate()</a></li>
+      <li><a href="#TokenCheck">TokenCheck()</a></li>
+      <li><a href="#CustomerUserCacheClear">CustomerUserCacheClear()</a></li>
+      <li><a href="#CustomerUserCustomerMemberAdd">CustomerUserCustomerMemberAdd()</a></li>
+      <li><a href="#CustomerUserCustomerMemberList">CustomerUserCustomerMemberList()</a></li>
+    </ul>
+  </li>
   <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 
@@ -62,26 +88,19 @@ $(document).ready(function() {
 
 <p>Kernel::System::CustomerUser - customer user lib</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS</h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>All customer user functions. E. g. to add and update customer users.</p>
 
 <h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
-<dl>
+<h2 id="new">new()</h2>
 
-<dt id="new">new()</dt>
-<dd>
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-<p>create an object. Do not use it directly, instead use:</p>
+<pre><code>    my $CustomerUserObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::CustomerUser&#39;);</code></pre>
 
-<pre><code>    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $CustomerUserObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::CustomerUser&#39;);</code></pre>
-
-</dd>
-<dt id="CustomerSourceList">CustomerSourceList()</dt>
-<dd>
+<h2 id="CustomerSourceList">CustomerSourceList()</h2>
 
 <p>return customer source list</p>
 
@@ -89,9 +108,7 @@ $(document).ready(function() {
         ReadOnly =&gt; 0 # optional, 1 returns only RO backends, 0 returns writable, if not passed returns all backends
     );</code></pre>
 
-</dd>
-<dt id="CustomerSearch">CustomerSearch()</dt>
-<dd>
+<h2 id="CustomerSearch">CustomerSearch()</h2>
 
 <p>to search users</p>
 
@@ -120,19 +137,143 @@ $(document).ready(function() {
         Valid            =&gt; 1,                # (optional) default 1
     );</code></pre>
 
-</dd>
-<dt id="CustomerUserList">CustomerUserList()</dt>
-<dd>
+<h2 id="CustomerSearchDetail">CustomerSearchDetail()</h2>
 
-<p>return a hash with all users (depreciated)</p>
+<p>To find customer user in the system.</p>
 
-<pre><code>    my %List = $CustomerUserObject-&gt;CustomerUserList(
-        Valid =&gt; 1, # not required
+<p>The search criteria are logically AND connected. When a list is passed as criteria, the individual members are OR connected. When an undef or a reference to an empty array is passed, then the search criteria is ignored.</p>
+
+<p>Returns either a list, as an arrayref, or a count of found customer user ids. The count of results is returned when the parameter <code>Result = &#39;COUNT&#39;</code> is passed.</p>
+
+<pre><code>    my $CustomerUserIDsRef = $CustomerUserObject-&gt;CustomerSearchDetail(
+
+        # all search fields possible which are defined in CustomerUser::EnhancedSearchFields
+        UserLogin     =&gt; &#39;example*&#39;,                                    # (optional)
+        UserFirstname =&gt; &#39;Firstn*&#39;,                                     # (optional)
+
+        # special parameters
+        CustomerCompanySearchCustomerIDs =&gt; [ &#39;example.com&#39; ],          # (optional)
+        ExcludeUserLogins                =&gt; [ &#39;example&#39;, &#39;doejohn&#39; ],   # (optional)
+
+        # array parameters are used with logical OR operator (all values are possible which
+        are defined in the config selection hash for the field)
+        UserCountry              =&gt; [ &#39;Austria&#39;, &#39;Germany&#39;, ],          # (optional)
+
+        # DynamicFields
+        #   At least one operator must be specified. Operators will be connected with AND,
+        #       values in an operator with OR.
+        #   You can also pass more than one argument to an operator: [&#39;value1&#39;, &#39;value2&#39;]
+        DynamicField_FieldNameX =&gt; {
+            Equals            =&gt; 123,
+            Like              =&gt; &#39;value*&#39;,                # &quot;equals&quot; operator with wildcard support
+            GreaterThan       =&gt; &#39;2001-01-01 01:01:01&#39;,
+            GreaterThanEquals =&gt; &#39;2001-01-01 01:01:01&#39;,
+            SmallerThan       =&gt; &#39;2002-02-02 02:02:02&#39;,
+            SmallerThanEquals =&gt; &#39;2002-02-02 02:02:02&#39;,
+        }
+
+        OrderBy =&gt; [ &#39;UserLogin&#39;, &#39;UserCustomerID&#39; ],                   # (optional)
+        # ignored if the result type is &#39;COUNT&#39;
+        # default: [ &#39;UserLogin&#39; ]
+        # (all search fields possible which are defined in
+        CustomerUser::EnhancedSearchFields)
+
+        # Additional information for OrderBy:
+        # The OrderByDirection can be specified for each OrderBy attribute.
+        # The pairing is made by the array indices.
+
+        OrderByDirection =&gt; [ &#39;Down&#39;, &#39;Up&#39; ],                          # (optional)
+        # ignored if the result type is &#39;COUNT&#39;
+        # (Down | Up) Default: [ &#39;Down&#39; ]
+
+        Result =&gt; &#39;ARRAY&#39; || &#39;COUNT&#39;,                                  # (optional)
+        # default: ARRAY, returns an array of change ids
+        # COUNT returns a scalar with the number of found changes
+
+        Limit =&gt; 100,                                                  # (optional)
+        # ignored if the result type is &#39;COUNT&#39;
     );</code></pre>
 
-</dd>
-<dt id="CustomerIDList">CustomerIDList()</dt>
-<dd>
+<p>Returns:</p>
+
+<p>Result: &#39;ARRAY&#39;</p>
+
+<pre><code>    @CustomerUserIDs = ( 1, 2, 3 );</code></pre>
+
+<p>Result: &#39;COUNT&#39;</p>
+
+<pre><code>    $CustomerUserIDs = 10;</code></pre>
+
+<h2 id="CustomerUserSearchFields">CustomerUserSearchFields()</h2>
+
+<p>Get a list of the defined search fields (optional only the relevant fields for the given source).</p>
+
+<pre><code>    my @SeachFields = $CustomerUserObject-&gt;CustomerUserSearchFields(
+        Source =&gt; &#39;CustomerUser&#39;, # optional, but important in the CustomerSearchDetail to get the right database fields
+    );</code></pre>
+
+<p>Returns an array of hash references.</p>
+
+<pre><code>    @SeachFields = (
+        {
+            Name          =&gt; &#39;UserEmail&#39;,
+            Label         =&gt; &#39;Email&#39;,
+            Type          =&gt; &#39;Input&#39;,
+            DatabaseField =&gt; &#39;mail&#39;,
+        },
+        {
+            Name           =&gt; &#39;UserCountry&#39;,
+            Label          =&gt; &#39;Country&#39;,
+            Type           =&gt; &#39;Selection&#39;,
+            SelectionsData =&gt; {
+                &#39;Germany&#39;        =&gt; &#39;Germany&#39;,
+                &#39;United Kingdom&#39; =&gt; &#39;United Kingdom&#39;,
+                &#39;United States&#39;  =&gt; &#39;United States&#39;,
+                ...
+            },
+            DatabaseField =&gt; &#39;country&#39;,
+        },
+        {
+            Name          =&gt; &#39;DynamicField_SkypeAccountName&#39;,
+            Label         =&gt; &#39;&#39;,
+            Type          =&gt; &#39;DynamicField&#39;,
+            DatabaseField =&gt; &#39;SkypeAccountName&#39;,
+        },
+    );</code></pre>
+
+<h2 id="GetFieldConfig">GetFieldConfig()</h2>
+
+<p>This function collect some field config information from the customer user map.</p>
+
+<pre><code>    my %FieldConfig = $CustomerUserObject-&gt;GetFieldConfig(
+        FieldName =&gt; &#39;UserEmail&#39;,
+        Source    =&gt; &#39;CustomerUser&#39;, # optional
+    );</code></pre>
+
+<p>Returns some field config information:</p>
+
+<pre><code>    my %FieldConfig = (
+        Label         =&gt; &#39;Email&#39;,
+        DatabaseField =&gt; &#39;email&#39;,
+        StorageType   =&gt; &#39;var&#39;,
+    );</code></pre>
+
+<h2 id="GetFieldSelections">GetFieldSelections()</h2>
+
+<p>This function collect the selections for the given field name, if the field has some selections.</p>
+
+<pre><code>    my %SelectionsData = $CustomerUserObject-&gt;GetFieldSelections(
+        FieldName =&gt; &#39;UserTitle&#39;,
+    );</code></pre>
+
+<p>Returns the selections for the given field name (merged from all sources) or a empty hash:</p>
+
+<pre><code>    my %SelectionData = (
+        &#39;Mr.&#39;  =&gt; &#39;Mr.&#39;,
+        &#39;Mrs.&#39; =&gt; &#39;Mrs.&#39;,
+    );</code></pre>
+
+<h2 id="CustomerIDList">CustomerIDList()</h2>
 
 <p>return a list of with all known unique CustomerIDs of the registered customers users (no SearchTerm), or a filtered list where the CustomerIDs must contain a search term.</p>
 
@@ -141,9 +282,7 @@ $(document).ready(function() {
         Valid       =&gt; 1,                 # optional
     );</code></pre>
 
-</dd>
-<dt id="CustomerName">CustomerName()</dt>
-<dd>
+<h2 id="CustomerName">CustomerName()</h2>
 
 <p>get customer user name</p>
 
@@ -151,9 +290,7 @@ $(document).ready(function() {
         UserLogin =&gt; &#39;some-login&#39;,
     );</code></pre>
 
-</dd>
-<dt id="CustomerIDs">CustomerIDs()</dt>
-<dd>
+<h2 id="CustomerIDs">CustomerIDs()</h2>
 
 <p>get customer user customer ids</p>
 
@@ -161,9 +298,7 @@ $(document).ready(function() {
         User =&gt; &#39;some-login&#39;,
     );</code></pre>
 
-</dd>
-<dt id="CustomerUserDataGet">CustomerUserDataGet()</dt>
-<dd>
+<h2 id="CustomerUserDataGet">CustomerUserDataGet()</h2>
 
 <p>get user data (UserLogin, UserFirstname, UserLastname, UserEmail, ...)</p>
 
@@ -171,9 +306,7 @@ $(document).ready(function() {
         User =&gt; &#39;franz&#39;,
     );</code></pre>
 
-</dd>
-<dt id="CustomerUserAdd">CustomerUserAdd()</dt>
-<dd>
+<h2 id="CustomerUserAdd">CustomerUserAdd()</h2>
 
 <p>to add new customer users</p>
 
@@ -189,9 +322,7 @@ $(document).ready(function() {
         UserID         =&gt; 123,
     );</code></pre>
 
-</dd>
-<dt id="CustomerUserUpdate">CustomerUserUpdate()</dt>
-<dd>
+<h2 id="CustomerUserUpdate">CustomerUserUpdate()</h2>
 
 <p>to update customer users</p>
 
@@ -207,9 +338,7 @@ $(document).ready(function() {
         UserID        =&gt; 123,
     );</code></pre>
 
-</dd>
-<dt id="SetPassword">SetPassword()</dt>
-<dd>
+<h2 id="SetPassword">SetPassword()</h2>
 
 <p>to set customer users passwords</p>
 
@@ -218,9 +347,7 @@ $(document).ready(function() {
         PW        =&gt; &#39;some-new-password&#39;
     );</code></pre>
 
-</dd>
-<dt id="GenerateRandomPassword">GenerateRandomPassword()</dt>
-<dd>
+<h2 id="GenerateRandomPassword">GenerateRandomPassword()</h2>
 
 <p>generate a random password</p>
 
@@ -232,9 +359,7 @@ $(document).ready(function() {
         Size =&gt; 16,
     );</code></pre>
 
-</dd>
-<dt id="SetPreferences">SetPreferences()</dt>
-<dd>
+<h2 id="SetPreferences">SetPreferences()</h2>
 
 <p>set customer user preferences</p>
 
@@ -244,9 +369,7 @@ $(document).ready(function() {
         UserID =&gt; &#39;some-login&#39;,
     );</code></pre>
 
-</dd>
-<dt id="GetPreferences">GetPreferences()</dt>
-<dd>
+<h2 id="GetPreferences">GetPreferences()</h2>
 
 <p>get customer user preferences</p>
 
@@ -254,9 +377,7 @@ $(document).ready(function() {
         UserID =&gt; &#39;some-login&#39;,
     );</code></pre>
 
-</dd>
-<dt id="SearchPreferences">SearchPreferences()</dt>
-<dd>
+<h2 id="SearchPreferences">SearchPreferences()</h2>
 
 <p>search in user preferences</p>
 
@@ -265,9 +386,7 @@ $(document).ready(function() {
         Value =&gt; &#39;SomeValue&#39;,   # optional, limit to a certain value/pattern
     );</code></pre>
 
-</dd>
-<dt id="TokenGenerate">TokenGenerate()</dt>
-<dd>
+<h2 id="TokenGenerate">TokenGenerate()</h2>
 
 <p>generate a random token</p>
 
@@ -275,9 +394,7 @@ $(document).ready(function() {
         UserID =&gt; 123,
     );</code></pre>
 
-</dd>
-<dt id="TokenCheck">TokenCheck()</dt>
-<dd>
+<h2 id="TokenCheck">TokenCheck()</h2>
 
 <p>check password token</p>
 
@@ -286,8 +403,42 @@ $(document).ready(function() {
         UserID =&gt; 123,
     );</code></pre>
 
-</dd>
-</dl>
+<h2 id="CustomerUserCacheClear">CustomerUserCacheClear()</h2>
+
+<p>clear cache of customer user data</p>
+
+<pre><code>    $CustomerUserObject-&gt;CustomerUserCacheClear(
+        UserLogin =&gt; &#39;mhuber&#39;,
+    );</code></pre>
+
+<h2 id="CustomerUserCustomerMemberAdd">CustomerUserCustomerMemberAdd()</h2>
+
+<p>to add a customer user to a customer</p>
+
+<pre><code>    my $Success = $CustomerUserObject-&gt;CustomerUserCustomerMemberAdd(
+        CustomerUserID =&gt; 123,
+        CustomerID     =&gt; 123,
+        Active         =&gt; 1,        # optional
+        UserID         =&gt; 123,
+    );</code></pre>
+
+<h2 id="CustomerUserCustomerMemberList">CustomerUserCustomerMemberList()</h2>
+
+<p>get related customer IDs of a customer user</p>
+
+<pre><code>    my @CustomerIDs = $CustomerUserObject-&gt;CustomerUserCustomerMemberList(
+        CustomerUserID =&gt; 123,
+    );</code></pre>
+
+<p>Returns: @CustomerIDs = ( &#39;123&#39;, &#39;456&#39;, );</p>
+
+<p>get related customer users of a customer ID</p>
+
+<pre><code>    my @CustomerUsers = $CustomerUserObject-&gt;CustomerUserCustomerMemberList(
+        CustomerID =&gt; 123,
+    );</code></pre>
+
+<p>Returns: @CustomerUsers = ( &#39;123&#39;, &#39;456&#39;, );</p>
 
 <h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 

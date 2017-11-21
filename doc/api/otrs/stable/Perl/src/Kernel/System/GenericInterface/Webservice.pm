@@ -18,11 +18,9 @@ our @ObjectDependencies = (
     'Kernel::System::Cache',
     'Kernel::System::DB',
     'Kernel::System::GenericInterface::DebugLog',
-    'Kernel::System::GenericInterface::ObjectLockState',
     'Kernel::System::GenericInterface::WebserviceHistory',
     'Kernel::System::Log',
     'Kernel::System::Main',
-    'Kernel::System::Time',
     'Kernel::System::Valid',
     'Kernel::System::YAML',
 );
@@ -31,22 +29,16 @@ our @ObjectDependencies = (
 
 Kernel::System::Webservice
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Web service configuration backend.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $WebserviceObject = $Kernel::OM->Get('Kernel::System::GenericInterface::Webservice');
 
 =cut
@@ -61,7 +53,7 @@ sub new {
     return $Self;
 }
 
-=item WebserviceAdd()
+=head2 WebserviceAdd()
 
 add new Webservices
 
@@ -94,7 +86,7 @@ sub WebserviceAdd {
     if ( !IsHashRefWithData( $Param{Config} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Webservice Config should be a non empty hash reference!",
+            Message  => "Web service Config should be a non empty hash reference!",
         );
         return;
     }
@@ -103,21 +95,21 @@ sub WebserviceAdd {
     if ( !IsHashRefWithData( $Param{Config}->{Debugger} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Webservice Config Debugger should be a non empty hash reference!",
+            Message  => "Web service Config Debugger should be a non empty hash reference!",
         );
         return;
     }
     if ( !IsStringWithData( $Param{Config}->{Debugger}->{DebugThreshold} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Webservice Config Debugger DebugThreshold should be a non empty string!",
+            Message  => "Web service Config Debugger DebugThreshold should be a non empty string!",
         );
         return;
     }
     if ( !defined $Param{Config}->{Provider} && !defined $Param{Config}->{Requester} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Webservice Config Provider or Requester should be defined!",
+            Message  => "Web service Config Provider or Requester should be defined!",
         );
         return;
     }
@@ -126,7 +118,7 @@ sub WebserviceAdd {
             if ( !IsHashRefWithData( $Param{Config}->{$CommunicationType} ) ) {
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'error',
-                    Message  => "Webservice Config $CommunicationType should be a non empty hash"
+                    Message  => "Web service Config $CommunicationType should be a non empty hash"
                         . " reference!",
                 );
                 return;
@@ -134,7 +126,7 @@ sub WebserviceAdd {
             if ( !IsHashRefWithData( $Param{Config}->{$CommunicationType}->{Transport} ) ) {
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'error',
-                    Message  => "Webservice Config $CommunicationType Transport should be a"
+                    Message  => "Web service Config $CommunicationType Transport should be a"
                         . " non empty hash reference!",
                 );
                 return;
@@ -142,13 +134,11 @@ sub WebserviceAdd {
         }
     }
 
+    # Check if web service is using an old configuration type and upgrade if necessary.
+    $Self->_WebserviceConfigUpgrade(%Param);
+
     # dump config as string
     my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
-
-    # md5 of content
-    my $MD5 = $Kernel::OM->Get('Kernel::System::Main')->MD5sum(
-        String => $Param{Name},
-    );
 
     # get database object
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
@@ -156,18 +146,18 @@ sub WebserviceAdd {
     # sql
     return if !$DBObject->Do(
         SQL =>
-            'INSERT INTO gi_webservice_config (name, config, config_md5, valid_id, '
+            'INSERT INTO gi_webservice_config (name, config, valid_id, '
             . ' create_time, create_by, change_time, change_by)'
-            . ' VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+            . ' VALUES (?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
         Bind => [
-            \$Param{Name}, \$Config, \$MD5, \$Param{ValidID},
+            \$Param{Name}, \$Config, \$Param{ValidID},
             \$Param{UserID}, \$Param{UserID},
         ],
     );
 
     return if !$DBObject->Prepare(
-        SQL  => 'SELECT id FROM gi_webservice_config WHERE config_md5 = ?',
-        Bind => [ \$MD5 ],
+        SQL  => 'SELECT id FROM gi_webservice_config WHERE name = ?',
+        Bind => [ \$Param{Name} ],
     );
 
     my $ID;
@@ -193,7 +183,7 @@ sub WebserviceAdd {
     return $ID;
 }
 
-=item WebserviceGet()
+=head2 WebserviceGet()
 
 get Webservices attributes
 
@@ -301,7 +291,7 @@ sub WebserviceGet {
     return \%Data;
 }
 
-=item WebserviceUpdate()
+=head2 WebserviceUpdate()
 
 update web service attributes
 
@@ -335,7 +325,7 @@ sub WebserviceUpdate {
     if ( !IsHashRefWithData( $Param{Config} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Webservice Config should be a non empty hash reference!",
+            Message  => "Web service Config should be a non empty hash reference!",
         );
         return;
     }
@@ -344,21 +334,21 @@ sub WebserviceUpdate {
     if ( !IsHashRefWithData( $Param{Config}->{Debugger} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Webservice Config Debugger should be a non empty hash reference!",
+            Message  => "Web service Config Debugger should be a non empty hash reference!",
         );
         return;
     }
     if ( !IsStringWithData( $Param{Config}->{Debugger}->{DebugThreshold} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Webservice Config Debugger DebugThreshold should be a non empty string!",
+            Message  => "Web service Config Debugger DebugThreshold should be a non empty string!",
         );
         return;
     }
     if ( !defined $Param{Config}->{Provider} && !defined $Param{Config}->{Requester} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Webservice Config Provider or Requester should be defined!",
+            Message  => "Web service Config Provider or Requester should be defined!",
         );
         return;
     }
@@ -367,7 +357,7 @@ sub WebserviceUpdate {
             if ( !IsHashRefWithData( $Param{Config}->{$CommunicationType} ) ) {
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'error',
-                    Message  => "Webservice Config $CommunicationType should be a non empty hash"
+                    Message  => "Web service Config $CommunicationType should be a non empty hash"
                         . " reference!",
                 );
                 return;
@@ -375,13 +365,16 @@ sub WebserviceUpdate {
             if ( !IsHashRefWithData( $Param{Config}->{$CommunicationType}->{Transport} ) ) {
                 $Kernel::OM->Get('Kernel::System::Log')->Log(
                     Priority => 'error',
-                    Message  => "Webservice Config $CommunicationType Transport should be a"
+                    Message  => "Web service Config $CommunicationType Transport should be a"
                         . " non empty hash reference!",
                 );
                 return;
             }
         }
     }
+
+    # Check if web service is using an old configuration type and upgrade if necessary.
+    $Self->_WebserviceConfigUpgrade(%Param);
 
     # dump config as string
     my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
@@ -438,7 +431,7 @@ sub WebserviceUpdate {
     return 1;
 }
 
-=item WebserviceDelete()
+=head2 WebserviceDelete()
 
 delete a Webservice
 
@@ -480,14 +473,6 @@ sub WebserviceDelete {
         UserID       => $Param{UserID},
     );
 
-    # get object lock state object
-    my $ObjectLockStateObject = $Kernel::OM->Get('Kernel::System::GenericInterface::ObjectLockState');
-
-    # delete remaining entries in ObjectLockState
-    return if !$ObjectLockStateObject->ObjectLockStatePurge(
-        WebserviceID => $Param{ID},
-    );
-
     # get debug log object
     my $DebugLogObject = $Kernel::OM->Get('Kernel::System::GenericInterface::DebugLog');
 
@@ -511,7 +496,7 @@ sub WebserviceDelete {
     return 1;
 }
 
-=item WebserviceList()
+=head2 WebserviceList()
 
 get web service list
 
@@ -531,11 +516,10 @@ sub WebserviceList {
     # get cache object
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
+    # check Valid param
+    my $Valid = ( IsStringWithData( $Param{Valid} ) && $Param{Valid} eq 0 ) ? 0 : 1;
+
     # check cache
-    my $Valid = 1;
-    if ( !$Param{Valid} ) {
-        $Valid = '0';
-    }
     my $CacheKey = 'WebserviceList::Valid::' . $Valid;
     my $Cache    = $CacheObject->Get(
         Type => 'Webservice',
@@ -545,7 +529,7 @@ sub WebserviceList {
 
     my $SQL = 'SELECT id, name FROM gi_webservice_config';
 
-    if ( !defined $Param{Valid} || $Param{Valid} eq 1 ) {
+    if ($Valid) {
 
         # get valid object
         my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
@@ -580,9 +564,134 @@ sub WebserviceList {
     return \%Data;
 }
 
+=begin Internal:
+
+=head2 _WebserviceConfigUpgrade()
+
+Update version if webservice config (e.g. for API changes).
+
+    my $Config = $WebserviceObject->_WebserviceConfigUpgrade( Config => $Config );
+
+=cut
+
+sub _WebserviceConfigUpgrade {
+    my ( $Self, %Param ) = @_;
+
+    return if !IsHashRefWithData( $Param{Config} );
+
+    # Updates of SOAP and REST transport in OTRS 6:
+    #   Authentication, SSL and Proxy option changes, introduction of timeout param.
+    # Upgrade is considered necessary if the new (and now mandatory) parameter 'Timeout' isn't set.
+    if (
+        IsHashRefWithData( $Param{Config}->{Requester} )    # prevent creation of dummy elements
+        && IsStringWithData( $Param{Config}->{Requester}->{Transport}->{Type} )
+        && (
+            $Param{Config}->{Requester}->{Transport}->{Type} eq 'HTTP::REST'
+            || $Param{Config}->{Requester}->{Transport}->{Type} eq 'HTTP::SOAP'
+        )
+        && IsHashRefWithData( $Param{Config}->{Requester}->{Transport}->{Config} )
+        && !IsStringWithData( $Param{Config}->{Requester}->{Transport}->{Config}->{Timeout} )
+        )
+    {
+        my $RequesterTransportConfig = $Param{Config}->{Requester}->{Transport}->{Config};
+        my $RequesterTransportType   = $Param{Config}->{Requester}->{Transport}->{Type};
+
+        # set default timeout
+        if ( $RequesterTransportType eq 'HTTP::SOAP' ) {
+            $RequesterTransportConfig->{Timeout} = 60;
+        }
+        else {
+            $RequesterTransportConfig->{Timeout} = 300;
+        }
+
+        # set default SOAPAction scheme for SOAP
+        if (
+            $RequesterTransportType eq 'HTTP::SOAP'
+            && IsStringWithData( $RequesterTransportConfig->{SOAPAction} )
+            && $RequesterTransportConfig->{SOAPAction} eq 'Yes'
+            )
+        {
+            $RequesterTransportConfig->{SOAPActionScheme} = 'NameSpaceSeparatorOperation';
+        }
+
+        # convert auth settings
+        my $Authentication = delete $RequesterTransportConfig->{Authentication};
+        if (
+            IsHashRefWithData($Authentication)
+            && $Authentication->{Type}
+            && $Authentication->{Type} eq 'BasicAuth'
+            )
+        {
+            $RequesterTransportConfig->{Authentication} = {
+                AuthType          => $Authentication->{Type},
+                BasicAuthUser     => $Authentication->{User},
+                BasicAuthPassword => $Authentication->{Password},
+            };
+        }
+
+        # convert ssl settings
+        my $SSL  = delete $RequesterTransportConfig->{SSL};
+        my $X509 = delete $RequesterTransportConfig->{X509};
+        if (
+            $RequesterTransportType eq 'HTTP::SOAP'
+            && IsHashRefWithData($SSL)
+            && $SSL->{UseSSL}
+            && $SSL->{UseSSL} eq 'Yes'
+            )
+        {
+            $RequesterTransportConfig->{SSL} = {
+                UseSSL         => 'Yes',
+                SSLPassword    => $SSL->{SSLP12Password},
+                SSLCertificate => $SSL->{SSLP12Certificate},
+                SSLCADir       => $SSL->{SSLCADir},
+                SSLCAFile      => $SSL->{SSLCAFile},
+            };
+        }
+        elsif (
+            IsHashRefWithData($X509)
+            && $X509->{UseX509}
+            && $X509->{UseX509} eq 'Yes'
+            )
+        {
+            $RequesterTransportConfig->{SSL} = {
+                UseSSL         => 'Yes',
+                SSLKey         => $X509->{X509KeyFile},
+                SSLCertificate => $X509->{X509CertFile},
+                SSLCAFile      => $X509->{X509CAFile},
+            };
+        }
+        else {
+            $RequesterTransportConfig->{SSL}->{UseSSL} = 'No';
+        }
+
+        # convert proxy settings
+        if (
+            IsHashRefWithData($SSL)
+            && $SSL->{SSLProxy}
+            )
+        {
+            $RequesterTransportConfig->{Proxy} = {
+                UseProxy      => 'Yes',
+                ProxyHost     => $SSL->{SSLProxy},
+                ProxyUser     => $SSL->{SSLProxyUser},
+                ProxyPassword => $SSL->{SSLProxyPassword},
+                ProxyExclude  => 'No',
+            };
+        }
+        else {
+            $RequesterTransportConfig->{Proxy}->{UseProxy} = 'No';
+        }
+
+        # set updated config
+        $Param{Config}->{Requester}->{Transport}->{Config} = $RequesterTransportConfig;
+    }
+
+    return 1;
+}
+
 1;
 
-=back
+=end Internal:
 
 =head1 TERMS AND CONDITIONS
 

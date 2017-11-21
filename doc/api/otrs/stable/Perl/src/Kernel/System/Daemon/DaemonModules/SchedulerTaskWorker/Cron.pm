@@ -14,34 +14,28 @@ use warnings;
 use IPC::Open3;
 use Symbol;
 
-use base qw(Kernel::System::Daemon::DaemonModules::BaseTaskWorker);
+use parent qw(Kernel::System::Daemon::DaemonModules::BaseTaskWorker);
 
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Daemon::SchedulerDB',
+    'Kernel::System::DateTime',
     'Kernel::System::Email',
     'Kernel::System::Log',
-    'Kernel::System::Time',
 );
 
 =head1 NAME
 
 Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::Cron - Scheduler daemon task handler module for cron like jobs
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 This task handler executes scheduler tasks based in cron notation.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
-
-=item new()
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $TaskHandlerObject = $Kernel::OM-Get('Kernel::System::Daemon::DaemonModules::SchedulerTaskWorker::Cron');
 
 =cut
@@ -58,7 +52,7 @@ sub new {
     return $Self;
 }
 
-=item Run()
+=head2 Run()
 
 Performs the selected Cron task.
 
@@ -95,7 +89,7 @@ sub Run {
     # Stop execution if an error in params is detected.
     return if !$CheckResult;
 
-    my $StartSystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
+    my $StartSystemTime = $Kernel::OM->Create('Kernel::System::DateTime')->ToEpoch();
 
     my $ModuleObject;
     eval {
@@ -153,7 +147,7 @@ sub Run {
     };
 
     # Get current system time (as soon as the method has been called).
-    my $EndSystemTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
+    my $EndSystemTime = $Kernel::OM->Create('Kernel::System::DateTime')->ToEpoch();
 
     my $IsConsoleCommand;
     if (
@@ -199,8 +193,6 @@ sub Run {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

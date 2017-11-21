@@ -20,7 +20,7 @@ our @ObjectDependencies = (
 
 Kernel::System::Cache - Key/value based data cache for OTRS
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 This is a simple data cache. It can store key/value data both
 in memory and in a configured cache backend for persistent caching.
@@ -29,18 +29,84 @@ This can be controlled via the config settings C<Cache::InMemory> and
 C<Cache::InBackend>. The backend can also be selected with the config setting
 C<Cache::Module> and defaults to file system based storage for permanent caching.
 
-=head1 PUBLIC INTERFACE
+=head1 CACHING STRATEGY
+
+Caching works based on C<CacheType>s and C<CacheKey>s.
+
+=head2 CACHE TYPES
+
+For file based caching,
+a C<CacheType> groups all contained entries in a top level directory like
+C<var/tmp/CacheFileStorable/MyCacheType>. This means also that all entries of a specific
+C<CacheType> can be deleted with one function call, L</CleanUp()>.
+
+Typically, every backend module like L<Kernel::System::Valid> has its own CacheType that is stored in C<$Self>
+for consistent use. There could be exceptions when modules have much cached data that needs to be cleaned up
+together. In this case additional C<CacheType>s could be used, but this should be avoided.
+
+=head2 CACHE KEYS
+
+A C<CacheKey> is used to identify a single cached entry within a C<CacheType>. The specified cache key will be
+internally hashed to a file name that is used to fetch/store that particular cache entry,
+like C<var/tmp/CacheFileStorable/Valid/2/1/217727036cc9b1804f7c0f4f7777ef86>.
+
+It is important that all variables that lead to the output of different results of a function
+must be part of the C<CacheKey> if the entire function result is to be stored in a separate cache entry.
+For example, L<Kernel::System::State/StateGet()> allows fetching of C<State>s by C<Name> or by C<ID>.
+So there are different cache keys for both cases:
+
+    my $CacheKey;
+    if ( $Param{Name} ) {
+        $CacheKey = 'StateGet::Name::' . $Param{Name};
+    }
+    else {
+        $CacheKey = 'StateGet::ID::' . $Param{ID};
+    }
+
+Please avoid the creation of too many different cache keys, as this can be a burden for storage
+and performance of the system. Sometimes it can be helpful to implement a function like the one presented above
+in another way: C<StateGet()> could call the cached C<StateList()> internally and fetch the requested entry from
+its result. This depends on the amount of data, of course.
+
+=head2 CACHING A BACKEND MODULE
 
 =over 4
 
-=cut
+=item Define a C<CacheType> and a C<CacheTTL>.
 
-=item new()
+Every module should have its own C<CacheType> which typically resembles the module name.
+The C<CacheTTL> defines how long a cache is valid. This depends on the data, but a value of 30 days is
+considered a good default choice.
 
-create an object. Do not use it directly, instead use:
+=item Add caching to methods fetching data.
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
+All functions that list and fetch entities can potentially get caches.
+
+=item Implement cache cleanup.
+
+All functions that add, modify or delete entries need to make sure that the cache stays consistent.
+All of these operations typically need to cleanup list method caches, while only modify and delete
+affect individual cache entries that need to be deleted.
+
+Whenever possible, avoid calling L</CleanUp()> for an entire cache type, but instead delete individual
+cache entries with L</Delete()> to keep as much cached data as possible.
+
+It is recommendable to implement a C<_CacheCleanup()> method in the module that centralizes cache cleanup.
+
+=item Extend module tests.
+
+Please also extend the module tests to work on non-cached and cached values
+(e. g. calling a method more than one time) to ensure consistency of both cached and non-cached data,
+and proper cleanup on deleting entities.
+
+=back
+
+=head1 PUBLIC INTERFACE
+
+=head2 new()
+
+Don't use the constructor directly, use the ObjectManager instead:
+
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
 =cut
@@ -67,7 +133,7 @@ sub new {
     return $Self;
 }
 
-=item Configure()
+=head2 Configure()
 
 change cache configuration settings at runtime. You can use this to disable the cache in
 environments where it is not desired, such as in long running scripts.
@@ -93,7 +159,7 @@ sub Configure {
     return;
 }
 
-=item Set()
+=head2 Set()
 
 store a value in the cache.
 
@@ -188,7 +254,7 @@ sub Set {
     return 1;
 }
 
-=item Get()
+=head2 Get()
 
 fetch a value from the cache.
 
@@ -248,7 +314,7 @@ sub Get {
     return $Value;
 }
 
-=item Delete()
+=head2 Delete()
 
 deletes a single value from the cache.
 
@@ -285,7 +351,7 @@ sub Delete {
     return $Self->{CacheObject}->Delete(%Param);
 }
 
-=item CleanUp()
+=head2 CleanUp()
 
 delete parts of the cache or the full cache data.
 
@@ -345,8 +411,6 @@ sub CleanUp {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

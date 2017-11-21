@@ -22,22 +22,16 @@ our @ObjectDependencies = (
 
 Kernel::System::CheckItem - check items
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All item check functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $CheckItemObject = $Kernel::OM->Get('Kernel::System::CheckItem');
 
 =cut
@@ -52,7 +46,7 @@ sub new {
     return $Self;
 }
 
-=item CheckError()
+=head2 CheckError()
 
 get the error of check item back
 
@@ -66,7 +60,7 @@ sub CheckError {
     return $Self->{Error};
 }
 
-=item CheckErrorType()
+=head2 CheckErrorType()
 
 get the error's type of check item back
 
@@ -80,7 +74,7 @@ sub CheckErrorType {
     return $Self->{ErrorType};
 }
 
-=item CheckEmail()
+=head2 CheckEmail()
 
 returns true if check was successful, if it's false, get the error message
 from CheckError()
@@ -180,7 +174,7 @@ sub CheckEmail {
                 if ( !@MXRecords ) {
 
                     $Kernel::OM->Get('Kernel::System::Log')->Log(
-                        Priority => 'notice',
+                        Priority => 'debug',
                         Message =>
                             "$Host has no mail exchanger (MX) defined, trying A resource record instead.",
                     );
@@ -192,7 +186,7 @@ sub CheckEmail {
                         $Error = "$Host has no mail exchanger (MX) or A resource record defined.";
 
                         $Kernel::OM->Get('Kernel::System::Log')->Log(
-                            Priority => 'error',
+                            Priority => 'debug',
                             Message  => $Error,
                         );
                     }
@@ -228,7 +222,7 @@ sub CheckEmail {
     }
 }
 
-=item StringClean()
+=head2 StringClean()
 
 clean a given string
 
@@ -289,7 +283,7 @@ sub StringClean {
     return $Param{StringRef};
 }
 
-=item CreditCardClean()
+=head2 CreditCardClean()
 
 clean a given string and remove credit card
 
@@ -327,8 +321,6 @@ sub CreditCardClean {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

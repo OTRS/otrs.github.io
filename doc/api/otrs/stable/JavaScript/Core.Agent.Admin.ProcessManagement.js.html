@@ -80,6 +80,54 @@ Core.Agent.Admin = Core.Agent.Admin || {};
 Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
 
     /**
+     * @name Init
+     * @memberof Core.Agent.Admin.ProcessManagement
+     * @function
+     * @description
+     *      This function initializes the module functionality.
+     */
+    TargetNS.Init = function () {
+
+        // Initialize Popup response (Redirect and close Popup)
+        InitProcessPopupsResponse();
+
+        // Initialize table filter
+        Core.UI.Table.InitTableFilter($('#Filter'), $('#Processes'), 0);
+
+        // Depending on Subaction initialize specific functions
+        if (Core.Config.Get('Subaction') === 'ActivityNew' ||
+          Core.Config.Get('Subaction') === 'ActivityEdit') {
+            TargetNS.InitActivityEdit();
+        }
+        else if (Core.Config.Get('Subaction') === 'ActivityDialogNew' ||
+          Core.Config.Get('Subaction') === 'ActivityDialogEdit') {
+            TargetNS.InitActivityDialogEdit();
+        }
+        else if (Core.Config.Get('Subaction') === 'TransitionNew' ||
+          Core.Config.Get('Subaction') === 'TransitionEdit') {
+            TargetNS.InitTransitionEdit();
+        }
+        else if (Core.Config.Get('Subaction') === 'TransitionActionNew' ||
+          Core.Config.Get('Subaction') === 'TransitionActionEdit') {
+            TargetNS.InitTransitionActionEdit();
+        }
+        else if (Core.Config.Get('Subaction') === 'ProcessEdit') {
+            TargetNS.InitProcessEdit();
+        }
+        else if (Core.Config.Get('Subaction') === 'ProcessPrint') {
+            $('.ProcessPrint').on('click', function() {
+                window.print();
+                return false;
+            });
+        }
+
+        // Depending on Action initialize specific functions
+        if (Core.Config.Get('Action') === 'AdminProcessManagementPath' &amp;&amp; Core.Config.Get('Subaction') !== 'ClosePopup') {
+           TargetNS.InitPathEdit();
+        }
+    };
+
+    /**
      * @private
      * @name InitProcessPopups
      * @memberof Core.Agent.Admin.ProcessManagement
@@ -88,7 +136,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
      *      Initializes needed popup handler.
      */
     function InitProcessPopups() {
-        $('a.AsPopup').bind('click', function () {
+        $('a.AsPopup').on('click', function () {
             var Matches,
                 PopupType = 'Process';
 
@@ -105,7 +153,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             return false;
         });
 
-        $('a.AsPopup_Redirect').bind('click', function () {
+        $('a.AsPopup_Redirect').on('click', function () {
             var $Form = $(this).closest('form');
 
             $('#PopupRedirect').val(1);
@@ -117,10 +165,10 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             $('#PopupRedirectStartActivityID').val($(this).data('startactivityid'));
 
             if ($(this).hasClass('Edit_Confirm')) {
-                if (window.confirm(Core.Agent.Admin.ProcessManagement.Localization.EditConfirm)) {
+                if (window.confirm(Core.Language.Translate('As soon as you use this button or link, you will leave this screen and its current state will be saved automatically. Do you want to continue?'))) {
                     // Remove onbeforeunload event only if there is no validation pending on form submit
                     if (!($Form.hasClass("Validate"))) {
-                        $(window).unbind("beforeunload.PMPopup");
+                        $(window).off("beforeunload.PMPopup");
                     }
                     $(this).closest('form').submit();
                 }
@@ -128,17 +176,74 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             else {
                 // Remove onbeforeunload event only if there is no validation pending on form submit
                 if (!($Form.hasClass("Validate"))) {
-                    $(window).unbind("beforeunload.PMPopup");
+                    $(window).off("beforeunload.PMPopup");
                 }
                 $(this).closest('form').submit();
             }
             return false;
         });
 
-        $('a.GoBack').bind('click', function () {
+        $('a.GoBack').on('click', function () {
             // Remove onbeforeunload event (which is only needed if you close the popup via the window "X")
-            $(window).unbind("beforeunload.PMPopup");
+            $(window).off("beforeunload.PMPopup");
         });
+    }
+
+    /**
+     * @private
+     * @name InitProcessPopupsResponse
+     * @memberof Core.Agent.Admin.ProcessManagement
+     * @function
+     * @description
+     *      Initializes redirect and close popups response.
+     */
+    function InitProcessPopupsResponse() {
+        var Redirect = Core.Config.Get('Redirect'),
+            ClosePopup = Core.Config.Get('ClosePopup'),
+            Data;
+
+        if (typeof Redirect !== 'undefined') {
+
+            Data = {
+                Action: Redirect.Action,
+                Subaction: Redirect.Subaction,
+                ID: Redirect.ID,
+                EntityID: Redirect.EntityID,
+                Field: Redirect.Field,
+                StartActivityID: Redirect.StartActivityID
+            };
+
+            // send results to main window
+            window.opener.Core.Agent.Admin.ProcessManagement.UpdateConfig(Redirect.ConfigJSON);
+
+            // reload popup
+            Core.App.InternalRedirect(Data);
+        }
+        else if (typeof ClosePopup !== 'undefined') {
+
+            window.opener.Core.Agent.Admin.ProcessManagement.UpdateScreensPath(window, function (WindowObject) {
+                //send results to main window
+                WindowObject.opener.Core.Agent.Admin.ProcessManagement.UpdateConfig(ClosePopup.ConfigJSON);
+
+                // update accordion
+                WindowObject.opener.Core.Agent.Admin.ProcessManagement.UpdateAccordion();
+
+                // update sync message
+                WindowObject.opener.Core.Agent.Admin.ProcessManagement.UpdateSyncMessage();
+
+                // redraw canvas
+                WindowObject.opener.Core.Agent.Admin.ProcessManagement.Canvas.Redraw();
+
+                // remove overlay
+                WindowObject.opener.Core.Agent.Admin.ProcessManagement.HideOverlay();
+
+                // remove onbeforeunload event (which is only needed if you close the popup via the window "X")
+                $(WindowObject).off("beforeunload.PMPopup");
+
+                // close popup
+                WindowObject.close();
+            });
+        }
     }
 
     /**
@@ -163,14 +268,14 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             true,
             [
                {
-                   Label: TargetNS.Localization.CancelMsg,
-                   Class: 'Primary',
+                   Label: Core.Language.Translate('Cancel'),
                    Function: function () {
                        Core.UI.Dialog.CloseDialog($('.Dialog'));
                    }
                },
                {
-                   Label: TargetNS.Localization.DeleteMsg,
+                   Label: Core.Language.Translate('Delete'),
+                   Class: 'Primary',
                    Function: function () {
                        var Data = {
                                Action: 'AdminProcessManagement',
@@ -223,20 +328,20 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
 
         Core.UI.Dialog.ShowContentDialog(
             $('#Dialogs #' + DialogID),
-            TargetNS.Localization.DeleteEntityTitle,
+            Core.Language.Translate('Delete Entity'),
             '240px',
             'Center',
             true,
             [
                {
-                   Label: TargetNS.Localization.CancelMsg,
-                   Class: 'Primary',
+                   Label: Core.Language.Translate('Cancel'),
                    Function: function () {
                        Core.UI.Dialog.CloseDialog($('.Dialog'));
                    }
                },
                {
-                   Label: TargetNS.Localization.DeleteMsg,
+                   Label: Core.Language.Translate('Delete'),
+                   Class: 'Primary',
                    Function: function () {
                        var Data = {
                                Action: 'AdminProcessManagement',
@@ -278,7 +383,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
      *      Initializes the event handler to delete entities.
      */
     function InitDeleteEntity() {
-        $('a.DeleteEntity').bind('click.DeleteEntity', function () {
+        $('a.DeleteEntity').on('click.DeleteEntity', function () {
             var EntityID = $(this).closest('li').data('entity'),
                 EntityName = $(this).closest('li').clone().children().remove().end().text(),
                 ItemID = $(this).closest('li').data('id'),
@@ -437,7 +542,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                     TargetNS.Canvas.MakeDraggable();
                 }
                 else {
-                    alert(Core.Agent.Admin.ProcessManagement.Localization.ActivityAlreadyPlaced);
+                    alert(Core.Language.Translate('This Activity is already used in the Process. You cannot add it twice!'));
                 }
             }
             else {
@@ -515,7 +620,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                                 alert(Response.Message);
                             }
                             else {
-                                alert('Error during AJAX communication');
+                                alert(Core.Language.Translate('Error during AJAX communication'));
                             }
 
                             TargetNS.Canvas.ShowActivityAddActivityDialogError(Activity);
@@ -579,7 +684,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             // if a dummy activity exists, another transition was placed to the canvas but not yet
             // connected to an end point. One cannot place two unconnected transitions on the canvas.
             if ($('#Dummy').length &amp;&amp; DummyActivityConnected(ProcessEntityID)) {
-              alert(Core.Agent.Admin.ProcessManagement.Localization.UnconnectedTransition);
+              alert(Core.Language.Translate('An unconnected transition is already placed on the canvas. Please connect this transition first before placing another transition.'));
               return false;
             }
 
@@ -592,7 +697,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 // If this transition is already bind to this activity
                 // you cannot bind it a second time
                 if (Path[Activity] &amp;&amp; typeof Path[Activity][EntityID] !== 'undefined') {
-                    alert(Core.Agent.Admin.ProcessManagement.Localization.TransitionAlreadyPlaced);
+                    alert(Core.Language.Translate('This Transition is already used for this Activity. You cannot use it twice!'));
                     return false;
                 }
 
@@ -649,7 +754,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                     typeof Path[Transition.StartActivity][Transition.TransitionID].TransitionAction !== 'undefined' &amp;&amp;
                     ($.inArray(EntityID, Path[Transition.StartActivity][Transition.TransitionID].TransitionAction) >= 0)
                 ) {
-                    alert(Core.Agent.Admin.ProcessManagement.Localization.TransitionActionAlreadyPlaced);
+                    alert(Core.Language.Translate('This TransitionAction is already used in this Path. You cannot use it twice!'));
                     return false;
                 }
 
@@ -846,7 +951,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                     alert(Response.Message);
                 }
                 else {
-                    alert('Error during AJAX communication');
+                    alert(Core.Language.Translate('Error during AJAX communication'));
                 }
                 return false;
             }
@@ -875,18 +980,6 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
     };
 
     /**
-     * @name InitProcessOverview
-     * @memberof Core.Agent.Admin.ProcessManagement
-     * @function
-     * @description
-     *      Initialize process overview screen.
-     */
-    TargetNS.InitProcessOverview = function() {
-        InitProcessPopups();
-        Core.UI.Table.InitTableFilter($('#Filter'), $('#Processes'), 0);
-    };
-
-    /**
      * @name InitProcessEdit
      * @memberof Core.Agent.Admin.ProcessManagement
      * @function
@@ -894,16 +987,18 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
      *      Initialize process edit screen.
      */
     TargetNS.InitProcessEdit = function () {
+      var ConfigProcess = Core.Config.Get('ConfigProcess');
+
         // Get Process Data
         TargetNS.ProcessData = {
-            Process: Core.Config.Get('Config.Process'),
-            Activity: Core.Config.Get('Config.Activity'),
-            ActivityDialog: Core.Config.Get('Config.ActivityDialog'),
-            Transition: Core.Config.Get('Config.Transition'),
-            TransitionAction: Core.Config.Get('Config.TransitionAction')
+            Process: ConfigProcess.Process,
+            Activity: ConfigProcess.Activity,
+            ActivityDialog: ConfigProcess.ActivityDialog,
+            Transition: ConfigProcess.Transition,
+            TransitionAction: ConfigProcess.TransitionAction
         };
 
-        TargetNS.ProcessLayout = Core.Config.Get('Config.ProcessLayout');
+        TargetNS.ProcessLayout = ConfigProcess.ProcessLayout;
 
         // Initialize Accordion in the sidebar
         Core.UI.Accordion.Init($('ul#ProcessElements'), 'li.AccordionElement h2 a', 'div.Content');
@@ -924,19 +1019,14 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         InitDeleteEntity();
 
         // Initialize DeleteProcess
-        $('#ProcessDelete').bind('click.ProcessDelete', function (Event) {
+        $('#ProcessDelete').on('click.ProcessDelete', function (Event) {
             ShowDeleteProcessConfirmationDialog($(Event.target).closest('a'));
             Event.stopPropagation();
             return false;
         });
 
-        $('#SubmitAndContinue').bind('click', function() {
-            $('#ContinueAfterSave').val(1);
-            $('#Submit').click();
-        });
-
         // Init submit function
-        $('#Submit').bind('click', function () {
+        $('#Submit').on('click', function () {
             var ProcessEntityID = $('#ProcessEntityID').val(),
                 StartActivity;
 
@@ -967,7 +1057,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         });
 
         // Init Canvas Resizing Functions
-        $('#ExtendCanvasHeight').bind('click', function () {
+        $('#ExtendCanvasHeight').on('click', function () {
             TargetNS.Canvas.Extend({
                 Width: 0,
                 Height: 150
@@ -975,7 +1065,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             return false;
         });
 
-        $('#ExtendCanvasWidth').bind('click', function () {
+        $('#ExtendCanvasWidth').on('click', function () {
             TargetNS.Canvas.Extend({
                 Width: 150,
                 Height: 0
@@ -983,13 +1073,13 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             return false;
         });
 
-        $('#ShowEntityIDs').bind('click', function() {
+        $('#ShowEntityIDs').on('click', function() {
             if ($(this).hasClass('Visible')) {
-                $(this).removeClass('Visible').text(Core.Agent.Admin.ProcessManagement.Localization.ShowEntityIDs);
+                $(this).removeClass('Visible').text(Core.Language.Translate('Show EntityIDs'));
                 $('em.EntityID').remove();
             }
             else {
-                $(this).addClass('Visible').text(Core.Agent.Admin.ProcessManagement.Localization.HideEntityIDs);
+                $(this).addClass('Visible').text(Core.Language.Translate('Hide EntityIDs'));
                 TargetNS.Canvas.ShowEntityIDs();
             }
             return false;
@@ -1020,7 +1110,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         // Initialize list filter
         Core.UI.Table.InitTableFilter($('#FilterAvailableActivityDialogs'), $('#AvailableActivityDialogs'));
 
-        $('#Submit').bind('click', function() {
+        $('#Submit').on('click', function() {
             $('#ActivityForm').submit();
         });
 
@@ -1030,7 +1120,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             $('input[name=ActivityDialogs]').val(Core.JSON.Stringify(Core.UI.AllocationList.GetResult('#AssignedActivityDialogs', 'id')));
 
             // not needed for normal submit
-            $(window).unbind("beforeunload.PMPopup");
+            $(window).off("beforeunload.PMPopup");
 
             Form.submit();
         });
@@ -1039,12 +1129,12 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         InitProcessPopups();
 
         // Init handling of closing popup with the OS functionality ("X")
-        $(window).unbind("beforeunload.PMPopup").bind("beforeunload.PMPopup", function () {
+        $(window).off("beforeunload.PMPopup").on("beforeunload.PMPopup", function () {
             window.opener.Core.Agent.Admin.ProcessManagement.HandlePopupClose();
         });
 
-        $('.ClosePopup').bind("click", function () {
-            $(window).unbind("beforeunload.PMPopup");
+        $('.ClosePopup').on("click", function () {
+            $(window).off("beforeunload.PMPopup");
         });
     };
 
@@ -1094,7 +1184,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         // Initialize list filter
         Core.UI.Table.InitTableFilter($('#FilterAvailableFields'), $('#AvailableFields'));
 
-        $('#Submit').bind('click', function() {
+        $('#Submit').on('click', function() {
             $('#ActivityDialogForm').submit();
             return false;
         });
@@ -1124,13 +1214,13 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             $('input[name=FieldDetails]').val(Core.JSON.Stringify(FieldDetails));
 
             // not needed for normal submit
-            $(window).unbind("beforeunload.PMPopup");
+            $(window).off("beforeunload.PMPopup");
 
             Form.submit();
         });
 
         // Init Fields modal overlay
-        $('.FieldDetailsOverlay').unbind('click').bind('click', function () {
+        $('.FieldDetailsOverlay').off('click').on('click', function () {
             var FieldConfig = $(this).closest('li').data('config'),
                 $Element = $(this),
                 Fieldname = $.trim($(this).closest('li').data('id')),
@@ -1143,13 +1233,13 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             // Open dialog
             Core.UI.Dialog.ShowContentDialog(
                 $('#Dialogs #FieldDetails'),
-                TargetNS.Localization.DialogTitle + ': ' + FieldNameTranslated,
+                Core.Language.Translate('Edit Field Details') + ': ' + FieldNameTranslated,
                 '200px',
                 'Center',
                 true,
                 [
                      {
-                         Label: TargetNS.Localization.SaveMsg,
+                         Label: Core.Language.Translate('Save'),
                          Class: 'Primary',
                          Function: function () {
                              var FieldConfigElement = {};
@@ -1163,11 +1253,16 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                                  if (typeof FieldConfigElement.Config === 'undefined'){
                                      FieldConfigElement.Config = {};
                                  }
-                                 FieldConfigElement.Config.ArticleType = $('#ArticleType').val();
+                                 FieldConfigElement.Config.CommunicationChannel = $('#CommunicationChannel').val();
 
-                                 // show error if internal article type is set for an interface different than AgentInterface
-                                 if ($('#Interface').val() !== 'AgentInterface' &amp;&amp; $('#ArticleType').val().match(/-int/i)){
-                                     window.alert(Core.Agent.Admin.ProcessManagement.Localization.WrongArticleTypeMsg);
+                                 FieldConfigElement.Config.IsVisibleForCustomer = '0';
+                                 if ($('#IsVisibleForCustomer').prop('checked')) {
+                                    FieldConfigElement.Config.IsVisibleForCustomer = '1';
+                                 }
+
+                                 // show error if not customer visible article is set for an interface different than AgentInterface
+                                 if ($('#Interface').val() !== 'AgentInterface' &amp;&amp; !$('#IsVisibleForCustomer').prop('checked')){
+                                     window.alert(Core.Language.Translate('Customer interface does not support articles not visible for customers.'));
                                      return false;
                                  }
 
@@ -1181,7 +1276,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                          }
                      },
                      {
-                         Label: TargetNS.Localization.CancelMsg,
+                         Label: Core.Language.Translate('Cancel'),
                          Function: function () {
                              Core.UI.Dialog.CloseDialog($('.Dialog'));
                          }
@@ -1222,8 +1317,11 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                     if (typeof FieldConfig.Config === 'undefined'){
                         FieldConfig.Config = {};
                     }
-                    if (FieldConfig.Config.ArticleType) {
-                        $('#ArticleType').val(FieldConfig.Config.ArticleType);
+                    if (FieldConfig.Config.CommunicationChannel) {
+                        $('#CommunicationChannel').val(FieldConfig.Config.CommunicationChannel);
+                    }
+                    if (FieldConfig.Config.IsVisibleForCustomer === '1') {
+                        $('#IsVisibleForCustomer').prop("checked", true);
                     }
                     if (FieldConfig.Config.TimeUnits) {
                         $('#TimeUnits').val(FieldConfig.Config.TimeUnits);
@@ -1240,12 +1338,15 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 $('#DefaultValue').prop('readonly', true).prop('disabled', true);
             }
 
-            // only article should show ArticleType select.
+            // only article should show Communication channel select.
             if (Fieldname === 'Article') {
 
-                $('#ArticleTypeContainer').removeClass('Hidden');
-                $('#ArticleTypeContainer').prev('label').css('display', 'block');
-                $('#ArticleTypeContainer .Modernize').trigger('redraw.InputField');
+                $('#CommunicationChannelContainer').removeClass('Hidden');
+                $('#CommunicationChannelContainer').prev('label').css('display', 'block');
+                $('#CommunicationChannelContainer .Modernize').trigger('redraw.InputField');
+
+                $('#IsVisibleForCustomerContainer').removeClass('Hidden');
+                $('#IsVisibleForCustomerContainer').prev('label').css('display', 'block');
 
                 $('#TimeUnitsContainer').removeClass('Hidden');
                 $('#TimeUnitsContainer').prev('label').css('display', 'block');
@@ -1253,8 +1354,11 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             }
             else {
 
-                $('#ArticleTypeContainer').addClass('Hidden');
-                $('#ArticleTypeContainer').prev('label').css('display', 'none');
+                $('#CommunicationChannelContainer').addClass('Hidden');
+                $('#CommunicationChannelContainer').prev('label').css('display', 'none');
+
+                $('#IsVisibleForCustomerContainer').addClass('Hidden');
+                $('#IsVisibleForCustomerContainer').prev('label').css('display', 'none');
 
                 $('#TimeUnitsContainer').addClass('Hidden');
                 $('#TimeUnitsContainer').prev('label').css('display', 'none');
@@ -1266,12 +1370,12 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         InitProcessPopups();
 
         // Init handling of closing popup with the OS functionality ("X")
-        $(window).unbind("beforeunload.PMPopup").bind("beforeunload.PMPopup", function () {
+        $(window).off("beforeunload.PMPopup").on("beforeunload.PMPopup", function () {
             window.opener.Core.Agent.Admin.ProcessManagement.HandlePopupClose();
         });
 
-        $('.ClosePopup').bind("click", function () {
-            $(window).unbind("beforeunload.PMPopup");
+        $('.ClosePopup').on("click", function () {
+            $(window).off("beforeunload.PMPopup");
         });
     };
 
@@ -1285,7 +1389,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
     TargetNS.InitTransitionEdit = function () {
 
         // Init addition of new conditions
-        $('#ConditionAdd').bind('click', function() {
+        $('#ConditionAdd').on('click', function() {
             // get current parent index
             var CurrentParentIndex = parseInt($(this).prev('.WidgetSimple').first().attr('id').replace(/Condition\[/g, '').replace(/\]/g, ''), 10),
                 // in case we add a whole new condition, the fieldindex must be 1
@@ -1305,7 +1409,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 $(this).closest('.WidgetSimple').remove();
             }
             else {
-                alert("Sorry, the only existing condition can't be removed.");
+                alert(Core.Language.Translate("Sorry, the only existing condition can't be removed."));
             }
 
             return false;
@@ -1333,13 +1437,13 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 $(this).parent().closest('fieldset').remove();
             }
             else {
-                alert("Sorry, the only existing field can't be removed.");
+                alert(Core.Language.Translate("Sorry, the only existing field can't be removed."));
             }
 
             return false;
         });
 
-        $('#Submit').bind('click', function() {
+        $('#Submit').on('click', function() {
             $('#TransitionForm').submit();
             return false;
         });
@@ -1349,18 +1453,18 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             $('input[name=ConditionConfig]').val(Core.JSON.Stringify(ConditionConfig));
 
             // not needed for normal submit
-            $(window).unbind("beforeunload.PMPopup");
+            $(window).off("beforeunload.PMPopup");
 
             Form.submit();
         });
 
         // Init handling of closing popup with the OS functionality ("X")
-        $(window).unbind("beforeunload.PMPopup").bind("beforeunload.PMPopup", function () {
+        $(window).off("beforeunload.PMPopup").on("beforeunload.PMPopup", function () {
             window.opener.Core.Agent.Admin.ProcessManagement.HandlePopupClose();
         });
 
-        $('.ClosePopup').bind("click", function () {
-            $(window).unbind("beforeunload.PMPopup");
+        $('.ClosePopup').on("click", function () {
+            $(window).off("beforeunload.PMPopup");
         });
 
         Core.UI.InputFields.Init();
@@ -1376,7 +1480,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
      */
     TargetNS.InitTransitionActionEdit = function () {
         // Init addition of new config parameters
-        $('#ConfigAdd').bind('click', function() {
+        $('#ConfigAdd').on('click', function() {
             // get the index for the newly to be added element
             // therefore, we search the preceding fieldset and the first
             // label in it to get its "for"-attribute which contains the index
@@ -1404,19 +1508,19 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 $(this).closest('fieldset').remove();
             }
             else {
-                alert("Sorry, the only existing parameter can't be removed.");
+                alert(Core.Language.Translate("Sorry, the only existing parameter can't be removed."));
             }
             return false;
         });
 
-        $('#Submit').bind('click', function() {
+        $('#Submit').on('click', function() {
             $('#TransitionForm').submit();
             return false;
         });
 
         Core.Form.Validate.SetSubmitFunction($('#TransitionForm'), function (Form) {
             // not needed for normal submit
-            $(window).unbind("beforeunload.PMPopup");
+            $(window).off("beforeunload.PMPopup");
 
             Form.submit();
         });
@@ -1424,12 +1528,12 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         InitProcessPopups();
 
         // Init handling of closing popup with the OS functionality ("X")
-        $(window).unbind("beforeunload.PMPopup").bind("beforeunload.PMPopup", function () {
+        $(window).off("beforeunload.PMPopup").on("beforeunload.PMPopup", function () {
             window.opener.Core.Agent.Admin.ProcessManagement.HandlePopupClose();
         });
 
-        $('.ClosePopup').bind("click", function () {
-            $(window).unbind("beforeunload.PMPopup");
+        $('.ClosePopup').on("click", function () {
+            $(window).off("beforeunload.PMPopup");
         });
     };
 
@@ -1441,9 +1545,9 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
      *      Initialize path edit screen.
      */
     TargetNS.InitPathEdit = function () {
-        var CurrentProcessEntityID = Core.Config.Get('Config.ProcessEntityID'),
-            CurrentTransitionEntityID = Core.Config.Get('Config.TransitionEntityID'),
-            StartActivityID = Core.Config.Get('Config.StartActivityID'),
+        var CurrentProcessEntityID = Core.Config.Get('ProcessEntityID'),
+            CurrentTransitionEntityID = Core.Config.Get('TransitionEntityID'),
+            StartActivityID = Core.Config.Get('StartActivityID'),
             ActivityInfo = window.opener.Core.Agent.Admin.ProcessManagement.ProcessData.Activity,
             PathInfo = window.opener.Core.Agent.Admin.ProcessManagement.ProcessData.Process[CurrentProcessEntityID].Path,
             StartActivityEntityID = '', EndActivityEntityID = '',
@@ -1484,11 +1588,11 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         }
 
         // if transition select is updated, also update transition edit link
-        $('#Transition').bind('change', function () {
+        $('#Transition').on('change', function () {
            $('#EditPath a').data('entity', $(this).val());
         });
 
-        $('#Submit').bind('click', function() {
+        $('#Submit').on('click', function() {
             $('#PathForm').submit();
             return false;
         });
@@ -1515,7 +1619,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             $('#TransitionInfo').val(Core.JSON.Stringify(TransitionInfo));
 
             // not needed for normal submit
-            $(window).unbind("beforeunload.PMPopup");
+            $(window).off("beforeunload.PMPopup");
 
             Form.submit();
         });
@@ -1524,12 +1628,12 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         InitProcessPopups();
 
         // Init handling of closing popup with the OS functionality ("X")
-        $(window).unbind("beforeunload.PMPopup").bind("beforeunload.PMPopup", function () {
+        $(window).off("beforeunload.PMPopup").on("beforeunload.PMPopup", function () {
             window.opener.Core.Agent.Admin.ProcessManagement.HandlePopupClose();
         });
 
-        $('.ClosePopup').bind("click", function () {
-            $(window).unbind("beforeunload.PMPopup");
+        $('.ClosePopup').on("click", function () {
+            $(window).off("beforeunload.PMPopup");
         });
     };
 
@@ -1664,6 +1768,8 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         }
     };
 
+    Core.Init.RegisterNamespace(TargetNS, 'APP_MODULE');
+
     return TargetNS;
 }(Core.Agent.Admin.ProcessManagement || {}));
 
@@ -1678,7 +1784,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingSimple.html">Core.Agent.Admin.GenericInterfaceMappingSimple</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.SysConfig.html">Core.Agent.Admin.SysConfig</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.Attachment.html">Core.Agent.Admin.Attachment</a></li><li><a href="Core.Agent.Admin.AutoResponse.html">Core.Agent.Admin.AutoResponse</a></li><li><a href="Core.Agent.Admin.CommunicationLog.html">Core.Agent.Admin.CommunicationLog</a></li><li><a href="Core.Agent.Admin.Core.Agent.Admin.html">Core.Agent.Admin.Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.Core.Agent.TicketFormDraft.html">Core.Agent.Admin.Core.Agent.TicketFormDraft</a></li><li><a href="Core.Agent.Admin.CustomerCompany.html">Core.Agent.Admin.CustomerCompany</a></li><li><a href="Core.Agent.Admin.CustomerGroup.html">Core.Agent.Admin.CustomerGroup</a></li><li><a href="Core.Agent.Admin.CustomerUser.html">Core.Agent.Admin.CustomerUser</a></li><li><a href="Core.Agent.Admin.CustomerUserService.html">Core.Agent.Admin.CustomerUserService</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldCheckbox.html">Core.Agent.Admin.DynamicFieldCheckbox</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandling.html">Core.Agent.Admin.GenericInterfaceErrorHandling</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry.html">Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvokerEvent.html">Core.Agent.Admin.GenericInterfaceInvokerEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMapping.html">Core.Agent.Admin.GenericInterfaceMapping</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingXSLT.html">Core.Agent.Admin.GenericInterfaceMappingXSLT</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPREST.html">Core.Agent.Admin.GenericInterfaceTransportHTTPREST</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP.html">Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.Group.html">Core.Agent.Admin.Group</a></li><li><a href="Core.Agent.Admin.Log.html">Core.Agent.Admin.Log</a></li><li><a href="Core.Agent.Admin.MailAccount.html">Core.Agent.Admin.MailAccount</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.PackageManager.html">Core.Agent.Admin.PackageManager</a></li><li><a href="Core.Agent.Admin.PostMasterFilter.html">Core.Agent.Admin.PostMasterFilter</a></li><li><a href="Core.Agent.Admin.Priority.html">Core.Agent.Admin.Priority</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.Queue.html">Core.Agent.Admin.Queue</a></li><li><a href="Core.Agent.Admin.QueueAutoResponse.html">Core.Agent.Admin.QueueAutoResponse</a></li><li><a href="Core.Agent.Admin.QueueTemplates.html">Core.Agent.Admin.QueueTemplates</a></li><li><a href="Core.Agent.Admin.Registration.html">Core.Agent.Admin.Registration</a></li><li><a href="Core.Agent.Admin.Role.html">Core.Agent.Admin.Role</a></li><li><a href="Core.Agent.Admin.RoleGroup.html">Core.Agent.Admin.RoleGroup</a></li><li><a href="Core.Agent.Admin.RoleUser.html">Core.Agent.Admin.RoleUser</a></li><li><a href="Core.Agent.Admin.Salutation.html">Core.Agent.Admin.Salutation</a></li><li><a href="Core.Agent.Admin.SelectBox.html">Core.Agent.Admin.SelectBox</a></li><li><a href="Core.Agent.Admin.Service.html">Core.Agent.Admin.Service</a></li><li><a href="Core.Agent.Admin.Session.html">Core.Agent.Admin.Session</a></li><li><a href="Core.Agent.Admin.Signature.html">Core.Agent.Admin.Signature</a></li><li><a href="Core.Agent.Admin.SLA.html">Core.Agent.Admin.SLA</a></li><li><a href="Core.Agent.Admin.SMIME.html">Core.Agent.Admin.SMIME</a></li><li><a href="Core.Agent.Admin.State.html">Core.Agent.Admin.State</a></li><li><a href="Core.Agent.Admin.SupportDataCollector.html">Core.Agent.Admin.SupportDataCollector</a></li><li><a href="Core.Agent.Admin.SysConfig.Entity.html">Core.Agent.Admin.SysConfig.Entity</a></li><li><a href="Core.Agent.Admin.SystemAddress.html">Core.Agent.Admin.SystemAddress</a></li><li><a href="Core.Agent.Admin.SystemConfiguration.html">Core.Agent.Admin.SystemConfiguration</a></li><li><a href="Core.Agent.Admin.SystemMaintenance.html">Core.Agent.Admin.SystemMaintenance</a></li><li><a href="Core.Agent.Admin.Template.html">Core.Agent.Admin.Template</a></li><li><a href="Core.Agent.Admin.TemplateAttachment.html">Core.Agent.Admin.TemplateAttachment</a></li><li><a href="Core.Agent.Admin.Type.html">Core.Agent.Admin.Type</a></li><li><a href="Core.Agent.Admin.UserGroup.html">Core.Agent.Admin.UserGroup</a></li><li><a href="Core.Agent.AppointmentCalendar.html">Core.Agent.AppointmentCalendar</a></li><li><a href="Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage.html">Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage</a></li><li><a href="Core.Agent.CustomerInformationCenter.html">Core.Agent.CustomerInformationCenter</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.CustomerSearchAutoComplete.html">Core.Agent.CustomerSearchAutoComplete</a></li><li><a href="Core.Agent.CustomerUserAddressBook.html">Core.Agent.CustomerUserAddressBook</a></li><li><a href="Core.Agent.CustomerUserInformationCenter.html">Core.Agent.CustomerUserInformationCenter</a></li><li><a href="Core.Agent.CustomerUserInformationCenterSearch.html">Core.Agent.CustomerUserInformationCenterSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.Header.html">Core.Agent.Header</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.LinkObject.SearchForm.html">Core.Agent.LinkObject.SearchForm</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Overview.html">Core.Agent.Overview</a></li><li><a href="Core.Agent.Preferences.html">Core.Agent.Preferences</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Statistics.ParamsWidget.html">Core.Agent.Statistics.ParamsWidget</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketActionCommon.html">Core.Agent.TicketActionCommon</a></li><li><a href="Core.Agent.TicketBounce.html">Core.Agent.TicketBounce</a></li><li><a href="Core.Agent.TicketBulk.html">Core.Agent.TicketBulk</a></li><li><a href="Core.Agent.TicketCompose.html">Core.Agent.TicketCompose</a></li><li><a href="Core.Agent.TicketEmail.html">Core.Agent.TicketEmail</a></li><li><a href="Core.Agent.TicketEmailOutbound.html">Core.Agent.TicketEmailOutbound</a></li><li><a href="Core.Agent.TicketEmailResend.html">Core.Agent.TicketEmailResend</a></li><li><a href="Core.Agent.TicketForward.html">Core.Agent.TicketForward</a></li><li><a href="Core.Agent.TicketHistory.html">Core.Agent.TicketHistory</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketMove.html">Core.Agent.TicketMove</a></li><li><a href="Core.Agent.TicketPhone.html">Core.Agent.TicketPhone</a></li><li><a href="Core.Agent.TicketPhoneCommon.html">Core.Agent.TicketPhoneCommon</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketSplit.html">Core.Agent.TicketSplit</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketMessage.html">Core.Customer.TicketMessage</a></li><li><a href="Core.Customer.TicketProcess.html">Core.Customer.TicketProcess</a></li><li><a href="Core.Customer.TicketSearch.html">Core.Customer.TicketSearch</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Init.html">Core.Init</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.Language.html">Core.Language</a></li><li><a href="Core.SystemConfiguration.html">Core.SystemConfiguration</a></li><li><a href="Core.Template.html">Core.Template</a></li><li><a href="Core.TicketProcess.html">Core.TicketProcess</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul><h3>Global</h3><ul><li><a href="global.html#EditAppointment">EditAppointment</a></li></ul>
 </nav>
 
 <br clear="both">

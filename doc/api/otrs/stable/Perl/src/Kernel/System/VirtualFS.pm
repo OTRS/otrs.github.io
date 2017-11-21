@@ -22,22 +22,16 @@ our @ObjectDependencies = (
 
 Kernel::System::VirtualFS - virtual filesystem lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All virtual filesystem functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $VirtualFSObject = $Kernel::OM->Get('Kernel::System::VirtualFS');
 
 =cut
@@ -62,7 +56,7 @@ sub new {
     return $Self;
 }
 
-=item Read()
+=head2 Read()
 
 read a file from virtual file system
 
@@ -83,7 +77,6 @@ returns
         Preferences => {
 
             # generated automatically
-            Filesize           => '12.4 KBytes',
             FilesizeRaw        => 12345,
 
             # optional
@@ -160,7 +153,7 @@ sub Read {
     );
 }
 
-=item Write()
+=head2 Write()
 
 write a file to virtual file system
 
@@ -226,17 +219,6 @@ sub Write {
 
     # size calculation
     $Param{Preferences}->{FilesizeRaw} = bytes::length( ${ $Param{Content} } );
-    my $Filesize = $Param{Preferences}->{FilesizeRaw};
-    if ( $Filesize > ( 1024 * 1024 ) ) {
-        $Filesize = sprintf "%.1f MBytes", ( $Filesize / ( 1024 * 1024 ) );
-    }
-    elsif ( $Filesize > 1024 ) {
-        $Filesize = sprintf "%.1f KBytes", ( $Filesize / 1024 );
-    }
-    else {
-        $Filesize = $Filesize . ' Bytes';
-    }
-    $Param{Preferences}->{Filesize} = $Filesize;
 
     # insert preferences
     for my $Key ( sort keys %{ $Param{Preferences} } ) {
@@ -260,7 +242,7 @@ sub Write {
     return 1;
 }
 
-=item Delete()
+=head2 Delete()
 
 delete a file from virtual file system
 
@@ -331,7 +313,7 @@ sub Delete {
     );
 }
 
-=item Find()
+=head2 Find()
 
 find files in virtual file system
 
@@ -511,8 +493,6 @@ sub _FileLookup {
 =cut
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

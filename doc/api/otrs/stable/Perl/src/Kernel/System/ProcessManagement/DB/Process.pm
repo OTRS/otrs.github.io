@@ -28,7 +28,6 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField',
     'Kernel::System::Log',
     'Kernel::System::Main',
-    'Kernel::System::Time',
     'Kernel::System::User',
     'Kernel::System::YAML',
 );
@@ -37,22 +36,16 @@ our @ObjectDependencies = (
 
 Kernel::System::ProcessManagement::DB::Process
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Process Management DB Process backend
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $ProcessObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::Process');
 
 =cut
@@ -83,7 +76,7 @@ sub new {
     return $Self;
 }
 
-=item ProcessAdd()
+=head2 ProcessAdd()
 
 add new Process
 
@@ -206,7 +199,7 @@ sub ProcessAdd {
     return $ID;
 }
 
-=item ProcessDelete()
+=head2 ProcessDelete()
 
 delete a Process
 
@@ -254,7 +247,7 @@ sub ProcessDelete {
     return 1;
 }
 
-=item ProcessGet()
+=head2 ProcessGet()
 
 get Process attributes
 
@@ -567,7 +560,7 @@ sub ProcessGet {
     return \%Data;
 }
 
-=item ProcessUpdate()
+=head2 ProcessUpdate()
 
 update Process attributes
 
@@ -708,7 +701,7 @@ sub ProcessUpdate {
     return 1;
 }
 
-=item ProcessList()
+=head2 ProcessList()
 
 get a Process list
 
@@ -781,7 +774,7 @@ sub ProcessList {
     if ( $StateEntityIDsStrg ne 'ALL' ) {
 
         my $StateEntityIDsStrgDB =
-            join ',', map "'" . $DBObject->Quote($_) . "'", @{ $Param{StateEntityIDs} };
+            join ',', map { "'" . $DBObject->Quote($_) . "'" } @{ $Param{StateEntityIDs} };
 
         $SQL .= "WHERE state_entity_id IN ($StateEntityIDsStrgDB)";
     }
@@ -809,7 +802,7 @@ sub ProcessList {
     return \%Data;
 }
 
-=item ProcessListGet()
+=head2 ProcessListGet()
 
 get a Process list with all process details
 
@@ -909,7 +902,88 @@ sub ProcessListGet {
     return \@Data;
 }
 
-=item ProcessDump()
+=head2 ProcessSearch()
+
+search processes by process name
+
+    my $ProcessEntityIDs = $ProcessObject->ProcessSearch(
+        ProcessName => 'SomeText',       # e. g. "SomeText*", "Some*ext" or ['*SomeTest1*', '*SomeTest2*']
+    );
+
+    Returns:
+
+    $ProcessEntityIDs = [ 'Process-e11e2e9aa83344a235279d4f6babc6ec', 'Process-f8194a25ab0ccddefeb4240c281c1f56' ];
+
+=cut
+
+sub ProcessSearch {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !$Param{ProcessName} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need ProcessName!',
+        );
+        return;
+    }
+
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    my $SQL = 'SELECT DISTINCT entity_id
+               FROM pm_process ';
+
+    # if it's no ref, put it to array ref
+    if ( ref $Param{ProcessName} eq '' ) {
+        $Param{ProcessName} = [ $Param{ProcessName} ];
+    }
+
+    if ( IsArrayRefWithData( $Param{ProcessName} ) ) {
+        $SQL .= ' WHERE' if IsArrayRefWithData( $Param{ProcessName} );
+    }
+
+    my @QuotedSearch;
+    my $SQLOR = 0;
+
+    VALUE:
+    for my $Value ( @{ $Param{ProcessName} } ) {
+
+        next VALUE if !defined $Value || !length $Value;
+
+        $Value = '%' . $DBObject->Quote( $Value, 'Like' ) . '%';
+        $Value =~ s/\*/%/g;
+        $Value =~ s/%%/%/gi;
+
+        if ($SQLOR) {
+            $SQL .= ' OR';
+        }
+
+        $SQL .= ' name LIKE ? ';
+
+        push @QuotedSearch, $Value;
+        $SQLOR = 1;
+
+    }
+
+    if ( IsArrayRefWithData( $Param{ProcessName} ) ) {
+        $SQL .= $DBObject->GetDatabaseFunction('LikeEscapeString');
+    }
+    $SQL .= ' ORDER BY entity_id';
+
+    return if !$DBObject->Prepare(
+        SQL  => $SQL,
+        Bind => [ \(@QuotedSearch) ]
+    );
+
+    my @Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        push @Data, $Row[0];
+    }
+
+    return \@Data;
+}
+
+=head2 ProcessDump()
 
 gets a complete processes information dump from the DB including: Process State, Activities,
 ActivityDialogs, Transitions and TransitionActions
@@ -1344,9 +1418,6 @@ sub ProcessDump {
         # return a file location
         else {
 
-            # get current time for the file comment
-            my $CurrentTime = $Kernel::OM->Get('Kernel::System::Time')->CurrentTimestamp();
-
             # get user data of the current user to use for the file comment
             my %User = $Kernel::OM->Get('Kernel::System::User')->GetUserData(
                 UserID => $Param{UserID},
@@ -1364,13 +1435,14 @@ sub ProcessDump {
 package Kernel::Config::Files::ZZZProcessManagement;
 use strict;
 use warnings;
-no warnings 'redefine';
+no warnings 'redefine'; ## no critic
 use utf8;
 sub Load {
     my ($File, $Self) = @_;
 EOF
 
             my $FileEnd = <<'EOF';
+    return;
 }
 1;
 EOF
@@ -1389,7 +1461,7 @@ EOF
     }
 }
 
-=item ProcessImport()
+=head2 ProcessImport()
 
 import a process YAML file/content
 
@@ -2113,8 +2185,6 @@ sub _ProcessImportRollBack {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

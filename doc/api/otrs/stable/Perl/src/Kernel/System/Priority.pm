@@ -24,22 +24,16 @@ our @ObjectDependencies = (
 
 Kernel::System::Priority - priority lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All ticket priority functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $PriorityObject = $Kernel::OM->Get('Kernel::System::Priority');
 
 
@@ -58,7 +52,7 @@ sub new {
     return $Self;
 }
 
-=item PriorityList()
+=head2 PriorityList()
 
 return a priority list as hash
 
@@ -120,7 +114,7 @@ sub PriorityList {
     return %Data;
 }
 
-=item PriorityGet()
+=head2 PriorityGet()
 
 get a priority
 
@@ -185,7 +179,7 @@ sub PriorityGet {
     return %Data;
 }
 
-=item PriorityAdd()
+=head2 PriorityAdd()
 
 add a ticket priority
 
@@ -245,7 +239,7 @@ sub PriorityAdd {
     return $ID;
 }
 
-=item PriorityUpdate()
+=head2 PriorityUpdate()
 
 update a existing ticket priority
 
@@ -253,7 +247,6 @@ update a existing ticket priority
         PriorityID     => 123,
         Name           => 'New Prio',
         ValidID        => 1,
-        CheckSysConfig => 0,   # (optional) default 1
         UserID         => 1,
     );
 
@@ -273,11 +266,6 @@ sub PriorityUpdate {
         }
     }
 
-    # check CheckSysConfig param
-    if ( !defined $Param{CheckSysConfig} ) {
-        $Param{CheckSysConfig} = 1;
-    }
-
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
     return if !$DBObject->Do(
@@ -293,14 +281,10 @@ sub PriorityUpdate {
         Type => $Self->{CacheType},
     );
 
-    # check all sysconfig options
-    return 1 if !$Param{CheckSysConfig};
-
-    # check all sysconfig options and correct them automatically if neccessary
-    $Kernel::OM->Get('Kernel::System::SysConfig')->ConfigItemCheckAll();
+    return 1;
 }
 
-=item PriorityLookup()
+=head2 PriorityLookup()
 
 returns the id or the name of a priority
 
@@ -359,8 +343,6 @@ sub PriorityLookup {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

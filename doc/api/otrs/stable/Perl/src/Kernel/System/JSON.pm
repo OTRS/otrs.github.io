@@ -15,7 +15,7 @@ use warnings;
 # see http://bugs.otrs.org/show_bug.cgi?id=7337
 BEGIN {
     if ( $ENV{GATEWAY_INTERFACE} && $ENV{GATEWAY_INTERFACE} =~ m{\A CGI-PerlEx}xmsi ) {
-        $ENV{PERL_JSON_BACKEND} = 'JSON::PP';
+        $ENV{PERL_JSON_BACKEND} = 'JSON::PP';    ## no critic
     }
 }
 
@@ -29,22 +29,16 @@ our @ObjectDependencies = (
 
 Kernel::System::JSON - the JSON wrapper lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Functions for encoding perl data structures to JSON.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create a JSON object. Do not use it directly, instead use:
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
 
 =cut
@@ -59,13 +53,14 @@ sub new {
     return $Self;
 }
 
-=item Encode()
+=head2 Encode()
 
 Encode a perl data structure to a JSON string.
 
     my $JSONString = $JSONObject->Encode(
         Data     => $Data,
         SortKeys => 1,          # (optional) (0|1) default 0, to sort the keys of the json data
+        Pretty => 1,            # (optional) (0|1) default 0, to pretty print
     );
 
 =cut
@@ -89,7 +84,12 @@ sub Encode {
 
     # sort the keys of the JSON data
     if ( $Param{SortKeys} ) {
-        $JSONObject->canonical( [1] );
+        $JSONObject->canonical(1);
+    }
+
+    # pretty print - can be useful for debugging purposes
+    if ( $Param{Pretty} ) {
+        $JSONObject->pretty(1);
     }
 
     # get JSON-encoded presentation of perl structure
@@ -109,7 +109,7 @@ sub Encode {
     return $JSONEncoded;
 }
 
-=item Decode()
+=head2 Decode()
 
 Decode a JSON string to a perl data structure.
 
@@ -152,7 +152,7 @@ sub Decode {
     return $Scalar;
 }
 
-=item True()
+=head2 True()
 
 returns a constant that can be mapped to a boolean true value
 in JSON rather than a string with "true".
@@ -176,7 +176,7 @@ sub True {
     return \1;
 }
 
-=item False()
+=head2 False()
 
 like C<True()>, but for a false boolean value.
 
@@ -193,7 +193,7 @@ sub False {
 
 =cut
 
-=item _BooleansProcess()
+=head2 _BooleansProcess()
 
 decode boolean values leftover from JSON decoder to simple scalar values
 
@@ -237,8 +237,6 @@ sub _BooleansProcess {
 1;
 
 =end Internal:
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

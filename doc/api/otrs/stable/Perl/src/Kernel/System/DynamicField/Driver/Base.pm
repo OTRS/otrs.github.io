@@ -22,11 +22,7 @@ our @ObjectDependencies = (
 
 Kernel::System::DynamicField::Driver::Base - common fields backend functions
 
-=head1 SYNOPSIS
-
 =head1 PUBLIC INTERFACE
-
-=over 4
 
 =cut
 
@@ -75,9 +71,6 @@ sub HasBehavior {
 
     # return success if the dynamic field has the expected behavior
     return IsPositiveInteger( $Self->{Behaviors}->{ $Param{Behavior} } );
-
-    # otherwise return fail
-    return;
 }
 
 sub SearchFieldPreferences {
@@ -93,7 +86,7 @@ sub SearchFieldPreferences {
     return \@Preferences;
 }
 
-=item EditLabelRender()
+=head2 EditLabelRender()
 
 creates the label HTML to be used in edit masks.
 
@@ -183,9 +176,72 @@ EOF
     return $HTMLString;
 }
 
-1;
+=head2 ValueSearch()
 
-=back
+Searches/fetches dynamic field value.
+
+    my $Value = $BackendObject->ValueSearch(
+        DynamicFieldConfig => $DynamicFieldConfig,      # complete config of the DynamicField
+        Search             => 'test',
+    );
+
+    Returns [
+        {
+            ID            => 437,
+            FieldID       => 23,
+            ObjectID      => 133,
+            ValueText     => 'some text',
+            ValueDateTime => '1977-12-12 12:00:00',
+            ValueInt      => 123,
+        },
+    ];
+
+=cut
+
+sub ValueSearch {
+    my ( $Self, %Param ) = @_;
+
+    # check mandatory parameters
+    if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need DynamicFieldConfig!"
+        );
+        return;
+    }
+
+    my $SearchTerm = $Param{Search};
+    my $Operator   = 'Equals';
+    if ( $Self->HasBehavior( Behavior => 'IsLikeOperatorCapable' ) ) {
+        $SearchTerm = '%' . $Param{Search} . '%';
+        $Operator   = 'Like';
+    }
+
+    my $SearchSQL = $Self->SearchSQLGet(
+        DynamicFieldConfig => $Param{DynamicFieldConfig},
+        TableAlias         => 'dynamic_field_value',
+        SearchTerm         => $SearchTerm,
+        Operator           => $Operator,
+    );
+
+    if ( !defined $SearchSQL || !length $SearchSQL ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Error generating search SQL!"
+        );
+        return;
+    }
+
+    my $Values = $Kernel::OM->Get('Kernel::System::DynamicFieldValue')->ValueSearch(
+        FieldID   => $Param{DynamicFieldConfig}->{ID},
+        Search    => $Param{Search},
+        SearchSQL => $SearchSQL,
+    );
+
+    return $Values;
+}
+
+1;
 
 =head1 TERMS AND CONDITIONS
 

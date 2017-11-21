@@ -20,21 +20,20 @@ our @ObjectDependencies = (
     'Kernel::System::DynamicField::Backend',
     'Kernel::System::Log',
     'Kernel::System::Ticket',
+    'Kernel::System::Web::Request',
 );
 
 =head1 NAME
 
 Kernel::System::DynamicField::ObjectType::Ticket
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Ticket object handler for DynamicFields
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=item new()
+=head2 new()
 
 usually, you want to create an instance of this
 by using Kernel::System::DynamicField::ObjectType::Ticket->new();
@@ -50,7 +49,7 @@ sub new {
     return $Self;
 }
 
-=item PostValueSet()
+=head2 PostValueSet()
 
 perform specific functions after the Value set for this object type.
 
@@ -137,7 +136,7 @@ sub PostValueSet {
 
     my $FieldName;
     if ( !defined $Param{DynamicFieldConfig}->{Name} ) {
-        $FieldName = '',
+        $FieldName = '';
     }
     else {
         $FieldName = $Param{DynamicFieldConfig}->{Name};
@@ -201,11 +200,14 @@ sub PostValueSet {
     $HistoryValue    //= '';
     $HistoryOldValue //= '';
 
-    # history insert
+    # Add history entry.
     $TicketObject->HistoryAdd(
         TicketID    => $Param{ObjectID},
         QueueID     => $Ticket{QueueID},
         HistoryType => 'TicketDynamicFieldUpdate',
+
+        # This insert is not optimal at all (not human readable), but will be kept due to backwards compatibility. The
+        #   value will be converted for use in a more speaking form directly in AgentTicketHistory.pm before display.
         Name =>
             "\%\%FieldName\%\%$FieldName"
             . "\%\%Value\%\%$HistoryValue"
@@ -232,9 +234,117 @@ sub PostValueSet {
     return 1;
 }
 
-1;
+=head2 ObjectDataGet()
 
-=back
+retrieves the data of the current object.
+
+    my %ObjectData = $DynamicFieldTicketHandlerObject->ObjectDataGet(
+        DynamicFieldConfig => $DynamicFieldConfig,      # complete config of the DynamicField
+        UserID             => 123,
+    );
+
+returns:
+
+    %ObjectData = (
+        ObjectID => 123,
+        Data     => {
+            TicketNumber => '20101027000001',
+            Title        => 'some title',
+            TicketID     => 123,
+            # ...
+        }
+    );
+
+=cut
+
+sub ObjectDataGet {
+    my ( $Self, %Param ) = @_;
+
+    # Check needed stuff.
+    for my $Needed (qw(DynamicFieldConfig UserID)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    # Check DynamicFieldConfig (general).
+    if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "The field configuration is invalid",
+        );
+        return;
+    }
+
+    # Check DynamicFieldConfig (internally).
+    for my $Needed (qw(ID FieldType ObjectType)) {
+        if ( !$Param{DynamicFieldConfig}->{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed in DynamicFieldConfig!",
+            );
+            return;
+        }
+    }
+
+    my $TicketID = $Kernel::OM->Get('Kernel::System::Web::Request')->GetParam(
+        Param => 'TicketID',
+    );
+
+    return if !$TicketID;
+
+    my %TicketData = $Kernel::OM->Get('Kernel::System::Ticket')->TicketGet(
+        TicketID      => $TicketID,
+        DynamicFields => 1,
+        Extended      => 1,
+        UserID        => $Param{UserID},
+    );
+
+    if ( !%TicketData ) {
+
+        return (
+            ObjectID => $TicketID,
+            Data     => {}
+        );
+    }
+
+    my %SkipAttributes = (
+        Age                         => 1,
+        EscalationDestinationIn     => 1,
+        EscalationDestinationTime   => 1,
+        EscalationSolutionTime      => 1,
+        EscalationTime              => 1,
+        EscalationTimeWorkingTime   => 1,
+        RealTillTimeNotUsed         => 1,
+        SolutionTime                => 1,
+        SolutionTimeDestinationTime => 1,
+        SolutionTimeEscalation      => 1,
+        SolutionTimeWorkingTime     => 1,
+        UnlockTimeout               => 1,
+        UntilTime                   => 1,
+    );
+
+    my %Result = (
+        ObjectID => $TicketID,
+    );
+
+    ATTRIBUTE:
+    for my $Attribute ( sort keys %TicketData ) {
+
+        next ATTRIBUTE if $SkipAttributes{$Attribute};
+
+        $Result{Data}->{$Attribute} = $TicketData{$Attribute};
+    }
+
+    return %Result;
+
+}
+
+1;
 
 =head1 TERMS AND CONDITIONS
 

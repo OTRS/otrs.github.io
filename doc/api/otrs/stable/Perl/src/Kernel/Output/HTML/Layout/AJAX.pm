@@ -19,15 +19,13 @@ our $ObjectManagerDisabled = 1;
 
 Kernel::Output::HTML::Layout::AJAX - all AJAX-related HTML functions
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All AJAX-related HTML functions
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=item BuildSelectionJSON()
+=head2 BuildSelectionJSON()
 
 build a JSON output which can be used for e. g. data for pull downs
 
@@ -147,8 +145,6 @@ sub BuildSelectionJSON {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

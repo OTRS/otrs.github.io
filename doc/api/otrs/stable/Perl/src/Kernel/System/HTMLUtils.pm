@@ -14,7 +14,6 @@ use warnings;
 use utf8;
 
 use MIME::Base64;
-use HTML::Truncate;
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -26,22 +25,16 @@ our @ObjectDependencies = (
 
 Kernel::System::HTMLUtils - creating and modifying html strings
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 A module for creating and modifying html strings.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $HTMLUtilsObject = $Kernel::OM->Get('Kernel::System::HTMLUtils');
 
 =cut
@@ -59,7 +52,7 @@ sub new {
     return $Self;
 }
 
-=item ToAscii()
+=head2 ToAscii()
 
 convert an HTML string to an ASCII string
 
@@ -81,7 +74,8 @@ sub ToAscii {
         }
     }
 
-    # turn on utf8 flag (bug#10970, bug#11596 and bug#12097)
+    # make sure to flag the input string as unicode (utf8) because replacements below can
+    # introduce unicode encoded characters (see bug#10970, bug#11596 and bug#12097 for more info)
     $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$Param{String} );
 
     # get length of line for forcing line breakes
@@ -589,7 +583,7 @@ sub ToAscii {
     return $Param{String};
 }
 
-=item ToHTML()
+=head2 ToHTML()
 
 convert an ASCII string to an HTML string
 
@@ -627,7 +621,7 @@ sub ToHTML {
     return $Param{String};
 }
 
-=item DocumentComplete()
+=head2 DocumentComplete()
 
 check and e. g. add <html> and <body> tags to given html string
 
@@ -657,6 +651,9 @@ sub DocumentComplete {
     my $Css = $Kernel::OM->Get('Kernel::Config')->Get('Frontend::RichText::DefaultCSS')
         || 'font-size: 12px; font-family:Courier,monospace,fixed;';
 
+    # escape special characters like double-quotes, e.g. used in font names with spaces
+    $Css = $Self->ToHTML( String => $Css );
+
     # Use the HTML5 doctype because it is compatible with HTML4 and causes the browsers
     #   to render the content in standards mode, which is more safe than quirks mode.
     my $Body = '<!DOCTYPE html><html><head>';
@@ -666,7 +663,7 @@ sub DocumentComplete {
     return $Body;
 }
 
-=item DocumentStrip()
+=head2 DocumentStrip()
 
 remove html document tags from string
 
@@ -698,7 +695,7 @@ sub DocumentStrip {
     return $Param{String};
 }
 
-=item DocumentCleanup()
+=head2 DocumentCleanup()
 
 perform some sanity checks on HTML content.
 
@@ -770,7 +767,7 @@ sub DocumentCleanup {
     return $Param{String};
 }
 
-=item LinkQuote()
+=head2 LinkQuote()
 
 detect links in HTML code, add C<a href> if missing
 
@@ -932,13 +929,13 @@ sub LinkQuote {
     ${$String} =~ s{${Marker}TagHash-(\d+)${Marker}}{$TagHash{$1}}egsxim;
 
     # check ref && return result like called
-    if ($StringScalar) {
+    if ( defined $StringScalar ) {
         return ${$String};
     }
     return $String;
 }
 
-=item Safety()
+=head2 Safety()
 
 To remove/strip active html tags/addons (javascript, C<applet>s, C<embed>s and C<object>s)
 from html strings.
@@ -1198,7 +1195,7 @@ sub Safety {
     return %Safety;
 }
 
-=item EmbeddedImagesExtract()
+=head2 EmbeddedImagesExtract()
 
 extracts embedded images with data-URLs from an HTML document.
 
@@ -1257,104 +1254,7 @@ sub EmbeddedImagesExtract {
     return 1;
 }
 
-=item HTMLTruncate()
-
-DEPRECATED: This function will be removed in further versions of OTRS
-
-truncate an HTML string to certain amount of characters without loosing the HTML tags, the resulting
-string will contain the specified amount of text characters plus the HTML tags, and ellipsis string.
-
-special characters like &aacute; in HTML code are considered as just one character.
-
-    my $HTML = $HTMLUtilsObject->HTMLTruncate(
-        String   => $String,
-        Chars    => 123,
-        Ellipsis => '...',              # optional (defaults to HTML &#8230;) string to indicate
-                                        #    that the HTML was truncated until that point
-        UTF8Mode => 0,                  # optional 1 or 0 (defaults to 0)
-        OnSpace  => 0,                  # optional 1 or 0 (defaults to 0) if enabled, prevents to
-                                        #    truncate in a middle of a word, but in the space before
-    );
-
-returns
-
-    $HTML => 'some HTML code'           # or false in case of a failure
-
-=cut
-
-sub HTMLTruncate {
-    my ( $Self, %Param ) = @_;
-
-    # check needed
-    for my $Needed (qw(String Chars)) {
-
-        if ( !$Param{$Needed} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "Need $Needed!",
-            );
-            return;
-        }
-    }
-
-    # translate params for compatibility reasons with HTML::Truncate
-    my %CompatibilityParams = (
-        'utf8_mode' => $Param{UTF8Mode} ? 1 : 0,
-        'on_space'  => $Param{OnSpace}  ? 1 : 0,
-        'chars'     => $Param{Chars},
-        'repair'    => 1,
-    );
-
-    if ( defined $Param{Ellipsis} ) {
-        $CompatibilityParams{ellipsis} = $Param{Ellipsis};
-    }
-
-    # create new HTML truncate object (with the specified options)
-    my $HTMLTruncateObject;
-    eval {
-        $HTMLTruncateObject = HTML::Truncate->new(%CompatibilityParams);
-    };
-
-    if ( !$HTMLTruncateObject ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Could not create HTMLTruncateObject: $@",
-        );
-        return;
-    }
-
-    # sanitize the string
-    my %Safe = $Self->Safety(
-        String         => $Param{String},
-        NoApplet       => 1,
-        NoObject       => 1,
-        NoEmbed        => 1,
-        NoSVG          => 1,
-        NoImg          => 1,
-        NoIntSrcLoad   => 1,
-        NoExtSrcLoad   => 1,
-        NoJavaScript   => 1,
-        ReplacementStr => '✂︎',
-    );
-
-    # truncate the HTML input string
-    my $Result;
-    if ( !eval { $Result = $HTMLTruncateObject->truncate( $Safe{String} ) } ) {
-
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Truncating string failed: ' . $@,
-        );
-
-        return;
-    }
-
-    return $Result;
-}
-
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

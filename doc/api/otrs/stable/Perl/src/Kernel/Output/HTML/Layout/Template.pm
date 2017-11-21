@@ -27,9 +27,7 @@ Kernel::Output::HTML::LayoutTemplate - template rendering engine based on Templa
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=item Output()
+=head2 Output()
 
 generates HTML output based on a template file.
 
@@ -49,14 +47,17 @@ Using a template string:
 
 Additional parameters:
 
-    KeepScriptTags - this causes [% WRAPPER JSOnDocumentComplete %] blocks NOT
+    AJAX - AJAX-specific adjustements: this causes [% WRAPPER JSOnDocumentComplete %] blocks NOT
         to be replaced. This is important to be able to generate snippets which can be cached.
+        Also, JS data added with AddJSData() calls is appended to the output here.
 
     my $HTML = $LayoutObject->Output(
         TemplateFile   => 'AdminLog.tt',
         Data           => \%Param,
-        KeepScriptTags => 1,
+        AJAX           => 1,
     );
+
+    KeepScriptTags - DEPRECATED, please use the parameter "AJAX" instead
 
 =cut
 
@@ -72,6 +73,11 @@ sub Output {
             Message  => "Need HashRef in Param Data! Got: '" . ref( $Param{Data} ) . "'!",
         );
         $Self->FatalError();
+    }
+
+    # asure compatibility with old KeepScriptTags parameter
+    if ( $Param{KeepScriptTags} && !$Param{AJAX} ) {
+        $Param{AJAX} = $Param{KeepScriptTags};
     }
 
     # fill init Env
@@ -187,8 +193,8 @@ sub Output {
         {
             Data => $Param{Data} // {},
             global => {
-                BlockData      => $Self->{BlockData}     // [],
-                KeepScriptTags => $Param{KeepScriptTags} // 0,
+                BlockData      => $Self->{BlockData} // [],
+                KeepScriptTags => $Param{AJAX}       // 0,
             },
         },
         \$Output,
@@ -284,10 +290,26 @@ sub Output {
         }
     }
 
+    #
+    # AddJSData() handling
+    #
+    if ( $Param{AJAX} ) {
+        my %Data = %{ $Self->{_JSData} // {} };
+        if (%Data) {
+            my $JSONString = $Kernel::OM->Get('Kernel::System::JSON')->Encode(
+                Data     => \%Data,
+                SortKeys => 1,
+            );
+            $Output
+                .= "\n<script type=\"text/javascript\">//<![CDATA[\n\"use strict\";\nCore.Config.AddConfig($JSONString);\n//]]></script>";
+        }
+        delete $Self->{_JSData};
+    }
+
     return $Output;
 }
 
-=item AddJSOnDocumentComplete()
+=head2 AddJSOnDocumentComplete()
 
 dynamically add JavaScript code that should be executed in Core.App.Ready().
 Call this for any dynamically generated code that is not in a template.
@@ -304,11 +326,33 @@ sub AddJSOnDocumentComplete {
     $Self->{_JSOnDocumentComplete} //= [];
     push @{ $Self->{_JSOnDocumentComplete} }, $Param{Code};
 
+    return;
+}
+
+=head2 AddJSData()
+
+dynamically add JavaScript data that should be handed over to
+JavaScript via Core.Config.
+
+    $LayoutObject->AddJSData(
+        Key   => 'Key1',  # the key to store this data
+        Value => { ... }  # simple or complex data
+    );
+
+=cut
+
+sub AddJSData {
+    my ( $Self, %Param ) = @_;
+
+    return if !$Param{Key};
+
+    $Self->{_JSData} //= {};
+    $Self->{_JSData}->{ $Param{Key} } = $Param{Value};
+
+    return;
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

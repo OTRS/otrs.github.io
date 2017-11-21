@@ -13,7 +13,7 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(IsStringWithData);
 
-# prevent 'Used once' warning for Kernel::OM
+# Prevent 'Used once' warning for Kernel::OM.
 use Kernel::System::ObjectManager;
 
 our $ObjectManagerDisabled = 1;
@@ -22,7 +22,7 @@ our $ObjectManagerDisabled = 1;
 
 Kernel::GenericInterface::Invoker - GenericInterface Invoker interface
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Invokers are responsible to prepare for making a remote web service
 request.
@@ -43,11 +43,7 @@ was initiated to allow the Invoker to handle possible errors.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object.
 
@@ -77,11 +73,11 @@ create an object.
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # allocate new hash for object
+    # Allocate new hash for object.
     my $Self = {};
     bless( $Self, $Type );
 
-    # check needed params
+    # Check needed params.
     for my $Needed (qw( DebuggerObject Invoker InvokerType WebserviceID )) {
         if ( !$Param{$Needed} ) {
 
@@ -101,7 +97,7 @@ sub new {
         );
     }
 
-    # load backend module
+    # Load backend module.
     my $GenericModule = 'Kernel::GenericInterface::Invoker::' . $Param{InvokerType};
     if ( !$Kernel::OM->Get('Kernel::System::Main')->Require($GenericModule) ) {
 
@@ -109,13 +105,13 @@ sub new {
     }
     $Self->{BackendObject} = $GenericModule->new( %{$Self} );
 
-    # pass back error message from backend if backend module could not be executed
+    # Pass back error message from backend if backend module could not be executed.
     return $Self->{BackendObject} if ref $Self->{BackendObject} ne $GenericModule;
 
     return $Self;
 }
 
-=item PrepareRequest()
+=head2 PrepareRequest()
 
 prepare the invocation of the configured remote web service.
 
@@ -144,7 +140,7 @@ prepare the invocation of the configured remote web service.
 sub PrepareRequest {
     my ( $Self, %Param ) = @_;
 
-    # check data - only accept undef or hash ref
+    # Check data - only accept undef or hash ref.
     if ( defined $Param{Data} && ref $Param{Data} ne 'HASH' ) {
 
         return $Self->{DebuggerObject}->Error(
@@ -152,18 +148,18 @@ sub PrepareRequest {
         );
     }
 
-    # start map on backend
+    # Start map on backend.
     return $Self->{BackendObject}->PrepareRequest(%Param);
 
 }
 
-=item HandleResponse()
+=head2 HandleResponse()
 
 handle response data of the configured remote web service.
 
     my $Result = $InvokerObject->HandleResponse(
-        ResponseSuccess      => 1,              # success status of the remote webservice
-        ResponseErrorMessage => '',             # in case of webservice error
+        ResponseSuccess      => 1,              # success status of the remote web service
+        ResponseErrorMessage => '',             # in case of web service error
         Data => {                               # data payload
             ...
         },
@@ -182,7 +178,7 @@ handle response data of the configured remote web service.
 sub HandleResponse {
     my ( $Self, %Param ) = @_;
 
-    # check data - only accept undef or hash ref
+    # Check data - only accept undef or hash ref.
     if ( defined $Param{Data} && ref $Param{Data} ne 'HASH' ) {
 
         return $Self->{DebuggerObject}->Error(
@@ -190,14 +186,47 @@ sub HandleResponse {
         );
     }
 
-    # start map on backend
+    # Start map on backend.
     return $Self->{BackendObject}->HandleResponse(%Param);
 
 }
 
-1;
+=head2 HandleError()
 
-=back
+handle error data of the configured remote web service.
+
+    my $Result = $InvokerObject->HandleError(
+        Data => {                               # data payload
+            ...
+        },
+    );
+
+    $Result = {
+        Success         => 1,                   # 0 or 1
+        ErrorMessage    => '',                  # in case of error
+        Data            => {                    # data payload after Invoker
+            ...
+        },
+    };
+
+=cut
+
+sub HandleError {
+    my ( $Self, %Param ) = @_;
+
+    # Check data - only accept undef or hash ref.
+    if ( defined $Param{Data} && ref $Param{Data} ne 'HASH' ) {
+
+        return $Self->{DebuggerObject}->Error(
+            Summary => 'Got Data but it is not a hash ref in Invoker handler (HandleResponse)!'
+        );
+    }
+
+    return $Self->{BackendObject}->HandleError(%Param);
+
+}
+
+1;
 
 =head1 TERMS AND CONDITIONS
 

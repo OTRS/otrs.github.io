@@ -20,15 +20,9 @@ our $ObjectManagerDisabled = 1;
 
 Kernel::GenericInterface::Transport - GenericInterface network transport interface
 
-=head1 SYNOPSIS
-
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object.
 
@@ -84,7 +78,7 @@ sub new {
     return $Self;
 }
 
-=item ProviderProcessRequest()
+=head2 ProviderProcessRequest()
 
 process an incoming web service request. This function has to read the request data
 from the web server process.
@@ -118,7 +112,7 @@ sub ProviderProcessRequest {
     return $Result;
 }
 
-=item ProviderGenerateResponse()
+=head2 ProviderGenerateResponse()
 
 generate response for an incoming web service request.
 
@@ -158,7 +152,7 @@ sub ProviderGenerateResponse {
     return $Self->{BackendObject}->ProviderGenerateResponse(%Param);
 }
 
-=item RequesterPerformRequest()
+=head2 RequesterPerformRequest()
 
 generate an outgoing web service request, receive the response and return its data..
 
@@ -200,8 +194,6 @@ sub RequesterPerformRequest {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

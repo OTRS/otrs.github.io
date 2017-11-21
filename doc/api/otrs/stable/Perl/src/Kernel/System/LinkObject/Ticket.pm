@@ -23,22 +23,16 @@ our @ObjectDependencies = (
 
 Kernel::System::LinkObject::Ticket
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Ticket backend for the ticket link object.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $LinkObjectTicketObject = $Kernel::OM->Get('Kernel::System::LinkObject::Ticket');
 
 =cut
@@ -53,7 +47,7 @@ sub new {
     return $Self;
 }
 
-=item LinkListWithData()
+=head2 LinkListWithData()
 
 fill up the link list with data
 
@@ -139,7 +133,7 @@ sub LinkListWithData {
     return 1;
 }
 
-=item ObjectPermission()
+=head2 ObjectPermission()
 
 checks read permission for a given object and UserID.
 
@@ -172,7 +166,7 @@ sub ObjectPermission {
     );
 }
 
-=item ObjectDescriptionGet()
+=head2 ObjectDescriptionGet()
 
 return a hash of object descriptions
 
@@ -233,7 +227,7 @@ sub ObjectDescriptionGet {
     return %Description;
 }
 
-=item ObjectSearch()
+=head2 ObjectSearch()
 
 return a hash list of the search results
 
@@ -275,14 +269,7 @@ sub ObjectSearch {
     # set focus
     my %Search;
     if ( $Param{SearchParams}->{TicketFulltext} ) {
-        %Search = (
-            From          => '*' . $Param{SearchParams}->{TicketFulltext} . '*',
-            To            => '*' . $Param{SearchParams}->{TicketFulltext} . '*',
-            Cc            => '*' . $Param{SearchParams}->{TicketFulltext} . '*',
-            Subject       => '*' . $Param{SearchParams}->{TicketFulltext} . '*',
-            Body          => '*' . $Param{SearchParams}->{TicketFulltext} . '*',
-            ContentSearch => 'OR',
-        );
+        $Search{Fulltext} = '*' . $Param{SearchParams}->{TicketFulltext} . '*';
     }
     if ( $Param{SearchParams}->{TicketTitle} ) {
         $Search{Title} = '*' . $Param{SearchParams}->{TicketTitle} . '*';
@@ -338,7 +325,7 @@ sub ObjectSearch {
     return \%SearchList;
 }
 
-=item LinkAddPre()
+=head2 LinkAddPre()
 
 link add pre event module
 
@@ -383,7 +370,7 @@ sub LinkAddPre {
     return 1;
 }
 
-=item LinkAddPost()
+=head2 LinkAddPost()
 
 link add pre event module
 
@@ -444,15 +431,6 @@ sub LinkAddPost {
             Name         => "\%\%$TicketNumber\%\%$Param{SourceKey}\%\%$Param{Key}",
         );
 
-        # ticket event
-        $TicketObject->EventHandler(
-            Event => 'TicketSlaveLinkAdd' . $Param{Type},
-            Data  => {
-                TicketID => $Param{Key},
-            },
-            UserID => $Param{UserID},
-        );
-
         return 1;
     }
 
@@ -472,22 +450,13 @@ sub LinkAddPost {
             Name         => "\%\%$TicketNumber\%\%$Param{TargetKey}\%\%$Param{Key}",
         );
 
-        # ticket event
-        $TicketObject->EventHandler(
-            Event  => 'TicketMasterLinkAdd' . $Param{Type},
-            UserID => $Param{UserID},
-            Data   => {
-                TicketID => $Param{Key},
-            },
-        );
-
         return 1;
     }
 
     return 1;
 }
 
-=item LinkDeletePre()
+=head2 LinkDeletePre()
 
 link delete pre event module
 
@@ -532,7 +501,7 @@ sub LinkDeletePre {
     return 1;
 }
 
-=item LinkDeletePost()
+=head2 LinkDeletePost()
 
 link delete post event module
 
@@ -593,15 +562,6 @@ sub LinkDeletePost {
             Name         => "\%\%$TicketNumber\%\%$Param{SourceKey}\%\%$Param{Key}",
         );
 
-        # ticket event
-        $TicketObject->EventHandler(
-            Event => 'TicketSlaveLinkDelete' . $Param{Type},
-            Data  => {
-                TicketID => $Param{Key},
-            },
-            UserID => $Param{UserID},
-        );
-
         return 1;
     }
 
@@ -621,15 +581,6 @@ sub LinkDeletePost {
             Name         => "\%\%$TicketNumber\%\%$Param{TargetKey}\%\%$Param{Key}",
         );
 
-        # ticket event
-        $TicketObject->EventHandler(
-            Event => 'TicketMasterLinkDelete' . $Param{Type},
-            Data  => {
-                TicketID => $Param{Key},
-            },
-            UserID => $Param{UserID},
-        );
-
         return 1;
     }
 
@@ -637,8 +588,6 @@ sub LinkDeletePost {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

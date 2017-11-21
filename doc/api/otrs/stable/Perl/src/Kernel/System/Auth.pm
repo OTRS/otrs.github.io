@@ -15,11 +15,11 @@ use Kernel::Language qw(Translatable);
 
 our @ObjectDependencies = (
     'Kernel::Config',
+    'Kernel::System::DateTime',
     'Kernel::System::Group',
     'Kernel::System::Log',
     'Kernel::System::Main',
     'Kernel::System::SystemMaintenance',
-    'Kernel::System::Time',
     'Kernel::System::User',
     'Kernel::System::Valid',
 );
@@ -28,22 +28,16 @@ our @ObjectDependencies = (
 
 Kernel::System::Auth - agent authentication module.
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 The authentication module for the agent interface.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $AuthObject = $Kernel::OM->Get('Kernel::System::Auth');
 
 =cut
@@ -110,7 +104,7 @@ sub new {
     return $Self;
 }
 
-=item GetOption()
+=head2 GetOption()
 
 Get module options. Currently there is just one option, "PreAuth".
 
@@ -126,7 +120,7 @@ sub GetOption {
     return $Self->{AuthBackend}->GetOption(%Param);
 }
 
-=item Auth()
+=head2 Auth()
 
 The authentication function.
 
@@ -347,14 +341,14 @@ sub Auth {
     # last login preferences update
     $UserObject->SetPreferences(
         Key    => 'UserLastLogin',
-        Value  => $Kernel::OM->Get('Kernel::System::Time')->SystemTime(),
+        Value  => $Kernel::OM->Create('Kernel::System::DateTime')->ToEpoch(),
         UserID => $UserID,
     );
 
     return $User;
 }
 
-=item GetLastErrorMessage()
+=head2 GetLastErrorMessage()
 
 Retrieve $Self->{LastErrorMessage} content.
 
@@ -373,8 +367,6 @@ sub GetLastErrorMessage {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

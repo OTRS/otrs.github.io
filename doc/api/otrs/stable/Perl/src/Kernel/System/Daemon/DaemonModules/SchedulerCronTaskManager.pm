@@ -14,7 +14,7 @@ use utf8;
 
 use Kernel::System::VariableCheck qw(:all);
 
-use base qw(Kernel::System::Daemon::BaseDaemon);
+use parent qw(Kernel::System::Daemon::BaseDaemon);
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -28,17 +28,13 @@ our @ObjectDependencies = (
 
 Kernel::System::Daemon::DaemonModules::SchedulerCronTaskManager - daemon to manage scheduler cron tasks
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Scheduler cron task daemon
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 Create scheduler cron task manager object.
 
@@ -116,10 +112,6 @@ sub PostRun {
 
     $Self->{DiscardCount}--;
 
-    if ( $Self->{Debug} ) {
-        print "  $Self->{DaemonName} Discard Count: $Self->{DiscardCount}\n";
-    }
-
     # Unlock long locked tasks.
     $Self->{SchedulerDBObject}->RecurrentTaskUnlockExpired(
         Type => 'Cron',
@@ -128,6 +120,10 @@ sub PostRun {
     # Remove obsolete tasks before destroy.
     if ( $Self->{DiscardCount} == 0 ) {
         $Self->{SchedulerDBObject}->CronTaskCleanup();
+
+        if ( $Self->{Debug} ) {
+            print "  $Self->{DaemonName} will be stopped and set for restart!\n";
+        }
     }
 
     return if $Self->{DiscardCount} <= 0;
@@ -145,8 +141,6 @@ sub DESTROY {
 
     return 1;
 }
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

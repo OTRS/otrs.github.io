@@ -17,6 +17,9 @@ use Kernel::System::VariableCheck qw(:all);
 
 our @ObjectDependencies = (
     'Kernel::Config',
+    'Kernel::System::DB',
+    'Kernel::System::DynamicField',
+    'Kernel::System::DynamicFieldValue',
     'Kernel::System::Log',
     'Kernel::System::Main',
 );
@@ -25,23 +28,17 @@ our @ObjectDependencies = (
 
 Kernel::System::DynamicField::Backend
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 DynamicFields backend interface
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create a DynamicField backend object. Do not use it directly, instead use:
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
-    my $DynamicFieldObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
+    my $BackendObject = $Kernel::OM->Get('Kernel::System::DynamicField::Backend');
 
 =cut
 
@@ -200,7 +197,7 @@ sub new {
     return $Self;
 }
 
-=item EditFieldRender()
+=head2 EditFieldRender()
 
 creates the field HTML to be used in edit masks.
 
@@ -213,11 +210,11 @@ creates the field HTML to be used in edit masks.
             'Key2' => 'Value2',                           #     where the possible values can be limited with and ACL.
         },
         Template             => {                         # Optional data structure of GenericAgent etc.
-                Owner => 2,                               # Value is accessable via field name (DynamicField_ + field name)
-                Title => 'Generic Agent Job was here'     # and could be a scalar, Hash- or ArrayRef
-                ...
-                DynamicField_ExampleField1 => 'Value 1'
-            }
+            Owner => 2,                                   # Value is accessable via field name (DynamicField_ + field name)
+            Title => 'Generic Agent Job was here'         # and could be a scalar, Hash- or ArrayRef
+            ...
+            DynamicField_ExampleField1 => 'Value 1'
+        },
         Value                => 'Any value',              # Optional
         Mandatory            => 1,                        # 0 or 1,
         Class                => 'AnyCSSClass OrOneMore',  # Optional
@@ -316,7 +313,7 @@ sub EditFieldRender {
 
 }
 
-=item DisplayValueRender()
+=head2 DisplayValueRender()
 
 creates value and title strings to be used in display masks. Supports HTML output
 and will transform dates to the current user's timezone.
@@ -393,7 +390,7 @@ sub DisplayValueRender {
     return $ValueStrg;
 }
 
-=item ValueSet()
+=head2 ValueSet()
 
 sets a dynamic field value.
 
@@ -401,6 +398,9 @@ sets a dynamic field value.
         DynamicFieldConfig => $DynamicFieldConfig,      # complete config of the DynamicField
         ObjectID           => $ObjectID,                # ID of the current object that the field
                                                         # must be linked to, e. g. TicketID
+        ObjectName         => $ObjectName,              # Name of the current object that the field
+                                                        # must be linked to, e. g. CustomerUserLogin
+                                                        # You have to give either ObjectID OR ObjectName
         Value              => $Value,                   # Value to store, depends on backend type
         UserID             => 123,
     );
@@ -411,7 +411,7 @@ sub ValueSet {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(DynamicFieldConfig ObjectID UserID)) {
+    for my $Needed (qw(DynamicFieldConfig UserID)) {
         if ( !$Param{$Needed} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -421,6 +421,19 @@ sub ValueSet {
         }
     }
 
+    # Either ObjectID or ObjectName has to be given
+    if (
+        ( !$Param{ObjectID} && !$Param{ObjectName} )
+        || ( $Param{ObjectID} && $Param{ObjectName} )
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Either ObjectID or ObjectName hast to be given!"
+        );
+        return;
+    }
+
     # check DynamicFieldConfig (general)
     if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -428,6 +441,35 @@ sub ValueSet {
             Message  => "The field configuration is invalid",
         );
         return;
+    }
+
+    # If ObjectName has been given, fetch/create an ID for it
+    if ( $Param{ObjectName} ) {
+        my $ObjectIDs = $Kernel::OM->Get('Kernel::System::DynamicField')->ObjectMappingGet(
+            ObjectName => $Param{ObjectName},
+            ObjectType => $Param{DynamicFieldConfig}->{ObjectType},
+        );
+
+        if ( IsHashRefWithData($ObjectIDs) && $ObjectIDs->{ $Param{ObjectName} } ) {
+            $Param{ObjectID} = $ObjectIDs->{ $Param{ObjectName} };
+        }
+        else {
+            my $ObjectID = $Kernel::OM->Get('Kernel::System::DynamicField')->ObjectMappingCreate(
+                ObjectName => $Param{ObjectName},
+                ObjectType => $Param{DynamicFieldConfig}->{ObjectType},
+            );
+
+            if ( !$ObjectID ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message =>
+                        "Unable to create object mapping for object name $Param{ObjectName} and type $Param{DynamicFieldConfig}->{ObjectType}!"
+                );
+                return;
+            }
+
+            $Param{ObjectID} = $ObjectID;
+        }
     }
 
     # check DynamicFieldConfig (internally)
@@ -501,7 +543,7 @@ sub ValueSet {
     return 1;
 }
 
-=item ValueIsDifferent()
+=head2 ValueIsDifferent()
 
 compares if two dynamic field values are different.
 
@@ -575,7 +617,7 @@ sub ValueIsDifferent {
     return $Self->{$DynamicFieldBackend}->ValueIsDifferent(%Param);
 }
 
-=item ValueDelete()
+=head2 ValueDelete()
 
 deletes a dynamic field value.
 
@@ -664,7 +706,7 @@ sub ValueDelete {
     return 1;
 }
 
-=item AllValuesDelete()
+=head2 AllValuesDelete()
 
 deletes all values of a dynamic field.
 
@@ -723,7 +765,7 @@ sub AllValuesDelete {
     return $Self->{$DynamicFieldBackend}->AllValuesDelete(%Param);
 }
 
-=item ValueValidate()
+=head2 ValueValidate()
 
 validates a dynamic field value.
 
@@ -784,7 +826,7 @@ sub ValueValidate {
     return $Self->{$DynamicFieldBackend}->ValueValidate(%Param);
 }
 
-=item ValueGet()
+=head2 ValueGet()
 
 get a dynamic field value.
 
@@ -792,6 +834,9 @@ get a dynamic field value.
         DynamicFieldConfig => $DynamicFieldConfig,      # complete config of the DynamicField
         ObjectID           => $ObjectID,                # ID of the current object that the field
                                                         # must be linked to, e. g. TicketID
+        ObjectName         => $ObjectName,              # Name of the current object that the field
+                                                        # must be linked to, e. g. CustomerUserLogin
+                                                        # You have to give either ObjectID OR ObjectName
     );
 
     Return $Value                                       # depends on backend type, i. e.
@@ -805,7 +850,7 @@ sub ValueGet {
     my ( $Self, %Param ) = @_;
 
     # check needed stuff
-    for my $Needed (qw(DynamicFieldConfig ObjectID)) {
+    for my $Needed (qw(DynamicFieldConfig)) {
         if ( !$Param{$Needed} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
@@ -815,6 +860,19 @@ sub ValueGet {
         }
     }
 
+    # Either ObjectID or ObjectName has to be given
+    if (
+        ( !$Param{ObjectID} && !$Param{ObjectName} )
+        || ( $Param{ObjectID} && $Param{ObjectName} )
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Either ObjectID or ObjectName hast tob be given!"
+        );
+        return;
+    }
+
     # check DynamicFieldConfig (general)
     if ( !IsHashRefWithData( $Param{DynamicFieldConfig} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
@@ -822,6 +880,24 @@ sub ValueGet {
             Message  => "The field configuration is invalid",
         );
         return;
+    }
+
+    # If ObjectName has been given, fetch an ID for it
+    if ( $Param{ObjectName} ) {
+        my $ObjectIDs = $Kernel::OM->Get('Kernel::System::DynamicField')->ObjectMappingGet(
+            ObjectName => $Param{ObjectName},
+            ObjectType => $Param{DynamicFieldConfig}->{ObjectType},
+        );
+        if ( !IsHashRefWithData($ObjectIDs) || !$ObjectIDs->{ $Param{ObjectName} } ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'notice',
+                Message =>
+                    "Unable to fetch object mapping for object name $Param{ObjectName} and type $Param{DynamicFieldConfig}->{ObjectType}!"
+            );
+            return;
+        }
+
+        $Param{ObjectID} = $ObjectIDs->{ $Param{ObjectName} };
     }
 
     # check DynamicFieldConfig (internally)
@@ -850,7 +926,7 @@ sub ValueGet {
     return $Self->{$DynamicFieldBackend}->ValueGet(%Param);
 }
 
-=item SearchSQLGet()
+=head2 SearchSQLGet()
 
 returns the SQL WHERE part that needs to be used to search in a particular
 dynamic field. The table must already be joined.
@@ -916,7 +992,7 @@ sub SearchSQLGet {
     return $Self->{$DynamicFieldBackend}->SearchSQLGet(%Param);
 }
 
-=item SearchSQLOrderFieldGet()
+=head2 SearchSQLOrderFieldGet()
 
 returns the SQL field needed for ordering based on a dynamic field.
 
@@ -975,7 +1051,7 @@ sub SearchSQLOrderFieldGet {
     return $Self->{$DynamicFieldBackend}->SearchSQLOrderFieldGet(%Param);
 }
 
-=item EditFieldValueGet()
+=head2 EditFieldValueGet()
 
 extracts the value of a dynamic field from the param object.
 
@@ -1098,7 +1174,7 @@ sub EditFieldValueGet {
     return $Self->{$DynamicFieldBackend}->EditFieldValueGet(%Param);
 }
 
-=item EditFieldValueValidate()
+=head2 EditFieldValueValidate()
 
 validate the current value for the dynamic field
 
@@ -1182,7 +1258,7 @@ sub EditFieldValueValidate {
 
 }
 
-=item SearchFieldRender()
+=head2 SearchFieldRender()
 
 creates the field HTML to be used in search masks.
 
@@ -1280,7 +1356,7 @@ sub SearchFieldRender {
 
 }
 
-=item SearchFieldValueGet()
+=head2 SearchFieldValueGet()
 
 extracts the value of a dynamic field from the param object or search profile.
 
@@ -1424,7 +1500,7 @@ sub SearchFieldValueGet {
     return $Self->{$DynamicFieldBackend}->SearchFieldValueGet(%Param);
 }
 
-=item SearchFieldPreferences()
+=head2 SearchFieldPreferences()
 
 Returns the search field preferences of the backend.
 
@@ -1502,7 +1578,7 @@ sub SearchFieldPreferences {
 
 }
 
-=item SearchFieldParameterBuild()
+=head2 SearchFieldParameterBuild()
 
 build the search parameters to be passed to the search engine.
 
@@ -1580,7 +1656,7 @@ sub SearchFieldParameterBuild {
     return $Self->{$DynamicFieldBackend}->SearchFieldParameterBuild(%Param);
 }
 
-=item ReadableValueRender()
+=head2 ReadableValueRender()
 
 creates value and title strings to be used for storage (e. g. TicketHistory).
 Produces text output and does not transform time zones of dates.
@@ -1650,7 +1726,7 @@ sub ReadableValueRender {
     return $ValueStrg;
 }
 
-=item TemplateValueTypeGet()
+=head2 TemplateValueTypeGet()
 
 gets the value type (SCALAR or ARRAY) for a field stored on a template, like a Search Profile or a
 Generic Agent job
@@ -1747,7 +1823,7 @@ sub TemplateValueTypeGet {
     return $ValueType;
 }
 
-=item RandomValueSet()
+=head2 RandomValueSet()
 
 sets a dynamic field random value.
 
@@ -1839,7 +1915,7 @@ sub RandomValueSet {
     return $Result
 }
 
-=item HistoricalValuesGet()
+=head2 HistoricalValuesGet()
 
 returns the list of database values for a defined dynamic field. This function is used to calculate
 ACLs in Search Dialog
@@ -1907,7 +1983,7 @@ sub HistoricalValuesGet {
     return $Self->{$DynamicFieldBackend}->HistoricalValuesGet(%Param);
 }
 
-=item ValueLookup()
+=head2 ValueLookup()
 
 returns the display value for a value key for a defined Dynamic Field. This function is meaningful
 for those Dynamic Fields that stores a value different than the value that is shown ( e.g. a
@@ -1979,7 +2055,7 @@ sub ValueLookup {
     return $Self->{$DynamicFieldBackend}->ValueLookup(%Param);
 }
 
-=item HasBehavior()
+=head2 HasBehavior()
 
 checks if the dynamic field as an specified behavior
 
@@ -2057,20 +2133,13 @@ sub HasBehavior {
     return $Self->{$DynamicFieldBackend}->HasBehavior(%Param);
 }
 
-=back
-
-=cut
-
 =head2 Functions For IsACLReducible Behavior
 
 The following functions should be only used if the dynamic field has
 IsACLReducible behavior
 
-=over 4
 
-=cut
-
-=item PossibleValuesGet()
+=head2 PossibleValuesGet()
 
 returns the list of possible values for a dynamic field
 
@@ -2140,7 +2209,7 @@ sub PossibleValuesGet {
     return $Self->{$DynamicFieldBackend}->PossibleValuesGet(%Param);
 }
 
-=item BuildSelectionDataGet()
+=head2 BuildSelectionDataGet()
 
 returns the list of possible values for a dynamic field as needed for BuildSelection or
 BuildSelectionJSON if TreeView parameter is set in the DynamicFieldConfig the result will be
@@ -2244,19 +2313,12 @@ sub BuildSelectionDataGet {
     return $Self->{$DynamicFieldBackend}->BuildSelectionDataGet(%Param);
 }
 
-=back
-
-=cut
-
 =head2 Functions For IsStatsCondition Behavior
 
 The following functions should be only used if the dynamic field has IsStatsCondition behavior
 
-=over 4
 
-=cut
-
-=item StatsFieldParameterBuild()
+=head2 StatsFieldParameterBuild()
 
     my $DynamicFieldStatsParameter =  $BackendObject->StatsFieldParameterBuild(
         DynamicFieldConfig   => $DynamicFieldConfig,      # complete config of the DynamicField
@@ -2331,7 +2393,7 @@ sub StatsFieldParameterBuild {
 
 }
 
-=item StatsSearchFieldParameterBuild()
+=head2 StatsSearchFieldParameterBuild()
 
 build the search parameters to be passed to the search engine within the stats module.
 
@@ -2406,20 +2468,12 @@ sub StatsSearchFieldParameterBuild {
 
 }
 
-=back
-
-=cut
-
 =head2 Functions For IsNotificationEventCondition Behavior
 
 The following functions should be only used if the dynamic field has IsNotificationEventCondition
 behavior
 
-=over 4
-
-=cut
-
-=item ObjectMatch()
+=head2 ObjectMatch()
 
 return if the current field values matches with the value got in an objects attribute structure (
 like the result of a TicketGet() )
@@ -2497,19 +2551,12 @@ sub ObjectMatch {
     return $Self->{$DynamicFieldBackend}->ObjectMatch(%Param);
 }
 
-=back
-
-=cut
-
 =head2 Functions For IsFiltrable Behavior
 
 The following functions should be only used if the dynamic field has IsFiltrable behavior
 
-=over 4
 
-=cut
-
-=item ColumnFilterValuesGet()
+=head2 ColumnFilterValuesGet()
 
 get the list distinct values for a dynamic field from a list of tickets
 
@@ -2583,9 +2630,59 @@ sub ColumnFilterValuesGet {
     );
 }
 
-=back
+=head2 ValueSearch()
+
+Searches/fetches dynamic field value.
+
+    my $Value = $BackendObject->ValueSearch(
+        DynamicFieldConfig => $DynamicFieldConfig,      # complete config of the DynamicField
+        Search             => 'search term',
+    );
+
+    Returns [
+        {
+            ID            => 437,
+            FieldID       => 23,
+            ObjectID      => 133,
+            ValueText     => 'some text',
+            ValueDateTime => '1977-12-12 12:00:00',
+            ValueInt      => 123,
+        },
+    ];
 
 =cut
+
+sub ValueSearch {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(DynamicFieldConfig)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    # set the dynamic field specific backend
+    my $DynamicFieldBackend = 'DynamicField' . $Param{DynamicFieldConfig}->{FieldType} . 'Object';
+
+    if ( !$Self->{$DynamicFieldBackend} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Backend $Param{DynamicFieldConfig}->{FieldType} is invalid!"
+        );
+        return;
+    }
+
+    # call ValueSearch on the specific backend
+    return $Self->{$DynamicFieldBackend}->ValueSearch(
+        DynamicFieldConfig => $Param{DynamicFieldConfig},
+        Search             => $Param{Search},
+    );
+}
 
 1;
 

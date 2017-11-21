@@ -96,7 +96,7 @@ sub Load {
 # ---------------------------------------------------- #
 
 use Kernel::Config::Defaults; # import Translatable()
-use base qw(Kernel::Config::Defaults);
+use parent qw(Kernel::Config::Defaults);
 
 # -----------------------------------------------------#
 

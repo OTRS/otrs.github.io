@@ -28,11 +28,11 @@ $(document).ready(function() {
 });</script>
 <!-- otrs.github.io -->
 
-<title>Kernel::GenericInterface::Event::Handler &mdash; OTRS 5.0 API Reference Perl</title>
+<title>Kernel::GenericInterface::Event::Handler &mdash; OTRS 6.0 API Reference Perl</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 </head>
 <body><div class="box">
-  <h1 class="t1">OTRS 5.0 API Reference Perl</h1>
+  <h1 class="t1">OTRS 6.0 API Reference Perl</h1>
   <table>
     <tr>
       <td class="label">Description</td>
@@ -41,7 +41,7 @@ $(document).ready(function() {
   </table>
 </div>
 <div class="path">
-  <a href="../../../index.html">OTRS 5.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  <a href="../../../index.html">OTRS 6.0 API Reference Perl</a> &gt; Perl Modules &gt;
   Kernel::GenericInterface::Event::Handler
 </div>
 <div>
@@ -53,7 +53,12 @@ $(document).ready(function() {
 
 <ul id="index">
   <li><a href="#NAME">NAME</a></li>
-  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#SerializeConfig">_SerializeConfig()</a></li>
+      <li><a href="#ConditionCheck">_ConditionCheck()</a></li>
+    </ul>
+  </li>
   <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
 </ul>
 
@@ -61,9 +66,88 @@ $(document).ready(function() {
 
 <p>Kernel::GenericInterface::Event::Handler - GenericInterface event handler</p>
 
-<h1 id="SYNOPSIS">SYNOPSIS</h1>
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
 
 <p>This event handler intercepts all system events and fires connected GenericInterface invokers.</p>
+
+<h2 id="SerializeConfig">_SerializeConfig()</h2>
+
+<pre><code>    returns a serialized hash/array of a given hash/array
+
+    my $ConditionCheck = $Self-&gt;_SerializeConfig(
+        Data =&gt; \%OldHash,
+        SHash =&gt; \%NewHash,
+    );
+
+    Modifies NewHash (SHash):
+
+    my %OldHash = (
+        Config =&gt; {
+            A =&gt; 1,
+            B =&gt; 2,
+            C =&gt; 3,
+        },
+        Config2 =&gt; 1
+    );
+
+    my %NewHash = (
+        Config_A =&gt; 1,
+        Config_B =&gt; 1,
+        Config_C =&gt; 1,
+        Config2  =&gt; 1,
+    );</code></pre>
+
+<h2 id="ConditionCheck">_ConditionCheck()</h2>
+
+<pre><code>    Checks if one or more conditions are true
+
+    my $ConditionCheck = $Self-&gt;_ConditionCheck(
+        ConditionLinking =&gt; &#39;and&#39;,
+        Condition =&gt; {
+            1 =&gt; {
+                Type   =&gt; &#39;and&#39;,
+                Fields =&gt; {
+                    DynamicField_Make    =&gt; [ &#39;2&#39; ],
+                    DynamicField_VWModel =&gt; {
+                        Type  =&gt; &#39;String&#39;,
+                        Match =&gt; &#39;Golf&#39;,
+                    },
+                    DynamicField_A =&gt; {
+                        Type  =&gt; &#39;Hash&#39;,
+                        Match =&gt; {
+                            Value  =&gt; 1,
+                        },
+                    },
+                    DynamicField_B =&gt; {
+                        Type  =&gt; &#39;Regexp&#39;,
+                        Match =&gt; qr{ [\n\r\f] }xms
+                    },
+                    DynamicField_C =&gt; {
+                        Type  =&gt; &#39;Module&#39;,
+                        Match =&gt;
+                            &#39;Kernel::GenericInterface::Event::Validation::MyModule&#39;,
+                    },
+                    Queue =&gt;  {
+                        Type  =&gt; &#39;Array&#39;,
+                        Match =&gt; [ &#39;Raw&#39; ],
+                    },
+                    # ...
+                },
+            },
+            # ...
+        },
+        Data =&gt; {
+            Queue         =&gt; &#39;Raw&#39;,
+            DynamicField1 =&gt; &#39;Value&#39;,
+            Subject       =&gt; &#39;Testsubject&#39;,
+            # ...
+        },
+    );
+
+    Returns:
+
+    $CheckResult = 1;   # 1 = process with Scheduler or Requester
+                        # 0 = stop processing</code></pre>
 
 <h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 

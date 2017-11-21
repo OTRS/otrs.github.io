@@ -19,6 +19,7 @@ our @ObjectDependencies = (
     'Kernel::System::Encode',
     'Kernel::System::JSON',
     'Kernel::System::Log',
+    'Kernel::System::OTRSBusiness',
     'Kernel::System::SystemData',
     'Kernel::System::WebUserAgent',
 );
@@ -27,22 +28,16 @@ our @ObjectDependencies = (
 
 Kernel::System::CloudService::Backend::Run - cloud service lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All functions for cloud service communication.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create a CloudService object. Do not use it directly, instead use:
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService::Backend::Run');
 
 =cut
@@ -67,7 +62,7 @@ sub new {
     return $Self;
 }
 
-=item Request()
+=head2 Request()
 
 perform a cloud service communication and return result data
 
@@ -191,10 +186,14 @@ sub Request {
     # create config object
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    # check if cloud services are disabled
-    my $CloudServicesDisabled = $ConfigObject->Get('CloudServices::Disabled');
+    # If OTRSSTORM package is installed, system is able to do a Cloud request even if CloudService is disabled.
+    if ( !$Kernel::OM->Get('Kernel::System::OTRSBusiness')->OTRSSTORMIsInstalled() ) {
 
-    return if $CloudServicesDisabled;
+        # check if cloud services are disabled
+        my $CloudServicesDisabled = $ConfigObject->Get('CloudServices::Disabled');
+
+        return if $CloudServicesDisabled;
+    }
 
     # check needed stuff
     if ( !defined $Param{RequestData} ) {
@@ -332,7 +331,7 @@ sub Request {
         },
     );
 
-    # perform webservice request
+    # Perform web service request.
     my %Response;
     TRY:
     for my $Try ( 1 .. 3 ) {
@@ -407,7 +406,7 @@ sub Request {
     return;
 }
 
-=item OperationResultGet()
+=head2 OperationResultGet()
 
     my $OperationResult = $CloudServiceObject->OperationResultGet(
         CloudService => 'Test',
@@ -522,7 +521,13 @@ sub OperationResultGet {
         }
         else {
 
-            next RESULT if $OperationResult->{InstanceName} ne $Param{InstanceName};
+            if (
+                !defined $OperationResult->{InstanceName}
+                || $OperationResult->{InstanceName} ne $Param{InstanceName}
+                )
+            {
+                next RESULT;
+            }
         }
 
         return $OperationResult;
@@ -549,8 +554,6 @@ sub OperationResultGet {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

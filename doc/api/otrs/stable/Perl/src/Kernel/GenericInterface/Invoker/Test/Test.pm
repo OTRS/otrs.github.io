@@ -22,15 +22,9 @@ our $ObjectManagerDisabled = 1;
 
 Kernel::GenericInterface::Invoker::Test::Test - GenericInterface test Invoker backend
 
-=head1 SYNOPSIS
-
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 usually, you want to create an instance of this
 by using Kernel::GenericInterface::Invoker->new();
@@ -57,7 +51,7 @@ sub new {
     return $Self;
 }
 
-=item PrepareRequest()
+=head2 PrepareRequest()
 
 prepare the invocation of the configured remote web service.
 
@@ -96,7 +90,7 @@ sub PrepareRequest {
 
     # check request for system time
     if ( IsStringWithData( $Param{Data}->{GetSystemTime} ) && $Param{Data}->{GetSystemTime} ) {
-        $ReturnData{SystemTime} = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
+        $ReturnData{SystemTime} = $Kernel::OM->Create('Kernel::System::DateTime')->ToEpoch();
     }
 
     return {
@@ -105,13 +99,13 @@ sub PrepareRequest {
     };
 }
 
-=item HandleResponse()
+=head2 HandleResponse()
 
 handle response data of the configured remote web service.
 
     my $Result = $InvokerObject->HandleResponse(
-        ResponseSuccess      => 1,              # success status of the remote webservice
-        ResponseErrorMessage => '',             # in case of webservice error
+        ResponseSuccess      => 1,              # success status of the remote web service
+        ResponseErrorMessage => '',             # in case of web service error
         Data => {                               # data payload
             ...
         },
@@ -174,8 +168,6 @@ sub HandleResponse {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

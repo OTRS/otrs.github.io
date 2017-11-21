@@ -13,13 +13,14 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(:all);
 
-use base qw(Kernel::System::DynamicField::Driver::BaseText);
+use parent qw(Kernel::System::DynamicField::Driver::BaseText);
 
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::DynamicFieldValue',
     'Kernel::System::Main',
     'Kernel::System::ProcessManagement::Process',
+    'Kernel::System::ProcessManagement::DB::Process',
     'Kernel::System::Ticket::ColumnFilter',
 );
 
@@ -27,7 +28,7 @@ our @ObjectDependencies = (
 
 Kernel::System::DynamicField::Driver::Text
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 DynamicFields Text Driver delegate
 
@@ -36,9 +37,7 @@ DynamicFields Text Driver delegate
 This module implements the public interface of L<Kernel::System::DynamicField::Backend>.
 Please look there for a detailed reference of the functions.
 
-=over 4
-
-=item new()
+=head2 new()
 
 usually, you want to create an instance of this
 by using Kernel::System::DynamicField::Backend->new();
@@ -104,7 +103,7 @@ sub new {
 sub DisplayValueRender {
     my ( $Self, %Param ) = @_;
 
-    # set HTMLOuput as default if not specified
+    # set HTMLOutput as default if not specified
     if ( !defined $Param{HTMLOutput} ) {
         $Param{HTMLOutput} = 1;
     }
@@ -122,7 +121,7 @@ sub DisplayValueRender {
 
     my $Title = $Value;
 
-    # HTMLOuput transformations
+    # HTMLOutput transformations
     if ( $Param{HTMLOutput} ) {
         $Value = $Param{LayoutObject}->Ascii2Html(
             Text => $Value,
@@ -185,9 +184,94 @@ sub ColumnFilterValuesGet {
     return $ColumnFilterValues;
 }
 
-1;
+sub SearchFieldParameterBuild {
+    my ( $Self, %Param ) = @_;
 
-=back
+    # Get field value.
+    my $Value = $Self->SearchFieldValueGet(%Param);
+
+    # Set operator.
+    my $Operator = 'Equals';
+
+    # Search for a wild card in the value.
+    if ( $Value && ( $Value =~ m{\*} || $Value =~ m{\|\|} ) ) {
+
+        # Change operator.
+        $Operator = 'Like';
+    }
+
+    if ( $Param{DynamicFieldConfig}->{Name} eq 'ProcessManagementProcessID' && $Value ) {
+
+        my $ProcessEntityIDs = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::Process')->ProcessSearch(
+            ProcessName => $Value,
+        );
+
+        if ( IsArrayRefWithData($ProcessEntityIDs) ) {
+
+            # Add search term from input field.
+            push @{$ProcessEntityIDs}, $Value;
+
+            # Return search parameter structure.
+            return {
+                Parameter => {
+                    $Operator => $ProcessEntityIDs,
+                },
+                Display => $Value,
+            };
+        }
+
+    }
+
+    # Return search parameter structure.
+    return {
+        Parameter => {
+            $Operator => $Value,
+        },
+        Display => $Value,
+    };
+
+}
+
+sub StatsSearchFieldParameterBuild {
+    my ( $Self, %Param ) = @_;
+
+    my $Value = $Param{Value};
+
+    # set operator
+    my $Operator = 'Equals';
+
+    # search for a wild card in the value
+    if ( $Value && $Value =~ m{\*} ) {
+
+        # change operator
+        $Operator = 'Like';
+    }
+
+    if ( $Param{DynamicFieldConfig}->{Name} eq 'ProcessManagementProcessID' && $Value ) {
+
+        my $ProcessEntityIDs = $Kernel::OM->Get('Kernel::System::ProcessManagement::DB::Process')->ProcessSearch(
+            ProcessName => $Value,
+        );
+
+        if ( IsArrayRefWithData($ProcessEntityIDs) ) {
+
+            # Add search term from input field.
+            push @{$ProcessEntityIDs}, $Value;
+
+            # Return search parameter structure.
+            return {
+                $Operator => $ProcessEntityIDs,
+
+            };
+        }
+    }
+
+    return {
+        $Operator => $Value,
+    };
+}
+
+1;
 
 =head1 TERMS AND CONDITIONS
 

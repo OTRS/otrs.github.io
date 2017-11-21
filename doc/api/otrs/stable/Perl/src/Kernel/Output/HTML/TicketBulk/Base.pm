@@ -17,17 +17,13 @@ our @ObjectManagerDisabled = 1;
 
 Kernel::Output::HTML::TicketBulk::Base - ticket bulk module base class
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Base class for ticket bulk modules.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item Display()
+=head2 Display()
 
 Generates the required HTML to display new fields in ticket bulk screen. It requires to get the value from the web request (e.g. in case of an error to re-display the field content).
 
@@ -50,7 +46,7 @@ sub Display {
     return;
 }
 
-=item Validate()
+=head2 Validate()
 
 Validates the values of the ticket bulk module. It requires to get the value from the web request.
 
@@ -78,7 +74,7 @@ sub Validate {
     return ();
 }
 
-=item Store()
+=head2 Store()
 
 Stores the values of the ticket bulk module. It requires to get the values from the web request.
 
@@ -102,8 +98,6 @@ sub Store {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

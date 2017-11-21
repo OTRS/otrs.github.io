@@ -21,15 +21,13 @@ our $ObjectManagerDisabled = 1;
 
 Kernel::Output::HTML::Layout::LinkObject - all LinkObject-related HTML functions
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All LinkObject-related HTML functions
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=item LinkObjectTableCreate()
+=head2 LinkObjectTableCreate()
 
 create a output table
 
@@ -75,7 +73,7 @@ sub LinkObjectTableCreate {
     }
 }
 
-=item LinkObjectTableCreateComplex()
+=head2 LinkObjectTableCreateComplex()
 
 create a complex output table
 
@@ -91,6 +89,10 @@ sub LinkObjectTableCreateComplex {
 
     # get log object
     my $LogObject = $Kernel::OM->Get('Kernel::System::Log');
+
+    # create new instance of the layout object
+    my $LayoutObject  = Kernel::Output::HTML::Layout->new( %{$Self} );
+    my $LayoutObject2 = Kernel::Output::HTML::Layout->new( %{$Self} );
 
     # check needed stuff
     for my $Argument (qw(LinkListWithData ViewMode)) {
@@ -183,6 +185,9 @@ sub LinkObjectTableCreateComplex {
         }
     }
 
+    # get config option to show the link delete button
+    my $ShowDeleteButton = $Kernel::OM->Get('Kernel::Config')->Get('LinkObject::ShowDeleteButton');
+
     # add "linked as" column to the table
     for my $Block (@OutputData) {
 
@@ -194,7 +199,65 @@ sub LinkObjectTableCreateComplex {
         # add new column to the headline
         push @{ $Block->{Headline} }, $Column;
 
+        # permission check
+        my $SourcePermission;
+        if ( $Param{SourceObject} && $Param{ObjectID} && $ShowDeleteButton ) {
+
+            # get source permission
+            $SourcePermission = $Kernel::OM->Get('Kernel::System::LinkObject')->ObjectPermission(
+                Object => $Param{SourceObject},
+                Key    => $Param{ObjectID},
+                UserID => $Self->{UserID},
+            );
+
+            # we show the column headline if we got source permission
+            if ($SourcePermission) {
+                $Column = {
+                    Content  => $Kernel::OM->Get('Kernel::Language')->Translate('Delete'),
+                    CssClass => 'Center Last',
+                };
+
+                # add new column to the headline
+                push @{ $Block->{Headline} }, $Column;
+            }
+
+        }
         for my $Item ( @{ $Block->{ItemList} } ) {
+
+            my %LinkDeleteData;
+            my $TargetPermission;
+            if ( $Param{SourceObject} && $Param{ObjectID} && $Item->[0]->{Key} && $ShowDeleteButton ) {
+
+                for my $LinkType ( sort keys %{ $LinkList{ $Block->{Object} }->{ $Item->[0]->{Key} } } ) {
+
+                    # get target permission
+                    $TargetPermission = $Kernel::OM->Get('Kernel::System::LinkObject')->ObjectPermission(
+                        Object => $Block->{Object},
+                        Key    => $Item->[0]->{Key},
+                        UserID => $Self->{UserID},
+                    );
+
+                    # build the delete link only if we also got target permission
+                    if ($TargetPermission) {
+
+                        my %InstantLinkDeleteData;
+
+                        # depending on the link type direction source and target must be switched
+                        if ( $LinkList{ $Block->{Object} }->{ $Item->[0]->{Key} }->{$LinkType} eq 'Source' ) {
+                            $LinkDeleteData{SourceObject} = $Block->{Object};
+                            $LinkDeleteData{SourceKey}    = $Item->[0]->{Key};
+                            $LinkDeleteData{TargetIdentifier}
+                                = $Param{SourceObject} . '::' . $Param{ObjectID} . '::' . $LinkType;
+                        }
+                        else {
+                            $LinkDeleteData{SourceObject} = $Param{SourceObject};
+                            $LinkDeleteData{SourceKey}    = $Param{ObjectID};
+                            $LinkDeleteData{TargetIdentifier}
+                                = $Block->{Object} . '::' . $Item->[0]->{Key} . '::' . $LinkType;
+                        }
+                    }
+                }
+            }
 
             # search for key
             my ($ItemWithKey) = grep { $_->{Key} } @{$Item};
@@ -209,6 +272,30 @@ sub LinkObjectTableCreateComplex {
 
             # add check-box cell to item
             push @{$Item}, $CheckboxCell;
+
+            # check if delete icon should be shown
+            if ( $Param{SourceObject} && $Param{ObjectID} && $SourcePermission && $ShowDeleteButton ) {
+
+                if ($TargetPermission) {
+
+                    # build delete link
+                    push @{$Item}, {
+                        Type      => 'DeleteLinkIcon',
+                        CssClass  => 'Center Last',
+                        Translate => 1,
+                        %LinkDeleteData,
+                    };
+                }
+                else {
+                    # build no delete link, instead use empty values
+                    # to keep table formatting correct
+                    push @{$Item}, {
+                        Type     => 'Plain',
+                        CssClass => 'Center Last',
+                        Content  => '',
+                    };
+                }
+            }
         }
     }
 
@@ -219,9 +306,7 @@ sub LinkObjectTableCreateComplex {
         for my $Block (@OutputData) {
 
             # define the headline column
-            my $Column = {
-                Content => 'Select',
-            };
+            my $Column;
 
             # add new column to the headline
             unshift @{ $Block->{Headline} }, $Column;
@@ -277,9 +362,9 @@ sub LinkObjectTableCreateComplex {
         }
     }
 
-    # create new instance of the layout object
-    my $LayoutObject  = Kernel::Output::HTML::Layout->new( %{$Self} );
-    my $LayoutObject2 = Kernel::Output::HTML::Layout->new( %{$Self} );
+    # # create new instance of the layout object
+    # my $LayoutObject  = Kernel::Output::HTML::Layout->new( %{$Self} );
+    # my $LayoutObject2 = Kernel::Output::HTML::Layout->new( %{$Self} );
 
     # output the table complex block
     $LayoutObject->Block(
@@ -347,6 +432,12 @@ sub LinkObjectTableCreateComplex {
                 $SourceObjectData = "<input type='hidden' name='$Block->{ObjectName}' value='$Block->{ObjectID}' />";
             }
 
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'LinkObjectName',
+                Value => $Block->{Blockname},
+            );
+
             $LayoutObject->Block(
                 Name => 'ContentLargePreferences',
                 Data => {
@@ -361,17 +452,17 @@ sub LinkObjectTableCreateComplex {
 
             # Add translations for the allocation lists for regular columns.
             for my $Column ( @{ $Block->{AllColumns} } ) {
-                $LayoutObject->Block(
-                    Name => 'ColumnTranslation',
-                    Data => {
-                        ColumnName      => $Column->{ColumnName},
-                        ColumnTranslate => $Column->{ColumnTranslate},
-                    },
-                );
-                $LayoutObject->Block(
-                    Name => 'ColumnTranslationSeparator',
+                $LayoutObject->AddJSData(
+                    Key   => 'Column' . $Column->{ColumnName},
+                    Value => $LayoutObject->{LanguageObject}->Translate( $Column->{ColumnTranslate} ),
                 );
             }
+
+            # send data to JS
+            $LayoutObject->AddJSData(
+                Key   => 'LinkObjectPreferences',
+                Value => \%Preferences,
+            );
 
             $LayoutObject->Block(
                 Name => 'ContentLargePreferencesForm',
@@ -492,12 +583,12 @@ sub LinkObjectTableCreateComplex {
     }
 
     return $LayoutObject->Output(
-        TemplateFile   => 'LinkObject',
-        KeepScriptTags => $Param{AJAX},
+        TemplateFile => 'LinkObject',
+        AJAX         => $Param{AJAX},
     );
 }
 
-=item LinkObjectTableCreateSimple()
+=head2 LinkObjectTableCreateSimple()
 
 create a simple output table
 
@@ -515,7 +606,7 @@ sub LinkObjectTableCreateSimple {
     if ( !$Param{LinkListWithData} || ref $Param{LinkListWithData} ne 'HASH' ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'Need LinkListWithData!'
+            Message  => 'Need LinkListWithData!',
         );
         return;
     }
@@ -619,7 +710,7 @@ sub LinkObjectTableCreateSimple {
     );
 }
 
-=item LinkObjectSelectableObjectList()
+=head2 LinkObjectSelectableObjectList()
 
 return a selection list of link-able objects
 
@@ -724,7 +815,7 @@ sub LinkObjectSelectableObjectList {
     return $TargetObjectStrg;
 }
 
-=item LinkObjectSearchOptionList()
+=head2 LinkObjectSearchOptionList()
 
 return a list of search options
 
@@ -762,7 +853,7 @@ sub LinkObjectSearchOptionList {
     return @SearchOptionList;
 }
 
-=item ComplexTablePreferencesGet()
+=head2 ComplexTablePreferencesGet()
 
 get items needed for AllocationList initialization.
 
@@ -825,8 +916,6 @@ sub ComplexTablePreferencesGet {
         }
     }
 
-    my @AllColumns = ( @ColumnsAvailable, @ColumnsEnabled );
-
     # check if the user has filter preferences for this widget
     my %Preferences = $Kernel::OM->Get('Kernel::System::User')->GetPreferences(
         UserID => $Self->{UserID},
@@ -881,13 +970,12 @@ sub ComplexTablePreferencesGet {
         ColumnsEnabled   => $JSONObject->Encode( Data => \@ColumnsEnabled ),
         ColumnsAvailable => $JSONObject->Encode( Data => \@ColumnsAvailableNotEnabled ),
         Translation      => 1,
-        AllColumns       => \@AllColumns,
     );
 
     return %Params;
 }
 
-=item ComplexTablePreferencesSet()
+=head2 ComplexTablePreferencesSet()
 
 set user preferences.
 
@@ -985,7 +1073,7 @@ sub ComplexTablePreferencesSet {
 
 =begin Internal:
 
-=item _LinkObjectContentStringCreate()
+=head2 _LinkObjectContentStringCreate()
 
 return a output string
 
@@ -1154,7 +1242,7 @@ sub _LinkObjectContentStringCreate {
     );
 }
 
-=item _LoadLinkObjectLayoutBackend()
+=head2 _LoadLinkObjectLayoutBackend()
 
 load a linkobject layout backend module
 
@@ -1219,8 +1307,6 @@ sub _LoadLinkObjectLayoutBackend {
 =cut
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

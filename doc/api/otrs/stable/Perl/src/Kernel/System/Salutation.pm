@@ -22,22 +22,16 @@ our @ObjectDependencies = (
 
 Kernel::System::Salutation - salutation lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All salutation functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $SalutationObject = $Kernel::OM->Get('Kernel::System::Salutation');
 
 =cut
@@ -49,15 +43,13 @@ sub new {
     my $Self = {};
     bless( $Self, $Type );
 
-    $Self->{DBObject} = $Kernel::OM->Get('Kernel::System::DB');
-
     $Self->{CacheType} = 'Salutation';
     $Self->{CacheTTL}  = 60 * 60 * 24 * 20;
 
     return $Self;
 }
 
-=item SalutationAdd()
+=head2 SalutationAdd()
 
 add new salutations
 
@@ -80,13 +72,16 @@ sub SalutationAdd {
         if ( !$Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
     }
 
-    return if !$Self->{DBObject}->Do(
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Do(
         SQL => 'INSERT INTO salutation (name, text, content_type, comments, valid_id, '
             . ' create_time, create_by, change_time, change_by) VALUES '
             . ' (?, ?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
@@ -97,14 +92,14 @@ sub SalutationAdd {
     );
 
     # get new salutation id
-    $Self->{DBObject}->Prepare(
+    $DBObject->Prepare(
         SQL   => 'SELECT id FROM salutation WHERE name = ?',
         Bind  => [ \$Param{Name} ],
         Limit => 1,
     );
 
     my $ID;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $ID = $Row[0];
     }
 
@@ -118,7 +113,7 @@ sub SalutationAdd {
     return $ID;
 }
 
-=item SalutationGet()
+=head2 SalutationGet()
 
 get salutations attributes
 
@@ -135,7 +130,7 @@ sub SalutationGet {
     if ( !$Param{ID} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "Need ID!"
+            Message  => "Need ID!",
         );
         return;
     }
@@ -147,8 +142,11 @@ sub SalutationGet {
     );
     return %{$Cache} if $Cache;
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # get the salutation
-    return if !$Self->{DBObject}->Prepare(
+    return if !$DBObject->Prepare(
         SQL => 'SELECT id, name, text, content_type, comments, valid_id, change_time, create_time '
             . 'FROM salutation WHERE id = ?',
         Bind => [ \$Param{ID} ],
@@ -156,7 +154,7 @@ sub SalutationGet {
 
     # fetch the result
     my %Data;
-    while ( my @Data = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Data = $DBObject->FetchrowArray() ) {
         %Data = (
             ID          => $Data[0],
             Name        => $Data[1],
@@ -189,7 +187,7 @@ sub SalutationGet {
     return %Data;
 }
 
-=item SalutationUpdate()
+=head2 SalutationUpdate()
 
 update salutation attributes
 
@@ -213,14 +211,17 @@ sub SalutationUpdate {
         if ( !$Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $_!"
+                Message  => "Need $_!",
             );
             return;
         }
     }
 
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
     # sql
-    return if !$Self->{DBObject}->Do(
+    return if !$DBObject->Do(
         SQL => 'UPDATE salutation SET name = ?, text = ?, content_type = ?, comments = ?, '
             . 'valid_id = ?, change_time = current_timestamp, change_by = ? WHERE id = ?',
         Bind => [
@@ -237,7 +238,7 @@ sub SalutationUpdate {
     return 1;
 }
 
-=item SalutationList()
+=head2 SalutationList()
 
 get salutation list
 
@@ -280,11 +281,14 @@ sub SalutationList {
             .= "WHERE valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
     }
 
-    return if !$Self->{DBObject}->Prepare( SQL => $SQL );
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    return if !$DBObject->Prepare( SQL => $SQL );
 
     # fetch the result
     my %Data;
-    while ( my @Row = $Self->{DBObject}->FetchrowArray() ) {
+    while ( my @Row = $DBObject->FetchrowArray() ) {
         $Data{ $Row[0] } = $Row[1];
     }
 
@@ -300,8 +304,6 @@ sub SalutationList {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

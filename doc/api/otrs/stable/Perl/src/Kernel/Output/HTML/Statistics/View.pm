@@ -16,6 +16,7 @@ use warnings;
 use List::Util qw( first );
 
 use Kernel::System::VariableCheck qw(:all);
+use Kernel::System::DateTime;
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -23,13 +24,13 @@ our @ObjectDependencies = (
     'Kernel::Output::HTML::Layout',
     'Kernel::Output::PDF::Statistics',
     'Kernel::System::CSV',
+    'Kernel::System::DateTime',
     'Kernel::System::Group',
     'Kernel::System::Log',
     'Kernel::System::Main',
     'Kernel::System::PDF',
     'Kernel::System::Stats',
-    'Kernel::System::Ticket',
-    'Kernel::System::Time',
+    'Kernel::System::Ticket::Article',
     'Kernel::System::User',
     'Kernel::System::Web::Request',
 );
@@ -40,13 +41,11 @@ use Kernel::Language qw(Translatable);
 
 Kernel::Output::HTML::Statistics::View - View object for statistics
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Provides several functions to generate statistics GUI elements.
 
 =head1 PUBLIC INTERFACE
-
-=over 4
 
 =cut
 
@@ -60,7 +59,7 @@ sub new {
     return $Self;
 }
 
-=item StatsParamsWidget()
+=head2 StatsParamsWidget()
 
 generate HTML for statistics run widget.
 
@@ -181,13 +180,12 @@ sub StatsParamsWidget {
         return;    # no possible output format
     }
 
-# provide the time zone field only, if the system use UTC as system time, the TimeZoneUser is active and for dynamic statistics
-    if (
-        !$Kernel::OM->Get('Kernel::System::Time')->ServerLocalTimeOffsetSeconds()
-        && $ConfigObject->Get('TimeZoneUser')
-        && $Stat->{StatType} eq 'dynamic'
-        )
-    {
+    # provide the time zone field only for dynamic statistics
+    if ( $Stat->{StatType} eq 'dynamic' ) {
+        my $SelectedTimeZone = $LocalGetParam->( Param => 'TimeZone' )
+            // $Stat->{TimeZone}
+            // Kernel::System::DateTime->OTRSTimeZoneGet();
+
         my %TimeZoneBuildSelection = $Self->_TimeZoneBuildSelection();
 
         my %Frontend;
@@ -195,8 +193,7 @@ sub StatsParamsWidget {
             %TimeZoneBuildSelection,
             Name       => 'TimeZone',
             Class      => 'Modernize',
-            SelectedID => $LocalGetParam->( Param => 'TimeZone' ) // $Stat->{TimeZone}
-                // $ConfigObject->Get('TimeZone') || 0,
+            SelectedID => $SelectedTimeZone,
         );
 
         $LayoutObject->Block(
@@ -433,6 +430,8 @@ sub StatsParamsWidget {
                                 Key   => $ElementName,
                                 Value => $LocalGetParam->( Param => $ElementName )
                                     // $ObjectAttribute->{SelectedValues}[0],
+                                CSSClass           => $ObjectAttribute->{CSSClass},
+                                HTMLDataAttributes => $ObjectAttribute->{HTMLDataAttributes},
                             },
                         );
                     }
@@ -555,7 +554,14 @@ sub StatsParamsWidget {
                                 Name => 'TimeScale',
                                 Data => {
                                     %BlockData,
-                                    Use => $Use,
+                                },
+                            );
+
+                            # send data to JS
+                            $LayoutObject->AddJSData(
+                                Key   => 'StatsParamData',
+                                Value => {
+                                    %BlockData
                                 },
                             );
                         }
@@ -591,13 +597,22 @@ sub StatsParamsWidget {
         $Stat->{$Field} = $Kernel::OM->Get('Kernel::System::User')->UserName( UserID => $Stat->{$Field} );
     }
 
+    if ( $Param{AJAX} ) {
+
+        # send data to JS
+        $LayoutObject->AddJSData(
+            Key   => 'StatsWidgetAJAX',
+            Value => $Param{AJAX}
+        );
+    }
+
     $Output .= $LayoutObject->Output(
         TemplateFile => 'Statistics/StatsParamsWidget',
         Data         => {
             %{$Stat},
             AJAX => $Param{AJAX},
         },
-        KeepScriptTags => $Param{AJAX},
+        AJAX => $Param{AJAX},
     );
     return $Output;
 }
@@ -790,17 +805,21 @@ sub GeneralSpecificationsWidget {
     }
     $Stat->{SelectPermission} = $LayoutObject->BuildSelection(%Permission);
 
-    # provide the timezone field only if the system use UTC as system time, the TimeZoneUser is active
-    # and for dynamic statistics
+    # provide the timezone field only for dynamic statistics
     if (
-        !$Kernel::OM->Get('Kernel::System::Time')->ServerLocalTimeOffsetSeconds()
-        && $ConfigObject->Get('TimeZoneUser')
-        && (
-            ( $Stat->{StatType} && $Stat->{StatType} eq 'dynamic' )
-            || ( $Frontend{StatType} && $Frontend{StatType} eq 'dynamic' )
-        )
+        ( $Stat->{StatType} && $Stat->{StatType} eq 'dynamic' )
+        || ( $Frontend{StatType} && $Frontend{StatType} eq 'dynamic' )
         )
     {
+
+        my $SelectedTimeZone = $GetParam{TimeZone} // $Stat->{TimeZone};
+        if ( !defined $SelectedTimeZone ) {
+            my %UserPreferences = $Kernel::OM->Get('Kernel::System::User')->GetPreferences(
+                UserID => $Param{UserID}
+            );
+            $SelectedTimeZone = $UserPreferences{UserTimeZone}
+                // Kernel::System::DateTime->OTRSTimeZoneGet();
+        }
 
         my %TimeZoneBuildSelection = $Self->_TimeZoneBuildSelection();
 
@@ -808,11 +827,11 @@ sub GeneralSpecificationsWidget {
             %TimeZoneBuildSelection,
             Name       => 'TimeZone',
             Class      => 'Modernize ' . ( $Errors{TimeZoneServerError} ? ' ServerError' : '' ),
-            SelectedID => $GetParam{TimeZone} // $Stat->{TimeZone} // $ConfigObject->Get('TimeZone') || 0,
+            SelectedID => $SelectedTimeZone,
         );
     }
 
-    my $Output .= $LayoutObject->Output(
+    my $Output = $LayoutObject->Output(
         TemplateFile => 'Statistics/GeneralSpecificationsWidget',
         Data         => {
             %Frontend,
@@ -829,9 +848,8 @@ sub XAxisWidget {
 
     my $Stat = $Param{Stat};
 
+    # get needed objects
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    #my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # if only one value is available select this value
@@ -839,6 +857,8 @@ sub XAxisWidget {
         $Stat->{UseAsXvalue}[0]{Selected} = 1;
         $Stat->{UseAsXvalue}[0]{Fixed}    = 1;
     }
+
+    my @XAxisElements;
 
     for my $ObjectAttribute ( @{ $Stat->{UseAsXvalue} } ) {
         my %BlockData;
@@ -906,6 +926,9 @@ sub XAxisWidget {
             $Block = 'MultiSelectField';
         }
 
+        # store data, which will be sent to JS
+        push @XAxisElements, $BlockData{Element} if $BlockData{Checked};
+
         # show the input element
         $LayoutObject->Block(
             Name => $Block,
@@ -913,7 +936,13 @@ sub XAxisWidget {
         );
     }
 
-    my $Output .= $LayoutObject->Output(
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'XAxisElements',
+        Value => \@XAxisElements,
+    );
+
+    my $Output = $LayoutObject->Output(
         TemplateFile => 'Statistics/XAxisWidget',
         Data         => {
             %{$Stat},
@@ -927,10 +956,11 @@ sub YAxisWidget {
 
     my $Stat = $Param{Stat};
 
+    # get needed objects
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    #my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my @YAxisElements;
 
     OBJECTATTRIBUTE:
     for my $ObjectAttribute ( @{ $Stat->{UseAsValueSeries} } ) {
@@ -1002,6 +1032,9 @@ sub YAxisWidget {
             $Block = 'MultiSelectField';
         }
 
+        # store data, which will be sent to JS
+        push @YAxisElements, $BlockData{Element} if $BlockData{Checked};
+
         # show the input element
         $LayoutObject->Block(
             Name => $Block,
@@ -1009,7 +1042,13 @@ sub YAxisWidget {
         );
     }
 
-    my $Output .= $LayoutObject->Output(
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'YAxisElements',
+        Value => \@YAxisElements,
+    );
+
+    my $Output = $LayoutObject->Output(
         TemplateFile => 'Statistics/YAxisWidget',
         Data         => {
             %{$Stat},
@@ -1023,16 +1062,19 @@ sub RestrictionsWidget {
 
     my $Stat = $Param{Stat};
 
+    # get needed objects
     my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-
-    #my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    my @RestrictionElements;
 
     for my $ObjectAttribute ( @{ $Stat->{UseAsRestriction} } ) {
         my %BlockData;
-        $BlockData{Fixed}   = 'checked="checked"';
-        $BlockData{Checked} = '';
-        $BlockData{Block}   = $ObjectAttribute->{Block};
+        $BlockData{Fixed}              = 'checked="checked"';
+        $BlockData{Checked}            = '';
+        $BlockData{Block}              = $ObjectAttribute->{Block};
+        $BlockData{CSSClass}           = $ObjectAttribute->{CSSClass};
+        $BlockData{HTMLDataAttributes} = $ObjectAttribute->{HTMLDataAttributes};
 
         if ( $ObjectAttribute->{Selected} ) {
             $BlockData{Checked} = 'checked="checked"';
@@ -1099,6 +1141,9 @@ sub RestrictionsWidget {
             %BlockData = ( %BlockData, %TimeData );
         }
 
+        # store data, which will be sent to JS
+        push @RestrictionElements, $BlockData{Element} if $BlockData{Checked};
+
         # show the input element
         $LayoutObject->Block(
             Name => $ObjectAttribute->{Block},
@@ -1106,7 +1151,13 @@ sub RestrictionsWidget {
         );
     }
 
-    my $Output .= $LayoutObject->Output(
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'RestrictionElements',
+        Value => \@RestrictionElements,
+    );
+
+    my $Output = $LayoutObject->Output(
         TemplateFile => 'Statistics/RestrictionsWidget',
         Data         => {
             %{$Stat},
@@ -1140,7 +1191,13 @@ sub PreviewWidget {
         );
     }
 
-    my $Output .= $LayoutObject->Output(
+    # send data to JS
+    $LayoutObject->AddJSData(
+        Key   => 'PreviewResult',
+        Value => $Frontend{PreviewResult},
+    );
+
+    my $Output = $LayoutObject->Output(
         TemplateFile => 'Statistics/PreviewWidget',
         Data         => {
             %{$Stat},
@@ -1162,7 +1219,6 @@ sub StatsParamsGet {
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
-    my $TimeObject   = $Kernel::OM->Get('Kernel::System::Time');
 
     my $LocalGetParam = sub {
         my (%Param) = @_;
@@ -1185,12 +1241,7 @@ sub StatsParamsGet {
     my ( %GetParam, @Errors );
 
     # get the time zone param
-    if (
-        !$TimeObject->ServerLocalTimeOffsetSeconds()
-        && $ConfigObject->Get('TimeZoneUser')
-        && length $LocalGetParam->( Param => 'TimeZone' )
-        )
-    {
+    if ( length $LocalGetParam->( Param => 'TimeZone' ) ) {
         $GetParam{TimeZone} = $LocalGetParam->( Param => 'TimeZone' ) // $Stat->{TimeZone};
     }
 
@@ -1203,12 +1254,11 @@ sub StatsParamsGet {
     # Static statistics
     #
     if ( $Stat->{StatType} eq 'static' ) {
-        my ( $s, $m, $h, $D, $M, $Y ) = $TimeObject->SystemTime2Date(
-            SystemTime => $TimeObject->SystemTime(),
-        );
-        $GetParam{Year}  = $Y;
-        $GetParam{Month} = $M;
-        $GetParam{Day}   = $D;
+        my $CurSysDTDetails = $Kernel::OM->Create('Kernel::System::DateTime')->Get();
+
+        $GetParam{Year}  = $CurSysDTDetails->{Year};
+        $GetParam{Month} = $CurSysDTDetails->{Month};
+        $GetParam{Day}   = $CurSysDTDetails->{Day};
 
         my $Params = $Kernel::OM->Get('Kernel::System::Stats')->GetParams(
             StatID => $Stat->{StatID},
@@ -1303,9 +1353,6 @@ sub StatsParamsGet {
                         # Check if it is an absolute time period
                         if ( $Element->{TimeStart} ) {
 
-                            # get time object
-                            my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-
                             if ( $LocalGetParam->( Param => $ElementName . 'StartYear' ) ) {
                                 for my $Limit (qw(Start Stop)) {
                                     for my $Unit (qw(Year Month Day Hour Minute Second)) {
@@ -1350,9 +1397,21 @@ sub StatsParamsGet {
                                 $Element->{TimeStop}  = $Time{TimeStop};
 
                                 if ( $Use eq 'UseAsXvalue' ) {
-                                    $TimePeriod
-                                        = ( $TimeObject->TimeStamp2SystemTime( String => $Element->{TimeStop} ) )
-                                        - ( $TimeObject->TimeStamp2SystemTime( String => $Element->{TimeStart} ) );
+                                    my $TimeStartEpoch = $Kernel::OM->Create(
+                                        'Kernel::System::Create',
+                                        ObjectParams => {
+                                            String => $Element->{TimeStart},
+                                        },
+                                    )->ToEpoch();
+
+                                    my $TimeStopEpoch = $Kernel::OM->Create(
+                                        'Kernel::System::Create',
+                                        ObjectParams => {
+                                            String => $Element->{TimeStop},
+                                        },
+                                    )->ToEpoch();
+
+                                    $TimePeriod = $TimeStopEpoch - $TimeStartEpoch;
                                 }
                             }
                         }
@@ -1502,15 +1561,23 @@ sub StatsResultRender {
             Value => $Title,
             Type  => 'Small',
         );
-        $Output .= $LayoutObject->Output(
-            Data => {
-                %{$Stat},
+
+        # send data to JS
+        $LayoutObject->AddJSData(
+            Key   => 'D3Data',
+            Value => {
                 RawData => [
                     [$Title],
                     $HeadArrayRef,
                     @StatArray,
                 ],
-                %Param,
+                Format => $Param{Format},
+                }
+        );
+
+        $Output .= $LayoutObject->Output(
+            Data => {
+                %{$Stat},
             },
             TemplateFile => 'Statistics/StatsResultRender/D3',
         );
@@ -1532,7 +1599,7 @@ sub StatsResultRender {
             );
             $UserCSVSeparator = $UserData{UserCSVSeparator} if $UserData{UserCSVSeparator};
         }
-        my $Output .= $CSVObject->Array2CSV(
+        my $Output = $CSVObject->Array2CSV(
             Head      => $HeadArrayRef,
             Data      => \@StatArray,
             Separator => $UserCSVSeparator,
@@ -1547,7 +1614,7 @@ sub StatsResultRender {
 
     # generate excel output
     elsif ( $Param{Format} eq 'Excel' ) {
-        my $Output .= $CSVObject->Array2CSV(
+        my $Output = $CSVObject->Array2CSV(
             Head   => $HeadArrayRef,
             Data   => \@StatArray,
             Format => 'Excel',
@@ -1580,7 +1647,7 @@ sub StatsResultRender {
     }
 }
 
-=item StatsConfigurationValidate()
+=head2 StatsConfigurationValidate()
 
     my $StatCorrectlyConfigured = $StatsViewObject->StatsConfigurationValidate(
         StatData => \%StatData,
@@ -1626,7 +1693,6 @@ sub StatsConfigurationValidate {
     }
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $TimeObject   = $Kernel::OM->Get('Kernel::System::Time');
 
     if ( $Stat{StatType} eq 'dynamic' ) {
 
@@ -1642,16 +1708,24 @@ sub StatsConfigurationValidate {
 
                 if ( $Xvalue->{Block} eq 'Time' ) {
                     if ( $Xvalue->{TimeStart} && $Xvalue->{TimeStop} ) {
-                        my $TimeStart = $TimeObject->TimeStamp2SystemTime(
-                            String => $Xvalue->{TimeStart}
+                        my $TimeStartDTObject = $Kernel::OM->Create(
+                            'Kernel::System::DateTime',
+                            ObjectParams => {
+                                String => $Xvalue->{TimeStart},
+                            },
                         );
-                        my $TimeStop = $TimeObject->TimeStamp2SystemTime(
-                            String => $Xvalue->{TimeStop}
+
+                        my $TimeStopDTObject = $Kernel::OM->Create(
+                            'Kernel::System::DateTime',
+                            ObjectParams => {
+                                String => $Xvalue->{TimeStop},
+                            },
                         );
-                        if ( !$TimeStart || !$TimeStop ) {
+
+                        if ( !$TimeStartDTObject || !$TimeStopDTObject ) {
                             $XAxisFieldErrors{ $Xvalue->{Element} } = Translatable('The selected date is not valid.');
                         }
-                        elsif ( $TimeStart > $TimeStop ) {
+                        elsif ( $TimeStartDTObject > $TimeStopDTObject ) {
                             $XAxisFieldErrors{ $Xvalue->{Element} }
                                 = Translatable('The selected end time is before the start time.');
                         }
@@ -1791,17 +1865,25 @@ sub StatsConfigurationValidate {
                 }
                 elsif ( $Restriction->{Block} eq 'Time' || $Restriction->{Block} eq 'TimeExtended' ) {
                     if ( $Restriction->{TimeStart} && $Restriction->{TimeStop} ) {
-                        my $TimeStart = $TimeObject->TimeStamp2SystemTime(
-                            String => $Restriction->{TimeStart}
+                        my $TimeStartDTObject = $Kernel::OM->Create(
+                            'Kernel::System::DateTime',
+                            ObjectParams => {
+                                String => $Restriction->{TimeStart},
+                            },
                         );
-                        my $TimeStop = $TimeObject->TimeStamp2SystemTime(
-                            String => $Restriction->{TimeStop}
+
+                        my $TimeStopDTObject = $Kernel::OM->Create(
+                            'Kernel::System::DateTime',
+                            ObjectParams => {
+                                String => $Restriction->{TimeStop},
+                            },
                         );
-                        if ( !$TimeStart || !$TimeStop ) {
+
+                        if ( !$TimeStartDTObject || !$TimeStopDTObject ) {
                             $RestrictionsFieldErrors{ $Restriction->{Element} }
                                 = Translatable('The selected date is not valid.');
                         }
-                        elsif ( $TimeStart > $TimeStop ) {
+                        elsif ( $TimeStartDTObject > $TimeStopDTObject ) {
                             $RestrictionsFieldErrors{ $Restriction->{Element} }
                                 = Translatable('The selected end time is before the start time.');
                         }
@@ -1853,12 +1935,21 @@ sub StatsConfigurationValidate {
                 }
 
                 if ( $Xvalue->{TimeStop} && $Xvalue->{TimeStart} ) {
-                    $TimePeriod = (
-                        $TimeObject->TimeStamp2SystemTime( String => $Xvalue->{TimeStop} )
-                        )
-                        - (
-                        $TimeObject->TimeStamp2SystemTime( String => $Xvalue->{TimeStart} )
-                        );
+                    my $TimeStartEpoch = $Kernel::OM->Create(
+                        'Kernel::System::DateTime',
+                        ObjectParams => {
+                            String => $Xvalue->{TimeStart},
+                        },
+                    )->ToEpoch();
+
+                    my $TimeStopEpoch = $Kernel::OM->Create(
+                        'Kernel::System::DateTime',
+                        ObjectParams => {
+                            String => $Xvalue->{TimeStop},
+                        },
+                    )->ToEpoch();
+
+                    $TimePeriod = $TimeStopEpoch - $TimeStartEpoch;
                 }
                 else {
                     $TimePeriod = $Xvalue->{TimeRelativeCount} * $Self->_TimeInSeconds(
@@ -1948,13 +2039,9 @@ sub _TimeOutput {
                 );
             }
 
-            # get time object
-            my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-
             # get time
-            my ( $Sec, $Min, $Hour, $Day, $Month, $Year ) = $TimeObject->SystemTime2Date(
-                SystemTime => $TimeObject->SystemTime(),
-            );
+            my $CurSysDTDetails = $Kernel::OM->Create('Kernel::System::DateTime')->Get();
+            my $Year            = $CurSysDTDetails->{Year};
             my %TimeConfig;
 
             # default time configuration
@@ -2240,34 +2327,10 @@ sub _TimeScaleYAxis {
 sub _TimeZoneBuildSelection {
     my ( $Self, %Param ) = @_;
 
+    my $TimeZones = Kernel::System::DateTime->TimeZoneList();
+
     my %TimeZoneBuildSelection = (
-        Data => {
-            '0'   => '+ 0',
-            '+1'  => '+ 1',
-            '+2'  => '+ 2',
-            '+3'  => '+ 3',
-            '+4'  => '+ 4',
-            '+5'  => '+ 5',
-            '+6'  => '+ 6',
-            '+7'  => '+ 7',
-            '+8'  => '+ 8',
-            '+9'  => '+ 9',
-            '+10' => '+10',
-            '+11' => '+11',
-            '+12' => '+12',
-            '-1'  => '- 1',
-            '-2'  => '- 2',
-            '-3'  => '- 3',
-            '-4'  => '- 4',
-            '-5'  => '- 5',
-            '-6'  => '- 6',
-            '-7'  => '- 7',
-            '-8'  => '- 8',
-            '-9'  => '- 9',
-            '-10' => '-10',
-            '-11' => '-11',
-            '-12' => '-12',
-        },
+        Data => { map { $_ => $_ } @{$TimeZones} },
     );
 
     return %TimeZoneBuildSelection;
@@ -2316,27 +2379,11 @@ sub _GetSelectedXAxisTimeScaleValue {
     return $SelectedXAxisTimeScaleValue;
 }
 
-=item _ColumnAndRowTranslation()
-
-DEPRECATED: This function will be removed in further versions of OTRS.
-The function do nothing at the moment, because the functionality was moved
-in the backend module (Stats.pm) and the statistic results will always be translated in
-the "StatsRun" function.
-
-=cut
-
-sub _ColumnAndRowTranslation {
-    my ( $Self, %Param ) = @_;
-
-    return 1;
-}
-
 sub _StopWordErrorCheck {
     my ( $Self, %Param ) = @_;
 
-    # get needed objects
-    my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
-    my $TicketObject = $Kernel::OM->Get('Kernel::System::Ticket');
+    my $LayoutObject  = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
+    my $ArticleObject = $Kernel::OM->Get('Kernel::System::Ticket::Article');
 
     if ( !%Param ) {
         $LayoutObject->FatalError(
@@ -2345,7 +2392,7 @@ sub _StopWordErrorCheck {
     }
 
     my %StopWordsServerErrors;
-    if ( !$TicketObject->SearchStringStopWordsUsageWarningActive() ) {
+    if ( !$ArticleObject->SearchStringStopWordsUsageWarningActive() ) {
         return %StopWordsServerErrors;
     }
 
@@ -2363,8 +2410,8 @@ sub _StopWordErrorCheck {
 
     if (%SearchStrings) {
 
-        my $StopWords = $TicketObject->SearchStringStopWordsFind(
-            SearchStrings => \%SearchStrings
+        my $StopWords = $ArticleObject->SearchStringStopWordsFind(
+            SearchStrings => \%SearchStrings,
         );
 
         FIELD:
@@ -2386,24 +2433,22 @@ sub _StopWordErrorCheck {
 sub _StopWordFieldsGet {
     my ( $Self, %Param ) = @_;
 
-    if ( !$Kernel::OM->Get('Kernel::System::Ticket')->SearchStringStopWordsUsageWarningActive() ) {
+    if ( !$Kernel::OM->Get('Kernel::System::Ticket::Article')->SearchStringStopWordsUsageWarningActive() ) {
         return ();
     }
 
     my %StopWordFields = (
-        'From'    => 1,
-        'To'      => 1,
-        'Cc'      => 1,
-        'Subject' => 1,
-        'Body'    => 1,
+        'MIME_From'    => 1,
+        'MIME_To'      => 1,
+        'MIME_Cc'      => 1,
+        'MIME_Subject' => 1,
+        'MIME_Body'    => 1,
     );
 
     return %StopWordFields;
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

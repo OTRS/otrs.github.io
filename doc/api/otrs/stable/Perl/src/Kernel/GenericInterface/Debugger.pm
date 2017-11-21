@@ -19,7 +19,7 @@ our $ObjectManagerDisabled = 1;
 
 Kernel::GenericInterface::Debugger
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 GenericInterface data debugger interface.
 
@@ -30,11 +30,7 @@ based on the configured debug level.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object.
 
@@ -51,6 +47,7 @@ create an object.
         CommunicationType   => Requester, # Requester or Provider
 
         RemoteIP        => 192.168.1.1, # optional
+        CommunicationID => '02a381c622d5f93df868a42151db1983', # optional
     );
 
 =cut
@@ -121,17 +118,26 @@ sub new {
     }
     $Self->{RemoteIP} = $Param{RemoteIP};
 
-    # communication ID MD5 (system time + random #)
-    my $CurrentTime = $Kernel::OM->Get('Kernel::System::Time')->SystemTime();
-    my $MD5String   = $Kernel::OM->Get('Kernel::System::Main')->MD5sum(
-        String => $CurrentTime . int( rand(1000000) ),
-    );
-    $Self->{CommunicationID} = $MD5String;
+    # use communication ID passed in constructor
+    if ( $Param{CommunicationID} ) {
+        $Self->{CommunicationID} = $Param{CommunicationID};
+    }
+
+    # create new communication ID
+    else {
+
+        # communication ID MD5 (system time + random #)
+        my $CurrentTime = $Kernel::OM->Create('Kernel::System::DateTime')->ToEpoch();
+        my $MD5String   = $Kernel::OM->Get('Kernel::System::Main')->MD5sum(
+            String => $CurrentTime . int( rand(1000000) ),
+        );
+        $Self->{CommunicationID} = $MD5String;
+    }
 
     return $Self;
 }
 
-=item DebugLog()
+=head2 DebugLog()
 
 add one piece of data to the logging of this communication process.
 
@@ -228,7 +234,7 @@ EOF
     return 1;
 }
 
-=item Debug()
+=head2 Debug()
 
 passes data to DebugLog with debug level 'debug'
 
@@ -250,7 +256,7 @@ sub Debug {
     return 1;
 }
 
-=item Info()
+=head2 Info()
 
 passes data to DebugLog with debug level 'info'
 
@@ -272,7 +278,7 @@ sub Info {
     return 1;
 }
 
-=item Notice()
+=head2 Notice()
 
 passes data to DebugLog with debug level 'notice'
 
@@ -294,7 +300,7 @@ sub Notice {
     return 1;
 }
 
-=item Error()
+=head2 Error()
 
 passes data to DebugLog with debug level 'error'
 then returns data structure to be used as return value in calling function
@@ -324,7 +330,7 @@ sub Error {
 
 =cut
 
-=item DESTROY()
+=head2 DESTROY()
 
 destructor, this will write the log entries to the database.
 
@@ -334,14 +340,12 @@ sub DESTROY {
     my $Self = shift;
 
     #TODO: implement storing of the debug messages
-
+    return;
 }
 
 1;
 
 =end Internal:
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

@@ -14,28 +14,23 @@ use warnings;
 our @ObjectDependencies = (
     'Kernel::System::DB',
     'Kernel::System::Log',
+    'Kernel::System::Valid',
 );
 
 =head1 NAME
 
 Kernel::System::Signature - signature lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All signature functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $SignatureObject = $Kernel::OM->Get('Kernel::System::Signature');
 
 =cut
@@ -50,7 +45,7 @@ sub new {
     return $Self;
 }
 
-=item SignatureAdd()
+=head2 SignatureAdd()
 
 add new signatures
 
@@ -106,7 +101,7 @@ sub SignatureAdd {
     return $ID;
 }
 
-=item SignatureGet()
+=head2 SignatureGet()
 
 get signatures attributes
 
@@ -164,7 +159,7 @@ sub SignatureGet {
     return %Data;
 }
 
-=item SignatureUpdate()
+=head2 SignatureUpdate()
 
 update signature attributes
 
@@ -207,14 +202,20 @@ sub SignatureUpdate {
     return 1;
 }
 
-=item SignatureList()
+=head2 SignatureList()
 
 get signature list
 
-    my %List = $SignatureObject->SignatureList();
-
     my %List = $SignatureObject->SignatureList(
-        Valid => 0,
+        Valid => 0,  # optional, defaults to 1
+    );
+
+returns:
+
+        %List = (
+          '1' => 'Some Name' ( Filname ),
+          '2' => 'Some Name' ( Filname ),
+          '3' => 'Some Name' ( Filname ),
     );
 
 =cut
@@ -222,24 +223,38 @@ get signature list
 sub SignatureList {
     my ( $Self, %Param ) = @_;
 
-    # check needed stuff
-    my $Valid = 1;
-    if ( !$Param{Valid} && defined $Param{Valid} ) {
-        $Valid = 0;
+    # set default value
+    my $Valid = $Param{Valid} // 1;
+
+    # create the valid list
+    my $ValidIDs = join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet();
+
+    # build SQL
+    my $SQL = 'SELECT id, name FROM signature';
+
+    # add WHERE statement in case Valid param is set to '1', for valid system address
+    if ($Valid) {
+        $SQL .= ' WHERE valid_id IN (' . $ValidIDs . ')';
     }
 
-    # sql
-    return $Kernel::OM->Get('Kernel::System::DB')->GetTableData(
-        What  => 'id, name',
-        Valid => $Valid,
-        Clamp => 1,
-        Table => 'signature',
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # get data from database
+    return if !$DBObject->Prepare(
+        SQL => $SQL,
     );
+
+    # fetch the result
+    my %SignatureList;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $SignatureList{ $Row[0] } = $Row[1];
+    }
+
+    return %SignatureList;
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

@@ -14,7 +14,7 @@ use warnings;
 use Kernel::System::VariableCheck qw(:all);
 use Kernel::Language qw(Translatable);
 
-use base qw(Kernel::System::DynamicField::Driver::Base);
+use parent qw(Kernel::System::DynamicField::Driver::Base);
 
 our @ObjectDependencies = (
     'Kernel::System::DB',
@@ -28,13 +28,11 @@ Kernel::System::DynamicField::Driver::BaseText - sub module of
 Kernel::System::DynamicField::Driver::Text and
 Kernel::System::DynamicField::Driver::TextArea
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Text common functions.
 
 =head1 PUBLIC INTERFACE
-
-=over 4
 
 =cut
 
@@ -116,6 +114,15 @@ sub ValueValidate {
 sub SearchSQLGet {
     my ( $Self, %Param ) = @_;
 
+    if ( $Param{Operator} eq 'Like' ) {
+        my $SQL = $Kernel::OM->Get('Kernel::System::DB')->QueryCondition(
+            Key   => "$Param{TableAlias}.value_text",
+            Value => $Param{SearchTerm},
+        );
+
+        return $SQL;
+    }
+
     my %Operators = (
         Equals            => '=',
         GreaterThan       => '>',
@@ -124,37 +131,38 @@ sub SearchSQLGet {
         SmallerThanEquals => '<=',
     );
 
-    # get database object
-    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
-
-    if ( $Operators{ $Param{Operator} } ) {
-        my $Lower = '';
-        if ( $DBObject->GetDatabaseFunction('CaseSensitive') ) {
-            $Lower = 'LOWER';
+    if ( $Param{Operator} eq 'Empty' ) {
+        if ( $Param{SearchTerm} ) {
+            return " $Param{TableAlias}.value_text IS NULL ";
         }
-
-        my $SQL = " $Lower($Param{TableAlias}.value_text) $Operators{ $Param{Operator} } ";
-        $SQL .= "$Lower('" . $DBObject->Quote( $Param{SearchTerm} ) . "') ";
-
-        return $SQL;
+        else {
+            my $DatabaseType = $Kernel::OM->Get('Kernel::System::DB')->{'DB::Type'};
+            if ( $DatabaseType eq 'oracle' ) {
+                return " $Param{TableAlias}.value_text IS NOT NULL ";
+            }
+            else {
+                return " $Param{TableAlias}.value_text <> '' ";
+            }
+        }
     }
-
-    if ( $Param{Operator} eq 'Like' ) {
-
-        my $SQL = $DBObject->QueryCondition(
-            Key   => "$Param{TableAlias}.value_text",
-            Value => $Param{SearchTerm},
+    elsif ( !$Operators{ $Param{Operator} } ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            'Priority' => 'error',
+            'Message'  => "Unsupported Operator $Param{Operator}",
         );
-
-        return $SQL;
+        return;
     }
 
-    $Kernel::OM->Get('Kernel::System::Log')->Log(
-        'Priority' => 'error',
-        'Message'  => "Unsupported Operator $Param{Operator}",
-    );
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+    my $Lower    = '';
+    if ( $DBObject->GetDatabaseFunction('CaseSensitive') ) {
+        $Lower = 'LOWER';
+    }
 
-    return;
+    my $SQL = " $Lower($Param{TableAlias}.value_text) $Operators{ $Param{Operator} } ";
+    $SQL .= "$Lower('" . $DBObject->Quote( $Param{SearchTerm} ) . "') ";
+
+    return $SQL;
 }
 
 sub SearchSQLOrderFieldGet {
@@ -179,7 +187,7 @@ sub EditFieldRender {
     }
     $Value = $Param{Value} // $Value;
 
-    # extract the dynamic field value form the web request
+    # extract the dynamic field value from the web request
     my $FieldValue = $Self->EditFieldValueGet(
         %Param,
     );
@@ -345,7 +353,7 @@ sub EditFieldValueValidate {
 sub DisplayValueRender {
     my ( $Self, %Param ) = @_;
 
-    # set HTMLOuput as default if not specified
+    # set HTMLOutput as default if not specified
     if ( !defined $Param{HTMLOutput} ) {
         $Param{HTMLOutput} = 1;
     }
@@ -354,7 +362,7 @@ sub DisplayValueRender {
     my $Value = defined $Param{Value} ? $Param{Value} : '';
     my $Title = $Value;
 
-    # HTMLOuput transformations
+    # HTMLOutput transformations
     if ( $Param{HTMLOutput} ) {
         $Value = $Param{LayoutObject}->Ascii2Html(
             Text => $Value,
@@ -487,10 +495,8 @@ sub SearchFieldParameterBuild {
     # set operator
     my $Operator = 'Equals';
 
-    # Search for a wild card in the value (also for '%').
-    # The '%' is needed for the compatibility with the old removed textarea function (bug#12783) and
-    #   can be removed with OTRS 6.
-    if ( $Value && ( $Value =~ m{\*} || $Value =~ m{\%} || $Value =~ m{\|\|} ) ) {
+    # search for a wild card in the value
+    if ( $Value && ( $Value =~ m{\*} || $Value =~ m{\|\|} ) ) {
 
         # change operator
         $Operator = 'Like';
@@ -523,10 +529,8 @@ sub StatsSearchFieldParameterBuild {
     # set operator
     my $Operator = 'Equals';
 
-    # Search for a wild card in the value (also for '%').
-    # The '%' is needed for the compatibility with the old removed textarea function (bug#12783) and
-    #   can be removed with OTRS 6.
-    if ( $Value && ( $Value =~ m{\*} || $Value =~ m{\%} ) ) {
+    # search for a wild card in the value
+    if ( $Value && $Value =~ m{\*} ) {
 
         # change operator
         $Operator = 'Like';
@@ -647,8 +651,6 @@ sub ValueLookup {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

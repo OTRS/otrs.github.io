@@ -26,17 +26,13 @@ our @ObjectDependencies = (
 
 Kernel::System::Web::InterfacePublic - the public web interface
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 the global public web interface
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create public web interface object
 
@@ -83,7 +79,7 @@ sub new {
     return $Self;
 }
 
-=item Run()
+=head2 Run()
 
 execute the object
 
@@ -94,18 +90,41 @@ execute the object
 sub Run {
     my $Self = shift;
 
-    # get common framework params
-    my %Param;
-
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
-    my $ParamObject  = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my $QueryString = $ENV{QUERY_STRING} || '';
+
+    # Check if https forcing is active, and redirect if needed.
+    if ( $ConfigObject->Get('HTTPSForceRedirect') ) {
+
+        # Some web servers do not set HTTPS environment variable, so it's not possible to easily know if we are using
+        #   https protocol. Look also for similarly named keys in environment hash, since this should prevent loops in
+        #   certain cases.
+        if (
+            (
+                !defined $ENV{HTTPS}
+                && !grep {/^HTTPS(?:_|$)/} keys %ENV
+            )
+            || $ENV{HTTPS} ne 'on'
+            )
+        {
+            my $Host = $ENV{HTTP_HOST} || $ConfigObject->Get('FQDN');
+
+            # Redirect with 301 code. Add two new lines at the end, so HTTP headers are validated correctly.
+            print "Status: 301 Moved Permanently\nLocation: https://$Host$ENV{REQUEST_URI}\n\n";
+            return;
+        }
+    }
+
+    my $ParamObject = $Kernel::OM->Get('Kernel::System::Web::Request');
+
+    my %Param;
 
     # get session id
     $Param{SessionName} = $ConfigObject->Get('CustomerPanelSessionName') || 'CSID';
     $Param{SessionID} = $ParamObject->GetParam( Param => $Param{SessionName} ) || '';
 
     # drop old session id (if exists)
-    my $QueryString = $ENV{QUERY_STRING} || '';
     $QueryString =~ s/(\?|&|;|)$Param{SessionName}(=&|=;|=.+?&|=.+?$)/;/g;
 
     # define framework params
@@ -162,20 +181,20 @@ sub Run {
 
     if ( !$DBCanConnect ) {
         $LayoutObject->CustomerFatalError(
-            Comment => Translatable('Please contact your administrator'),
+            Comment => Translatable('Please contact the administrator.'),
         );
     }
     if ( $ParamObject->Error() ) {
         $LayoutObject->CustomerFatalError(
             Message => $ParamObject->Error(),
-            Comment => Translatable('Please contact your administrator'),
+            Comment => Translatable('Please contact the administrator.'),
         );
     }
 
     # run modules if a version value exists
     if ( !$Kernel::OM->Get('Kernel::System::Main')->Require("Kernel::Modules::$Param{Action}") ) {
         $LayoutObject->CustomerFatalError(
-            Comment => Translatable('Please contact your administrator'),
+            Comment => Translatable('Please contact the administrator.'),
         );
         return 1;
     }
@@ -189,7 +208,7 @@ sub Run {
                 "Module Kernel::Modules::$Param{Action} not registered in Kernel/Config.pm!",
         );
         $LayoutObject->CustomerFatalError(
-            Comment => Translatable('Please contact your administrator'),
+            Comment => Translatable('Please contact the administrator.'),
         );
         return;
     }
@@ -266,8 +285,6 @@ sub DESTROY {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

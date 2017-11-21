@@ -22,22 +22,16 @@ our @ObjectDependencies = (
 
 Kernel::System::ProcessManagement::ActivityDialog - activity dialog lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All Process Management Activity Dialog functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $ActivityDialogObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::ActivityDialog');
 
 =cut
@@ -52,7 +46,7 @@ sub new {
     return $Self;
 }
 
-=item ActivityDialogGet()
+=head2 ActivityDialogGet()
 
     Get activity dialog info
 
@@ -186,7 +180,7 @@ sub ActivityDialogGet {
     return $ActivityDialog->{ $Param{ActivityDialogEntityID} };
 }
 
-=item ActivityDialogCompletedCheck()
+=head2 ActivityDialogCompletedCheck()
 
     Checks if an activity dialog is completed
 
@@ -252,10 +246,10 @@ sub ActivityDialogCompletedCheck {
     for my $Field ( sort keys %{ $ActivityDialog->{Fields} } ) {
 
         # Checks if Field was invisible
-        next FIELDLOOP if ( !$ActivityDialog->{Fields}{$Field}{Display} );
+        next FIELDLOOP if ( !$ActivityDialog->{Fields}->{$Field}->{Display} );
 
         # Checks if Field was visible but not required
-        next FIELDLOOP if ( $ActivityDialog->{Fields}{$Field}{Display} == 1 );
+        next FIELDLOOP if ( $ActivityDialog->{Fields}->{$Field}->{Display} == 1 );
 
         # checks if $Data->{Field} is defined and not an empty string
         return if ( !IsStringWithData( $Param{Data}->{$Field} ) );
@@ -263,9 +257,8 @@ sub ActivityDialogCompletedCheck {
 
     return 1;
 }
-1;
 
-=back
+1;
 
 =head1 TERMS AND CONDITIONS
 

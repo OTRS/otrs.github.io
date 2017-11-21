@@ -12,7 +12,7 @@ use strict;
 use warnings;
 use utf8;
 
-use base qw(Kernel::System::Daemon::BaseDaemon);
+use parent qw(Kernel::System::Daemon::BaseDaemon);
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -22,24 +22,19 @@ our @ObjectDependencies = (
     'Kernel::System::Daemon::SchedulerDB',
     'Kernel::System::GenericAgent',
     'Kernel::System::Log',
-    'Kernel::System::Time',
 );
 
 =head1 NAME
 
 Kernel::System::Daemon::DaemonModules::SchedulerGenericAgentTaskManager - daemon to manage scheduler generic agent tasks
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Scheduler generic agent task daemon
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 Create scheduler future task manager object.
 
@@ -117,10 +112,6 @@ sub PostRun {
 
     $Self->{DiscardCount}--;
 
-    if ( $Self->{Debug} ) {
-        print "  $Self->{DaemonName} Discard Count: $Self->{DiscardCount}\n";
-    }
-
     # Unlock long locked tasks.
     $Self->{SchedulerDBObject}->RecurrentTaskUnlockExpired(
         Type => 'GenericAgent',
@@ -129,6 +120,10 @@ sub PostRun {
     # Remove obsolete tasks before destroy.
     if ( $Self->{DiscardCount} == 0 ) {
         $Self->{SchedulerDBObject}->GenericAgentTaskCleanup();
+
+        if ( $Self->{Debug} ) {
+            print "  $Self->{DaemonName} will be stopped and set for restart!\n";
+        }
     }
 
     return if $Self->{DiscardCount} <= 0;
@@ -148,8 +143,6 @@ sub DESTROY {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

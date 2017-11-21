@@ -19,7 +19,6 @@ our @ObjectDependencies = (
     'Kernel::System::DB',
     'Kernel::System::Log',
     'Kernel::System::Main',
-    'Kernel::System::Time',
     'Kernel::System::Valid',
     'Kernel::System::YAML',
 );
@@ -28,23 +27,17 @@ our @ObjectDependencies = (
 
 Kernel::System::CloudService::Backend::Configuration
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 CloudService configuration backend.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
-    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::GenericInterface::CloudService');
+    my $CloudServiceObject = $Kernel::OM->Get('Kernel::System::CloudService::Backend::Configuration');
 
 =cut
 
@@ -55,10 +48,13 @@ sub new {
     my $Self = {};
     bless( $Self, $CloudService );
 
+    $Self->{CacheType} = 'CloudService';
+    $Self->{CacheTTL}  = 60 * 60;          # 1 hour
+
     return $Self;
 }
 
-=item CloudServiceAdd()
+=head2 CloudServiceAdd()
 
 add new CloudServices
 
@@ -81,7 +77,7 @@ sub CloudServiceAdd {
         if ( !$Param{$Key} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Key!"
+                Message  => "Need $Key!",
             );
             return;
         }
@@ -108,22 +104,17 @@ sub CloudServiceAdd {
     # dump config as string
     my $Config = $Kernel::OM->Get('Kernel::System::YAML')->Dump( Data => $Param{Config} );
 
-    # md5 of content
-    my $MD5 = $Kernel::OM->Get('Kernel::System::Main')->MD5sum(
-        String => $Param{Name},
-    );
-
     # get database object
     my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
 
     # sql
     return if !$DBObject->Do(
-        SQL =>
-            'INSERT INTO cloud_service_config (name, config, config_md5, valid_id, '
-            . ' create_time, create_by, change_time, change_by)'
-            . ' VALUES (?, ?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
+        SQL => '
+            INSERT INTO cloud_service_config
+            (name, config, valid_id, create_time, create_by, change_time, change_by)
+            VALUES (?, ?, ?, current_timestamp, ?, current_timestamp, ?)',
         Bind => [
-            \$Param{Name}, \$Config, \$MD5, \$Param{ValidID},
+            \$Param{Name}, \$Config, \$Param{ValidID},
             \$Param{UserID}, \$Param{UserID},
         ],
     );
@@ -140,13 +131,13 @@ sub CloudServiceAdd {
 
     # delete cache
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'CloudService',
+        Type => $Self->{CacheType},
     );
 
     return $ID;
 }
 
-=item CloudServiceGet()
+=head2 CloudServiceGet()
 
 get CloudServices attributes
 
@@ -175,7 +166,7 @@ sub CloudServiceGet {
     if ( !$Param{ID} && !$Param{Name} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'Need ID or Name!'
+            Message  => 'Need ID or Name!',
         );
         return;
     }
@@ -193,7 +184,7 @@ sub CloudServiceGet {
 
     }
     my $Cache = $CacheObject->Get(
-        Type => 'CloudService',
+        Type => $Self->{CacheType},
         Key  => $CacheKey,
     );
     return $Cache if $Cache;
@@ -204,57 +195,55 @@ sub CloudServiceGet {
     # sql
     if ( $Param{ID} ) {
         return if !$DBObject->Prepare(
-            SQL => 'SELECT id, name, config, valid_id, create_time, change_time '
-                . 'FROM cloud_service_config WHERE id = ?',
+            SQL => '
+                SELECT id, name, config, valid_id, create_time, change_time
+                FROM cloud_service_config
+                WHERE id = ?',
             Bind  => [ \$Param{ID} ],
             Limit => 1,
         );
     }
     else {
         return if !$DBObject->Prepare(
-            SQL => 'SELECT id, name, config, valid_id, create_time, change_time '
-                . 'FROM cloud_service_config WHERE name = ?',
+            SQL => '
+                SELECT id, name, config, valid_id, create_time, change_time
+                FROM cloud_service_config
+                WHERE name = ?',
             Bind  => [ \$Param{Name} ],
             Limit => 1,
         );
     }
 
-    # get yaml object
-    my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
-
     my %Data;
     while ( my @Data = $DBObject->FetchrowArray() ) {
-
-        my $Config = $YAMLObject->Load( Data => $Data[2] );
 
         %Data = (
             ID         => $Data[0],
             Name       => $Data[1],
-            Config     => $Config,
+            Config     => $Data[2],
             ValidID    => $Data[3],
             CreateTime => $Data[4],
             ChangeTime => $Data[5],
         );
     }
 
-    # get the cache TTL (in seconds)
-    my $CacheTTL = int(
-        $Kernel::OM->Get('Kernel::Config')->Get('CloudServiceConfig::CacheTTL')
-            || 3600
-    );
+    # Convert YAML string back to Perl data structure.
+    if ( $Data{Config} ) {
+        $Data{Config} = $Kernel::OM->Get('Kernel::System::YAML')->Load( Data => $Data{Config} );
+    }
 
     # set cache
     $CacheObject->Set(
-        Type  => 'CloudService',
+        Type  => $Self->{CacheType},
         Key   => $CacheKey,
         Value => \%Data,
-        TTL   => $CacheTTL,
+        TTL   => $Self->{CacheTTL},
     );
 
     return \%Data;
 }
 
-=item CloudServiceUpdate()
+=head2 CloudServiceUpdate()
 
 update CloudService attributes
 
@@ -278,7 +267,7 @@ sub CloudServiceUpdate {
         if ( !$Param{$Key} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Key!"
+                Message  => "Need $Key!",
             );
             return;
         }
@@ -310,7 +299,10 @@ sub CloudServiceUpdate {
 
     # check if config and valid_id is the same
     return if !$DBObject->Prepare(
-        SQL   => 'SELECT config, valid_id, name FROM cloud_service_config WHERE id = ?',
+        SQL => '
+            SELECT config, valid_id, name
+            FROM cloud_service_config
+            WHERE id = ?',
         Bind  => [ \$Param{ID} ],
         Limit => 1,
     );
@@ -323,16 +315,21 @@ sub CloudServiceUpdate {
         $ValidIDCurrent = $Data[1];
         $NameCurrent    = $Data[2];
     }
-
-    return 1 if $ValidIDCurrent eq $Param{ValidID}
+    if (
+        $ValidIDCurrent eq $Param{ValidID}
         && $Config eq $ConfigCurrent
-        && $NameCurrent eq $Param{Name};
+        && $NameCurrent eq $Param{Name}
+        )
+    {
+        return 1;
+    }
 
     # sql
     return if !$DBObject->Do(
-        SQL => 'UPDATE cloud_service_config SET name = ?, config = ?, '
-            . ' valid_id = ?, change_time = current_timestamp, '
-            . ' change_by = ? WHERE id = ?',
+        SQL => '
+            UPDATE cloud_service_config
+            SET name = ?, config = ?, valid_id = ?, change_time = current_timestamp, change_by = ?
+            WHERE id = ?',
         Bind => [
             \$Param{Name}, \$Config, \$Param{ValidID}, \$Param{UserID},
             \$Param{ID},
@@ -341,13 +338,13 @@ sub CloudServiceUpdate {
 
     # delete cache
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'CloudService',
+        Type => $Self->{CacheType},
     );
 
     return 1;
 }
 
-=item CloudServiceDelete()
+=head2 CloudServiceDelete()
 
 delete a CloudService
 
@@ -368,7 +365,7 @@ sub CloudServiceDelete {
         if ( !$Param{$Key} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
-                Message  => "Need $Key!"
+                Message  => "Need $Key!",
             );
             return;
         }
@@ -388,13 +385,13 @@ sub CloudServiceDelete {
 
     # delete cache
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        Type => 'CloudService',
+        Type => $Self->{CacheType},
     );
 
     return 1;
 }
 
-=item CloudServiceList()
+=head2 CloudServiceList()
 
 get CloudService list
 
@@ -403,7 +400,7 @@ get CloudService list
     or
 
     my $List = $CloudServiceObject->CloudServiceList(
-        Valid => 0, # optional, defaults to 1
+        Valid => 0,     # 0 | 1 (optional) (default 1)
     );
 
 =cut
@@ -411,15 +408,13 @@ get CloudService list
 sub CloudServiceList {
     my ( $Self, %Param ) = @_;
 
+    # set default
+    $Param{Valid} //= 1;
+
     # get cache object
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
-    # check cache
-    my $Valid = 1;
-    if ( !$Param{Valid} ) {
-        $Valid = '0';
-    }
-    my $CacheKey = 'CloudServiceList::Valid::' . $Valid;
+    my $CacheKey = 'CloudServiceList::Valid::' . $Param{Valid};
     my $Cache    = $CacheObject->Get(
         Type => 'CloudService',
         Key  => $CacheKey,
@@ -428,7 +423,7 @@ sub CloudServiceList {
 
     my $SQL = 'SELECT id, name FROM cloud_service_config';
 
-    if ( !defined $Param{Valid} || $Param{Valid} eq 1 ) {
+    if ( $Param{Valid} ) {
 
         # get valid object
         my $ValidObject = $Kernel::OM->Get('Kernel::System::Valid');
@@ -446,26 +441,18 @@ sub CloudServiceList {
         $Data{ $Row[0] } = $Row[1];
     }
 
-    # get the cache TTL (in seconds)
-    my $CacheTTL = int(
-        $Kernel::OM->Get('Kernel::Config')->Get('CloudServiceConfig::CacheTTL')
-            || 3600
-    );
-
     # set cache
     $CacheObject->Set(
         Type  => 'CloudService',
         Key   => $CacheKey,
         Value => \%Data,
-        TTL   => $CacheTTL,
+        TTL   => $Self->{CacheTTL},
     );
 
     return \%Data;
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

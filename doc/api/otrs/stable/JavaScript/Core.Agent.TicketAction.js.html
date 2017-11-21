@@ -96,37 +96,23 @@ Core.Agent.TicketAction = (function (TargetNS) {
 
     /**
      * @private
-     * @name OpenSpellChecker
+     * @name OpenCustomerUserAddressBook
      * @memberof Core.Agent.TicketAction
      * @function
+     * @param {String} RecipientField - The recipient field name to add the selected recipients in the correct field.
+     * @param {String} RecipientFieldLabel - The recipient field label for the output in the address book screen.
+     * @param {String} RecipientType - The recipient type for the diffrent screens.
      * @description
-     *      Open the spellchecker screen.
+     *      Open the AgentCustomerUserAddressBook screen.
      */
-    function OpenSpellChecker() {
-        var SpellCheckIFrame, SpellCheckIFrameURL;
-        SpellCheckIFrameURL = Core.Config.Get('CGIHandle') + '?Action=AgentSpelling;Field=RichText;Body=' + encodeURIComponent($('#RichText').val());
-        SpellCheckIFrameURL += SerializeData(Core.App.GetSessionInformation());
-        SpellCheckIFrame = '&lt;iframe class="TextOption SpellCheck" src="' + SpellCheckIFrameURL + '">&lt;/iframe>';
-        Core.UI.Dialog.ShowContentDialog(SpellCheckIFrame, '', '10px', 'Center', true);
-    }
+    function OpenCustomerUserAddressBook(RecipientField, RecipientFieldLabel, RecipientType) {
+        var CustomerUserAddressBookIFrameURL, CustomerUserAddressBookIFrame;
 
-    /**
-     * @private
-     * @name OpenAddressBook
-     * @memberof Core.Agent.TicketAction
-     * @function
-     * @description
-     *      Open the AddressBook screen.
-     */
-    function OpenAddressBook() {
-        var AddressBookIFrameURL, AddressBookIFrame;
-        AddressBookIFrameURL = Core.Config.Get('CGIHandle') +
-            '?Action=AgentBook;ToCustomer=' + encodeURIComponent($('#CustomerAutoComplete, #ToCustomer').val()) +
-            ';CcCustomer=' + encodeURIComponent($('#Cc, #CcCustomer').val()) +
-            ';BccCustomer=' + encodeURIComponent($('#Bcc, #BccCustomer').val());
-        AddressBookIFrameURL += SerializeData(Core.App.GetSessionInformation());
-        AddressBookIFrame = '&lt;iframe class="TextOption" src="' + AddressBookIFrameURL + '">&lt;/iframe>';
-        Core.UI.Dialog.ShowContentDialog(AddressBookIFrame, '', '10px', 'Center', true);
+        CustomerUserAddressBookIFrameURL = Core.Config.Get('CGIHandle') + '?Action=AgentCustomerUserAddressBook;RecipientField=' + RecipientField + ';RecipientFieldLabel=' + RecipientFieldLabel + ';RecipientType=' + RecipientType;
+        CustomerUserAddressBookIFrameURL += SerializeData(Core.App.GetSessionInformation());
+
+        CustomerUserAddressBookIFrame = '&lt;iframe class="TextOption CustomerUserAddressBook" src="' + CustomerUserAddressBookIFrameURL + '">&lt;/iframe>';
+        Core.UI.Dialog.ShowContentDialog(CustomerUserAddressBookIFrame, '', '10px', 'Center', true);
     }
 
     /**
@@ -149,50 +135,68 @@ Core.Agent.TicketAction = (function (TargetNS) {
 
     /**
      * @private
-     * @name AddMailAddress
+     * @name OpenCustomerIDSelection
      * @memberof Core.Agent.TicketAction
      * @function
-     * @param {Object} $Link - Element link type that will receive the new email adrress in its value attribute
      * @description
-     *      Add email address.
+     *      Open the CustomerIDSelectionDialog screen.
      */
-    function AddMailAddress($Link) {
-        var $Element = $('#' + $Link.attr('rel')),
-            NewValue = $Element.val(), NewData, NewDataItem, Length;
+    function OpenCustomerIDSelection() {
+        var Data = {
+            Action: 'AgentCustomerSearch',
+            Subaction: 'AssignedCustomerIDs',
+            CustomerUserID: $('#SelectedCustomerUser').val(),
+        };
 
-        if (NewValue.length) {
-            NewValue = NewValue + ', ';
-        }
-        NewValue = NewValue +
-            Core.Data.Get($Link.closest('tr'), 'Email')
-            .replace(/&amp;quot;/g, '"')
-            .replace(/&amp;lt;/g, '&lt;')
-            .replace(/&amp;gt;/g, '>')
-            .replace(/&amp;amp;/g, '&amp;');
-        $Element.val(NewValue);
+        $('#SelectionCustomerIDAssigned').empty();
 
-        Length = $Element.val().length;
-        $Element.focus();
-        $Element[0].setSelectionRange(Length, Length);
+        Core.AJAX.FunctionCall(Core.Config.Get('Baselink'), Data, function (Response) {
+            $.each(Response, function(Index, CustomerID) {
+                var CustomerIDOption = new Option(CustomerID, CustomerID);
 
-        // set customer data for customer user information (AgentTicketEmail) in the compose screen
-        if ($Link.attr('rel') === 'ToCustomer' &amp;&amp; Core.Config.Get('CustomerInfoSet')){
+                // Overwrite option text, because of wrong html quoting of text content.
+                // (This is needed for IE.)
+                CustomerIDOption.innerHTML = CustomerID;
+                $('#SelectionCustomerIDAssigned').append(CustomerIDOption);
+            });
 
-            NewData = $('#CustomerData').val();
-            NewDataItem = Core.Data.Get($Link.closest('a'), 'customerdatajson');
-
-            if(NewData){
-                NewData = Core.JSON.Parse(NewData);
-                $.each(NewDataItem, function(CustomerMail, CustomerKey) {
-                    NewData[CustomerMail] = CustomerKey;
-                });
-                $('#CustomerData').val(Core.JSON.Stringify(NewData));
+            if (!$('#SelectionCustomerIDAssigned > option').length) {
+                $('#TemplateSelectionCustomerID fieldset:last').addClass('Hidden');
             }
-            else
-            {
-                $('#CustomerData').val(Core.JSON.Stringify(NewDataItem));
+            else {
+                $('#TemplateSelectionCustomerID fieldset:last').removeClass('Hidden');
             }
-        }
+
+            Core.UI.Dialog.ShowContentDialog($('#TemplateSelectionCustomerID'), Core.Language.Translate('Select a customer ID to assign to this ticket'), '10px', 'Center', true);
+
+            Core.Agent.CustomerSearch.InitSimple($('#SelectionCustomerIDAll'));
+
+            $('#SelectionCustomerIDAssigned').val($('#CustomerID').val()).trigger('redraw.InputField').trigger('change');
+
+            $('#SelectionCustomerIDAll').on('select.Autocomplete', function() {
+                CloseCustomerIDSelection($(this).val());
+            });
+
+            $('#SelectionCustomerIDAssigned').on('change', function() {
+                CloseCustomerIDSelection($(this).val());
+            });
+        });
+    }
+
+    /**
+     * @private
+     * @name CloseCustomerIDSelection
+     * @memberof Core.Agent.TicketAction
+     * @function
+     * @param {String} CustomerID - The selected customer ID value.
+     * @description
+     *      Close the customer ID selection dialog.
+     */
+    function CloseCustomerIDSelection(CustomerID) {
+        $('#CustomerID').val(CustomerID);
+        $('#ShowCustomerID').html(CustomerID);
+
+        Core.UI.Dialog.CloseDialog($('.Dialog'));
     }
 
     /**
@@ -226,59 +230,25 @@ Core.Agent.TicketAction = (function (TargetNS) {
      */
     TargetNS.Init = function () {
 
-        // Register event for spell checker dialog
-        $('#OptionSpellCheck').bind('click', function () {
-            OpenSpellChecker();
-            return false;
-        });
-
-        // Register event for addressbook dialog
-        $('#OptionAddressBook').bind('click', function () {
-            OpenAddressBook();
+        $('.OptionCustomerUserAddressBook').on('click', function () {
+            OpenCustomerUserAddressBook($(this).data('recipient-field'), $(this).data('recipient-field-label'), $(this).data('recipient-type'));
             return false;
         });
 
         // Register event for customer dialog
-        $('#OptionCustomer').bind('click', function () {
+        $('#OptionCustomer').on('click', function () {
             OpenCustomerDialog();
             return false;
         });
 
-        // check if spell check is being used
-        if (parseInt(Core.Config.Get('SpellChecker'), 10) === 1 &amp;&amp; parseInt(Core.Config.Get('NeedSpellCheck'), 10) === 1) {
+        // Register the event for customer id selection dialog.
+        $('#SelectionCustomerID').on('click', function () {
+            OpenCustomerIDSelection();
+            return false;
+        });
 
-            Core.Config.Set('TextIsSpellChecked', false);
-            $('#RichTextField, .RichTextField').on('click', '.cke_button__spellcheck', function() {
-                Core.Config.Set('TextIsSpellChecked', true);
-            });
-            $('#OptionSpellCheck').bind('click', function() {
-                Core.Config.Set('TextIsSpellChecked', true);
-            });
-
-            if (parseInt(Core.Config.Get('RichTextSet'), 10) === 0) {
-                $('#RichTextField, .RichTextField').on('change', '#RichText', function() {
-                    Core.Config.Set('TextIsSpellChecked', false);
-                });
-            }
-
-            Core.Form.Validate.SetSubmitFunction($('form[name=compose]'), function() {
-                if ($('#RichText').val() &amp;&amp; !$('#RichText').hasClass('ValidationIgnore') &amp;&amp; !Core.Config.Get('TextIsSpellChecked')) {
-                    Core.App.Publish('Event.Agent.TicketAction.NeedSpellCheck', [$('#RichText')]);
-                    Core.UI.Dialog.ShowContentDialog('&lt;p>' + Core.Config.Get('SpellCheckNeededMsg') + '&lt;/p>', '', '150px', 'Center', true, [
-                        {
-                            Label: '&lt;span>' + Core.Config.Get('DialogCloseMsg') + '&lt;/span>',
-                            Function: function () {
-                                Core.UI.Dialog.CloseDialog($('.Dialog:visible'));
-                                Core.Form.EnableForm($('#RichText').closest('form'));
-                            },
-                            Class: 'Primary'
-                        }
-                    ]);
-                    return false;
-                }
-                $('#RichText').closest('form').get(0).submit();
-            });
-        }
+        // Deactivate the fields in the template.
+        Core.UI.InputFields.Deactivate($('#TemplateSelectionCustomerID'));
 
         // Subscribe to the reloading of the CustomerInfo box to
         // specially mark the primary customer
@@ -312,136 +282,10 @@ Core.Agent.TicketAction = (function (TargetNS) {
                 return;
             }
 
+            // If widget is being expanded, activate checkbox to create article.
             if ($WidgetElement.hasClass('Expanded')) {
-                // if widget is being opened, add checbkox to create article
                 $('#CreateArticle').prop('checked', true);
             }
-        });
-
-        // Subscribe to NeedSpellCheck event to open RTE widget if collapsed, if spellcheck is needed on submit
-        Core.App.Subscribe('Event.Agent.TicketAction.NeedSpellCheck', function ($TextElement) {
-            var $Widget = $TextElement.closest('div.WidgetSimple');
-
-            if ($Widget.attr('id') !== 'WidgetArticle' || $Widget.hasClass('Expanded')) {
-                return;
-            }
-
-            $Widget.find('div.WidgetAction.Toggle > a').trigger('click');
-        });
-
-    };
-
-    /**
-     * @name InitAddressBook
-     * @memberof Core.Agent.TicketAction
-     * @function
-     * @description
-     *      This function initializes the necessary stuff for address book link in TicketAction screens.
-     */
-    TargetNS.InitAddressBook = function () {
-        // Register event for copying mail address to input field
-        $('#SearchResult a').bind('click', function () {
-            AddMailAddress($(this));
-            return false;
-        });
-
-        // Register Apply button event
-        $('#Apply').bind('click', function () {
-            // Update ticket action popup fields
-            var $To, $Cc, $Bcc, CustomerData;
-
-            // Because we are in an iframe, we need to call the parent frames javascript function
-            // with a jQuery object which is in the parent frames context
-
-            // check if the multi selection feature is present
-            if ($('#CustomerAutoComplete', parent.document).length) {
-                // no multi select (AgentTicketForward)
-                $To = $('#CustomerAutoComplete', parent.document);
-                $Cc = $('#Cc', parent.document);
-                $Bcc = $('#Bcc', parent.document);
-
-                $To.val($('#ToCustomer').val());
-                $Cc.val($('#CcCustomer').val());
-                $Bcc.val($('#BccCustomer').val());
-            }
-            else {
-                // multi select is present
-                $To = $('#ToCustomer', parent.document);
-                $Cc = $('#CcCustomer', parent.document);
-                $Bcc = $('#BccCustomer', parent.document);
-
-                // check is set customer data for customer user information
-                // it will not be set if it is used CustomerAutoComplete ( e.g for forwrad, reply ticket )
-                if ($('#CustomerData').val()) {
-                    CustomerData = Core.JSON.Parse($('#CustomerData').val());
-                    $.each(CustomerData, function(CustomerMail, CustomerKey) {
-                        $To.val(CustomerMail);
-                        parent.Core.Agent.CustomerSearch.AddTicketCustomer('ToCustomer', CustomerMail, CustomerKey);
-
-                    });
-                }
-                else{
-                    $.each($('#ToCustomer').val().split(/, ?/), function(Index, Value){
-                        $To.val(Value);
-                        parent.Core.Agent.CustomerSearch.AddTicketCustomer('ToCustomer', Value);
-                    });
-                }
-
-                $.each($('#CcCustomer').val().split(/, ?/), function(Index, Value){
-                    $Cc.val(Value);
-                    parent.Core.Agent.CustomerSearch.AddTicketCustomer('CcCustomer', Value);
-                });
-
-                $.each($('#BccCustomer').val().split(/, ?/), function(Index, Value){
-                    $Bcc.val(Value);
-                    parent.Core.Agent.CustomerSearch.AddTicketCustomer('BccCustomer', Value);
-                });
-            }
-
-            parent.Core.UI.Dialog.CloseDialog($('.Dialog', parent.document));
-        });
-
-        // Register Cancel button event
-        $('#Cancel').bind('click', function () {
-            // Because we are in an iframe, we need to call the parent frames javascript function
-            // with a jQuery object which is in the parent frames context
-            parent.Core.UI.Dialog.CloseDialog($('.Dialog', parent.document));
-        });
-    };
-
-    /**
-     * @name InitSpellCheck
-     * @memberof Core.Agent.TicketAction
-     * @function
-     * @description
-     *      This function initializes the necessary stuff for spell check link  in TicketAction screens.
-     */
-    TargetNS.InitSpellCheck = function () {
-        // Register onchange event for dropdown and input field to change the radiobutton
-        $('#SpellCheck select, #SpellCheck input[type="text"]').bind('change', function () {
-            var $Row = $(this).closest('tr'),
-                RowCount = parseInt($Row.attr('id').replace(/Row/, ''), 10);
-            $Row.find('input[type="radio"][id=ChangeWord' + RowCount + ']').prop('checked', true);
-        });
-
-        // Register Apply button event
-        $('#Apply').bind('click', function () {
-            // Update ticket action popup fields
-            var FieldName = $('#Field').val(),
-                $Body = $('#' + FieldName, parent.document);
-
-            $Body.val($('#Body').val());
-
-            // Because we are in an iframe, we need to call the parent frames javascript function
-            // with a jQuery object which is in the parent frames context
-            parent.Core.UI.Dialog.CloseDialog($('.Dialog', parent.document));
-        });
-
-        // Register Cancel button event
-        $('#Cancel').bind('click', function () {
-            // Because we are in an iframe, we need to call the parent frames javascript function
-            // with a jQuery object which is in the parent frames context
-            parent.Core.UI.Dialog.CloseDialog($('.Dialog', parent.document));
         });
     };
 
@@ -508,7 +352,7 @@ Core.Agent.TicketAction = (function (TargetNS) {
         // if content already exists let user confirm to really overwrite that content with a template
         if (
             Content.length &amp;&amp;
-            !window.confirm(Core.Config.Get('TicketActionTemplateOverwrite') + ' ' + Core.Config.Get('TicketActionTemplateOverwriteConfirm')))
+            !window.confirm(Core.Language.Translate('Setting a template will overwrite any text or attachment.') + ' ' + Core.Language.Translate('Do you really want to continue?')))
             {
                 // if user cancels confirmation, reset template selection
                 $TemplateSelect.val(LastValue).trigger('redraw');
@@ -519,6 +363,8 @@ Core.Agent.TicketAction = (function (TargetNS) {
             $TemplateSelect.data('LastValue', $TemplateSelect.val());
         }
     }
+
+    Core.Init.RegisterNamespace(TargetNS, 'APP_MODULE');
 
     return TargetNS;
 }(Core.Agent.TicketAction || {}));
@@ -532,7 +378,7 @@ Core.Agent.TicketAction = (function (TargetNS) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingSimple.html">Core.Agent.Admin.GenericInterfaceMappingSimple</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.SysConfig.html">Core.Agent.Admin.SysConfig</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.Attachment.html">Core.Agent.Admin.Attachment</a></li><li><a href="Core.Agent.Admin.AutoResponse.html">Core.Agent.Admin.AutoResponse</a></li><li><a href="Core.Agent.Admin.CommunicationLog.html">Core.Agent.Admin.CommunicationLog</a></li><li><a href="Core.Agent.Admin.Core.Agent.Admin.html">Core.Agent.Admin.Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.Core.Agent.TicketFormDraft.html">Core.Agent.Admin.Core.Agent.TicketFormDraft</a></li><li><a href="Core.Agent.Admin.CustomerCompany.html">Core.Agent.Admin.CustomerCompany</a></li><li><a href="Core.Agent.Admin.CustomerGroup.html">Core.Agent.Admin.CustomerGroup</a></li><li><a href="Core.Agent.Admin.CustomerUser.html">Core.Agent.Admin.CustomerUser</a></li><li><a href="Core.Agent.Admin.CustomerUserService.html">Core.Agent.Admin.CustomerUserService</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldCheckbox.html">Core.Agent.Admin.DynamicFieldCheckbox</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandling.html">Core.Agent.Admin.GenericInterfaceErrorHandling</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry.html">Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvokerEvent.html">Core.Agent.Admin.GenericInterfaceInvokerEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMapping.html">Core.Agent.Admin.GenericInterfaceMapping</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingXSLT.html">Core.Agent.Admin.GenericInterfaceMappingXSLT</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPREST.html">Core.Agent.Admin.GenericInterfaceTransportHTTPREST</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP.html">Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.Group.html">Core.Agent.Admin.Group</a></li><li><a href="Core.Agent.Admin.Log.html">Core.Agent.Admin.Log</a></li><li><a href="Core.Agent.Admin.MailAccount.html">Core.Agent.Admin.MailAccount</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.PackageManager.html">Core.Agent.Admin.PackageManager</a></li><li><a href="Core.Agent.Admin.PostMasterFilter.html">Core.Agent.Admin.PostMasterFilter</a></li><li><a href="Core.Agent.Admin.Priority.html">Core.Agent.Admin.Priority</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.Queue.html">Core.Agent.Admin.Queue</a></li><li><a href="Core.Agent.Admin.QueueAutoResponse.html">Core.Agent.Admin.QueueAutoResponse</a></li><li><a href="Core.Agent.Admin.QueueTemplates.html">Core.Agent.Admin.QueueTemplates</a></li><li><a href="Core.Agent.Admin.Registration.html">Core.Agent.Admin.Registration</a></li><li><a href="Core.Agent.Admin.Role.html">Core.Agent.Admin.Role</a></li><li><a href="Core.Agent.Admin.RoleGroup.html">Core.Agent.Admin.RoleGroup</a></li><li><a href="Core.Agent.Admin.RoleUser.html">Core.Agent.Admin.RoleUser</a></li><li><a href="Core.Agent.Admin.Salutation.html">Core.Agent.Admin.Salutation</a></li><li><a href="Core.Agent.Admin.SelectBox.html">Core.Agent.Admin.SelectBox</a></li><li><a href="Core.Agent.Admin.Service.html">Core.Agent.Admin.Service</a></li><li><a href="Core.Agent.Admin.Session.html">Core.Agent.Admin.Session</a></li><li><a href="Core.Agent.Admin.Signature.html">Core.Agent.Admin.Signature</a></li><li><a href="Core.Agent.Admin.SLA.html">Core.Agent.Admin.SLA</a></li><li><a href="Core.Agent.Admin.SMIME.html">Core.Agent.Admin.SMIME</a></li><li><a href="Core.Agent.Admin.State.html">Core.Agent.Admin.State</a></li><li><a href="Core.Agent.Admin.SupportDataCollector.html">Core.Agent.Admin.SupportDataCollector</a></li><li><a href="Core.Agent.Admin.SysConfig.Entity.html">Core.Agent.Admin.SysConfig.Entity</a></li><li><a href="Core.Agent.Admin.SystemAddress.html">Core.Agent.Admin.SystemAddress</a></li><li><a href="Core.Agent.Admin.SystemConfiguration.html">Core.Agent.Admin.SystemConfiguration</a></li><li><a href="Core.Agent.Admin.SystemMaintenance.html">Core.Agent.Admin.SystemMaintenance</a></li><li><a href="Core.Agent.Admin.Template.html">Core.Agent.Admin.Template</a></li><li><a href="Core.Agent.Admin.TemplateAttachment.html">Core.Agent.Admin.TemplateAttachment</a></li><li><a href="Core.Agent.Admin.Type.html">Core.Agent.Admin.Type</a></li><li><a href="Core.Agent.Admin.UserGroup.html">Core.Agent.Admin.UserGroup</a></li><li><a href="Core.Agent.AppointmentCalendar.html">Core.Agent.AppointmentCalendar</a></li><li><a href="Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage.html">Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage</a></li><li><a href="Core.Agent.CustomerInformationCenter.html">Core.Agent.CustomerInformationCenter</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.CustomerSearchAutoComplete.html">Core.Agent.CustomerSearchAutoComplete</a></li><li><a href="Core.Agent.CustomerUserAddressBook.html">Core.Agent.CustomerUserAddressBook</a></li><li><a href="Core.Agent.CustomerUserInformationCenter.html">Core.Agent.CustomerUserInformationCenter</a></li><li><a href="Core.Agent.CustomerUserInformationCenterSearch.html">Core.Agent.CustomerUserInformationCenterSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.Header.html">Core.Agent.Header</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.LinkObject.SearchForm.html">Core.Agent.LinkObject.SearchForm</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Overview.html">Core.Agent.Overview</a></li><li><a href="Core.Agent.Preferences.html">Core.Agent.Preferences</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Statistics.ParamsWidget.html">Core.Agent.Statistics.ParamsWidget</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketActionCommon.html">Core.Agent.TicketActionCommon</a></li><li><a href="Core.Agent.TicketBounce.html">Core.Agent.TicketBounce</a></li><li><a href="Core.Agent.TicketBulk.html">Core.Agent.TicketBulk</a></li><li><a href="Core.Agent.TicketCompose.html">Core.Agent.TicketCompose</a></li><li><a href="Core.Agent.TicketEmail.html">Core.Agent.TicketEmail</a></li><li><a href="Core.Agent.TicketEmailOutbound.html">Core.Agent.TicketEmailOutbound</a></li><li><a href="Core.Agent.TicketEmailResend.html">Core.Agent.TicketEmailResend</a></li><li><a href="Core.Agent.TicketForward.html">Core.Agent.TicketForward</a></li><li><a href="Core.Agent.TicketHistory.html">Core.Agent.TicketHistory</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketMove.html">Core.Agent.TicketMove</a></li><li><a href="Core.Agent.TicketPhone.html">Core.Agent.TicketPhone</a></li><li><a href="Core.Agent.TicketPhoneCommon.html">Core.Agent.TicketPhoneCommon</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketSplit.html">Core.Agent.TicketSplit</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketMessage.html">Core.Customer.TicketMessage</a></li><li><a href="Core.Customer.TicketProcess.html">Core.Customer.TicketProcess</a></li><li><a href="Core.Customer.TicketSearch.html">Core.Customer.TicketSearch</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Init.html">Core.Init</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.Language.html">Core.Language</a></li><li><a href="Core.SystemConfiguration.html">Core.SystemConfiguration</a></li><li><a href="Core.Template.html">Core.Template</a></li><li><a href="Core.TicketProcess.html">Core.TicketProcess</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul><h3>Global</h3><ul><li><a href="global.html#EditAppointment">EditAppointment</a></li></ul>
 </nav>
 
 <br clear="both">

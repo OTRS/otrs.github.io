@@ -26,22 +26,16 @@ our @ObjectDependencies = (
 
 Kernel::System::Loader - CSS/JavaScript loader backend
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All valid functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $LoaderObject = $Kernel::OM->Get('Kernel::System::Loader');
 
 =cut
@@ -59,17 +53,19 @@ sub new {
     return $Self;
 }
 
-=item MinifyFiles()
+=head2 MinifyFiles()
 
 takes a list of files and returns a filename in the target directory
 which holds the minified and concatenated content of the files.
 Uses caching internally.
 
     my $TargetFilename = $LoaderObject->MinifyFiles(
-        List  => [
+        List  => [                          # optional,  minify list of files
             $Filename,
             $Filename2,
         ],
+        Checksum             => '...'       # optional, pass a checksum for the minified file
+        Content              => '...'       # optional, pass direct (already minified) content instead of a file list
         Type                 => 'CSS',      # CSS | JavaScript
         TargetDirectory      => $TargetDirectory,
         TargetFilenamePrefix => 'CommonCSS',    # optional, prefix for the target filename
@@ -81,11 +77,13 @@ sub MinifyFiles {
     my ( $Self, %Param ) = @_;
 
     # check needed params
-    my $List = $Param{List};
-    if ( ref $List ne 'ARRAY' || !@{$List} ) {
+    my $List    = $Param{List};
+    my $Content = $Param{Content};
+
+    if ( !$Content && ( ref $List ne 'ARRAY' || !@{$List} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => 'Need List!',
+            Message  => 'Need List or Content!',
         );
         return;
     }
@@ -126,24 +124,33 @@ sub MinifyFiles {
 
     my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
 
-    my $FileString;
-    LOCATION:
-    for my $Location ( @{$List} ) {
-        if ( !-e $Location ) {
-            next LOCATION;
-        }
-        my $FileMTime = $MainObject->FileGetMTime(
-            Location => $Location
-        );
-
-        # For the caching, use both filename and mtime to make sure that
-        #   caches are correctly regenerated on changes.
-        $FileString .= "$Location:$FileMTime:";
+    my $Filename;
+    if ( $Param{Checksum} ) {
+        $Filename = $TargetFilenamePrefix . $Param{Checksum};
     }
+    else {
+        my $FileString;
 
-    my $Filename = $TargetFilenamePrefix . $MainObject->MD5sum(
-        String => \$FileString,
-    );
+        if ( $Param{List} ) {
+            LOCATION:
+            for my $Location ( @{$List} ) {
+                if ( !-e $Location ) {
+                    next LOCATION;
+                }
+                my $FileMTime = $MainObject->FileGetMTime(
+                    Location => $Location
+                );
+
+                # For the caching, use both filename and mtime to make sure that
+                #   caches are correctly regenerated on changes.
+                $FileString .= "$Location:$FileMTime:";
+            }
+        }
+
+        $Filename = $TargetFilenamePrefix . $MainObject->MD5sum(
+            String => \$FileString,
+        );
+    }
 
     if ( $Param{Type} eq 'CSS' ) {
         $Filename .= '.css';
@@ -154,8 +161,6 @@ sub MinifyFiles {
     }
 
     if ( !-r "$TargetDirectory/$Filename" ) {
-
-        my $Content;
 
         # no cache available, so loop through all files, get minified version and concatenate
         LOCATION: for my $Location ( @{$List} ) {
@@ -218,7 +223,7 @@ sub MinifyFiles {
     return $Filename;
 }
 
-=item GetMinifiedFile()
+=head2 GetMinifiedFile()
 
 returns the minified contents of a given CSS or JavaScript file.
 Uses caching internally.
@@ -312,7 +317,7 @@ sub GetMinifiedFile {
     return $Result;
 }
 
-=item MinifyCSS()
+=head2 MinifyCSS()
 
 returns a minified version of the given CSS Code
 
@@ -348,7 +353,7 @@ sub MinifyCSS {
     return $Result;
 }
 
-=item MinifyJavaScript()
+=head2 MinifyJavaScript()
 
 returns a minified version of the given JavaScript Code.
 
@@ -385,7 +390,7 @@ sub MinifyJavaScript {
     return JavaScript::Minifier::minify( input => $Param{Code} );
 }
 
-=item CacheGenerate()
+=head2 CacheGenerate()
 
 generates the loader cache files for all frontend modules.
 
@@ -423,10 +428,22 @@ sub CacheGenerate {
         push @Result, $FrontendModule;
     }
 
+    # Now generate JavaScript translation content
+    for my $UserLanguage ( sort keys %{ $ConfigObject->Get('DefaultUsedLanguages') // {} } ) {
+        $Kernel::OM->ObjectsDiscard( Objects => ['Kernel::Language'] );
+        my $LocalLayoutObject = Kernel::Output::HTML::Layout->new(
+            Lang => $UserLanguage,
+        );
+        $LocalLayoutObject->LoaderCreateJavaScriptTranslationData();
+    }
+
+    # generate JS template cache
+    $LayoutObject->LoaderCreateJavaScriptTemplateData();
+
     return @Result;
 }
 
-=item CacheDelete()
+=head2 CacheDelete()
 
 deletes all the loader cache files.
 
@@ -506,8 +523,6 @@ sub CacheDelete {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

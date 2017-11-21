@@ -21,12 +21,13 @@ use Kernel::System::WebUserAgent;
 use Kernel::System::VariableCheck qw(:all);
 use Kernel::Language qw(Translatable);
 
-use base qw(Kernel::System::EventHandler);
+use parent qw(Kernel::System::EventHandler);
 
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Cache',
     'Kernel::System::CloudService::Backend::Run',
+    'Kernel::System::DateTime',
     'Kernel::System::DB',
     'Kernel::System::Encode',
     'Kernel::System::Environment',
@@ -34,7 +35,11 @@ our @ObjectDependencies = (
     'Kernel::System::Loader',
     'Kernel::System::Log',
     'Kernel::System::Main',
-    'Kernel::System::Time',
+    'Kernel::System::OTRSBusiness',
+    'Kernel::System::Scheduler',
+    'Kernel::System::SysConfig::Migration',
+    'Kernel::System::SysConfig::XML',
+    'Kernel::System::SystemData',
     'Kernel::System::XML',
 );
 
@@ -42,22 +47,18 @@ our @ObjectDependencies = (
 
 Kernel::System::Package - to manage application packages/modules
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All functions to manage application packages/modules.
 
+=encoding utf-8
+
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $PackageObject = $Kernel::OM->Get('Kernel::System::Package');
 
 =cut
@@ -71,7 +72,6 @@ sub new {
 
     # get needed objects
     $Self->{ConfigObject} = $Kernel::OM->Get('Kernel::Config');
-    $Self->{MainObject}   = $Kernel::OM->Get('Kernel::System::Main');
 
     $Self->{PackageMap} = {
         Name            => 'SCALAR',
@@ -133,7 +133,7 @@ sub new {
     return $Self;
 }
 
-=item RepositoryList()
+=head2 RepositoryList()
 
 returns a list of repository packages
 
@@ -174,9 +174,13 @@ sub RepositoryList {
                 ORDER BY name, create_time',
     );
 
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
     # fetch the data
     my @Data;
     while ( my @Row = $DBObject->FetchrowArray() ) {
+
         my %Package = (
             Name    => $Row[0],
             Version => $Row[1],
@@ -184,21 +188,31 @@ sub RepositoryList {
             Vendor  => $Row[4],
         );
 
-        # correct any 'dos-style' line endings - http://bugs.otrs.org/show_bug.cgi?id=9838
-        $Row[3] =~ s{\r\n}{\n}xmsg;
-        $Package{MD5sum} = $Self->{MainObject}->MD5sum( String => \$Row[3] );
+        my $Content = $Row[3];
+
+        if ( $Content && !$DBObject->GetDatabaseFunction('DirectBlob') ) {
+
+            # Backwards compatibility: don't decode existing values that were not yet properly Base64 encoded.
+            if ( $Content =~ m{ \A [a-zA-Z0-9+/\n]+ ={0,2} [\n]? \z }smx ) {    # Does it look like Base64?
+                $Content = decode_base64($Content);
+                $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$Content );
+            }
+        }
+
+        # Correct any 'dos-style' line endings that might have been introduced by saving an
+        #   opm file from a mail client on Windows (see http://bugs.otrs.org/show_bug.cgi?id=9838).
+        $Content =~ s{\r\n}{\n}xmsg;
+        $Package{MD5sum} = $MainObject->MD5sum( String => \$Content );
 
         # get package attributes
-        if ( $Row[3] && $Result eq 'Short' ) {
+        if ( $Content && $Result eq 'Short' ) {
 
             push @Data, {%Package};
-
         }
-        elsif ( $Row[3] ) {
+        elsif ($Content) {
 
-            my %Structure = $Self->PackageParse( String => \$Row[3] );
+            my %Structure = $Self->PackageParse( String => \$Content );
             push @Data, { %Package, %Structure };
-
         }
     }
 
@@ -213,7 +227,7 @@ sub RepositoryList {
     return @Data;
 }
 
-=item RepositoryGet()
+=head2 RepositoryGet()
 
 get a package from local repository
 
@@ -226,7 +240,7 @@ get a package from local repository
         Name            => 'Application A',
         Version         => '1.0',
         Result          => 'SCALAR',
-        DisableWarnings => 1,         # optional
+        DisableWarnings => 1,                 # optional
     );
 
 =cut
@@ -269,18 +283,26 @@ sub RepositoryGet {
 
     # fetch data
     my $Package = '';
+    ROW:
     while ( my @Row = $DBObject->FetchrowArray() ) {
         $Package = $Row[0];
+
+        next ROW if $DBObject->GetDatabaseFunction('DirectBlob');
+
+        # Backwards compatibility: don't decode existing values that were not yet properly Base64 encoded.
+        next ROW if $Package !~ m{ \A [a-zA-Z0-9+/\n]+ ={0,2} [\n]? \z }smx;    # looks like Base64?
+        $Package = decode_base64($Package);
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeInput( \$Package );
     }
 
     if ( !$Package ) {
 
-        if ( !$Param{DisableWarnings} ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'notice',
-                Message  => "No such package: $Param{Name}-$Param{Version}!",
-            );
-        }
+        return if $Param{DisableWarnings};
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'notice',
+            Message  => "No such package: $Param{Name}-$Param{Version}!",
+        );
 
         return;
     }
@@ -297,13 +319,13 @@ sub RepositoryGet {
     return $Package;
 }
 
-=item RepositoryAdd()
+=head2 RepositoryAdd()
 
 add a package to local repository
 
     $PackageObject->RepositoryAdd(
-        String => $FileString,
-        FromCloud => 0, # optional 1 or 0, it indicates if package came from Cloud or not
+        String    => $FileString,
+        FromCloud => 0,             # optional 1 or 0, it indicates if package came from Cloud or not
     );
 
 =cut
@@ -369,6 +391,12 @@ sub RepositoryAdd {
     # add new package
     my $FileName = $Structure{Name}->{Content} . '-' . $Structure{Version}->{Content} . '.xml';
 
+    my $Content = $Param{String};
+    if ( !$DBObject->GetDatabaseFunction('DirectBlob') ) {
+        $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$Content );
+        $Content = encode_base64($Content);
+    }
+
     return if !$DBObject->Do(
         SQL => 'INSERT INTO package_repository (name, version, vendor, filename, '
             . ' content_type, content, install_status, '
@@ -378,7 +406,7 @@ sub RepositoryAdd {
             . ' current_timestamp, 1, current_timestamp, 1)',
         Bind => [
             \$Structure{Name}->{Content}, \$Structure{Version}->{Content},
-            \$Structure{Vendor}->{Content}, \$FileName, \$Param{String},
+            \$Structure{Vendor}->{Content}, \$FileName, \$Content,
         ],
     );
 
@@ -390,7 +418,7 @@ sub RepositoryAdd {
     return 1;
 }
 
-=item RepositoryRemove()
+=head2 RepositoryRemove()
 
 remove a package from local repository
 
@@ -423,7 +451,7 @@ sub RepositoryRemove {
 
     return if !$Kernel::OM->Get('Kernel::System::DB')->Do(
         SQL  => $SQL,
-        Bind => \@Bind
+        Bind => \@Bind,
     );
 
     # get cache object
@@ -440,13 +468,14 @@ sub RepositoryRemove {
     return 1;
 }
 
-=item PackageInstall()
+=head2 PackageInstall()
 
 install a package
 
     $PackageObject->PackageInstall(
-        String    => $FileString
-        FromCloud => 1, # optional 1 or 0, it indicates if package's origin is Cloud or not
+        String    => $FileString,
+        Force     => 1,             # optional 1 or 0, for to install package even if validation fails
+        FromCloud => 1,             # optional 1 or 0, it indicates if package's origin is Cloud or not
     );
 
 =cut
@@ -490,7 +519,10 @@ sub PackageInstall {
 
     # check framework
     if ( $Structure{Framework} && !$Param{Force} ) {
-        return if !$Self->_CheckFramework( Framework => $Structure{Framework} );
+        my %Check = $Self->AnalyzePackageFrameworkRequirements(
+            Framework => $Structure{Framework},
+        );
+        return if !$Check{Success};
     }
 
     # check required packages
@@ -521,12 +553,6 @@ sub PackageInstall {
 
     # check files
     my $FileCheckOk = 1;
-    if ( $Structure{Filelist} && ref $Structure{Filelist} eq 'ARRAY' ) {
-        for my $File ( @{ $Structure{Filelist} } ) {
-
-            #print STDERR "Notice: Want to install $File->{Location}!\n";
-        }
-    }
     if ( !$FileCheckOk && !$Param{Force} ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
@@ -571,7 +597,7 @@ sub PackageInstall {
     # add package
     return if !$Self->RepositoryAdd(
         String    => $Param{String},
-        FromCloud => $FromCloud
+        FromCloud => $FromCloud,
     );
 
     # update package status
@@ -586,8 +612,11 @@ sub PackageInstall {
     );
 
     # install config
-    $Self->{SysConfigObject} = Kernel::System::SysConfig->new( %{$Self} );
-    $Self->{SysConfigObject}->WriteDefault();
+    $Self->_ConfigurationDeploy(
+        Comments => "Package Install $Structure{Name}->{Content} $Structure{Version}->{Content}",
+        Package  => $Structure{Name}->{Content},
+        Action   => 'PackageInstall',
+    );
 
     # install database (post)
     if ( $Structure{DatabaseInstall} && $Structure{DatabaseInstall}->{post} ) {
@@ -609,7 +638,13 @@ sub PackageInstall {
     }
 
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        KeepTypes => ['XMLParse'],
+        KeepTypes => [
+            'XMLParse',
+            'SysConfigDefaultListGet',
+            'SysConfigDefaultList',
+            'SysConfigDefault',
+            'SysConfigPersistent',
+        ],
     );
     $Kernel::OM->Get('Kernel::System::Loader')->CacheDelete();
 
@@ -627,7 +662,7 @@ sub PackageInstall {
     return 1;
 }
 
-=item PackageReinstall()
+=head2 PackageReinstall()
 
 reinstall files of a package
 
@@ -660,7 +695,10 @@ sub PackageReinstall {
 
     # check framework
     if ( $Structure{Framework} && !$Param{Force} ) {
-        return if !$Self->_CheckFramework( Framework => $Structure{Framework} );
+        my %Check = $Self->AnalyzePackageFrameworkRequirements(
+            Framework => $Structure{Framework},
+        );
+        return if !$Check{Success};
     }
 
     # reinstall code (pre)
@@ -679,14 +717,17 @@ sub PackageReinstall {
             # install file
             $Self->_FileInstall(
                 File      => $File,
-                Reinstall => 1
+                Reinstall => 1,
             );
         }
     }
 
     # install config
-    $Self->{SysConfigObject} = Kernel::System::SysConfig->new( %{$Self} );
-    $Self->{SysConfigObject}->WriteDefault();
+    $Self->_ConfigurationDeploy(
+        Comments => "Package Reinstall $Structure{Name}->{Content} $Structure{Version}->{Content}",
+        Package  => $Structure{Name}->{Content},
+        Action   => 'PackageReinstall',
+    );
 
     # reinstall code (post)
     if ( $Structure{CodeReinstall} ) {
@@ -698,7 +739,13 @@ sub PackageReinstall {
     }
 
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        KeepTypes => ['XMLParse'],
+        KeepTypes => [
+            'XMLParse',
+            'SysConfigDefaultListGet',
+            'SysConfigDefaultList',
+            'SysConfigDefault',
+            'SysConfigPersistent',
+        ],
     );
     $Kernel::OM->Get('Kernel::System::Loader')->CacheDelete();
 
@@ -716,18 +763,19 @@ sub PackageReinstall {
     return 1;
 }
 
-=item PackageUpgrade()
+=head2 PackageUpgrade()
 
 upgrade a package
 
-    $PackageObject->PackageUpgrade( String => $FileString );
+    $PackageObject->PackageUpgrade(
+        String => $FileString,
+        Force  => 1,             # optional 1 or 0, for to install package even if validation fails
+    );
 
 =cut
 
 sub PackageUpgrade {
     my ( $Self, %Param ) = @_;
-
-    my %InstalledStructure;
 
     # check needed stuff
     if ( !defined $Param{String} ) {
@@ -742,10 +790,13 @@ sub PackageUpgrade {
     my %Structure = $Self->PackageParse(%Param);
 
     # check if package is already installed
+    my %InstalledStructure;
     my $Installed        = 0;
     my $InstalledVersion = 0;
     for my $Package ( $Self->RepositoryList() ) {
+
         if ( $Structure{Name}->{Content} eq $Package->{Name}->{Content} ) {
+
             if ( $Package->{Status} =~ /^installed$/i ) {
                 $Installed          = 1;
                 $InstalledVersion   = $Package->{Version}->{Content};
@@ -753,12 +804,13 @@ sub PackageUpgrade {
             }
         }
     }
+
     if ( !$Installed ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Package is not installed, can\'t upgrade!',
+            Priority => 'notice',
+            Message  => 'Package is not installed, try a installation!',
         );
-        return;
+        return $Self->PackageInstall(%Param);
     }
 
     # write permission check
@@ -771,7 +823,10 @@ sub PackageUpgrade {
 
     # check framework
     if ( $Structure{Framework} && !$Param{Force} ) {
-        return if !$Self->_CheckFramework( Framework => $Structure{Framework} );
+        my %Check = $Self->AnalyzePackageFrameworkRequirements(
+            Framework => $Structure{Framework},
+        );
+        return if !$Check{Success};
     }
 
     # check required packages
@@ -987,8 +1042,11 @@ sub PackageUpgrade {
     }
 
     # install config
-    $Self->{SysConfigObject} = Kernel::System::SysConfig->new( %{$Self} );
-    $Self->{SysConfigObject}->WriteDefault();
+    $Self->_ConfigurationDeploy(
+        Comments => "Package Upgrade $Structure{Name}->{Content} $Structure{Version}->{Content}",
+        Package  => $Structure{Name}->{Content},
+        Action   => 'PackageUpgrade',
+    );
 
     # upgrade database (post)
     if ( $Structure{DatabaseUpgrade}->{post} && ref $Structure{DatabaseUpgrade}->{post} eq 'ARRAY' )
@@ -1106,7 +1164,13 @@ sub PackageUpgrade {
     }
 
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        KeepTypes => ['XMLParse'],
+        KeepTypes => [
+            'XMLParse',
+            'SysConfigDefaultListGet',
+            'SysConfigDefaultList',
+            'SysConfigDefault',
+            'SysConfigPersistent',
+        ],
     );
     $Kernel::OM->Get('Kernel::System::Loader')->CacheDelete();
 
@@ -1124,7 +1188,7 @@ sub PackageUpgrade {
     return 1;
 }
 
-=item PackageUninstall()
+=head2 PackageUninstall()
 
 uninstall a package
 
@@ -1183,8 +1247,11 @@ sub PackageUninstall {
     $Self->RepositoryRemove( Name => $Structure{Name}->{Content} );
 
     # install config
-    $Self->{SysConfigObject} = Kernel::System::SysConfig->new( %{$Self} );
-    $Self->{SysConfigObject}->WriteDefault();
+    $Self->_ConfigurationDeploy(
+        Comments => "Package Uninstall $Structure{Name}->{Content} $Structure{Version}->{Content}",
+        Package  => $Structure{Name}->{Content},
+        Action   => 'PackageUninstall',
+    );
 
     # uninstall database (post)
     if ( $Structure{DatabaseUninstall} && $Structure{DatabaseUninstall}->{post} ) {
@@ -1204,7 +1271,13 @@ sub PackageUninstall {
     $Self->{ConfigObject} = Kernel::Config->new( %{$Self} );
 
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        KeepTypes => ['XMLParse'],
+        KeepTypes => [
+            'XMLParse',
+            'SysConfigDefaultListGet',
+            'SysConfigDefaultList',
+            'SysConfigDefault',
+            'SysConfigPersistent',
+        ],
     );
     $Kernel::OM->Get('Kernel::System::Loader')->CacheDelete();
 
@@ -1222,7 +1295,7 @@ sub PackageUninstall {
     return 1;
 }
 
-=item PackageOnlineRepositories()
+=head2 PackageOnlineRepositories()
 
 returns a list of available online repositories
 
@@ -1276,16 +1349,17 @@ sub PackageOnlineRepositories {
     return %List;
 }
 
-=item PackageOnlineList()
+=head2 PackageOnlineList()
 
 returns a list of available on-line packages
 
     my @List = $PackageObject->PackageOnlineList(
-        URL  => '',
-        Lang => 'en',
-        Cache => 0,   # (optional) do not use cached data
-        FromCloud => 1, # optional 1 or 0, it indicates if a Cloud Service
-                        # should be used for getting the packages list
+        URL                => '',
+        Lang               => 'en',
+        Cache              => 0,    # (optional) do not use cached data
+        FromCloud          => 1,    # optional 1 or 0, it indicates if a Cloud Service
+                                    #  should be used for getting the packages list
+        IncludeSameVersion => 1,    # (optional) to also get packages already installed and with the same version
     );
 
 =cut
@@ -1313,11 +1387,13 @@ sub PackageOnlineList {
         }
     }
 
+    $Param{IncludeSameVersion} //= 0;
+
     # get cache object
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
 
     # check cache
-    my $CacheKey = $Param{URL} . '-' . $Param{Lang};
+    my $CacheKey = $Param{URL} . '-' . $Param{Lang} . '-' . $Param{IncludeSameVersion};
     if ( $Param{Cache} ) {
         my $Cache = $CacheObject->Get(
             Type => 'PackageOnlineList',
@@ -1380,6 +1456,9 @@ sub PackageOnlineList {
                     $Package{Description} = $Tag->{Content};
                 }
             }
+            elsif ( $Tag->{Tag} eq 'PackageRequired' ) {
+                push @{ $Package{PackageRequired} }, $Tag;
+            }
             else {
                 $Package{ $Tag->{Tag} } = $Tag->{Content};
             }
@@ -1397,7 +1476,8 @@ sub PackageOnlineList {
         my $ListResult = $Self->CloudFileGet(
             Operation => $Operation,
             Data      => {
-                Language => $Param{Lang},
+                Language        => $Param{Lang},
+                PackageRequired => 1,
             },
         );
 
@@ -1431,25 +1511,11 @@ sub PackageOnlineList {
 
         if ( $Package->{Framework} ) {
 
-            my $Response = $Self->_CheckFramework(
-                Framework            => $Package->{Framework},
-                NoLog                => 1,
-                IgnoreMinimumMaximum => 1,
-                ResultType           => 'HASH'
+            my %Check = $Self->AnalyzePackageFrameworkRequirements(
+                Framework => $Package->{Framework},
+                NoLog     => 1
             );
-
-            # Check result type of _CheckFramework() for compatibility reasons.
-            if (
-                (
-                    ref $Response eq 'SCALAR'
-                    && $Response
-                )
-                || (
-                    ref $Response eq 'HASH'
-                    && $Response->{Success}
-                )
-                )
-            {
+            if ( $Check{Success} ) {
                 $FWCheckOk                    = 1;
                 $PackageForRequestedFramework = 1;
             }
@@ -1537,7 +1603,7 @@ sub PackageOnlineList {
         }
 
         # add package if not already installed
-        if ( !$InstalledSameVersion ) {
+        if ( !$InstalledSameVersion || $Param{IncludeSameVersion} ) {
             push @NewPackages, $Newest{$Data};
         }
     }
@@ -1557,7 +1623,7 @@ sub PackageOnlineList {
     return @Packages;
 }
 
-=item PackageOnlineGet()
+=head2 PackageOnlineGet()
 
 download of an online package and put it into the local repository
 
@@ -1621,7 +1687,7 @@ sub PackageOnlineGet {
     return $Self->_Download( URL => $Param{Source} . '/' . $Param{File} );
 }
 
-=item DeployCheck()
+=head2 DeployCheck()
 
 check if package (files) is deployed, returns true if it's ok
 
@@ -1659,6 +1725,9 @@ sub DeployCheck {
     return 1 if !$Structure{Filelist};
     return 1 if ref $Structure{Filelist} ne 'ARRAY';
 
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
     my $Hit = 0;
     for my $File ( @{ $Structure{Filelist} } ) {
 
@@ -1678,7 +1747,7 @@ sub DeployCheck {
         }
         elsif ( -e $LocalFile ) {
 
-            my $Content = $Self->{MainObject}->FileRead(
+            my $Content = $MainObject->FileRead(
                 Location => $Self->{Home} . '/' . $File->{Location},
                 Mode     => 'binmode',
             );
@@ -1716,7 +1785,7 @@ sub DeployCheck {
     return 1;
 }
 
-=item DeployCheckInfo()
+=head2 DeployCheckInfo()
 
 returns the info of the latest DeployCheck(), what's not deployed correctly
 
@@ -1733,7 +1802,7 @@ sub DeployCheckInfo {
     return ();
 }
 
-=item PackageVerify()
+=head2 PackageVerify()
 
 check if package is verified by the vendor
 
@@ -1781,7 +1850,7 @@ sub PackageVerify {
     my $PackageVerifyInfo = {
         Description =>
             Translatable(
-            "<br>If you continue to install this package, the following issues may occur!<br><br>&nbsp;-Security problems<br>&nbsp;-Stability problems<br>&nbsp;-Performance problems<br><br>Please note that issues that are caused by working with this package are not covered by OTRS service contracts!<br><br>"
+            "<p>If you continue to install this package, the following issues may occur:</p><ul><li>Security problems</li><li>Stability problems</li><li>Performance problems</li></ul><p>Please note that issues that are caused by working with this package are not covered by OTRS service contracts.</p>"
             ),
         Title =>
             Translatable('Package not verified by the OTRS Group! It is recommended not to use this package.'),
@@ -1794,7 +1863,7 @@ sub PackageVerify {
     $Param{Package} =~ s{\r\n}{\n}xmsg;
 
     # create MD5 sum
-    my $Sum = $Self->{MainObject}->MD5sum( String => $Param{Package} );
+    my $Sum = $Kernel::OM->Get('Kernel::System::Main')->MD5sum( String => $Param{Package} );
 
     # get cache object
     my $CacheObject = $Kernel::OM->Get('Kernel::System::Cache');
@@ -1877,7 +1946,7 @@ sub PackageVerify {
     return $PackageVerify;
 }
 
-=item PackageVerifyInfo()
+=head2 PackageVerifyInfo()
 
 returns the info of the latest PackageVerify()
 
@@ -1895,7 +1964,7 @@ sub PackageVerifyInfo {
     return %{ $Self->{PackageVerifyInfo} };
 }
 
-=item PackageVerifyAll()
+=head2 PackageVerifyAll()
 
 check if all installed packages are installed by the vendor
 returns a hash with package names and verification status.
@@ -2022,7 +2091,7 @@ sub PackageVerifyAll {
     return %Result;
 }
 
-=item PackageBuild()
+=head2 PackageBuild()
 
 build an opm package
 
@@ -2183,16 +2252,16 @@ sub PackageBuild {
     if ( !$Param{Type} ) {
 
         # get time object
-        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+        my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
 
-        my $Time = $TimeObject->SystemTime2TimeStamp(
-            SystemTime => $TimeObject->SystemTime(),
-        );
-
-        $XML .= "    <BuildDate>" . $Time . "</BuildDate>\n";
+        $XML .= "    <BuildDate>" . $DateTimeObject->ToString() . "</BuildDate>\n";
         $XML .= "    <BuildHost>" . $Self->{ConfigObject}->Get('FQDN') . "</BuildHost>\n";
     }
+
     if ( $Param{Filelist} ) {
+
+        # get main object
+        my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
 
         $XML .= "    <Filelist>\n";
 
@@ -2228,7 +2297,7 @@ sub PackageBuild {
             # don't use content in in index mode
             if ( !$Param{Type} ) {
                 $XML .= " Encode=\"Base64\">";
-                my $FileContent = $Self->{MainObject}->FileRead(
+                my $FileContent = $MainObject->FileRead(
                     Location => $Home . '/' . $File->{Location},
                     Mode     => 'binmode',
                 );
@@ -2338,7 +2407,7 @@ sub PackageBuild {
     return $XML;
 }
 
-=item PackageParse()
+=head2 PackageParse()
 
 parse a package
 
@@ -2364,7 +2433,7 @@ sub PackageParse {
     $Kernel::OM->Get('Kernel::System::Encode')->EncodeOutput( \$CookedString );
 
     # create checksum
-    my $Checksum = $Self->{MainObject}->MD5sum(
+    my $Checksum = $Kernel::OM->Get('Kernel::System::Main')->MD5sum(
         String => \$CookedString,
     );
 
@@ -2539,7 +2608,7 @@ sub PackageParse {
     return %Package;
 }
 
-=item PackageExport()
+=head2 PackageExport()
 
 export files of an package
 
@@ -2582,7 +2651,7 @@ sub PackageExport {
     return 1;
 }
 
-=item PackageIsInstalled()
+=head2 PackageIsInstalled()
 
 returns true if the package is already installed
 
@@ -2628,7 +2697,7 @@ sub PackageIsInstalled {
     return $Flag;
 }
 
-=item PackageInstallDefaultFiles()
+=head2 PackageInstallDefaultFiles()
 
 returns true if the distribution package (located under ) can get installed
 
@@ -2642,8 +2711,11 @@ sub PackageInstallDefaultFiles {
     # write permission check
     return if !$Self->_FileSystemCheck();
 
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
     my $Directory    = $Self->{ConfigObject}->Get('Home') . '/var/packages';
-    my @PackageFiles = $Self->{MainObject}->DirectoryRead(
+    my @PackageFiles = $MainObject->DirectoryRead(
         Directory => $Directory,
         Filter    => '*.opm',
     );
@@ -2653,7 +2725,7 @@ sub PackageInstallDefaultFiles {
     for my $Location (@PackageFiles) {
 
         # read package
-        my $ContentSCALARRef = $Self->{MainObject}->FileRead(
+        my $ContentSCALARRef = $MainObject->FileRead(
             Location => $Location,
             Mode     => 'binmode',
             Type     => 'Local',
@@ -2678,7 +2750,7 @@ sub PackageInstallDefaultFiles {
     return 1;
 }
 
-=item PackageFileGetMD5Sum()
+=head2 PackageFileGetMD5Sum()
 
 generates a MD5 Sum for all files in a given package
 
@@ -2726,12 +2798,15 @@ sub PackageFileGetMD5Sum {
     );
     my %Structure = $Self->PackageParse( String => $Package );
 
-    return 1 if !$Structure{Filelist};
-    return 1 if ref $Structure{Filelist} ne 'ARRAY';
+    return {} if !$Structure{Filelist};
+    return {} if ref $Structure{Filelist} ne 'ARRAY';
 
     # cleanup the Home variable (remove tailing "/")
     my $Home = $Self->{Home};
     $Home =~ s{\/\z}{};
+
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
 
     my %MD5SumLookup;
     for my $File ( @{ $Structure{Filelist} } ) {
@@ -2739,7 +2814,7 @@ sub PackageFileGetMD5Sum {
         my $LocalFile = $Home . '/' . $File->{Location};
 
         # generate the MD5Sum
-        my $MD5Sum = $Self->{MainObject}->MD5sum(
+        my $MD5Sum = $MainObject->MD5sum(
             String => \$File->{Content},
         );
 
@@ -2755,6 +2830,616 @@ sub PackageFileGetMD5Sum {
     );
 
     return \%MD5SumLookup;
+}
+
+=head2 AnalyzePackageFrameworkRequirements()
+
+Compare a framework array with the current framework.
+
+    my %CheckOk = $PackageObject->AnalyzePackageFrameworkRequirements(
+        Framework       => $Structure{Framework}, # [ { 'Content' => '4.0.x', 'Minimum' => '4.0.4'} ]
+        NoLog           => 1, # optional
+    );
+
+    %CheckOK = (
+        Success                     => 1,           # 1 || 0
+        RequiredFramework           => '5.0.x',
+        RequiredFrameworkMinimum    => '5.0.10',
+        RequiredFrameworkMaximum    => '5.0.16',
+    );
+
+=cut
+
+sub AnalyzePackageFrameworkRequirements {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    if ( !defined $Param{Framework} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Framework not defined!',
+        );
+        return;
+    }
+
+    # check format
+    if ( ref $Param{Framework} ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Need array ref in Framework param!',
+        );
+        return;
+    }
+
+    my %Response = (
+        Success => 0,
+    );
+
+    my $FWCheck           = 0;
+    my $CurrentFramework  = $Self->{ConfigObject}->Get('Version');
+    my $PossibleFramework = '';
+
+    if ( ref $Param{Framework} eq 'ARRAY' ) {
+
+        FW:
+        for my $FW ( @{ $Param{Framework} } ) {
+
+            next FW if !$FW;
+
+            # add framework versions for the log entry
+            $PossibleFramework .= $FW->{Content} . ';';
+            my $Framework = $FW->{Content};
+
+            # add required framework to response hash
+            $Response{RequiredFramework} = $Framework;
+
+            # regexp modify
+            $Framework =~ s/\./\\\./g;
+            $Framework =~ s/x/.+?/gi;
+
+            # skip to next framework, if we get no positive match
+            next FW if $CurrentFramework !~ /^$Framework$/i;
+
+            # framework is correct
+            $FWCheck = 1;
+
+            if ( !$Param{IgnoreMinimumMaximum} ) {
+
+                # get minimum and/or maximum values
+                # e.g. the opm contains <Framework Minimum="5.0.7" Maximum="5.0.12">5.0.x</Framework>
+                my $FrameworkMinimum = $FW->{Minimum} || '';
+                my $FrameworkMaximum = $FW->{Maximum} || '';
+
+                # check for minimum or maximum required framework, if it was defined
+                if ( $FrameworkMinimum || $FrameworkMaximum ) {
+
+                    # prepare hash for framework comparsion
+                    my %FrameworkComparsion;
+                    $FrameworkComparsion{MinimumFrameworkRequired} = $FrameworkMinimum;
+                    $FrameworkComparsion{MaximumFrameworkRequired} = $FrameworkMaximum;
+                    $FrameworkComparsion{CurrentFramework}         = $CurrentFramework;
+
+                    # prepare version parts hash
+                    my %VersionParts;
+
+                    TYPE:
+                    for my $Type (qw(MinimumFrameworkRequired MaximumFrameworkRequired CurrentFramework)) {
+
+                        # split version string
+                        my @ThisVersionParts = split /\./, $FrameworkComparsion{$Type};
+                        $VersionParts{$Type} = \@ThisVersionParts;
+                    }
+
+                    # check minimum required framework
+                    if ($FrameworkMinimum) {
+
+                        COUNT:
+                        for my $Count ( 0 .. 2 ) {
+
+                            $VersionParts{MinimumFrameworkRequired}->[$Count] ||= 0;
+                            $VersionParts{CurrentFramework}->[$Count]         ||= 0;
+
+                            # skip equal version parts
+                            next COUNT
+                                if $VersionParts{MinimumFrameworkRequired}->[$Count] eq
+                                $VersionParts{CurrentFramework}->[$Count];
+
+                            # skip current framework verion parts containing "x"
+                            next COUNT if $VersionParts{CurrentFramework}->[$Count] =~ /x/;
+
+                            if (
+                                $VersionParts{CurrentFramework}->[$Count]
+                                > $VersionParts{MinimumFrameworkRequired}->[$Count]
+                                )
+                            {
+                                $FWCheck = 1;
+                                last COUNT;
+                            }
+                            else {
+
+                                # add required minimum version for the log entry
+                                $PossibleFramework .= 'Minimum Version ' . $FrameworkMinimum . ';';
+
+                                # add required minimum version to response hash
+                                $Response{RequiredFrameworkMinimum} = $FrameworkMinimum;
+
+                                $FWCheck = 0;
+                            }
+                        }
+                    }
+
+                    # check maximum required framework, if the framework check is still positive so far
+                    if ( $FrameworkMaximum && $FWCheck ) {
+
+                        COUNT:
+                        for my $Count ( 0 .. 2 ) {
+
+                            $VersionParts{MaximumFrameworkRequired}->[$Count] ||= 0;
+                            $VersionParts{CurrentFramework}->[$Count]         ||= 0;
+
+                            next COUNT
+                                if $VersionParts{MaximumFrameworkRequired}->[$Count] eq
+                                $VersionParts{CurrentFramework}->[$Count];
+
+                            # skip current framework verion parts containing "x"
+                            next COUNT if $VersionParts{CurrentFramework}->[$Count] =~ /x/;
+
+                            if (
+                                $VersionParts{CurrentFramework}->[$Count]
+                                < $VersionParts{MaximumFrameworkRequired}->[$Count]
+                                )
+                            {
+
+                                $FWCheck = 1;
+                                last COUNT;
+                            }
+                            else {
+
+                                # add required maximum version for the log entry
+                                $PossibleFramework .= 'Maximum Version ' . $FrameworkMaximum . ';';
+
+                                # add required maximum version to response hash
+                                $Response{RequiredFrameworkMaximum} = $FrameworkMaximum;
+
+                                $FWCheck = 0;
+                            }
+
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+
+    if ($FWCheck) {
+        $Response{Success} = 1;
+    }
+    elsif ( !$Param{NoLog} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Sorry, can't install/upgrade package, because the framework version required"
+                . " by the package ($PossibleFramework) does not match your Framework ($CurrentFramework)!",
+        );
+    }
+
+    return %Response;
+}
+
+=head2 PackageUpgradeAll()
+
+Updates installed packages to their latest version. Also updates OTRS Business Solution™ if system
+    is entitled and there is an update.
+
+    my %Result = $PackageObject->PackageUpgradeAll(
+        Force => 1,     # optional 1 or 0, Upgrades packages even if validation fails.
+    );
+
+    %Result = (
+        Updated => {                # updated packages to the latest on-line repository version
+            PackageA => 1,
+            PackageB => 1,
+            PackageC => 1,
+            # ...
+        },
+        Installed => {              # packages installed as a result of missing dependencies
+            PackageD => 1,
+            # ...
+        },
+        AlreadyInstalled {          # packages that are already installed with the latest version
+            PackageE => 1,
+        }
+        Failed => {                 # or {} if no failures
+            Cyclic => {             # packages with cyclic dependencies
+                PackageF => 1,
+                # ...
+            },
+            NotFound => {           # packages not listed in the on-line repositories
+                PackageG => 1,
+                # ...
+            },
+            WrongVersion => {       # packages that requires a mayor version that the available in the on-line repositories
+                PackageH => 1,
+                # ...
+            },
+            DependencyFail => {     # packages with dependencies that fail on any of the above reasons
+                PackageI => 1,
+                # ...
+            },
+        },
+    );
+
+=cut
+
+sub PackageUpgradeAll {
+    my ( $Self, %Param ) = @_;
+
+    # Set system data as communication channel with the GUI
+    my $SystemDataObject = $Kernel::OM->Get('Kernel::System::SystemData');
+    my $DataGroup        = 'Package_UpgradeAll';
+    my %SystemData       = $SystemDataObject->SystemDataGroupGet(
+        Group => $DataGroup,
+    );
+    if (%SystemData) {
+        KEY:
+        for my $Key (qw(StartTime UpdateTime InstalledPackages UpgradeResult Status Success))
+        {    # remove any existing information
+            next KEY if !defined $SystemData{$Key};
+
+            my $Success = $SystemDataObject->SystemDataDelete(
+                Key    => "${DataGroup}::${Key}",
+                UserID => 1,
+            );
+            if ( !$Success ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Could not delete key ${DataGroup}::${Key} from SystemData!",
+                );
+            }
+        }
+    }
+    my $CurrentDateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+    $SystemDataObject->SystemDataAdd(
+        Key    => "${DataGroup}::StartTime",
+        Value  => $CurrentDateTimeObject->ToString(),
+        UserID => 1,
+    );
+    $SystemDataObject->SystemDataAdd(
+        Key    => "${DataGroup}::UpdateTime",
+        Value  => $CurrentDateTimeObject->ToString(),
+        UserID => 1,
+    );
+    $SystemDataObject->SystemDataAdd(
+        Key    => "${DataGroup}::Status",
+        Value  => "Running",
+        UserID => 1,
+    );
+
+    my %OnlinePackages = $Self->_PackageOnlineListGet();
+
+    my @PackageOnlineList   = @{ $OnlinePackages{PackageList} };
+    my %PackageSoruceLookup = %{ $OnlinePackages{PackageLookup} };
+
+    my @PackageInstalledList = $Self->RepositoryList(
+        Result => 'short',
+    );
+
+    my $JSONObject = $Kernel::OM->Get('Kernel::System::JSON');
+    my $JSON       = $JSONObject->Encode(
+        Data => \@PackageInstalledList,
+    );
+    $SystemDataObject->SystemDataAdd(
+        Key    => "${DataGroup}::InstalledPackages",
+        Value  => $JSON,
+        UserID => 1,
+    );
+    $SystemDataObject->SystemDataAdd(
+        Key    => "${DataGroup}::UpgradeResult",
+        Value  => '{}',
+        UserID => 1,
+    );
+
+    my %Result = $Self->PackageInstallOrderListGet(
+        InstalledPackages => \@PackageInstalledList,
+        OnlinePackages    => \@PackageOnlineList,
+    );
+
+    my %InstallOrder = %{ $Result{InstallOrder} };
+    my $Success      = 1;
+    if ( IsHashRefWithData( $Result{Failed} ) ) {
+        $Success = 0;
+    }
+
+    my %Failed = %{ $Result{Failed} };
+    my %Installed;
+    my %Updated;
+    my %AlreadyUpdated;
+
+    my %InstalledVersions = map { $_->{Name} => $_->{Version} } @PackageInstalledList;
+
+    PACKAGENAME:
+    for my $PackageName ( sort { $InstallOrder{$b} <=> $InstallOrder{$a} } keys %InstallOrder ) {
+
+        if ( $PackageName eq 'OTRSBusiness' ) {
+            my $UpdateSuccess = $Kernel::OM->Get('Kernel::System::OTRSBusiness')->OTRSBusinessUpdate();
+
+            if ( !$UpdateSuccess ) {
+                $Success = 0;
+                $Failed{UpdateError}->{$PackageName} = 1;
+                next PACKAGENAME;
+            }
+
+            $Updated{'OTRS Business Solution™'} = 1;
+            next PACKAGENAME;
+        }
+
+        my $MetaPackage = $PackageSoruceLookup{$PackageName};
+        next PACKAGENAME if !$MetaPackage;
+
+        if ( $MetaPackage->{Version} eq ( $InstalledVersions{$PackageName} || '' ) ) {
+            $AlreadyUpdated{$PackageName} = 1;
+            next PACKAGENAME;
+        }
+
+        my $Package = $Self->PackageOnlineGet(
+            Source => $MetaPackage->{URL},
+            File   => $MetaPackage->{File},
+        );
+
+        if ( !$InstalledVersions{$PackageName} ) {
+            my $InstallSuccess = $Self->PackageInstall(
+                String    => $Package,
+                FromCloud => $MetaPackage->{FromCloud},
+                Force     => $Param{Force} || 0,
+            );
+            if ( !$InstallSuccess ) {
+                $Success = 0;
+                $Failed{InstallError}->{$PackageName} = 1;
+                next PACKAGENAME;
+            }
+            $Installed{$PackageName} = 1;
+            next PACKAGENAME;
+        }
+
+        my $UpdateSuccess = $Self->PackageUpgrade(
+            String => $Package,
+            Force  => $Param{Force} || 0,
+        );
+        if ( !$UpdateSuccess ) {
+            $Success = 0;
+            $Failed{UpdateError}->{$PackageName} = 1;
+            next PACKAGENAME;
+        }
+        $Updated{$PackageName} = 1;
+        next PACKAGENAME;
+    }
+    continue {
+        my $JSON = $JSONObject->Encode(
+            Data => {
+                Updated        => \%Updated,
+                Installed      => \%Installed,
+                AlreadyUpdated => \%AlreadyUpdated,
+                Failed         => \%Failed,
+            },
+        );
+        $SystemDataObject->SystemDataUpdate(
+            Key    => "${DataGroup}::UpdateTime",
+            Value  => $Kernel::OM->Create('Kernel::System::DateTime')->ToString(),
+            UserID => 1,
+        );
+        $SystemDataObject->SystemDataUpdate(
+            Key    => "${DataGroup}::UpgradeResult",
+            Value  => $JSON,
+            UserID => 1,
+        );
+    }
+
+    $SystemDataObject->SystemDataAdd(
+        Key    => "${DataGroup}::Success",
+        Value  => $Success,
+        UserID => 1,
+    );
+    $SystemDataObject->SystemDataUpdate(
+        Key    => "${DataGroup}::Status",
+        Value  => 'Finished',
+        UserID => 1,
+    );
+
+    return (
+        Success        => $Success,
+        Updated        => \%Updated,
+        Installed      => \%Installed,
+        AlreadyUpdated => \%AlreadyUpdated,
+        Failed         => \%Failed,
+    );
+}
+
+=head2 PackageInstallOrderListGet()
+
+Gets a list of packages and its corresponding install order including is package dependencies. Higher
+    install order means to install first.
+
+    my %Result = $PackageObject->PackageInstallOrderListGet(
+        InstalledPackages => \@PakageList,      # as returned from RepositoryList(Result => 'short')
+        OnlinePackages    => \@PakageList,      # as returned from PackageOnlineList()
+    );
+
+    %Result = (
+        InstallOrder => {
+            PackageA => 3,
+            PackageB => 2,
+            PackageC => 1,
+            PackageD => 1,
+            # ...
+        },
+        Failed => {                 # or {} if no failures
+            Cyclic => {             # packages with cyclic dependencies
+                PackageE => 1,
+                # ...
+            },
+            NotFound => {           # packages not listed in the on-line repositories
+                PackageF => 1,
+                # ...
+            },
+            WrongVersion => {        # packages that requires a mayor version that the available in the on-line repositories
+                PackageG => 1,
+                # ...
+            },
+            DependencyFail => {     # packages with dependencies that fail on any of the above reasons
+                PackageH => 1,
+                # ...
+            }
+        },
+    );
+
+=cut
+
+sub PackageInstallOrderListGet {
+    my ( $Self, %Param ) = @_;
+
+    for my $Needed (qw(InstalledPackages OnlinePackages)) {
+        if ( !$Param{$Needed} || ref $Param{$Needed} ne 'ARRAY' ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "$Needed is missing or invalid!",
+            );
+            return;
+        }
+    }
+
+    my %InstalledVersions = map { $_->{Name} => $_->{Version} } @{ $Param{InstalledPackages} };
+
+    my %OnlinePackageLookup = map { $_->{Name} => $_ } @{ $Param{OnlinePackages} };
+
+    my %InstallOrder;
+    my %Failed;
+
+    my $OTRSBusinessObject = $Kernel::OM->Get('Kernel::System::OTRSBusiness');
+
+    if ( $OTRSBusinessObject->OTRSBusinessIsInstalled() && $OTRSBusinessObject->OTRSBusinessIsUpdateable() ) {
+        $InstallOrder{OTRSBusiness} = 9999;
+    }
+
+    my $DependenciesSuccess = $Self->_PackageInstallOrderListGet(
+        Callers             => {},
+        InstalledVersions   => \%InstalledVersions,
+        TargetPackages      => \%InstalledVersions,
+        InstallOrder        => \%InstallOrder,
+        OnlinePackageLookup => \%OnlinePackageLookup,
+        Failed              => \%Failed,
+        IsDependency        => 0,
+    );
+
+    return (
+        InstallOrder => \%InstallOrder,
+        Failed       => \%Failed,
+    );
+}
+
+=head2 PackageUpgradeAllDataDelete()
+
+Removes all Package Upgrade All data from the database.
+
+    my $Success = $PackageObject->PackageUpgradeAllDataDelete();
+
+=cut
+
+sub PackageUpgradeAllDataDelete {
+    my ( $Self, %Param ) = @_;
+
+    my $SystemDataObject = $Kernel::OM->Get('Kernel::System::SystemData');
+    my $DataGroup        = 'Package_UpgradeAll';
+    my %SystemData       = $SystemDataObject->SystemDataGroupGet(
+        Group => $DataGroup,
+    );
+
+    my $Success = 1;
+
+    KEY:
+    for my $Key (qw(StartTime UpdateTime InstalledPackages UpgradeResult Status Success)) {
+        next KEY if !$SystemData{$Key};
+
+        my $DeleteSuccess = $SystemDataObject->SystemDataDelete(
+            Key    => "${DataGroup}::${Key}",
+            UserID => 1,
+        );
+        if ( !$DeleteSuccess ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Could not delete key ${DataGroup}::${Key} from SystemData!",
+            );
+            $Success = 0;
+        }
+    }
+
+    return 1;
+}
+
+=head2 PackageUpgradeAllIsRunning()
+
+Check if there is a Package Upgrade All process running by checking the scheduler tasks and the
+system data.
+
+    my %Result = $PackageObject->PackageUpgradeAllIsRunning();
+
+Returns:
+    %Result = (
+        IsRunning      => 1,             # or 0 if it is not running
+        UpgradeStatus  => 'Running'      # (optional) 'Running' or 'Finished' or 'TimedOut',
+        UpgradeSuccess => 1,             # (optional) 1 or 0,
+    );
+
+=cut
+
+sub PackageUpgradeAllIsRunning {
+    my ( $Self, %Param ) = @_;
+
+    my $IsRunning;
+
+    # Check if there is a task for the scheduler daemon (process started from GUI).
+    my @List = $Kernel::OM->Get('Kernel::System::Scheduler')->TaskList(
+        Type => 'AsynchronousExecutor',
+    );
+    if ( grep { $_->{Name} eq 'Kernel::System::Package-PackageUpgradeAll()' } @List ) {
+        $IsRunning = 1;
+    }
+
+    my $SystemDataObject = $Kernel::OM->Get('Kernel::System::SystemData');
+    my %SystemData       = $SystemDataObject->SystemDataGroupGet(
+        Group => 'Package_UpgradeAll',
+    );
+
+    # If there is no task running but there is system data it might be that the is a running
+    #   process from the CLI.
+    if (
+        !$IsRunning
+        && %SystemData
+        && $SystemData{Status}
+        && $SystemData{Status} eq 'Running'
+        )
+    {
+        $IsRunning = 1;
+
+        # Check if the last update was more than 5 minutes ago (timed out).
+        my $CurrentDateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+        my $TargetDateTimeObject  = $Kernel::OM->Create(
+            'Kernel::System::DateTime',
+            ObjectParams => {
+                String => $SystemData{UpdateTime},
+                }
+        );
+        $TargetDateTimeObject->Add( Minutes => 5 );
+        if ( $CurrentDateTimeObject > $TargetDateTimeObject ) {
+            $IsRunning = 0;
+            $SystemData{Status} = 'TimedOut';
+        }
+    }
+
+    return (
+        IsRunning => $IsRunning // 0,
+        UpgradeStatus  => $SystemData{Status}  || '',
+        UpgradeSuccess => $SystemData{Success} || '',
+    );
 }
 
 =begin Internal:
@@ -2940,216 +3625,7 @@ sub _OSCheck {
     return;
 }
 
-=item _CheckFramework()
-
-Compare a framework array with the current framework.
-
-    my $CheckOk = $PackageObject->_CheckFramework(
-        Framework       => $Structure{Framework}, # [ { 'Content' => '4.0.x', 'Minimum' => '4.0.4'} ]
-        NoLog           => 1,                     # optional
-        ResultType      => 'HASH',                # optional
-    );
-
-ResultType 'HASH' returns:
-
-    $CheckOK = {
-        Success                     => 1,           # 1 || 0
-
-        RequiredFramework           => '5.0.x',
-        RequiredFrameworkMinimum    => '5.0.10',
-        RequiredFrameworkMaximum    => '5.0.16',
-    };
-
-DEPRECATED: For compatibility reasons, if this method is called without ResultType 'HASH' parameter, it will return 1
-if current framework is supported. This parameter will be required in next major version.
-
-=cut
-
-sub _CheckFramework {
-    my ( $Self, %Param ) = @_;
-
-    # check needed stuff
-    if ( !defined $Param{Framework} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Framework not defined!',
-        );
-        return;
-    }
-
-    # check format
-    if ( ref $Param{Framework} ne 'ARRAY' ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => 'Need array ref in Framework param!',
-        );
-        return;
-    }
-
-    my %Response = (
-        Success => 0,
-    );
-
-    my $ResultType        = $Param{ResultType} || '';
-    my $FWCheck           = 0;
-    my $CurrentFramework  = $Self->{ConfigObject}->Get('Version');
-    my $PossibleFramework = '';
-
-    if ( ref $Param{Framework} eq 'ARRAY' ) {
-
-        FW:
-        for my $FW ( @{ $Param{Framework} } ) {
-
-            next FW if !$FW;
-
-            # add framework versions for the log entry
-            $PossibleFramework .= $FW->{Content} . ';';
-            my $Framework = $FW->{Content};
-
-            # add required framework to response hash
-            $Response{RequiredFramework} = $Framework;
-
-            # regexp modify
-            $Framework =~ s/\./\\\./g;
-            $Framework =~ s/x/.+?/gi;
-
-            # skip to next framework, if we get no positive match
-            next FW if $CurrentFramework !~ /^$Framework$/i;
-
-            # framework is correct
-            $FWCheck = 1;
-
-            if ( !$Param{IgnoreMinimumMaximum} ) {
-
-                # get minimum and/or maximum values
-                # e.g. the opm contains <Framework Minimum="5.0.7" Maximum="5.0.12">5.0.x</Framework>
-                my $FrameworkMinimum = $FW->{Minimum} || '';
-                my $FrameworkMaximum = $FW->{Maximum} || '';
-
-                # check for minimum or maximum required framework, if it was defined
-                if ( $FrameworkMinimum || $FrameworkMaximum ) {
-
-                    # prepare hash for framework comparsion
-                    my %FrameworkComparsion;
-                    $FrameworkComparsion{MinimumFrameworkRequired} = $FrameworkMinimum;
-                    $FrameworkComparsion{MaximumFrameworkRequired} = $FrameworkMaximum;
-                    $FrameworkComparsion{CurrentFramework}         = $CurrentFramework;
-
-                    # prepare version parts hash
-                    my %VersionParts;
-
-                    TYPE:
-                    for my $Type (qw(MinimumFrameworkRequired MaximumFrameworkRequired CurrentFramework)) {
-
-                        # split version string
-                        my @ThisVersionParts = split /\./, $FrameworkComparsion{$Type};
-                        $VersionParts{$Type} = \@ThisVersionParts;
-                    }
-
-                    # check minimum required framework
-                    if ($FrameworkMinimum) {
-
-                        COUNT:
-                        for my $Count ( 0 .. 2 ) {
-
-                            $VersionParts{MinimumFrameworkRequired}->[$Count] ||= 0;
-                            $VersionParts{CurrentFramework}->[$Count]         ||= 0;
-
-                            # skip equal version parts
-                            next COUNT
-                                if $VersionParts{MinimumFrameworkRequired}->[$Count] eq
-                                $VersionParts{CurrentFramework}->[$Count];
-
-                            # skip current framework verion parts containing "x"
-                            next COUNT if $VersionParts{CurrentFramework}->[$Count] =~ /x/;
-
-                            if (
-                                $VersionParts{CurrentFramework}->[$Count]
-                                > $VersionParts{MinimumFrameworkRequired}->[$Count]
-                                )
-                            {
-                                $FWCheck = 1;
-                                last COUNT;
-                            }
-                            else {
-
-                                # add required minimum version for the log entry
-                                $PossibleFramework .= 'Minimum Version ' . $FrameworkMinimum . ';';
-
-                                # add required minimum version to response hash
-                                $Response{RequiredFrameworkMinimum} = $FrameworkMinimum;
-
-                                $FWCheck = 0;
-                            }
-                        }
-                    }
-
-                    # check maximum required framework, if the framework check is still positive so far
-                    if ( $FrameworkMaximum && $FWCheck ) {
-
-                        COUNT:
-                        for my $Count ( 0 .. 2 ) {
-
-                            $VersionParts{MaximumFrameworkRequired}->[$Count] ||= 0;
-                            $VersionParts{CurrentFramework}->[$Count]         ||= 0;
-
-                            next COUNT
-                                if $VersionParts{MaximumFrameworkRequired}->[$Count] eq
-                                $VersionParts{CurrentFramework}->[$Count];
-
-                            # skip current framework verion parts containing "x"
-                            next COUNT if $VersionParts{CurrentFramework}->[$Count] =~ /x/;
-
-                            if (
-                                $VersionParts{CurrentFramework}->[$Count]
-                                < $VersionParts{MaximumFrameworkRequired}->[$Count]
-                                )
-                            {
-
-                                $FWCheck = 1;
-                                last COUNT;
-                            }
-                            else {
-
-                                # add required maximum version for the log entry
-                                $PossibleFramework .= 'Maximum Version ' . $FrameworkMaximum . ';';
-
-                                # add required maximum version to response hash
-                                $Response{RequiredFrameworkMaximum} = $FrameworkMaximum;
-
-                                $FWCheck = 0;
-                            }
-
-                        }
-                    }
-                }
-            }
-
-        }
-    }
-
-    if ($FWCheck) {
-        $Response{Success} = 1;
-    }
-    elsif ( !$Param{NoLog} ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'error',
-            Message  => "Sorry, can't install/upgrade package, because the framework version required"
-                . " by the package ($PossibleFramework) does not match your Framework ($CurrentFramework)!",
-        );
-    }
-
-    if ( $ResultType eq 'HASH' ) {
-        return \%Response;
-    }
-    else {
-        return 1 if $FWCheck;
-    }
-
-    return;
-}
-
-=item _CheckVersion()
+=head2 _CheckVersion()
 
 Compare the two version strings $VersionNew and $VersionInstalled.
 The type is either 'Min' or 'Max'.
@@ -3499,6 +3975,9 @@ sub _FileInstall {
     my $RealFile = $Home . '/' . $Param{File}->{Location};
     $RealFile =~ s/\/\//\//g;
 
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
     # backup old file (if reinstall, don't overwrite .backup and .save files)
     if ( -e $RealFile ) {
         if ( $Param{File}->{Type} && $Param{File}->{Type} =~ /^replace$/i ) {
@@ -3513,7 +3992,7 @@ sub _FileInstall {
             if ( $Param{Reinstall} && !-e "$RealFile.save" ) {
 
                 # check if it's not the same
-                my $Content = $Self->{MainObject}->FileRead(
+                my $Content = $MainObject->FileRead(
                     Location => $RealFile,
                     Mode     => 'binmode',
                 );
@@ -3561,7 +4040,7 @@ sub _FileInstall {
     }
 
     # write file
-    return if !$Self->{MainObject}->FileWrite(
+    return if !$MainObject->FileWrite(
         Location   => $RealFile,
         Content    => \$Param{File}->{Content},
         Mode       => 'binmode',
@@ -3620,9 +4099,12 @@ sub _FileRemove {
         return;
     }
 
+    # get main object
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
     # check if we should backup this file, if it is touched/different
     if ( $Param{File}->{Content} ) {
-        my $Content = $Self->{MainObject}->FileRead(
+        my $Content = $MainObject->FileRead(
             Location => $RealFile,
             Mode     => 'binmode',
         );
@@ -3645,7 +4127,7 @@ sub _FileRemove {
     }
 
     # remove old file
-    if ( !$Self->{MainObject}->FileDelete( Location => $RealFile ) ) {
+    if ( !$MainObject->FileDelete( Location => $RealFile ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Can't remove file $RealFile: $!!",
@@ -3689,7 +4171,7 @@ sub _ReadDistArchive {
     }
 
     # read ARCHIVE file
-    my $Content = $Self->{MainObject}->FileRead(
+    my $Content = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
         Directory => $Home,
         Filename  => 'ARCHIVE',
         Result    => 'ARRAY',
@@ -3736,31 +4218,28 @@ sub _FileSystemCheck {
         return;
     }
 
-    # create test files in following directories
-    for my $Filepath (
-        qw(/bin/ /Kernel/ /Kernel/System/ /Kernel/Output/ /Kernel/Output/HTML/ /Kernel/Modules/)
-        )
-    {
-        my $Location = $Home . $Filepath . "check_permissions.$$";
-        my $Content  = 'test';
+    my @Filepaths = (
+        '/bin/',
+        '/Kernel/',
+        '/Kernel/System/',
+        '/Kernel/Output/',
+        '/Kernel/Output/HTML/',
+        '/Kernel/Modules/',
+    );
 
-        # create test file
-        my $Write = $Self->{MainObject}->FileWrite(
-            Location => $Location,
-            Content  => \$Content,
+    # check write permissions
+    FILEPATH:
+    for my $Filepath (@Filepaths) {
+
+        next FILEPATH if -w $Home . $Filepath;
+
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "ERROR: Need write permissions for directory $Home$Filepath\n"
+                . " Try: $Home/bin/otrs.SetPermissions.pl!",
         );
 
-        if ( !$Write ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'error',
-                Message  => "ERROR: Need write permissions for directory $Home$Filepath\n"
-                    . " Try: $Home/bin/otrs.SetPermissions.pl!",
-            );
-            return;
-        }
-
-        # delete test file
-        $Self->{MainObject}->FileDelete( Location => $Location );
+        return;
     }
 
     $Self->{FileSystemCheckAlreadyDone} = 1;
@@ -3781,7 +4260,7 @@ sub _Encode {
     return $Text;
 }
 
-=item _PackageUninstallMerged()
+=head2 _PackageUninstallMerged()
 
 ONLY CALL THIS METHOD FROM A DATABASE UPGRADING SCRIPT DURING FRAMEWORK UPDATES
 OR FROM A CODEUPGRADE SECTION IN AN SOPM FILE OF A PACKAGE THAT INCLUDES A MERGED FEATURE ADDON.
@@ -3847,6 +4326,9 @@ sub _PackageUninstallMerged {
     # remove unneeded files (if exists)
     if ( IsArrayRefWithData( $PackageDetails{Filelist} ) ) {
 
+        # get main object
+        my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
         FILE:
         for my $FileHash ( @{ $PackageDetails{Filelist} } ) {
 
@@ -3869,7 +4351,7 @@ sub _PackageUninstallMerged {
                         if ( -e $SavedFile ) {
 
                             # remove old file
-                            if ( !$Self->{MainObject}->FileDelete( Location => $SavedFile ) ) {
+                            if ( !$MainObject->FileDelete( Location => $SavedFile ) ) {
                                 $Kernel::OM->Get('Kernel::System::Log')->Log(
                                     Priority => 'error',
                                     Message  => "Can't remove file $SavedFile: $!!",
@@ -3886,7 +4368,7 @@ sub _PackageUninstallMerged {
                 }
 
                 # remove old file
-                if ( !$Self->{MainObject}->FileDelete( Location => $RealFile ) ) {
+                if ( !$MainObject->FileDelete( Location => $RealFile ) ) {
                     $Kernel::OM->Get('Kernel::System::Log')->Log(
                         Priority => 'error',
                         Message  => "Can't remove file $RealFile: $!!",
@@ -3904,7 +4386,13 @@ sub _PackageUninstallMerged {
     );
 
     $Kernel::OM->Get('Kernel::System::Cache')->CleanUp(
-        KeepTypes => ['XMLParse'],
+        KeepTypes => [
+            'XMLParse',
+            'SysConfigDefaultListGet',
+            'SysConfigDefaultList',
+            'SysConfigDefault',
+            'SysConfigPersistent',
+        ],
     );
     $Kernel::OM->Get('Kernel::System::Loader')->CacheDelete();
 
@@ -4146,7 +4634,7 @@ sub _CheckDBMerged {
     return \@Parts;
 }
 
-=item RepositoryCloudList()
+=head2 RepositoryCloudList()
 
 returns a list of available cloud repositories
 
@@ -4191,7 +4679,7 @@ sub RepositoryCloudList {
     return $RepositoryResult;
 }
 
-=item CloudFileGet()
+=head2 CloudFileGet()
 
 returns a file from cloud
 
@@ -4287,6 +4775,397 @@ sub CloudFileGet {
 
 }
 
+sub _ConfigurationDeploy {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(Package Action)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!",
+            );
+            return;
+        }
+    }
+
+    my $SysConfigObject = Kernel::System::SysConfig->new();
+
+    if (
+        !$SysConfigObject->ConfigurationXML2DB(
+            UserID  => 1,
+            Force   => 1,
+            CleanUp => 1,
+        )
+        )
+    {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "There was a problem writing XML to DB.",
+        );
+        return;
+    }
+
+    # get OTRS home directory
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+
+    # build file location for OTRS5 config file
+    my $OTRS5ConfigFile = "$Home/Kernel/Config/Backups/ZZZAutoOTRS5.pm";
+
+    # if this is a Packageupgrade and if there is a ZZZAutoOTRS5.pm file in the backup location
+    # (this file has been copied there during the migration from OTRS 5 to OTRS 6)
+    if ( ( IsHashRefWithData( $Self->{MergedPackages} ) || $Param{Action} eq 'PackageUpgrade' ) && -e $OTRS5ConfigFile )
+    {
+
+        # delete categories cache
+        $Kernel::OM->Get('Kernel::System::Cache')->Delete(
+            Type => 'SysConfig',
+            Key  => 'ConfigurationCategoriesGet',
+        );
+
+        # get all config categories
+        my %Categories = $SysConfigObject->ConfigurationCategoriesGet();
+
+        # to store all setting names from this package
+        my @PackageSettings;
+
+        # get all config files names for this package
+        CONFIGXMLFILE:
+        for my $ConfigXMLFile ( @{ $Categories{ $Param{Package} }->{Files} } ) {
+
+            my $FileLocation = "$Home/Kernel/Config/Files/XML/$ConfigXMLFile";
+
+            # get the content of the XML file
+            my $ContentRef = $Kernel::OM->Get('Kernel::System::Main')->FileRead(
+                Location => $FileLocation,
+                Mode     => 'utf8',
+                Result   => 'SCALAR',
+            );
+
+            # check error, but continue
+            if ( !$ContentRef ) {
+                $Kernel::OM->Get('Kernel::System::Log')->Log(
+                    Priority => 'error',
+                    Message  => "Could not read content of $FileLocation!",
+                );
+                next CONFIGXMLFILE;
+            }
+
+            # get all settings from this package
+            my @SettingList = $Kernel::OM->Get('Kernel::System::SysConfig::XML')->SettingListParse(
+                XMLInput    => ${$ContentRef},
+                XMLFilename => $ConfigXMLFile,
+            );
+
+            # get all the setting names from this file
+            for my $Setting (@SettingList) {
+                push @PackageSettings, $Setting->{XMLContentParsed}->{Name};
+            }
+        }
+
+        # sort the settings
+        @PackageSettings = sort @PackageSettings;
+
+        # run the migration of the effective values (only for the package settings)
+        my $Success = $Kernel::OM->Get('Kernel::System::SysConfig::Migration')->MigrateConfigEffectiveValues(
+            FileClass       => 'Kernel::Config::Backups::ZZZAutoOTRS5',
+            FilePath        => $OTRS5ConfigFile,
+            PackageSettings => \@PackageSettings,                         # only migrate the given package settings
+            NoOutput => 1,    # we do not want to print status output to the screen
+        );
+
+        # deploy only the package settings
+        # (even if the migration of the effective values was not or only party successfull)
+        $Success = $SysConfigObject->ConfigurationDeploy(
+            Comments      => $Param{Comments},
+            NoValidation  => 1,
+            UserID        => 1,
+            Force         => 1,
+            DirtySettings => \@PackageSettings,
+        );
+
+        # check error
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Could not deploy configuration!",
+            );
+            return;
+        }
+    }
+
+    else {
+
+        my $Success = $SysConfigObject->ConfigurationDeploy(
+            Comments => $Param{Comments},
+            NotDirty => 1,
+            UserID   => 1,
+            Force    => 1,
+        );
+        if ( !$Success ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Could not deploy configuration!",
+            );
+            return;
+        }
+    }
+
+    return 1;
+}
+
+=head2 _PackageInstallOrderListGet()
+
+Helper function for PackageInstallOrderListGet() to process the packages and its dependencies recursively.
+
+    my $Success = $PackageObject->_PackageInstallOrderListGet(
+        Callers           => {      # packages in the recursive chain
+            PackageA => 1,
+            # ...
+        },
+        InstalledVersions => {      # list of installed packages and their versions
+            PackageA => '1.0.1',
+            # ...
+        },
+        TargetPackages => {
+            PackageA => '1.0.1',    # list of packages to process
+            # ...
+        }
+        InstallOrder => {           # current install order
+            PackageA => 2,
+            PacakgeB => 1,
+            # ...
+        },
+        Failed => {                 # current failed packages or dependencies
+            Cyclic => {},
+            NotFound => {},
+            WrongVersion => {},
+            DependencyFail => {},
+        },
+        OnlinePackageLookup => {
+            PackageA => {
+                Name    => 'PackageA',
+                Version => '1.0.1',
+                PackageRequired => [
+                    {
+                        Content => 'PackageB',
+                        Version => '1.0.2',
+                    },
+                    # ...
+                ],
+            },
+        },
+        IsDependency => 1,      # 1 or 0
+    );
+
+=cut
+
+sub _PackageInstallOrderListGet {
+    my ( $Self, %Param ) = @_;
+
+    my $Success = 1;
+    PACKAGENAME:
+    for my $PackageName ( sort keys %{ $Param{TargetPackages} } ) {
+
+        next PACKAGENAME if $PackageName eq 'OTRSBusiness';
+
+        # Prevent cyclic dependencies.
+        if ( $Param{Callers}->{$PackageName} ) {
+            $Param{Failed}->{Cyclic}->{$PackageName} = 1;
+            $Success = 0;
+            next PACKAGENAME;
+        }
+
+        my $OnlinePackage = $Param{OnlinePackageLookup}->{$PackageName};
+
+        # Check if the package can be obtained on-line.
+        if ( !$OnlinePackage || !IsHashRefWithData($OnlinePackage) ) {
+            $Param{Failed}->{NotFound}->{$PackageName} = 1;
+            $Success = 0;
+            next PACKAGENAME;
+        }
+
+        # Check if the version of the on-line package is grater (or equal) to the required version,
+        #   in case of equal, reference still counts, but at update or install package must be
+        #   skipped.
+        if ( $OnlinePackage->{Version} ne $Param{TargetPackages}->{$PackageName} ) {
+            my $CheckOk = $Self->_CheckVersion(
+                VersionNew       => $OnlinePackage->{Version},
+                VersionInstalled => $Param{TargetPackages}->{$PackageName},
+                Type             => 'Max',
+            );
+            if ( !$CheckOk ) {
+                $Param{Failed}->{WrongVersion}->{$PackageName} = 1;
+                $Success = 0;
+                next PACKAGENAME;
+            }
+        }
+
+        my %PackageDependencies = map { $_->{Content} => $_->{Version} } @{ $OnlinePackage->{PackageRequired} };
+
+        # Update callers list locally to start recursion
+        my %Callers = (
+            %{ $Param{Callers} },
+            $PackageName => 1,
+        );
+
+        # Start recursion with package dependencies.
+        my $DependenciesSuccess = $Self->_PackageInstallOrderListGet(
+            Callers             => \%Callers,
+            InstalledVersions   => $Param{InstalledVersions},
+            TargetPackages      => \%PackageDependencies,
+            InstallOrder        => $Param{InstallOrder},
+            OnlinePackageLookup => $Param{OnlinePackageLookup},
+            Failed              => $Param{Failed},
+            IsDependency        => 1,
+        );
+
+        if ( !$DependenciesSuccess ) {
+            $Param{Failed}->{DependencyFail}->{$PackageName} = 1;
+            $Success = 0;
+
+            # Do not process more dependencies.
+            last PACKAGENAME if $Param{IsDependency};
+
+            # Keep processing other initial packages.
+            next PACKAGENAME;
+        }
+
+        if ( $Param{InstallOrder}->{$PackageName} ) {
+
+            # Only increase the counter if is a dependency, if its a first level package then skip,
+            #   as it was already set from the dependencies of another package.
+            if ( $Param{IsDependency} ) {
+                $Param{InstallOrder}->{$PackageName}++;
+            }
+
+            next PACKAGENAME;
+        }
+
+        # If package wasn't set before it initial value must be 1, but in case the package is added
+        #   because its a dependency then it must be sum of all packages that requires it at the
+        #   moment + 1 e.g.
+        #   ITSMCore -> GeneralCatalog, Then GeneralCatalog needs to be 2
+        #   ITSMIncidenProblemManagement -> ITSMCore -> GeneralCatalog, Then GeneralCatalog needs to be 3
+        my $InitialValue = $Param{IsDependency} ? scalar keys %Callers : 1;
+        $Param{InstallOrder}->{$PackageName} = $InitialValue;
+    }
+
+    return $Success
+}
+
+=head2 _PackageOnlineListGet()
+
+Helper function that gets the full list of available on-line packages.
+
+    my %OnlinePackages = $PackageObject->_PackageOnlineListGet();
+
+Returns:
+
+    %OnlinePackages = (
+        PackageList => [
+            {
+                Name => 'Test',
+                Version => '6.0.20',
+                File => 'Test-6.0.20.opm',
+                ChangeLog => 'InitialRelease',
+                Description => 'Test package.',
+                Framework => [
+                    {
+                        Content => '6.0.x',
+                        Minimum => '6.0.2',
+                        # ... ,
+                    }
+                ],
+                License => 'GNU AFFERO GENERAL PUBLIC LICENSE Version 3, November 2007',
+                PackageRequired => [
+                    {
+                        Content => 'TestRequitement',
+                        Version => '6.0.20',
+                        # ... ,
+                    },
+                ],
+                URL => 'http://otrs.org/',
+                Vendor => 'OTRS AG',
+            },
+            # ...
+        ];
+        PackageLookup  => {
+            Test => {
+                   URL        => 'http://otrs.org/',
+                    FromCloud => 1,                     # 1 or 0,
+                    Version   => '6.0.20',
+                    File      => 'Test-6.0.20.opm',
+            },
+            # ...
+        },
+    );
+
+=cut
+
+sub _PackageOnlineListGet {
+
+    my ( $Self, %Param ) = @_;
+
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+    my %RepositoryList;
+    if ( $ConfigObject->Get('Package::RepositoryList') ) {
+        %RepositoryList = %{ $ConfigObject->Get('Package::RepositoryList') };
+    }
+    if ( $ConfigObject->Get('Package::RepositoryRoot') ) {
+        %RepositoryList = ( %RepositoryList, $Self->PackageOnlineRepositories() );
+    }
+
+    # Show cloud repositories if system is registered.
+    my $RepositoryCloudList;
+    my $RegistrationState = $Kernel::OM->Get('Kernel::System::SystemData')->SystemDataGet(
+        Key => 'Registration::State',
+    ) || '';
+
+    if ( $RegistrationState eq 'registered' && !$Self->{CloudServicesDisabled} ) {
+        $RepositoryCloudList = $Self->RepositoryCloudList( NoCache => 1 );
+
+    }
+
+    my %RepositoryListAll = ( %RepositoryList, %{ $RepositoryCloudList || {} } );
+
+    my @PackageOnlineList;
+    my %PackageSoruceLookup;
+
+    for my $URL ( sort keys %RepositoryListAll ) {
+
+        my $FromCloud = 0;
+        if ( $RepositoryCloudList->{$URL} ) {
+            $FromCloud = 1;
+
+        }
+
+        my @OnlineList = $Self->PackageOnlineList(
+            URL                => $URL,
+            Lang               => 'en',
+            Cache              => 1,
+            FromCloud          => $FromCloud,
+            IncludeSameVersion => 1,
+        );
+
+        @PackageOnlineList = ( @PackageOnlineList, @OnlineList );
+
+        for my $Package (@OnlineList) {
+            $PackageSoruceLookup{ $Package->{Name} } = {
+                URL       => $URL,
+                FromCloud => $FromCloud,
+                Version   => $Package->{Version},
+                File      => $Package->{File},
+            };
+        }
+    }
+
+    return (
+        PackageList   => \@PackageOnlineList,
+        PackageLookup => \%PackageSoruceLookup,
+    );
+}
+
 sub DESTROY {
     my $Self = shift;
 
@@ -4299,8 +5178,6 @@ sub DESTROY {
 1;
 
 =end Internal:
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

@@ -16,31 +16,28 @@ use vars qw(@ISA);
 use Exporter qw(import);
 our @EXPORT_OK = qw(Translatable);    ## no critic
 
+use File::stat;
+use Digest::MD5;
+
+use Kernel::System::DateTime;
+
 our @ObjectDependencies = (
     'Kernel::Config',
     'Kernel::System::Log',
     'Kernel::System::Main',
-    'Kernel::System::Time',
 );
-
-my @DAYS = qw/Sun Mon Tue Wed Thu Fri Sat/;
-my @MONS = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
 
 =head1 NAME
 
 Kernel::Language - global language interface
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All language functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create a language object. Do not use it directly, instead use:
 
@@ -68,11 +65,6 @@ sub new {
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
     my $MainObject   = $Kernel::OM->Get('Kernel::System::Main');
 
-    # check if LanguageDebug is configured
-    if ( $ConfigObject->Get('LanguageDebug') ) {
-        $Self->{LanguageDebug} = 1;
-    }
-
     # user language
     $Self->{UserLanguage} = $Param{UserLanguage}
         || $ConfigObject->Get('DefaultLanguage')
@@ -85,7 +77,7 @@ sub new {
     }
 
     # take time zone
-    $Self->{TimeZone} = $Param{UserTimeZone} || $Param{TimeZone} || 0;
+    $Self->{TimeZone} = $Param{UserTimeZone} || $Param{TimeZone} || Kernel::System::DateTime->OTRSTimeZoneGet();
 
     # Debug
     if ( $Self->{Debug} > 0 ) {
@@ -207,7 +199,7 @@ sub new {
     return $Self;
 }
 
-=item Translatable()
+=head2 Translatable()
 
 this is a no-op to mark a text as translatable in the Perl code.
 
@@ -217,7 +209,7 @@ sub Translatable {
     return shift;
 }
 
-=item Translate()
+=head2 Translate()
 
 translate a text with placeholders.
 
@@ -242,108 +234,7 @@ sub Translate {
     return $Text;
 }
 
-=item Get()
-
-WARNING: THIS METHOD IS DEPRECATED AND WILL BE REMOVED IN FUTURE VERSION OF OTRS! USE Translate() INSTEAD.
-
-Translate a string.
-
-    my $Text = $LanguageObject->Get('Hello');
-
-    Example: (the quoting looks strange, but is in fact correct!)
-
-    my $String = 'History::NewTicket", "2011031110000023", "Postmaster", "3 normal", "open", "9';
-
-    my $TranslatedString = $LanguageObject->Translate( $String );
-
-=cut
-
-sub Get {
-    my ( $Self, $What ) = @_;
-
-    # check
-    return if !defined $What;
-    return '' if $What eq '';
-
-    # check dyn spaces
-    my @Dyn;
-    if ( $What && $What =~ /^(.+?)",\s{0,1}"(.*?)$/ ) {
-        $What = $1;
-        @Dyn = split( /",\s{0,1}"/, $2 );
-    }
-
-    # check wanted param and returns the
-    # lookup or the english data
-    if ( $Self->{Translation}->{$What} ) {
-
-        # Debug
-        if ( $Self->{Debug} > 3 ) {
-            $Kernel::OM->Get('Kernel::System::Log')->Log(
-                Priority => 'Debug',
-                Message  => "->Get('$What') = ('$Self->{Translation}->{$What}').",
-            );
-        }
-
-        my $Text = $Self->{Translation}->{$What};
-        if (@Dyn) {
-            COUNT:
-            for ( 0 .. $#Dyn ) {
-
-                # be careful $Dyn[$_] can be 0! bug#3826
-                last COUNT if !defined $Dyn[$_];
-
-                if ( $Dyn[$_] =~ /Time\((.*)\)/ ) {
-                    $Dyn[$_] = $Self->Time(
-                        Action => 'GET',
-                        Format => $1,
-                    );
-                    $Text =~ s/\%(s|d)/$Dyn[$_]/;
-                }
-                else {
-                    $Text =~ s/\%(s|d)/$Dyn[$_]/;
-                }
-            }
-        }
-
-        return $Text;
-    }
-
-    # warn if the value is not def
-    if ( $Self->{Debug} > 1 ) {
-        $Kernel::OM->Get('Kernel::System::Log')->Log(
-            Priority => 'debug',
-            Message  => "->Get('$What') Is not translated!!!",
-        );
-    }
-
-    if ( $Self->{LanguageDebug} ) {
-        print STDERR "No translation available for '$What'\n";
-    }
-
-    if (@Dyn) {
-        COUNT:
-        for ( 0 .. $#Dyn ) {
-
-            # be careful $Dyn[$_] can be 0! bug#3826
-            last COUNT if !defined $Dyn[$_];
-
-            if ( $Dyn[$_] =~ /Time\((.*)\)/ ) {
-                $Dyn[$_] = $Self->Time(
-                    Action => 'GET',
-                    Format => $1,
-                );
-                $What =~ s/\%(s|d)/$Dyn[$_]/;
-            }
-            else {
-                $What =~ s/\%(s|d)/$Dyn[$_]/;
-            }
-        }
-    }
-
-    return $What;
-}
-
-=item FormatTimeString()
+=head2 FormatTimeString()
 
 formats a timestamp according to the specified date format for the current
 language (locale).
@@ -372,45 +263,65 @@ sub FormatTimeString {
 
     # Valid timestamp
     if ( $String =~ /(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2}):(\d{2})/ ) {
-        my ( $Y, $M, $D, $h, $m, $s ) = ( $1, $2, $3, $4, $5, $6 );
-        my $WD;    # day of week
-
         my $ReturnString = $Self->{$Config} || "$Config needs to be translated!";
 
-        # get time object
-        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-
-        my $TimeStamp = $TimeObject->TimeStamp2SystemTime(
-            String => "$Y-$M-$D $h:$m:$s",
+        my $DateTimeObject = $Kernel::OM->Create(
+            'Kernel::System::DateTime',
+            ObjectParams => {
+                String => $String,
+            },
         );
 
-        # Add user time zone diff, but only if we actually display the time!
+        if ( !$DateTimeObject ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Invalid date/time string $String.",
+            );
+
+            return $String;
+        }
+
+        # Convert to time zone, but only if we actually display the time!
         # Otherwise the date might be off by one day because of the TimeZone diff.
         if ( $Self->{TimeZone} && $Config ne 'DateFormatShort' ) {
-            $TimeStamp = $TimeStamp + ( $Self->{TimeZone} * 60 * 60 );
+            $DateTimeObject->ToTimeZone( TimeZone => $Self->{TimeZone} );
         }
 
-        ( $s, $m, $h, $D, $M, $Y, $WD ) = $TimeObject->SystemTime2Date(
-            SystemTime => $TimeStamp,
-        );
+        my $DateTimeValues = $DateTimeObject->Get();
+
+        my $Year      = $DateTimeValues->{Year};
+        my $Month     = sprintf "%02d", $DateTimeValues->{Month};
+        my $MonthAbbr = $DateTimeValues->{MonthAbbr};
+        my $Day       = sprintf "%02d", $DateTimeValues->{Day};
+        my $DayAbbr   = $DateTimeValues->{DayAbbr};
+        my $Hour      = sprintf "%02d", $DateTimeValues->{Hour};
+        my $Minute    = sprintf "%02d", $DateTimeValues->{Minute};
+        my $Second    = sprintf "%02d", $DateTimeValues->{Second};
 
         if ($Short) {
-            $ReturnString =~ s/\%T/$h:$m/g;
+            $ReturnString =~ s/\%T/$Hour:$Minute/g;
         }
         else {
-            $ReturnString =~ s/\%T/$h:$m:$s/g;
+            $ReturnString =~ s/\%T/$Hour:$Minute:$Second/g;
         }
-        $ReturnString =~ s/\%D/$D/g;
-        $ReturnString =~ s/\%M/$M/g;
-        $ReturnString =~ s/\%Y/$Y/g;
+        $ReturnString =~ s/\%D/$Day/g;
+        $ReturnString =~ s/\%M/$Month/g;
+        $ReturnString =~ s/\%Y/$Year/g;
 
-        $ReturnString =~ s{(\%A)}{defined $WD ? $Self->Translate($DAYS[$WD]) : '';}egx;
+        $ReturnString =~ s{(\%A)}{$Self->Translate($DayAbbr);}egx;
         $ReturnString
-            =~ s{(\%B)}{(defined $M && $M =~ m/^\d+$/) ? $Self->Translate($MONS[$M-1]) : '';}egx;
+            =~ s{(\%B)}{$Self->Translate($MonthAbbr);}egx;
 
-        if ( $Self->{TimeZone} && $Config ne 'DateFormatShort' ) {
+        # output time zone only if it differs from OTRS' time zone
+        if (
+            $Config ne 'DateFormatShort'
+            && $Self->{TimeZone}
+            && $Self->{TimeZone} ne Kernel::System::DateTime->OTRSTimeZoneGet()
+            )
+        {
             return $ReturnString . " ($Self->{TimeZone})";
         }
+
         return $ReturnString;
     }
 
@@ -426,7 +337,7 @@ sub FormatTimeString {
 
 }
 
-=item GetRecommendedCharset()
+=head2 GetRecommendedCharset()
 
 DEPRECATED. Don't use this function any more, 'utf-8' is always the internal charset.
 
@@ -443,7 +354,7 @@ sub GetRecommendedCharset {
     return 'utf-8';
 }
 
-=item GetPossibleCharsets()
+=head2 GetPossibleCharsets()
 
 Returns an array of possible charsets (based on translation file).
 
@@ -458,7 +369,7 @@ sub GetPossibleCharsets {
     return;
 }
 
-=item Time()
+=head2 Time()
 
 Returns a time string in language format (based on translation file).
 
@@ -519,60 +430,107 @@ sub Time {
         }
     }
     my $ReturnString = $Self->{ $Param{Format} } || 'Need to be translated!';
-    my ( $s, $m, $h, $D, $M, $Y, $WD, $YD, $DST );
+    my ( $Year, $Month, $MonthAbbr, $Day, $DayAbbr, $Hour, $Minute, $Second );
 
     # set or get time
     if ( lc $Param{Action} eq 'get' ) {
 
-        # get time object
-        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-
-        ( $s, $m, $h, $D, $M, $Y, $WD, $YD, $DST ) = $TimeObject->SystemTime2Date(
-            SystemTime => $TimeObject->SystemTime(),
+        my $DateTimeObject = $Kernel::OM->Create(
+            'Kernel::System::DateTime',
+            ObjectParams => {
+                TimeZone => $Self->{TimeZone},
+            },
         );
+        my $DateTimeValues = $DateTimeObject->Get();
+
+        $Year      = $DateTimeValues->{Year};
+        $Month     = sprintf "%02d", $DateTimeValues->{Month};
+        $MonthAbbr = $DateTimeValues->{MonthAbbr};
+        $Day       = sprintf "%02d", $DateTimeValues->{Day};
+        $DayAbbr   = $DateTimeValues->{DayAbbr};
+        $Hour      = sprintf "%02d", $DateTimeValues->{Hour};
+        $Minute    = sprintf "%02d", $DateTimeValues->{Minute};
+        $Second    = sprintf "%02d", $DateTimeValues->{Second};
     }
     elsif ( lc $Param{Action} eq 'return' ) {
-        $s = $Param{Second} || 0;
-        $m = $Param{Minute} || 0;
-        $h = $Param{Hour}   || 0;
-        $D = $Param{Day}    || 0;
-        $M = $Param{Month}  || 0;
-        $Y = $Param{Year}   || 0;
+        $Year   = $Param{Year}   || 0;
+        $Month  = $Param{Month}  || 0;
+        $Day    = $Param{Day}    || 0;
+        $Hour   = $Param{Hour}   || 0;
+        $Minute = $Param{Minute} || 0;
+        $Second = $Param{Second} || 0;
+
+        my @MonthAbbrs = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
+        $MonthAbbr = defined $Month && $Month =~ m/^\d+$/ ? $MonthAbbrs[ $Month - 1 ] : '';
     }
 
     # do replace
     if ( ( lc $Param{Action} eq 'get' ) || ( lc $Param{Action} eq 'return' ) ) {
         my $Time = '';
         if ( $Param{Mode} && $Param{Mode} =~ /^NotNumeric$/i ) {
-            if ( !$s ) {
-                $Time = "$h:$m";
+            if ( !$Second ) {
+                $Time = "$Hour:$Minute";
             }
             else {
-                $Time = "$h:$m:$s";
+                $Time = "$Hour:$Minute:$Second";
             }
         }
         else {
-            $Time = sprintf( "%02d:%02d:%02d", $h, $m, $s );
-            $D    = sprintf( "%02d",           $D );
-            $M    = sprintf( "%02d",           $M );
+            $Time  = sprintf( "%02d:%02d:%02d", $Hour, $Minute, $Second );
+            $Day   = sprintf( "%02d",           $Day );
+            $Month = sprintf( "%02d",           $Month );
         }
         $ReturnString =~ s/\%T/$Time/g;
-        $ReturnString =~ s/\%D/$D/g;
-        $ReturnString =~ s/\%M/$M/g;
-        $ReturnString =~ s/\%Y/$Y/g;
-        $ReturnString =~ s/\%Y/$Y/g;
-        $ReturnString =~ s{(\%A)}{defined $WD ? $Self->Translate($DAYS[$WD]) : '';}egx;
+        $ReturnString =~ s/\%D/$Day/g;
+        $ReturnString =~ s/\%M/$Month/g;
+        $ReturnString =~ s/\%Y/$Year/g;
+        $ReturnString =~ s{(\%A)}{defined $DayAbbr ? $Self->Translate($DayAbbr) : '';}egx;
         $ReturnString
-            =~ s{(\%B)}{(defined $M && $M =~ m/^\d+$/) ? $Self->Translate($MONS[$M-1]) : '';}egx;
+            =~ s{(\%B)}{defined $MonthAbbr ? $Self->Translate($MonthAbbr) : '';}egx;
         return $ReturnString;
     }
 
     return $ReturnString;
 }
 
-1;
+=head2 LanguageChecksum()
 
-=back
+This function returns an MD5 sum that is generated from all loaded language files and their modification timestamps.
+Whenever a file is changed, added or removed, this checksum will change.
+
+=cut
+
+sub LanguageChecksum {
+    my $Self = shift;
+
+    my $Home = $Kernel::OM->Get('Kernel::Config')->Get('Home');
+
+    my @Files;
+    for my $Class (@ISA) {
+        my $File = "$Home/$Class.pm";
+        $File =~ s{::}{/}smxg;
+        push @Files, $File;
+    }
+
+    # Create a string with filenames and file mtimes of the config files
+    my $LanguageString;
+    for my $File (@Files) {
+
+        # get file metadata
+        my $Stat = stat($File);
+
+        if ( !$Stat ) {
+            print STDERR "Error: cannot stat file '$File': $!";
+            return;
+        }
+
+        $LanguageString .= $File . $Stat->mtime();
+    }
+
+    return Digest::MD5::md5_hex($LanguageString);
+}
+
+1;
 
 =head1 TERMS AND CONDITIONS
 

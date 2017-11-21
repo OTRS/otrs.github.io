@@ -13,7 +13,7 @@ use warnings;
 
 use Kernel::System::VariableCheck qw( :all );
 
-use base qw(
+use parent qw(
     Kernel::GenericInterface::Operation::Common
     Kernel::GenericInterface::Operation::Ticket::Common
 );
@@ -26,11 +26,7 @@ Kernel::GenericInterface::Operation::Ticket::TicketSearch - GenericInterface Tic
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 usually, you want to create an instance of this
 by using Kernel::GenericInterface::Operation->new();
@@ -61,7 +57,7 @@ sub new {
     return $Self;
 }
 
-=item Run()
+=head2 Run()
 
 perform TicketSearch Operation. This will return a Ticket ID list.
 
@@ -137,14 +133,29 @@ perform TicketSearch Operation. This will return a Ticket ID list.
         #   At least one operator must be specified. Operators will be connected with AND,
         #       values in an operator with OR.
         #   You can also pass more than one argument to an operator: ['value1', 'value2']
-        DynamicField_FieldNameX => {
-            Equals            => 123,
-            Like              => 'value*',                # "equals" operator with wildcard support
-            GreaterThan       => '2001-01-01 01:01:01',
-            GreaterThanEquals => '2001-01-01 01:01:01',
-            SmallerThan       => '2002-02-02 02:02:02',
-            SmallerThanEquals => '2002-02-02 02:02:02',
-        }
+        DynamicField => [                                                  # optional
+            {
+                Name   => 'some name',
+                Empty             => 1,                       # will return dynamic fields without a value
+                                                                  # set to 0 to search fields with a value present
+                Equals            => 123,
+                Like              => 'value*',                # "equals" operator with wildcard support
+                GreaterThan       => '2001-01-01 01:01:01',
+                GreaterThanEquals => '2001-01-01 01:01:01',
+                SmallerThan       => '2002-02-02 02:02:02',
+                SmallerThanEquals => '2002-02-02 02:02:02',
+            },
+            # ...
+        ],
+        # or
+        # DynamicField => {
+        #    Name   => 'some name',
+        #    # ...
+        #    Equals => 123,
+        #    # ...
+        #},
+
+
 
         # article stuff (optional)
         From    => '%spam@example.com%',
@@ -348,7 +359,7 @@ sub Run {
 
 =begin Internal:
 
-=item _GetParams()
+=head2 _GetParams()
 
 get search parameters.
 
@@ -370,11 +381,14 @@ sub _GetParams {
     # get single params
     my %GetParam;
 
+    my %SearchableFields = $Kernel::OM->Get('Kernel::System::Ticket::Article')->ArticleSearchableFieldsList();
+
     for my $Item (
-        qw(From To Cc Subject Body
+        sort keys %SearchableFields,
+        qw(
         Agent ResultForm TimeSearchType ChangeTimeSearchType LastChangeTimeSearchType CloseTimeSearchType UseSubQueues
         ArticleTimeSearchType SearchInArchive
-        Fulltext ContentSearch ShownAttributes AttachmentName
+        Fulltext ContentSearch ShownAttributes
         )
         )
     {
@@ -392,7 +406,7 @@ sub _GetParams {
 
     # get array params
     for my $Item (
-        qw(TicketNumber Title
+        qw(TicketNumber TicketID Title
         StateIDs StateTypeIDs QueueIDs PriorityIDs OwnerIDs
         CreatedUserIDs WatchUserIDs ResponsibleIDs
         TypeIDs ServiceIDs SLAIDs LockIDs Queues Types States
@@ -494,7 +508,7 @@ sub _GetParams {
 
 }
 
-=item _GetDynamicFields()
+=head2 _GetDynamicFields()
 
 get search parameters.
 
@@ -525,26 +539,47 @@ sub _GetDynamicFields {
         ObjectType => ['Ticket'],
     );
 
-    for my $ParameterName ( sort keys %Param ) {
-        if ( $ParameterName =~ m{\A DynamicField_ ( [a-zA-Z\d]+ ) \z}xms ) {
+    my %DynamicFieldsRaw;
+    if ( $Param{DynamicField} ) {
+        my %SearchParams;
+        if ( IsHashRefWithData( $Param{DynamicField} ) ) {
+            $DynamicFieldsRaw{ $Param{DynamicField}->{Name} } = $Param{DynamicField};
+        }
+        elsif ( IsArrayRefWithData( $Param{DynamicField} ) ) {
+            %DynamicFieldsRaw = map { $_->{Name} => $_ } @{ $Param{DynamicField} };
+        }
+        else {
+            return %DynamicFieldSearchParameters;
+        }
 
-            # loop over the dynamic fields configured
-            DYNAMICFIELD:
-            for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
-                next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
-                next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+    }
+    else {
 
-                # skip all fields that does not match with current field name ($1)
-                # without the 'DynamicField_' prefix
-                next DYNAMICFIELD if $DynamicFieldConfig->{Name} ne $1;
-
-                # set search parameter
-                $DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} }
-                    = $Param{ 'DynamicField_' . $DynamicFieldConfig->{Name} };
-
-                last DYNAMICFIELD;
+        # Compatibility with older versions of the web service.
+        for my $ParameterName ( sort keys %Param ) {
+            if ( $ParameterName =~ m{\A DynamicField_ ( [a-zA-Z\d]+ ) \z}xms ) {
+                $DynamicFieldsRaw{$1} = $Param{$ParameterName};
             }
         }
+    }
+
+    # loop over the dynamic fields configured
+    DYNAMICFIELD:
+    for my $DynamicFieldConfig ( @{ $Self->{DynamicField} } ) {
+        next DYNAMICFIELD if !IsHashRefWithData($DynamicFieldConfig);
+        next DYNAMICFIELD if !$DynamicFieldConfig->{Name};
+
+        # skip all fields that does not match with current field name
+        next DYNAMICFIELD if !$DynamicFieldsRaw{ $DynamicFieldConfig->{Name} };
+
+        next DYNAMICFIELD if !IsHashRefWithData( $DynamicFieldsRaw{ $DynamicFieldConfig->{Name} } );
+
+        my %SearchOperators = %{ $DynamicFieldsRaw{ $DynamicFieldConfig->{Name} } };
+
+        delete $SearchOperators{Name};
+
+        # set search parameter
+        $DynamicFieldSearchParameters{ 'DynamicField_' . $DynamicFieldConfig->{Name} } = \%SearchOperators;
     }
 
     # allow free fields
@@ -553,7 +588,7 @@ sub _GetDynamicFields {
 
 }
 
-=item _CreateTimeSettings()
+=head2 _CreateTimeSettings()
 
 get search parameters.
 
@@ -812,8 +847,6 @@ sub _CreateTimeSettings {
 }
 
 =end Internal:
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

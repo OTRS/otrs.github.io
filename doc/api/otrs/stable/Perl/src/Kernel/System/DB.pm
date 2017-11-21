@@ -22,8 +22,8 @@ our @ObjectDependencies = (
     'Kernel::System::Encode',
     'Kernel::System::Log',
     'Kernel::System::Main',
+    'Kernel::System::DateTime',
     'Kernel::System::Storable',
-    'Kernel::System::Time',
 );
 
 our $UseSlaveDB = 0;
@@ -32,17 +32,13 @@ our $UseSlaveDB = 0;
 
 Kernel::System::DB - global database interface
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All database functions to connect/insert/update/delete/... to a database.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create database object, with database connect..
 Usually you do not use it directly, instead use:
@@ -76,13 +72,18 @@ sub new {
     # 0=off; 1=updates; 2=+selects; 3=+Connects;
     $Self->{Debug} = $Param{Debug} || 0;
 
-    # get config object
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    # get config data
-    $Self->{DSN}  = $Param{DatabaseDSN}  || $ConfigObject->Get('DatabaseDSN');
-    $Self->{USER} = $Param{DatabaseUser} || $ConfigObject->Get('DatabaseUser');
-    $Self->{PW}   = $Param{DatabasePw}   || $ConfigObject->Get('DatabasePw');
+    # Get config data in following order of significance:
+    #   1 - Parameters passed to constructor
+    #   2 - Test database configuration
+    #   3 - Main database configuration
+    $Self->{DSN} =
+        $Param{DatabaseDSN} || $ConfigObject->Get('TestDatabaseDSN') || $ConfigObject->Get('DatabaseDSN');
+    $Self->{USER} =
+        $Param{DatabaseUser} || $ConfigObject->Get('TestDatabaseUser') || $ConfigObject->Get('DatabaseUser');
+    $Self->{PW} =
+        $Param{DatabasePw} || $ConfigObject->Get('TestDatabasePw') || $ConfigObject->Get('DatabasePw');
 
     $Self->{IsSlaveDB} = $Param{IsSlaveDB};
 
@@ -158,7 +159,7 @@ sub new {
     return $Self;
 }
 
-=item Connect()
+=head2 Connect()
 
 to connect to a database
 
@@ -232,7 +233,7 @@ sub Connect {
     return $Self->{dbh};
 }
 
-=item Disconnect()
+=head2 Disconnect()
 
 to disconnect from a database
 
@@ -265,7 +266,7 @@ sub Disconnect {
     return 1;
 }
 
-=item Version()
+=head2 Version()
 
 to get the database version
 
@@ -290,7 +291,7 @@ sub Version {
     return $Version;
 }
 
-=item Quote()
+=head2 Quote()
 
 to quote sql parameters
 
@@ -361,7 +362,7 @@ sub Quote {
     return;
 }
 
-=item Error()
+=head2 Error()
 
 to retrieve database errors
 
@@ -375,7 +376,7 @@ sub Error {
     return $DBI::errstr;
 }
 
-=item Do()
+=head2 Do()
 
 to insert, update or delete values
 
@@ -436,15 +437,22 @@ sub Do {
     # - This avoids time inconsistencies of app and db server
     # - This avoids timestamp problems in Postgresql servers where
     #   the timestamp is sometimes 1 second off the perl timestamp.
-    my $Timestamp = $Kernel::OM->Get('Kernel::System::Time')->CurrentTimestamp();
+
     $Param{SQL} =~ s{
         (?<= \s | \( | , )  # lookahead
         current_timestamp   # replace current_timestamp by 'yyyy-mm-dd hh:mm:ss'
         (?=  \s | \) | , )  # lookbehind
     }
     {
-        '$Timestamp'
-    }xmsg;
+        # Only calculate timestamp if it is really needed (on first invocation or if the system time changed)
+        #   for performance reasons.
+        my $Epoch = time;
+        if (!$Self->{TimestampEpoch} || $Self->{TimestampEpoch} != $Epoch) {
+            $Self->{TimestampEpoch} = $Epoch;
+            $Self->{Timestamp}      = $Kernel::OM->Create('Kernel::System::DateTime')->ToString();
+        }
+        "'$Self->{Timestamp}'";
+    }exmsg;
 
     # debug
     if ( $Self->{Debug} > 0 ) {
@@ -529,7 +537,7 @@ sub _InitSlaveDB {
     return;
 }
 
-=item Prepare()
+=head2 Prepare()
 
 to prepare a SELECT statement
 
@@ -580,6 +588,13 @@ sub Prepare {
             Message  => 'Need SQL!',
         );
         return;
+    }
+
+    if ( $Param{Bind} && ref $Param{Bind} ne 'ARRAY' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => 'Bind must be and array reference!',
+        );
     }
 
     $Self->{_PreparedOnSlaveDB} = 0;
@@ -700,7 +715,7 @@ sub Prepare {
     return 1;
 }
 
-=item FetchrowArray()
+=head2 FetchrowArray()
 
 to process the results of a SELECT statement
 
@@ -771,7 +786,46 @@ sub FetchrowArray {
     return @Row;
 }
 
-=item GetColumnNames()
+=head2 ListTables()
+
+list all tables in the OTRS database.
+
+    my @Tables = $DBObject->ListTables();
+
+On databases like Oracle it could happen that too many tables are listed (all belonging
+to the current user), if the user also has permissions for other databases. So this list
+should only be used for verification of the presence of expected OTRS tables.
+
+=cut
+
+sub ListTables {
+    my $Self = shift;
+
+    my $SQL = $Self->GetDatabaseFunction('ListTables');
+
+    if ( !$SQL ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'Error',
+            Message  => "Database driver $Self->{'DB::Type'} does not support ListTables.",
+        );
+        return;
+    }
+
+    my $Success = $Self->Prepare(
+        SQL => $SQL,
+    );
+
+    return if !$Success;
+
+    my @Tables;
+    while ( my @Row = $Self->FetchrowArray() ) {
+        push @Tables, lc $Row[0];
+    }
+
+    return @Tables;
+}
+
+=head2 GetColumnNames()
 
 to retrieve the column names of a database statement
 
@@ -797,7 +851,7 @@ sub GetColumnNames {
     return @Result;
 }
 
-=item SelectAll()
+=head2 SelectAll()
 
 returns all available records of a SELECT statement.
 In essence, this calls Prepare() and FetchrowArray() to get all records.
@@ -832,7 +886,7 @@ sub SelectAll {
     return \@Records;
 }
 
-=item GetDatabaseFunction()
+=head2 GetDatabaseFunction()
 
 to get database functions like
 
@@ -860,7 +914,7 @@ sub GetDatabaseFunction {
     return $Self->{Backend}->{ 'DB::' . $What };
 }
 
-=item SQLProcessor()
+=head2 SQLProcessor()
 
 generate database-specific sql syntax (e. g. CREATE TABLE ...)
 
@@ -1019,7 +1073,7 @@ sub SQLProcessor {
     return @SQL;
 }
 
-=item SQLProcessorPost()
+=head2 SQLProcessorPost()
 
 generate database-specific sql syntax, post data of SQLProcessor(),
 e. g. foreign keys
@@ -1040,67 +1094,7 @@ sub SQLProcessorPost {
     return ();
 }
 
-# GetTableData()
-#
-# !! DONT USE THIS FUNCTION !!
-#
-# Due to compatibility reason this function is still available and it will be removed
-# in upcoming releases.
-
-sub GetTableData {
-    my ( $Self, %Param ) = @_;
-
-    my $Table = $Param{Table};
-    my $What  = $Param{What};
-    my $Where = $Param{Where} || '';
-    my $Valid = $Param{Valid} || '';
-    my $Clamp = $Param{Clamp} || '';
-    my %Data;
-
-    my $SQL = "SELECT $What FROM $Table ";
-    if ($Where) {
-        $SQL .= ' WHERE ' . $Where;
-    }
-
-    if ( !$Where && $Valid ) {
-        my @ValidIDs;
-
-        return if !$Self->Prepare( SQL => 'SELECT id FROM valid WHERE name = \'valid\'' );
-        while ( my @Row = $Self->FetchrowArray() ) {
-            push @ValidIDs, $Row[0];
-        }
-
-        $SQL .= " WHERE valid_id IN ( ${\(join ', ', @ValidIDs)} )";
-    }
-
-    $Self->Prepare( SQL => $SQL );
-
-    while ( my @Row = $Self->FetchrowArray() ) {
-        if ( $Row[3] ) {
-            if ($Clamp) {
-                $Data{ $Row[0] } = "$Row[1] $Row[2] ($Row[3])";
-            }
-            else {
-                $Data{ $Row[0] } = "$Row[1] $Row[2] $Row[3]";
-            }
-        }
-        elsif ( $Row[2] ) {
-            if ($Clamp) {
-                $Data{ $Row[0] } = "$Row[1] ( $Row[2] )";
-            }
-            else {
-                $Data{ $Row[0] } = "$Row[1] $Row[2]";
-            }
-        }
-        else {
-            $Data{ $Row[0] } = $Row[1];
-        }
-    }
-
-    return %Data;
-}
-
-=item QueryCondition()
+=head2 QueryCondition()
 
 generate SQL condition query based on a search expression
 
@@ -1161,7 +1155,7 @@ sub QueryCondition {
 
     # check needed stuff
     for (qw(Key Value)) {
-        if ( !$Param{$_} ) {
+        if ( !defined $Param{$_} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'error',
                 Message  => "Need $_!"
@@ -1569,7 +1563,162 @@ sub QueryCondition {
     return $SQL;
 }
 
-=item QueryStringEscape()
+=head2 QueryInCondition()
+
+Generate a SQL IN condition query based on the given table key and values.
+
+    my $SQL = $DBObject->QueryInCondition(
+        Key       => 'table.column',
+        Values    => [ 1, 2, 3, 4, 5, 6 ],
+        QuoteType => '(undef|Integer|Number)',
+        BindMode  => (0|1),
+        Negate    => (0|1),
+    );
+
+Returns the SQL string:
+
+    my $SQL = "ticket_id IN (1, 2, 3, 4, 5, 6)"
+
+Return a separated IN condition for more then C<MaxParamCountForInCondition> values:
+
+    my $SQL = "( ticket_id IN ( 1, 2, 3, 4, 5, 6 ... ) OR ticket_id IN ( ... ) )"
+
+Return the SQL String with ?-values and a array with values references in bind mode:
+
+    $BindModeResult = (
+        'SQL'    => 'ticket_id IN (?, ?, ?, ?, ?, ?)',
+        'Values' => [1, 2, 3, 4, 5, 6],
+    );
+
+    or
+
+    $BindModeResult = (
+        'SQL'    => '( ticket_id IN (?, ?, ?, ?, ?, ?) OR ticket_id IN ( ?, ... ) )',
+        'Values' => [1, 2, 3, 4, 5, 6, ... ],
+    );
+
+Returns the SQL string for a negated in condition:
+
+    my $SQL = "ticket_id NOT IN (1, 2, 3, 4, 5, 6)"
+
+    or
+
+    my $SQL = "( ticket_id NOT IN ( 1, 2, 3, 4, 5, 6 ... ) AND ticket_id NOT IN ( ... ) )"
+
+=cut
+
+sub QueryInCondition {
+    my ( $Self, %Param ) = @_;
+
+    if ( !$Param{Key} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Key!",
+        );
+        return;
+    }
+
+    if ( !IsArrayRefWithData( $Param{Values} ) ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need Values!",
+        );
+        return;
+    }
+
+    if ( $Param{QuoteType} && $Param{QuoteType} eq 'Like' ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "QuoteType 'Like' is not allowed for 'IN' conditions!",
+        );
+        return;
+    }
+
+    $Param{Negate}   //= 0;
+    $Param{BindMode} //= 0;
+
+    # Set the flag for string because of the other handling in the sql statement with strings.
+    my $IsString;
+    if ( !$Param{QuoteType} ) {
+        $IsString = 1;
+    }
+
+    my @Values = @{ $Param{Values} };
+
+    # Perform quoting depending on given quote type (only if not in bind mode)
+    if ( !$Param{BindMode} ) {
+
+        # Sort the values to cache the SQL query.
+        if ($IsString) {
+            @Values = sort { $a cmp $b } @Values;
+        }
+        else {
+            @Values = sort { $a <=> $b } @Values;
+        }
+
+        @Values = map { $Self->Quote( $_, $Param{QuoteType} ) } @Values;
+
+        # Something went wrong during the quoting, if the count is not equal.
+        return if scalar @Values != scalar @{ $Param{Values} };
+    }
+
+    # Set the correct operator and connector (only needed for splitted conditions).
+    my $Operator  = 'IN';
+    my $Connector = 'OR';
+
+    if ( $Param{Negate} ) {
+        $Operator  = 'NOT IN';
+        $Connector = 'AND';
+    }
+
+    my @SQLStrings;
+    my @BindValues;
+
+    # Split IN statement with more than the defined 'MaxParamCountForInCondition' elements in more
+    # then one statements combined with OR, because some databases e.g. oracle doesn't support more
+    # than 1000 elements for one IN statement.
+    while ( scalar @Values ) {
+
+        my @ValuesPart;
+        if ( $Self->GetDatabaseFunction('MaxParamCountForInCondition') ) {
+            @ValuesPart = splice @Values, 0, $Self->GetDatabaseFunction('MaxParamCountForInCondition');
+        }
+        else {
+            @ValuesPart = splice @Values;
+        }
+
+        my $ValueString;
+        if ( $Param{BindMode} ) {
+            $ValueString = join ', ', ('?') x scalar @ValuesPart;
+            push @BindValues, @ValuesPart;
+        }
+        elsif ($IsString) {
+            $ValueString = join ', ', map {"'$_'"} @ValuesPart;
+        }
+        else {
+            $ValueString = join ', ', @ValuesPart;
+        }
+
+        push @SQLStrings, "$Param{Key} $Operator ($ValueString)";
+    }
+
+    my $SQL = join " $Connector ", @SQLStrings;
+
+    if ( scalar @SQLStrings > 1 ) {
+        $SQL = '( ' . $SQL . ' )';
+    }
+
+    if ( $Param{BindMode} ) {
+        my $BindRefList = [ map { \$_ } @BindValues ];
+        return (
+            'SQL'    => $SQL,
+            'Values' => $BindRefList,
+        );
+    }
+    return $SQL;
+}
+
+=head2 QueryStringEscape()
 
 escapes special characters within a query string
 
@@ -1608,7 +1757,7 @@ sub QueryStringEscape {
     return $Param{QueryString};
 }
 
-=item Ping()
+=head2 Ping()
 
 checks if the database is reachable
 
@@ -1739,8 +1888,6 @@ sub DESTROY {
 1;
 
 =end Internal:
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

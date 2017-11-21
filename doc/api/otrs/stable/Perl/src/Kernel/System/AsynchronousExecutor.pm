@@ -14,6 +14,7 @@ use warnings;
 use Kernel::System::VariableCheck qw(:all);
 
 our @ObjectDependencies = (
+    'Kernel::Config',
     'Kernel::System::Log',
     'Kernel::System::Scheduler',
 );
@@ -22,18 +23,14 @@ our @ObjectDependencies = (
 
 Kernel::System::AsynchronousExecutor - base class to delegate tasks to the OTRS Scheduler Daemon
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 ObjectManager controlled modules can add this base class to execute some time consuming tasks in the
 background using the separate process OTRS Scheduler Daemon.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item AsyncCall()
+=head2 AsyncCall()
 
 creates a scheduler daemon task to execute a function asynchronously.
 
@@ -45,7 +42,7 @@ creates a scheduler daemon task to execute a function asynchronously.
         Attempts                 => 3,                          # optional, default: 1, number of tries to lock the
                                                                 #   task by the scheduler
         MaximumParallelInstances => 1,                          # optional, default: 0 (unlimited), number of same
-                                                                #   function calls form the same object that can be
+                                                                #   function calls from the same object that can be
                                                                 #   executed at the the same time
     );
 
@@ -57,6 +54,9 @@ Returns:
 
 sub AsyncCall {
     my ( $Self, %Param ) = @_;
+
+    # Do not schedule asynchronous task if the feature has been disabled.
+    return 1 if $Kernel::OM->Get('Kernel::Config')->Get('DisableAsyncCalls');
 
     my $FunctionName = $Param{FunctionName};
 
@@ -140,8 +140,6 @@ sub AsyncCall {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

@@ -260,7 +260,7 @@ Core.UI.InputFields = (function (TargetNS) {
     TargetNS.Activate = function ($Context) {
 
         // Check SysConfig
-        if (Core.Config.Get('InputFieldsActivated') === 1) {
+        if (parseInt(Core.Config.Get('InputFieldsActivated'), 10) === 1) {
 
             // Initialize select fields on all applicable fields
             TargetNS.InitSelect($('select.Modernize', $Context));
@@ -343,7 +343,7 @@ Core.UI.InputFields = (function (TargetNS) {
             return;
         }
 
-        $SearchObj.removeAttr('readonly', 'readonly');
+        $SearchObj.prop('readonly', false);
         $InputContainerObj.removeClass('AlreadyDisabled');
 
         // Check if there are only empty and disabled options
@@ -358,7 +358,7 @@ Core.UI.InputFields = (function (TargetNS) {
             // Disable the field, add the tooltip and dash string
             $SearchObj
                 .attr('readonly', 'readonly')
-                .attr('title', Core.Config.Get('InputFieldsNotAvailable'));
+                .attr('title', Core.Language.Translate('Not available'));
 
             // when the original field does no longer provide any valid options,
             // we also want to remove existing selections
@@ -369,7 +369,8 @@ Core.UI.InputFields = (function (TargetNS) {
 
             // Enable the field, remove the tooltip and dash string
             $SearchObj
-                .removeAttr('readonly title')
+                .removeAttr('title')
+                .prop('readonly', false)
                 .val('');
         }
     }
@@ -407,7 +408,11 @@ Core.UI.InputFields = (function (TargetNS) {
         // If the dropdown of the field is opened, close it (by calling blur event)
         // TODO: nicer way to find opened select elements
         $('select.Modernize', $Context).each(function () {
-            $('#' + Core.App.EscapeSelector($(this).data('modernized'))).filter('[aria-expanded=true]').trigger('blur');
+            var Selector = Core.App.EscapeSelector($(this).data('modernized'));
+            if (!Selector) {
+                return;
+            }
+            $('#' + Selector).filter('[aria-expanded=true]').trigger('blur');
         });
     }
 
@@ -424,13 +429,13 @@ Core.UI.InputFields = (function (TargetNS) {
     function ShowSelectionBoxes($SelectObj, $InputContainerObj) {
         var Selection,
             SelectionLength,
+            $SelectionFilterObj,
             i = 0,
             OffsetLeft = 0,
             OffsetRight = Config.SelectionBoxOffsetRight,
             MoreBox = false,
             Multiple = ($SelectObj.attr('multiple') !== '' &amp;&amp; $SelectObj.attr('multiple') !== undefined) ? true : false,
             PossibleNone = false,
-            MoreString = Core.Config.Get('InputFieldsMore'),
             MaxWidth,
             $SearchObj = $InputContainerObj.find('.InputField_Search'),
             $TempMoreObj;
@@ -443,6 +448,7 @@ Core.UI.InputFields = (function (TargetNS) {
 
         // Remove any existing boxes in supplied container
         $InputContainerObj.find('.InputField_Selection').remove();
+        $InputContainerObj.find('.InputField_SelectionFilter').remove();
         $InputContainerObj.find('.InputField_More').remove();
 
         // Check for empty values (allow field clearing).
@@ -463,7 +469,7 @@ Core.UI.InputFields = (function (TargetNS) {
         if ($SelectObj.val()) {
 
             // Maximum available width for boxes
-            MaxWidth = $SearchObj.width();
+            MaxWidth = $SearchObj.width() - Config.SelectionBoxOffsetRight - Config.InputFieldPadding;
 
             // Check which kind of selection we are dealing with
             if ($.isArray($SelectObj.val())) {
@@ -478,7 +484,7 @@ Core.UI.InputFields = (function (TargetNS) {
             if (SelectionLength > 1) {
                 $TempMoreObj = $('&lt;div />').hide()
                     .addClass('InputField_More')
-                    .text(MoreString.replace(/%s/, '##'))
+                    .text(Core.Language.Translate("and %s more...").replace(/%s/, '##'))
                     .appendTo($InputContainerObj);
 
                 // Save place for string
@@ -520,13 +526,13 @@ Core.UI.InputFields = (function (TargetNS) {
                     $RemoveObj.addClass('Remove')
                         .append(
                             $('&lt;a />').attr('href', '#')
-                                .attr('title', Core.Config.Get('InputFieldsRemoveSelection'))
+                                .attr('title', Core.Language.Translate('Remove selection'))
                                 .text('x')
                                 .attr('role', 'button')
                                 .attr('tabindex', '-1')
                                 .attr(
                                     'aria-label',
-                                    Core.Config.Get('InputFieldsRemoveSelection') + ': ' + Text
+                                    Core.Language.Translate('Remove selection') + ': ' + Text
                                 )
                                 .off('click.InputField').on('click.InputField', function () {
                                     var HasEmptyElement = $SelectObj.find('option[value=""]').length === 0 ? false : true,
@@ -544,6 +550,9 @@ Core.UI.InputFields = (function (TargetNS) {
                                         $SelectObj.trigger('change');
                                         ValidateFormElement($SelectObj);
                                     }, 0);
+                                    if (Multiple) {
+                                        RefreshSelectionFilter($SelectObj, null);
+                                    }
                                     return false;
                                 })
                         );
@@ -600,7 +609,7 @@ Core.UI.InputFields = (function (TargetNS) {
                                     OffsetLeft + 'px'
                                 )
                                 .text(
-                                    MoreString.replace(/%s/, SelectionLength - i)
+                                    Core.Language.Translate("and %s more...").replace(/%s/, SelectionLength - i)
                                 )
                                 .on('click.InputField', function () {
                                     $SearchObj.trigger('focus');
@@ -623,8 +632,44 @@ Core.UI.InputFields = (function (TargetNS) {
                 i++;
             });
 
-        }
+            if (Multiple &amp;&amp; MoreBox) {
+                $SelectionFilterObj = $('&lt;a />').appendTo($InputContainerObj);
+                $SelectionFilterObj.addClass('InputField_Action InputField_SelectionFilter')
+                    .attr('href', '#')
+                    .attr('title', Core.Language.Translate('Show current selection'))
+                    .css(($('body').hasClass('RTL') ? 'left' : 'right'), Config.SelectionBoxOffsetRight + 'px')
+                    .append($('&lt;i />').addClass('fa fa-eye'))
+                    .attr('role', 'button')
+                    .attr('tabindex', '-1')
+                    .attr('aria-label', Core.Language.Translate('Current selection'))
+                    .off('click.InputField').on('click.InputField', function () {
+                        if ($SelectObj.data('filters') !== '' &amp;&amp; $SelectObj.data('filters') !== undefined) {
 
+                            // See if we already have a selection filter
+                            $.each($SelectObj.data('filters').Filters, function(Index, Filter) {
+                                if (Filter.Name === Core.Language.Translate('Current selection')) {
+                                    $SelectObj.data('filtered', Index + 1);
+                                    $SelectObj.data('expand-filters', true);
+                                    $SelectObj.data('selection-filter', true);
+                                    ApplyFilter($SelectObj, null);
+
+                                    // Refresh the field and get focus
+                                    $SearchObj = $('#' + Core.App.EscapeSelector($SelectObj.data('modernized')));
+                                    $SearchObj.width($SelectObj.outerWidth())
+                                        .trigger('blur');
+                                    CheckAvailability($SelectObj, $SearchObj, $InputContainerObj);
+                                    setTimeout(function () {
+                                        $SearchObj.focus();
+                                    }, 0);
+                                    return true;
+                                }
+                            });
+                        }
+
+                        return false;
+                });
+            }
+        }
     }
 
     /**
@@ -837,6 +882,7 @@ Core.UI.InputFields = (function (TargetNS) {
 
             // Restore original data
             $SelectObj.append($SelectObj.data('original'));
+            $SelectObj.data('expand-filters', false);
         }
 
         // Restore selection
@@ -888,7 +934,6 @@ Core.UI.InputFields = (function (TargetNS) {
             case 'Filter':
                 $FilterObj.off('click.InputField').on('click.InputField', function (Event) {
 
-
                     // Allow selection of only one filter
                     $FilterObj.siblings('input').each(function (Index, Filter) {
                         if ($(Filter).attr('id') !== $FilterObj.attr('id')) {
@@ -922,12 +967,8 @@ Core.UI.InputFields = (function (TargetNS) {
                     setTimeout(function () {
                         $SearchObj.focus();
                     }, 0);
-                })
-
-                // Prevent clicks on action to steal focus from search field
-                .on('mousedown.InputField', function () {
-                    return false;
                 });
+
                 break;
         }
     }
@@ -980,6 +1021,135 @@ Core.UI.InputFields = (function (TargetNS) {
             $TabbableElements.eq($TabbableElements.index($Element) - 1)
                 .focus();
         }, 0);
+    }
+
+    /**
+     * @private
+     * @name BuildSelectionFilter
+     * @memberof Core.UI.InputFields
+     * @param {jQueryObject} $SelectObj - Original select field
+     * @description
+     *      Build current selection filter.
+     */
+    function BuildSelectionFilter($SelectObj) {
+        var Filters = new Object(),
+            SelectionFilterIndex,
+            SelectionFilter,
+            Elements;
+
+        if ($SelectObj.data('filters') !== '' &amp;&amp; $SelectObj.data('filters') !== undefined) {
+            Filters.Filters = $SelectObj.data('filters').Filters;
+
+            // See if we already have a selection filter
+            $.each(Filters.Filters, function(Index, Filter) {
+                if (Filter.Name === Core.Language.Translate('Current selection')) {
+                    SelectionFilterIndex = Index;
+                    SelectionFilter = Filter;
+                    Filters.Filters.splice(SelectionFilterIndex, 1);
+                    SelectionFilter.Data = new Array();
+                    return true;
+                }
+            });
+        } else {
+            Filters.Filters = new Array();
+        }
+
+        if (Filters.Filters.length === 0 || !SelectionFilterIndex) {
+            SelectionFilter = new Object();
+            SelectionFilter.Name = Core.Language.Translate('Current selection');
+            SelectionFilter.Data = new Array();
+        }
+
+        // Generate JSON structure based on select field options
+        // Sort the list by default if tree view is active
+        Elements = Core.UI.TreeSelection.BuildElementsArray($SelectObj, $SelectObj.data('tree', true));
+
+        SelectionFilter.Data = GetSelectionFilterData(Elements);
+
+        function GetSelectionFilterData(Elements, Data) {
+            if (Data === undefined) {
+                Data = new Array();
+            }
+            $.each(Elements, function (Index, Element) {
+                if (typeof Element === 'object') {
+                    if (Element.state) {
+                        if (Element.state.selected) {
+                            Data.push({
+                                'Key': Element.ID,
+                                'Value': Element.Name
+                            });
+                        }
+                        if (Element.children.length > 0) {
+                            return GetSelectionFilterData(Element.children, Data);
+                        }
+                    }
+                }
+            });
+            return Data;
+        }
+
+        if (SelectionFilter.Data.length == 0) {
+            SelectionFilter.Data.push({
+                'Key': '',
+                'Value': ''
+            });
+        }
+
+        Filters.Filters.push(SelectionFilter);
+        $SelectObj.data('filters', Filters);
+    }
+
+    /**
+     * @private
+     * @name RefreshSelectionFilter
+     * @memberof Core.UI.InputFields
+     * @param {jQueryObject} $SelectObj - Original select field
+     * @param {jQueryObject} $ToolbarContainerObj - Container for toolbar actions
+     * @description
+     *      Refresh current selection filter.
+     */
+    function RefreshSelectionFilter($SelectObj, $ToolbarContainerObj) {
+        var Filters = new Object(),
+            SelectionFilterIndex,
+            $FilterObj;
+
+        // Rebuild the selection filter
+        BuildSelectionFilter($SelectObj);
+
+        // Get index
+        if ($SelectObj.data('filters') !== '' &amp;&amp; $SelectObj.data('filters') !== undefined) {
+            Filters.Filters = $SelectObj.data('filters').Filters;
+            $.each(Filters.Filters, function(Index, Filter) {
+                if (Filter.Name === Core.Language.Translate('Current selection')) {
+                    SelectionFilterIndex = Index;
+                    if ($ToolbarContainerObj) {
+                        $FilterObj = $ToolbarContainerObj.find('input[type="checkbox"]').filter(function () {
+                            return $(this).data('index') === SelectionFilterIndex + 1;
+                        });
+                    }
+                    return true;
+                }
+            });
+        }
+
+        // Check if the selection is empty.
+        if ($SelectObj.val() !== null &amp;&amp; $SelectObj.val().length === 0) {
+            $SelectObj.data('filtered', '0');
+            $SelectObj.data('selection', []);
+            ApplyFilter($SelectObj, $ToolbarContainerObj);
+            if ($FilterObj) {
+                $FilterObj.attr('disabled', true)
+                    .attr('checked', false);
+            }
+        } else {
+            if (SelectionFilterIndex === parseInt($SelectObj.data('filtered'), 10) - 1) {
+                ApplyFilter($SelectObj, $ToolbarContainerObj);
+            }
+            if ($FilterObj) {
+                $FilterObj.attr('disabled', false);
+            }
+        }
+
     }
 
     /**
@@ -1173,6 +1343,12 @@ Core.UI.InputFields = (function (TargetNS) {
                     $SearchObj.addClass(Config.ServerErrorClass);
                 }
 
+                // Add selection filter
+                if (Multiple) {
+                    Filterable = true;
+                    BuildSelectionFilter($SelectObj);
+                }
+
                 if (Filterable) {
 
                     // Preserve original data
@@ -1283,7 +1459,7 @@ Core.UI.InputFields = (function (TargetNS) {
                                 left: $InputContainerObj.offset().left
                             });
 
-                        // decide wether list should be positioned on top or at the bottom of the input field
+                        // decide whether list should be positioned on top or at the bottom of the input field
                         if (AvailableHeightTop > AvailableHeightBottom) {
                             AvailableMaxHeight = AvailableHeightTop;
 
@@ -1372,6 +1548,7 @@ Core.UI.InputFields = (function (TargetNS) {
 
                     // Remove any existing selection boxes in container
                     $InputContainerObj.find('.InputField_Selection').remove();
+                    $InputContainerObj.find('.InputField_SelectionFilter').remove();
                     $InputContainerObj.find('.InputField_More').remove();
 
                     // Create list container
@@ -1587,6 +1764,9 @@ Core.UI.InputFields = (function (TargetNS) {
                             $TreeObj.blur();
                         }
 
+                        // Refresh selection filter
+                        RefreshSelectionFilter($SelectObj, $ToolbarContainerObj);
+
                         // Delay triggering change event on original field (see bug#11419)
                         $SelectObj.data('changed', true);
 
@@ -1614,7 +1794,7 @@ Core.UI.InputFields = (function (TargetNS) {
                             HoveredValue = $HoveredNode.closest('li').data('id');
 
                             // at this point, the jstree events have already selected the new value and processed the event
-                            // but we need to know, if the hovered element was selected before or not to decide wether to
+                            // but we need to know, if the hovered element was selected before or not to decide whether to
                             // select or deselect it now. therefor we check for OldSelectedID
                             if (!Multiple) {
                                 if (HoveredValue !== OldSelectedID) {
@@ -1664,6 +1844,9 @@ Core.UI.InputFields = (function (TargetNS) {
 
                             OldSelectedID = SelectedID;
                             SelectedID = $SelectObj.val();
+
+                            // Update selection filter
+                            RefreshSelectionFilter($SelectObj, $ToolbarContainerObj);
 
                             // Delay triggering change event on original field (see bug#11419)
                             $SelectObj.data('changed', true);
@@ -1842,8 +2025,8 @@ Core.UI.InputFields = (function (TargetNS) {
                             .attr('href', '#')
                             .attr('role', 'button')
                             .attr('tabindex', '-1')
-                            .text(Core.Config.Get('InputFieldsSelectAll'))
-                            .attr('aria-label', Core.Config.Get('InputFieldsSelectAll'))
+                            .text(Core.Language.Translate('Select all'))
+                            .attr('aria-label', Core.Language.Translate('Select all'))
                             .appendTo($ToolbarObj)
                             .wrap('&lt;li />');
                         RegisterActionEvent($TreeObj, $SelectAllObj, 'SelectAll');
@@ -1853,8 +2036,8 @@ Core.UI.InputFields = (function (TargetNS) {
                             .attr('href', '#')
                             .attr('role', 'button')
                             .attr('tabindex', '-1')
-                            .text(Core.Config.Get('InputFieldsClearAll'))
-                            .attr('aria-label', Core.Config.Get('InputFieldsClearAll'))
+                            .text(Core.Language.Translate('Clear all'))
+                            .attr('aria-label', Core.Language.Translate('Clear all'))
                             .appendTo($ToolbarObj)
                             .wrap('&lt;li />');
                         RegisterActionEvent($TreeObj, $ClearAllObj, 'ClearAll');
@@ -1867,8 +2050,8 @@ Core.UI.InputFields = (function (TargetNS) {
                             .attr('href', '#')
                             .attr('role', 'button')
                             .attr('tabindex', '-1')
-                            .text(Core.Config.Get('InputFieldsFilters'))
-                            .attr('aria-label', Core.Config.Get('InputFieldsFilters'))
+                            .text(Core.Language.Translate('Filters'))
+                            .attr('aria-label', Core.Language.Translate('Filters'))
                             .appendTo($ToolbarObj)
                             .wrap('&lt;li />');
                         RegisterFilterEvent($SelectObj, $InputContainerObj, $ToolbarContainerObj, $FiltersObj, 'ShowFilters');
@@ -1900,6 +2083,7 @@ Core.UI.InputFields = (function (TargetNS) {
                                 $SpanObj = $('&lt;span />').appendTo($FiltersListObj);
                             $FilterObj.attr('type', 'checkbox')
                                 .attr('tabindex', '-1')
+                                .addClass('InputField_FilterCheckbox')
                                 .data('index', FilterIndex + 1);
                             if (
                                 $SelectObj.data('filtered')
@@ -1995,8 +2179,8 @@ Core.UI.InputFields = (function (TargetNS) {
                             .attr('href', '#')
                             .attr('role', 'button')
                             .attr('tabindex', '-1')
-                            .text(Core.Config.Get('InputFieldsConfirm'))
-                            .attr('aria-label', Core.Config.Get('InputFieldsConfirm'))
+                            .text(Core.Language.Translate('Confirm'))
+                            .attr('aria-label', Core.Language.Translate('Confirm'))
                             .appendTo($ToolbarObj)
                             .prepend('&lt;i class="fa fa-check-square-o" /> ')
                             .wrap('&lt;li />');
@@ -2019,6 +2203,7 @@ Core.UI.InputFields = (function (TargetNS) {
                         window.clearTimeout(SearchTimeout);
 
                         SearchTimeout = window.setTimeout(function () {
+
                             // Abandon search if empty string
                             if (SearchValue === '') {
                                 $TreeObj.jstree('delete_node', $TreeObj.find('.jstree-no-match'));
@@ -2078,7 +2263,7 @@ Core.UI.InputFields = (function (TargetNS) {
 
                                 // Add no match node
                                 NoMatchNodeJSON = {
-                                    text: Core.Config.Get('InputFieldsNoMatchMsg'),
+                                    text: Core.Language.Translate('No matches found.'),
                                     state: {
                                         disabled: true
                                     },
@@ -2101,12 +2286,12 @@ Core.UI.InputFields = (function (TargetNS) {
                                 $ClearSearchObj = $('&lt;a />').insertAfter($SearchObj);
                                 $ClearSearchObj.addClass('InputField_Action InputField_ClearSearch')
                                     .attr('href', '#')
-                                    .attr('title', Core.Config.Get('InputFieldsClearSearch'))
+                                    .attr('title', Core.Language.Translate('Clear search'))
                                     .css(($('body').hasClass('RTL') ? 'left' : 'right'), Config.SelectionBoxOffsetRight + 'px')
                                     .append($('&lt;i />').addClass('fa fa-times-circle'))
                                     .attr('role', 'button')
                                     .attr('tabindex', '-1')
-                                    .attr('aria-label', Core.Config.Get('InputFieldsClearSearch'))
+                                    .attr('aria-label', Core.Language.Translate('Clear search'))
                                     .off('click.InputField').on('click.InputField', function () {
 
                                         // Reset the search field
@@ -2345,6 +2530,8 @@ Core.UI.InputFields = (function (TargetNS) {
         }, 100);
     });
 
+    Core.Init.RegisterNamespace(TargetNS, 'APP_GLOBAL');
+
     return TargetNS;
 }(Core.UI.InputFields || {}));
 </code></pre>
@@ -2357,7 +2544,7 @@ Core.UI.InputFields = (function (TargetNS) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingSimple.html">Core.Agent.Admin.GenericInterfaceMappingSimple</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.SysConfig.html">Core.Agent.Admin.SysConfig</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.Attachment.html">Core.Agent.Admin.Attachment</a></li><li><a href="Core.Agent.Admin.AutoResponse.html">Core.Agent.Admin.AutoResponse</a></li><li><a href="Core.Agent.Admin.CommunicationLog.html">Core.Agent.Admin.CommunicationLog</a></li><li><a href="Core.Agent.Admin.Core.Agent.Admin.html">Core.Agent.Admin.Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.Core.Agent.TicketFormDraft.html">Core.Agent.Admin.Core.Agent.TicketFormDraft</a></li><li><a href="Core.Agent.Admin.CustomerCompany.html">Core.Agent.Admin.CustomerCompany</a></li><li><a href="Core.Agent.Admin.CustomerGroup.html">Core.Agent.Admin.CustomerGroup</a></li><li><a href="Core.Agent.Admin.CustomerUser.html">Core.Agent.Admin.CustomerUser</a></li><li><a href="Core.Agent.Admin.CustomerUserService.html">Core.Agent.Admin.CustomerUserService</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldCheckbox.html">Core.Agent.Admin.DynamicFieldCheckbox</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandling.html">Core.Agent.Admin.GenericInterfaceErrorHandling</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry.html">Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvokerEvent.html">Core.Agent.Admin.GenericInterfaceInvokerEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMapping.html">Core.Agent.Admin.GenericInterfaceMapping</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingXSLT.html">Core.Agent.Admin.GenericInterfaceMappingXSLT</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPREST.html">Core.Agent.Admin.GenericInterfaceTransportHTTPREST</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP.html">Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.Group.html">Core.Agent.Admin.Group</a></li><li><a href="Core.Agent.Admin.Log.html">Core.Agent.Admin.Log</a></li><li><a href="Core.Agent.Admin.MailAccount.html">Core.Agent.Admin.MailAccount</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.PackageManager.html">Core.Agent.Admin.PackageManager</a></li><li><a href="Core.Agent.Admin.PostMasterFilter.html">Core.Agent.Admin.PostMasterFilter</a></li><li><a href="Core.Agent.Admin.Priority.html">Core.Agent.Admin.Priority</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.Queue.html">Core.Agent.Admin.Queue</a></li><li><a href="Core.Agent.Admin.QueueAutoResponse.html">Core.Agent.Admin.QueueAutoResponse</a></li><li><a href="Core.Agent.Admin.QueueTemplates.html">Core.Agent.Admin.QueueTemplates</a></li><li><a href="Core.Agent.Admin.Registration.html">Core.Agent.Admin.Registration</a></li><li><a href="Core.Agent.Admin.Role.html">Core.Agent.Admin.Role</a></li><li><a href="Core.Agent.Admin.RoleGroup.html">Core.Agent.Admin.RoleGroup</a></li><li><a href="Core.Agent.Admin.RoleUser.html">Core.Agent.Admin.RoleUser</a></li><li><a href="Core.Agent.Admin.Salutation.html">Core.Agent.Admin.Salutation</a></li><li><a href="Core.Agent.Admin.SelectBox.html">Core.Agent.Admin.SelectBox</a></li><li><a href="Core.Agent.Admin.Service.html">Core.Agent.Admin.Service</a></li><li><a href="Core.Agent.Admin.Session.html">Core.Agent.Admin.Session</a></li><li><a href="Core.Agent.Admin.Signature.html">Core.Agent.Admin.Signature</a></li><li><a href="Core.Agent.Admin.SLA.html">Core.Agent.Admin.SLA</a></li><li><a href="Core.Agent.Admin.SMIME.html">Core.Agent.Admin.SMIME</a></li><li><a href="Core.Agent.Admin.State.html">Core.Agent.Admin.State</a></li><li><a href="Core.Agent.Admin.SupportDataCollector.html">Core.Agent.Admin.SupportDataCollector</a></li><li><a href="Core.Agent.Admin.SysConfig.Entity.html">Core.Agent.Admin.SysConfig.Entity</a></li><li><a href="Core.Agent.Admin.SystemAddress.html">Core.Agent.Admin.SystemAddress</a></li><li><a href="Core.Agent.Admin.SystemConfiguration.html">Core.Agent.Admin.SystemConfiguration</a></li><li><a href="Core.Agent.Admin.SystemMaintenance.html">Core.Agent.Admin.SystemMaintenance</a></li><li><a href="Core.Agent.Admin.Template.html">Core.Agent.Admin.Template</a></li><li><a href="Core.Agent.Admin.TemplateAttachment.html">Core.Agent.Admin.TemplateAttachment</a></li><li><a href="Core.Agent.Admin.Type.html">Core.Agent.Admin.Type</a></li><li><a href="Core.Agent.Admin.UserGroup.html">Core.Agent.Admin.UserGroup</a></li><li><a href="Core.Agent.AppointmentCalendar.html">Core.Agent.AppointmentCalendar</a></li><li><a href="Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage.html">Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage</a></li><li><a href="Core.Agent.CustomerInformationCenter.html">Core.Agent.CustomerInformationCenter</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.CustomerSearchAutoComplete.html">Core.Agent.CustomerSearchAutoComplete</a></li><li><a href="Core.Agent.CustomerUserAddressBook.html">Core.Agent.CustomerUserAddressBook</a></li><li><a href="Core.Agent.CustomerUserInformationCenter.html">Core.Agent.CustomerUserInformationCenter</a></li><li><a href="Core.Agent.CustomerUserInformationCenterSearch.html">Core.Agent.CustomerUserInformationCenterSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.Header.html">Core.Agent.Header</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.LinkObject.SearchForm.html">Core.Agent.LinkObject.SearchForm</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Overview.html">Core.Agent.Overview</a></li><li><a href="Core.Agent.Preferences.html">Core.Agent.Preferences</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Statistics.ParamsWidget.html">Core.Agent.Statistics.ParamsWidget</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketActionCommon.html">Core.Agent.TicketActionCommon</a></li><li><a href="Core.Agent.TicketBounce.html">Core.Agent.TicketBounce</a></li><li><a href="Core.Agent.TicketBulk.html">Core.Agent.TicketBulk</a></li><li><a href="Core.Agent.TicketCompose.html">Core.Agent.TicketCompose</a></li><li><a href="Core.Agent.TicketEmail.html">Core.Agent.TicketEmail</a></li><li><a href="Core.Agent.TicketEmailOutbound.html">Core.Agent.TicketEmailOutbound</a></li><li><a href="Core.Agent.TicketEmailResend.html">Core.Agent.TicketEmailResend</a></li><li><a href="Core.Agent.TicketForward.html">Core.Agent.TicketForward</a></li><li><a href="Core.Agent.TicketHistory.html">Core.Agent.TicketHistory</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketMove.html">Core.Agent.TicketMove</a></li><li><a href="Core.Agent.TicketPhone.html">Core.Agent.TicketPhone</a></li><li><a href="Core.Agent.TicketPhoneCommon.html">Core.Agent.TicketPhoneCommon</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketSplit.html">Core.Agent.TicketSplit</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketMessage.html">Core.Customer.TicketMessage</a></li><li><a href="Core.Customer.TicketProcess.html">Core.Customer.TicketProcess</a></li><li><a href="Core.Customer.TicketSearch.html">Core.Customer.TicketSearch</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Init.html">Core.Init</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.Language.html">Core.Language</a></li><li><a href="Core.SystemConfiguration.html">Core.SystemConfiguration</a></li><li><a href="Core.Template.html">Core.Template</a></li><li><a href="Core.TicketProcess.html">Core.TicketProcess</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul><h3>Global</h3><ul><li><a href="global.html#EditAppointment">EditAppointment</a></li></ul>
 </nav>
 
 <br clear="both">

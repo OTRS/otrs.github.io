@@ -22,27 +22,24 @@ our @ObjectDependencies = (
     'Kernel::System::Package',
     'Kernel::System::Registration',
     'Kernel::System::SupportDataCollector',
-    'Kernel::System::Time',
+    'Kernel::System::SysConfig',
+    'Kernel::System::DateTime',
 );
 
 =head1 NAME
 
 Kernel::System::SupportBundleGenerator - support bundle generator
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All support bundle generator functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=item new()
+Don't use the constructor directly, use the ObjectManager instead:
 
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $SupportBundleGeneratorObject = $Kernel::OM->Get('Kernel::System::SupportBundleGenerator');
 
 =cut
@@ -66,7 +63,7 @@ sub new {
     return $Self;
 }
 
-=item Generate()
+=head2 Generate()
 
 Generates a support bundle C<.tar> or C<.tar.gz> with the following contents: Registration Information,
 Support Data, Installed Packages, and another C<.tar> or C<.tar.gz> with all changed or new files in the
@@ -161,6 +158,21 @@ sub Generate {
         };
     }
 
+    # get the configuration dump
+    ( $SupportFiles{ConfigurationDumpContent}, $SupportFiles{ConfigurationDumpFilename} )
+        = $Self->GenerateConfigurationDump();
+    if ( !$SupportFiles{ConfigurationDumpFilename} ) {
+        my $Message = 'Can not get the configuration dump!';
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => $Message,
+        );
+        return {
+            Success => 0,
+            Message => $Message,
+        };
+    }
+
     # get config object
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
@@ -187,7 +199,7 @@ sub Generate {
     my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
 
     my @List;
-    for my $Key (qw(PackageList RegistrationInfo SupportData CustomFilesArchive)) {
+    for my $Key (qw(PackageList RegistrationInfo SupportData CustomFilesArchive ConfigurationDump)) {
 
         if ( $SupportFiles{ $Key . 'Filename' } && $SupportFiles{ $Key . 'Content' } ) {
 
@@ -206,15 +218,8 @@ sub Generate {
         }
     }
 
-    # get time object
-    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-
-    ## no critic
-    my ( $s, $m, $h, $D, $M, $Y, $wd, $yd, $dst ) = $TimeObject->SystemTime2Date(
-        SystemTime => $TimeObject->SystemTime(),
-    );
-    ## use critic
-    my $Filename = "SupportBundle_$Y-$M-$D" . '_' . "$h-$m";
+    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+    my $Filename = "SupportBundle_" . $DateTimeObject->Format( Format => "%Y-%m-%d_%H-%M" );
 
     # add files to the tar archive
     my $Archive   = $TempDir . '/' . $Filename;
@@ -272,7 +277,7 @@ sub Generate {
     };
 }
 
-=item GenerateCustomFilesArchive()
+=head2 GenerateCustomFilesArchive()
 
 Generates a C<.tar> or C<.tar.gz> file with all eligible changed or added files taking the ARCHIVE file as a reference
 
@@ -349,15 +354,9 @@ sub GenerateCustomFilesArchive {
             next CONFIGFILE;
         }
 
-        # Trim any passswords.
-        # Simple settings like $Self->{'DatabasePw'} or $Self->{'AuthModule::LDAP::SearchUserPw1'}.
-        $Content =~ s/(\$Self->\{'*[^']+(?:Password|Pw)\d*'*\}\s*=\s*)\'.*?\'/$1\'xxx\'/mg;
-
-        # Complex settings like:
-        #     $Self->{CustomerUser1} = {
-        #         Params => {
-        #             UserPw => 'xxx',
-        $Content =~ s/((?:Password|Pw)\d*\s*=>\s*)\'.*?\'/$1\'xxx\'/mg;
+        $Content = $Self->_MaskPasswords(
+            StringToMask => $Content,
+        );
 
         $TarObject->replace_content( $FullFilePath, $Content );
     }
@@ -410,7 +409,7 @@ sub GenerateCustomFilesArchive {
     return ( \$TmpTar, 'application.tar' );
 }
 
-=item GeneratePackageList()
+=head2 GeneratePackageList()
 
 Generates a .csv file with all installed packages
 
@@ -451,7 +450,7 @@ sub GeneratePackageList {
     return ( \$CSVContent, 'InstalledPackages.csv' );
 }
 
-=item GenerateRegistrationInfo()
+=head2 GenerateRegistrationInfo()
 
 Generates a C<.json> file with the otrs system registration information
 
@@ -501,7 +500,34 @@ sub GenerateRegistrationInfo {
     return ( \$JSONContent, 'RegistrationInfo.json' );
 }
 
-=item GenerateSupportData()
+=head2 GenerateConfigurationDump()
+
+Generates a <.yml> file with the otrs system registration information
+
+    my ( $Content, $Filename ) = $SupportBundleGeneratorObject->GenerateConfigurationDump();
+
+Returns:
+    $Content  = $FileContentsRef;
+    $Filename = <'ModifiedSettings.yml'>;
+
+=cut
+
+sub GenerateConfigurationDump {
+    my ( $Self, %Param ) = @_;
+
+    my $Export = $Kernel::OM->Get('Kernel::System::SysConfig')->ConfigurationDump(
+        SkipDefaultSettings => 1,
+    );
+
+    $Export = $Self->_MaskPasswords(
+        StringToMask => $Export,
+        YAML         => 1
+    );
+
+    return ( \$Export, 'ModifiedSettings.yml' );
+}
+
+=head2 GenerateSupportData()
 
 Generates a C<.json> file with the support data
 
@@ -564,7 +590,7 @@ sub _GetMD5SumLookup {
         %PackageMD5SumLookup = ( %PackageMD5SumLookup, %{$PartialMD5Sum} );
     }
 
-    # add MD5Sums from all packages to the list from framwork ARCHIVE
+    # add MD5Sums from all packages to the list from framework ARCHIVE
     # overwritten files by packages will also overwrite the MD5 Sum
     %MD5SumLookup = ( %MD5SumLookup, %PackageMD5SumLookup );
 
@@ -589,7 +615,7 @@ sub _GetCustomFileList {
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     # article directory
-    my $ArticleDir = $ConfigObject->Get('ArticleDir');
+    my $ArticleDir = $ConfigObject->Get('Ticket::Article::Backend::MIMEBase::ArticleDataDir');
 
     # cleanup file name
     $ArticleDir =~ s/\/\//\//g;
@@ -665,7 +691,35 @@ sub _GetCustomFileList {
     return @Files;
 }
 
-=back
+sub _MaskPasswords {
+    my ( $Self, %Param ) = @_;
+
+    # check needed stuff
+    for my $Needed (qw(StringToMask)) {
+        if ( !$Param{$Needed} ) {
+            $Kernel::OM->Get('Kernel::System::Log')->Log(
+                Priority => 'error',
+                Message  => "Need $Needed!"
+            );
+            return;
+        }
+    }
+
+    my $StringToMask = $Param{StringToMask};
+
+    # Trim any passswords.
+    # Simple settings like $Self->{'DatabasePw'} or $Self->{'AuthModule::LDAP::SearchUserPw1'}.
+    $StringToMask =~ s/(\$Self->\{'*[^']+(?:Password|Pw)\d*'*\}\s*=\s*)\'.*?\'/$1\'xxx\'/mg;
+
+    # Complex settings like:
+    #     $Self->{CustomerUser1} = {
+    #         Params => {
+    #             UserPw => 'xxx',
+    $StringToMask =~ s/((?:Password|Pw)\d*\s*=>\s*)\'.*?\'/$1\'xxx\'/mg;
+
+    return $StringToMask;
+
+}
 
 =head1 TERMS AND CONDITIONS
 

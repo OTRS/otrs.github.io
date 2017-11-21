@@ -26,49 +26,58 @@ use Kernel::Output::HTML::Layout;
 use Kernel::System::Auth;
 use Kernel::System::AuthSession;
 use Kernel::System::Cache;
+use Kernel::System::DateTime;
 use Kernel::System::DB;
 use Kernel::System::Encode;
 use Kernel::System::Group;
 use Kernel::System::Log;
 use Kernel::System::Main;
-use Kernel::System::Time;
 use Kernel::System::Web::Request;
 use Kernel::System::User;
 
-# Contains the top-level object being retrieved;
-# used to generate better error messages.
-our $CurrentObject;
-
 =head1 NAME
 
-Kernel::System::ObjectManager - object and dependency manager
+Kernel::System::ObjectManager - Central singleton manager and object instance generator
 
 =head1 SYNOPSIS
 
-The ObjectManager is the central place to create and access singleton OTRS objects.
+    # In top level scripts only!
+    local $Kernel::OM = Kernel::System::ObjectManager->new();
 
-=head2 How does it work?
+    # Everywhere: get a singleton instance (and create it, if needed).
+    my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
+
+    # Remove singleton objects and all their dependencies.
+    $Kernel::OM->ObjectsDiscard(
+        Objects            => ['Kernel::System::Ticket', 'Kernel::System::Queue'],
+    );
+
+=head1 DESCRIPTION
+
+The ObjectManager is the central place to create and access singleton OTRS objects (via C<L</Get()>>)
+as well as create regular (unmanaged) object instances (via C<L</Create()>>).
+
+=head2 How does singleton management work?
 
 It creates objects as late as possible and keeps references to them. Upon destruction the objects
 are destroyed in the correct order, based on their dependencies (see below).
 
 =head2 How to use it?
 
-The ObjectManager must always be provided to OTRS by the toplevel script like this:
+The ObjectManager must always be provided to OTRS by the top level script like this:
 
     use Kernel::System::ObjectManager;
     local $Kernel::OM = Kernel::System::ObjectManager->new(
-        # options for module constructors here
+        # possible options for module constructors here
         LogObject {
             LogPrefix => 'OTRS-MyTestScript',
         },
     );
 
-Then in the code any object can be retrieved that the ObjectManager can handle,
+Then in the code any singleton object can be retrieved that the ObjectManager can handle,
 like Kernel::System::DB:
 
     return if !$Kernel::OM->Get('Kernel::System::DB')->Prepare('SELECT 1');
-
 
 =head2 Which objects can be loaded?
 
@@ -86,7 +95,7 @@ The ObjectManager can load every object that declares its dependencies like this
     );
 
 The C<@ObjectDependencies> is the list of objects that the current object will depend on. They will
-be destroyed only after this object is destroyed.
+be destroyed only after this object is destroyed (only for singletons).
 
 If you want to signal that a package can NOT be loaded by the ObjectManager, you can use the
 C<$ObjectManagerDisabled> flag:
@@ -96,18 +105,36 @@ C<$ObjectManagerDisabled> flag:
     use strict;
     use warnings;
 
-    $ObjectManagerDisabled = 1;
+    our $ObjectManagerDisabled = 1;
+
+There are a few flags available to convey meta data about the packages to the object manager.
+
+To indicate that a certain package can B<only> be loaded as a singleton, you can use the
+C<IsSingleton> flag. Similarly, you can indicate that a certain package can B<only> be
+created as unmanaged instance, and B<not> as a singleton via the C<NonSingleton> flag.
+By default, the ObjectManager will die if a constructor does not return an object.
+To suppress this in the C<L</Create()>> method, you can use the C<AllowConstructorFailure>
+flag (this will not work with C<L</Get()>>).
+
+    package Kernel::System::MyPackage;
+
+    use strict;
+    use warnings;
+
+    our %ObjectManagerFlags = (
+        IsSingleton             => 1,  # default 0
+        NonSingleton            => 0,  # default 0
+        AllowConstructorFailure => 0,  # default 0
+    );
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=item new()
+=head2 new()
 
 Creates a new instance of Kernel::System::ObjectManager.
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
+This is typically B<only> needed in top level (C<bin/>) scripts! All parts of the OTRS API assume
+the ObjectManager to be present in C<$Kernel::OM> and use it.
 
 Sometimes objects need parameters to be sent to their constructors,
 these can also be passed to the ObjectManager's constructor like in the following example.
@@ -119,7 +146,7 @@ The hash reference will be flattened and passed to the constructor of the object
         },
     );
 
-Alternatively, C<ObjectParamAdd()> can be used to set these parameters at runtime (but this
+Alternatively, C<L</ObjectParamAdd()>> can be used to set these parameters at runtime (but this
 must happen before the object was created).
 
 If the C<< Debug => 1 >> option is present, destruction of objects
@@ -146,20 +173,18 @@ sub new {
     return $Self;
 }
 
-=item Get()
+=head2 Get()
 
 Retrieves a singleton object, and if it not yet exists, implicitly creates one for you.
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-DEPRECATED: For backwards compatibility reasons, object aliases can be defined in L<Kernel::Config::Defaults>.
-For example C<< ->Get('TicketObject') >> retrieves a L<Kernel::System::Ticket> object.
-
-    my $ConfigObject = $Kernel::OM->Get('Kernel::Config'); # returns the same ConfigObject as above
+    # On the second call, this returns the same ConfigObject as above.
+    my $ConfigObject2 = $Kernel::OM->Get('Kernel::Config');
 
 =cut
 
-sub Get {
+sub Get {    ## no critic
 
     # No param unpacking for increased performance
     if ( $_[1] && $_[0]->{Objects}->{ $_[1] } ) {
@@ -172,41 +197,78 @@ sub Get {
         );
     }
 
-    # record the object we are about to retrieve to potentially
-    # build better error messages
-    # needs to be a statement-modifying 'if', otherwise 'local'
-    # is local to the scope of the 'if'-block
-    local $CurrentObject = $_[1] if !$CurrentObject;
-
     return $_[0]->_ObjectBuild( Package => $_[1] );
+}
+
+=head2 Create()
+
+Creates a new object instance. This instance will not be managed by the object manager later on.
+
+    my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+
+    # On the second call, this creates a new independent instance.
+    my $DateTimeObject2 = $Kernel::OM->Create('Kernel::System::DateTime');
+
+It is also possible to pass in constructor parameters:
+
+    my $DateTimeObject = $Kernel::OM->Create(
+        'Kernel::System::DateTime',
+        ObjectParams => {
+            Param1 => 'Value1',
+        },
+    );
+
+By default, this method will C<die>, if the package cannot be instantiated or the constructor returns undef.
+You can suppress this with C<< Silent => 1 >>, for example to not cause exceptions when trying
+to load modules based on user configuration.
+
+    my $CustomObject = $Kernel::OM->Create(
+        'Kernel::System::CustomObject',
+        Silent => 1,
+    );
+
+=cut
+
+sub Create {
+    my ( $Self, $Package, %Param ) = @_;
+
+    if ( !$Package ) {
+        $Self->_DieWithError(
+            Error => "Error: Missing parameter (object name)",
+        );
+    }
+
+    return $Self->_ObjectBuild(
+        %Param,
+        Package     => $Package,
+        NoSingleton => 1,
+    );
 }
 
 sub _ObjectBuild {
     my ( $Self, %Param ) = @_;
 
-    my $Package  = $Param{Package};
-    my $FileName = $Package;
-    $FileName =~ s{::}{/}g;
-    $FileName .= '.pm';
+    my $Package = $Param{Package};
     eval {
-        require $FileName;
+        my $FileName = $Param{Package} =~ s{::}{/}smxgr;
+        require $FileName . '.pm';
     };
     if ($@) {
-        if ( $CurrentObject && $CurrentObject ne $Package ) {
-            $Self->_DieWithError(
-                Error => "$CurrentObject depends on $Package, but $Package could not be loaded: $@",
-            );
+        if ( $Param{Silent} ) {
+            return;    # don't throw
         }
-        else {
-            $Self->_DieWithError(
-                Error => "$Package could not be loaded: $@",
-            );
-        }
+        $Self->_DieWithError(
+            Error => "$Package could not be loaded: $@",
+        );
     }
 
     # Kernel::Config does not declare its dependencies (they would have to be in
     #   Kernel::Config::Defaults), so assume [] in this case.
     my $Dependencies = [];
+
+    no strict 'refs';    ## no critic
+    my %ObjectManagerFlags = %{ $Package . '::ObjectManagerFlags' };
+    use strict 'refs';
 
     if ( $Package ne 'Kernel::Config' ) {
         no strict 'refs';    ## no critic
@@ -219,38 +281,52 @@ sub _ObjectBuild {
             $Self->_DieWithError( Error => "$Package cannot be loaded via ObjectManager!" );
         }
 
+        if ( $Param{NoSingleton} ) {
+            if ( $ObjectManagerFlags{IsSingleton} ) {
+                $Self->_DieWithError(
+                    Error =>
+                        "$Package cannot be created as a new instance via ObjectManager! Use Get() instead of Create() to fetch the singleton."
+                );
+            }
+        }
+        else {
+            if ( $ObjectManagerFlags{NonSingleton} ) {
+                $Self->_DieWithError(
+                    Error =>
+                        "$Package cannot be loaded as a singleton via ObjectManager! Use Create() instead of Get() to create new instances."
+                );
+            }
+        }
+
         use strict 'refs';
     }
     $Self->{ObjectDependencies}->{$Package} = $Dependencies;
 
     my $NewObject = $Package->new(
-        %{ $Self->{Param}->{$Package} // {} }
+        %{ $Param{ObjectParams} // $Self->{Param}->{$Package} // {} }
     );
 
     if ( !defined $NewObject ) {
-        if ( $CurrentObject && $CurrentObject ne $Package ) {
-            $Self->_DieWithError(
-                Error =>
-                    "$CurrentObject depends on $Package, but the constructor of $Package returned undef.",
-            );
+        if ( $Param{Silent} || $ObjectManagerFlags{AllowConstructorFailure} ) {
+            return;    # don't throw
         }
-        else {
-            $Self->_DieWithError(
-                Error => "The constructor of $Package returned undef.",
-            );
-        }
+        $Self->_DieWithError(
+            Error => "The constructor of $Package returned undef.",
+        );
     }
+
+    return $NewObject if ( $Param{NoSingleton} );
 
     $Self->{Objects}->{$Package} = $NewObject;
 
     return $NewObject;
 }
 
-=item ObjectInstanceRegister()
+=head2 ObjectInstanceRegister()
 
 Adds an existing object instance to the ObjectManager so that it can be accessed by other objects.
 
-This should only be used on special circumstances, e. g. in the unit tests to pass $Self to the
+This should B<only> be used on special circumstances, e. g. in the unit tests to pass C<$Self> to the
 ObjectManager so that it is also available from there as 'Kernel::System::UnitTest'.
 
     $Kernel::OM->ObjectInstanceRegister(
@@ -278,10 +354,10 @@ sub ObjectInstanceRegister {
     return 1;
 }
 
-=item ObjectParamAdd()
+=head2 ObjectParamAdd()
 
 Adds arguments that will be passed to constructors of classes
-when they are created, in the same format as the C<new()> method
+when they are created, in the same format as the C<L<new()>> method
 receives them.
 
     $Kernel::OM->ObjectParamAdd(
@@ -321,7 +397,47 @@ sub ObjectParamAdd {
     return;
 }
 
-=item ObjectsDiscard()
+=head2 ObjectEventsHandle()
+
+Execute all queued (C<< Transaction => 1 >>) events for all singleton objects
+that the ObjectManager created before. This can be used to flush the event queue
+before destruction, for example.
+
+    $Kernel::OM->ObjectEventsHandle();
+
+=cut
+
+sub ObjectEventsHandle {
+    my ( $Self, %Param ) = @_;
+
+    my $HasQueuedTransactions;
+    EVENTS:
+    for my $Counter ( 1 .. 10 ) {
+        $HasQueuedTransactions = 0;
+        EVENTHANDLERS:
+        for my $EventHandler ( @{ $Self->{EventHandlers} } ) {
+
+            # since the event handlers are weak references,
+            # they might be undef by now.
+            next EVENTHANDLERS if !defined $EventHandler;
+            if ( $EventHandler->EventHandlerHasQueuedTransactions() ) {
+                $HasQueuedTransactions = 1;
+                $EventHandler->EventHandlerTransaction();
+            }
+        }
+        if ( !$HasQueuedTransactions ) {
+            last EVENTS;
+        }
+    }
+    if ($HasQueuedTransactions) {
+        warn "Unable to handle all pending events in 10 iterations";
+    }
+    delete $Self->{EventHandlers};
+
+    return;
+}
+
+=head2 ObjectsDiscard()
 
 Discards internally stored objects, so that the next access to objects
 creates them newly. If a list of object names is passed, only
@@ -354,29 +470,7 @@ sub ObjectsDiscard {
     my ( $Self, %Param ) = @_;
 
     # fire outstanding events before destroying anything
-    my $HasQueuedTransactions;
-    EVENTS:
-    for my $Counter ( 1 .. 10 ) {
-        $HasQueuedTransactions = 0;
-        EVENTHANDLERS:
-        for my $EventHandler ( @{ $Self->{EventHandlers} } ) {
-
-            # since the event handlers are weak references,
-            # they might be undef by now.
-            next EVENTHANDLERS if !defined $EventHandler;
-            if ( $EventHandler->EventHandlerHasQueuedTransactions() ) {
-                $HasQueuedTransactions = 1;
-                $EventHandler->EventHandlerTransaction();
-            }
-        }
-        if ( !$HasQueuedTransactions ) {
-            last EVENTS;
-        }
-    }
-    if ($HasQueuedTransactions) {
-        warn "Unable to handle all pending events in 10 iterations";
-    }
-    delete $Self->{EventHandlers};
+    $Self->ObjectEventsHandle();
 
     # destroy objects before their dependencies are destroyed
 
@@ -503,7 +597,7 @@ sub ObjectsDiscard {
     return 1;
 }
 
-=item ObjectRegisterEventHandler()
+=head2 ObjectRegisterEventHandler()
 
 Registers an object that can handle asynchronous events.
 
@@ -548,9 +642,9 @@ sub DESTROY {
     # Make sure $Kernel::OM is still available in the destructor
     local $Kernel::OM = $Self;
     $Self->ObjectsDiscard();
-}
 
-=back
+    return;
+}
 
 =head1 TERMS AND CONDITIONS
 

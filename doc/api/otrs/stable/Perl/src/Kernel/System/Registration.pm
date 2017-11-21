@@ -20,16 +20,17 @@ our @ObjectDependencies = (
     'Kernel::System::DB',
     'Kernel::System::Environment',
     'Kernel::System::Log',
+    'Kernel::System::OTRSBusiness',
     'Kernel::System::SupportDataCollector',
     'Kernel::System::SystemData',
-    'Kernel::System::Time',
+    'Kernel::System::DateTime',
 );
 
 =head1 NAME
 
 Kernel::System::Registration - Registration lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All Registration functions.
 
@@ -54,16 +55,10 @@ UpdateID the Portal refuses the update and an updated registration is required.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $RegistrationObject = $Kernel::OM->Get('Kernel::System::Registration');
 
 
@@ -87,7 +82,7 @@ sub new {
     return $Self;
 }
 
-=item TokenGet()
+=head2 TokenGet()
 
 Get a token needed for system registration.
 To obtain this token, you need to pass a valid OTRS ID and password.
@@ -232,7 +227,7 @@ sub TokenGet {
     return %Result;
 }
 
-=item Register()
+=head2 Register()
 
 Register the system;
 
@@ -404,21 +399,21 @@ sub Register {
         Message  => "Registration - received UniqueID '$ResponseData->{UniqueID}'.",
     );
 
-    # get time object
-    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+    # get datetime object
+    my $DateTimeObject   = $Kernel::OM->Create('Kernel::System::DateTime');
+    my $CurrentTimestamp = $DateTimeObject->ToString();
 
     # calculate due date for next update, fall back to 24h
     my $NextUpdateSeconds = int $ResponseData->{NextUpdate} || ( 60 * 60 * 24 );
-    my $NextUpdateTime = $TimeObject->SystemTime2TimeStamp(
-        SystemTime => $TimeObject->SystemTime() + $NextUpdateSeconds,
-    );
+    $DateTimeObject->Add( Seconds => $NextUpdateSeconds );
+    my $NextUpdateTime = $DateTimeObject->ToString();
 
     my %RegistrationData = (
         State              => 'registered',
         UniqueID           => $ResponseData->{UniqueID},
         APIKey             => $ResponseData->{APIKey},
         LastUpdateID       => $ResponseData->{LastUpdateID},
-        LastUpdateTime     => $TimeObject->CurrentTimestamp(),
+        LastUpdateTime     => $CurrentTimestamp,
         Type               => $ResponseData->{Type} || $Param{Type},
         Description        => $ResponseData->{Description} || $Param{Description},
         SupportDataSending => $ResponseData->{SupportDataSending} || $SupportDataSending,
@@ -511,7 +506,7 @@ sub Register {
     return 1;
 }
 
-=item RegistrationDataGet()
+=head2 RegistrationDataGet()
 
 Get the registration data from the system.
 
@@ -556,7 +551,7 @@ sub RegistrationDataGet {
     return %RegistrationData;
 }
 
-=item RegistrationUpdateSend()
+=head2 RegistrationUpdateSend()
 
 Register the system as Active.
 This also updates any information on Database, OTRS Version and Perl version that
@@ -569,6 +564,7 @@ If you provide Type and Description, these will be sent to the registration serv
     my %Result = $RegistrationObject->RegistrationUpdateSend(
         Type        => 'test',
         Description => 'new test system',
+        Debug       => 1,                 # optional
     );
 
 returns
@@ -589,7 +585,12 @@ or
 sub RegistrationUpdateSend {
     my ( $Self, %Param ) = @_;
 
-    if ( $Self->{CloudServicesDisabled} ) {
+    # If OTRSSTORM package is installed, system is able to do a Cloud request even if CloudService is disabled.
+    if (
+        !$Kernel::OM->Get('Kernel::System::OTRSBusiness')->OTRSSTORMIsInstalled()
+        && $Self->{CloudServicesDisabled}
+        )
+    {
         return (
             Success => 0,
             Reason  => 'Cloud services are disabled!',
@@ -635,6 +636,7 @@ sub RegistrationUpdateSend {
         my %CollectResult = eval {
             $Kernel::OM->Get('Kernel::System::SupportDataCollector')->Collect(
                 WebTimeout => $SupportDataCollectorWebTimeout,
+                Debug      => $Param{Debug},
             );
         };
         if ( !$CollectResult{Success} ) {
@@ -772,19 +774,19 @@ sub RegistrationUpdateSend {
         Message  => "RegistrationUpdate - received UpdateID '$ResponseData->{UpdateID}'.",
     );
 
-    # get time object
-    my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
+    # get datetime object
+    my $DateTimeObject   = $Kernel::OM->Create('Kernel::System::DateTime');
+    my $CurrentTimestamp = $DateTimeObject->ToString();
 
-    # calculate due date for next update, fall back to 24 hours
+    # calculate due date for next update, fall back to 24h
     my $NextUpdateSeconds = int $ResponseData->{NextUpdate} || ( 60 * 60 * 24 );
-    my $NextUpdateTime = $TimeObject->SystemTime2TimeStamp(
-        SystemTime => $TimeObject->SystemTime() + $NextUpdateSeconds,
-    );
+    $DateTimeObject->Add( Seconds => $NextUpdateSeconds );
+    my $NextUpdateTime = $DateTimeObject->ToString();
 
     # gather and update provided data in SystemData table
     my %UpdateData = (
         LastUpdateID       => $ResponseData->{UpdateID},
-        LastUpdateTime     => $TimeObject->CurrentTimestamp(),
+        LastUpdateTime     => $CurrentTimestamp,
         Type               => $ResponseData->{Type},
         Description        => $ResponseData->{Description},
         SupportDataSending => $ResponseData->{SupportDataSending} || $SupportDataSending,
@@ -863,7 +865,7 @@ sub RegistrationUpdateSend {
     );
 }
 
-=item Deregister()
+=head2 Deregister()
 
 Deregister the system. Deregistering also stops any update jobs.
 
@@ -991,8 +993,6 @@ sub Deregister {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

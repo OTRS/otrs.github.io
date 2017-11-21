@@ -25,22 +25,16 @@ our @ObjectDependencies = (
 
 Kernel::System::XML - xml lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All xml related functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $XMLObject = $Kernel::OM->Get('Kernel::System::XML');
 
 =cut
@@ -55,7 +49,7 @@ sub new {
     return $Self;
 }
 
-=item XMLHashAdd()
+=head2 XMLHashAdd()
 
 add an XMLHash to storage
 
@@ -137,7 +131,7 @@ sub XMLHashAdd {
     return;
 }
 
-=item XMLHashUpdate()
+=head2 XMLHashUpdate()
 
 update an XMLHash to storage
 
@@ -168,7 +162,7 @@ sub XMLHashUpdate {
     return $Self->XMLHashAdd(%Param);
 }
 
-=item XMLHashGet()
+=head2 XMLHashGet()
 
 get an XMLHash from the database
 
@@ -260,7 +254,7 @@ sub XMLHashGet {
     return @XMLHash;
 }
 
-=item XMLHashDelete()
+=head2 XMLHashDelete()
 
 delete an XMLHash from the database
 
@@ -302,7 +296,7 @@ sub XMLHashDelete {
     return 1;
 }
 
-=item XMLHashMove()
+=head2 XMLHashMove()
 
 move an XMLHash from one type or/and key to another
 
@@ -361,7 +355,7 @@ sub XMLHashMove {
     return 1;
 }
 
-=item XMLHashSearch()
+=head2 XMLHashSearch()
 
 Search an XMLHash in the database.
 
@@ -480,7 +474,7 @@ sub XMLHashSearch {
     return @Keys;
 }
 
-=item XMLHashList()
+=head2 XMLHashList()
 
 generate a list of XMLHashes in the database
 
@@ -518,7 +512,7 @@ sub XMLHashList {
     return @Keys;
 }
 
-=item XMLHash2XML()
+=head2 XMLHash2XML()
 
 generate an XML string from an XMLHash
 
@@ -539,7 +533,7 @@ sub XMLHash2XML {
     return $Output;
 }
 
-=item XMLParse2XMLHash()
+=head2 XMLParse2XMLHash()
 
 parse an XML file and return an XMLHash structure
 
@@ -627,7 +621,7 @@ sub XMLParse2XMLHash {
 
 }
 
-=item XMLHash2D()
+=head2 XMLHash2D()
 
 returns a simple hash with tag keys as keys and the values of C<XMLHash> as values.
 As a side effect the data structure C<XMLHash> is enriched with tag keys.
@@ -677,7 +671,7 @@ sub XMLHash2D {
     return %{ $Self->{XMLHash} };
 }
 
-=item XMLStructure2XMLHash()
+=head2 XMLStructure2XMLHash()
 
 get an @XMLHash from a @XMLStructure with current TagKey param
 
@@ -718,7 +712,7 @@ sub XMLStructure2XMLHash {
     return ( \%{ $Self->{XMLHash2} } );
 }
 
-=item XMLParse()
+=head2 XMLParse()
 
 parse an XML file
 
@@ -868,7 +862,7 @@ sub XMLParse {
 
 =begin Internal:
 
-=item  _XMLHashAddAutoIncrement()
+=head2  _XMLHashAddAutoIncrement()
 
 Generate a new integer key.
 All keys for that type must be integers.
@@ -1570,8 +1564,6 @@ sub _ES {
 1;
 
 =end Internal:
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

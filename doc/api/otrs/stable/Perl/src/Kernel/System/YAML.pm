@@ -23,20 +23,15 @@ our @ObjectDependencies = (
 
 Kernel::System::YAML - YAML wrapper functions
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Functions for YAML serialization / deserialization.
 
-=over 4
 
-=cut
-
-=item new()
+=head2 new()
 
 create a YAML object. Do not use it directly, instead use:
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $YAMLObject = $Kernel::OM->Get('Kernel::System::YAML');
 
 =cut
@@ -51,7 +46,7 @@ sub new {
     return $Self;
 }
 
-=item Dump()
+=head2 Dump()
 
 Dump a perl data structure to a YAML string.
 
@@ -81,7 +76,7 @@ sub Dump {
     return $Result;
 }
 
-=item Load()
+=head2 Load()
 
 Load a YAML string to a perl data structure.
 This string must be a encoded in UTF8.
@@ -100,6 +95,17 @@ sub Load {
 
     if ( Encode::is_utf8( $Param{Data} ) ) {
         Encode::_utf8_off( $Param{Data} );
+    }
+
+    # There is a currently a problem with YAML loader it cant load YAML representations of:
+    #   0, '0' or ''.
+    # This workaround looks for this special cases and returns the correct value without using the
+    #   loader
+    if ( $Param{Data} =~ m{\A---[ ](?: '0' | 0 )\n\z}msx ) {
+        return 0;
+    }
+    elsif ( $Param{Data} eq "--- ''\n" ) {
+        return '';
     }
 
     my $Result;
@@ -147,7 +153,7 @@ sub Load {
 
 =begin Internal:
 
-=item _AddUTF8Flag()
+=head2 _AddUTF8Flag()
 
 adds the UTF8 flag to all elements in a complex data structure.
 
@@ -193,8 +199,6 @@ sub _AddUTF8Flag {
 1;
 
 =end Internal:
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

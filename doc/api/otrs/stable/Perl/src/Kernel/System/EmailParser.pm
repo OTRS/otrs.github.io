@@ -24,23 +24,17 @@ our $ObjectManagerDisabled = 1;
 
 Kernel::System::EmailParser - parse and encode an email
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 A module to parse and encode an email.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object. Do not use it directly, instead use:
 
     use Kernel::System::EmailParser;
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
 
     # as string (takes more memory!)
     my $ParserObject = Kernel::System::EmailParser->new(
@@ -96,6 +90,8 @@ sub new {
             $Param{Email} = \@Content;
         }
 
+        $Self->{OriginalEmail} = join( '', @{ $Param{Email} } );
+
         # create Mail::Internet object
         $Self->{Email} = Mail::Internet->new( $Param{Email} );
 
@@ -127,7 +123,7 @@ sub new {
     return $Self;
 }
 
-=item GetPlainEmail()
+=head2 GetPlainEmail()
 
 To get a email as a string back (plain email).
 
@@ -138,10 +134,10 @@ To get a email as a string back (plain email).
 sub GetPlainEmail {
     my $Self = shift;
 
-    return $Self->{Email}->as_string();
+    return $Self->{OriginalEmail} || $Self->{Email}->as_string();
 }
 
-=item GetParam()
+=head2 GetParam()
 
 To get a header (e. g. Subject, To, ContentType, ...) of an email
 (mime is already done!).
@@ -199,7 +195,7 @@ sub GetParam {
     return $ReturnLine;
 }
 
-=item GetEmailAddress()
+=head2 GetEmailAddress()
 
 To get the senders email address back.
 
@@ -224,7 +220,7 @@ sub GetEmailAddress {
     return $Email;
 }
 
-=item GetRealname()
+=head2 GetRealname()
 
 to get the sender's C<RealName>.
 
@@ -256,7 +252,7 @@ sub GetRealname {
     return $Realname;
 }
 
-=item SplitAddressLine()
+=head2 SplitAddressLine()
 
 To get an array of email addresses of an To, Cc or Bcc line back.
 
@@ -279,7 +275,7 @@ sub SplitAddressLine {
     return @GetParam;
 }
 
-=item GetContentType()
+=head2 GetContentType()
 
 Returns the message body (or from the first attachment) "ContentType" header.
 
@@ -297,7 +293,7 @@ sub GetContentType {
     return $Self->GetParam( WHAT => 'Content-Type' ) || 'text/plain';
 }
 
-=item GetCharset()
+=head2 GetCharset()
 
 Returns the message body (or from the first attachment) "charset".
 
@@ -395,7 +391,7 @@ sub GetCharset {
     return 'ISO-8859-1';
 }
 
-=item GetReturnContentType()
+=head2 GetReturnContentType()
 
 Returns the new message body (or from the first attachment) "ContentType" header
 (maybe the message is converted to utf-8).
@@ -424,7 +420,7 @@ sub GetReturnContentType {
     return $ContentType;
 }
 
-=item GetReturnCharset()
+=head2 GetReturnCharset()
 
 Returns the charset of the new message body "Charset"
 (maybe the message is converted to utf-8).
@@ -441,7 +437,7 @@ sub GetReturnCharset {
     return 'utf-8';
 }
 
-=item GetMessageBody()
+=head2 GetMessageBody()
 
 Returns the message body (or from the first attachment) from the email.
 
@@ -453,7 +449,7 @@ sub GetMessageBody {
     my ( $Self, %Param ) = @_;
 
     # check if message body is already there
-    return $Self->{MessageBody} if $Self->{MessageBody};
+    return $Self->{MessageBody} if defined $Self->{MessageBody};
 
     # get encode object
     my $EncodeObject = $Kernel::OM->Get('Kernel::System::Encode');
@@ -564,7 +560,7 @@ sub GetMessageBody {
     return;
 }
 
-=item GetAttachments()
+=head2 GetAttachments()
 
 Returns an array of the email attachments.
 
@@ -677,9 +673,8 @@ sub PartsAttachments {
         if ( !$PartData{Content} ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'notice',
-                Message  => "Totally empty attachment part ($PartCounter)",
+                Message  => "Empty attachment part ($PartCounter)",
             );
-            return;
         }
     }
 
@@ -862,7 +857,7 @@ sub PartsAttachments {
     return 1;
 }
 
-=item GetReferences()
+=head2 GetReferences()
 
 To get an array of reference ids of the parsed email
 
@@ -1001,7 +996,7 @@ sub CheckMessageBody {
 
 =begin Internal:
 
-=item _DecodeString()
+=head2 _DecodeString()
 
 Decode all encoded substrings.
 
@@ -1058,7 +1053,7 @@ sub _DecodeString {
     return $DecodedString;
 }
 
-=item _MailAddressParse()
+=head2 _MailAddressParse()
 
     my @Chunks = $ParserObject->_MailAddressParse(Email => $Email);
 
@@ -1084,8 +1079,6 @@ sub _MailAddressParse {
 }
 
 =end Internal:
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

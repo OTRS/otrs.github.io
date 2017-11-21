@@ -14,7 +14,7 @@ use utf8;
 
 use Kernel::System::VariableCheck qw(:all);
 
-use base qw(Kernel::System::ProcessManagement::TransitionAction::Base);
+use parent qw(Kernel::System::ProcessManagement::TransitionAction::Base);
 
 our @ObjectDependencies = (
     'Kernel::System::Log',
@@ -26,22 +26,16 @@ our @ObjectDependencies = (
 
 Kernel::System::ProcessManagement::TransitionAction::TicketSLASet - A module to set the ticket SLA
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All TicketSLASet functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $TicketSLASetObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::TransitionAction::TicketSLASet');
 
 =cut
@@ -56,7 +50,7 @@ sub new {
     return $Self;
 }
 
-=item Run()
+=head2 Run()
 
     Run Data
 
@@ -267,7 +261,9 @@ sub Run {
     return $Success;
 }
 
-=item _CheckSLA()
+=begin Internal:
+
+=head2 _CheckSLA()
 
 checks if a SLA is assigned to a Service
 
@@ -303,7 +299,7 @@ sub _CheckSLA {
 
 1;
 
-=back
+=end Internal:
 
 =head1 TERMS AND CONDITIONS
 

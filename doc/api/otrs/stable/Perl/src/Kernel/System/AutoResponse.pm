@@ -22,22 +22,16 @@ our @ObjectDependencies = (
 
 Kernel::System::AutoResponse - auto response lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All auto response functions. E. g. to add auto response or other functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $AutoResponseObject = $Kernel::OM->Get('Kernel::System::AutoResponse');
 
 =cut
@@ -52,7 +46,7 @@ sub new {
     return $Self;
 }
 
-=item AutoResponseAdd()
+=head2 AutoResponseAdd()
 
 add auto response with attributes
 
@@ -130,7 +124,7 @@ sub AutoResponseAdd {
     return $ID;
 }
 
-=item AutoResponseGet()
+=head2 AutoResponseGet()
 
 get auto response with attributes
 
@@ -191,7 +185,7 @@ sub AutoResponseGet {
     return %Data;
 }
 
-=item AutoResponseUpdate()
+=head2 AutoResponseUpdate()
 
 update auto response with attributes
 
@@ -247,7 +241,7 @@ sub AutoResponseUpdate {
     return 1;
 }
 
-=item AutoResponseGetByTypeQueueID()
+=head2 AutoResponseGetByTypeQueueID()
 
 get a hash with data from Auto Response and it's corresponding System Address
 
@@ -264,6 +258,7 @@ Return example:
         'Subject'         => 'New ticket has been created! (RE: <OTRS_CUSTOMER_SUBJECT[24]>)',
         'ContentType'     => 'text/plain',
         'SystemAddressID' => '1',
+        'AutoResponseID'  => '1'
 
         #System Address Data
         'ID'              => '1',
@@ -299,7 +294,7 @@ sub AutoResponseGetByTypeQueueID {
     # SQL query
     return if !$DBObject->Prepare(
         SQL => "
-            SELECT ar.text0, ar.text1, ar.content_type, ar.system_address_id
+            SELECT ar.text0, ar.text1, ar.content_type, ar.system_address_id, ar.id
             FROM auto_response_type art, auto_response ar, queue_auto_response qar
             WHERE ar.valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )
                 AND qar.queue_id = ?
@@ -320,6 +315,7 @@ sub AutoResponseGetByTypeQueueID {
         $Data{Subject}         = $Row[1];
         $Data{ContentType}     = $Row[2] || 'text/plain';
         $Data{SystemAddressID} = $Row[3];
+        $Data{AutoResponseID}  = $Row[4];
     }
 
     # return if no auto response is configured
@@ -337,7 +333,7 @@ sub AutoResponseGetByTypeQueueID {
     return ( %Address, %Data );
 }
 
-=item AutoResponseWithoutQueue()
+=head2 AutoResponseWithoutQueue()
 
 get a list of the Queues that do not have Auto Response
 
@@ -378,18 +374,21 @@ sub AutoResponseWithoutQueue {
     return %QueueData;
 }
 
-=item AutoResponseList()
+=head2 AutoResponseList()
 
 get a list of the Auto Responses
 
-    my %AutoResponse = $AutoResponseObject->AutoResponseList();
+    my %AutoResponse = $AutoResponseObject->AutoResponseList(
+        Valid   => 1,                 # (optional) default 1
+        TypeID  => 1,                 # (optional) Auto Response type ID
+    );
 
 Return example:
 
     %AutoResponse = (
-        '1' => 'default reply (after new ticket has been created) ( 1 )',
-        '2' => 'default reject (after follow up and rejected of a closed ticket) ( 2 )',
-        '3' => 'default follow up (after a ticket follow up has been added) ( 3 )',
+        '1' => 'default reply (after new ticket has been created)',
+        '2' => 'default reject (after follow up and rejected of a closed ticket)',
+        '3' => 'default follow up (after a ticket follow up has been added)',
     );
 
 =cut
@@ -397,19 +396,50 @@ Return example:
 sub AutoResponseList {
     my ( $Self, %Param ) = @_;
 
-    return $Kernel::OM->Get('Kernel::System::DB')->GetTableData(
-        What  => 'id, name, id',
-        Valid => 0,
-        Clamp => 1,
-        Table => 'auto_response',
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    my $Valid = $Param{Valid} // 1;
+
+    # create sql
+    my $SQL = "SELECT ar.id, ar.name FROM auto_response ar";
+    my ( @SQLWhere, @Bind );
+
+    if ($Valid) {
+        push @SQLWhere, "ar.valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
+    }
+
+    # if there is TypeID, select only AutoResponses by that AutoResponse type
+    if ( defined $Param{TypeID} ) {
+        push @SQLWhere, "ar.type_id = ?";
+        push @Bind,     \$Param{TypeID};
+    }
+
+    if (@SQLWhere) {
+        $SQL .= " WHERE " . join( ' AND ', @SQLWhere );
+    }
+
+    # select
+    return if !$DBObject->Prepare(
+        SQL  => $SQL,
+        Bind => \@Bind,
     );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[1];
+    }
+
+    return %Data;
 }
 
-=item AutoResponseTypeList()
+=head2 AutoResponseTypeList()
 
 get a list of the Auto Response Types
 
-    my %AutoResponseType = $AutoResponseObject->AutoResponseTypeList();
+    my %AutoResponseType = $AutoResponseObject->AutoResponseTypeList(
+        Valid => 1,     # (optional) default 1
+    );
 
 Return example:
 
@@ -426,15 +456,30 @@ Return example:
 sub AutoResponseTypeList {
     my ( $Self, %Param ) = @_;
 
-    return $Kernel::OM->Get('Kernel::System::DB')->GetTableData(
-        What  => 'id, name',
-        Valid => 1,
-        Clamp => 1,
-        Table => 'auto_response_type',
-    );
+    my $Valid = $Param{Valid} // 1;
+
+    # get database object
+    my $DBObject = $Kernel::OM->Get('Kernel::System::DB');
+
+    # create sql
+    my $SQL = 'SELECT id, name FROM auto_response_type ';
+    if ($Valid) {
+        $SQL
+            .= "WHERE valid_id IN ( ${\(join ', ', $Kernel::OM->Get('Kernel::System::Valid')->ValidIDsGet())} )";
+    }
+
+    # select
+    return if !$DBObject->Prepare( SQL => $SQL );
+
+    my %Data;
+    while ( my @Row = $DBObject->FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[1];
+    }
+
+    return %Data;
 }
 
-=item AutoResponseQueue()
+=head2 AutoResponseQueue()
 
 assigns a list of auto-responses to a queue
 
@@ -496,7 +541,7 @@ sub AutoResponseQueue {
 
 =begin Internal:
 
-=item _NameExistsCheck()
+=head2 _NameExistsCheck()
 
 return if another auto-response with this name already exits
 
@@ -529,7 +574,7 @@ sub _NameExistsCheck {
     if ($Flag) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
-            Message  => "An Auto-Response with name '$Param{Name}' already exists!",
+            Message  => "An auto-response with the name '$Param{Name}' already exists.",
         );
         return;
     }
@@ -542,8 +587,6 @@ sub _NameExistsCheck {
 =cut
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

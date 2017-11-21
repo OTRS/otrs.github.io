@@ -14,7 +14,7 @@ use utf8;
 
 use Kernel::System::VariableCheck qw(:all);
 
-use base qw(Kernel::System::ProcessManagement::TransitionAction::Base);
+use parent qw(Kernel::System::ProcessManagement::TransitionAction::Base);
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -26,22 +26,16 @@ our @ObjectDependencies = (
 
 Kernel::System::ProcessManagement::TransitionAction::TicketTypeSet - A Module to set the type of a Ticket
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All TicketTypeSet functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $TicketTypeSetObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::TransitionAction::TicketTypeSet');
 
 =cut
@@ -56,7 +50,7 @@ sub new {
     return $Self;
 }
 
-=item Run()
+=head2 Run()
 
     Run Data
 
@@ -173,8 +167,6 @@ sub Run {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

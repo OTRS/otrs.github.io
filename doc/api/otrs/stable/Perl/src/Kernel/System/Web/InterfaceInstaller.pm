@@ -25,17 +25,13 @@ our @ObjectDependencies = (
 
 Kernel::System::Web::InterfaceInstaller - the installer web interface
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 the global installer web interface
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create installer web interface object
 
@@ -80,7 +76,7 @@ sub new {
     return $Self;
 }
 
-=item Run()
+=head2 Run()
 
 execute the object
 
@@ -144,6 +140,7 @@ sub Run {
         print $LayoutObject->Footer();
     }
 
+    return;
 }
 
 sub DESTROY {
@@ -162,8 +159,6 @@ sub DESTROY {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

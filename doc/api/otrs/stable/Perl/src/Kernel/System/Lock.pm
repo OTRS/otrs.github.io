@@ -23,7 +23,7 @@ our @ObjectDependencies = (
 
 Kernel::System::Lock - lock lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All lock functions.
 
@@ -32,16 +32,10 @@ Usually you would not modify those lock states, because there is no use case for
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 create an object
 
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $LockObject = $Kernel::OM->Get('Kernel::System::Lock');
 
 =cut
@@ -62,7 +56,7 @@ sub new {
     return $Self;
 }
 
-=item LockViewableLock()
+=head2 LockViewableLock()
 
 get list of view-able lock types (used to show available tickets)
 
@@ -141,7 +135,7 @@ sub LockViewableLock {
     return @ID;
 }
 
-=item LockLookup()
+=head2 LockLookup()
 
 lock state lookup by ID or Name
 
@@ -186,7 +180,7 @@ sub LockLookup {
     return $ReturnData;
 }
 
-=item LockList()
+=head2 LockList()
 
 get lock state list
 
@@ -248,8 +242,6 @@ sub LockList {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

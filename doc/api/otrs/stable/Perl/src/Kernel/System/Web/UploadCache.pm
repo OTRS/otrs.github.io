@@ -19,22 +19,16 @@ our @ObjectDependencies = (
 
 Kernel::System::Web::UploadCache - an upload file system cache
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All upload cache functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $WebUploadCacheObject = $Kernel::OM->Get('Kernel::System::Web::UploadCache');
 
 =cut
@@ -56,7 +50,7 @@ sub new {
     return;
 }
 
-=item FormIDCreate()
+=head2 FormIDCreate()
 
 create a new Form ID
 
@@ -65,12 +59,12 @@ create a new Form ID
 =cut
 
 sub FormIDCreate {
-    my $Self = shift;
+    my ( $Self, %Param ) = @_;
 
-    return $Self->{Backend}->FormIDCreate(@_);
+    return $Self->{Backend}->FormIDCreate(%Param);
 }
 
-=item FormIDRemove()
+=head2 FormIDRemove()
 
 remove all data for a provided Form ID
 
@@ -79,12 +73,12 @@ remove all data for a provided Form ID
 =cut
 
 sub FormIDRemove {
-    my $Self = shift;
+    my ( $Self, %Param ) = @_;
 
-    return $Self->{Backend}->FormIDRemove(@_);
+    return $Self->{Backend}->FormIDRemove(%Param);
 }
 
-=item FormIDAddFile()
+=head2 FormIDAddFile()
 
 add a file to a Form ID
 
@@ -110,12 +104,12 @@ ContentID is optional (automatically generated if not given on disposition = inl
 =cut
 
 sub FormIDAddFile {
-    my $Self = shift;
+    my ( $Self, %Param ) = @_;
 
-    return $Self->{Backend}->FormIDAddFile(@_);
+    return $Self->{Backend}->FormIDAddFile(%Param);
 }
 
-=item FormIDRemoveFile()
+=head2 FormIDRemoveFile()
 
 removes a file from a form id
 
@@ -127,12 +121,12 @@ removes a file from a form id
 =cut
 
 sub FormIDRemoveFile {
-    my $Self = shift;
+    my ( $Self, %Param ) = @_;
 
-    return $Self->{Backend}->FormIDRemoveFile(@_);
+    return $Self->{Backend}->FormIDRemoveFile(%Param);
 }
 
-=item FormIDGetAllFilesData()
+=head2 FormIDGetAllFilesData()
 
 returns an array with a hash ref of all files for a Form ID
 
@@ -145,12 +139,12 @@ returns an array with a hash ref of all files for a Form ID
 =cut
 
 sub FormIDGetAllFilesData {
-    my $Self = shift;
+    my ( $Self, %Param ) = @_;
 
-    return @{ $Self->{Backend}->FormIDGetAllFilesData(@_) };
+    return @{ $Self->{Backend}->FormIDGetAllFilesData(%Param) };
 }
 
-=item FormIDGetAllFilesMeta()
+=head2 FormIDGetAllFilesMeta()
 
 returns an array with a hash ref of all files for a Form ID
 
@@ -165,12 +159,12 @@ Note: returns no content, only meta data.
 =cut
 
 sub FormIDGetAllFilesMeta {
-    my $Self = shift;
+    my ( $Self, %Param ) = @_;
 
-    return @{ $Self->{Backend}->FormIDGetAllFilesMeta(@_) };
+    return @{ $Self->{Backend}->FormIDGetAllFilesMeta(%Param) };
 }
 
-=item FormIDCleanUp()
+=head2 FormIDCleanUp()
 
 Removed no longer needed temporary files.
 
@@ -181,14 +175,12 @@ Each file older than 1 day will be removed.
 =cut
 
 sub FormIDCleanUp {
-    my $Self = shift;
+    my ( $Self, %Param ) = @_;
 
-    return $Self->{Backend}->FormIDCleanUp(@_);
+    return $Self->{Backend}->FormIDCleanUp(%Param);
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

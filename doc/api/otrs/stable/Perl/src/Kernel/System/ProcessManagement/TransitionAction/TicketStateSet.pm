@@ -14,35 +14,29 @@ use utf8;
 
 use Kernel::System::VariableCheck qw(:all);
 
-use base qw(Kernel::System::ProcessManagement::TransitionAction::Base);
+use parent qw(Kernel::System::ProcessManagement::TransitionAction::Base);
 
 our @ObjectDependencies = (
     'Kernel::System::Log',
     'Kernel::System::State',
     'Kernel::System::Ticket',
-    'Kernel::System::Time',
+    'Kernel::System::DateTime',
 );
 
 =head1 NAME
 
 Kernel::System::ProcessManagement::TransitionAction::TicketStateSet - A module to set the ticket state
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All TicketStateSet functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $TicketStateSetObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::TransitionAction::TicketStateSet');
 
 =cut
@@ -57,7 +51,7 @@ sub new {
     return $Self;
 }
 
-=item Run()
+=head2 Run()
 
     Run Data
 
@@ -213,25 +207,15 @@ sub Run {
         )
     {
 
-        # get time object
-        my $TimeObject = $Kernel::OM->Get('Kernel::System::Time');
-
-        # get current time
-        my $PendingTime = $TimeObject->SystemTime();
-
-        # add PendingTimeDiff
-        $PendingTime += $Param{Config}->{PendingTimeDiff};
-
-        # convert pending time to time stamp
-        my $PendingTimeString = $TimeObject->SystemTime2TimeStamp(
-            SystemTime => $PendingTime,
-        );
+        # get datetime object
+        my $DateTimeObject = $Kernel::OM->Create('Kernel::System::DateTime');
+        $DateTimeObject->Add( Seconds => $Param{Config}->{PendingTimeDiff} );
 
         # set pending time
         $Kernel::OM->Get('Kernel::System::Ticket')->TicketPendingTimeSet(
             UserID   => $Param{UserID},
             TicketID => $Param{Ticket}->{TicketID},
-            String   => $PendingTimeString,
+            String   => $DateTimeObject->ToString(),
         );
     }
 
@@ -239,8 +223,6 @@ sub Run {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

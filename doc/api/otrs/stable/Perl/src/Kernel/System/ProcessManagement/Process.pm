@@ -29,22 +29,16 @@ our @ObjectDependencies = (
 
 Kernel::System::ProcessManagement::Process - process lib
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 All ProcessManagement Process functions.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
+=head2 new()
 
-=cut
+Don't use the constructor directly, use the ObjectManager instead:
 
-=item new()
-
-create an object. Do not use it directly, instead use:
-
-    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager->new();
     my $ProcessObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::Process');
 
 =cut
@@ -62,7 +56,7 @@ sub new {
     return $Self;
 }
 
-=item ProcessGet()
+=head2 ProcessGet()
 
     Get process info
 
@@ -134,7 +128,7 @@ sub ProcessGet {
     return $Process->{ $Param{ProcessEntityID} };
 }
 
-=item ProcessList()
+=head2 ProcessList()
 
     Get a list of all Processes
 
@@ -191,8 +185,8 @@ sub ProcessList {
     # get only processes with the requested ProcessState(s)
     my %ProcessList;
     for my $ProcessEntityID ( sort keys %{$Processes} ) {
-        if ( grep { $_ eq $Processes->{$ProcessEntityID}{State} } @{ $Param{ProcessState} } ) {
-            $ProcessList{$ProcessEntityID} = $Processes->{$ProcessEntityID}{Name} || '';
+        if ( grep { $_ eq $Processes->{$ProcessEntityID}->{State} } @{ $Param{ProcessState} } ) {
+            $ProcessList{$ProcessEntityID} = $Processes->{$ProcessEntityID}->{Name} || '';
         }
     }
 
@@ -237,7 +231,7 @@ sub ProcessList {
     return \%ReducedProcessList;
 }
 
-=item ProcessStartpointGet()
+=head2 ProcessStartpointGet()
 
     Get process startpoint
 
@@ -309,7 +303,7 @@ sub ProcessStartpointGet {
     };
 }
 
-=item ProcessTransition()
+=head2 ProcessTransition()
 
     Check valid Transitions and Change Ticket's Activity
     if a Transition was positively checked
@@ -423,7 +417,7 @@ sub ProcessTransition {
 
     # Check if our ActivitySet has a path configured
     # if it hasn't we got nothing to do -> print debuglog if desired and return
-    if ( !IsHashRefWithData( $Process->{Path}{ $Param{ActivityEntityID} } ) ) {
+    if ( !IsHashRefWithData( $Process->{Path}->{ $Param{ActivityEntityID} } ) ) {
         if ( $Self->{Debug} > 0 ) {
             $Kernel::OM->Get('Kernel::System::Log')->Log(
                 Priority => 'debug',
@@ -436,7 +430,7 @@ sub ProcessTransition {
 
     # %Transitions Hash for easier reading
     # contains all possible Transitions for the current Activity
-    my %Transitions = %{ $Process->{Path}{ $Param{ActivityEntityID} } };
+    my %Transitions = %{ $Process->{Path}->{ $Param{ActivityEntityID} } };
 
     # get transition object
     my $TransitionObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::Transition');
@@ -469,11 +463,11 @@ sub ProcessTransition {
     # If we have a Transition without valid FutureActivitySet we have to complain
     if (
         !IsHashRefWithData( $Transitions{$TransitionEntityID} )
-        || !$Transitions{$TransitionEntityID}{ActivityEntityID}
+        || !$Transitions{$TransitionEntityID}->{ActivityEntityID}
         || !IsHashRefWithData(
             $ActivityObject->ActivityGet(
                 Interface        => 'all',
-                ActivityEntityID => $Transitions{$TransitionEntityID}{ActivityEntityID}
+                ActivityEntityID => $Transitions{$TransitionEntityID}->{ActivityEntityID}
                 )
         )
         )
@@ -505,7 +499,7 @@ sub ProcessTransition {
     # Set the new ActivityEntityID on the Ticket
     my $Success = $Self->ProcessTicketActivitySet(
         ProcessEntityID  => $Param{ProcessEntityID},
-        ActivityEntityID => $Transitions{$TransitionEntityID}{ActivityEntityID},
+        ActivityEntityID => $Transitions{$TransitionEntityID}->{ActivityEntityID},
         TicketID         => $Param{TicketID},
         UserID           => $Param{UserID},
     );
@@ -514,7 +508,7 @@ sub ProcessTransition {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Failed setting ActivityEntityID of Ticket: $Param{TicketID} to "
-                . $Transitions{$TransitionEntityID}{ActivityEntityID}
+                . $Transitions{$TransitionEntityID}->{ActivityEntityID}
                 . " after successful Transition: $TransitionEntityID!",
         );
         return;
@@ -523,10 +517,10 @@ sub ProcessTransition {
     # if we don't have Transition Actions on that transition,
     # return 1 for successful transition
     if (
-        !$Transitions{$TransitionEntityID}{TransitionAction}
+        !$Transitions{$TransitionEntityID}->{TransitionAction}
         || (
-            ref $Transitions{$TransitionEntityID}{TransitionAction} eq 'ARRAY'
-            && !@{ $Transitions{$TransitionEntityID}{TransitionAction} }
+            ref $Transitions{$TransitionEntityID}->{TransitionAction} eq 'ARRAY'
+            && !@{ $Transitions{$TransitionEntityID}->{TransitionAction} }
         )
         )
     {
@@ -534,7 +528,7 @@ sub ProcessTransition {
     }
 
     # if we have Transition Action and it isn't an array return
-    if ( !IsArrayRefWithData( $Transitions{$TransitionEntityID}{TransitionAction} ) ) {
+    if ( !IsArrayRefWithData( $Transitions{$TransitionEntityID}->{TransitionAction} ) ) {
         $Kernel::OM->Get('Kernel::System::Log')->Log(
             Priority => 'error',
             Message  => "Defective Process configuration: 'TrasitionAction' must be an array in "
@@ -548,7 +542,7 @@ sub ProcessTransition {
     my $TransitionActionObject = $Kernel::OM->Get('Kernel::System::ProcessManagement::TransitionAction');
 
     my $TransitionActions = $TransitionActionObject->TransitionActionList(
-        TransitionActionEntityID => $Transitions{$TransitionEntityID}{TransitionAction},
+        TransitionActionEntityID => $Transitions{$TransitionEntityID}->{TransitionAction},
     );
 
     if ( !IsArrayRefWithData($TransitionActions) ) {
@@ -593,7 +587,7 @@ sub ProcessTransition {
 
 }
 
-=item ProcessTicketActivitySet()
+=head2 ProcessTicketActivitySet()
 
     Set Ticket's ActivityEntityID
 
@@ -713,7 +707,7 @@ sub ProcessTicketActivitySet {
     return;
 }
 
-=item ProcessTicketProcessSet()
+=head2 ProcessTicketProcessSet()
 
     Set Ticket's ProcessEntityID
 
@@ -816,8 +810,6 @@ sub ProcessTicketProcessSet {
 }
 
 1;
-
-=back
 
 =head1 TERMS AND CONDITIONS
 

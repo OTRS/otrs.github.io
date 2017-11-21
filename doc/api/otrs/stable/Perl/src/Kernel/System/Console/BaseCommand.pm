@@ -15,6 +15,7 @@ use Getopt::Long();
 use Term::ANSIColor();
 use IO::Interactive();
 use Encode::Locale();
+use Kernel::System::VariableCheck qw(:all);
 
 our @ObjectDependencies = (
     'Kernel::Config',
@@ -29,17 +30,13 @@ our $SuppressANSI = 0;
 
 Kernel::System::Console::BaseCommand - command base class
 
-=head1 SYNOPSIS
+=head1 DESCRIPTION
 
 Base class for console commands.
 
 =head1 PUBLIC INTERFACE
 
-=over 4
-
-=cut
-
-=item new()
+=head2 new()
 
 constructor for new objects. You should not need to reimplement this in your command,
 override L</Configure()> instead if you need to.
@@ -98,7 +95,7 @@ sub new {
     return $Self;
 }
 
-=item Configure()
+=head2 Configure()
 
 initializes this object. Override this method in your commands.
 
@@ -110,7 +107,7 @@ sub Configure {
     return;
 }
 
-=item Name()
+=head2 Name()
 
 get the Name of the current Command, e. g. 'Admin::User::SetPassword'.
 
@@ -122,7 +119,7 @@ sub Name {
     return $Self->{Name};
 }
 
-=item Description()
+=head2 Description()
 
 get/set description for the current command. Call this in your Configure() method.
 
@@ -136,7 +133,7 @@ sub Description {
     return $Self->{Description};
 }
 
-=item AdditionalHelp()
+=head2 AdditionalHelp()
 
 get/set additional help text for the current command. Call this in your Configure() method.
 
@@ -152,7 +149,7 @@ sub AdditionalHelp {
     return $Self->{AdditionalHelp};
 }
 
-=item AddArgument()
+=head2 AddArgument()
 
 adds an argument that can/must be specified on the command line.
 This function must be called during Configure() by the command to
@@ -201,9 +198,11 @@ sub AddArgument {
 
     $Self->{_Arguments} //= [];
     push @{ $Self->{_Arguments} }, \%Param;
+
+    return;
 }
 
-=item GetArgument()
+=head2 GetArgument()
 
 fetch an argument value as provided by the user on the command line.
 
@@ -222,7 +221,7 @@ sub GetArgument {
     return $Self->{_ParsedARGV}->{Arguments}->{$Argument};
 }
 
-=item AddOption()
+=head2 AddOption()
 
 adds an option that can/must be specified on the command line.
 This function must be called during L</Configure()> by the command to
@@ -292,9 +291,10 @@ sub AddOption {
     $Self->{_Options} //= [];
     push @{ $Self->{_Options} }, \%Param;
 
+    return;
 }
 
-=item GetOption()
+=head2 GetOption()
 
 fetch an option as provided by the user on the command line.
 
@@ -320,7 +320,7 @@ sub GetOption {
 
 }
 
-=item PreRun()
+=head2 PreRun()
 
 perform additional validations/preparations before Run(). Override this method in your commands.
 
@@ -332,7 +332,7 @@ sub PreRun {
     return 1;
 }
 
-=item Run()
+=head2 Run()
 
 runs the command. Override this method in your commands.
 
@@ -349,7 +349,7 @@ sub Run {
     return $Self->ExitCodeOk();
 }
 
-=item PostRun()
+=head2 PostRun()
 
 perform additional cleanups after Run(). Override this method in your commands.
 
@@ -365,7 +365,7 @@ sub PostRun {
     return;
 }
 
-=item Execute()
+=head2 Execute()
 
 this method will parse/validate the command line arguments supplied by the user.
 If that was ok, the Run() method of the command will be called.
@@ -478,7 +478,7 @@ sub Execute {
     return $ExitCode;
 }
 
-=item ExitCodeError()
+=head2 ExitCodeError()
 
 returns an exit code to signal something went wrong (mostly for better
 code readability).
@@ -497,7 +497,7 @@ sub ExitCodeError {
     return $CustomExitCode // 1;
 }
 
-=item ExitCodeOk()
+=head2 ExitCodeOk()
 
 returns 0 as exit code to indicate everything went fine in the command
 (mostly for better code readability).
@@ -508,7 +508,7 @@ sub ExitCodeOk {
     return 0;
 }
 
-=item GetUsageHelp()
+=head2 GetUsageHelp()
 
 generates usage / help screen for this command.
 
@@ -580,7 +580,7 @@ sub GetUsageHelp {
     return $Self->_ReplaceColorTags($UsageText);
 }
 
-=item ANSI()
+=head2 ANSI()
 
 get/set support for colored text.
 
@@ -593,7 +593,7 @@ sub ANSI {
     return $Self->{ANSI};
 }
 
-=item PrintError()
+=head2 PrintError()
 
 shorthand method to print an error message to STDERR.
 
@@ -610,7 +610,7 @@ sub PrintError {
     return;
 }
 
-=item Print()
+=head2 Print()
 
 this method will print the given text to STDOUT.
 
@@ -629,7 +629,236 @@ sub Print {
     return;
 }
 
-=item _ParseGlobalOptions()
+=head2 TableOutput()
+
+this method generates an ascii table of headers and column content
+
+    my $FormattedOutput = $Command->TableOutput(
+        TableData => {
+            Header => [
+                'First Header',
+                'Second Header',
+                'Third Header'
+            ],
+            Body => [
+                [ 'FirstItem 1', 'SecondItem 1', 'ThirdItem 1' ],
+                [ 'FirstItem 2', 'SecondItem 2', 'ThirdItem 2' ],
+                [ 'FirstItem 3', 'SecondItem 3', 'ThirdItem 3' ],
+                [ 'FirstItem 4', 'SecondItem 4', 'ThirdItem 4' ],
+            ],
+        },
+        Indention => 2, # Spaces to indent (ltr), default 0;
+        EvenOdd   => 'yellow', # add even and odd line coloring (green|yellow|red)
+                               # (overwrites existing coloring), # default 0
+    );
+
+    Returns:
+
+    +--------------+---------------+--------------+
+    | First Header | Second Header | Third Header |
+    +--------------+---------------+--------------+
+    | FirstItem 1  | SecondItem 1  | ThirdItem 1  |
+    | FirstItem 2  | SecondItem 2  | ThirdItem 1  |
+    | FirstItem 3  | SecondItem 3  | ThirdItem 1  |
+    | FirstItem 4  | SecondItem 4  | ThirdItem 1  |
+    +--------------+---------------+--------------+
+
+=cut
+
+sub TableOutput {
+    my ( $Self, %Param ) = @_;
+
+    return if $Param{TableData}->{Header} && !IsArrayRefWithData( $Param{TableData}->{Header} );
+    return if $Param{TableData}->{Body}   && !IsArrayRefWithData( $Param{TableData}->{Body} );
+
+    my @MaxColumnLength;
+
+    # check for available header row and determine lengths
+    my $ShowHeader = IsArrayRefWithData( $Param{TableData}->{Header} ) ? 1 : 0;
+
+    if ($ShowHeader) {
+
+        my $HeaderCount = 0;
+
+        for my $Header ( @{ $Param{TableData}->{Header} } ) {
+
+            # detect coloring
+            my $PreparedHeader = $Header;
+
+            if ( $PreparedHeader =~ m/<.+?>.+?<\/.+?>/smx ) {
+                $PreparedHeader =~ s{ (<.+?>)(.+?)(<\/.+?>) }{$2}xmsg;
+            }
+
+            # detect header value length
+            if ( !$MaxColumnLength[$HeaderCount] || $MaxColumnLength[$HeaderCount] < length $PreparedHeader ) {
+                $MaxColumnLength[$HeaderCount] = length $PreparedHeader;
+            }
+            $HeaderCount++;
+        }
+    }
+
+    Row:
+    for my $Row ( @{ $Param{TableData}->{Body} } ) {
+
+        next ROW if !$Row;
+        next ROW if !IsArrayRefWithData($Row);
+
+        # determine maximum length of every column
+        my $ColumnCount = 0;
+
+        for my $Column ( @{$Row} ) {
+
+            # detect coloring
+            my $PreparedColumn = $Column || ' ';
+
+            if ( $PreparedColumn =~ m/<.+?>.+?<\/.+?>/smx ) {
+                $PreparedColumn =~ s{ (<.+?>)(.+?)(<\/.+?>) }{$2}xmsg;
+            }
+
+            # detect column value length
+            if ( !$MaxColumnLength[$ColumnCount] || $MaxColumnLength[$ColumnCount] < length $PreparedColumn ) {
+                $MaxColumnLength[$ColumnCount] = length $PreparedColumn;
+            }
+            $ColumnCount++;
+        }
+    }
+
+    # generate horizontal border
+    my $HorizontalBorder = '';
+
+    my $ColumnCount = 0;
+
+    for my $ColumnLength (@MaxColumnLength) {
+
+        # add space character before and after column content
+        $ColumnLength += 2;
+
+        # save new column length in maximum column length array
+        $MaxColumnLength[$ColumnCount] = $ColumnLength;
+
+        # save border part
+        $HorizontalBorder .= '+' . ( '-' x $ColumnLength );
+
+        $ColumnCount++;
+    }
+
+    $HorizontalBorder .= '+';
+
+    if ( $Param{Indention} ) {
+        my $Indention = ' ' x $Param{Indention};
+        $HorizontalBorder = $Indention . $HorizontalBorder;
+    }
+
+    # add first border to output
+    my $Output = $HorizontalBorder . "\n";
+
+    # add header row if available
+    if ($ShowHeader) {
+
+        my $HeaderContent = '';
+        my $HeaderCount   = 0;
+
+        if ( $Param{Indention} ) {
+            my $Indention = ' ' x $Param{Indention};
+            $HeaderContent = $Indention . $HeaderContent;
+        }
+
+        for my $Header ( @{ $Param{TableData}->{Header} } ) {
+
+            # prepare header content
+            $HeaderContent .= '| ' . $Header;
+
+            # detect coloring
+            if ( $Header =~ m/<.+?>.+?<\/.+?>/smx ) {
+                $Header =~ s{ (<.+?>)(.+?)(<\/.+?>) }{$2}xmsg;
+            }
+
+            # determine difference between current header content and maximum content length
+            my $HeaderContentDiff = ( $MaxColumnLength[$HeaderCount] ) - ( length $Header );
+
+            # fill up with spaces
+            if ($HeaderContentDiff) {
+                $HeaderContent .= ' ' x ( $HeaderContentDiff - 1 );
+            }
+
+            $HeaderCount++;
+        }
+
+        # save the result as output
+        $Output .= $HeaderContent . "|\n";
+
+        # add horizontal border
+        $Output .= $HorizontalBorder . "\n";
+    }
+
+    my $EvenOddIndicator = 0;
+
+    # add body rows
+    Row:
+    for my $Row ( @{ $Param{TableData}->{Body} } ) {
+
+        next ROW if !$Row;
+        next ROW if !IsArrayRefWithData($Row);
+
+        my $RowContent  = '';
+        my $ColumnCount = 0;
+
+        if ( $Param{Indention} ) {
+            my $Indention = ' ' x $Param{Indention};
+            $RowContent = $Indention . $RowContent;
+        }
+
+        for my $Column ( @{$Row} ) {
+
+            $Column = IsStringWithData($Column) ? $Column : ' ';
+
+            # even and odd coloring
+            if ( $Param{EvenOdd} ) {
+
+                if ( $Column =~ m/<.+?>.+?<\/.+?>/smx ) {
+                    $Column =~ s{ (<.+?>)(.+?)(<\/.+?>) }{$2}xmsg;
+                }
+
+                if ($EvenOddIndicator) {
+                    $Column = "<$Param{EvenOdd}>" . $Column . "</$Param{EvenOdd}>";
+                }
+            }
+
+            # prepare header content
+            $RowContent .= '| ' . $Column;
+
+            # detect coloring
+            if ( $Column =~ m/<.+?>.+?<\/.+?>/smx ) {
+                $Column =~ s{ (<.+?>)(.+?)(<\/.+?>) }{$2}xmsg;
+            }
+
+            # determine difference between current column content and maximum content length
+            my $RowContentDiff = ( $MaxColumnLength[$ColumnCount] ) - ( length $Column );
+
+            # fill up with spaces
+            if ($RowContentDiff) {
+                $RowContent .= ' ' x ( $RowContentDiff - 1 );
+            }
+
+            $ColumnCount++;
+        }
+
+        # toggle even odd indicator
+        $EvenOddIndicator = $EvenOddIndicator ? 0 : 1;
+
+        # save the result as output
+        $Output .= $RowContent . "|\n";
+    }
+
+    # add trailing horizontal border
+    $Output .= $HorizontalBorder . "\n";
+
+    return $Output // '';
+}
+
+=begin Internal:
+
+=head2 _ParseGlobalOptions()
 
 parses any global options possibly provided by the user.
 
@@ -661,7 +890,7 @@ sub _ParseGlobalOptions {
     return \%OptionValues;
 }
 
-=item _ParseCommandlineArguments()
+=head2 _ParseCommandlineArguments()
 
 parses and validates the command line arguments provided by the user according to
 the configured arguments and options of the command.
@@ -784,7 +1013,7 @@ sub _ParseCommandlineArguments {
     };
 }
 
-=item _Color()
+=head2 _Color()
 
 this will color the given text (see Term::ANSIColor::color()) if
 ANSI output is available and active, otherwise the text stays unchanged.
@@ -809,7 +1038,7 @@ sub _ReplaceColorTags {
 
 1;
 
-=back
+=end Internal:
 
 =head1 TERMS AND CONDITIONS
 
