@@ -23,13 +23,13 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '6.0',
-                    HTMLPath: '6.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS 6',
                     Languages: ['en', 'hu', 'zh_CN']
                 },
                 {
                     Version:  '5.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '5.0',
                     Name:     'OTRS 5',
                     Languages: ['en', 'hu', 'zh_CN']
                 },
@@ -60,7 +60,7 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:     '6.0',
-                    HTMLPath:    '6.0',
+                    HTMLPath:    'stable',
                     Name:        'OTRS 6',
                     Languages:   ['en'],
                     PDFPath:     'doc-otrsbusiness',
@@ -68,7 +68,7 @@ $(document).ready(function() {
                 },
                 {
                     Version:     '5.0',
-                    HTMLPath:    'stable',
+                    HTMLPath:    '5.0',
                     Name:        'OTRS 5',
                     Languages:   ['en', 'pt_BR', 'hu'],
                     PDFPath:     'doc-otrsbusiness',
@@ -91,13 +91,13 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '6.0',
-                    HTMLPath: '6.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS::ITSM 6',
                     Languages: ['en', 'hu', 'ru', 'zh_CN']
                 },
                 {
                     Version:  '5.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '5.0',
                     Name:     'OTRS::ITSM 5',
                     Languages: ['en', 'hu', 'ru', 'zh_CN']
                 },
@@ -128,13 +128,13 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '6.0',
-                    HTMLPath: '6.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS 6',
                     Languages: ['en']
                 },
                 {
                     Version:  '5.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '5.0',
                     Name:     'OTRS 5',
                     Languages: ['en', 'hu']
                 },
@@ -171,13 +171,13 @@ $(document).ready(function() {
                 },
                 {
                     Version:  '6.0',
-                    HTMLPath: '6.0',
+                    HTMLPath: 'stable',
                     Types:    ['Perl', 'JavaScript'],
                     Name:     'OTRS 6'
                 },
                 {
                     Version:  '5.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '5.0',
                     Types:    ['Perl', 'JavaScript'],
                     Name:     'OTRS 5'
                 },
