@@ -25,7 +25,7 @@ $(document).ready(function() {
     });
 });</script>
 <!-- otrs.github.io -->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Rendszerbeállítások</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 5 - Adminisztrátori kézikönyv"><link rel="up" href="administration.html" title="4. fejezet - Adminisztráció"><link rel="prev" href="administration.html" title="4. fejezet - Adminisztráció"><link rel="next" href="backup-and-restore.html" title="A rendszer biztonsági mentése"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Rendszerbeállítások</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="administration.html">Vissza</a> </td><th width="60%" align="center">4. fejezet - Adminisztráció</th><td width="20%" align="right"> <a accesskey="n" href="backup-and-restore.html">Előre</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="configuration"></a>Rendszerbeállítások</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="configuration.html#directories-and-configfiles">OTRS beállítófájlok</a></span></dt><dt><span class="section"><a href="configuration.html#sysconfig">A rendszer beállítása a webes felületen keresztül</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="directories-and-configfiles"></a>OTRS beállítófájlok</h3></div></div></div><p>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Rendszerbeállítások</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Adminisztrátori kézikönyv"><link rel="up" href="administration.html" title="4. fejezet - Adminisztráció"><link rel="prev" href="administration.html" title="4. fejezet - Adminisztráció"><link rel="next" href="backup-and-restore.html" title="A rendszer biztonsági mentése"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Rendszerbeállítások</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="administration.html">Vissza</a> </td><th width="60%" align="center">4. fejezet - Adminisztráció</th><td width="20%" align="right"> <a accesskey="n" href="backup-and-restore.html">Előre</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="configuration"></a>Rendszerbeállítások</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="configuration.html#directories-and-configfiles">OTRS beállítófájlok</a></span></dt><dt><span class="section"><a href="configuration.html#sysconfig">A rendszer beállítása a webes felületen keresztül</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="directories-and-configfiles"></a>OTRS beállítófájlok</h3></div></div></div><p>
 Az összes OTRS beállítófájl a <code class="filename">Kernel</code> könyvtárban és
 annak alkönyvtáraiban van eltárolva. Nincs szükség a
 <code class="filename">Kernel/Config.pm</code> fájlon kívül egyetlen fájl kézi
@@ -33,67 +33,103 @@ megváltoztatására sem, mert a többi fájl meg lesz változtatva, amikor a
 rendszer frissítést kap. Egyszerűen másolja át a beállítási paramétereket a
 többi fájlból a <code class="filename">Kernel/Config.pm</code> fájlba, és változtassa
 meg azokat az igényei szerint. Ehhez a fájlhoz sosem fognak hozzányúlni a
-frissítési folyamat közben, így a kézi beállításai biztonságban vannak.
+frissítési folyamat közben, így a kézi változtatásai biztonságban vannak.
 </p><p>
-A <code class="filename">Kernel/Config/Files</code> könyvtárban van néhány egyéb fájl
-is, amelyek feldolgozásra kerülnek, amikor hozzáférnek az OTRS
-bejelentkezési oldalához. Ha telepítve vannak további alkalmazások (mint
-például GyIK vagy a Fájlkezelő), akkor azok beállítófájljai is az említett
-útvonalon találhatók.
+A beállítások újraépíthetők kézzel a <code class="literal">perl bin/otrs.Console.pl
+Maint::Config::Rebuild</code>parancsfájl végrehajtásával, vagy
+automatikusan a telepítő, a csomagműveletek (telepítés, frissítés,
+újratelepítés és eltávolítás) stb. által. A
+<code class="filename">Kernel/Config/Files/XML/</code> mappában található összes
+<code class="filename">.xml</code> fájl fel lesz dolgozva, és a tartalmuk át lesz
+küldve az OTRS adatbázisába. A legtöbb <code class="filename">.xml</code> fájl -
+amelyek ennek a könyvtárnak a részei - alapértelmezetten az OTRS Free
+csoporthoz tartoznak, de az OTRS Free funkciók, mint például a GyIK vagy
+kérdőív (vagy bármely más OTRS kiterjesztés) is hozzá fogják adni a saját
+beállítófájljukat ehhez a könyvtárhoz.
 </p><p>
-Ha belépnek az OTRS webes felületére, akkor a
-<code class="filename">Kernel/Config/Files</code> könyvtárban lévő összes .xml fájl
-feldolgozásra kerül ábécé sorrendben, és a központi keretrendszer, valamint
-a további alkalmazások beállításai lesznek betöltve. Azután a
+A konfiguráción elvégzett bármilyen változtatás alkalmazásához üzembe kell
+állítani azokat. Az üzembe állítási folyamat ki fogja szedni az összes
+beállítást és a megfelelő értékeket az OTRS adatbázisából, átalakítja olyan
+formátumra, hogy az OTRS természetes módon megértse, és elhelyezi azokat a
+<code class="filename">Kernel/Config/Files/ZZZAAuto.pm</code> fájlba.
+</p><p>
+Ha az OTRS a webes felületen keresztül lett elérve, akkor a
 <code class="filename">Kernel/Config/Files/ZZZAAuto.pm</code>, a
-<code class="filename">Kernel/Config/Files/ZZZAuto.pm</code> és a
-<code class="filename">Kernel/Config/Files/ZZZProcessManagement.pm</code> fájlokban
-lévő beállítások lesznek kiértékelve (ha léteznek). Ezeket a fájlokat a
-grafikus felület használja a rendszerbeállítások gyorsítótárazására, és
-sosem szabad kézzel megváltoztatni. Végül a
-<code class="filename">Kernel/Config.pm</code> fájl kerül feldolgozásra, amely az
-egyéni beállításait és a kézzel megváltoztatott beállítási paramétereket
-tartalmazza. A beállítófájlok ilyen sorrendben történő olvasása gondoskodik
-arról, hogy a speciális konfigurációs beállításait használja a rendszer.
+<code class="filename">Kernel/Config/Files/ZZZACL.pm</code> (ha létezik), a
+<code class="filename">Kernel/Config/Files/ZZZProcessManagement.pm</code> (ha
+létezik) és bármilyen más egyéni <code class="filename">.pm</code> fájlban tárolt
+beállítás ábécé sorrendben lesz kiértékelve. Ezeket a fájlokat a grafikus
+felhasználói felület használja gyorsítótárazási célokra, és sosem szabad
+kézzel megváltoztatni. Végül a <code class="filename">Kernel/Config.pm</code> fájl
+lesz feldolgozva, amely az egyéni beállításokat és a kézzel megváltoztatott
+beállítási paramétereket tartalmazza. A beállítófájlok ebben a sorrendben
+történő olvasása biztosítja, hogy a különleges konfigurációs beállításait
+helyesen vegye figyelembe a rendszer.
 </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="sysconfig"></a>A rendszer beállítása a webes felületen keresztül</h3></div></div></div><p>
-Az OTRS 2.0 óta a központi keretrendszer és a további telepített
-alkalmazások csaknem minden beállítási paramétere egyszerűen
-megváltoztatható grafikus felületen a rendszerbeállításoknál. Jelentkezzen
-be OTRS adminisztrátorként, és kövesse az adminisztrációs oldalon lévő
-„Rendszerbeállítások” hivatkozást az új beállítóeszköz futtatásához (lásd a
-lenti ábrát).
+</p><div class="figure"><a name="id-1.6.3.3.2.1"></a><p class="title"><b>4.79. ábra - A grafikus felület a rendszer beállításához</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/adminarea/admin-systemconfiguration.png" alt="A grafikus felület a rendszer beállításához"></div></div></div></div><p><br class="figure-break">
 </p><p>
-</p><div class="figure"><a name="id-1.6.3.3.3.1"></a><p class="title"><b>4.65. ábra - A grafikus felület a rendszer beállításához</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/adminarea/admin-sysconfig.png" alt="A grafikus felület a rendszer beállításához"></div></div></div></div><p><br class="figure-break">
+Az OTRS Free jelenleg több mint 1700 konfigurációs beállítást hoz, és
+különböző módok vannak egy bizonyos beállításhoz való gyors hozzáféréshez. A
+szabad-szavas kereséssel az összes konfigurációs beállítás kereshető egy
+vagy több kulcsszóval. A szabad-szavas keresés nem csak a konfigurációs
+beállítások neveiben keres, hanem a leírásokban és az értékekben is. Ez
+lehetővé teszi egy elem egyszerű megtalálását akkor is, ha a neve
+ismeretlen.
 </p><p>
-Az OTRS jelenleg több mint 600 beállítási paraméterrel rendelkezik, és
-különböző módok vannak egy adott paraméter gyors eléréséhez. A szabad-szavas
-kereséssel az összes beállítási paraméter átvizsgálható egy vagy több
-kulcsszónál. A szabad-szavas keresés nem csak a beállítási paraméterek
-neveiben keres, hanem a paraméterek leírásaiban is. Ez lehetővé teszi egy
-elem könnyű megkeresését akkor is, ha a neve nem ismert.
+Ráadásul minden egyes konfigurációs beállítás osztályozva van egy kategória
+és egy navigációs csoport szerint. A navigációs csoportok önálló elemek a fő
+navigációs fában. Ezen navigációs bejegyzések egyikének kiválasztásával a
+kiválasztott csoporthoz rendelt összes beállítás meg fog jelenni. Amíg
+nincsenek kiterjesztések telepítve, addig a kategóriaválasztás automatikusan
+el lesz rejtve, de amint egy olyan csomag kerül telepítésre, amely a saját
+konfigurációs beállításait hozza (mint például a GyIK vagy a kérdőív), akkor
+a kategóriaválasztó fel lesz fedve. Egy kategória kiválasztásával a fő
+navigációs fa csak azokat a navigációs csoportokat jeleníti meg, amelyek a
+kiválasztott kategóriához tartoznak.
 </p><p>
-Továbbá az összes beállítási paraméter főcsoportokban és alcsoportokban van
-eltárolva. A főcsoport képviseli az alkalmazást, amelyhez a beállítási
-paraméter tartozik, például a „Framework” a központi OTRS keretrendszerhez,
-a „Ticket” a jegyrendszerhez, a „FAQ” a GyIK rendszerhez, és így tovább. Az
-alcsoportok akkor érhetők el, ha az alkalmazás ki lett választva a csoportok
-listamezőből és a „Csoport kiválasztása” gombot megnyomták.
+Az összes konfigurációs beállítás alapértelmezetten csak olvashatóan jelenik
+meg. Egy beállítás szerkesztéséhez kattintson a <span class="emphasis"><em>Beállítás
+szerkesztése</em></span> gombra, amely akkor jelenik meg, ha az egérkurzort
+egy beállítás fölé viszi. Amikor belépett a szerkesztési módba, akkor a
+beállításon belül a megváltoztatott mezők elmenthetők a jobb oldalon lévő
+<span class="emphasis"><em>Mentés</em></span> gombra kattintással (vagy az
+<span class="emphasis"><em>Enter</em></span> billentyű megnyomásával a billentyűzeten). Ha egy
+beállítást egy másik adminisztrátor éppen szerkeszt, akkor nem lehetséges a
+szerkesztési módhoz hozzáférni annál a beállításnál, amíg a másik
+adminisztrátor be nem fejezi a munkáját. A szerkesztés megszakítható a jobb
+oldalon lévő <span class="emphasis"><em>Mégse</em></span> gombra kattintással (vagy az
+<span class="emphasis"><em>Escape</em></span> billentyű megnyomásával a
+billentyűzeten). Amikor a szerkesztés megszakításra került, akkor az
+aktuális szerkesztési munkamenetben elvégzett összes változtatás el lesz
+dobva.
 </p><p>
-Minden beállítási paraméter be- vagy kikapcsolható egy jelölőnégyzeten
-keresztül. Ha a paraméter ki van kapcsolva, akkor a rendszer figyelmen kívül
-fogja hagyni azt a paramétert, vagy egy alapértelmezettet fog
-használni. Lehetséges egy megváltoztatott beállítási paramétert
-visszakapcsolni a rendszer alapértelmezettjére a Visszaállítás hivatkozás
-használatával. A Frissítés gomb elküldi az összes változtatást a rendszer
-beállítási paramétereinek.
+A beállítás nevére vagy az egyes beállítások jobb felső részén lévő
+menüikonra kattintva egy menü fog megjelenni néhány további lehetőséggel
+(például egy beállítás engedélyezése vagy tiltása, egy beállítás értékeinek
+visszaállítása az alapértelmezettekre, egy beállításra mutató közvetlen
+hivatkozás másolása, valamint egy beállítás hozzáadása a kedvencek
+listájához a gyors elérésért).
 </p><p>
-Ha el szeretne menteni minden változtatást, amelyet a rendszer beállításain
-végzett, például egy új telepítés gyors beállításához, akkor használhatja a
-„Beállítások exportálása” gombot, amely létre fog hozni egy .pm fájlt. A
-saját beállítások visszaállításához egyszerűen nyomja meg a „Beállítások
-importálása” gombot, és válassza ki a korábban létrehozott .pm fájlt.
+A változtatások hatályba léptetéséhez egy üzembe állítást kell elindítani. A
+rendszerbeállítások üzembe állítás képernyője azon beállítások listáját
+jeleníti meg, amelyeket üzembe kell állítani. Az egyes beállítások bal felső
+részén vagy a külső <span class="emphasis"><em>Változtatások áttekintése</em></span> dobozban
+lévő nyíl ikonra kattintva egy egymás melletti összehasonlítás jelenik meg a
+beállítások aktuális állapota (amelyet üzembe készül állítani) és a korábbi
+(vagy alapértelmezett) állapot között.
+</p><p>
+</p><div class="figure"><a name="id-1.6.3.3.8.1"></a><p class="title"><b>4.80. ábra - Rendszerbeállítások üzembe állítása</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/adminarea/admin-systemconfigurationdeployment.png" alt="Rendszerbeállítások üzembe állítása"></div></div></div></div><p><br class="figure-break">
+</p><p>
+Ha el szeretné menteni az összes olyan változtatást, amelyet a
+rendszerbeállításokon végzett (például egy új példány gyors beállításához),
+akkor használhatja a <span class="emphasis"><em>Beállítások exportálása</em></span> gombot,
+amely egy <code class="filename">.yml</code> fájlt fog szolgáltatni a letöltéshez. A
+saját beállításai visszaállításához használja a <span class="emphasis"><em>Beállítások
+importálása</em></span> gombot, és válassza ki a korábban létrehozott
+<code class="filename">.yml</code> fájlt.
 </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
-Biztonsági okokból az adatbázis-kapcsolat beállítási paraméterei nem
-változtathatók meg a rendszerbeállítások szakaszban. Azokat kézzel kell
-beállítani a <code class="filename">Kernel/Config.pm</code> fájlban.
+Biztonsági okokból az adatbázis-kapcsolat konfigurációs beállításai nem
+változtathatók meg a rendszerbeállítások grafikus felhasználói
+felületén. Azokat kézzel kell beállítani a
+<code class="filename">Kernel/Config.pm</code> fájlban.
 </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="administration.html">Vissza</a> </td><td width="20%" align="center"><a accesskey="u" href="administration.html">Fel</a></td><td width="40%" align="right"> <a accesskey="n" href="backup-and-restore.html">Előre</a></td></tr><tr><td width="40%" align="left" valign="top">4. fejezet - Adminisztráció </td><td width="20%" align="center"><a accesskey="h" href="index.html">Főoldal</a></td><td width="40%" align="right" valign="top"> A rendszer biztonsági mentése</td></tr></table></div></body></html>
