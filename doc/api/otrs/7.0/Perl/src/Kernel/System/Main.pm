@@ -19,6 +19,7 @@ use File::stat;
 use Unicode::Normalize;
 use List::Util qw();
 use Fcntl qw(:flock);
+use String::ShellQuote qw(shell_quote);
 
 our @ObjectDependencies = (
     'Kernel::System::Encode',
@@ -987,6 +988,39 @@ sub GenerateRandomString {
     }
 
     return $String;
+}
+
+=head2 ShellQuote()
+
+Quotes string so it can be passed through the shell. String is quoted so that the shell will pass it along as a single
+argument and without further interpretation. Quoting is done by an external library C<String::ShellQuote>.
+
+    my $QuotedString = $MainObject->ShellQuote(
+        "Safe string for 'shell arguments'."   # string to quote
+    );
+
+Returns quoted string, or undef if unsuccessful:
+
+    $QuotedString = <<'EOS';
+'Safe string for '\''shell arguments'\''.'
+EOS
+
+=cut
+
+sub ShellQuote {
+    my ( $Self, $Param ) = @_;
+
+    return if !$Param;
+
+    my $QuotedString;
+
+    # If any string can't be safely quoted shell_quote will croak. In this case, wrap whole call in an eval block
+    #   and return nothing if quoting failed.
+    eval {
+        $QuotedString = String::ShellQuote::shell_quote($Param);
+    };
+
+    return $QuotedString;
 }
 
 =begin Internal:

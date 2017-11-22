@@ -119,12 +119,18 @@ sub Crypt {
         }
     }
 
+    my $MainObject = $Kernel::OM->Get('Kernel::System::Main');
+
     my @PublicKeys;
     if ( ref $Param{Key} eq 'ARRAY' ) {
-        @PublicKeys = @{ $Param{Key} };
+        for my $Key ( @{ $Param{Key} } ) {
+            my $QuotedKey = $MainObject->ShellQuote($Key);
+            push @PublicKeys, $QuotedKey;
+        }
     }
     elsif ( ref $Param{Key} eq '' ) {
-        push @PublicKeys, $Param{Key};
+        my $QuotedKey = $MainObject->ShellQuote( $Param{Key} );
+        push @PublicKeys, $QuotedKey;
     }
 
     if ( !@PublicKeys ) {
@@ -271,6 +277,9 @@ sub Sign {
     print $FHPhrase $Pw;
     close $FHPhrase;
 
+    # Quote the key parameter before passing it to the shell.
+    my $QuotedKey = $Kernel::OM->Get('Kernel::System::Main')->ShellQuote( $Param{Key} );
+
     my $Quiet = '';
 
     # GnuPG 2.1 (and higher) may send info messages about used default keys to STDERR, which leads to problems.
@@ -283,7 +292,7 @@ sub Sign {
     }
 
     my $GPGOptions
-        = qq{$Quiet --passphrase-fd 0 -o $FileSign --default-key $Param{Key} $SigType $DigestAlgorithm $Filename};
+        = qq{$Quiet --passphrase-fd 0 -o $FileSign --default-key $QuotedKey $SigType $DigestAlgorithm $Filename};
     my $LogMessage = qx{$Self->{GPGBin} $GPGOptions < $FilePhrase 2>&1};
 
     # error
@@ -679,7 +688,7 @@ returns an array with search result (private keys)
 sub PrivateKeySearch {
     my ( $Self, %Param ) = @_;
 
-    my $Search         = $Param{Search} || '';
+    my $Search         = $Kernel::OM->Get('Kernel::System::Main')->ShellQuote( $Param{Search} ) || '';
     my $GPGOptions     = "--list-secret-keys --with-fingerprint --with-colons $Search";
     my @GPGOutputLines = qx{$Self->{GPGBin} $GPGOptions 2>&1};
 
@@ -699,7 +708,7 @@ returns an array with search result (public keys)
 sub PublicKeySearch {
     my ( $Self, %Param ) = @_;
 
-    my $Search         = $Param{Search} || '';
+    my $Search         = $Kernel::OM->Get('Kernel::System::Main')->ShellQuote( $Param{Search} ) || '';
     my $GPGOptions     = "--list-keys --with-fingerprint --with-colons $Search";
     my @GPGOutputLines = qx{$Self->{GPGBin} $GPGOptions 2>&1};
 
@@ -719,8 +728,8 @@ returns public key in ascii
 sub PublicKeyGet {
     my ( $Self, %Param ) = @_;
 
-    my $Key = quotemeta( $Param{Key} || '' );
-    my $LogMessage = qx{$Self->{GPGBin} --export --armor $Key 2>&1};
+    my $QuotedKey = $Kernel::OM->Get('Kernel::System::Main')->ShellQuote( $Param{Key} ) || '';
+    my $LogMessage = qx{$Self->{GPGBin} --export --armor $QuotedKey 2>&1};
     my $PublicKey;
     if ( $LogMessage =~ /nothing exported/i ) {
         $LogMessage =~ s/\n//g;
@@ -760,8 +769,6 @@ returns secret key in ascii
 sub SecretKeyGet {
     my ( $Self, %Param ) = @_;
 
-    my $Key = quotemeta( $Param{Key} || '' );
-
     my $LogMessage = '';
 
     # GnuPG 2.1 (and higher) asks via pinentry for the key passphrase. We suppress that behavior by passing the phrase
@@ -772,7 +779,8 @@ sub SecretKeyGet {
         )
     {
         my %PasswordHash = %{ $Kernel::OM->Get('Kernel::Config')->Get('PGP::Key::Password') };
-        my $Password = $PasswordHash{$Key} || '';
+        my $Key          = quotemeta( $Param{Key} || '' );
+        my $Password     = $PasswordHash{$Key} || '';
 
         my ( $FH, $Filename ) = $Kernel::OM->Get('Kernel::System::FileTemp')->TempFile();
         print $FH $Password;
@@ -784,7 +792,8 @@ sub SecretKeyGet {
 
     # GnuPG 2.0 (and lower)
     else {
-        $LogMessage = qx{$Self->{GPGBin} --export-secret-keys --armor $Key 2>&1};
+        my $QuotedKey = $Kernel::OM->Get('Kernel::System::Main')->ShellQuote( $Param{Key} ) || '';
+        $LogMessage = qx{$Self->{GPGBin} --export-secret-keys --armor $QuotedKey 2>&1};
     }
 
     my $SecretKey = '';
@@ -833,9 +842,9 @@ sub PublicKeyDelete {
         return;
     }
 
-    my $Key        = quotemeta( $Param{Key} || '' );
+    my $QuotedKey  = $Kernel::OM->Get('Kernel::System::Main')->ShellQuote( $Param{Key} ) || '';
     my $GPGOptions = '--status-fd 1';
-    my $Message    = qx{$Self->{GPGBin} $GPGOptions --delete-key $Key 2>&1};
+    my $Message    = qx{$Self->{GPGBin} $GPGOptions --delete-key $QuotedKey 2>&1};
 
     my %LogMessage = $Self->_HandleLog( LogString => $Message );
 
