@@ -104,7 +104,7 @@ The <code class="literal">&lt;Insert&gt;</code> syntax has changed in &gt;=2.2. 
     &lt;Data Key="description" Type="Quote"&gt;exploit&lt;/Data&gt;
 &lt;/Insert&gt;
             </pre></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="database-xml-create"></a>CREATE TABLE</h5></div></div></div><p>
-Possible data types are: BIGINT, SMALLINT, INTEGER, VARCHAR (Size=1-1000000), DATE (Format: yyyy-mm-dd hh:mm:ss) and LONGBLOB.
+Possible data types are: <code class="literal">BIGINT</code>, <code class="literal">SMALLINT</code>, <code class="literal">INTEGER</code>, <code class="literal">VARCHAR</code> (Size=1-1000000), <code class="literal">DATE</code> (Format: <code class="literal">yyyy-mm-dd hh:mm:ss</code>) and <code class="literal">LONGBLOB</code>.
             </p><pre class="programlisting">
 &lt;TableCreate Name="calendar_event"&gt;
     &lt;Column Name="id" Required="true" PrimaryKey="true" AutoIncrement="true" Type="BIGINT"/&gt;
@@ -124,6 +124,41 @@ Possible data types are: BIGINT, SMALLINT, INTEGER, VARCHAR (Size=1-1000000), DA
         &lt;Reference Local="owner_id" Foreign="id"/&gt;
     &lt;/ForeignKey&gt;
 &lt;/TableCreate&gt;
+            </pre><p>
+                <code class="literal">LONGBLOB</code> columns need special treatment. Their content needs to be <code class="literal">Base64</code> transcoded if the database driver does not support the feature <code class="literal">DirectBlob</code>. Please see the following example:
+            </p><pre class="programlisting">
+my $Content = $StorableContent;
+if ( !$DBObject-&gt;GetDatabaseFunction('DirectBlob') ) {
+    $Content = MIME::Base64::encode_base64($StorableContent);
+}
+            </pre><p>
+                Similarly, when reading from such a column, the content must not automatically be decoded as <code class="literal">UTF-8</code> by passing the <code class="literal">Encode =&gt; 0</code> flag to <code class="literal">Prepare()</code>:
+            </p><pre class="programlisting">
+return if !$DBObject-&gt;Prepare(
+    SQL =&gt; '
+        SELECT content_type, content, content_id, content_alternative, disposition, filename
+        FROM article_data_mime_attachment
+        WHERE id = ?',
+    Bind   =&gt; [ \$AttachmentID ],
+    Encode =&gt; [ 1, 0, 0, 0, 1, 1 ],
+);
+
+while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
+
+    $Data{ContentType} = $Row[0];
+
+    # Decode attachment if it's e. g. a postgresql backend.
+    if ( !$DBObject-&gt;GetDatabaseFunction('DirectBlob') ) {
+        $Data{Content} = decode_base64( $Row[1] );
+    }
+    else {
+        $Data{Content} = $Row[1];
+    }
+    $Data{ContentID}          = $Row[2] || '';
+    $Data{ContentAlternative} = $Row[3] || '';
+    $Data{Disposition}        = $Row[4];
+    $Data{Filename}           = $Row[5];
+}
             </pre></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="database-xml-drop"></a>DROP TABLE</h5></div></div></div><pre class="programlisting">
 &lt;TableDrop Name="calendar_event"/&gt;
             </pre></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="database-xml-alter"></a>ALTER TABLE</h5></div></div></div><p>
