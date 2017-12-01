@@ -62,7 +62,7 @@ $(document).ready(function() {
                     Version:     '6.0',
                     HTMLPath:    'stable',
                     Name:        'OTRS 6',
-                    Languages:   ['en'],
+                    Languages:   ['en', 'hu'],
                     PDFPath:     'doc-otrsbusiness',
                     PDFFileName: 'otrs_business_solution_book.pdf'
                 },
