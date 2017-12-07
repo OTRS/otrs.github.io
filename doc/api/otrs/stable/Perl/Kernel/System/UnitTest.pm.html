@@ -53,17 +53,10 @@ $(document).ready(function() {
 
 <ul id="index">
   <li><a href="#NAME">NAME</a></li>
-  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
   <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
     <ul>
       <li><a href="#new">new()</a></li>
       <li><a href="#Run">Run()</a></li>
-      <li><a href="#True">True()</a></li>
-      <li><a href="#False">False()</a></li>
-      <li><a href="#Is">Is()</a></li>
-      <li><a href="#IsNot">IsNot()</a></li>
-      <li><a href="#IsDeeply">IsDeeply()</a></li>
-      <li><a href="#IsNotDeeply">IsNotDeeply()</a></li>
     </ul>
   </li>
   <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -71,11 +64,7 @@ $(document).ready(function() {
 
 <h1 id="NAME">NAME</h1>
 
-<p>Kernel::System::UnitTest - global unit test interface</p>
-
-<h1 id="DESCRIPTION">DESCRIPTION</h1>
-
-<p>Functions to run existing unit tests, as well as functions to define test cases.</p>
+<p>Kernel::System::UnitTest - functions to run all or some OTRS unit tests</p>
 
 <h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
@@ -87,7 +76,7 @@ $(document).ready(function() {
 
 <h2 id="Run">Run()</h2>
 
-<p>Run all tests located in scripts/test/*.t and print result to stdout.</p>
+<p>run all or some tests located in <code>scripts/test/**/*.t</code> and print the result.</p>
 
 <pre><code>    $UnitTestObject-&gt;Run(
         Name                   =&gt; [&#39;JSON&#39;, &#39;User&#39;],     # optional, execute certain test files only
@@ -98,76 +87,13 @@ $(document).ready(function() {
         SubmitResultAsExitCode =&gt; 1,                    # optional, specify if exit code should not indicate if tests were ok/not ok, but if submission was successful instead
         JobID                  =&gt; 12,                   # optional job ID for unit test submission to server
         Scenario               =&gt; &#39;OTRS 6 git&#39;,         # optional scenario identifier for unit test submission to server
+        PostTestScripts        =&gt; [&#39;...&#39;],              # Script(s) to execute after a test has been run.
+                                                        #  You can specify %File%, %TestOk% and %TestNotOk% as dynamic arguments.
+        PreSubmitScripts       =&gt; [&#39;...&#39;],              # Script(s) to execute after all tests have been executed
+                                                        #  and the results are about to be sent to the server.
     );</code></pre>
 
-<h2 id="True">True()</h2>
-
-<p>test for a scalar value that evaluates to true.</p>
-
-<p>Send a scalar value to this function along with the test&#39;s name:</p>
-
-<pre><code>    $UnitTestObject-&gt;True(1, &#39;Test Name&#39;);
-
-    $UnitTestObject-&gt;True($ParamA, &#39;Test Name&#39;);</code></pre>
-
-<p>Internally, the function receives this value and evaluates it to see if it&#39;s true, returning 1 in this case or undef, otherwise.</p>
-
-<pre><code>    my $TrueResult = $UnitTestObject-&gt;True(
-        $TestValue,
-        &#39;Test Name&#39;,
-    );</code></pre>
-
-<h2 id="False">False()</h2>
-
-<p>test for a scalar value that evaluates to false.</p>
-
-<p>It has the same interface as <a href="#True">&quot;True()&quot;</a>, but tests for a false value instead.</p>
-
-<h2 id="Is">Is()</h2>
-
-<p>compares two scalar values for equality.</p>
-
-<p>To this function you must send a pair of scalar values to compare them, and the name that the test will take, this is done as shown in the examples below.</p>
-
-<pre><code>    $UnitTestObject-&gt;Is($A, $B, &#39;Test Name&#39;);</code></pre>
-
-<p>Returns 1 if the values were equal, or undef otherwise.</p>
-
-<pre><code>    my $IsResult = $UnitTestObject-&gt;Is(
-        $ValueFromFunction,      # test data
-        1,                       # expected value
-        &#39;Test Name&#39;,
-    );</code></pre>
-
-<h2 id="IsNot">IsNot()</h2>
-
-<p>compares two scalar values for inequality.</p>
-
-<p>It has the same interface as <a href="#Is">&quot;Is()&quot;</a>, but tests for inequality instead.</p>
-
-<h2 id="IsDeeply">IsDeeply()</h2>
-
-<p>compares complex data structures for equality.</p>
-
-<p>To this function you must send the references to two data structures to be compared, and the name that the test will take, this is done as shown in the examples below.</p>
-
-<pre><code>    $UnitTestObject-&gt; IsDeeply($ParamA, $ParamB, &#39;Test Name&#39;);</code></pre>
-
-<p>Where $ParamA and $ParamB must be references to a structure (scalar, list or hash).</p>
-
-<p>Returns 1 if the data structures are the same, or undef otherwise.</p>
-
-<pre><code>    my $IsDeeplyResult = $UnitTestObject-&gt;IsDeeply(
-        \%ResultHash,           # test data
-        \%ExpectedHash,         # expected value
-        &#39;Dummy Test Name&#39;,
-    );</code></pre>
-
-<h2 id="IsNotDeeply">IsNotDeeply()</h2>
-
-<p>compares two data structures for inequality.</p>
-
-<p>It has the same interface as <a href="#IsDeeply">&quot;IsDeeply()&quot;</a>, but tests for inequality instead.</p>
+<p>Please note that the individual test files are not executed in the main process, but instead in separate forked child processes which are controlled by <a href="UnitTest/Driver.pm.html">Kernel::System::UnitTest::Driver</a>. Their results will be transmitted to the main process via a local file.</p>
 
 <h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
