@@ -38,18 +38,6 @@ $(document).ready(function() {
                     HTMLPath: '4.0',
                     Name:     'OTRS 4',
                     Languages: ['en', 'de', 'hu', 'ja', 'ru', 'sw']
-                },
-                {
-                    Version:  '3.3',
-                    HTMLPath: '3.3',
-                    Name:     'OTRS 3.3',
-                    Languages: ['en', 'de', 'ja', 'ru', 'sw']
-                },
-                {
-                    Version:  '3.2',
-                    HTMLPath: '3.2',
-                    Name:     'OTRS 3.2',
-                    Languages: ['en']
                 }
             ]
         },
@@ -81,7 +69,7 @@ $(document).ready(function() {
                     Languages:   ['en', 'hu'],
                     PDFPath:     'doc-otrsbusiness',
                     PDFFileName: 'otrs_business_solution_book.pdf'
-                },
+                }
             ]
         },
         {
@@ -106,18 +94,6 @@ $(document).ready(function() {
                     HTMLPath: '4.0',
                     Name:     'OTRS::ITSM 4',
                     Languages: ['en', 'ru']
-                },
-                {
-                    Version:  '3.3',
-                    HTMLPath: '3.3',
-                    Name:     'OTRS::ITSM 3.3',
-                    Languages: ['en', 'de']
-                },
-                {
-                    Version:  '3.2',
-                    HTMLPath: '3.2',
-                    Name:     'OTRS::ITSM 3.2',
-                    Languages: ['en', 'de']
                 }
             ]
         },
@@ -142,18 +118,6 @@ $(document).ready(function() {
                     Version:  '4.0',
                     HTMLPath: '4.0',
                     Name:     'OTRS 4',
-                    Languages: ['en']
-                },
-                {
-                    Version:  '3.3',
-                    HTMLPath: '3.3',
-                    Name:     'OTRS 3.3',
-                    Languages: ['en']
-                },
-                {
-                    Version:  '3.2',
-                    HTMLPath: '3.2',
-                    Name:     'OTRS 3.2',
                     Languages: ['en']
                 }
             ]
@@ -186,12 +150,6 @@ $(document).ready(function() {
                     HTMLPath: '4.0',
                     Types:    ['Perl'],
                     Name:     'OTRS 4'
-                },
-                {
-                    Version:  '3.3',
-                    HTMLPath: '3.3',
-                    Types:    ['Perl'],
-                    Name:     'OTRS 3.3'
                 }
             ]
         }
