@@ -560,7 +560,7 @@ sub Redirect {
 
     # add cookies if exists
     my $Cookies = '';
-    if ( $Self->{SetCookies} && $ConfigObject->Get('SessionUseCookie') ) {
+    if ( $Self->{SetCookies} ) {
         for ( sort keys %{ $Self->{SetCookies} } ) {
             $Cookies .= "Set-Cookie: $Self->{SetCookies}->{$_}\n";
         }
@@ -626,40 +626,6 @@ sub Redirect {
         Data         => \%Param
         );
 
-    # add session id to redirect if no cookie is enabled
-    if ( !$Self->{SessionIDCookie} && !( $Self->{BrowserHasCookie} && $Param{Login} ) ) {
-
-        # rewrite location header
-        $Output =~ s{
-            (location:\s)(.*)
-        }
-        {
-            my $Start  = $1;
-            my $Target = $2;
-            my $End = '';
-            if ($Target =~ /^(.+?)#(|.+?)$/) {
-                $Target = $1;
-                $End = "#$2";
-            }
-            if ($Target =~ /http/i || !$Self->{SessionID}) {
-                "$Start$Target$End";
-            }
-            else {
-                if ($Target =~ /(\?|&)$/) {
-                    "$Start$Target$Self->{SessionName}=$Self->{SessionID}$End";
-                }
-                elsif ($Target !~ /\?/) {
-                    "$Start$Target?$Self->{SessionName}=$Self->{SessionID}$End";
-                }
-                elsif ($Target =~ /\?/) {
-                    "$Start$Target&$Self->{SessionName}=$Self->{SessionID}$End";
-                }
-                else {
-                    "$Start$Target?&$Self->{SessionName}=$Self->{SessionID}$End";
-                }
-            }
-        }iegx;
-    }
     return $Output;
 }
 
@@ -673,29 +639,9 @@ sub Login {
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
     my $Output = '';
-    if ( $ConfigObject->Get('SessionUseCookie') ) {
-
-        # always set a cookie, so that at the time the user submits
-        # the password, we know already if the browser supports cookies.
-        # ( the session cookie isn't available at that time ).
-        my $CookieSecureAttribute = 0;
-        if ( $ConfigObject->Get('HttpType') eq 'https' ) {
-
-            # Restrict Cookie to HTTPS if it is used.
-            $CookieSecureAttribute = 1;
-        }
-        $Self->{SetCookies}->{OTRSBrowserHasCookie} = $Kernel::OM->Get('Kernel::System::Web::Request')->SetCookie(
-            Key      => 'OTRSBrowserHasCookie',
-            Value    => 1,
-            Expires  => '+1y',
-            Path     => $ConfigObject->Get('ScriptAlias'),
-            Secure   => $CookieSecureAttribute,
-            HttpOnly => 1,
-        );
-    }
 
     # add cookies if exists
-    if ( $Self->{SetCookies} && $ConfigObject->Get('SessionUseCookie') ) {
+    if ( $Self->{SetCookies} ) {
         for ( sort keys %{ $Self->{SetCookies} } ) {
             $Output .= "Set-Cookie: $Self->{SetCookies}->{$_}\n";
         }
@@ -1286,7 +1232,7 @@ sub Header {
 
     # add cookies if exists
     my $Output = '';
-    if ( $Self->{SetCookies} && $ConfigObject->Get('SessionUseCookie') ) {
+    if ( $Self->{SetCookies} ) {
         for ( sort keys %{ $Self->{SetCookies} } ) {
             $Output .= "Set-Cookie: $Self->{SetCookies}->{$_}\n";
         }
@@ -1577,7 +1523,6 @@ sub Footer {
         WebPath                        => $ConfigObject->Get('Frontend::WebPath'),
         Action                         => $Self->{Action},
         Subaction                      => $Self->{Subaction},
-        SessionIDCookie                => $Self->{SessionIDCookie},
         SessionName                    => $Self->{SessionName},
         SessionID                      => $Self->{SessionID},
         ChallengeToken                 => $Self->{UserChallengeToken},
@@ -3769,29 +3714,7 @@ sub CustomerLogin {
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    if ( $ConfigObject->Get('SessionUseCookie') ) {
-
-        # always set a cookie, so that at the time the user submits
-        # the password, we know already if the browser supports cookies.
-        # ( the session cookie isn't available at that time ).
-        my $CookieSecureAttribute = 0;
-        if ( $ConfigObject->Get('HttpType') eq 'https' ) {
-
-            # Restrict Cookie to HTTPS if it is used.
-            $CookieSecureAttribute = 1;
-        }
-        $Self->{SetCookies}->{OTRSBrowserHasCookie} = $Kernel::OM->Get('Kernel::System::Web::Request')->SetCookie(
-            Key      => 'OTRSBrowserHasCookie',
-            Value    => 1,
-            Expires  => '+1y',
-            Path     => $ConfigObject->Get('ScriptAlias'),
-            Secure   => $CookieSecureAttribute,
-            HttpOnly => 1,
-        );
-    }
-
-    # add cookies if exists
-    if ( $Self->{SetCookies} && $ConfigObject->Get('SessionUseCookie') ) {
+    if ( $Self->{SetCookies} ) {
         for ( sort keys %{ $Self->{SetCookies} } ) {
             $Output .= "Set-Cookie: $Self->{SetCookies}->{$_}\n";
         }
@@ -3963,9 +3886,8 @@ sub CustomerHeader {
 
     my $ConfigObject = $Kernel::OM->Get('Kernel::Config');
 
-    # add cookies if exists
     my $Output = '';
-    if ( $Self->{SetCookies} && $ConfigObject->Get('SessionUseCookie') ) {
+    if ( $Self->{SetCookies} ) {
         for ( sort keys %{ $Self->{SetCookies} } ) {
             $Output .= "Set-Cookie: $Self->{SetCookies}->{$_}\n";
         }
@@ -4156,7 +4078,6 @@ sub CustomerFooter {
         WebPath                  => $ConfigObject->Get('Frontend::WebPath'),
         Action                   => $Self->{Action},
         Subaction                => $Self->{Subaction},
-        SessionIDCookie          => $Self->{SessionIDCookie},
         SessionName              => $Self->{SessionName},
         SessionID                => $Self->{SessionID},
         ChallengeToken           => $Self->{UserChallengeToken},
@@ -4948,12 +4869,6 @@ sub RichTextDocumentServe {
         }
     }
 
-    # build base url for inline images
-    my $SessionID = '';
-    if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
-        $SessionID = ';' . $Self->{SessionName} . '=' . $Self->{SessionID};
-    }
-
     # replace inline images in content with runtime url to images
     my $AttachmentLink = $Self->{Baselink} . $Param{URL};
     $Param{Data}->{Content} =~ s{
@@ -4976,7 +4891,7 @@ sub RichTextDocumentServe {
         ATTACHMENT_ID:
         for my $AttachmentID (  sort keys %{ $Param{Attachments} }) {
             next ATTACHMENT_ID if lc $Param{Attachments}->{$AttachmentID}->{ContentID} ne lc "<$ContentID>";
-            $ContentID = $AttachmentLink . $AttachmentID . $SessionID;
+            $ContentID = $AttachmentLink . $AttachmentID;
             last ATTACHMENT_ID;
         }
 
@@ -5016,7 +4931,7 @@ sub RichTextDocumentServe {
         }
 
         # return new runtime url
-        $ContentID = $AttachmentLink . $AttachmentID . $SessionID;
+        $ContentID = $AttachmentLink . $AttachmentID;
         $Start . $ContentID . $End;
     }egxi;
     }

@@ -133,7 +133,7 @@ sub Run {
 
     # get session id
     $Param{SessionName} = $ConfigObject->Get('CustomerPanelSessionName') || 'CSID';
-    $Param{SessionID} = $ParamObject->GetParam( Param => $Param{SessionName} ) || '';
+    $Param{SessionID} = $ParamObject->GetCookie( Key => $Param{SessionName} ) // '';
 
     # drop old session id (if exists)
     $QueryString =~ s/(\?|&|;|)$Param{SessionName}(=&|=;|=.+?&|=.+?$)/;/g;
@@ -153,17 +153,6 @@ sub Run {
     # validate language
     if ( $Param{Lang} && $Param{Lang} !~ m{\A[a-z]{2}(?:_[A-Z]{2})?\z}xms ) {
         delete $Param{Lang};
-    }
-
-    my $BrowserHasCookie = 0;
-
-    # Check if the browser sends the SessionID cookie and set the SessionID-cookie
-    # as SessionID! GET or POST SessionID have the lowest priority.
-    if ( $ConfigObject->Get('SessionUseCookie') ) {
-        $Param{SessionIDCookie} = $ParamObject->GetCookie( Key => $Param{SessionName} );
-        if ( $Param{SessionIDCookie} ) {
-            $Param{SessionID} = $Param{SessionIDCookie};
-        }
     }
 
     my $CookieSecureAttribute;
@@ -258,21 +247,6 @@ sub Run {
 
         # login is invalid
         if ( !$User ) {
-            $Kernel::OM->ObjectParamAdd(
-                'Kernel::Output::HTML::Layout' => {
-                    SetCookies => {
-                        OTRSBrowserHasCookie => $ParamObject->SetCookie(
-                            Key      => 'OTRSBrowserHasCookie',
-                            Value    => 1,
-                            Expires  => $Expires,
-                            Path     => $ConfigObject->Get('ScriptAlias'),
-                            Secure   => $CookieSecureAttribute,
-                            HTTPOnly => 1,
-                        ),
-                    },
-                },
-            );
-
             my $LayoutObject = $Kernel::OM->Get('Kernel::Output::HTML::Layout');
 
             # redirect to alternate login
@@ -308,15 +282,6 @@ sub Run {
             User  => $User,
             Valid => 1
         );
-
-        # check if the browser supports cookies
-        if ( $ParamObject->GetCookie( Key => 'OTRSBrowserHasCookie' ) ) {
-            $Kernel::OM->ObjectParamAdd(
-                'Kernel::Output::HTML::Layout' => {
-                    BrowserHasCookie => 1,
-                },
-            );
-        }
 
         # check needed data
         if ( !$UserData{UserID} || !$UserData{UserLogin} ) {
@@ -424,7 +389,7 @@ sub Run {
         $Kernel::OM->ObjectParamAdd(
             'Kernel::Output::HTML::Layout' => {
                 SetCookies => {
-                    SessionIDCookie => $ParamObject->SetCookie(
+                    SessionID => $ParamObject->SetCookie(
                         Key      => $Param{SessionName},
                         Value    => $NewSessionID,
                         Expires  => $Expires,
@@ -432,15 +397,6 @@ sub Run {
                         Secure   => scalar $CookieSecureAttribute,
                         HTTPOnly => 1,
                     ),
-                    OTRSBrowserHasCookie => $ParamObject->SetCookie(
-                        Key      => 'OTRSBrowserHasCookie',
-                        Value    => '',
-                        Expires  => '-1y',
-                        Path     => $ConfigObject->Get('ScriptAlias'),
-                        Secure   => $CookieSecureAttribute,
-                        HTTPOnly => 1,
-                    ),
-
                 },
                 SessionID   => $NewSessionID,
                 SessionName => $Param{SessionName},
@@ -499,7 +455,7 @@ sub Run {
         $Kernel::OM->ObjectParamAdd(
             'Kernel::Output::HTML::Layout' => {
                 SetCookies => {
-                    SessionIDCookie => $ParamObject->SetCookie(
+                    SessionID => $ParamObject->SetCookie(
                         Key      => $Param{SessionName},
                         Value    => '',
                         Expires  => '-1y',
@@ -993,7 +949,7 @@ sub Run {
             $Kernel::OM->ObjectParamAdd(
                 'Kernel::Output::HTML::Layout' => {
                     SetCookies => {
-                        SessionIDCookie => $ParamObject->SetCookie(
+                        SessionID => $ParamObject->SetCookie(
                             Key      => $Param{SessionName},
                             Value    => '',
                             Expires  => '-1y',

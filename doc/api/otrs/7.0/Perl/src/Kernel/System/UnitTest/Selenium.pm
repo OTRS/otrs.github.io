@@ -206,6 +206,7 @@ sub get {    ## no critic
     my ( $Self, $URL ) = @_;
 
     if ( $URL !~ m{http[s]?://}smx ) {
+        $URL =~ s{\A/+}{}smx; # Chop off leading slashes to avoid duplicates.
         $URL = "$Self->{BaseURL}/$URL";
     }
 

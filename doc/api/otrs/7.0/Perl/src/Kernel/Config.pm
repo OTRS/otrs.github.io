@@ -70,7 +70,6 @@ sub Load {
     # insert your own config settings "here"               #
     # config settings taken from Kernel/Config/Defaults.pm #
     # ---------------------------------------------------- #
-    # $Self->{SessionUseCookie} = 0;
     # $Self->{CheckMXRecord} = 0;
 
     # ---------------------------------------------------- #

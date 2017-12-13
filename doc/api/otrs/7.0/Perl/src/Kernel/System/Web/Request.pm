@@ -466,7 +466,7 @@ sub SaveFormDraft {
     }
     return if !$MetaParams{Action};
 
-    # determine session name param (SessionUseCookie = 0) for exclusion
+    # Don't store Session name in the draft. This could be sent if cookie support was disabled in OTRS 6 or earlier.
     my $SessionName = $Kernel::OM->Get('Kernel::Config')->Get('SessionName') || 'SessionID';
 
     # compile override list

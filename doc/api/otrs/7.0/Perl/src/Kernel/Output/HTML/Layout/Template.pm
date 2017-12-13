@@ -207,48 +207,6 @@ sub Output {
         $Self->FatalError();
     }
 
-    # If the browser does not send the session cookie, we need to append it to all links and image urls.
-    #   We cannot do this in the template preprocessor because links are often dynamically generated.
-    if ( $Self->{SessionID} && !$Self->{SessionIDCookie} ) {
-
-        # rewrite a hrefs
-        $Output =~ s{
-            (<a.+?href=")(.+?)(\#.+?|)(".+?>)
-        }
-        {
-            my $AHref   = $1;
-            my $Target  = $2;
-            my $End     = $3;
-            my $RealEnd = $4;
-            if ( lc($Target) =~ /^(http:|https:|#|ftp:)/ ||
-                $Target !~ /\.(pl|php|cgi|fcg|fcgi|fpl)(\?|$)/ ||
-                $Target =~ /(\?|&|;)\Q$Self->{SessionName}\E=/) {
-                $AHref.$Target.$End.$RealEnd;
-            }
-            else {
-                $AHref.$Target.';'.$Self->{SessionName}.'='.$Self->{SessionID}.$End.$RealEnd;
-            }
-        }iegxs;
-
-        # rewrite img and iframe src
-        $Output =~ s{
-            (<(?:img|iframe).+?src=")(.+?)(".+?>)
-        }
-        {
-            my $AHref = $1;
-            my $Target = $2;
-            my $End = $3;
-            if (lc($Target) =~ m{^http s? :}smx || !$Self->{SessionID} ||
-                $Target !~ /\.(pl|php|cgi|fcg|fcgi|fpl)(\?|$)/ ||
-                $Target =~ /\Q$Self->{SessionName}\E=/) {
-                $AHref.$Target.$End;
-            }
-            else {
-                $AHref.$Target.'&'.$Self->{SessionName}.'='.$Self->{SessionID}.$End;
-            }
-        }iegxs;
-    }
-
     #
     # "Post" Output filter handling
     #
