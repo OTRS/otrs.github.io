@@ -1,0 +1,560 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Usaninishaji kutoka kwenye chanzo (Linux, Unix)</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 3.3 - Mwongozo wa msimamizi"><link rel="up" href="installation.html" title="Chapter 2. Usanikishaji"><link rel="prev" href="installation.html" title="Chapter 2. Usanikishaji"><link rel="next" href="web-installer.html" title="Kutumia kisakinishi cha wavuti"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Usaninishaji kutoka kwenye chanzo (Linux, Unix)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">Prev</a> </td><th width="60%" align="center">Chapter 2. Usanikishaji</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>Usaninishaji kutoka kwenye chanzo (Linux, Unix)</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="manual-installation-of-otrs.html#preparing-manual-installation">Kuandaa usakinishaji kutoka kwenye chanzo</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#installation-of-perl-modules">Usakinishaji wa moduli za perl</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#web-server-configuration">Kusanidi seva ya tovuti ya Apache</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#database-configuration">Usanidi wa hifadhidata</a></span></dt><dd><dl><dt><span class="section"><a href="manual-installation-of-otrs.html#manual-installation-of-database">Kusakinisha hifadhidata ya OTRS kwa mikono</a></span></dt></dl></dd><dt><span class="section"><a href="manual-installation-of-otrs.html#cronjobs">Kuanzisha kazi za mfumo zilizopangwa za OTRS</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#installation-scheduler">Huduma ya Mratibu wa OTRS</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="preparing-manual-installation"></a>Kuandaa usakinishaji kutoka kwenye chanzo</h3></div></div></div><p>
+Kama unataka kusakinisha OTRS kutoka kwenye chanzo, kwanza pakua nyaraka
+kama faili .tar.gz, .tar.bz2, au .zip kutoka <a class="ulink" href="http://www.otrs.com/try/" target="_top">
+<em class="citetitle">http://www.otrs.com/try/</em> </a>
+</p><p>
+Pakua nyaraka (kwa mfano, kwa kutumia <span class="command"><strong>tar</strong></span>) kwenda kwenye
+mpangilio orodha <code class="filename">/opt</code>, na upa mpangilio orodha jina
+jipya kutoka otrs-x.x.x kuwa otrs (ona Hati chini).
+</p><p>
+</p><pre class="screen">
+linux:/opt# tar xf /tmp/otrs-x.x.x.tar.gz
+linux:/opt# mv otrs-x.x.x otrs
+linux:/opt# ls
+otrs
+linux:/opt#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati:Hatua za kwanza kusakinisha OTRS.</em></span>
+</p><p>
+OTRS HAITAKIWI kuendeshwa kwa kutumia haki za mzizi. Kifwatacho unatakiwa
+kuongeza mtumiaji mpya kwa ajili ya OTRS. Mpangiio orodha wa nyumbani wa
+huyu mtumiaji mpya unatakiwa kuwa <code class="filename">/opt/otrs</code>. Kama seva
+yako ya wavuti haifanyi kazi na haki za mtumiaji sawa na mtumiaji mpya wa
+'otrs', ambayo ndiyo kawaida kwa mifumo mingi, utahitaji kuongeza mtumiaji
+mpya wa 'otrs' kwenye kundi la watumiaji wa seva ya wavuti (ona Hati chini).
+</p><p>
+</p><pre class="screen">
+linux:/opt# useradd -r -d /opt/otrs/ -c 'OTRS user' otrs
+linux:/opt# usermod -G www otrs
+linux:/opt#
+</pre><p> (SUSE=www, Red Hat/CentOS/Fedora=apache,
+Debian/Ubuntu=www-data)
+</p><p>
+<span class="emphasis"><em>Hati: Kuongeza mtumiaji mpya 'otrs', na kumuongeza kwenye
+kundi.</em></span>
+</p><p>
+Kisha, inabidi unakili baadhi ya mafaili ya usanidi. Mfumo baadae utatumia
+mafaili yaliyo nakiliwa. Mafaili yanapatikana kwenye
+<code class="filename">/opt/otrs/Kernel</code> na
+<code class="filename">/opt/otrs/Kernel/Config</code> na yana kiambishi tamati .dist
+(ona Hati chini).
+</p><p>
+</p><pre class="screen">
+linux:/opt# cd otrs/Kernel/
+linux:/opt/otrs/Kernel# cp Config.pm.dist Config.pm
+linux:/opt/otrs/Kernel# cd Config
+linux:/opt/otrs/Kernel/Config# cp GenericAgent.pm.dist GenericAgent.pm
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kunakili mafaili ya mfano.</em></span>
+</p><p>
+Hatua ya mwisho ya kuandaa usakinishaji wa OTRS ni kuseti haki sahihi za
+ufikivu za mafaili. Unaweza kutumia hati
+<span class="command"><strong>otrs.SetPermissions.pl</strong></span>, ambayo inapatikana kwenye
+mpangilio orodha <code class="filename">bin</code>, katika mpangilio orodha wa
+nyumbani wa mtumiaji wa 'otrs'. Unaweza kutekeleza hati na parameta
+zifuatazo:
+</p><p>
+</p><div class="cmdsynopsis"><p><code class="command">otrs.SetPermissions.pl</code>  {
+<em class="replaceable"><code>Mpangilio orodha wa nyumbani wa mtumiaji wa OTRS</code></em>
+} { --otrs-user= <em class="replaceable"><code>Mtumiaji wa
+OTRS</code></em> } { --web-user=
+<em class="replaceable"><code>Mtumiaji wa seva ya tovuti</code></em> } [ --otrs-group= <em class="replaceable"><code>Kundi la mtumiaji wa
+OTRS</code></em> ] [ --web-group= <em class="replaceable"><code>Kundi
+la mtumiaji wa seva ya tovuti</code></em> ]</p></div><p>
+</p><p>
+Kama seva yako ya tovuti inafanya kazi na haki za mtumiaji sawa na za
+mtumiaji 'otrs', amri ya kuseti haki sahihi za ufikivu ni
+<span class="command"><strong>otrs.SetPermissions.pl /opt/otrs --otrs-user=otrs
+--web-user=otrs</strong></span>. Katika mifumo ya SUSE seva ya tovuti inafanya
+kazi na haki za mtumiaji za 'wwwrun'. Katika mifumo iliyojikita kwenye
+Debian hii ni 'www-data'. Ungeweza kutumia amri
+<span class="command"><strong>otrs.SetPermissions.pl /opt/otrs --otrs-user=otrs --web-user=wwwrun
+--otrs-group=nogroup --web-group=www</strong></span> kuseti haki sawa za ufikivu.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-of-perl-modules"></a>Usakinishaji wa moduli za perl</h3></div></div></div><p>
+OTRS inahitaji baadhi ya moduli za Perl za ziada, kama ilivyoelezewa katika
+Jedwali 3-1. Kama ukisakinisha OTRS kutoka kwenye chanzo, utahitaji
+kusakinisha hizi moduli kwa mikono. Hii inaweza kufanyika aidha na meneja
+vifurushi wa usambazaji wako wa Linux (<span class="application">yast</span>,
+<span class="application">apt-get</span>) au, kama ilivyoelezewa katika kifungu
+hiki, kupitia sheli ya Perl na CPAN. Kama unatumia Perl ya HaliaHai, kwa
+mfano kwenye Windows, ungeweza kutumia RPM, Meneja Kifurushi wa Perl
+iliyojengwa kwa ndani. Tunashauri kutumia meneja vifurushi wako kama
+inawezekana.
+</p><p>
+Unaweza kuthibitisha moduli zipi unahitaji kusakinisha kwa
+<span class="command"><strong>otrs.CheckModules.pl</strong></span>. Hii hati inapatikana kwenye
+mpangilio orodha <code class="filename">bin</code>, katika mpangilio orodha wa
+nyumbani wa mtumiaji wa 'otrs' (ona Hati chini). Tafadhali tambua kwamba
+baadhi ya moduli ni za hiari. </p><pre class="screen">
+linux:~# cd /opt/otrs/bin/
+linux:/opt/otrs/bin# ./otrs.CheckModules.pl
+   o CGI..............................ok (v3.60)
+   o Crypt::PasswdMD5.................ok (v1.3)
+   o Crypt::SSLeay....................Not installed! (Optional - Required for Generic Interface SOAP SSL connections.)
+   o CSS::Minifier....................ok (v0.01)
+   o Date::Format.....................ok (v2.22)
+   o Date::Pcalc......................ok (v1.2)
+
+   ...
+
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kukagua moduli zinazotakiwa.</em></span>
+</p><p>
+Unatakiwa kujitahidi kusakinisha moduli zinazokosekana kwenye mfumo wa
+usimamizi wa kifurushi chako cha usambazaji wa Linux. Kwa kufanya hivyo
+vifurushi vitasasishwa kiotomatiki wakati matoleo mapya yanapatikana au
+masuala ya usalama yakipatikana. Tafadhali rejea kwenye nyaraka za
+usambazaji wako kuhusu jinsi ya kusasisha vifurushi vya ziada. Kama moduli
+() haipatikani kwenye hifadhi ya kifurushi, unaweza pia kusakinisha CPAN,
+Comprehensive Perl Archive Network.
+</p><p>
+Kusakinisha moja ya moduli hapa juu kupitia CPAN, inabidi utekeleze amri
+<span class="command"><strong>perl -e shell -MCPAN</strong></span>. Sheli ya Perl itaanzishwa katika
+hali-tumizi ingiliani na moduli ya CPAN itapakiwa. Kama CPAN tayari
+imesanidiwa, unaweza kusanidi moduli kwa kutumia amri
+<span class="command"><strong>install</strong></span> inayofuatwa na jina la moduli. CPAN
+inashughulikia utegemezi wa moduli kwenye moduli nyingine za Perl na
+itakujulisha kama moduli nyingine zinahitajika.
+</p><p>
+    Pia tekeleza amri <span class="command"><strong>perl -cw bin/cgi-bin/index.pl</strong></span>
+<span class="command"><strong>perl -cw bin/cgi-bin/customer.pl</strong></span> na <span class="command"><strong>perl -cw
+bin/otrs.PostMaster.pl</strong></span> baada ya kuingia kwenye mpangilio orodha
+<code class="filename">/opt/otrs</code>.  Kama matokeo ya amri zote ni "sintaksi
+SAWA", Perl yako imesetiwa sawa (ona Hati chini).
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs
+linux:/opt/otrs# perl -cw bin/cgi-bin/index.pl
+cgi-bin/installer.pl syntax OK
+linux:/opt/otrs# perl -cw bin/cgi-bin/customer.pl
+cgi-bin/customer.pl syntax OK
+linux:/opt/otrs# perl -cw bin/otrs.PostMaster.pl
+bin/otrs.PostMaster.pl syntax OK
+linux:/opt/otrs#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>hati: Kukagua sintaksi.</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="web-server-configuration"></a>Kusanidi seva ya tovuti ya Apache</h3></div></div></div><p>Kwanza kabisa, unatakiwa kusanidi seva ya wavuti ya Apache2 na mod_perl;
+utafanya hivi kutoka kwenye meneja kifurushi. Hapa chini utakuta amri
+zinazohitajika kuseti Apache kwenye usambazaji wa Linux maarufu.
+</p><p>
+  </p><pre class="screen">
+
+    # rhel / centos:
+    linux:# yum install httpd mod_perl
+
+    # suse:
+    linux:# zypper install apache2-mod_perl
+
+    # debian/ubuntu:
+    linux:# apt-get install apache2 libapache2-mod-perl2
+
+  </pre><p>
+</p><p>
+Kufikia kiolesura cha wavuti cha OTRS kupitia URL fupi, maingizo ya Lakabu
+na HatiLakabu yanahitajika. Usakinishaji mwingi wa
+<span class="application">Apache</span>  una mpangilio orodha
+<code class="filename">conf.d</code> umejumuishwa. Kwenye mifumo ya Linux unaweza
+kukuta huu mpangilio orodha chini ya <code class="filename">/etc/apache</code> or
+<code class="filename">/etc/apache2</code>. Ingia kama mzizi, badilisha kwenda
+mpangilio orodha <code class="filename">conf.d</code> na nakili kiolezo husika katika
+<code class="filename">/opt/otrs/scripts/apache2-httpd.include.conf</code> kwenda
+kwenye faili liitwalo <code class="filename">otrs.conf</code> katika mpangilio orodha
+wa usanidi wa Apache.
+</p><p>
+Anzisha upya seva yako ya tovuti kupakia mipangilio mipya ya usanidi. Katika
+mifumo mingi unaweza kuanzisha/kuanzisha upya sevayako ya tovuti na agizo
+<span class="command"><strong>/etc/init.d/apache2 restart</strong></span> (ona Hati chini).
+</p><p>
+</p><pre class="screen">
+linux:/etc/apache2/conf.d# /etc/init.d/apache2 restart
+Forcing reload of web server: Apache2.
+linux:/etc/apache2/conf.d#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kuanzisha upya seva ya tovuti.</em></span>
+</p><p>
+Sasa seva yako ya wavuti inabidi iwe na usanidi wa OTRS.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="database-configuration"></a>Usanidi wa hifadhidata</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="manual-installation-of-database"></a>Kusakinisha hifadhidata ya OTRS kwa mikono</h4></div></div></div><p>
+Njia inayoshauriwa ya kusanidi hifadhidata ni kuanzisha <a class="link" href="web-installer.html" title="Kutumia kisakinishi cha wavuti">Kisanikishi cha Tovuti</a>. Kama huwezi kutumia
+njia hii kwa sababu fulani, unaweza pia kusanidi hifadhidata kwa mikono,
+kama ilivyoelezewa kwenye hii sura. Kama hutaweza kutumia kisakinishi cha
+tovuti kuseti hifadhidata ya OTRS, inabidi kuiseti kwa mikono. Hati zenye
+kauli za SQL za kutengeneza na kusanidi hifadhidata zinapatikana kwenye
+<code class="filename">scripts/database</code>, katika mpangilio orodha wa nyumbani
+wa mtumiaji wa 'otrs' (ona Hati chini).
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs/scripts/database/
+linux:/opt/otrs/scripts/database# ls
+otrs-initial_insert.db2.sql         otrs-schema.mysql.sql
+otrs-schema.oracle.sql
+otrs-initial_insert.mssql.sql       otrs-schema-post.db2.sql
+otrs-initial_insert.mysql.sql       otrs-schema.postgresql.sql
+otrs-initial_insert.oracle.sql
+otrs-initial_insert.postgresql.sql  otrs-schema-post.mssql.sql
+otrs-initial_insert.xml             otrs-schema-post.mysql.sql
+otrs-schema.db2.sql                 otrs-schema-post.oracle.sql
+ otrs-schema-post.postgresql.sql
+otrs-schema.mssql.sql               otrs-schema.xml
+linux:/opt/otrs/scripts/database#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Mafaili yanayohitajika kutengeneza na kusanidi
+hifadhidata.</em></span>
+</p><p>
+Kuseti hifadhidata kwa ajili ya mazingira ya nyuma tofauti ya hifadhidata,
+mafaili ya .sql lazima yachakatishwe katika mpangilio maalumu.
+</p><p>
+</p><div class="orderedlist"><p class="title"><b>Tengeneza hifadhidata ya OTRS kwa mikono hatua kwa hatua</b></p><ol class="orderedlist" type="1"><li class="listitem"><p>
+Kutengeneza DB: Tengeneza hifadhidata ambayo unataka kutumia kwa ajili ya
+OTRS, kwa kutumumia programu yako ya hifadhidata au kiolesura chako cha
+hifadhidata.
+</p></li><li class="listitem"><p>
+Kutengeneza majedwali: Na mafaili ya otrs-schema.DatabaseType.sql
+(mf. <code class="filename">otrs-schema.oracle.sql</code>,
+<code class="filename">otrs-schema.postgresql.sql</code>) unaweza kutengeneza
+majedwali katika hifadhidata yako ya OTRS.
+</p></li><li class="listitem"><p>
+Kuingiza data za mwanzo za mfumo: OTRS inahitaji data za mwanzo za mfumo
+kuafanya kazi vizuri (mf. hali tofauti za tiketi, tiketi na aina za
+taarifa). Kutegemeana na aina ya hifadhidata unayotumia, utahitaji kutumia
+moja ya mafaili yafuatayo:
+<code class="filename">otrs-initial_insert.mysql.sql</code>,
+<code class="filename">otrs-initial_insert.oracle.sql</code>,
+<code class="filename">otrs-initial_insert.postgresql.sql</code> au
+<code class="filename">otrs-initial_insert.mssql.sql </code>.
+</p></li><li class="listitem"><p>
+Kutengeneza marejeo kati ya majedwali: Hatua ya mwisho ni kutengeneza
+marejeo kati ya majedwali tofauti katika hifadhidata ya OTRS. Tumia faili
+otrs-schema-post.DatabaseType.sql kutengeneza hizi
+(mf. <code class="filename">otrs-schema-oracle.post.sql</code>,
+<code class="filename">otrs-schema-post.postgresql.sql</code>).
+</p></li></ol></div><p>
+</p><p>
+Baada ya kumaliza kuseti hifadhidata, unatakiwa kukagua na kuseti haki
+sahihi za ufikivu kwa ajili ya hifadhidata ya OTRS. Zinatakiwa kuwa za
+kutosha kutoa ufikivu kwa mtumiaji mmoja. Kutegemeana na hifadhidata
+unayotumia, kuseti haki za ufikivu kunatofautiana, lakini inatakiwa
+kuwezekana aidha kwa programu ya hifadhidata au mazingira ya mbele ya
+michoro ya hifadhidata.
+</p><p>
+Kama hifadhidata yako na haki za ufikivu zimesanidiwa kwa usahihi, inabidi
+uiambie OTRS mazingira yapi ya nyuma ya hifadhidata unataka kutumia na jinsi
+mfumo wa tiketi unaweza kuunganishwa kwenye hifadhidata. Fungua faili
+<code class="filename">Kernel/Config.pm</code> linalopatikana katika mpangilio orodha
+wa nyumbani wa mtumiaji wa 'otrs' na badilisha parameta zilizoonyeshwa
+kwenye hati chini kuendana na mahitaji yako.
+</p><p>
+</p><pre class="programlisting">
+
+    # DatabaseHost
+    # (The database host.)
+    $Self-&gt;{'DatabaseHost'} = 'localhost';
+
+    # Database
+    # (The database name.)
+    $Self-&gt;{Database} = 'otrs';
+
+    # DatabaseUser
+    # (The database user.)
+    $Self-&gt;{DatabaseUser} = 'otrs';
+
+    # DatabasePw
+    # (The password of database user.)
+    $Self-&gt;{DatabasePw} = 'some-pass';
+
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Parameta za kugeuzwa kukufaa.</em></span>
+</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="cronjobs"></a>Kuanzisha kazi za mfumo zilizopangwa za OTRS</h3></div></div></div><p>
+OTRS inahitaji baadhi ya kazi za mfumo zilizopangwa kufanya kazi kwa
+usahihi. Kazi za mfumo zilizopangwa zinatakiwa kuendeshwa na haki zawa za
+mtumiaji kama zilizowekwa bayana kwa ajili ya moduli za OTRS. Hii
+inamaanisha kazi za mfumo zilizopangwa lazima ziingizwe katika faili la
+kichupo cha cron  cha mtumiaji wa 'otrs'.
+</p><p>
+Hati zote zenye kazi za mfumo zilizopangwa zinapatikana katika
+<code class="filename">var/cron</code>, katika mpangilio orodha wa nyumbani wa
+mtumiaji wa 'otrs' (ona Hati chini).
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs/var/cron
+linux:/opt/otrs/var/cron# ls
+aaa_base.dist                generic_agent.dist       rebuild_ticket_index.dist
+cache.dist                   pending_jobs.dist        session.dist
+fetchmail.dist               postmaster.dist          unlock.dist
+generic_agent-database.dist  postmaster_mailbox.dist
+linux:/opt/otrs/var/cron#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>hati: Mafaili yanayohitajika kutengeneza kazi za mfumo
+zilizopangwa.</em></span>
+</p><p>
+Hizi hati zina kiambishi tamati cha '.dist'. Unatakiwa kuzinakili katika
+mafaili na kiambishi tamati kikiwa kimeondolewa. kama ukitumia bash, unaweza
+kuhitaji kutumia amri iliyoorodheshwa katika Hati chini.
+</p><p>
+</p><pre class="screen">
+linux:/opt/otrs/var/cron# for foo in *.dist; do cp $foo `basename $foo .dist`; done
+linux:/opt/otrs/var/cron# ls
+aaa_base                generic_agent-database.dist  rebuild_ticket_index
+aaa_base.dist           generic_agent.dist           rebuild_ticket_index.dist
+cache                   pending_jobs                 session
+cache.dist              pending_jobs.dist            session.dist
+fetchmail               postmaster                   unlock
+fetchmail.dist          postmaster.dist              unlock.dist
+generic_agent           postmaster_mailbox
+generic_agent-database  postmaster_mailbox.dist
+linux:/opt/otrs/var/cron#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kunakili na kuyapa majina upya mafaili yote yanayohitajika
+kutengeneza kazi za mfumo zilizopangwa.</em></span>
+</p><p>
+Jedwali 3-2 linafafanua kazi tofauti za mfumo zilizopangwa.
+</p><p>
+</p><div class="table"><a name="table-of-cronjobs-for-otrs"></a><p class="title"><b>Table 2.1. Maelezo ya hati tofauti za kazi zilizopangwa za mfumo.</b></p><div class="table-contents"><table class="table" summary="Maelezo ya hati tofauti za kazi zilizopangwa za mfumo." border="1"><colgroup><col><col></colgroup><thead><tr><th>
+          hati
+        </th><th>
+          Kazi
+        </th></tr></thead><tbody><tr><td>
+          aaa_base
+        </td><td>
+          Inaseti vya msingi kwa ajili ya crontab ya mtumiaji wa 'otrs'.
+        </td></tr><tr><td>
+          Hifadhi muda
+        </td><td>
+          Inaondoa hifadhi muda iliyopitwa muda wake kwenye mfumo. Inasafisha hifadhi
+muda ya kupakia kwa ajili ya mafaili ya CSS na JavaScript.
+        </td></tr><tr><td>
+          tafutabarua
+        </td><td>
+          Inatumika tu kama barua pepe mpya zitatafutwa kwa tafutabaruapepe kwenda
+kwenye mfumo wa tiketi.
+        </td></tr><tr><td>
+          wakala_ujumla
+        </td><td>
+          Inatekeleza kazi za WakalaWaUjumla ambazo hazijahifadhiwa kwenye hifadhidata
+lakini katika mafaili yake ya config.
+        </td></tr><tr><td>
+          wakala-hifadhidata_ujumla
+        </td><td>
+          Inatekeleza kazi za WakalaWaUjumla ambazo zinahifadhiwa katika hifadhidata.
+        </td></tr><tr><td>
+          kazi_zinazosubiri
+        </td><td>
+          Inakagua mfumo kwa ajili ya tiketi zinazosubiri, na kuzifunga au kutuma
+vikumbusho kama inahitajika.
+        </td></tr><tr><td>
+          mkuu wa posta
+        </td><td>
+          Inakagua foleni ya ujumbe ya mfumo wa tiketi, na kuwasilisha ujumbe ambao
+bado uko kwenye foleni.
+        </td></tr><tr><td>
+          mkuuwaposta_kikashabarua
+        </td><td>
+          Inatafuta barua kutoka kwenye akaunti za POP3 ambazo ziliwekwa bayana kwenye
+eneo la msimamizi, katika kifungu cha "Akaunti za Barua za MkuuWaPosta".
+        </td></tr><tr><td>
+          tengenezaupya_tiketi_kielezo
+        </td><td>
+          Inatengeneza upya kielezo cha tiketi, ambayo inaboresha kasi ya
+MuonekanoFoleni.
+        </td></tr><tr><td>
+          kipindi
+        </td><td>
+          Inaondoa vitambulisho vya vipindi vya zamani au visivyohitajika.
+        </td></tr><tr><td>
+          fungua
+        </td><td>
+          Inafungua tiketi kwenye mfumo.
+        </td></tr></tbody></table></div></div><p><br class="table-break">
+</p><p>
+Kuseti kazi zote za mfumo zilizopangwa, hati
+<code class="filename">bin/Cron.sh</code> inayopatikana katika mpangilio orodha wa
+nyumbani wa mtumiaji wa 'otrs' inaweza kutumika. Wakati hati hii
+inatekelezwa, inahitaji parameta kuweka bayana kama unataka kusakinisha,
+kuondoa, au kusakinisha upya kazi za mfumo zilizopangwa. Parameta zifuatazo
+zinaweza kutumiak:
+</p><p>
+</p><div class="cmdsynopsis"><p><code class="command">Cron.sh</code>  {
+<em class="replaceable"><code>start</code></em> } {
+<em class="replaceable"><code>stop</code></em> } {
+<em class="replaceable"><code>restart</code></em> } [
+<em class="replaceable"><code>OTRS user</code></em> ]</p></div><p>
+</p><p>
+Kwa sababu kazi za mfumo zilizopangwa zinatakiwa kusakinishwa katika faili
+la crontab la mtumiaji wa 'otrs', unahitaji kuingia kwenye mfumo kama
+'otrs'. Kama umeingia kama mzizi, unaweza kubadilisha kuwa 'otrs' kwa
+kutumia amri <span class="command"><strong>su otrs</strong></span>. Tekeleza maagizo yaliyowekwa bayana
+kwenye Hati chini kusakinisha kazi za mfumo zilizopangwa.
+</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>
+Tafadhali tambua maingizo mengine ya crontab ya mtumiaji wa 'otrs'
+ytaandikwa juu yake au kuondolewa na hati
+<code class="filename">Cron.sh</code>. Tafadhali badilisha hati
+<code class="filename">Cron.sh</code> kuacha maingizo mengine ya crontab kama
+inavyohitajika.
+</p></div><p>
+</p><pre class="screen">
+linux:/opt/otrs/var/cron# cd /opt/otrs/bin/
+linux:/opt/otrs/bin# su otrs
+linux:~/bin$ ./Cron.sh start
+/opt/otrs/bin
+Cron.sh - start/stop OTRS cronjobs
+Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+(using /opt/otrs) done
+linux:~/bin$ exit
+exit
+linux:/opt/otrs/bin#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kusakinisha kazi za mfumo zilizopangwa.</em></span>
+</p><p>
+Amri <span class="command"><strong>crontab -l -u otrs</strong></span>, ambayo inaweza kutekelezwa kama
+mzizi, inaonyesha faili la crontab la mtumiaji wa 'otrs', na unaweza kukagua
+kama maingizo yote yamewekwa kwa usahihi (ona Kielelezo chini).
+</p><p>
+</p><pre class="screen">
+linux:/opt/otrs/bin# crontab -l -u otrs
+# --
+# cron/aaa_base - base crontab package
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# Who gets the cron emails?
+MAILTO="root@localhost"
+
+# --
+# cron/cache - delete expired cache
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# delete expired cache weekly (Sunday mornings)
+20 0 * * 0  $HOME/bin/otrs.CacheDelete.pl --expired &gt;&gt; /dev/null
+30 0 * * 0  $HOME/bin/otrs.LoaderCache.pl -o delete &gt;&gt; /dev/null
+
+# --
+# cron/fetchmail - fetchmail cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# fetch every 5 minutes emails via fetchmail
+#*/5 * * * * /usr/bin/fetchmail -a &gt;&gt; /dev/null
+
+# --
+# cron/generic_agent - otrs.GenericAgent.pl cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# start generic agent every 20 minutes
+*/20 * * * * $HOME/bin/GenericAgent.pl &gt;&gt; /dev/null
+# example to execute GenericAgent.pl on 23:00 with
+# Kernel::Config::GenericAgentMove job file
+#0 23 * * * $HOME/bin/otrs.GenericAgent.pl -c "Kernel::Config::GenericAgentMove" &gt;&gt; /dev/null
+# --
+# cron/generic_agent - GenericAgent.pl cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# start generic agent every 10 minutes
+*/10 * * * * $HOME/bin/otrs.GenericAgent.pl -c db &gt;&gt; /dev/null
+# --
+# cron/pending_jobs - pending_jobs cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# check every 120 min the pending jobs
+45 */2 * * * $HOME/bin/otrs.PendingJobs.pl &gt;&gt; /dev/null
+# --
+# cron/postmaster - postmaster cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# check daily the spool directory of OTRS
+10 0 * * *  $HOME/bin/otrs.ReprocessMails.pl &gt;&gt; /dev/null
+# --
+# cron/postmaster_mailbox - postmaster_mailbox cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# fetch emails every 10 minutes
+*/10 * * * * $HOME/bin/otrs.PostMasterMailbox.pl &gt;&gt; /dev/null
+# --
+# cron/rebuild_ticket_index - rebuild ticket index for OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# just every day
+01 01 * * * $HOME/bin/otrs.RebuildTicketIndex.pl &gt;&gt; /dev/null
+
+# --
+# cron/session - delete old session ids of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# delete every 120 minutes old/idle session ids
+55 */2 * * * $HOME/bin/otrs.DeleteSessionIDs.pl --expired &gt;&gt; /dev/null
+
+# --
+# cron/unlock - unlock old locked ticket of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# unlock every hour old locked tickets
+35 * * * * $HOME/bin/otrs.UnlockTickets.pl --timeout &gt;&gt; /dev/null
+
+linux:/opt/otrs/bin#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Faili la Crontab.</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-scheduler"></a>Huduma ya Mratibu wa OTRS</h3></div></div></div><p>
+        OTRS inakuja na huduma ya mratibu inayotumika kufanya kazi solandanifu.
+    </p><p>
+        RPM za OTRS zita seti Huduma ya Mratibu kiotomatiki. Kama ukisakinisha
+kutoka kwenye chanzo, unaweza kusakinisha huduma hiyo kwa kunakili faili
+<code class="filename">scripts/otrs-scheduler-linux</code> kwenda
+<code class="filename">/etc/init.d</code> na kulipa ruhusa sahihi. Hii itahakikisha
+huduma ya mratibu inaanza pale mfumo unapoanza.
+    </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="installation.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="installation.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="web-installer.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 2. Usanikishaji </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Kutumia kisakinishi cha wavuti</td></tr></table></div></body></html>

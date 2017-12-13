@@ -1,0 +1,469 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Installation from source (Linux, Unix)</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 3.3 - Admin Manual"><link rel="up" href="installation.html" title="Chapter 2. Installation"><link rel="prev" href="installation.html" title="Chapter 2. Installation"><link rel="next" href="web-installer.html" title="Using the web installer"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Installation from source (Linux, Unix)</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation.html">Prev</a> </td><th width="60%" align="center">Chapter 2. Installation</th><td width="20%" align="right"> <a accesskey="n" href="web-installer.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="manual-installation-of-otrs"></a>Installation from source (Linux, Unix)</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="manual-installation-of-otrs.html#preparing-manual-installation">Preparing the installation from source</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#installation-of-perl-modules">Installation of Perl modules</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#web-server-configuration">Configuring the Apache web server</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#database-configuration">Configuring the database</a></span></dt><dd><dl><dt><span class="section"><a href="manual-installation-of-otrs.html#manual-installation-of-database">Installing the OTRS database manually</a></span></dt></dl></dd><dt><span class="section"><a href="manual-installation-of-otrs.html#cronjobs">Setting up the cron jobs for OTRS</a></span></dt><dt><span class="section"><a href="manual-installation-of-otrs.html#installation-scheduler">OTRS Scheduler Service</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="preparing-manual-installation"></a>Preparing the installation from source</h3></div></div></div><p>
+If you want to install OTRS from source, first download the source archive as .tar.gz, .tar.bz2, or .zip file from
+<a class="ulink" href="http://www.otrs.com/try/" target="_top">
+<em class="citetitle">http://www.otrs.com/try/</em>
+</a>
+</p><p>
+Unpack the archive (for example, using <span class="command"><strong>tar</strong></span>) into the directory <code class="filename">/opt</code>, and rename the directory from otrs-x.x.x to otrs (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:/opt# tar xf /tmp/otrs-x.x.x.tar.gz
+linux:/opt# mv otrs-x.x.x otrs
+linux:/opt# ls
+otrs
+linux:/opt#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: First steps to install OTRS.</em></span>
+</p><p>
+OTRS should NOT be run with root rights. Next you should add a new user for OTRS. The home directory of this
+new user should be <code class="filename">/opt/otrs</code>. If your web server is not running with the same user rights as the new 'otrs' user, which is the case on most systems, you will need to add the new 'otrs' user to the group of the web server user (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:/opt# useradd -r -d /opt/otrs/ -c 'OTRS user' otrs
+linux:/opt# usermod -G www otrs
+linux:/opt#
+</pre><p>
+(SUSE=www, Red Hat/CentOS/Fedora=apache, Debian/Ubuntu=www-data)
+</p><p>
+<span class="emphasis"><em>Script: Adding a new user 'otrs', and adding it to a group.</em></span>
+</p><p>
+Next, you have to copy some sample configuration files. The system will later use the copied files. The files are located in <code class="filename">/opt/otrs/Kernel</code> and <code class="filename">/opt/otrs/Kernel/Config</code> and have the suffix .dist (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:/opt# cd otrs/Kernel/
+linux:/opt/otrs/Kernel# cp Config.pm.dist Config.pm
+linux:/opt/otrs/Kernel# cd Config
+linux:/opt/otrs/Kernel/Config# cp GenericAgent.pm.dist GenericAgent.pm
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Copying some sample files.</em></span>
+</p><p>
+The last step to prepare the installation of OTRS is to set the proper access rights for the files. You can use the script
+<span class="command"><strong>otrs.SetPermissions.pl</strong></span>, which is located in the <code class="filename">bin</code> directory, in the home directory of the 'otrs' user. You can execute the script with the following parameters:
+</p><p>
+</p><div class="cmdsynopsis"><p><code class="command">otrs.SetPermissions.pl</code>  {
+      <em class="replaceable"><code>Home directory of the OTRS user</code></em>
+    } {
+      --otrs-user=
+      <em class="replaceable"><code>OTRS user</code></em>
+    } {
+      --web-user=
+      <em class="replaceable"><code>Web server user</code></em>
+    } [
+      --otrs-group=
+      <em class="replaceable"><code>Group of the OTRS user</code></em>
+    ] [
+      --web-group=
+      <em class="replaceable"><code>Group of the web server user</code></em>
+    ]</p></div><p>
+</p><p>
+If your web server is running with the same user rights as user 'otrs', the command to set the proper access rights is <span class="command"><strong>otrs.SetPermissions.pl /opt/otrs --otrs-user=otrs --web-user=otrs</strong></span>. On SUSE systems the web server is running with the user rights of 'wwwrun'. On Debian-based systems this is 'www-data'. You would use the command <span class="command"><strong>otrs.SetPermissions.pl /opt/otrs --otrs-user=otrs --web-user=wwwrun --otrs-group=nogroup --web-group=www</strong></span> to set the proper access rights.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-of-perl-modules"></a>Installation of Perl modules</h3></div></div></div><p>
+OTRS requires some additional Perl modules, as described in Table 3-1. If you install OTRS from source, you will need to install these modules manually.
+This can be done either with the package manager of your Linux distribution (<span class="application">yast</span>, <span class="application">apt-get</span>) or,
+as described in this section, through the Perl shell and CPAN. If you're using ActiveState Perl, for instance on Windows, you could use PPM, the built-in Perl Package Manager.
+We recommend using your package manager if possible.
+</p><p>
+You can verify which modules you need to install with <span class="command"><strong>otrs.CheckModules.pl</strong></span>.
+This script is located in the <code class="filename">bin</code> directory, in the home directory of the 'otrs' user (see Script below).
+Please note that some modules are optional.
+
+</p><pre class="screen">
+linux:~# cd /opt/otrs/bin/
+linux:/opt/otrs/bin# ./otrs.CheckModules.pl
+   o CGI..............................ok (v3.60)
+   o Crypt::PasswdMD5.................ok (v1.3)
+   o Crypt::SSLeay....................Not installed! (Optional - Required for Generic Interface SOAP SSL connections.)
+   o CSS::Minifier....................ok (v0.01)
+   o Date::Format.....................ok (v2.22)
+   o Date::Pcalc......................ok (v1.2)
+
+   ...
+
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Checking needed modules.</em></span>
+</p><p>
+You should strive to install the missing modules from your Linux distribution's package management system. By doing so, the packages will be automatically updated when new versions are available or when security issues are found. Please refer
+to your distribution's documentation on how to install additional packages. If the (correct version of) the module is not available from the package repositories, you can also install from CPAN, the Comprehensive Perl Archive Network.
+</p><p>
+To install one of the modules from above via CPAN, you have to execute the command <span class="command"><strong>perl -e shell -MCPAN</strong></span>. The Perl shell will be started in interactive mode and the CPAN module will be loaded. If CPAN is
+already configured, you can install the modules with the command <span class="command"><strong>install</strong></span> followed by the name of the module. CPAN takes care of the dependencies of a module to other Perl modules and will let you know if other modules are needed.
+</p><p>
+    Execute also the commands
+    <span class="command"><strong>perl -cw bin/cgi-bin/index.pl</strong></span>
+    <span class="command"><strong>perl -cw bin/cgi-bin/customer.pl</strong></span>
+    and <span class="command"><strong>perl -cw bin/otrs.PostMaster.pl</strong></span>
+    after changing into the directory <code class="filename">/opt/otrs</code>.
+    If the output of both commands is "syntax OK", your Perl is properly set up (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs
+linux:/opt/otrs# perl -cw bin/cgi-bin/index.pl
+cgi-bin/installer.pl syntax OK
+linux:/opt/otrs# perl -cw bin/cgi-bin/customer.pl
+cgi-bin/customer.pl syntax OK
+linux:/opt/otrs# perl -cw bin/otrs.PostMaster.pl
+bin/otrs.PostMaster.pl syntax OK
+linux:/opt/otrs#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Syntax check.</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="web-server-configuration"></a>Configuring the Apache web server</h3></div></div></div><p>First of all, you should install the Apache2 web server and mod_perl; you'd typically do this from your systems package manager.
+Below you'll find the commands needed to set up Apache on the most popular Linux distributions.
+</p><p>
+  </p><pre class="screen">
+
+    # rhel / centos:
+    linux:# yum install httpd mod_perl
+
+    # suse:
+    linux:# zypper install apache2-mod_perl
+
+    # debian/ubuntu:
+    linux:# apt-get install apache2 libapache2-mod-perl2
+
+  </pre><p>
+</p><p>
+To access the web interface of OTRS via a short URL, Alias and ScriptAlias entries are needed. Most
+<span class="application">Apache</span>  installations have a <code class="filename">conf.d</code> directory included. On Linux systems you can usually find this directory  under <code class="filename">/etc/apache</code> or <code class="filename">/etc/apache2</code>. Log in as root, change to the <code class="filename">conf.d</code> directory and copy the appropriate template in <code class="filename">/opt/otrs/scripts/apache2-httpd.include.conf</code> to a file called <code class="filename">otrs.conf</code> in the Apache configuration directory.
+</p><p>
+Restart your web server to load the new configuration settings. On most systems you can start/restart your web server
+with the command <span class="command"><strong>/etc/init.d/apache2 restart</strong></span> (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:/etc/apache2/conf.d# /etc/init.d/apache2 restart
+Forcing reload of web server: Apache2.
+linux:/etc/apache2/conf.d#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Restarting the web server.</em></span>
+</p><p>
+Now your web server should be configured for OTRS.
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="database-configuration"></a>Configuring the database</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="manual-installation-of-database"></a>Installing the OTRS database manually</h4></div></div></div><p>
+The recommended way to configure the database is to run the <a class="link" href="web-installer.html" title="Using the web installer">Web Installer</a>. If you can't use this for some reason, you can also configure the database manually, as described in this chapter.
+If you can't use the web installer to setup the OTRS database, you have to set it up manually. Scripts with the SQL statements to create and configure the database are located in <code class="filename">scripts/database</code>, in the home directory of the 'otrs' user (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs/scripts/database/
+linux:/opt/otrs/scripts/database# ls
+otrs-initial_insert.db2.sql         otrs-schema.mysql.sql
+otrs-schema.oracle.sql
+otrs-initial_insert.mssql.sql       otrs-schema-post.db2.sql
+otrs-initial_insert.mysql.sql       otrs-schema.postgresql.sql
+otrs-initial_insert.oracle.sql
+otrs-initial_insert.postgresql.sql  otrs-schema-post.mssql.sql
+otrs-initial_insert.xml             otrs-schema-post.mysql.sql
+otrs-schema.db2.sql                 otrs-schema-post.oracle.sql
+ otrs-schema-post.postgresql.sql
+otrs-schema.mssql.sql               otrs-schema.xml
+linux:/opt/otrs/scripts/database#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Files needed to create and configure the database.</em></span>
+</p><p>
+To setup the database for the different database back-ends, the .sql files must be processed in a specific order.
+</p><p>
+</p><div class="orderedlist"><p class="title"><b>Create the OTRS database manually step by step</b></p><ol class="orderedlist" type="1"><li class="listitem"><p>
+Creating the DB: Create the database that you want to use for OTRS, with your database client or your database interface.
+</p></li><li class="listitem"><p>
+Creating the tables: With the otrs-schema.DatabaseType.sql files (e.g. <code class="filename">otrs-schema.oracle.sql</code>,
+<code class="filename">otrs-schema.postgresql.sql</code>) you can create the tables in your OTRS database.
+</p></li><li class="listitem"><p>
+Inserting the initial system data: OTRS needs some initial system data to work properly (e.g. the different ticket states, ticket and notification types). Depending on the type of database that you are using, you will need to use one of the following files:
+<code class="filename">otrs-initial_insert.mysql.sql</code>,
+<code class="filename">otrs-initial_insert.oracle.sql</code>,
+<code class="filename">otrs-initial_insert.postgresql.sql</code> or
+<code class="filename">otrs-initial_insert.mssql.sql </code>.
+</p></li><li class="listitem"><p>
+Creating references between tables: The last step is to create the references between the different tables in the OTRS database. Use the otrs-schema-post.DatabaseType.sql file to create these (e.g.  <code class="filename">otrs-schema-oracle.post.sql</code>,
+<code class="filename">otrs-schema-post.postgresql.sql</code>).
+</p></li></ol></div><p>
+</p><p>
+After you have finished the database setup, you should check and set proper access rights for the OTRS database. It should be enough to grant access to one user. Depending on the database server you are using, setting up the
+access rights differs, but it should be possible either with your database client or your graphical database front-end.
+</p><p>
+If your database and the access rights are configured properly, you have to tell OTRS which database back-end you want to use and how the ticket system can connect to the database. Open the file <code class="filename">Kernel/Config.pm</code> located in the home directory of the 'otrs' user, and change the parameters shown in the script below according to your needs.
+</p><p>
+</p><pre class="programlisting">
+
+    # DatabaseHost
+    # (The database host.)
+    $Self-&gt;{'DatabaseHost'} = 'localhost';
+
+    # Database
+    # (The database name.)
+    $Self-&gt;{Database} = 'otrs';
+
+    # DatabaseUser
+    # (The database user.)
+    $Self-&gt;{DatabaseUser} = 'otrs';
+
+    # DatabasePw
+    # (The password of database user.)
+    $Self-&gt;{DatabasePw} = 'some-pass';
+
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Parameters to be customized.</em></span>
+</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="cronjobs"></a>Setting up the cron jobs for OTRS</h3></div></div></div><p>
+OTRS needs some cron jobs to work properly. The cron jobs should be run with the same user rights that were specified for the OTRS modules. That means that the cron jobs must be inserted into the crontab file of the 'otrs' user.
+</p><p>
+All scripts with the cron jobs are located in <code class="filename">var/cron</code>, in the home directory of the 'otrs' user (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:~# cd /opt/otrs/var/cron
+linux:/opt/otrs/var/cron# ls
+aaa_base.dist                generic_agent.dist       rebuild_ticket_index.dist
+cache.dist                   pending_jobs.dist        session.dist
+fetchmail.dist               postmaster.dist          unlock.dist
+generic_agent-database.dist  postmaster_mailbox.dist
+linux:/opt/otrs/var/cron#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Files needed to create the cron jobs.</em></span>
+</p><p>
+These scripts have a suffix of '.dist'. You should copy them to files with the suffix removed. If you use bash, you might want to use the command listed in Script below.
+</p><p>
+</p><pre class="screen">
+linux:/opt/otrs/var/cron# for foo in *.dist; do cp $foo `basename $foo .dist`; done
+linux:/opt/otrs/var/cron# ls
+aaa_base                generic_agent-database.dist  rebuild_ticket_index
+aaa_base.dist           generic_agent.dist           rebuild_ticket_index.dist
+cache                   pending_jobs                 session
+cache.dist              pending_jobs.dist            session.dist
+fetchmail               postmaster                   unlock
+fetchmail.dist          postmaster.dist              unlock.dist
+generic_agent           postmaster_mailbox
+generic_agent-database  postmaster_mailbox.dist
+linux:/opt/otrs/var/cron#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Copying and renaming all the files needed to create the cron jobs.</em></span>
+</p><p>
+Table 3-2 describes the different cron jobs.
+</p><p>
+</p><div class="table"><a name="table-of-cronjobs-for-otrs"></a><p class="title"><b>Table 2.1. Description of several cron job scripts.</b></p><div class="table-contents"><table class="table" summary="Description of several cron job scripts." border="1"><colgroup><col><col></colgroup><thead><tr><th>
+          Script
+        </th><th>
+          Function
+        </th></tr></thead><tbody><tr><td>
+          aaa_base
+        </td><td>
+          Sets the basics for the crontab of the 'otrs' user.
+        </td></tr><tr><td>
+          cache
+        </td><td>
+          Removes expired cache entries from disk. Clears the loader cache for CSS and JavaScript files.
+        </td></tr><tr><td>
+          fetchmail
+        </td><td>
+          Used only if new mails will be fetched with fetchmail into the ticket system.
+        </td></tr><tr><td>
+          generic_agent
+        </td><td>
+          Executes the jobs of the GenericAgent that are not stored in the database but in own config files.
+        </td></tr><tr><td>
+          generic_agent-database
+        </td><td>
+          Executes the jobs of the GenericAgent that are stored in the database.
+        </td></tr><tr><td>
+          pending_jobs
+        </td><td>
+          Checks system for pending tickets, and closes them or sends reminders if needed.
+        </td></tr><tr><td>
+          postmaster
+        </td><td>
+          Checks the message queue of the ticket system, and delivers messages that are still in the queues.
+        </td></tr><tr><td>
+          postmaster_mailbox
+        </td><td>
+          Fetches the mails from the POP3 accounts that were specified in the admin area, in the section for "PostMaster Mail Accounts".
+        </td></tr><tr><td>
+          rebuild_ticket_index
+        </td><td>
+          Rebuilds the ticket index, which improves the speed of the QueueView.
+        </td></tr><tr><td>
+          session
+        </td><td>
+          Removes old and no longer needed session IDs.
+        </td></tr><tr><td>
+          unlock
+        </td><td>
+          Unlocks tickets in the system.
+        </td></tr></tbody></table></div></div><p><br class="table-break">
+</p><p>
+To setup all cron jobs, the script <code class="filename">bin/Cron.sh</code> located in the home directory of the 'otrs' user can be used. When this script is executed, it needs a parameter to specify whether you want to install, remove, or reinstall the cron jobs. The following parameters can be used:
+</p><p>
+</p><div class="cmdsynopsis"><p><code class="command">Cron.sh</code>  {
+      <em class="replaceable"><code>start</code></em>
+    } {
+      <em class="replaceable"><code>stop</code></em>
+    } {
+      <em class="replaceable"><code>restart</code></em>
+    } [
+      <em class="replaceable"><code>OTRS user</code></em>
+    ]</p></div><p>
+</p><p>
+Because the cron jobs need to be installed in the crontab file of the 'otrs' user, you need to be logged in as 'otrs'. If you are logged in as root, you can switch to 'otrs' with the command <span class="command"><strong>su otrs</strong></span>. Execute the commands specified in Script below to install the cron jobs.
+</p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>
+Please note that other crontab entries of the 'otrs' user will be overwritten or removed by the <code class="filename">Cron.sh</code> script. Please change the <code class="filename">Cron.sh</code> script to retain other crontab entries as needed.
+</p></div><p>
+</p><pre class="screen">
+linux:/opt/otrs/var/cron# cd /opt/otrs/bin/
+linux:/opt/otrs/bin# su otrs
+linux:~/bin$ ./Cron.sh start
+/opt/otrs/bin
+Cron.sh - start/stop OTRS cronjobs
+Copyright (C) 2001-2009 OTRS AG, http://otrs.org/
+(using /opt/otrs) done
+linux:~/bin$ exit
+exit
+linux:/opt/otrs/bin#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Installing the cron jobs.</em></span>
+</p><p>
+The command <span class="command"><strong>crontab -l -u otrs</strong></span>, which can be executed as root, shows you the crontab file of the 'otrs' user, and you can check if all entries are placed correctly (see Script below).
+</p><p>
+</p><pre class="screen">
+linux:/opt/otrs/bin# crontab -l -u otrs
+# --
+# cron/aaa_base - base crontab package
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# Who gets the cron emails?
+MAILTO="root@localhost"
+
+# --
+# cron/cache - delete expired cache
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# delete expired cache weekly (Sunday mornings)
+20 0 * * 0  $HOME/bin/otrs.CacheDelete.pl --expired &gt;&gt; /dev/null
+30 0 * * 0  $HOME/bin/otrs.LoaderCache.pl -o delete &gt;&gt; /dev/null
+
+# --
+# cron/fetchmail - fetchmail cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# fetch every 5 minutes emails via fetchmail
+#*/5 * * * * /usr/bin/fetchmail -a &gt;&gt; /dev/null
+
+# --
+# cron/generic_agent - otrs.GenericAgent.pl cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# start generic agent every 20 minutes
+*/20 * * * * $HOME/bin/GenericAgent.pl &gt;&gt; /dev/null
+# example to execute GenericAgent.pl on 23:00 with
+# Kernel::Config::GenericAgentMove job file
+#0 23 * * * $HOME/bin/otrs.GenericAgent.pl -c "Kernel::Config::GenericAgentMove" &gt;&gt; /dev/null
+# --
+# cron/generic_agent - GenericAgent.pl cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# start generic agent every 10 minutes
+*/10 * * * * $HOME/bin/otrs.GenericAgent.pl -c db &gt;&gt; /dev/null
+# --
+# cron/pending_jobs - pending_jobs cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# check every 120 min the pending jobs
+45 */2 * * * $HOME/bin/otrs.PendingJobs.pl &gt;&gt; /dev/null
+# --
+# cron/postmaster - postmaster cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# check daily the spool directory of OTRS
+10 0 * * *  $HOME/bin/otrs.ReprocessMails.pl &gt;&gt; /dev/null
+# --
+# cron/postmaster_mailbox - postmaster_mailbox cron of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# fetch emails every 10 minutes
+*/10 * * * * $HOME/bin/otrs.PostMasterMailbox.pl &gt;&gt; /dev/null
+# --
+# cron/rebuild_ticket_index - rebuild ticket index for OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# just every day
+01 01 * * * $HOME/bin/otrs.RebuildTicketIndex.pl &gt;&gt; /dev/null
+
+# --
+# cron/session - delete old session ids of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# delete every 120 minutes old/idle session ids
+55 */2 * * * $HOME/bin/otrs.DeleteSessionIDs.pl --expired &gt;&gt; /dev/null
+
+# --
+# cron/unlock - unlock old locked ticket of the OTRS
+# Copyright (C) 2001-2014 OTRS AG, http://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY.
+# --
+# unlock every hour old locked tickets
+35 * * * * $HOME/bin/otrs.UnlockTickets.pl --timeout &gt;&gt; /dev/null
+
+linux:/opt/otrs/bin#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Script: Crontab file.</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="installation-scheduler"></a>OTRS Scheduler Service</h3></div></div></div><p>
+        OTRS comes with a scheduler service that is used to perform asynchronous tasks.
+    </p><p>
+        The OTRS RPMs will set up the Scheduler Service automatically.
+        If you install from source, you can install the service by copying the
+        <code class="filename">scripts/otrs-scheduler-linux</code> file to <code class="filename">/etc/init.d</code>
+        and giving it the appropriate permissions.
+        This will make sure the scheduler service starts when the system starts up.
+    </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="installation.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="installation.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="web-installer.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 2. Installation </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Using the web installer</td></tr></table></div></body></html>
