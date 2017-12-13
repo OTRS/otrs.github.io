@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::PID &mdash; OTRS 3.3 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 3.3 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 3.3 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::PID
+</div>
+<div>
+<a href="../../src/Kernel/System/PID.pm">Source</a>
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a></li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::PID - to manage PIDs</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<p>All functions to manage process ids</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<dl>
+
+<dt id="new">new()</dt>
+<dd>
+
+<p>create an object</p>
+
+<pre><code>    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Main;
+    use Kernel::System::DB;
+    use Kernel::System::PID;
+
+    my $ConfigObject = Kernel::Config-&gt;new();
+    my $EncodeObject = Kernel::System::Encode-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $DBObject = Kernel::System::DB-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+        MainObject   =&gt; $MainObject,
+    );
+    my $PIDObject = Kernel::System::PID-&gt;new(
+        LogObject    =&gt; $LogObject,
+        ConfigObject =&gt; $ConfigObject,
+        DBObject     =&gt; $DBObject,
+    );</code></pre>
+
+</dd>
+<dt id="PIDCreate">PIDCreate()</dt>
+<dd>
+
+<p>create a new process id lock</p>
+
+<pre><code>    $PIDObject-&gt;PIDCreate(
+        Name =&gt; &#39;PostMasterPOP3&#39;,
+    );
+
+    or to create a new PID forced, without check if already exists (this will delete any process
+    with the same name from any other host)
+
+    $PIDObject-&gt;PIDCreate(
+        Name  =&gt; &#39;PostMasterPOP3&#39;,
+        Force =&gt; 1,
+    );
+
+    or to create a new PID with extra TTL time
+
+    $PIDObject-&gt;PIDCreate(
+        Name  =&gt; &#39;PostMasterPOP3&#39;,
+        TTL   =&gt; 60 * 60 * 24 * 3, # for 3 days, per default 1h is used
+    );</code></pre>
+
+</dd>
+<dt id="PIDGet">PIDGet()</dt>
+<dd>
+
+<p>get process id lock info</p>
+
+<pre><code>    my %PID = $PIDObject-&gt;PIDGet(
+        Name =&gt; &#39;PostMasterPOP3&#39;,
+    );</code></pre>
+
+</dd>
+<dt id="PIDDelete">PIDDelete()</dt>
+<dd>
+
+<p>delete the process id lock</p>
+
+<pre><code>    my $Success = $PIDObject-&gt;PIDDelete(
+        Name  =&gt; &#39;PostMasterPOP3&#39;,
+    );
+
+    or to force delete even if the PID is registered by another host
+    my $Success = $PIDObject-&gt;PIDDelete(
+        Name  =&gt; &#39;PostMasterPOP3&#39;,
+        Force =&gt; 1,
+    );</code></pre>
+
+</dd>
+<dt id="PIDUpdate">PIDUpdate()</dt>
+<dd>
+
+<p>update the process id change time. this might be useful as a keep alive signal.</p>
+
+<pre><code>    my $Success = $PIDObject-&gt;PIDUpdate(
+        Name    =&gt; &#39;PostMasterPOP3&#39;,
+    );</code></pre>
+
+</dd>
+</dl>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

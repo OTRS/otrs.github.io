@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::Web::Request &mdash; OTRS 3.3 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 3.3 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../index.html">OTRS 3.3 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::Web::Request
+</div>
+<div>
+<a href="../../../src/Kernel/System/Web/Request.pm">Source</a>
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a></li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::Web::Request - global CGI interface</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<p>All cgi param functions.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<dl>
+
+<dt id="new">new()</dt>
+<dd>
+
+<p>create param object</p>
+
+<pre><code>    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Main;
+    use Kernel::System::Web::Request;
+
+    my $ConfigObject = Kernel::Config-&gt;new();
+    my $EncodeObject = Kernel::System::Encode-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $ParamObject = Kernel::System::Web::Request-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        LogObject    =&gt; $LogObject,
+        EncodeObject =&gt; $EncodeObject,
+        MainObject   =&gt; $MainObject,
+        WebRequest   =&gt; CGI::Fast-&gt;new(), # optional, e. g. if fast cgi is used
+    );</code></pre>
+
+<p>If Kernel::System::Web::Request is instantiated several times, they will share the same CGI data (this can be helpful in filters which do not have access to the ParamObject, for example.</p>
+
+<p>If you need to reset the CGI data before creating a new instance, use</p>
+
+<pre><code>    CGI::initialize_globals();</code></pre>
+
+<p>before calling Kernel::System::Web::Request-&gt;new();</p>
+
+</dd>
+<dt id="Error">Error()</dt>
+<dd>
+
+<p>to get the error back</p>
+
+<pre><code>    if ( $ParamObject-&gt;Error() ) {
+        print STDERR $ParamObject-&gt;Error() . &quot;\n&quot;;
+    }</code></pre>
+
+</dd>
+<dt id="GetParam">GetParam()</dt>
+<dd>
+
+<p>to get single request parameters. By default, trimming is performed on the data.</p>
+
+<pre><code>    my $Param = $ParamObject-&gt;GetParam(
+        Param =&gt; &#39;ID&#39;,
+        Raw   =&gt; 1,     # optional, input data is not changed
+    );</code></pre>
+
+</dd>
+<dt id="GetParamNames">GetParamNames()</dt>
+<dd>
+
+<p>to get names of all parameters passed to the script.</p>
+
+<pre><code>    my @ParamNames = $ParamObject-&gt;GetParamNames();</code></pre>
+
+<p>Example:</p>
+
+<p>Called URL: index.pl?Action=AdminSysConfig;Subaction=Save;Name=Config::Option::Valid</p>
+
+<pre><code>    my @ParamNames = $ParamObject-&gt;GetParamNames();
+    print join &quot; :: &quot;, @ParamNames;
+    #prints Action :: Subaction :: Name</code></pre>
+
+</dd>
+<dt id="GetArray">GetArray()</dt>
+<dd>
+
+<p>to get array request parameters. By default, trimming is performed on the data.</p>
+
+<pre><code>    my @Param = $ParamObject-&gt;GetArray(
+        Param =&gt; &#39;ID&#39;,
+        Raw   =&gt; 1,     # optional, input data is not changed
+    );</code></pre>
+
+</dd>
+<dt id="GetUploadAll">GetUploadAll()</dt>
+<dd>
+
+<p>gets file upload data.</p>
+
+<pre><code>    my %File = $ParamObject-&gt;GetUploadAll(
+        Param  =&gt; &#39;FileParam&#39;,  # the name of the request parameter containing the file data
+    );
+
+    returns (
+        Filename    =&gt; &#39;abc.txt&#39;,
+        ContentType =&gt; &#39;text/plain&#39;,
+        Content     =&gt; &#39;Some text&#39;,
+    );</code></pre>
+
+</dd>
+<dt id="SetCookie">SetCookie()</dt>
+<dd>
+
+<p>set a cookie</p>
+
+<pre><code>    $ParamObject-&gt;SetCookie(
+        Key     =&gt; ID,
+        Value   =&gt; 123456,
+        Expires =&gt; &#39;+3660s&#39;,
+        Path    =&gt; &#39;otrs/&#39;,     # optional, only allow cookie for given path
+        Secure  =&gt; 1,           # optional, set secure attribute to disable cookie on HTTP (HTTPS only)
+        HTTPOnly =&gt; 1,          # optional, sets HttpOnly attribute of cookie to prevent access via JavaScript
+    );</code></pre>
+
+</dd>
+<dt id="GetCookie">GetCookie()</dt>
+<dd>
+
+<p>get a cookie</p>
+
+<pre><code>    my $String = $ParamObject-&gt;GetCookie(
+        Key =&gt; ID,
+    );</code></pre>
+
+</dd>
+</dl>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

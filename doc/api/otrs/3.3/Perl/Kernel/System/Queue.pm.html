@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::Queue &mdash; OTRS 3.3 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 3.3 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 3.3 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::Queue
+</div>
+<div>
+<a href="../../src/Kernel/System/Queue.pm">Source</a>
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a></li>
+  <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::Queue - queue lib</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<p>All queue functions. E. g. to add queue or other functions.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<dl>
+
+<dt id="new">new()</dt>
+<dd>
+
+<p>create an object</p>
+
+<pre><code>    use Kernel::Config;
+    use Kernel::System::Encode;
+    use Kernel::System::Log;
+    use Kernel::System::Main;
+    use Kernel::System::DB;
+    use Kernel::System::Queue;
+
+    my $ConfigObject = Kernel::Config-&gt;new();
+    my $EncodeObject = Kernel::System::Encode-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+    );
+    my $LogObject = Kernel::System::Log-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+    );
+    my $MainObject = Kernel::System::Main-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+    );
+    my $DBObject = Kernel::System::DB-&gt;new(
+        ConfigObject =&gt; $ConfigObject,
+        EncodeObject =&gt; $EncodeObject,
+        LogObject    =&gt; $LogObject,
+        MainObject   =&gt; $MainObject,
+    );
+    my $QueueObject = Kernel::System::Queue-&gt;new(
+        ConfigObject        =&gt; $ConfigObject,
+        LogObject           =&gt; $LogObject,
+        DBObject            =&gt; $DBObject,
+        MainObject          =&gt; $MainObject,
+        EncodeObject        =&gt; $EncodeObject,
+        GroupObject         =&gt; $GroupObject, # if given
+        CustomerGroupObject =&gt; $CustomerGroupObject, # if given
+    );</code></pre>
+
+</dd>
+<dt id="GetSystemAddress">GetSystemAddress()</dt>
+<dd>
+
+<p>get a queue system email address as hash (Email, RealName)</p>
+
+<pre><code>    my %Address = $QueueObject-&gt;GetSystemAddress(
+        QueueID =&gt; 123,
+    );</code></pre>
+
+</dd>
+<dt id="GetSignature">GetSignature()</dt>
+<dd>
+
+<p>get a queue signature</p>
+
+<pre><code>    my $Signature = $QueueObject-&gt;GetSignature(QueueID =&gt; 123);</code></pre>
+
+</dd>
+<dt id="GetStandardResponses">GetStandardResponses()</dt>
+<dd>
+
+<p>DEPRECATED: This function will be removed in further versions of otrs.</p>
+
+<p>get std responses of a queue</p>
+
+<pre><code>    my %Responses = $QueueObject-&gt;GetStandardResponses( QueueID =&gt; 123 );</code></pre>
+
+<p>Returns: %Responses = ( 1 =&gt; &#39;Some Name&#39;, 2 =&gt; &#39;Some Name&#39;, );</p>
+
+<pre><code>    my %Responses = $QueueObject-&gt;GetStandardResponses(
+        QueueID       =&gt; 123,
+        TemplateTypes =&gt; 1,
+    );</code></pre>
+
+<p>Returns: %Responses = ( Answer =&gt; { 1 =&gt; &#39;Some Name&#39;, 2 =&gt; &#39;Some Name&#39;, }, # ... );</p>
+
+<pre><code>    my %Queues = $QueueObject-&gt;GetStandardResponses( StandardResponseID =&gt; 123 );</code></pre>
+
+<p>Returns: %Queues = ( 1 =&gt; &#39;Some Name&#39;, 2 =&gt; &#39;Some Name&#39;, );</p>
+
+</dd>
+<dt id="QueueStandardTemplateMemberAdd">QueueStandardTemplateMemberAdd()</dt>
+<dd>
+
+<p>to add a template to a queue</p>
+
+<pre><code>    my $Success = $QueueObject-&gt;QueueStandardTemplateMemberAdd(
+        QueueID            =&gt; 123,
+        StandardTemplateID =&gt; 123,
+        Active             =&gt; 1,        # optional
+        UserID             =&gt; 123,
+    );</code></pre>
+
+</dd>
+<dt id="QueueStandardTemplateMemberList">QueueStandardTemplateMemberList()</dt>
+<dd>
+
+<p>get std responses of a queue</p>
+
+<pre><code>    my %Templates = $QueueObject-&gt;QueueStandardTemplateMemberList( QueueID =&gt; 123 );</code></pre>
+
+<p>Returns: %Templates = ( 1 =&gt; &#39;Some Name&#39;, 2 =&gt; &#39;Some Name&#39;, );</p>
+
+<pre><code>    my %Responses = $QueueObject-&gt;QueueStandardTemplateMemberList(
+        QueueID       =&gt; 123,
+        TemplateTypes =&gt; 1,
+    );</code></pre>
+
+<p>Returns: %Responses = ( Answer =&gt; { 1 =&gt; &#39;Some Name&#39;, 2 =&gt; &#39;Some Name&#39;, }, # ... );</p>
+
+<pre><code>    my %Queues = $QueueObject-&gt;QueueStandardTemplateMemberList( StandardTemplateID =&gt; 123 );</code></pre>
+
+<p>Returns: %Queues = ( 1 =&gt; &#39;Some Name&#39;, 2 =&gt; &#39;Some Name&#39;, );</p>
+
+</dd>
+<dt id="GetAllQueues">GetAllQueues()</dt>
+<dd>
+
+<p>get all valid system queues</p>
+
+<pre><code>    my %Queues = $QueueObject-&gt;GetAllQueues();</code></pre>
+
+<p>get all system queues of a user with permission type (e. g. ro, move_into, rw, ...)</p>
+
+<pre><code>    my %Queues = $QueueObject-&gt;GetAllQueues( UserID =&gt; 123, Type =&gt; &#39;ro&#39; );</code></pre>
+
+</dd>
+<dt id="GetAllCustomQueues">GetAllCustomQueues()</dt>
+<dd>
+
+<p>get all custom queues of one user</p>
+
+<pre><code>    my @Queues = $QueueObject-&gt;GetAllCustomQueues( UserID =&gt; 123 );</code></pre>
+
+</dd>
+<dt id="QueueLookup">QueueLookup()</dt>
+<dd>
+
+<p>get id or name for queue</p>
+
+<pre><code>    my $Queue = $QueueObject-&gt;QueueLookup( QueueID =&gt; $QueueID );
+
+    my $QueueID = $QueueObject-&gt;QueueLookup( Queue =&gt; $Queue );</code></pre>
+
+</dd>
+<dt id="GetFollowUpOption">GetFollowUpOption()</dt>
+<dd>
+
+<p>get FollowUpOption for the given QueueID</p>
+
+<pre><code>    my $FollowUpOption = $QueueObject-&gt;GetFollowUpOption( QueueID =&gt; $QueueID );</code></pre>
+
+<p>returns any of &#39;possible&#39;, &#39;reject&#39;, &#39;new ticket&#39;.</p>
+
+</dd>
+<dt id="GetFollowUpLockOption">GetFollowUpLockOption()</dt>
+<dd>
+
+<p>get FollowUpLockOption for the given QueueID</p>
+
+<pre><code>    my $FollowUpLockOption = $QueueObject-&gt;GetFollowUpLockOption( QueueID =&gt; $QueueID );</code></pre>
+
+<p>returns &#39;1&#39; if ticket should be locked after a follow up, &#39;0&#39; if not.</p>
+
+</dd>
+<dt id="GetQueueGroupID">GetQueueGroupID()</dt>
+<dd>
+
+<p>get GroupID defined for the given QueueID.</p>
+
+<pre><code>    my $GroupID = $QueueObject-&gt;GetQueueGroupID( QueueID =&gt; $QueueID );</code></pre>
+
+</dd>
+<dt id="QueueAdd">QueueAdd()</dt>
+<dd>
+
+<p>add queue with attributes</p>
+
+<pre><code>    $QueueObject-&gt;QueueAdd(
+        Name                =&gt; &#39;Some::Queue&#39;,
+        ValidID             =&gt; 1,
+        GroupID             =&gt; 1,
+        Calendar            =&gt; &#39;Calendar1&#39;, # (optional)
+        FirstResponseTime   =&gt; 120,         # (optional)
+        FirstResponseNotify =&gt; 60,          # (optional, notify agent if first response escalation is 60% reached)
+        UpdateTime          =&gt; 180,         # (optional)
+        UpdateNotify        =&gt; 80,          # (optional, notify agent if update escalation is 80% reached)
+        SolutionTime        =&gt; 580,         # (optional)
+        SolutionNotify      =&gt; 80,          # (optional, notify agent if solution escalation is 80% reached)
+        UnlockTimeout       =&gt; 480,         # (optional)
+        FollowUpID          =&gt; 3,           # possible (1), reject (2) or new ticket (3) (optional, default 0)
+        FollowUpLock        =&gt; 0,           # yes (1) or no (0) (optional, default 0)
+        DefaultSignKey      =&gt; &#39;key name&#39;,  # (optional)
+        SystemAddressID     =&gt; 1,
+        SalutationID        =&gt; 1,
+        SignatureID         =&gt; 1,
+        Comment             =&gt; &#39;Some comment&#39;,
+        UserID              =&gt; 123,
+    );</code></pre>
+
+</dd>
+<dt id="QueueGet">QueueGet()</dt>
+<dd>
+
+<p>get queue attributes</p>
+
+<pre><code>    my %Queue = $QueueObject-&gt;QueueGet(
+        ID    =&gt; 123,
+    );
+
+    my %Queue = $QueueObject-&gt;QueueGet(
+        Name  =&gt; &#39;Some::Queue&#39;,
+    );</code></pre>
+
+</dd>
+<dt id="QueueUpdate">QueueUpdate()</dt>
+<dd>
+
+<p>update queue attributes</p>
+
+<pre><code>    $QueueObject-&gt;QueueUpdate(
+        QueueID             =&gt; 123,
+        Name                =&gt; &#39;Some::Queue&#39;,
+        ValidID             =&gt; 1,
+        GroupID             =&gt; 1,
+        Calendar            =&gt; &#39;1&#39;, # (optional) default &#39;&#39;
+        FirstResponseTime   =&gt; 120, # (optional)
+        FirstResponseNotify =&gt; 60,  # (optional, notify agent if first response escalation is 60% reached)
+        UpdateTime          =&gt; 180, # (optional)
+        UpdateNotify        =&gt; 80,  # (optional, notify agent if update escalation is 80% reached)
+        SolutionTime        =&gt; 580, # (optional)
+        SolutionNotify      =&gt; 80,  # (optional, notify agent if solution escalation is 80% reached)
+        SystemAddressID     =&gt; 1,
+        SalutationID        =&gt; 1,
+        SignatureID         =&gt; 1,
+        UserID              =&gt; 123,
+        FollowUpID          =&gt; 1,
+        Comment             =&gt; &#39;Some Comment2&#39;,
+        DefaultSignKey      =&gt; &#39;&#39;
+        UnlockTimeOut       =&gt; &#39;&#39;
+        FollowUpLock        =&gt; 1,
+        ParentQueueID       =&gt; &#39;&#39;,
+        CheckSysConfig      =&gt; 0,   # (optional) default 1
+    );</code></pre>
+
+</dd>
+<dt id="QueueList">QueueList()</dt>
+<dd>
+
+<p>get all queues</p>
+
+<pre><code>    my %Queues = $QueueObject-&gt;QueueList();
+
+    my %Queues = $QueueObject-&gt;QueueList( Valid =&gt; 1 );</code></pre>
+
+</dd>
+<dt id="QueuePreferencesSet">QueuePreferencesSet()</dt>
+<dd>
+
+<p>set queue preferences</p>
+
+<pre><code>    $QueueObject-&gt;QueuePreferencesSet(
+        QueueID =&gt; 123,
+        Key     =&gt; &#39;UserComment&#39;,
+        Value   =&gt; &#39;some comment&#39;,
+        UserID  =&gt; 123,
+    );</code></pre>
+
+</dd>
+<dt id="QueuePreferencesGet">QueuePreferencesGet()</dt>
+<dd>
+
+<p>get queue preferences</p>
+
+<pre><code>    my %Preferences = $QueueObject-&gt;QueuePreferencesGet(
+        QueueID =&gt; 123,
+        UserID  =&gt; 123,
+    );</code></pre>
+
+</dd>
+</dl>
+
+<h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
+
+<p>This software is part of the OTRS project (<a href="http://otrs.org/">http://otrs.org/</a>).</p>
+
+<p>This software comes with ABSOLUTELY NO WARRANTY. For details, see the enclosed file COPYING for license information (AGPL). If you did not receive this file, see <a href="http://www.gnu.org/licenses/agpl.txt">http://www.gnu.org/licenses/agpl.txt</a>.</p>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+
