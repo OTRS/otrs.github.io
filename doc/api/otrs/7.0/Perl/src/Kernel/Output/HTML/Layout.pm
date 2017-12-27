@@ -1029,36 +1029,41 @@ sub Warning {
 
 =head2 Notify()
 
-create notify lines
+Generate HTML code for a notification line and return it.
 
-    infos, the text will be translated
+The C<Info>/C<Data> text of the notification will always be translated. Use the C<Priority> parameter to style the
+notification:
 
     my $Output = $LayoutObject->Notify(
         Priority => 'Warning',
-        Info => 'Some Info Message',
+        Info     => 'Some Info Message',
     );
 
-    data with link, the text will be translated
+If you supply C<Data> with a C<Link>, the text will be wrapped in an anchor tag with defined C<LinkClass> and
+C<LinkTarget>:
 
     my $Output = $LayoutObject->Notify(
-        Priority  => 'Warning',
-        Data      => 'Template content',
-        Link      => 'http://example.com/',
-        LinkClass => 'some_CSS_class',              # optional
+        Priority   => 'Warning',
+        Data       => 'Template content',
+        Link       => 'http://example.com/',
+        LinkClass  => 'some_CSS_class',              # optional
+        LinkTarget => '_blank',                      # optional
     );
 
-    errors, the text will be translated
-
-    my $Output = $LayoutObject->Notify(
-        Priority => 'Error',
-        Info => 'Some Error Message',
-    );
-
-    errors from log backend, if no error exists, a '' will be returned
+For error notifications, you can supply your own error message:
 
     my $Output = $LayoutObject->Notify(
         Priority => 'Error',
+        Info     => 'Some Error Message',
     );
+
+Or use the last error message from the log backend.
+
+    my $Output = $LayoutObject->Notify(
+        Priority => 'Error',
+    );
+
+If no error was found, an empty string will be returned.
 
 =cut
 
@@ -1101,8 +1106,9 @@ sub Notify {
         $Self->Block(
             Name => 'LinkStart',
             Data => {
-                LinkStart => $Param{Link},
-                LinkClass => $Param{LinkClass} || '',
+                LinkStart  => $Param{Link},
+                LinkClass  => $Param{LinkClass} || '',
+                LinkTarget => $Param{LinkTarget} || '',
             },
         );
     }
