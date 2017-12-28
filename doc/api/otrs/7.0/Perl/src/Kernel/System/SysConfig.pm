@@ -2819,6 +2819,48 @@ sub ConfigurationNavigationTree {
         IsValid => $Param{IsValid},
     );
 
+    # For AgentPreference take into account which settings are Forbidden to update by user or disabled when counting
+    #   settings. See bug#13488 (https://bugs.otrs.org/show_bug.cgi?id=13488).
+    if ( $Param{Action} && $Param{Action} eq 'AgentPreferences' ) {
+
+        # Get List of all modified settings which are valid and forbidden to update by user.
+        my @ForbiddenSettings = $SysConfigDBObject->ModifiedSettingListGet(
+            %CategoryOptions,
+            UserModificationActive => 0,
+            IsValid                => 1,
+        );
+
+        # Get List of all modified settings which are invalid and allowed to update by user.
+        my @InvalidSettings = $SysConfigDBObject->ModifiedSettingListGet(
+            %CategoryOptions,
+            UserModificationActive => 1,
+            IsValid                => 0,
+        );
+
+        my @ModifiedSettings;
+        for my $Setting (@SettingsRaw) {
+            push @ModifiedSettings, $Setting
+                if !grep { $_->{Name} eq $Setting->{Name} } ( @ForbiddenSettings, @InvalidSettings );
+        }
+        @SettingsRaw = @ModifiedSettings;
+
+        # Add settings which by default are not UserModifiedActive and are changed, to the navigation list
+        #   in preference screen. Please see bug#13489 for more information.
+        @ModifiedSettings = $SysConfigDBObject->ModifiedSettingListGet(
+            %CategoryOptions,
+            UserModificationActive => 1,
+            IsValid                => 1,
+        );
+        for my $Setting (@ModifiedSettings) {
+            my %DefaultSetting = $SysConfigDBObject->DefaultSettingGet(
+                Name => $Setting->{Name},
+            );
+            if ( !grep { $_->{Name} eq $DefaultSetting{Name} } @SettingsRaw ) {
+                push @SettingsRaw, \%DefaultSetting;
+            }
+        }
+    }
+
     my @Settings;
 
     # Skip invisible settings from the navigation tree
