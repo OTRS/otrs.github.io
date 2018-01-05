@@ -559,6 +559,14 @@ sub SettingUpdate {
         );
 
         $UserModificationActive = undef;    # prevent setting this value
+
+        my %GlobalSetting = $Self->SettingGet(
+            Name            => $Param{Name},
+            OverriddenInXML => 1,
+            UserID          => 1,
+        );
+
+        $Setting{EffectiveValue} = $GlobalSetting{EffectiveValue};
     }
 
     # Add new modified setting (if there wasn't).
@@ -2126,7 +2134,9 @@ sub ConfigurationTranslatedGet {
 
     return %{$Cache} if ref $Cache eq 'HASH';
 
-    my @SettingList = $Self->ConfigurationList();
+    my @SettingList = $Self->ConfigurationList(
+        IncludeInvisible => 1,
+    );
 
     my %Result;
 
@@ -2577,7 +2587,9 @@ sub ConfigurationXML2DB {
         return;
     }
 
-    my @SettingList = $Self->ConfigurationList();
+    my @SettingList = $Self->ConfigurationList(
+        IncludeInvisible => 1,
+    );
 
     my $StorableObject = $Kernel::OM->Get('Kernel::System::Storable');
 
@@ -3160,7 +3172,7 @@ Returns:
 sub ConfigurationList {
     my ( $Self, %Param ) = @_;
 
-    return $Kernel::OM->Get('Kernel::System::SysConfig::DB')->DefaultSettingList();
+    return $Kernel::OM->Get('Kernel::System::SysConfig::DB')->DefaultSettingList(%Param);
 }
 
 =head2 ConfigurationInvalidList()
@@ -4293,7 +4305,9 @@ sub ConfigurationSearch {
 
     my $Search = lc $Param{Search};
 
-    my %Settings = $Self->ConfigurationTranslatedGet();
+    my %Settings = $Self->ConfigurationTranslatedGet(
+        IncludeInvisible => $Param{IncludeInvisible},
+    );
 
     my %Result;
 
@@ -4774,6 +4788,51 @@ sub OverriddenFileNameGet {
     }
 
     return $Result;
+}
+
+=head2 GlobalEffectiveValueGet()
+
+Returns global effective value for provided setting name.
+
+    my $EffectiveValue = $SysConfigObject->GlobalEffectiveValueGet(
+        SettingName    => 'Setting::Name',  # (required)
+    );
+
+Returns:
+
+    $EffectiveValue = 'test';
+
+=cut
+
+sub GlobalEffectiveValueGet {
+    my ( $Self, %Param ) = @_;
+
+    # Check needed stuff.
+    if ( !$Param{SettingName} ) {
+        $Kernel::OM->Get('Kernel::System::Log')->Log(
+            Priority => 'error',
+            Message  => "Need SettingName!",
+        );
+        return;
+    }
+
+    my $GlobalConfigObject = Kernel::Config->new();
+
+    my $LoadedEffectiveValue;
+
+    my @SettingStructure = split( '###', $Param{SettingName} );
+    for my $Key (@SettingStructure) {
+        if ( !defined $LoadedEffectiveValue ) {
+
+            # first iteration
+            $LoadedEffectiveValue = $GlobalConfigObject->Get($Key);
+        }
+        elsif ( ref $LoadedEffectiveValue eq 'HASH' ) {
+            $LoadedEffectiveValue = $LoadedEffectiveValue->{$Key};
+        }
+    }
+
+    return $LoadedEffectiveValue;
 }
 
 =head1 PRIVATE INTERFACE
@@ -6123,7 +6182,9 @@ sub _DefaultSettingAddBulk {
     }
 
     # Get again all settings.
-    @SettingList = $Self->ConfigurationList();
+    @SettingList = $Self->ConfigurationList(
+        IncludeInvisible => 1,
+    );
 
     $Success = $SysConfigDBObject->DefaultSettingVersionBulkAdd(
         Settings    => \%Settings,
