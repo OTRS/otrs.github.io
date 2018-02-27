@@ -87,8 +87,7 @@ chomp $Variable;
             </p><p>
                 </p><pre class="programlisting">
 # --
-# (file name) - a short description what it does
-# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2018 OTRS AG, http://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
 # the enclosed file COPYING for license information (AGPL). If you
@@ -102,8 +101,7 @@ chomp $Variable;
                 </p><pre class="programlisting">
 #!/usr/bin/perl
 # --
-# (file name) - a short description what it does
-# Copyright (C) 2001-2017 OTRS AG, http://otrs.com/
+# Copyright (C) 2001-2018 OTRS AG, http://otrs.com/
 # --
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU AFFERO General Public License as published by
@@ -227,7 +225,7 @@ if( !$ItemId ) {
                     This is correct:
                 </p><p>
                     </p><pre class="programlisting">
-for my $Needed (1..10) {
+for my $Needed ( 1 .. 10 ) {
     next if $Needed == 5;
     last  if $Needed == 9;
 }
@@ -243,10 +241,10 @@ my $Var = 1 if $Something == 'Yes';
                 </p></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="builtin-sub-restrictions"></a>Restrictions for the use of some Perl builtins</h5></div></div></div><p>
                 Some builtin subroutines of Perl may not be used in every place:
             </p><p>
-                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>Don't use <code class="literal">die</code> and <code class="literal">exit</code> in <code class="filename">.pm</code> files.</p></li><li class="listitem"><p>Don't use the <code class="literal">Dumper</code> function in released files.</p></li><li class="listitem"><p>Don't use <code class="literal">print</code> in <code class="filename">.pm</code> files.</p></li><li class="listitem"><p>Don't use <code class="literal">require</code>, use <code class="literal">Main::Require()</code> instead.</p></li><li class="listitem"><p>Use the functions of the <code class="literal">TimeObject</code> instead of the builtin functions like <code class="literal">time()</code>, <code class="literal">localtime()</code>, etc.</p></li></ul></div><p>
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>Don't use <code class="literal">die</code> and <code class="literal">exit</code> in <code class="filename">.pm</code> files.</p></li><li class="listitem"><p>Don't use the <code class="literal">Dumper</code> function in released files.</p></li><li class="listitem"><p>Don't use <code class="literal">print</code> in <code class="filename">.pm</code> files.</p></li><li class="listitem"><p>Don't use <code class="literal">require</code>, use <code class="literal">Main::Require()</code> instead.</p></li><li class="listitem"><p>Use the functions of the <code class="literal">DateTimeObject</code> instead of the builtin functions like <code class="literal">time()</code>, <code class="literal">localtime()</code>, etc.</p></li></ul></div><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="regular-expressions"></a>Regular Expressions</h5></div></div></div><p>
-                For regular expressions <span class="emphasis"><em>in the source code</em></span>, we always use the <code class="literal">m//</code> operator with curly braces as delimiters. We also use the modifiers <code class="literal">x</code>, <code class="literal">m</code> and <code class="literal">s</code>.
-                The <code class="literal">x</code> modifiers allows you to comment your regex and use spaces to "group" logical groups.
+                For regular expressions <span class="emphasis"><em>in the source code</em></span>, we always use the <code class="literal">m//</code> operator with curly braces as delimiters. We also use the modifiers <code class="literal">x</code>, <code class="literal">m</code> and <code class="literal">s</code> by default.
+                The <code class="literal">x</code> modifier allows you to comment your regex and use spaces to visually separate logical groups.
             </p><p>
                 </p><pre class="programlisting">
 $Date =~ m{ \A \d{4} - \d{2} - \d{2} \z }xms
@@ -277,17 +275,108 @@ $Text =~ m{
                 An exception to the convention above applies to all cases where regular expressions are not written statically in the code but instead are <span class="emphasis"><em>supplied by users</em></span> in one form or another (for example via SysConfig or in a PostMaster filter configuration). Any evaluation of such a regular expression has to be done without any modifiers (e.g. <code class="literal">$Variable =~ m{$Regex}</code>) in order to match the expectation of (mostly inexperienced) users and also to be backwards compatible.
             </p><p>
                 If modifiers are strictly necessary for user supplied regular expressions, it is always possible to use embedded modifiers (e.g. <code class="literal">(?:(?i)SmAlL oR lArGe)</code>). For details, please see <a class="ulink" href="http://perldoc.perl.org/perlretut.html#Embedding-comments-and-modifiers-in-a-regular-expression" target="_top">perlretut</a>.
+            </p><p>
+                Usage of the <code class="literal">r</code> modifier is encouraged, e.g. if you need to extract part of a string into another variable.
+                This modifier keeps the matched variable intact and instead provides the substitution result as a return value.
+            </p><p>
+                Example: Use this...
+            </p><p>
+            </p><pre class="programlisting">
+my $NewText = $Text =~ s{
+    \A
+    Prefix
+    (
+        Text
+    )
+}
+{NewPrefix$1Postfix}xmsr;
+    </pre><p>
+            </p><p>
+                instead of this...
+            </p><p>
+            </p><pre class="programlisting">
+my $NewText = $Text;
+$NewText =~ s{
+    \A
+    Prefix
+    (
+        Text
+    )
+}
+{NewPrefix$1Postfix}xms;
+    </pre><p>
+            </p><p>
+                If you want to match for start and end of a <span class="emphasis"><em>string</em></span>, you should generally use <code class="literal">\A</code> and <code class="literal">\z</code> instead of the more generic <code class="literal">^</code> and <code class="literal">$</code> unless you really need to match start or end of <span class="emphasis"><em>lines</em></span> within a multiline string.
+            </p><p>
+            </p><pre class="programlisting">
+$Text =~ m{
+    \A      # beginning of the string
+    Content # some string
+    \z      # end of the string
+}xms;
+
+$MultilineText =~ m{
+    \A                      # beginning of the string
+    .*
+    (?: \n Content $ )+      # one or more lines containing the same string
+    .*
+    \z                      # end of the string
+}xms;
+    </pre><p>
+            </p><p>
+                Usage of named capture groups is also encouraged, particularly for multi-matches.
+                Named capture groups are easier to read/understand, prevent mix-ups when matching more than one capture group and allow extension without accidentally introducing bugs.
+            </p><p>
+                Example: Use this...
+            </p><p>
+            </p><pre class="programlisting">
+$Contact =~ s{
+    \A
+    [ ]*
+    (?'TrimmedContact'
+        (?'FirstName' \w+ )
+        [ ]+
+        (?'LastName' \w+ )
+    )
+    [ ]+
+    (?'Email' [^ ]+ )
+    [ ]*
+    \z
+}
+{$+{TrimmedContact}}xms;
+my $FormattedContact = "$+{LastName}, $+{FirstName} ($+{Email})";
+    </pre><p>
+            </p><p>
+                instead of this...
+            </p><p>
+            </p><pre class="programlisting">
+$Contact =~ s{
+    \A
+    [ ]*
+    (
+        ( \w+ )
+        [ ]+
+        ( \w+ )
+    )
+    [ ]+
+    ( [^ ]+ )
+    [ ]*
+    \z
+}
+{$1}xms;
+my $FormattedContact = "$3, $2 ($4)";
+    </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="naming"></a>Naming</h5></div></div></div><p>
                 Names and comments are written in English. Variables, objects and methods
                 must be descriptive nouns or noun phrases with the first letter set upper case (<a class="ulink" href="https://en.wikipedia.org/wiki/CamelCase" target="_top">CamelCase</a>).
             </p><p>
                 Names should be as descriptive as possible.
-                A reader should be able to say what is meant by a name without digging too deep into the code. E.g. use <code class="literal">$ConfigItemID</code> instead of <code class="literal">$ID</code>. Examples: <code class="literal">@TicktIDs</code>, <code class="literal">$Output</code>, <code class="literal">StateSet()</code>, etc.
+                A reader should be able to say what is meant by a name without digging too deep into the code. E.g. use <code class="literal">$ConfigItemID</code> instead of <code class="literal">$ID</code>. Examples: <code class="literal">@TicketIDs</code>, <code class="literal">$Output</code>, <code class="literal">StateSet()</code>, etc.
             </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="variables"></a>Variables</h5></div></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="variable-declaration"></a>Declaration</h6></div></div></div><p>
                     If you have several variables, you can declare them in one line if they "belong together":
                 </p><p>
                     </p><pre class="programlisting">
-my ($Minute, $Hour, $Year);
+my ( $Minute, $Hour, $Year );
 
                     </pre><p>
                 </p><p>
@@ -315,7 +404,7 @@ my $Variable;
                 </p><p>
                     </p><pre class="programlisting">
 my $SqlStatement = '';
-for my $Part ( @Parts ) {
+for my $Part (@Parts) {
     $SqlStatement .= $Part;
 }
                     
@@ -406,7 +495,7 @@ use strict;
 use warnings;
 
 use Kernel::System::User;
-use Kernel::System::Time;
+use Kernel::System::DateTime;
                     
                     </pre><p>
                 </p><p>
@@ -416,7 +505,7 @@ use Kernel::System::Time;
 package Kernel::System::ITSMConfigItem::History;
 
 use Kernel::System::User;
-use Kernel::System::Time;
+use Kernel::System::DateTime;
 
 use strict;
 use warnings;
@@ -485,7 +574,7 @@ It is also able to:
                     </p><pre class="programlisting">
 =head2 LastTimeObjectChanged()
 
-calculates the last time the object was changed. It returns a hash reference with
+Calculates the last time the object was changed. It returns a hash reference with
     information about the object and the time.
 
     my $Info = $Object-&gt;LastTimeObjectChanged(
@@ -513,7 +602,7 @@ This returns something like:
                 Please adhere to the following guidelines:
             </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">Make the code so readable that comments are not needed, if possible.</span></dt><dd><p>
                             It's always preferable to write code so that it is very readable and self-explaining, for example with precise variable and function names.
-                        </p></dd><dt><span class="term">Don't say what the code says (DRY).</span></dt><dd><p>
+                        </p></dd><dt><span class="term">Don't say what the code says (DRY -&gt; Don't repeat yourself).</span></dt><dd><p>
                             Don't repeat (obvious) code in the comments.
                         </p><pre class="programlisting">
 # WRONG:
