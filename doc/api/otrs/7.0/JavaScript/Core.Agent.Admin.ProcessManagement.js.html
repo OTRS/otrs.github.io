@@ -103,13 +103,13 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
           Core.Config.Get('Subaction') === 'ActivityDialogEdit') {
             TargetNS.InitActivityDialogEdit();
         }
-        else if (Core.Config.Get('Subaction') === 'TransitionNew' ||
-          Core.Config.Get('Subaction') === 'TransitionEdit') {
-            TargetNS.InitTransitionEdit();
+        else if (Core.Config.Get('Subaction') === 'SequenceFlowNew' ||
+          Core.Config.Get('Subaction') === 'SequenceFlowEdit') {
+            TargetNS.InitSequenceFlowEdit();
         }
-        else if (Core.Config.Get('Subaction') === 'TransitionActionNew' ||
-          Core.Config.Get('Subaction') === 'TransitionActionEdit') {
-            TargetNS.InitTransitionActionEdit();
+        else if (Core.Config.Get('Subaction') === 'SequenceFlowActionNew' ||
+          Core.Config.Get('Subaction') === 'SequenceFlowActionEdit') {
+            TargetNS.InitSequenceFlowActionEdit();
         }
         else if (Core.Config.Get('Subaction') === 'ProcessEdit') {
             TargetNS.InitProcessEdit();
@@ -120,11 +120,24 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 return false;
             });
         }
+        else if (Core.Config.Get('Subaction') === 'ActivityEditModuleConfiguration' || Core.Config.Get('Subaction') === 'SequenceFlowActionEditModuleConfiguration') {
+            TargetNS.InitModuleConfiguration();
+        }
 
         // Depending on Action initialize specific functions
         if (Core.Config.Get('Action') === 'AdminProcessManagementPath' &amp;&amp; Core.Config.Get('Subaction') !== 'ClosePopup') {
            TargetNS.InitPathEdit();
         }
+
+        if (Core.Config.Get('Action') === 'AdminProcessManagementActivity') {
+           TargetNS.InitWidgetsByActivityType();
+        }
+
+        if (Core.Config.Get('Action') === 'AdminProcessManagementActivity' || Core.Config.Get('Action') === 'AdminProcessManagementSequenceFlowAction') {
+           TargetNS.InitConfigParameter();
+        }
+
+
     };
 
     /**
@@ -399,11 +412,11 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             else if ($(this).hasClass('DeleteActivityDialog')) {
                 EntityType = 'ActivityDialog';
             }
-            else if ($(this).hasClass('DeleteTransition')) {
-                EntityType = 'Transition';
+            else if ($(this).hasClass('DeleteSequenceFlow')) {
+                EntityType = 'SequenceFlow';
             }
-            else if ($(this).hasClass('DeleteTransitionAction')) {
-                EntityType = 'TransitionAction';
+            else if ($(this).hasClass('DeleteSequenceFlowAction')) {
+                EntityType = 'SequenceFlowAction';
             }
 
             ShowDeleteEntityConfirmationDialog($(this), EntityType, EntityName, EntityID, ItemID);
@@ -648,13 +661,13 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
        * @returns {Boolean} True if a dummy endpoint was found, false otherwise.
        * @param {String} ProcessEntityID - The process ID.
        * @description
-       *      Check if any transition has a dummy endpoint.
+       *      Check if any sequence flow has a dummy endpoint.
        */
         function DummyActivityConnected(ProcessEntityID) {
             var DummyFound = false;
             $.each(TargetNS.ProcessData.Process[ProcessEntityID].Path, function (Activity, ActivityData) {
-                $.each(ActivityData, function (Transition, TransitionData) {
-                    if (typeof TransitionData.ActivityEntityID === 'undefined') {
+                $.each(ActivityData, function (SequenceFlow, SequenceFlowData) {
+                    if (typeof SequenceFlowData.ActivityEntityID === 'undefined') {
                         DummyFound = true;
                     }
                 });
@@ -664,27 +677,27 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
 
       /**
        * @private
-       * @name AddTransitionToCanvas
+       * @name AddSequenceFlowToCanvas
        * @memberof Core.Agent.Admin.ProcessManagement.InitAccordionDND
        * @function
-       * @returns {Boolean} False if a another unconnected transition is on the canvas
+       * @returns {Boolean} False if a another unconnected sequence flow is on the canvas
        * @param {Object} Event - The event object.
        * @param {Object} UI - jQuery UI object.
        * @description
-       *      Adds transition to the canvas after drop event.
+       *      Adds sequence flow to the canvas after drop event.
        */
-        function AddTransitionToCanvas(Event, UI) {
+        function AddSequenceFlowToCanvas(Event, UI) {
             var Position = GetPositionOnCanvas(Event),
                 EntityID = $(UI.draggable).data('entity'),
-                Entity = TargetNS.ProcessData.Transition[EntityID],
+                Entity = TargetNS.ProcessData.SequenceFlow[EntityID],
                 ProcessEntityID = $('#ProcessEntityID').val(),
                 Activity,
                 Path = TargetNS.ProcessData.Process[ProcessEntityID].Path;
 
-            // if a dummy activity exists, another transition was placed to the canvas but not yet
-            // connected to an end point. One cannot place two unconnected transitions on the canvas.
+            // if a dummy activity exists, another sequence flow was placed to the canvas but not yet
+            // connected to an end point. One cannot place two unconnected sequence flows on the canvas.
             if ($('#Dummy').length &amp;&amp; DummyActivityConnected(ProcessEntityID)) {
-              alert(Core.Language.Translate('An unconnected transition is already placed on the canvas. Please connect this transition first before placing another transition.'));
+              alert(Core.Language.Translate('An unconnected sequence flow is already placed on the canvas. Please connect this sequence flow first before placing another sequence flow.'));
               return false;
             }
 
@@ -694,21 +707,21 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 // if not, just cancel
                 Activity = CheckIfMousePositionIsOverActivity(Position);
 
-                // If this transition is already bind to this activity
+                // If this sequence flow is already bind to this activity
                 // you cannot bind it a second time
                 if (Path[Activity] &amp;&amp; typeof Path[Activity][EntityID] !== 'undefined') {
-                    alert(Core.Language.Translate('This Transition is already used for this Activity. You cannot use it twice!'));
+                    alert(Core.Language.Translate('This Sequence Flow is already used for this Activity. You cannot use it twice!'));
                     return false;
                 }
 
                 if (Activity) {
-                    // Create dummy activity to use for initial transition
+                    // Create dummy activity to use for initial sequence flow
                     TargetNS.Canvas.CreateActivityDummy(Activity);
 
-                    // Create transition between this Activity and DummyElement
-                    TargetNS.Canvas.CreateTransition(Activity, 'Dummy', EntityID);
+                    // Create sequence flow between this Activity and DummyElement
+                    TargetNS.Canvas.CreateSequenceFlow(Activity, 'Dummy', EntityID);
 
-                    // Add Transition to Path
+                    // Add SequenceFlow to Path
                     if (typeof Path[Activity] === 'undefined') {
                         Path[Activity] = {};
                     }
@@ -724,49 +737,49 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
 
       /**
        * @private
-       * @name AddTransitionActionToCanvas
+       * @name AddSequenceFlowActionToCanvas
        * @memberof Core.Agent.Admin.ProcessManagement.InitAccordionDND
        * @function
-       * @returns {Boolean} Returns false, if transition is not defined.
+       * @returns {Boolean} Returns false, if sequence flow is not defined.
        * @param {Object} Event - The event object.
        * @param {Object} UI - jQuery UI object.
        * @description
-       *      Adds transition action to the canvas after drop event.
+       *      Adds sequence flow action to the canvas after drop event.
        */
-        function AddTransitionActionToCanvas(Event, UI) {
+        function AddSequenceFlowActionToCanvas(Event, UI) {
             var EntityID = $(UI.draggable).data('entity'),
-                Entity = TargetNS.ProcessData.TransitionAction[EntityID],
-                Transition,
+                Entity = TargetNS.ProcessData.SequenceFlowAction[EntityID],
+                SequenceFlow,
                 ProcessEntityID = $('#ProcessEntityID').val(),
                 Path = TargetNS.ProcessData.Process[ProcessEntityID].Path;
 
             if (typeof Entity !== 'undefined') {
-                Transition = TargetNS.Canvas.DragTransitionActionTransition;
+                SequenceFlow = TargetNS.Canvas.DragSequenceFlowActionSequenceFlow;
 
-                if (!Transition.TransitionID) {
+                if (!SequenceFlow.SequenceFlowID) {
                     return false;
                 }
 
-                // If this action is already bound to this transition
+                // If this action is already bound to this sequence flow
                 // you cannot bind it a second time
-                if (Path[Transition.StartActivity] &amp;&amp;
-                    typeof Path[Transition.StartActivity][Transition.TransitionID] !== 'undefined' &amp;&amp;
-                    typeof Path[Transition.StartActivity][Transition.TransitionID].TransitionAction !== 'undefined' &amp;&amp;
-                    ($.inArray(EntityID, Path[Transition.StartActivity][Transition.TransitionID].TransitionAction) >= 0)
+                if (Path[SequenceFlow.StartActivity] &amp;&amp;
+                    typeof Path[SequenceFlow.StartActivity][SequenceFlow.SequenceFlowID] !== 'undefined' &amp;&amp;
+                    typeof Path[SequenceFlow.StartActivity][SequenceFlow.SequenceFlowID].SequenceFlowAction !== 'undefined' &amp;&amp;
+                    ($.inArray(EntityID, Path[SequenceFlow.StartActivity][SequenceFlow.SequenceFlowID].SequenceFlowAction) >= 0)
                 ) {
-                    alert(Core.Language.Translate('This TransitionAction is already used in this Path. You cannot use it twice!'));
+                    alert(Core.Language.Translate('This SequenceFlowAction is already used in this Path. You cannot use it twice!'));
                     return false;
                 }
 
-                if (Transition) {
+                if (SequenceFlow) {
                     // Add Action to Path
-                    if (typeof Path[Transition.StartActivity][Transition.TransitionID].TransitionAction === 'undefined') {
-                        Path[Transition.StartActivity][Transition.TransitionID].TransitionAction = [];
+                    if (typeof Path[SequenceFlow.StartActivity][SequenceFlow.SequenceFlowID].SequenceFlowAction === 'undefined') {
+                        Path[SequenceFlow.StartActivity][SequenceFlow.SequenceFlowID].SequenceFlowAction = [];
                     }
-                    Path[Transition.StartActivity][Transition.TransitionID].TransitionAction.push(EntityID);
+                    Path[SequenceFlow.StartActivity][SequenceFlow.SequenceFlowID].SequenceFlowAction.push(EntityID);
 
                     // Show success icon in the label
-                    $(Transition.Connection.canvas).append('&lt;div class="Icon Success">&lt;/div>').find('.Icon').fadeIn().delay(1000).fadeOut();
+                    $(SequenceFlow.Connection.canvas).append('&lt;div class="Icon Success">&lt;/div>').find('.Icon').fadeIn().delay(1000).fadeOut();
                 }
             }
             else {
@@ -774,7 +787,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             }
         }
 
-        $('#Activities li.OneRow, #ActivityDialogs li.OneRow, #Transitions li.OneRow, #TransitionActions li.OneRow').draggable({
+        $('#Activities li.OneRow, #ActivityDialogs li.OneRow, #SequenceFlows li.OneRow, #SequenceFlowActions li.OneRow').draggable({
             revert: 'invalid',
             helper: function () {
                 var $Clone = $(this).clone();
@@ -785,19 +798,19 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 var $Source = $(this),
                     SourceID = $Source.closest('ul').attr('id');
 
-                if (SourceID === 'ActivityDialogs' || SourceID === 'Transitions') {
+                if (SourceID === 'ActivityDialogs' || SourceID === 'SequenceFlows') {
 
                     // Set event flag
                     TargetNS.Canvas.DragActivityItem = true;
 
                     $('#Canvas .Activity').addClass('Highlighted');
                 }
-                else if (SourceID === 'TransitionActions') {
+                else if (SourceID === 'SequenceFlowActions') {
                     // Set event flag
-                    TargetNS.Canvas.DragTransitionAction = true;
+                    TargetNS.Canvas.DragSequenceFlowAction = true;
 
-                    // Highlight all available Transitions
-                    $('.TransitionLabel').addClass('Highlighted');
+                    // Highlight all available SequenceFlows
+                    $('.SequenceFlowLabel').addClass('Highlighted');
                 }
                 else {
                     UI.helper.css('z-index', 1000);
@@ -807,25 +820,25 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 var $Source = $(this),
                     SourceID = $Source.closest('ul').attr('id');
 
-                if (SourceID === 'ActivityDialogs' || SourceID === 'Transitions') {
+                if (SourceID === 'ActivityDialogs' || SourceID === 'SequenceFlows') {
 
                     // Reset event flag
                     TargetNS.Canvas.DragActivityItem = false;
 
                     $('#Canvas .Activity').removeClass('Highlighted');
                 }
-                else if (SourceID === 'TransitionActions') {
+                else if (SourceID === 'SequenceFlowActions') {
                     // Reset event flag
-                    TargetNS.Canvas.DragTransitionAction = false;
+                    TargetNS.Canvas.DragSequenceFlowAction = false;
 
-                    // Unhighlight all available Transitions
-                    $('.TransitionLabel').removeClass('Highlighted');
+                    // Unhighlight all available SequenceFlows
+                    $('.SequenceFlowLabel').removeClass('Highlighted');
                 }
             }
         });
 
         $('#Canvas').droppable({
-            accept: '#Activities li.OneRow, #ActivityDialogs li.OneRow, #Transitions li.OneRow, #TransitionActions li.OneRow',
+            accept: '#Activities li.OneRow, #ActivityDialogs li.OneRow, #SequenceFlows li.OneRow, #SequenceFlowActions li.OneRow',
             drop: function (Event, UI) {
                 var $Source = $(UI.draggable),
                     SourceID = $Source.closest('ul').attr('id');
@@ -836,11 +849,11 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 else if (SourceID === 'ActivityDialogs') {
                     AddActivityDialogToCanvas(Event, UI);
                 }
-                else if (SourceID === 'Transitions') {
-                    AddTransitionToCanvas(Event, UI);
+                else if (SourceID === 'SequenceFlows') {
+                    AddSequenceFlowToCanvas(Event, UI);
                 }
-                else if (SourceID === 'TransitionActions') {
-                    AddTransitionActionToCanvas(Event, UI);
+                else if (SourceID === 'SequenceFlowActions') {
+                    AddSequenceFlowActionToCanvas(Event, UI);
                 }
                 else {
                     Core.Exception.Throw('Error: No matching droppable found', 'ProcessError');
@@ -881,8 +894,8 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             // Initialize filters
             Core.UI.Table.InitTableFilter($('#ActivityFilter'), $('#Activities'));
             Core.UI.Table.InitTableFilter($('#ActivityDialogFilter'), $('#ActivityDialogs'));
-            Core.UI.Table.InitTableFilter($('#TransitionFilter'), $('#Transitions'));
-            Core.UI.Table.InitTableFilter($('#TransitionActionFilter'), $('#TransitionActions'));
+            Core.UI.Table.InitTableFilter($('#SequenceFlowFilter'), $('#SequenceFlows'));
+            Core.UI.Table.InitTableFilter($('#SequenceFlowActionFilter'), $('#SequenceFlowActions'));
 
             // Init DnD on Accordion
             TargetNS.InitAccordionDnD();
@@ -994,8 +1007,8 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             Process: ConfigProcess.Process,
             Activity: ConfigProcess.Activity,
             ActivityDialog: ConfigProcess.ActivityDialog,
-            Transition: ConfigProcess.Transition,
-            TransitionAction: ConfigProcess.TransitionAction
+            SequenceFlow: ConfigProcess.SequenceFlow,
+            SequenceFlowAction: ConfigProcess.SequenceFlowAction
         };
 
         TargetNS.ProcessLayout = ConfigProcess.ProcessLayout;
@@ -1006,8 +1019,8 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         // Initialize filters
         Core.UI.Table.InitTableFilter($('#ActivityFilter'), $('#Activities'));
         Core.UI.Table.InitTableFilter($('#ActivityDialogFilter'), $('#ActivityDialogs'));
-        Core.UI.Table.InitTableFilter($('#TransitionFilter'), $('#Transitions'));
-        Core.UI.Table.InitTableFilter($('#TransitionActionFilter'), $('#TransitionActions'));
+        Core.UI.Table.InitTableFilter($('#SequenceFlowFilter'), $('#SequenceFlows'));
+        Core.UI.Table.InitTableFilter($('#SequenceFlowActionFilter'), $('#SequenceFlowActions'));
 
         // Init DnD on Accordion
         TargetNS.InitAccordionDnD();
@@ -1033,12 +1046,12 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             // get process layout and store it into a hidden field as JSON string
             $('input[name=ProcessLayout]').val(Core.JSON.Stringify(TargetNS.ProcessLayout));
 
-            // check if there are "open" transitions, e.g. transitions that have only a startpoint but no defined endpoint
-            // these open transitions must be deleted before saving
+            // check if there are "open" sequence flows, e.g. sequence flows that have only a start point but no defined endpoint
+            // these open sequence flows must be deleted before saving
             $.each(TargetNS.ProcessData.Process[ProcessEntityID].Path, function (Activity, ActivityData) {
-                $.each(ActivityData, function (Transition, TransitionData) {
-                    if (typeof TransitionData.ActivityEntityID === 'undefined') {
-                        delete ActivityData[Transition];
+                $.each(ActivityData, function (SequenceFlow, SequenceFlowData) {
+                    if (typeof SequenceFlowData.ActivityEntityID === 'undefined') {
+                        delete ActivityData[SequenceFlow];
                     }
                 });
             });
@@ -1097,6 +1110,8 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
      *      Initialize activity edit screen.
      */
     TargetNS.InitActivityEdit = function () {
+        var Action = Core.Config.Get('Subaction');
+
         function InitListFilter(Event, UI) {
          // only do something, if the element was removed from the right list
             if (UI.sender.attr('id') === 'AssignedActivityDialogs') {
@@ -1104,11 +1119,31 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             }
         }
 
+        function HideElements(){
+            $('span.HideActionOnChange').parent().hide();
+            $('.HideOnChange').hide();
+        }
+
+        if (Action === "ActivityNew") {
+            HideElements();
+        }
+
+        $('.HideTrigger').on('change', function(){
+            HideElements();
+        });
+
         // Initialize Allocation List
         Core.UI.AllocationList.Init("#AvailableActivityDialogs, #AssignedActivityDialogs", ".AllocationList", InitListFilter);
 
         // Initialize list filter
         Core.UI.Table.InitTableFilter($('#FilterAvailableActivityDialogs'), $('#AvailableActivityDialogs'));
+
+        $('#WebServiceID').off('change').on('change', function () {
+            Core.AJAX.FormUpdate($('#ActivityForm'), 'AJAXUpdate', 'WebServiceID', ['Invoker']);
+            if ($('#Invoker').length) {
+                $('#ServiceTaskConfiguration').removeClass('Hidden');
+            }
+        });
 
         $('#Submit').on('click', function() {
             $('#ActivityForm').submit();
@@ -1118,6 +1153,40 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
 
             // get assigned activity dialogs
             $('input[name=ActivityDialogs]').val(Core.JSON.Stringify(Core.UI.AllocationList.GetResult('#AssignedActivityDialogs', 'id')));
+
+            // not needed for normal submit
+            $(window).off("beforeunload.PMPopup");
+
+            Form.submit();
+        });
+
+        // Init popups
+        InitProcessPopups();
+
+        // Init handling of closing popup with the OS functionality ("X")
+        $(window).off("beforeunload.PMPopup").on("beforeunload.PMPopup", function () {
+            window.opener.Core.Agent.Admin.ProcessManagement.HandlePopupClose();
+        });
+
+        $('.ClosePopup').on("click", function () {
+            $(window).off("beforeunload.PMPopup");
+        });
+    };
+
+    /**
+     * @name InitModuleConfiguration
+     * @memberof Core.Agent.Admin.ProcessManagement
+     * @function
+     * @description
+     *      Initialize activity / sequence flow action module configuration screen.
+     */
+    TargetNS.InitModuleConfiguration = function () {
+
+        $('#Submit').on('click', function() {
+            $('#ModuleConfigurationForm').submit();
+        });
+
+        Core.Form.Validate.SetSubmitFunction($('#ModuleConfigurationForm'), function (Form) {
 
             // not needed for normal submit
             $(window).off("beforeunload.PMPopup");
@@ -1380,13 +1449,13 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
     };
 
     /**
-     * @name InitTransitionEdit
+     * @name InitSequenceFlowEdit
      * @memberof Core.Agent.Admin.ProcessManagement
      * @function
      * @description
-     *      Initialize transition edit screen.
+     *      Initialize sequence flow edit screen.
      */
-    TargetNS.InitTransitionEdit = function () {
+    TargetNS.InitSequenceFlowEdit = function () {
 
         // Init addition of new conditions
         $('#ConditionAdd').on('click', function() {
@@ -1409,7 +1478,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
                 $(this).closest('.WidgetSimple').remove();
             }
             else {
-                alert(Core.Language.Translate("Sorry, the only existing condition can't be removed."));
+                alert(Core.Language.Translate("Sorry, the only existing condition expression can't be removed."));
             }
 
             return false;
@@ -1444,11 +1513,11 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         });
 
         $('#Submit').on('click', function() {
-            $('#TransitionForm').submit();
+            $('#SequenceFlowForm').submit();
             return false;
         });
 
-        Core.Form.Validate.SetSubmitFunction($('#TransitionForm'), function (Form) {
+        Core.Form.Validate.SetSubmitFunction($('#SequenceFlowForm'), function (Form) {
             var ConditionConfig = TargetNS.GetConditionConfig($('#PresentConditionsContainer').find('.ConditionField'));
             $('input[name=ConditionConfig]').val(Core.JSON.Stringify(ConditionConfig));
 
@@ -1472,53 +1541,20 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
     };
 
     /**
-     * @name InitTransitionActionEdit
+     * @name InitSequenceFlowActionEdit
      * @memberof Core.Agent.Admin.ProcessManagement
      * @function
      * @description
-     *      Initialize transition action edit screen.
+     *      Initialize sequence flow action edit screen.
      */
-    TargetNS.InitTransitionActionEdit = function () {
-        // Init addition of new config parameters
-        $('#ConfigAdd').on('click', function() {
-            // get the index for the newly to be added element
-            // therefore, we search the preceding fieldset and the first
-            // label in it to get its "for"-attribute which contains the index
-            var $PreviousField = $(this).closest('.WidgetSimple').find('.Content fieldset').last(),
-                LastKnownFieldIndex,
-                ConfigParamHTML;
-
-            if ($PreviousField.length) {
-                LastKnownFieldIndex = parseInt($PreviousField.find('label').first().attr('for').replace(/ConfigKey\[/, '').replace(/\]/, ''), 10);
-            }
-            else {
-                LastKnownFieldIndex = 0;
-            }
-
-            // get current index
-            ConfigParamHTML = $('#ConfigParamContainer').html().replace(/_INDEX_/g, LastKnownFieldIndex + 1);
-
-            $($.parseHTML(ConfigParamHTML)).insertAfter($PreviousField);
-            return false;
-        });
-
-        // Init removal of fields
-        $('#ConfigParams').delegate('.RemoveButton', 'click', function() {
-            if ($(this).closest('.Content').find('fieldset').length > 1) {
-                $(this).closest('fieldset').remove();
-            }
-            else {
-                alert(Core.Language.Translate("Sorry, the only existing parameter can't be removed."));
-            }
-            return false;
-        });
+    TargetNS.InitSequenceFlowActionEdit = function () {
 
         $('#Submit').on('click', function() {
-            $('#TransitionForm').submit();
+            $('#SequenceFlowForm').submit();
             return false;
         });
 
-        Core.Form.Validate.SetSubmitFunction($('#TransitionForm'), function (Form) {
+        Core.Form.Validate.SetSubmitFunction($('#SequenceFlowForm'), function (Form) {
             // not needed for normal submit
             $(window).off("beforeunload.PMPopup");
 
@@ -1546,49 +1582,49 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
      */
     TargetNS.InitPathEdit = function () {
         var CurrentProcessEntityID = Core.Config.Get('ProcessEntityID'),
-            CurrentTransitionEntityID = Core.Config.Get('TransitionEntityID'),
+            CurrentSequenceFlowEntityID = Core.Config.Get('SequenceFlowEntityID'),
             StartActivityID = Core.Config.Get('StartActivityID'),
             ActivityInfo = window.opener.Core.Agent.Admin.ProcessManagement.ProcessData.Activity,
             PathInfo = window.opener.Core.Agent.Admin.ProcessManagement.ProcessData.Process[CurrentProcessEntityID].Path,
             StartActivityEntityID = '', EndActivityEntityID = '',
-            AssignedTransitionActions = [];
+            AssignedSequenceFlowActions = [];
 
         // Initialize Allocation List
-        Core.UI.AllocationList.Init("#AvailableTransitionActions, #AssignedTransitionActions", ".AllocationList");
+        Core.UI.AllocationList.Init("#AvailableSequenceFlowActions, #AssignedSequenceFlowActions", ".AllocationList");
 
         // Initialize list filter
-        Core.UI.Table.InitTableFilter($('#FilterAvailableTransitionActions'), $('#AvailableTransitionActions'));
+        Core.UI.Table.InitTableFilter($('#FilterAvailableSequenceFlowActions'), $('#AvailableSequenceFlowActions'));
 
         // store process data to hidden field for later merging
         $('#ProcessData').val(Core.JSON.Stringify(window.opener.Core.Agent.Admin.ProcessManagement.ProcessData.Process));
 
         // set current start and end activity (just for information purposes, not changeable)
-        $.each(PathInfo, function(Activity, Transition) {
-            if (Activity === StartActivityID &amp;&amp; typeof Transition[CurrentTransitionEntityID] !== 'undefined') {
+        $.each(PathInfo, function(Activity, SequenceFlow) {
+            if (Activity === StartActivityID &amp;&amp; typeof SequenceFlow[CurrentSequenceFlowEntityID] !== 'undefined') {
                 $('#StartActivity').attr('title', ActivityInfo[Activity].Name).text(ActivityInfo[Activity].Name);
-                $('#EndActivity').attr('title', ActivityInfo[Transition[CurrentTransitionEntityID].ActivityEntityID].Name).text(ActivityInfo[Transition[CurrentTransitionEntityID].ActivityEntityID].Name);
+                $('#EndActivity').attr('title', ActivityInfo[SequenceFlow[CurrentSequenceFlowEntityID].ActivityEntityID].Name).text(ActivityInfo[SequenceFlow[CurrentSequenceFlowEntityID].ActivityEntityID].Name);
 
                 StartActivityEntityID = Activity;
-                EndActivityEntityID = Transition[CurrentTransitionEntityID].ActivityEntityID;
-                AssignedTransitionActions = Transition[CurrentTransitionEntityID].TransitionAction;
+                EndActivityEntityID = SequenceFlow[CurrentSequenceFlowEntityID].ActivityEntityID;
+                AssignedSequenceFlowActions = SequenceFlow[CurrentSequenceFlowEntityID].SequenceFlowAction;
 
                 return false;
             }
         });
 
-        // Set chosen Startactivity, Endactivity and Transition
-        $('#Transition').val(CurrentTransitionEntityID);
-        $('#EditPath a').data('entity', CurrentTransitionEntityID);
+        // Set chosen Start activity, End activity and SequenceFlow
+        $('#SequenceFlow').val(CurrentSequenceFlowEntityID);
+        $('#EditPath a').data('entity', CurrentSequenceFlowEntityID);
 
-        if (AssignedTransitionActions &amp;&amp; AssignedTransitionActions.length) {
-            // Display assigned Transition Actions
-            $.each(AssignedTransitionActions, function(Index, TransitionActionEntityID) {
-                $('#AvailableTransitionActions').find('#' + TransitionActionEntityID).remove().appendTo($('#AssignedTransitionActions'));
+        if (AssignedSequenceFlowActions &amp;&amp; AssignedSequenceFlowActions.length) {
+            // Display assigned SequenceFlow Actions
+            $.each(AssignedSequenceFlowActions, function(Index, SequenceFlowActionEntityID) {
+                $('#AvailableSequenceFlowActions').find('#' + SequenceFlowActionEntityID).remove().appendTo($('#AssignedSequenceFlowActions'));
             });
         }
 
-        // if transition select is updated, also update transition edit link
-        $('#Transition').on('change', function () {
+        // if sequence flow select is updated, also update sequence flow edit link
+        $('#SequenceFlow').on('change', function () {
            $('#EditPath a').data('entity', $(this).val());
         });
 
@@ -1600,23 +1636,23 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
         // init submit
         Core.Form.Validate.SetSubmitFunction($('#PathForm'), function (Form) {
 
-            var NewTransitionEntityID = $('#Transition').val(),
-                NewTransitionActions = [],
-                TransitionInfo;
+            var NewSequenceFlowEntityID = $('#SequenceFlow').val(),
+                NewSequenceFlowActions = [],
+                SequenceFlowInfo;
 
-            $('#AssignedTransitionActions li').each(function() {
-                NewTransitionActions.push($(this).attr('id'));
+            $('#AssignedSequenceFlowActions li').each(function() {
+                NewSequenceFlowActions.push($(this).attr('id'));
             });
 
-            // collection transition info for later merging
-            TransitionInfo = {
+            // collection sequence flow info for later merging
+            SequenceFlowInfo = {
                 StartActivityEntityID: StartActivityEntityID,
-                NewTransitionEntityID: NewTransitionEntityID,
-                NewTransitionActions: NewTransitionActions,
-                NewTransitionActivityID: EndActivityEntityID
+                NewSequenceFlowEntityID: NewSequenceFlowEntityID,
+                NewSequenceFlowActions: NewSequenceFlowActions,
+                NewSequenceFlowActivityID: EndActivityEntityID
             };
 
-            $('#TransitionInfo').val(Core.JSON.Stringify(TransitionInfo));
+            $('#SequenceFlowInfo').val(Core.JSON.Stringify(SequenceFlowInfo));
 
             // not needed for normal submit
             $(window).off("beforeunload.PMPopup");
@@ -1753,19 +1789,140 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
             });
         }
 
-        // Update Transitions
-        if (typeof Config.Transition !== 'undefined') {
-            $.each(Config.Transition, function (Key, Value) {
-                TargetNS.ProcessData.Transition[Key] = Value;
+        // Update Sequence Flows
+        if (typeof Config.SequenceFlow !== 'undefined') {
+            $.each(Config.SequenceFlow, function (Key, Value) {
+                TargetNS.ProcessData.SequenceFlow[Key] = Value;
             });
         }
 
-        // Update Transition Actions
-        if (typeof Config.TransitionAction !== 'undefined') {
-            $.each(Config.TransitionAction, function (Key, Value) {
-                TargetNS.ProcessData.TransitionAction[Key] = Value;
+        // Update Sequence Flow Actions
+        if (typeof Config.SequenceFlowAction !== 'undefined') {
+            $.each(Config.SequenceFlowAction, function (Key, Value) {
+                TargetNS.ProcessData.SequenceFlowAction[Key] = Value;
             });
         }
+    };
+
+
+   /**
+     * @name InitConfigParameter
+     * @memberof Core.Agent.Admin.ProcessManagement
+     * @function
+     * @description
+     *      Initialize the module configuration fields and actions.
+     */
+    TargetNS.InitConfigParameter = function () {
+
+        // Init addition of new config parameters
+        $('#ConfigAdd').on('click', function() {
+            // get the index for the newly to be added element
+            // therefore, we search the preceding fieldset and the first
+            // label in it to get its "for"-attribute which contains the index
+            var $PreviousField = $(this).closest('.WidgetSimple').find('.Content fieldset').last(),
+                LastKnownFieldIndex,
+                ConfigParamHTML;
+
+            if ($PreviousField.length) {
+                LastKnownFieldIndex = parseInt($PreviousField.find('label').first().attr('for').replace(/ConfigKey\[/, '').replace(/\]/, ''), 10);
+            }
+            else {
+                LastKnownFieldIndex = 0;
+            }
+
+            // get current index
+            ConfigParamHTML = $('#ConfigParamContainer').html().replace(/_INDEX_/g, LastKnownFieldIndex + 1);
+
+            $($.parseHTML(ConfigParamHTML)).insertAfter($PreviousField);
+            return false;
+        });
+
+        // Init removal of fields
+        $('#ConfigParams').delegate('.RemoveButton', 'click', function() {
+            if ($(this).closest('.Content').find('fieldset').length > 1) {
+                $(this).closest('fieldset').remove();
+            }
+            else {
+                alert(Core.Language.Translate("Sorry, the only existing parameter can't be removed."));
+            }
+            return false;
+        });
+    };
+
+
+
+
+    /**
+     * @name InitWidgetsByActivityType
+     * @memberof Core.Agent.Admin.ProcessManagement
+     * @function
+     * @description
+     *      Shows the correct widget according to the selected activity type while creating/adding a new activity.
+     */
+    TargetNS.InitWidgetsByActivityType = function () {
+
+        /**
+         * @private
+         * @name ToggleWidgets
+         * @memberof Core.Agent.Admin.ProcessManagement.InitWidgetsByActivityType
+         * @function
+         * @description
+         *      Toggle the widgets for each activity type.
+         */
+        function ToggleWidgets() {
+            var ID,
+                Type = $('#Type').val();
+
+            if (!Type) return;
+
+            $('.WidgetSimple').each(function () {
+
+                ID = $(this).prop('id');
+                if (!ID) return;
+
+                if (ID === Type) {
+
+                    // Show widget and modernize fields.
+                    $(this).removeClass('Hidden');
+
+                    Core.UI.InputFields.Activate($(this));
+
+                    $(this)
+                        .find("input:not([type='hidden']), textarea, select")
+                        .removeClass('ValidationIgnore');
+                }
+                else {
+
+                    // Don't show widget and unmodernize fields.
+                    $(this).addClass('Hidden');
+
+                    Core.UI.InputFields.Deactivate($(this));
+
+                    $(this)
+                        .find("input:not([type='hidden']), textarea, select")
+                        .addClass('ValidationIgnore');
+
+                    // Don't show additional non user activity settings.
+                    $('#NonUserActivitySettings').addClass('Hidden');
+                }
+
+                // Show config parameters and activity description for service and script tasks.
+                if (Type === 'ServiceTask' || Type === 'ScriptTask') {
+
+                    // Show additional non user activity settings.
+                    $('#NonUserActivitySettings').removeClass('Hidden');
+                    Core.UI.InputFields.Init();
+                }
+            });
+        }
+
+        // Show correct widget if activity type has changed.
+        $('#Type').off('change').on('change', function () {
+            ToggleWidgets();
+        });
+
+        // Init call to show correct widget on load.
+        ToggleWidgets();
     };
 
     Core.Init.RegisterNamespace(TargetNS, 'APP_MODULE');
@@ -1784,7 +1941,7 @@ Core.Agent.Admin.ProcessManagement = (function (TargetNS) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.Attachment.html">Core.Agent.Admin.Attachment</a></li><li><a href="Core.Agent.Admin.AutoResponse.html">Core.Agent.Admin.AutoResponse</a></li><li><a href="Core.Agent.Admin.CommunicationLog.html">Core.Agent.Admin.CommunicationLog</a></li><li><a href="Core.Agent.Admin.Core.Agent.Admin.html">Core.Agent.Admin.Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.Core.Agent.TicketFormDraft.html">Core.Agent.Admin.Core.Agent.TicketFormDraft</a></li><li><a href="Core.Agent.Admin.CustomerCompany.html">Core.Agent.Admin.CustomerCompany</a></li><li><a href="Core.Agent.Admin.CustomerGroup.html">Core.Agent.Admin.CustomerGroup</a></li><li><a href="Core.Agent.Admin.CustomerUser.html">Core.Agent.Admin.CustomerUser</a></li><li><a href="Core.Agent.Admin.CustomerUserService.html">Core.Agent.Admin.CustomerUserService</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldCheckbox.html">Core.Agent.Admin.DynamicFieldCheckbox</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandling.html">Core.Agent.Admin.GenericInterfaceErrorHandling</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry.html">Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvokerEvent.html">Core.Agent.Admin.GenericInterfaceInvokerEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMapping.html">Core.Agent.Admin.GenericInterfaceMapping</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingXSLT.html">Core.Agent.Admin.GenericInterfaceMappingXSLT</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPREST.html">Core.Agent.Admin.GenericInterfaceTransportHTTPREST</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP.html">Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.Group.html">Core.Agent.Admin.Group</a></li><li><a href="Core.Agent.Admin.Log.html">Core.Agent.Admin.Log</a></li><li><a href="Core.Agent.Admin.MailAccount.html">Core.Agent.Admin.MailAccount</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.PackageManager.html">Core.Agent.Admin.PackageManager</a></li><li><a href="Core.Agent.Admin.PostMasterFilter.html">Core.Agent.Admin.PostMasterFilter</a></li><li><a href="Core.Agent.Admin.Priority.html">Core.Agent.Admin.Priority</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.Queue.html">Core.Agent.Admin.Queue</a></li><li><a href="Core.Agent.Admin.QueueAutoResponse.html">Core.Agent.Admin.QueueAutoResponse</a></li><li><a href="Core.Agent.Admin.QueueTemplates.html">Core.Agent.Admin.QueueTemplates</a></li><li><a href="Core.Agent.Admin.Registration.html">Core.Agent.Admin.Registration</a></li><li><a href="Core.Agent.Admin.Role.html">Core.Agent.Admin.Role</a></li><li><a href="Core.Agent.Admin.RoleGroup.html">Core.Agent.Admin.RoleGroup</a></li><li><a href="Core.Agent.Admin.RoleUser.html">Core.Agent.Admin.RoleUser</a></li><li><a href="Core.Agent.Admin.Salutation.html">Core.Agent.Admin.Salutation</a></li><li><a href="Core.Agent.Admin.SelectBox.html">Core.Agent.Admin.SelectBox</a></li><li><a href="Core.Agent.Admin.Service.html">Core.Agent.Admin.Service</a></li><li><a href="Core.Agent.Admin.Session.html">Core.Agent.Admin.Session</a></li><li><a href="Core.Agent.Admin.Signature.html">Core.Agent.Admin.Signature</a></li><li><a href="Core.Agent.Admin.SLA.html">Core.Agent.Admin.SLA</a></li><li><a href="Core.Agent.Admin.SMIME.html">Core.Agent.Admin.SMIME</a></li><li><a href="Core.Agent.Admin.State.html">Core.Agent.Admin.State</a></li><li><a href="Core.Agent.Admin.SupportDataCollector.html">Core.Agent.Admin.SupportDataCollector</a></li><li><a href="Core.Agent.Admin.SysConfig.Entity.html">Core.Agent.Admin.SysConfig.Entity</a></li><li><a href="Core.Agent.Admin.SystemAddress.html">Core.Agent.Admin.SystemAddress</a></li><li><a href="Core.Agent.Admin.SystemConfiguration.html">Core.Agent.Admin.SystemConfiguration</a></li><li><a href="Core.Agent.Admin.SystemMaintenance.html">Core.Agent.Admin.SystemMaintenance</a></li><li><a href="Core.Agent.Admin.Template.html">Core.Agent.Admin.Template</a></li><li><a href="Core.Agent.Admin.TemplateAttachment.html">Core.Agent.Admin.TemplateAttachment</a></li><li><a href="Core.Agent.Admin.Type.html">Core.Agent.Admin.Type</a></li><li><a href="Core.Agent.Admin.UserGroup.html">Core.Agent.Admin.UserGroup</a></li><li><a href="Core.Agent.AppointmentCalendar.html">Core.Agent.AppointmentCalendar</a></li><li><a href="Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage.html">Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage</a></li><li><a href="Core.Agent.CustomerInformationCenter.html">Core.Agent.CustomerInformationCenter</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.CustomerSearchAutoComplete.html">Core.Agent.CustomerSearchAutoComplete</a></li><li><a href="Core.Agent.CustomerUserAddressBook.html">Core.Agent.CustomerUserAddressBook</a></li><li><a href="Core.Agent.CustomerUserInformationCenter.html">Core.Agent.CustomerUserInformationCenter</a></li><li><a href="Core.Agent.CustomerUserInformationCenterSearch.html">Core.Agent.CustomerUserInformationCenterSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.Header.html">Core.Agent.Header</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.LinkObject.SearchForm.html">Core.Agent.LinkObject.SearchForm</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Overview.html">Core.Agent.Overview</a></li><li><a href="Core.Agent.Preferences.html">Core.Agent.Preferences</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Statistics.ParamsWidget.html">Core.Agent.Statistics.ParamsWidget</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketActionCommon.html">Core.Agent.TicketActionCommon</a></li><li><a href="Core.Agent.TicketBounce.html">Core.Agent.TicketBounce</a></li><li><a href="Core.Agent.TicketBulk.html">Core.Agent.TicketBulk</a></li><li><a href="Core.Agent.TicketCompose.html">Core.Agent.TicketCompose</a></li><li><a href="Core.Agent.TicketEmail.html">Core.Agent.TicketEmail</a></li><li><a href="Core.Agent.TicketEmailOutbound.html">Core.Agent.TicketEmailOutbound</a></li><li><a href="Core.Agent.TicketEmailResend.html">Core.Agent.TicketEmailResend</a></li><li><a href="Core.Agent.TicketForward.html">Core.Agent.TicketForward</a></li><li><a href="Core.Agent.TicketHistory.html">Core.Agent.TicketHistory</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketMove.html">Core.Agent.TicketMove</a></li><li><a href="Core.Agent.TicketPhone.html">Core.Agent.TicketPhone</a></li><li><a href="Core.Agent.TicketPhoneCommon.html">Core.Agent.TicketPhoneCommon</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketSplit.html">Core.Agent.TicketSplit</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketMessage.html">Core.Customer.TicketMessage</a></li><li><a href="Core.Customer.TicketProcess.html">Core.Customer.TicketProcess</a></li><li><a href="Core.Customer.TicketSearch.html">Core.Customer.TicketSearch</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Init.html">Core.Init</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.Language.html">Core.Language</a></li><li><a href="Core.SystemConfiguration.html">Core.SystemConfiguration</a></li><li><a href="Core.Template.html">Core.Template</a></li><li><a href="Core.TicketProcess.html">Core.TicketProcess</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul><h3>Global</h3><ul><li><a href="global.html#EditAppointment">EditAppointment</a></li></ul>
+    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-TargetNS.html">TargetNS</a></li></ul><h3>Namespaces</h3><ul><li><a href="Core.html">Core</a></li><li><a href="Core.Agent.html">Core.Agent</a></li><li><a href="Core.Agent.Admin.html">Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.ACL.html">Core.Agent.Admin.ACL</a></li><li><a href="Core.Agent.Admin.Attachment.html">Core.Agent.Admin.Attachment</a></li><li><a href="Core.Agent.Admin.AutoResponse.html">Core.Agent.Admin.AutoResponse</a></li><li><a href="Core.Agent.Admin.CommunicationLog.html">Core.Agent.Admin.CommunicationLog</a></li><li><a href="Core.Agent.Admin.Core.Agent.Admin.html">Core.Agent.Admin.Core.Agent.Admin</a></li><li><a href="Core.Agent.Admin.Core.Agent.TicketFormDraft.html">Core.Agent.Admin.Core.Agent.TicketFormDraft</a></li><li><a href="Core.Agent.Admin.CustomerCompany.html">Core.Agent.Admin.CustomerCompany</a></li><li><a href="Core.Agent.Admin.CustomerGroup.html">Core.Agent.Admin.CustomerGroup</a></li><li><a href="Core.Agent.Admin.CustomerUser.html">Core.Agent.Admin.CustomerUser</a></li><li><a href="Core.Agent.Admin.CustomerUserService.html">Core.Agent.Admin.CustomerUserService</a></li><li><a href="Core.Agent.Admin.DynamicField.html">Core.Agent.Admin.DynamicField</a></li><li><a href="Core.Agent.Admin.DynamicFieldCheckbox.html">Core.Agent.Admin.DynamicFieldCheckbox</a></li><li><a href="Core.Agent.Admin.DynamicFieldDateTime.html">Core.Agent.Admin.DynamicFieldDateTime</a></li><li><a href="Core.Agent.Admin.DynamicFieldDropdown.html">Core.Agent.Admin.DynamicFieldDropdown</a></li><li><a href="Core.Agent.Admin.DynamicFieldMultiselect.html">Core.Agent.Admin.DynamicFieldMultiselect</a></li><li><a href="Core.Agent.Admin.DynamicFieldText.html">Core.Agent.Admin.DynamicFieldText</a></li><li><a href="Core.Agent.Admin.GenericAgentEvent.html">Core.Agent.Admin.GenericAgentEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceDebugger.html">Core.Agent.Admin.GenericInterfaceDebugger</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandling.html">Core.Agent.Admin.GenericInterfaceErrorHandling</a></li><li><a href="Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry.html">Core.Agent.Admin.GenericInterfaceErrorHandlingRequestRetry</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvoker.html">Core.Agent.Admin.GenericInterfaceInvoker</a></li><li><a href="Core.Agent.Admin.GenericInterfaceInvokerEvent.html">Core.Agent.Admin.GenericInterfaceInvokerEvent</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMapping.html">Core.Agent.Admin.GenericInterfaceMapping</a></li><li><a href="Core.Agent.Admin.GenericInterfaceMappingXSLT.html">Core.Agent.Admin.GenericInterfaceMappingXSLT</a></li><li><a href="Core.Agent.Admin.GenericInterfaceOperation.html">Core.Agent.Admin.GenericInterfaceOperation</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPREST.html">Core.Agent.Admin.GenericInterfaceTransportHTTPREST</a></li><li><a href="Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP.html">Core.Agent.Admin.GenericInterfaceTransportHTTPSOAP</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebservice.html">Core.Agent.Admin.GenericInterfaceWebservice</a></li><li><a href="Core.Agent.Admin.GenericInterfaceWebserviceHistory.html">Core.Agent.Admin.GenericInterfaceWebserviceHistory</a></li><li><a href="Core.Agent.Admin.Group.html">Core.Agent.Admin.Group</a></li><li><a href="Core.Agent.Admin.Log.html">Core.Agent.Admin.Log</a></li><li><a href="Core.Agent.Admin.MailAccount.html">Core.Agent.Admin.MailAccount</a></li><li><a href="Core.Agent.Admin.NotificationEvent.html">Core.Agent.Admin.NotificationEvent</a></li><li><a href="Core.Agent.Admin.PackageManager.html">Core.Agent.Admin.PackageManager</a></li><li><a href="Core.Agent.Admin.PostMasterFilter.html">Core.Agent.Admin.PostMasterFilter</a></li><li><a href="Core.Agent.Admin.Priority.html">Core.Agent.Admin.Priority</a></li><li><a href="Core.Agent.Admin.ProcessManagement.html">Core.Agent.Admin.ProcessManagement</a></li><li><a href="Core.Agent.Admin.ProcessManagement.Canvas.html">Core.Agent.Admin.ProcessManagement.Canvas</a></li><li><a href="Core.Agent.Admin.ProcessManagement.ModuleConfiguration.MultiLanguageRichText.html">Core.Agent.Admin.ProcessManagement.ModuleConfiguration.MultiLanguageRichText</a></li><li><a href="Core.Agent.Admin.Queue.html">Core.Agent.Admin.Queue</a></li><li><a href="Core.Agent.Admin.QueueAutoResponse.html">Core.Agent.Admin.QueueAutoResponse</a></li><li><a href="Core.Agent.Admin.QueueTemplates.html">Core.Agent.Admin.QueueTemplates</a></li><li><a href="Core.Agent.Admin.Registration.html">Core.Agent.Admin.Registration</a></li><li><a href="Core.Agent.Admin.Role.html">Core.Agent.Admin.Role</a></li><li><a href="Core.Agent.Admin.RoleGroup.html">Core.Agent.Admin.RoleGroup</a></li><li><a href="Core.Agent.Admin.RoleUser.html">Core.Agent.Admin.RoleUser</a></li><li><a href="Core.Agent.Admin.Salutation.html">Core.Agent.Admin.Salutation</a></li><li><a href="Core.Agent.Admin.SelectBox.html">Core.Agent.Admin.SelectBox</a></li><li><a href="Core.Agent.Admin.Service.html">Core.Agent.Admin.Service</a></li><li><a href="Core.Agent.Admin.Session.html">Core.Agent.Admin.Session</a></li><li><a href="Core.Agent.Admin.Signature.html">Core.Agent.Admin.Signature</a></li><li><a href="Core.Agent.Admin.SLA.html">Core.Agent.Admin.SLA</a></li><li><a href="Core.Agent.Admin.SMIME.html">Core.Agent.Admin.SMIME</a></li><li><a href="Core.Agent.Admin.State.html">Core.Agent.Admin.State</a></li><li><a href="Core.Agent.Admin.SupportDataCollector.html">Core.Agent.Admin.SupportDataCollector</a></li><li><a href="Core.Agent.Admin.SysConfig.Entity.html">Core.Agent.Admin.SysConfig.Entity</a></li><li><a href="Core.Agent.Admin.SystemAddress.html">Core.Agent.Admin.SystemAddress</a></li><li><a href="Core.Agent.Admin.SystemConfiguration.html">Core.Agent.Admin.SystemConfiguration</a></li><li><a href="Core.Agent.Admin.SystemMaintenance.html">Core.Agent.Admin.SystemMaintenance</a></li><li><a href="Core.Agent.Admin.Template.html">Core.Agent.Admin.Template</a></li><li><a href="Core.Agent.Admin.TemplateAttachment.html">Core.Agent.Admin.TemplateAttachment</a></li><li><a href="Core.Agent.Admin.Type.html">Core.Agent.Admin.Type</a></li><li><a href="Core.Agent.Admin.UserGroup.html">Core.Agent.Admin.UserGroup</a></li><li><a href="Core.Agent.AppointmentCalendar.html">Core.Agent.AppointmentCalendar</a></li><li><a href="Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage.html">Core.Agent.AppointmentCalendar.Core.Agent.Admin.AppointmentCalendar.Manage</a></li><li><a href="Core.Agent.CustomerInformationCenter.html">Core.Agent.CustomerInformationCenter</a></li><li><a href="Core.Agent.CustomerInformationCenterSearch.html">Core.Agent.CustomerInformationCenterSearch</a></li><li><a href="Core.Agent.CustomerSearch.html">Core.Agent.CustomerSearch</a></li><li><a href="Core.Agent.CustomerSearchAutoComplete.html">Core.Agent.CustomerSearchAutoComplete</a></li><li><a href="Core.Agent.CustomerUserAddressBook.html">Core.Agent.CustomerUserAddressBook</a></li><li><a href="Core.Agent.CustomerUserInformationCenter.html">Core.Agent.CustomerUserInformationCenter</a></li><li><a href="Core.Agent.CustomerUserInformationCenterSearch.html">Core.Agent.CustomerUserInformationCenterSearch</a></li><li><a href="Core.Agent.Daemon.html">Core.Agent.Daemon</a></li><li><a href="Core.Agent.Dashboard.html">Core.Agent.Dashboard</a></li><li><a href="Core.Agent.Header.html">Core.Agent.Header</a></li><li><a href="Core.Agent.LinkObject.html">Core.Agent.LinkObject</a></li><li><a href="Core.Agent.LinkObject.SearchForm.html">Core.Agent.LinkObject.SearchForm</a></li><li><a href="Core.Agent.Login.html">Core.Agent.Login</a></li><li><a href="Core.Agent.Overview.html">Core.Agent.Overview</a></li><li><a href="Core.Agent.Preferences.html">Core.Agent.Preferences</a></li><li><a href="Core.Agent.Responsive.html">Core.Agent.Responsive</a></li><li><a href="Core.Agent.Search.html">Core.Agent.Search</a></li><li><a href="Core.Agent.SortedTree.html">Core.Agent.SortedTree</a></li><li><a href="Core.Agent.Statistics.html">Core.Agent.Statistics</a></li><li><a href="Core.Agent.Statistics.ParamsWidget.html">Core.Agent.Statistics.ParamsWidget</a></li><li><a href="Core.Agent.StatisticsReports.html">Core.Agent.StatisticsReports</a></li><li><a href="Core.Agent.Stats.html">Core.Agent.Stats</a></li><li><a href="Core.Agent.TableFilters.html">Core.Agent.TableFilters</a></li><li><a href="Core.Agent.TicketAction.html">Core.Agent.TicketAction</a></li><li><a href="Core.Agent.TicketActionCommon.html">Core.Agent.TicketActionCommon</a></li><li><a href="Core.Agent.TicketBounce.html">Core.Agent.TicketBounce</a></li><li><a href="Core.Agent.TicketBulk.html">Core.Agent.TicketBulk</a></li><li><a href="Core.Agent.TicketCompose.html">Core.Agent.TicketCompose</a></li><li><a href="Core.Agent.TicketEmail.html">Core.Agent.TicketEmail</a></li><li><a href="Core.Agent.TicketEmailOutbound.html">Core.Agent.TicketEmailOutbound</a></li><li><a href="Core.Agent.TicketEmailResend.html">Core.Agent.TicketEmailResend</a></li><li><a href="Core.Agent.TicketForward.html">Core.Agent.TicketForward</a></li><li><a href="Core.Agent.TicketHistory.html">Core.Agent.TicketHistory</a></li><li><a href="Core.Agent.TicketMerge.html">Core.Agent.TicketMerge</a></li><li><a href="Core.Agent.TicketMove.html">Core.Agent.TicketMove</a></li><li><a href="Core.Agent.TicketPhone.html">Core.Agent.TicketPhone</a></li><li><a href="Core.Agent.TicketPhoneCommon.html">Core.Agent.TicketPhoneCommon</a></li><li><a href="Core.Agent.TicketProcess.html">Core.Agent.TicketProcess</a></li><li><a href="Core.Agent.TicketSplit.html">Core.Agent.TicketSplit</a></li><li><a href="Core.Agent.TicketZoom.html">Core.Agent.TicketZoom</a></li><li><a href="Core.AJAX.html">Core.AJAX</a></li><li><a href="Core.App.html">Core.App</a></li><li><a href="Core.App.Responsive.html">Core.App.Responsive</a></li><li><a href="Core.Config.html">Core.Config</a></li><li><a href="Core.Customer.html">Core.Customer</a></li><li><a href="Core.Customer.Login.html">Core.Customer.Login</a></li><li><a href="Core.Customer.Responsive.html">Core.Customer.Responsive</a></li><li><a href="Core.Customer.TicketMessage.html">Core.Customer.TicketMessage</a></li><li><a href="Core.Customer.TicketProcess.html">Core.Customer.TicketProcess</a></li><li><a href="Core.Customer.TicketSearch.html">Core.Customer.TicketSearch</a></li><li><a href="Core.Customer.TicketZoom.html">Core.Customer.TicketZoom</a></li><li><a href="Core.Data.html">Core.Data</a></li><li><a href="Core.Debug.html">Core.Debug</a></li><li><a href="Core.Exception.html">Core.Exception</a></li><li><a href="Core.Form.html">Core.Form</a></li><li><a href="Core.Form.ErrorTooltips.html">Core.Form.ErrorTooltips</a></li><li><a href="Core.Form.Validate.html">Core.Form.Validate</a></li><li><a href="Core.Init.html">Core.Init</a></li><li><a href="Core.Installer.html">Core.Installer</a></li><li><a href="Core.JSON.html">Core.JSON</a></li><li><a href="Core.Language.html">Core.Language</a></li><li><a href="Core.SystemConfiguration.html">Core.SystemConfiguration</a></li><li><a href="Core.Template.html">Core.Template</a></li><li><a href="Core.TicketProcess.html">Core.TicketProcess</a></li><li><a href="Core.UI.html">Core.UI</a></li><li><a href="Core.UI.Accessibility.html">Core.UI.Accessibility</a></li><li><a href="Core.UI.Accordion.html">Core.UI.Accordion</a></li><li><a href="Core.UI.ActionRow.html">Core.UI.ActionRow</a></li><li><a href="Core.UI.AdvancedChart.html">Core.UI.AdvancedChart</a></li><li><a href="Core.UI.AllocationList.html">Core.UI.AllocationList</a></li><li><a href="Core.UI.Autocomplete.html">Core.UI.Autocomplete</a></li><li><a href="Core.UI.Datepicker.html">Core.UI.Datepicker</a></li><li><a href="Core.UI.Dialog.html">Core.UI.Dialog</a></li><li><a href="Core.UI.DnD.html">Core.UI.DnD</a></li><li><a href="Core.UI.Floater.html">Core.UI.Floater</a></li><li><a href="Core.UI.InputFields.html">Core.UI.InputFields</a></li><li><a href="Core.UI.Notification.html">Core.UI.Notification</a></li><li><a href="Core.UI.Popup.html">Core.UI.Popup</a></li><li><a href="Core.UI.Resizable.html">Core.UI.Resizable</a></li><li><a href="Core.UI.RichTextEditor.html">Core.UI.RichTextEditor</a></li><li><a href="Core.UI.Table.html">Core.UI.Table</a></li><li><a href="Core.UI.Table.Sort.html">Core.UI.Table.Sort</a></li><li><a href="Core.UI.TreeSelection.html">Core.UI.TreeSelection</a></li></ul><h3>Global</h3><ul><li><a href="global.html#EditAppointment">EditAppointment</a></li></ul>
 </nav>
 
 <br clear="both">

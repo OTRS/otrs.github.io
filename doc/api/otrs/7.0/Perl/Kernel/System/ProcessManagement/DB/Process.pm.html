@@ -66,6 +66,11 @@ $(document).ready(function() {
       <li><a href="#ProcessSearch">ProcessSearch()</a></li>
       <li><a href="#ProcessDump">ProcessDump()</a></li>
       <li><a href="#ProcessImport">ProcessImport()</a></li>
+      <li><a href="#ProcessDeploy">ProcessDeploy()</a></li>
+      <li><a href="#ProcessDeploymentListGet">ProcessDeploymentListGet()</a></li>
+      <li><a href="#ProcessDeploymentGetLast">ProcessDeploymentGetLast()</a></li>
+      <li><a href="#ProcessDeploymentSync-Updates-ZZZProcessManagement.pm-to-the-latest-deployment-found-in-the-database">ProcessDeploymentSync() Updates ZZZProcessManagement.pm to the latest deployment found in the database.</a></li>
+      <li><a href="#FileWriteAtomic">_FileWriteAtomic()</a></li>
     </ul>
   </li>
 </ul>
@@ -84,7 +89,7 @@ $(document).ready(function() {
 
 <p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
 
-<pre><code>    my $ProcessObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ProcessManagement::DB::Process&#39;);</code></pre>
+<pre><code>    my $ProcessDBObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ProcessManagement::DB::Process&#39;);</code></pre>
 
 <h2 id="ProcessAdd">ProcessAdd()</h2>
 
@@ -92,7 +97,7 @@ $(document).ready(function() {
 
 <p>returns the id of the created process if success or undef otherwise</p>
 
-<pre><code>    my $ID = $ProcessObject-&gt;ProcessAdd(
+<pre><code>    my $ID = $ProcessDBObject-&gt;ProcessAdd(
         EntityID       =&gt; &#39;P1&#39;             # mandatory, exportable unique identifier
         Name           =&gt; &#39;NameOfProcess&#39;, # mandatory
         StateEntityID  =&gt; &#39;S1&#39;,
@@ -113,7 +118,7 @@ $(document).ready(function() {
 
 <p>returns 1 if success or undef otherwise</p>
 
-<pre><code>    my $Success = $ProcessObject-&gt;ProcessDelete(
+<pre><code>    my $Success = $ProcessDBObject-&gt;ProcessDelete(
         ID      =&gt; 123,
         UserID  =&gt; 123,
     );</code></pre>
@@ -122,21 +127,21 @@ $(document).ready(function() {
 
 <p>get Process attributes</p>
 
-<pre><code>    my $Process = $ProcessObject-&gt;ProcessGet(
+<pre><code>    my $Process = $ProcessDBObject-&gt;ProcessGet(
         ID              =&gt; 123,          # ID or EntityID is needed
         EntityID        =&gt; &#39;P1&#39;,
         ActivityNames   =&gt; 1,            # default 0, 1 || 0, if 0 returns an Activities array
                                          #     with the activity entity IDs, if 1 returns an
                                          #     Activities hash with the activity entity IDs as
                                          #     keys and Activity Names as values
-        TransitionNames =&gt; 1,            # default 0, 1 || 0, if 0 returns an Transitions array
-                                         #     with the transition entity IDs, if 1 returns an
-                                         #     Transitions hash with the transition entity IDs as
-                                         #     keys and Transition Names as values
-        TransitionActionNames =&gt; 1,      # default 0, 1 || 0, if 0 returns an TransitionActions array
-                                         #     with the TransitionAction entity IDs, if 1 returns an
-                                         #     TransitionAction hash with the TransitionAction entity IDs as
-                                         #     keys and TransitionAction Names as values
+        SequenceFlowNames =&gt; 1,          # default 0, 1 || 0, if 0 returns an Sequence Flows array
+                                         #     with the sequence flow entity IDs, if 1 returns an
+                                         #     SequenceFlows hash with the sequence flow entity IDs as
+                                         #     keys and SequenceFlow Names as values
+        SequenceFlowActionNames =&gt; 1,    # default 0, 1 || 0, if 0 returns an SequenceFlowActions array
+                                         #     with the SequenceFlowAction entity IDs, if 1 returns an
+                                         #     SequenceFlowAction hash with the SequenceFlowAction entity IDs as
+                                         #     keys and SequenceFlowAction Names as values
         UserID          =&gt; 123,          # mandatory
     );</code></pre>
 
@@ -169,15 +174,15 @@ $(document).ready(function() {
             &#39;A2&#39; =&gt; &#39;Activity2&#39;,
             &#39;A3&#39; =&gt; &#39;Activity3&#39;,
         };
-        Transitions   =&gt; {
-            &#39;T1&#39; =&gt; &#39;Transition1&#39;,
-            &#39;T2&#39; =&gt; &#39;Transition2&#39;,
-            &#39;T3&#39; =&gt; &#39;Transition3&#39;,
+        SequenceFlows   =&gt; {
+            &#39;T1&#39; =&gt; &#39;SequenceFlow1&#39;,
+            &#39;T2&#39; =&gt; &#39;SequenceFlow2&#39;,
+            &#39;T3&#39; =&gt; &#39;SequenceFlow3&#39;,
         };
-        TransitionActions =&gt; {
-            &#39;TA1&#39; =&gt; &#39;TransitionAction1&#39;,
-            &#39;TA2&#39; =&gt; &#39;TransitionAction2&#39;,
-            &#39;TA3&#39; =&gt; &#39;TransitionAction3&#39;,
+        SequenceFlowActions =&gt; {
+            &#39;TA1&#39; =&gt; &#39;SequenceFlowAction1&#39;,
+            &#39;TA2&#39; =&gt; &#39;SequenceFlowAction2&#39;,
+            &#39;TA3&#39; =&gt; &#39;SequenceFlowAction3&#39;,
         };
         CreateTime =&gt; &#39;2012-07-04 15:08:00&#39;,
         ChangeTime =&gt; &#39;2012-07-04 15:08:00&#39;,
@@ -189,7 +194,7 @@ $(document).ready(function() {
 
 <p>returns 1 if success or undef otherwise</p>
 
-<pre><code>    my $Success = $ProcessObject-&gt;ProcessUpdate(
+<pre><code>    my $Success = $ProcessDBObject-&gt;ProcessUpdate(
         ID            =&gt; 123,             # mandatory
         EntityID      =&gt; &#39;P1&#39;             # mandatory, exportable unique identifier
         Name          =&gt; &#39;NameOfProcess&#39;, # mandatory
@@ -205,7 +210,7 @@ $(document).ready(function() {
 
 <p>get a Process list</p>
 
-<pre><code>    my $List = $ProcessObject-&gt;ProcessList(
+<pre><code>    my $List = $ProcessDBObject-&gt;ProcessList(
         UseEntities     =&gt; 0,                   # default 0, 1 || 0. if 0 the return hash keys are
                                                 #    the process IDs otherwise keys are the
                                                 #    process entity IDs
@@ -230,7 +235,7 @@ $(document).ready(function() {
 
 <p>get a Process list with all process details</p>
 
-<pre><code>    my $List = $ProcessObject-&gt;ProcessListGet(
+<pre><code>    my $List = $ProcessDBObject-&gt;ProcessListGet(
         UserID      =&gt; 1,
     );</code></pre>
 
@@ -267,7 +272,7 @@ $(document).ready(function() {
 
 <p>search processes by process name</p>
 
-<pre><code>    my $ProcessEntityIDs = $ProcessObject-&gt;ProcessSearch(
+<pre><code>    my $ProcessEntityIDs = $ProcessDBObject-&gt;ProcessSearch(
         ProcessName =&gt; &#39;SomeText&#39;,       # e. g. &quot;SomeText*&quot;, &quot;Some*ext&quot; or [&#39;*SomeTest1*&#39;, &#39;*SomeTest2*&#39;]
     );
 
@@ -277,11 +282,10 @@ $(document).ready(function() {
 
 <h2 id="ProcessDump">ProcessDump()</h2>
 
-<p>gets a complete processes information dump from the DB including: Process State, Activities, ActivityDialogs, Transitions and TransitionActions</p>
+<p>gets a complete processes information dump from the DB including: Process State, Activities, ActivityDialogs, SequenceFlows and SequenceFlowActions</p>
 
-<pre><code>    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
-        ResultType  =&gt; &#39;SCALAR&#39;                     # &#39;SCALAR&#39; || &#39;HASH&#39; || &#39;FILE&#39;
-        Location    =&gt; &#39;/opt/otrs/var/myfile.txt&#39;   # mandatory for ResultType = &#39;FILE&#39;
+<pre><code>    my $ProcessDump = $ProcessDBObject-&gt;ProcessDump(
+        ResultType  =&gt; &#39;SCALAR&#39;                     # &#39;SCALAR&#39; || &#39;HASH&#39;
         UserID      =&gt; 1,
     );</code></pre>
 
@@ -354,9 +358,9 @@ $(document).ready(function() {
             #...
         };
 
-        $Self-&gt;{&#39;Process::Transition&#39;} = {
+        $Self-&gt;{&#39;Process::SequenceFlow&#39;} = {
           &#39;T1&#39; =&gt; {
-            &#39;Name&#39; =&gt; &#39;Transition 1&#39;
+            &#39;Name&#39; =&gt; &#39;SequenceFlow 1&#39;
             &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
             &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
             &#39;Condition&#39; =&gt; {
@@ -380,7 +384,7 @@ $(document).ready(function() {
             &#39;Name&#39; =&gt; &#39;Queue Move&#39;,
             &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
             &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
-            &#39;Module&#39; =&gt; &#39;Kernel::System::Process::Transition::Action::QueueMove&#39;,
+            &#39;Module&#39; =&gt; &#39;Kernel::System::Process::SequenceFlow::Action::QueueMove&#39;,
             &#39;Config&#39; =&gt; {
               &#39;NewOwner&#39; =&gt; &#39;root@localhost&#39;,
               &#39;TargetQueue&#39; =&gt; &#39;Raw&#39;,
@@ -390,7 +394,7 @@ $(document).ready(function() {
         };
      &#39;;
 
-    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
+    my $ProcessDump = $ProcessDBObject-&gt;ProcessDump(
         ResultType  =&gt; &#39;HASH&#39;                       # &#39;SCALAR&#39; || &#39;HASH&#39; || &#39;FILE&#39;
         Location    =&gt; &#39;/opt/otrs/var/myfile.txt&#39;   # mandatory for ResultType = &#39;FILE&#39;
         UserID      =&gt; 1,
@@ -465,9 +469,9 @@ $(document).ready(function() {
             #...
         };
 
-        Transition =&gt; {
+        SequenceFlow =&gt; {
           &#39;T1&#39; =&gt; {
-            &#39;Name&#39; =&gt; &#39;Transition 1&#39;
+            &#39;Name&#39; =&gt; &#39;SequenceFlow 1&#39;
             &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
             &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
             &#39;Condition&#39; =&gt; {
@@ -486,12 +490,12 @@ $(document).ready(function() {
           # ...
         };
 
-        TransitionAction =&gt; {
+        SequenceFlowAction =&gt; {
           &#39;TA1&#39; =&gt; {
             &#39;Name&#39; =&gt; &#39;Queue Move&#39;,
             &#39;CreateTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
             &#39;ChangeTime&#39; =&gt; &#39;2012-07-21 08:11:33&#39;,
-            &#39;Module&#39; =&gt; &#39;Kernel::System::Process::Transition::Action::QueueMove&#39;,
+            &#39;Module&#39; =&gt; &#39;Kernel::System::Process::SequenceFlow::Action::QueueMove&#39;,
             &#39;Config&#39; =&gt; {
               &#39;NewOwner&#39; =&gt; &#39;root@localhost&#39;,
               &#39;TargetQueue&#39; =&gt; &#39;Raw&#39;,
@@ -499,21 +503,13 @@ $(document).ready(function() {
           },
           # ...
         };
-    }
-
-    my $ProcessDump = $ProcessObject-&gt;ProcessDump(
-        ResultType  =&gt; &#39;Location&#39;                     # &#39;SCALAR&#39; || &#39;HASH&#39; || &#39;FILE&#39;
-        Location    =&gt; &#39;/opt/otrs/var/myfile.txt&#39;     # mandatory for ResultType = &#39;FILE&#39;
-        UserID      =&gt; 1,
-    );</code></pre>
-
-<p>Returns: $ProcessDump = &#39;/opt/otrs/var/myfile.txt&#39;; # or undef if can&#39;t write the file</p>
+    }</code></pre>
 
 <h2 id="ProcessImport">ProcessImport()</h2>
 
 <p>import a process YAML file/content</p>
 
-<pre><code>    my %ProcessImport = $ProcessObject-&gt;ProcessImport(
+<pre><code>    my %ProcessImport = $ProcessDBObject-&gt;ProcessImport(
         Content                   =&gt; $YAMLContent, # mandatory, YAML format
         OverwriteExistingEntities =&gt; 0,            # 0 || 1
         UserID                    =&gt; 1,            # mandatory
@@ -525,6 +521,76 @@ $(document).ready(function() {
         Message =&gt; &#39;The Message to show.&#39;, # error or success message
         Comment =&gt; &#39;Any comment&#39;,          # optional
         Success =&gt; 1,                      # 1 if success or undef otherwise
+    );</code></pre>
+
+<h2 id="ProcessDeploy">ProcessDeploy()</h2>
+
+<p>Deploys Processes from DB to a perl file and stores deployment information back into the DB.</p>
+
+<pre><code>    my $DeploymentID = $ProcessDBObject-&gt;ProcessDeploy(
+        UserID =&gt; 123,
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $DeploymentID = 123;        # or false in case of an error</code></pre>
+
+<h2 id="ProcessDeploymentListGet">ProcessDeploymentListGet()</h2>
+
+<p>Get Process deployment list with complete data.</p>
+
+<pre><code>    my @List = $ProcessDBObject-&gt;ProcessDeploymentListGet();</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    @List = (
+        {
+            DeploymentID       =&gt; 123,
+            DeploymentUUID     =&gt; 14906327941360ed8455f125d0450277,
+            EffectiveValueStrg =&gt; $ProcesEffectiveValues,      # String with the value of all Process,
+                                                            #   as seen in the Perl cache file.
+            CreateTime         =&gt; &quot;2016-05-29 11:04:04&quot;,
+            CreateBy           =&gt; 123,
+        },
+        {
+            DeploymentID       =&gt; 456,
+            DeploymentUUID     =&gt; 14906327941360ed8455f125d0450288,
+            EffectiveValueStrg =&gt; $ProcesEffectiveValues2,     # String with the value of all Process,
+                                                            #   as seen in the Perl cache file.
+            CreateTime         =&gt; &quot;2016-05-29 12:00:01&quot;,
+            CreateBy           =&gt; 123,
+        },
+        # ...
+    );</code></pre>
+
+<h2 id="ProcessDeploymentGetLast">ProcessDeploymentGetLast()</h2>
+
+<p>Get last last ACL deployment.</p>
+
+<pre><code>    my %Deployment = $ProcessDBObject-&gt;ProcessDeploymentGetLast();</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    %Deployment = (
+        DeploymentID       =&gt; 123,
+        DeploymentUUID     =&gt; 14906327941360ed8455f125d0450277,
+        Comments           =&gt; &#39;Some Comments&#39;,
+        EffectiveValueStrg =&gt; $SettingEffectiveValues,
+        CreateTime         =&gt; &quot;2016-05-29 11:04:04&quot;,
+        CreateBy           =&gt; 123,
+    );</code></pre>
+
+<h2 id="ProcessDeploymentSync-Updates-ZZZProcessManagement.pm-to-the-latest-deployment-found-in-the-database">ProcessDeploymentSync() Updates <code>ZZZProcessManagement.pm</code> to the latest deployment found in the database.</h2>
+
+<pre><code>    my $Success = $ProcessDBObject-&gt;ProcessDeploymentSync();</code></pre>
+
+<h2 id="FileWriteAtomic">_FileWriteAtomic()</h2>
+
+<p>Writes a file in an atomic operation. This is achieved by creating a temporary file, filling and renaming it. This avoids inconsistent states when the file is updated.</p>
+
+<pre><code>    my $Success = $ProcessDBObject-&gt;_FileWriteAtomic(
+        Filename =&gt; &quot;$Self-&gt;{Home}/Kernel/Config/Files/ZZZProcessManagement.pm&quot;,
+        Content  =&gt; \$NewContent,
     );</code></pre>
 
 </div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>

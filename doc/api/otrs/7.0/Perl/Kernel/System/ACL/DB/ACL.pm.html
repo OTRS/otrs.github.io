@@ -67,13 +67,17 @@ $(document).ready(function() {
       <li><a href="#ACLsNeedSyncReset">ACLsNeedSyncReset()</a></li>
       <li><a href="#ACLDump">ACLDump()</a></li>
       <li><a href="#ACLImport">ACLImport()</a></li>
+      <li><a href="#ACLDeploy">ACLDeploy()</a></li>
+      <li><a href="#ACLDeploymentListGet">ACLDeploymentListGet()</a></li>
+      <li><a href="#ACLDeploymentGetLast">ACLDeploymentGetLast()</a></li>
+      <li><a href="#ACLDeploymentSync-Updates-ZZZACL.pm-to-the-latest-deployment-found-in-the-database">ACLDeploymentSync() Updates ZZZACL.pm to the latest deployment found in the database.</a></li>
     </ul>
   </li>
 </ul>
 
 <h1 id="NAME">NAME</h1>
 
-<p>Kernel::System::ACL::DB::ACL.pm</p>
+<p>Kernel::System::ACL::DB::ACL</p>
 
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
 
@@ -85,7 +89,7 @@ $(document).ready(function() {
 
 <p>create a ACL object. Do not use it directly, instead use:</p>
 
-<pre><code>    my $ACLObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ACL::DB::ACL&#39;);</code></pre>
+<pre><code>    my $ACLDBObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::ACL::DB::ACL&#39;);</code></pre>
 
 <h2 id="ACLAdd">ACLAdd()</h2>
 
@@ -93,7 +97,7 @@ $(document).ready(function() {
 
 <p>returns the id of the created ACL if success or undef otherwise</p>
 
-<pre><code>    my $ID = $ACL-&gt;ACLAdd(
+<pre><code>    my $ID = $ACLDBObject-&gt;ACLAdd(
         Name           =&gt; &#39;NameOfACL&#39;           # mandatory
         Comment        =&gt; &#39;Comment&#39;,            # optional
         Description    =&gt; &#39;Description&#39;,        # optional
@@ -114,7 +118,7 @@ $(document).ready(function() {
 
 <p>returns 1 if success or undef otherwise</p>
 
-<pre><code>    my $Success = $ACLObject-&gt;ACLDelete(
+<pre><code>    my $Success = $ACLDBObject-&gt;ACLDelete(
         ID      =&gt; 123,
         UserID  =&gt; 123,
     );</code></pre>
@@ -123,7 +127,7 @@ $(document).ready(function() {
 
 <p>get ACL attributes</p>
 
-<pre><code>    my $ACL = $ACLObject-&gt;ACLGet(
+<pre><code>    my $ACL = $ACLDBObject-&gt;ACLGet(
         ID              =&gt; 123,          # ID or name is needed
         Name            =&gt; &#39;ACL1&#39;,
         UserID          =&gt; 123,          # mandatory
@@ -152,7 +156,7 @@ $(document).ready(function() {
 
 <p>returns 1 if success or undef otherwise</p>
 
-<pre><code>    my $Success = $ACLObject-&gt;ACLUpdate(
+<pre><code>    my $Success = $ACLDBObject-&gt;ACLUpdate(
         ID             =&gt; 123,                  # mandatory
         Name           =&gt; &#39;NameOfACL&#39;,          # mandatory
         Comment        =&gt; &#39;Comment&#39;,            # optional
@@ -168,7 +172,7 @@ $(document).ready(function() {
 
 <p>get an ACL list</p>
 
-<pre><code>    my $List = $ACLObject-&gt;ACLList(
+<pre><code>    my $List = $ACLDBObject-&gt;ACLList(
         ValidIDs        =&gt; [&#39;1&#39;,&#39;2&#39;],           # optional, to filter ACLs that match listed valid IDs
         UserID          =&gt; 1,
     );
@@ -183,7 +187,7 @@ $(document).ready(function() {
 
 <p>get an ACL list with all ACL details</p>
 
-<pre><code>    my $List = $ACLObject-&gt;ACLListGet(
+<pre><code>    my $List = $ACLDBObject-&gt;ACLListGet(
         UserID   =&gt; 1,
         ValidIDs =&gt; [&#39;1&#39;,&#39;2&#39;], # optional, to filter ACLs that match listed valid IDs
     );</code></pre>
@@ -219,7 +223,7 @@ $(document).ready(function() {
 
 <p>Check if there are ACLs that are not yet deployed</p>
 
-<pre><code>    my $SyncCount = $ACLObject-&gt;ACLsNeedSync();
+<pre><code>    my $SyncCount = $ACLDBObject-&gt;ACLsNeedSync();
 
     Returns:
 
@@ -233,19 +237,15 @@ $(document).ready(function() {
 
 <p>gets a complete ACL information dump from the DB</p>
 
-<pre><code>    my $ACLDump = $ACLObject-&gt;ACLDump(
-        ResultType  =&gt; &#39;SCALAR&#39;                     # &#39;SCALAR&#39; || &#39;HASH&#39; || &#39;FILE&#39;
-        Location    =&gt; &#39;/opt/otrs/var/myfile.txt&#39;   # mandatory for ResultType = &#39;FILE&#39;
-        UserID      =&gt; 1,
-    );</code></pre>
+<pre><code>    my $ACLDump = $ACLDBObject-&gt;ACLDump();</code></pre>
 
-<p>Returns: $ACLDump = &#39;/opt/otrs/var/myfile.txt&#39;; # or undef if can&#39;t write the file</p>
+<p>Returns: $ACLDump = &#39; $Self-&gt;{TicketACL}-&gt;{&#39;SomeName&#39;} = { Possible =&gt; {}, PossibleAdd =&gt; {}, PossibleNot =&gt; {}, Properties =&gt; {}, PropertiesDatabase =&gt; {}, StopAfterMatch = &gt; 0, }, # ... &#39;;</p>
 
 <h2 id="ACLImport">ACLImport()</h2>
 
 <p>import an ACL YAML file/content</p>
 
-<pre><code>    my $ACLImport = $ACLObject-&gt;ACLImport(
+<pre><code>    my $ACLImport = $ACLDBObject-&gt;ACLImport(
         Content                   =&gt; $YAMLContent, # mandatory, YAML format
         OverwriteExistingEntities =&gt; 0,            # 0 || 1
         UserID                    =&gt; 1,            # mandatory
@@ -261,6 +261,67 @@ $(document).ready(function() {
         UpdatedACLs =&gt; &#39;ACL3, ACL4&#39;,               # list of ACLs correctly updated
         ACLErrors   =&gt; &#39;ACL5&#39;,                     # list of ACLs that could not be added or updated
     };</code></pre>
+
+<h2 id="ACLDeploy">ACLDeploy()</h2>
+
+<p>Deploys ACLs from DB to a perl file and stores deployment information back into the DB.</p>
+
+<pre><code>    my $DeploymentID = $ACLDBObject-&gt;ACLDeploy(
+        UserID =&gt; 123,
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $DeploymentID = 123;        # or false in case of an error</code></pre>
+
+<h2 id="ACLDeploymentListGet">ACLDeploymentListGet()</h2>
+
+<p>Get ACL deployment list with complete data.</p>
+
+<pre><code>    my @List = $ACLDBObject-&gt;ACLDeploymentListGet();</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    @List = (
+        {
+            DeploymentID       =&gt; 123,
+            DeploymentUUID     =&gt; 14906327941360ed8455f125d0450277,
+            EffectiveValueStrg =&gt; $ACLEffectiveValues,      # String with the value of all ACLs,
+                                                            #   as seen in the Perl cache file.
+            CreateTime         =&gt; &quot;2016-05-29 11:04:04&quot;,
+            CreateBy           =&gt; 123,
+        },
+        {
+            DeploymentID       =&gt; 456,
+            DeploymentUUID     =&gt; 14906327941360ed8455f125d0450288,
+            EffectiveValueStrg =&gt; $ACLEffectiveValues2,     # String with the value of all ACLs,
+                                                            #   as seen in the Perl cache file.
+            CreateTime         =&gt; &quot;2016-05-29 12:00:01&quot;,
+            CreateBy           =&gt; 123,
+        },
+        # ...
+    );</code></pre>
+
+<h2 id="ACLDeploymentGetLast">ACLDeploymentGetLast()</h2>
+
+<p>Get last last ACL deployment.</p>
+
+<pre><code>    my %Deployment = $ACLDBObject-&gt;ACLDeploymentGetLast();</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    %Deployment = (
+        DeploymentID       =&gt; 123,
+        DeploymentUUID     =&gt; 14906327941360ed8455f125d0450277,
+        Comments           =&gt; &#39;Some Comments&#39;,
+        EffectiveValueStrg =&gt; $SettingEffectiveValues,
+        CreateTime         =&gt; &quot;2016-05-29 11:04:04&quot;,
+        CreateBy           =&gt; 123,
+    );</code></pre>
+
+<h2 id="ACLDeploymentSync-Updates-ZZZACL.pm-to-the-latest-deployment-found-in-the-database">ACLDeploymentSync() Updates <code>ZZZACL.pm</code> to the latest deployment found in the database.</h2>
+
+<pre><code>    my $Success = $ACLDBObject-&gt;ACLDeploymentSync();</code></pre>
 
 <p>1;</p>
 
