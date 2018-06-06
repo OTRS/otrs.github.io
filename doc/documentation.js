@@ -258,7 +258,13 @@ $(document).ready(function() {
 <div class="doconline">\
     <div id="content">\
         <div id="marginalia_wrapper">' + CreateNavigation() + '</div>\
-        <div id="doc"></div>\
+        <div id="doc" class="intro">\
+            <div class="github-teaser github-teaser--important">\
+                <p>\
+                    <i class="fa fa-lightbulb-o"></i> <strong>Did you know?</strong> The OTRS Group recently announced important open source strategy changes. Learn more about these changes on the new <a href="https://community.otrs.com/" target="_blank">OTRS community website</a>.\
+                </p>\
+            </div>\
+        </div>\
         <div id="footer">\
             <p class="copyright">\
                 &copy; 2001-2017 <a href="https://www.otrs.com/company/imprint/">OTRS Group</a>\
