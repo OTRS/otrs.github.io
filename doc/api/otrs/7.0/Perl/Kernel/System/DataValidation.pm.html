@@ -67,7 +67,7 @@ $(document).ready(function() {
 
 <h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
-<p>Provides methods to either validate single values or complete data structures against <code>validator</code> classes for different purposes. The <code>validators</code> to be executed on the given values are grouped in an array consisting of either single strings (the <code>validator</code> name to be used) or array elements including the <code>validator</code> name and further arguments if needed. Those modules are executed sequential.</p>
+<p>Provides methods to either validate single values or complete data structures against <code>validator</code> classes for different purposes. The <code>validators</code> to be executed on the given values are grouped in an array consisting of either single strings (the <code>validator</code> name to be used) or hash elements including the <code>validator</code> name and further arguments if needed. Those modules are executed sequential.</p>
 
 <p>In case all requested modules proceed successfully, the related method will return <code>undef</code>, otherwise it will either return an error object based on a single validation (in that case refer to <a href="DataValidation/Error.pm.html">Kernel::System::DataValidation::Error</a> for more information), or it returns an errors object, that contains all collected error objects based on the data structure validation. In that case please refer to <a href="DataValidation/Errors.pm.html">Kernel::System::DataValidation::Errors</a>.</p>
 
@@ -77,13 +77,34 @@ $(document).ready(function() {
 
 <p><code>Validator</code> without arguments:</p>
 
-<pre><code>    &#39;ValidatorName&#39; || [&#39;ValidatorName&#39;]</code></pre>
+<pre><code>    &#39;ValidatorName&#39; || { Validator =&gt; &#39;ValidatorName&#39; }</code></pre>
 
 <p><code>Validator</code> with arguments:</p>
 
-<pre><code>    [ &#39;ValidatorName&#39;, &#39;Argument1&#39;, &#39;Argument2&#39; ... ]</code></pre>
+<pre><code>    {
+        Validator =&gt; &#39;ValidatorName&#39;,
+        Arguments =&gt; &#39;Argument1&#39;
+    }
 
-<p>For more information about needed or optional arguments, please refer to the related <code>validator</code> module.</p>
+    or
+
+    {
+        Validator =&gt; &#39;ValidatorName&#39;,
+        Arguments =&gt; [ &#39;Argument1&#39;, &#39;Argument2&#39; ... ]
+    }
+
+    or
+
+    {
+        Validator =&gt; &#39;ValidatorName&#39;,
+        Arguments =&gt; {
+            Argument1 =&gt; &#39;FirstArgumentValue&#39;,
+            Argument2 =&gt; &#39;SecondArgumentValue&#39;,
+            Argument3 =&gt;  ...
+        }
+    }</code></pre>
+
+<p>The amount and needed type of the arguments relates to the particular <code>validator</code>. For more information about needed or optional arguments and their structure, please refer to the related <code>validator</code> module.</p>
 
 <h2 id="IsInvalidStructure">IsInvalidStructure()</h2>
 
@@ -94,17 +115,17 @@ $(document).ready(function() {
         Fields =&gt; {
             TicketID =&gt; [
                 &#39;Required&#39;,
-                [ &#39;DataType&#39;, &#39;PositiveInt&#39; ],
+                { Validator =&gt; &#39;DataType&#39;, Arguments =&gt; &#39;PositiveInt&#39; },
                 &#39;Ticket::ID&#39;,
             ],
             ArticleID =&gt; [
                 &#39;Required&#39;,
-                [ &#39;DataType&#39;, &#39;PositiveInt&#39; ],
+                { Validator =&gt; &#39;DataType&#39;, Arguments =&gt; &#39;PositiveInt&#39; },
                 &#39;Article::ID&#39;,
             ],
             Body =&gt; [
                 &#39;Required&#39;,
-                [ &#39;Pattern&#39;, &#39;.*&#39; ],
+                { Validator =&gt; &#39;Pattern&#39;, Arguments =&gt; &#39;.*&#39; },
             ],
         },
     }</code></pre>
@@ -125,17 +146,17 @@ $(document).ready(function() {
             Fields =&gt; {
                 TicketID =&gt; [
                     &#39;Required&#39;,
-                    [ &#39;DataType&#39;, &#39;PositiveInt&#39; ],
+                    { Validator =&gt; &#39;DataType&#39;, Arguments =&gt; &#39;PositiveInt&#39; },
                     &#39;Ticket::ID&#39;,
                 ],
                 ArticleID =&gt; [
                     &#39;Required&#39;,
-                    [ &#39;DataType&#39;, &#39;PositiveInt&#39; ],
+                    { Validator =&gt; &#39;DataType&#39;, Arguments =&gt; &#39;PositiveInt&#39; },
                     &#39;Article::ID&#39;,
                 ],
                 Body =&gt; [
                     &#39;Required&#39;,
-                    [ &#39;Pattern&#39;, &#39;.*&#39; ],
+                    { Validator =&gt; &#39;Pattern&#39;, Arguments =&gt; &#39;.*&#39; },
                 ],
             },
         },
@@ -156,7 +177,7 @@ $(document).ready(function() {
 <pre><code>    my $Error = $DataValidationObject-&gt;IsInvalid(
         Validators =&gt; [
             &#39;Required&#39;,
-            [ &#39;DataType&#39;, &#39;PositiveInt&#39; ],
+            { Validator =&gt; &#39;DataType&#39;, Arguments =&gt; &#39;PositiveInt&#39; },
             &#39;Ticket::TicketID&#39;,
         ],
         Value =&gt; 123,
