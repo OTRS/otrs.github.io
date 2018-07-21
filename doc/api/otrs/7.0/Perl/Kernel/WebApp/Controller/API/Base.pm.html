@@ -57,10 +57,16 @@ $(document).ready(function() {
     <ul>
       <li><a href="#Handler">Handler()</a></li>
       <li><a href="#Authenticate1">Authenticate()</a></li>
+      <li><a href="#RenderAuthenticationError">RenderAuthenticationError()</a></li>
       <li><a href="#DataValidate1">DataValidate()</a></li>
+      <li><a href="#RenderDataValidationError">RenderDataValidationError()</a></li>
+      <li><a href="#RenderNotFoundError">RenderNotFoundError()</a></li>
       <li><a href="#Authorize1">Authorize()</a></li>
+      <li><a href="#RenderAuthorizationError">RenderAuthorizationError()</a></li>
       <li><a href="#Action1">Action()</a></li>
-      <li><a href="#RequestPath">RequestPath()</a></li>
+      <li><a href="#CustomErrorResponses">CustomErrorResponses()</a></li>
+      <li><a href="#RenderCustomError">RenderCustomError()</a></li>
+      <li><a href="#APIVersion">APIVersion()</a></li>
     </ul>
   </li>
 </ul>
@@ -71,11 +77,11 @@ $(document).ready(function() {
 
 <h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
-<p>Provides endpoint-level version information based on <a href="Role/HasEndpointVersion.pm.html">Kernel::WebApp::Controller::API::Role::HasEndpointVersion</a>.</p>
+<p>Provides a 4-phase request handling architecture.</p>
 
 <h2 id="Handler">Handler()</h2>
 
-<p>implements a 4-phase request handling. Endpoints can provide their own implementation of these phase methods:</p>
+<p>implements a 4-phase request handling. Endpoints should not override <a href="#Handler">&quot;Handler()&quot;</a>, but can provide their own implementation of these 4 phase methods:</p>
 
 <dl>
 
@@ -99,7 +105,9 @@ $(document).ready(function() {
 
 <p>The <a href="#Handler">&quot;Handler()&quot;</a> method will execute the 4 phases in this order. If any of these create a response (e. g. <code>401 Unauthenticated</code>) or return a false value, the processing is stopped.</p>
 
-<p>The <code>HTTP PATCH</code> method has a special meaning here. It serves as a &quot;pre-flight check&quot; that only executes the first 3 verification phases, but not the final <a href="#Action">&quot;Action()&quot;</a> phase. If the verification was ok, a <code>200 OK</code> response is sent. This can be used for validation purposes on any API endpoint.</p>
+<p>The <code>X-OTRS-API-OnlyValidate</code> header causes a special behaviour here. It serves as a &quot;pre-flight check&quot; that only executes the first 3 verification phases, but not the final <a href="#Action">&quot;Action()&quot;</a> phase. If the verification was ok, a <code>200 OK</code> response is sent. This can be used for validation purposes on any API endpoint.</p>
+
+<p>This methods also sends the API version information in the custom <code>X-OTRS-API-Version</code> <code>HTTP</code> header for all controllers consuming this role.</p>
 
 <h2 id="Authenticate1">Authenticate()</h2>
 
@@ -107,11 +115,45 @@ $(document).ready(function() {
 
 <p>Default implementation is a no-op, can be overridden by endpoints or roles.</p>
 
+<p>Custom handlers should return a <code>401 Unauthorized</code> response in case of failed authentication.</p>
+
+<h2 id="RenderAuthenticationError">RenderAuthenticationError()</h2>
+
+<p>generates a error response for authentication errors, generates a <code>401 Unauthorized</code> response (note that this HTTP status code name is not fully correct, because the error is about authentication).</p>
+
+<pre><code>    return $Self-&gt;RenderAuthenticationError(
+        Data   =&gt; {}                # Optional, payload to send to the client
+    );</code></pre>
+
 <h2 id="DataValidate1">DataValidate()</h2>
 
 <p>checks if the data payload is valid (e. g. a form was correctly filled).</p>
 
 <p>Default implementation is a no-op, can be overridden by endpoints or roles.</p>
+
+<p>Custom handlers should return a <code>422 Unprocessable Entity</code> response in case of failed data validation. For data that is also used in the <a href="#Authorize">&quot;Authorize()&quot;</a> phase, a <code>403 Forbidden</code> response should be returned without detail information about the failed fields (to prevent information disclosure).</p>
+
+<h2 id="RenderDataValidationError">RenderDataValidationError()</h2>
+
+<p>generates a error response for input validation errors. Defaults to <code>422 Unprocessable Entity</code>, but this can be changed.</p>
+
+<pre><code>    return $Self-&gt;RenderDataValidationError(
+        Data   =&gt; {                 # Optional, payload to send to the client
+            Errors =&gt; {             # An &quot;Errors&quot; key with detail information for the failed keys is recommended.
+                Field1 =&gt; {}
+            },
+            OtherInformation =&gt; ...,
+        }
+        Status =&gt; 413,              # Optional, defaults to 422 (example: Payload too large)
+    );</code></pre>
+
+<h2 id="RenderNotFoundError">RenderNotFoundError()</h2>
+
+<p>special case (<code>404 Not Found</code>) for input validation errors.</p>
+
+<pre><code>    return $Self-&gt;RenderNotFoundError(
+        Data   =&gt; {},               # Optional, payload to send to the client
+    );</code></pre>
 
 <h2 id="Authorize1">Authorize()</h2>
 
@@ -119,15 +161,60 @@ $(document).ready(function() {
 
 <p>Default implementation is a no-op, can be overridden by endpoints or roles.</p>
 
+<p>Custom handlers should return a <code>403 Forbidden</code> response in case of failed authorization (e.g., no permission to access to a ticket).</p>
+
+<h2 id="RenderAuthorizationError">RenderAuthorizationError()</h2>
+
+<p>generates a error response for authorization errors, generates a <code>403 Forbidden</code> response.</p>
+
+<pre><code>    return $Self-&gt;RenderAuthorizationError(
+        Data   =&gt; {}                # Optional, payload to send to the client
+    );</code></pre>
+
 <h2 id="Action1">Action()</h2>
 
 <p>after all previous checks succeeded, this method will perform the requested action (e. g. create or fetch a ticket).</p>
 
 <p>Default implementation is a no-op, can be overridden by endpoints or roles.</p>
 
-<h2 id="RequestPath">RequestPath()</h2>
+<h2 id="CustomErrorResponses">CustomErrorResponses()</h2>
 
-<p>this method will just set the url path for this controller.</p>
+<p>provides a hash of custom error responses that the controller can generate. Endpoints should override this like follows:</p>
+
+<pre><code>    sub CustomErrorResponses {
+        return {
+            &#39;MultipleAccountsFound&#39; =&gt; {
+                ErrorMessage =&gt; Translatable(&#39;Multiple accounts with the same email address were found. Please contact the administrator.&#39;),
+            },
+            &#39;EmailSendingFailed&#39; =&gt; {
+                ErrorMessage =&gt; Translatable(&#39;Could not send password recovery instructions via email. Please contact the administrator.&#39;),
+            },
+            &#39;CustomErrorWithParameters&#39; =&gt; {
+                ErrorMessage =&gt; Translatable(&#39;Custom errors can have placeholders: %s.&#39;)
+            },
+        };
+    }</code></pre>
+
+<p>This information is used both to generate the API documentation and also to generate the actual error responses, see <a href="#RenderCustomError">&quot;RenderCustomError()&quot;</a>.</p>
+
+<h2 id="RenderCustomError">RenderCustomError()</h2>
+
+<p>generates a <code>900 Custom Error</code> based on the defined custom errors (see <a href="#CustomErrorResponses">&quot;CustomErrorResponses()&quot;</a>).</p>
+
+<pre><code>    return $Self-&gt;RenderCustomError(
+        ErrorIdentifier =&gt; &#39;EmailSendingFailed&#39;,
+    );
+
+    return $Self-&gt;RenderCustomError(
+        ErrorIdentifier =&gt; &#39;CustomErrorWithParameters&#39;,
+        ErrorMessageParams =&gt; [&#39;Value for the first parameter&#39;, ...]
+    );</code></pre>
+
+<h2 id="APIVersion">APIVersion()</h2>
+
+<p>API endpoints need to implement this method method to return a version number. This version number should be incremented on changes in the endpoints input or output data.</p>
+
+<pre><code>    sub APIVersion { return 1.0.0 }</code></pre>
 
 </div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
