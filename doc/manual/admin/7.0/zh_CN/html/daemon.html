@@ -25,7 +25,7 @@ $(document).ready(function() {
     });
 });</script>
 <!-- otrs.github.io -->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>OTRS守护进程</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - 系统管理手册"><link rel="up" href="administration.html" title="第 4 章 管理"><link rel="prev" href="genericinterface.html" title="通用接口"><link rel="next" href="customization.html" title="第 5 章 定制"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">OTRS守护进程</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="genericinterface.html">上一页</a> </td><th width="60%" align="center">第 4 章 管理</th><td width="20%" align="right"> <a accesskey="n" href="customization.html">下一页</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="daemon"></a>OTRS守护进程</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="daemon.html#daemon-gui">OTRS守护进程图形界面</a></span></dt><dt><span class="section"><a href="daemon.html#daemon-cli">OTRS守护进程命令行接口</a></span></dt><dd><dl><dt><span class="section"><a href="daemon.html#daemon-cli-main">主守护进程工具</a></span></dt><dt><span class="section"><a href="daemon.html#daemon-cli-other">其它守护进程的工具</a></span></dt></dl></dd></dl></div><p>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>OTRS守护进程</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 7 - Admin Manual"><link rel="up" href="administration.html" title="第 4 章 管理"><link rel="prev" href="genericinterface.html" title="通用接口"><link rel="next" href="customization.html" title="第 5 章 定制"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">OTRS守护进程</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="genericinterface.html">上一页</a> </td><th width="60%" align="center">第 4 章 管理</th><td width="20%" align="right"> <a accesskey="n" href="customization.html">下一页</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="daemon"></a>OTRS守护进程</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="daemon.html#daemon-gui">OTRS守护进程图形界面</a></span></dt><dt><span class="section"><a href="daemon.html#daemon-cli">OTRS守护进程命令行接口</a></span></dt><dd><dl><dt><span class="section"><a href="daemon.html#daemon-cli-main">主守护进程工具</a></span></dt><dt><span class="section"><a href="daemon.html#daemon-cli-other">其它守护进程的工具</a></span></dt></dl></dd></dl></div><p>
         OTRS守护进程是一组计划和执行后台任务（循环任务或事件触发任务）的独立的系统进程。OTRS守护进程是正确系统操作的基础保障。
     </p><p>
         在OTRS之前的版本中（从3.1到4）有另外的进程叫做OTRS调度器，它做了OTRS
@@ -33,7 +33,7 @@ $(document).ready(function() {
     </p><p>
         OTRS守护进程能够同时处理多达10个任务，还能与群集中不同前端服务器的OTRS守护进程进行协同工作。
     </p><p>
-        OTRS守护进程在空闲时包含5个进程：
+        When idle OTRS Daemon consist in six processes:
         </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
                     主守护进程（<code class="filename">bin/otrs.Daemon.pl</code>）
                 </p><p>
@@ -58,6 +58,21 @@ $(document).ready(function() {
                     自动任务管理器守护进程（<code class="filename">Kernel/System/Daemon/DaemonModules/SchedulerGenericAgentTaskManager.pm</code>）
                 </p><p>
                     这个守护进程扫描存储在数据库中的定时自动任务（丢弃所有事件触发的自动任务）。当自动任务运行时间到了时，它将需要的信息发送给任务工作者守护进程以处理任务。
+                </p></li><li class="listitem"><p>
+                    System Configuration sync manager daemon
+(<code class="filename">Kernel/System/Daemon/DaemonModules/SystemConfigurationSyncManager.pm</code>)
+                </p><p>
+                    This daemon verifies that the configuration files
+<code class="filename">Kernel/Config/Files/ZZZAAuto.pm</code>
+<code class="filename">Kernel/Config/Files/ZZZACL.pm</code> and
+<code class="filename">Kernel/Config/Files/ZZZProcessManagement.pm</code> are up to
+date with the deployment information from the database, otherwise the files
+are updated. and signal the main daemon to restart all daemon modules with
+the updated configuration.
+                </p><p>
+                    Additionally if any other .pm file in
+<code class="filename">Kernel/Config/Files/</code> is modified while the daemon is
+running, it will also signal the main daemon to restart all daemon modules.
                 </p></li></ul></div><p>
     </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
             活动进程数取决于一个时间点上OTRS守护进程同时执行的任务数。
@@ -80,11 +95,11 @@ $(document).ready(function() {
         </p><p>
             要禁用这个通知（不推荐），修改或添加通知的组，请在系统配置中编辑<code class="literal">Frontend::NotifyModule###800-Daemon-Check</code>的设置。
         </p><p>
-            </p><div class="figure"><a name="id-1.6.13.12.5.1"></a><p class="title"><b>图 4.130. 守护进程通知</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/adminarea/daemon-notify.png" alt="守护进程通知"></div></div></div></div><p><br class="figure-break">
+            </p><div class="figure"><a name="id-1.6.13.12.5.1"></a><p class="title"><b>图 4.138. 守护进程通知</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/adminarea/daemon-notify.png" alt="守护进程通知"></div></div></div></div><p><br class="figure-break">
         </p><p>
             点击这个通知系统会显示一个重叠窗口来解释启动OTRS守护进程的步骤。
         </p><p>
-            </p><div class="figure"><a name="id-1.6.13.12.7.1"></a><p class="title"><b>图 4.131. 启动OTRS守护进程</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/adminarea/daemon-start.png" alt="启动OTRS守护进程"></div></div></div></div><p><br class="figure-break">
+            </p><div class="figure"><a name="id-1.6.13.12.7.1"></a><p class="title"><b>图 4.139. 启动OTRS守护进程</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/adminarea/daemon-start.png" alt="启动OTRS守护进程"></div></div></div></div><p><br class="figure-break">
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="daemon-cli"></a>OTRS守护进程命令行接口</h3></div></div></div><p>
             OTRS守护进程命令行工具能让你控制主守护进程（启动或停止）或查询它的状态。还有获取其它四个子进程的详细信息的工具。
         </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="daemon-cli-main"></a>主守护进程工具</h4></div></div></div><p>
