@@ -130,7 +130,7 @@ $(document).ready(function() {
                 {
                     Version:  '7.0',
                     HTMLPath: '7.0',
-                    Types:    ['Perl', 'JavaScript'],
+                    Types:    ['Perl', 'JavaScript', 'REST'],
                     Name:     'OTRS git (development)'
                 },
                 {
@@ -223,7 +223,14 @@ $(document).ready(function() {
                     Navigation += '<li id="' + ID + '"><a href="#">' + Version.Name + '</a><ul class="Hidden">';
                     $.each(Version.Types, function(){
                         var Type = this;
-                        Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type + '/index.html">' + Type + '</a></li>';
+                        Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type;
+                        if (Type === 'REST') {
+                            Navigation += '/otrs.html" target="_blank">'
+                        }
+                        else {
+                            Navigation += '/index.html">'
+                        }
+                        Navigation += Type + '</a></li>';
                     });
                     Navigation += '</ul></li>';
                 });
