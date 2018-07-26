@@ -55,6 +55,8 @@ sub FindHTMLFiles {
     my $Wanted = sub {
         return if (!-f $File::Find::name);
         return if (substr($File::Find::name, -5) ne '.html');
+        # Don't modify the REST API documentation at this point.
+        return if ($File::Find::name =~ m{/REST/});
         push @HTMLFiles, $File::Find::name;
     };
     File::Find::find($Wanted, $RealBin);
