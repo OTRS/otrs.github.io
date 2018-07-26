@@ -1,0 +1,1797 @@
+#%RAML 1.0
+title: OTRS
+version: 7.0.x git
+protocols: [ HTTP, HTTPS ]
+mediaType: application/json
+baseUri: http://localhost:3000
+description: |
+    OTRS is one of the most flexible web-based ticketing systems used for Customer Service, Help Desk,
+    IT Service Management. With a fast implementation and easy customization to your needs it helps you
+    reducing costs and increasing the efficiency and transparency of your business communication.
+securitySchemes:
+    CustomerAccessToken:
+        description: |
+            JSON Web Token (RFC 7519) based customer authentication via header or cookie.
+        type: x-custom
+        describedBy:
+            headers:
+                Authentication:
+                    description: |
+                        Used to send the JSON Web Token. Alternatively, you can send an 'AuthenticationCustomer' cookie header value that contains the token.
+                    type: string
+                    required: false
+                    example: "Bearer [token]"
+                Cookie:
+                    description: |
+                        Use this to send the token in browser based contexts where custom HTTP headers cannot be set. Cookie authentication is only supported by some endpoints that cannot operate with the normal authentication header.
+                    type: string
+                    required: false
+                    example: "Authentication=[token]"
+                X-OTRS-API-FakeCustomerLogin:
+                    description: 'Fake customer authentication (works on development server only!)'
+                    type: string
+                    required: false
+                    example: "testuser_login"
+            responses:
+                401:
+                    description: |
+                        Bad token.
+                403:
+                    description: |
+                        Access denied.
+/api/customer: 
+    /account/recover: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        EmailAddress: 
+                            required: true
+            description: Request password recovery for a customer account.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: 
+                    description: Password recovery instructions were sent via email.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"EmailSendingFailed","ErrorMessage":"Could not send password recovery instructions via email. Please contact the administrator."},{"ErrorIdentifier":"MultipleAccountsFound","ErrorMessage":"Multiple accounts with the same email address were found. Please contact the administrator."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /account/register: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        EmailAddress: 
+                            required: true
+                        FirstName: 
+                            required: true
+                        LastName: 
+                            required: true
+            description: Register a new customer user account.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"UserLogin":"customer@test.com"}
+                    description: Register a new customer user account.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"AddingCustomerFailed","ErrorMessage":"Could not add new customer user."},{"ErrorMessage":"This e-mail address already exists. Please log in or reset your password.","ErrorIdentifier":"EmailAddressAlreadyExists"},{"ErrorMessage":"This email address is not allowed to register. Please contact support staff.","ErrorIdentifier":"EmailAddressBlacklisted"},{"ErrorMessage":"Could not send email with new customer user account information.","ErrorIdentifier":"EmailSendingFailed"}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /account/reset: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        Token: 
+                            required: true
+            description: Reset password for a customer account.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: 
+                    description: Password was successfully reset and sent to the account email address.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"EmailSendingFailed","ErrorMessage":"Could not send new password via email. Please contact the administrator."},{"ErrorIdentifier":"PasswordResetFailed","ErrorMessage":"Reset password was unsuccessful. Please contact the administrator."},{"ErrorMessage":"Supplied password reset token is invalid. Please check your link.","ErrorIdentifier":"PasswordResetTokenInvalid"}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /auth/check: 
+        get: 
+            description: Checks if authentication token is valid.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Authentication token is valid.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                401: 
+                    description: Authentication token is invalid.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /auth/cookie: 
+        get: 
+            description: Some endpoints cannot be accessed via the usual HTTP Authorize header, for example the fetching of inline images. Only for these, we use cookies. This endpoint is used to generate an httpOnly cookie with the token information in case the user does have a valid token. Otherwise, the cookie will be deleted.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: 
+                    description: Success response, will create or clear the access token cookie.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /auth/login: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        Password: 
+                            required: true
+                        TwoFactorToken: 
+                            required: false
+                        Username: 
+                            required: true
+            description: Authenticate against the OTRS API, creates an access token.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Token":"eyJhbGciOiJIUzI1NiJeyJhdWQiOiJjdXN0b21lc"}
+                    description: Return access token after successful login.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"CouldNotGenerateToken","ErrorMessage":"The system was unable to generate the token."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /auth/logout: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        Token: 
+                            required: false
+            description: Logout from the OTRS API, delete the token.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Logged out successfully.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /personal-preferences: 
+        post: 
+            description: Save personal preferences of the currently logged in customer user.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that the data was successfully saved
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Password":{"Message":"Password must have at least %d character(s).","Data":["8"]}}}
+                    description: Indicates that was some problem while validating the data
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"CouldNotSaveUserPreference","ErrorMessage":"The system was unable to save the user preference setting."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /self: 
+        get: 
+            description: Get related data of the currently logged in customer user.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"UserLastLogin":"1523019398","UserRefreshTime":"0","UserFirstname":"Theo","UserCity":"","UserMailString":"\"Theo Test\" <theo@example.com>","UserFullname":"Theo Test","CustomerCompanyValidID":null,"UserFax":"","UserPhone":"","UserMobile":"","UserLoginFailed":"0","UserComment":"","MultipleArticlesView":"0","TicketListSortBy":"Created","UserAvatar":"image content...","ChangeTime":"2018-02-23 08:28:32","UserLastLoginTimestamp":"2018-04-06 12:56:38","UserStreet":"","UserShowTickets":"25","TicketListTicketsPerPage":"10","ChangeBy":"1","TicketListOrderBy":"Down","UserLogin":"theo","UserCountry":"","Source":"CustomerUser","UserEmail":"theo@example.com","CreateBy":"1","UserCustomerID":"example.com","UserTitle":"","UserLastname":"Test","CreateTime":"2018-02-23 08:28:32","UserZip":"","UserID":"theo","ValidID":"1"}
+                    description: Return the customer user related data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /ticket: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        Body: 
+                            required: true
+                        PriorityID: 
+                            example: 1234
+                            required: false
+                        QueueID: 
+                            example: 1234
+                            required: false
+                        SLAID: 
+                            example: 1234
+                            required: false
+                        ServiceID: 
+                            example: 1234
+                            required: false
+                        Title: 
+                            required: true
+                        TypeID: 
+                            example: 1234
+                            required: false
+            description: Create a new ticket.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"NextScreenAfterNewTicket":"TicketOverview","TicketNumber":"2018061740123"}
+                    description: Created the ticket successfully.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorMessage":"The system was unable to create the article.","ErrorIdentifier":"CouldNotCreateArticle"},{"ErrorIdentifier":"CouldNotCreateTicket","ErrorMessage":"The system was unable to create the ticket."},{"ErrorIdentifier":"CouldNotSetDynamicField","ErrorMessage":"The system was unable to set a dynamic field value."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /ticket/count: 
+        get: 
+            description: Get ticket count.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Return the ticket count.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                404: 
+                    description: Company tickets requested, but company tickets are disabled.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /ticket/id/{TicketID}: 
+        get: 
+            description: Returns the information about a ticket giving its ID.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that data was successfully returned.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorMessage":"The system was unable to load the articles.","ErrorIdentifier":"ArticleLoadingFailed"}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        uriParameters: 
+            TicketID: 
+                example: 1234
+                required: true
+    /ticket/list: 
+        get: 
+            description: Get a list of tickets.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Return the ticket list.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                404: 
+                    description: Company tickets requested, but company tickets are disabled.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /ticket/number/{TicketNumber}: 
+        get: 
+            description: Returns the information about a ticket giving its number.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that data was successfully returned.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"ArticleLoadingFailed","ErrorMessage":"The system was unable to load the articles."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        uriParameters: 
+            TicketNumber: 
+                example: 2018081154000045
+                required: true
+    /ticket/{TicketID}/article: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        Body: 
+                            required: true
+                        FormID: 
+                            required: false
+                        Subject: 
+                            required: true
+            description: Creates the new article for the given ticket
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"ArticleID":123,"NextScreenAfterFollowUp":"TicketOverview"}
+                    description: Indicates that the article was successfully create
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                403: 
+                    body: 
+                        application/json: 
+                            example: {"Error":"Can't reopen ticket, not possible in this queue!"}
+                    description: Indicates that it's not possible to reopen the given ticket or the user hasn't access to the the ticket.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"CouldNotCreateArticle","ErrorMessage":"The system was unable to create the article."},{"ErrorMessage":"The system was unable to set a dynamic field value.","ErrorIdentifier":"CouldNotSetDynamicField"}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        uriParameters: 
+            TicketID: 
+                example: 1234
+                required: true
+    /ticket/{TicketID}/article/{ArticleID}: 
+        get: 
+            body: 
+                application/json: 
+                    properties: 
+                        Avatar: 
+                            required: false
+                        DynamicFields: 
+                            required: false
+            description: Returns the information about an article.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that data was successfully returned.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"ArticleLoadingFailed","ErrorMessage":"The system was unable to load the articles."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        uriParameters: 
+            ArticleID: 
+                example: 1234
+                required: true
+            TicketID: 
+                example: 1234
+                required: true
+    /ticket/{TicketID}/article/{ArticleID}/attachment/{AttachmentID}: 
+        get: 
+            description: Returns the attachment content for the given ticket-article.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that the attachment was successfully returned.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                403: 
+                    description: Indicates that the access to the attachment is denied (No access to the ticket or the article is not visible).
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                404: 
+                    description: Indicates that the attachment was not found.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        uriParameters: 
+            ArticleID: 
+                example: 1234
+                required: true
+            AttachmentID: 
+                required: true
+            TicketID: 
+                example: 1234
+                required: true
+    /ticket/{TicketID}/article/{ArticleID}/attachment/{AttachmentID}/{Download}: 
+        get: 
+            description: Returns the attachment content for the given ticket-article.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that the attachment was successfully returned.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                403: 
+                    description: Indicates that the access to the attachment is denied (No access to the ticket or the article is not visible).
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                404: 
+                    description: Indicates that the attachment was not found.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        uriParameters: 
+            ArticleID: 
+                example: 1234
+                required: true
+            AttachmentID: 
+                required: true
+            TicketID: 
+                example: 1234
+                required: true
+    /upload/{FormID}: 
+        get: 
+            description: Get a file upload from a FormID in the WebUploadCache.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            queryParameters: 
+                ContentID: 
+                    required: true
+            responses: 
+                200: 
+                    body: 
+                        application/octet-stream: 
+                            example: Some file content
+                    description: Returning the related attachment.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        post: 
+            description: Add a file upload to a FormID in the WebUploadCache.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            queryParameters: 
+                Upload: 
+                    required: false
+                upload: 
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"uploaded":1,"FileID":1,"url":"/api/customer/upload/bbcbda800-31f3-11e8-a39e-6ba2f50ba514%40localhost"}
+                    description: Attachment successfully saved.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                413: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Upload":{"Message":"Size limit exceeded!"}}}
+                    description: The attachment is too big to be uploaded.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Upload":{"Message":"Invalid upload or UploadFile!"}}}
+                    description: Invalid upload or UploadFile!
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorMessage":"The system was unable to add the attachment in the upload cache.","ErrorIdentifier":"CouldNotAddFile"}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        uriParameters: 
+            FormID: 
+                required: true
+    /upload/{FormID}/{FileID}: 
+        delete: 
+            description: Delete a file upload from a FormID in the WebUploadCache.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Deleted the attachment successfully.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                404: 
+                    description: Attachment not found.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"CouldNotDeleteFile","ErrorMessage":"The system was unable to delete the attachment from the upload cache."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        uriParameters: 
+            FileID: 
+                required: true
+            FormID: 
+                required: true
+/api/frontend: 
+    /external/chat/{FromChatID}/messages: 
+        get: 
+            description: Returns a list of chat messages.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that data was successfully returned.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /external/config: 
+        get: 
+            body: 
+                application/json: 
+                    properties: 
+                        Config: 
+                            required: true
+            description: Get whitelisted configuration settings.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"ExternalFrontend::Account::Register":"1","ExternalFrontend::Account::Recover":"1"}
+                    description: Return configuration entries.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /external/custom-page/inline-image: 
+        get: 
+            description: Get custom page inline image.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            queryParameters: 
+                ContentID: 
+                    required: true
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Content":"content"}
+                    description: Get custom page inline image
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /external/custom-page/{Slug}: 
+        get: 
+            description: Get custom page content.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            queryParameters: 
+                Language: 
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Content":"content"}
+                    description: Get custom page content.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                404: 
+                    description: Custom page was not found.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+        uriParameters: 
+            Slug: 
+                required: true
+    /external/documentsearch/section-config: 
+        get: 
+            description: Get current section config for the document search field for authenticated or unauthenticated users.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"FAQ":{"Limit":5},"Ticket":{"Limit":5}}
+                    description: Return document search field section config entries for authenticated or unauthenticated users.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /external/form/account/recover: 
+        post: 
+            description: Get password recovery form schema.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+                X-OTRS-API-ValidateFormData: 
+                    description: Signal that the form data should be validated.
+                    required: false
+            responses: 
+                200: 
+                    description: Returns the form schema.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /external/form/account/register: 
+        post: 
+            description: Get registration form schema.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+                X-OTRS-API-ValidateFormData: 
+                    description: Signal that the form data should be validated.
+                    required: false
+            responses: 
+                200: 
+                    description: Returns the form schema.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /external/form/auth/login: 
+        post: 
+            description: Get login form schema.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+                X-OTRS-API-ValidateFormData: 
+                    description: Signal that the form data should be validated.
+                    required: false
+            responses: 
+                200: 
+                    description: Returns the form schema.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /external/form/personal-preferences/{Category}: 
+        post: 
+            description: Get the personal preferences for the user.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+                X-OTRS-API-ValidateFormData: 
+                    description: Signal that the form data should be validated.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Schema":{"Fields":[{"Description":"Description of the field","Label":"Label"}]}}
+                    description: Returns personal preferences form schema.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"FieldName":{"Data":{"SomeField":1},"Message":"Some error message"}}}
+                    description: Indicates that the given category or some fields are invalid.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /external/form/ticket: 
+        post: 
+            description: Get ticket create form schema.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+                X-OTRS-API-ValidateFormData: 
+                    description: Signal that the form data should be validated.
+                    required: false
+            responses: 
+                200: 
+                    description: Returns form schemata.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /external/form/ticket/{TicketID}/article: 
+        post: 
+            description: Validate/Get the form schema to create a new ticket article.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+                X-OTRS-API-ValidateFormData: 
+                    description: Signal that the form data should be validated.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Schema":{"Fields":[{"Label":"Label","Description":"Description of the field"}]}}
+                    description: .
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /external/menu: 
+        get: 
+            description: Get the navigation config for unauthenticated users or based on customer user permissions.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Bottom":[{"Name":"Knowledge Base","IsPublic":"1","ExternalLink":"","RouteLink":"/knowledge-base","Description":"Knowledge base.","Prio":"100","GroupRo":[],"Group":[],"Target":""}],"Top":[{"Description":"Custom link.","Prio":"100","GroupRo":[],"Group":[],"Target":"","Name":"Custom Link","IsPublic":"1","ExternalLink":"","RouteLink":"/home"}],"Main":[{"Prio":"100","Description":"Knowledge base.","GroupRo":[],"Target":"","Group":[],"Name":"Knowledge Base","ExternalLink":"","IsPublic":"1","RouteLink":"/knowledge-base"},{"Group":[],"Target":"","GroupRo":[],"Description":"This is a private resource.","Prio":"100","RouteLink":"/private-resource","IsPublic":"","ExternalLink":"","Name":"Private Resource"}]}
+                    description: Return the navigation structure.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /external/personal-preferences/categories: 
+        get: 
+            description: Returns the available personal preferences categories.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that data was successfully returned.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /external/ticket/zoom: 
+        get: 
+            description: Returns the configuration settings for the ticket zoom
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that config was successfully returned.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+/api/public: 
+    /documentsearch: 
+        get: 
+            body: 
+                application/json: 
+                    properties: 
+                        ActiveFilters: 
+                            required: false
+                        DocumentSearchType: 
+                            required: false
+                        FilterAggregations: 
+                            required: false
+                        LoadDocumentSearchTypes: 
+                            required: false
+                        SearchQuery: 
+                            required: true
+            description: Returns the document search result for the given search query and additional filters.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: 
+                    description: Result for the normal document search.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+    /documentsearch/simple: 
+        get: 
+            body: 
+                application/json: 
+                    properties: 
+                        SearchQuery: 
+                            required: true
+            description: Returns a simple document search result for the given search query.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: 
+                    description: Simple search result for the given saerch query.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQL: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERR: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
