@@ -223,14 +223,11 @@ $(document).ready(function() {
                     Navigation += '<li id="' + ID + '"><a href="#">' + Version.Name + '</a><ul class="Hidden">';
                     $.each(Version.Types, function(){
                         var Type = this;
-                        Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type;
+                        Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type + '"';
                         if (Type === 'REST') {
-                            Navigation += '/otrs.html" target="_blank">'
+                            Navigation += ' target="_blank"'
                         }
-                        else {
-                            Navigation += '/index.html">'
-                        }
-                        Navigation += Type + '</a></li>';
+                        Navigation += '>' + Type + '</a></li>';
                     });
                     Navigation += '</ul></li>';
                 });
