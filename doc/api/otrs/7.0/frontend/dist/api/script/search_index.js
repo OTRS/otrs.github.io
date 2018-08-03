@@ -840,6 +840,18 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/mixins/diacriticslookup.js",
+    "file/Frontend/Mixins/DiacriticsLookup.js.html",
+    "Frontend/Mixins/DiacriticsLookup.js",
+    "file"
+  ],
+  [
+    "frontend/mixins/routedetection.js",
+    "file/Frontend/Mixins/RouteDetection.js.html",
+    "Frontend/Mixins/RouteDetection.js",
+    "file"
+  ],
+  [
     "frontend/plugins/apiclient/index.js",
     "file/Frontend/Plugins/APIClient/index.js.html",
     "Frontend/Plugins/APIClient/index.js",
@@ -1116,12 +1128,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/apps/customer/auth.js",
-    "file/Frontend/Tests/Apps/Customer/Auth.js.html",
-    "Frontend/Tests/Apps/Customer/Auth.js",
-    "file"
-  ],
-  [
     "frontend/tests/apps/external/components/common/commonarticleteaser.js",
     "file/Frontend/Tests/Apps/External/Components/Common/CommonArticleTeaser.js.html",
     "Frontend/Tests/Apps/External/Components/Common/CommonArticleTeaser.js",
@@ -1137,6 +1143,12 @@ window.esdocSearchIndex = [
     "frontend/tests/apps/external/components/common/commonhero.js",
     "file/Frontend/Tests/Apps/External/Components/Common/CommonHero.js.html",
     "Frontend/Tests/Apps/External/Components/Common/CommonHero.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/external/components/layout/layoutpagesidebarnav.js",
+    "file/Frontend/Tests/Apps/External/Components/Layout/LayoutPageSidebarNav.js.html",
+    "Frontend/Tests/Apps/External/Components/Layout/LayoutPageSidebarNav.js",
     "file"
   ],
   [
