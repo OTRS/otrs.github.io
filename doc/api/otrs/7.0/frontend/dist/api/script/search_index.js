@@ -6,12 +6,6 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
-    "apps/customer/auth~auth",
-    "class/Frontend/Apps/Customer/Auth/index.js~Auth.html",
-    "<span>Auth</span> <span class=\"search-result-import-path\">Apps/Customer/Auth</span>",
-    "class"
-  ],
-  [
     "form/validator/datatype~datatype",
     "class/Frontend/Form/Validator/DataType.js~DataType.html",
     "<span>DataType</span> <span class=\"search-result-import-path\">Form/Validator/DataType</span>",
@@ -57,12 +51,6 @@ window.esdocSearchIndex = [
     "plugins/apiclient~plugin",
     "class/Frontend/Plugins/APIClient/index.js~Plugin.html",
     "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/APIClient</span>",
-    "class"
-  ],
-  [
-    "plugins/componentloader~plugin",
-    "class/Frontend/Plugins/ComponentLoader/index.js~Plugin.html",
-    "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/ComponentLoader</span>",
     "class"
   ],
   [
@@ -114,6 +102,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "apps/external/plugins/routergenerator~routergenerator",
+    "class/Frontend/Apps/External/Plugins/RouterGenerator/index.js~RouterGenerator.html",
+    "<span>RouterGenerator</span> <span class=\"search-result-import-path\">Apps/External/Plugins/RouterGenerator</span>",
+    "class"
+  ],
+  [
     "plugins/store~store",
     "class/Frontend/Plugins/Store/index.js~Store.html",
     "<span>Store</span> <span class=\"search-result-import-path\">Plugins/Store</span>",
@@ -126,15 +120,27 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
-    "apps/customer/auth~auth",
-    "variable/index.html#static-variable-auth",
-    "<span>auth</span> <span class=\"search-result-import-path\">Apps/Customer/Auth</span>",
-    "variable"
-  ],
-  [
     "server/apiclient~client",
     "variable/index.html#static-variable-client",
     "<span>client</span> <span class=\"search-result-import-path\">Server/APIClient</span>",
+    "variable"
+  ],
+  [
+    "apps/external/helpers/communicationchannelregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
+    "variable"
+  ],
+  [
+    "apps/external/helpers/documentsearchtyperegistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeRegistration</span>",
+    "variable"
+  ],
+  [
+    "helpers/dynamicfieldregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/DynamicFieldRegistration</span>",
     "variable"
   ],
   [
@@ -150,9 +156,45 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "apps/external/helpers/communicationchannelregistration~getchannelcomponents",
+    "function/index.html#static-function-getChannelComponents",
+    "<span>getChannelComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/communicationchannelregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/documentsearchtyperegistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeRegistration</span>",
+    "function"
+  ],
+  [
+    "helpers/dynamicfieldregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/DynamicFieldRegistration</span>",
+    "function"
+  ],
+  [
     "helpers/formfieldregistration~getcomponents",
     "function/index.html#static-function-getComponents",
     "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/FormFieldRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/documentsearchtyperegistration~getdocumentsearchtypecomponents",
+    "function/index.html#static-function-getDocumentSearchTypeComponents",
+    "<span>getDocumentSearchTypeComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeRegistration</span>",
+    "function"
+  ],
+  [
+    "helpers/dynamicfieldregistration~getdynamicfieldcomponents",
+    "function/index.html#static-function-getDynamicFieldComponents",
+    "<span>getDynamicFieldComponents</span> <span class=\"search-result-import-path\">Helpers/DynamicFieldRegistration</span>",
     "function"
   ],
   [
@@ -171,6 +213,24 @@ window.esdocSearchIndex = [
     "helpers/formvalidators~getvalidators",
     "function/index.html#static-function-getValidators",
     "<span>getValidators</span> <span class=\"search-result-import-path\">Helpers/FormValidators</span>",
+    "function"
+  ],
+  [
+    "helpers/stylefunctions~lighten",
+    "function/index.html#static-function-lighten",
+    "<span>lighten</span> <span class=\"search-result-import-path\">Helpers/StyleFunctions</span>",
+    "function"
+  ],
+  [
+    "helpers/stylefunctions~lineargradient",
+    "function/index.html#static-function-linearGradient",
+    "<span>linearGradient</span> <span class=\"search-result-import-path\">Helpers/StyleFunctions</span>",
+    "function"
+  ],
+  [
+    "helpers/stylefunctions~lineargradientoverlay",
+    "function/index.html#static-function-linearGradientOverlay",
+    "<span>linearGradientOverlay</span> <span class=\"search-result-import-path\">Helpers/StyleFunctions</span>",
     "function"
   ],
   [
@@ -528,57 +588,21 @@ window.esdocSearchIndex = [
     "external"
   ],
   [
-    "frontend/apps/customer/auth/index.js",
-    "file/Frontend/Apps/Customer/Auth/index.js.html",
-    "Frontend/Apps/Customer/Auth/index.js",
+    "frontend/apps/external/helpers/communicationchannelregistration.js",
+    "file/Frontend/Apps/External/Helpers/CommunicationChannelRegistration.js.html",
+    "Frontend/Apps/External/Helpers/CommunicationChannelRegistration.js",
     "file"
   ],
   [
-    "frontend/apps/customer/auth/index.js~auth#authenticate",
-    "class/Frontend/Apps/Customer/Auth/index.js~Auth.html#instance-method-authenticate",
-    "Frontend/Apps/Customer/Auth/index.js~Auth#authenticate",
-    "method"
-  ],
-  [
-    "frontend/apps/customer/auth/index.js~auth#constructor",
-    "class/Frontend/Apps/Customer/Auth/index.js~Auth.html#instance-constructor-constructor",
-    "Frontend/Apps/Customer/Auth/index.js~Auth#constructor",
-    "method"
-  ],
-  [
-    "frontend/apps/customer/auth/index.js~auth#logout",
-    "class/Frontend/Apps/Customer/Auth/index.js~Auth.html#instance-method-logout",
-    "Frontend/Apps/Customer/Auth/index.js~Auth#logout",
-    "method"
-  ],
-  [
-    "frontend/apps/customer/auth/index.js~auth#unauthorizedrequests",
-    "class/Frontend/Apps/Customer/Auth/index.js~Auth.html#instance-member-unauthorizedRequests",
-    "Frontend/Apps/Customer/Auth/index.js~Auth#unauthorizedRequests",
-    "member"
-  ],
-  [
-    "frontend/apps/customer/components/layout/layoutheader/index.vue.preprocessors/filtered.js",
-    "file/Frontend/Apps/Customer/Components/Layout/LayoutHeader/index.vue.preprocessors/Filtered.js.html",
-    "Frontend/Apps/Customer/Components/Layout/LayoutHeader/index.vue.preprocessors/Filtered.js",
+    "frontend/apps/external/helpers/documentsearchtyperegistration.js",
+    "file/Frontend/Apps/External/Helpers/DocumentSearchTypeRegistration.js.html",
+    "Frontend/Apps/External/Helpers/DocumentSearchTypeRegistration.js",
     "file"
   ],
   [
-    "frontend/apps/customer/plugins/router/index.js",
-    "file/Frontend/Apps/Customer/Plugins/Router/index.js.html",
-    "Frontend/Apps/Customer/Plugins/Router/index.js",
-    "file"
-  ],
-  [
-    "frontend/apps/customer/plugins/store/index.js",
-    "file/Frontend/Apps/Customer/Plugins/Store/index.js.html",
-    "Frontend/Apps/Customer/Plugins/Store/index.js",
-    "file"
-  ],
-  [
-    "frontend/apps/customer/index.js",
-    "file/Frontend/Apps/Customer/index.js.html",
-    "Frontend/Apps/Customer/index.js",
+    "frontend/apps/external/mixins/communicationchannelsbase.js",
+    "file/Frontend/Apps/External/Mixins/CommunicationChannelsBase.js.html",
+    "Frontend/Apps/External/Mixins/CommunicationChannelsBase.js",
     "file"
   ],
   [
@@ -594,10 +618,16 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/apps/external/plugins/store/index.js",
-    "file/Frontend/Apps/External/Plugins/Store/index.js.html",
-    "Frontend/Apps/External/Plugins/Store/index.js",
+    "frontend/apps/external/plugins/routergenerator/index.js",
+    "file/Frontend/Apps/External/Plugins/RouterGenerator/index.js.html",
+    "Frontend/Apps/External/Plugins/RouterGenerator/index.js",
     "file"
+  ],
+  [
+    "frontend/apps/external/plugins/routergenerator/index.js~routergenerator#constructor",
+    "class/Frontend/Apps/External/Plugins/RouterGenerator/index.js~RouterGenerator.html#instance-constructor-constructor",
+    "Frontend/Apps/External/Plugins/RouterGenerator/index.js~RouterGenerator#constructor",
+    "method"
   ],
   [
     "frontend/apps/external/index.js",
@@ -708,9 +738,9 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/helpers/componentloader.js",
-    "file/Frontend/Helpers/ComponentLoader.js.html",
-    "Frontend/Helpers/ComponentLoader.js",
+    "frontend/helpers/dynamicfieldregistration.js",
+    "file/Frontend/Helpers/DynamicFieldRegistration.js.html",
+    "Frontend/Helpers/DynamicFieldRegistration.js",
     "file"
   ],
   [
@@ -723,6 +753,12 @@ window.esdocSearchIndex = [
     "frontend/helpers/formvalidators.js",
     "file/Frontend/Helpers/FormValidators.js.html",
     "Frontend/Helpers/FormValidators.js",
+    "file"
+  ],
+  [
+    "frontend/helpers/stylefunctions.js",
+    "file/Frontend/Helpers/StyleFunctions.js.html",
+    "Frontend/Helpers/StyleFunctions.js",
     "file"
   ],
   [
@@ -861,18 +897,6 @@ window.esdocSearchIndex = [
     "frontend/plugins/apiclient/index.js~plugin.install",
     "class/Frontend/Plugins/APIClient/index.js~Plugin.html#static-method-install",
     "Frontend/Plugins/APIClient/index.js~Plugin.install",
-    "method"
-  ],
-  [
-    "frontend/plugins/componentloader/index.js",
-    "file/Frontend/Plugins/ComponentLoader/index.js.html",
-    "Frontend/Plugins/ComponentLoader/index.js",
-    "file"
-  ],
-  [
-    "frontend/plugins/componentloader/index.js~plugin.install",
-    "class/Frontend/Plugins/ComponentLoader/index.js~Plugin.html#static-method-install",
-    "Frontend/Plugins/ComponentLoader/index.js~Plugin.install",
     "method"
   ],
   [
@@ -1075,13 +1099,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1146,6 +1170,18 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/apps/external/components/common/commonlinklist.js",
+    "file/Frontend/Tests/Apps/External/Components/Common/CommonLinkList.js.html",
+    "Frontend/Tests/Apps/External/Components/Common/CommonLinkList.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/external/components/common/commonteasercard.js",
+    "file/Frontend/Tests/Apps/External/Components/Common/CommonTeaserCard.js.html",
+    "Frontend/Tests/Apps/External/Components/Common/CommonTeaserCard.js",
+    "file"
+  ],
+  [
     "frontend/tests/apps/external/components/layout/layoutpagesidebarnav.js",
     "file/Frontend/Tests/Apps/External/Components/Layout/LayoutPageSidebarNav.js.html",
     "Frontend/Tests/Apps/External/Components/Layout/LayoutPageSidebarNav.js",
@@ -1161,12 +1197,6 @@ window.esdocSearchIndex = [
     "frontend/tests/apps/external/components/layout/notify/notifyglobal.js",
     "file/Frontend/Tests/Apps/External/Components/Layout/Notify/NotifyGlobal.js.html",
     "Frontend/Tests/Apps/External/Components/Layout/Notify/NotifyGlobal.js",
-    "file"
-  ],
-  [
-    "frontend/tests/apps/external/components/search/searchfield.js",
-    "file/Frontend/Tests/Apps/External/Components/Search/SearchField.js.html",
-    "Frontend/Tests/Apps/External/Components/Search/SearchField.js",
     "file"
   ],
   [
@@ -1305,6 +1335,12 @@ window.esdocSearchIndex = [
     "frontend/tests/form/validator/required.js",
     "file/Frontend/Tests/Form/Validator/Required.js.html",
     "Frontend/Tests/Form/Validator/Required.js",
+    "file"
+  ],
+  [
+    "frontend/tests/helpers/stylefunctions.js",
+    "file/Frontend/Tests/Helpers/StyleFunctions.js.html",
+    "Frontend/Tests/Helpers/StyleFunctions.js",
     "file"
   ],
   [
