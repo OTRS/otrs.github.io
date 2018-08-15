@@ -100,12 +100,14 @@ $(document).ready(function() {
       <li><a href="#DeploymentIsLockedByUser">DeploymentIsLockedByUser()</a></li>
       <li><a href="#DeploymentModifiedVersionList">DeploymentModifiedVersionList()</a></li>
       <li><a href="#DeploymentUnlock">DeploymentUnlock()</a></li>
+      <li><a href="#DeploymentListCleanup">DeploymentListCleanup()</a></li>
     </ul>
   </li>
   <li><a href="#PRIVATE-INTERFACE">PRIVATE INTERFACE</a>
     <ul>
       <li><a href="#DeploymentLockGet">_DeploymentLockGet()</a></li>
       <li><a href="#BulkInsert">_BulkInsert()</a></li>
+      <li><a href="#GetUID">_GetUID()</a></li>
     </ul>
   </li>
   <li><a href="#TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</a></li>
@@ -113,7 +115,7 @@ $(document).ready(function() {
 
 <h1 id="NAME">NAME</h1>
 
-<p>Kernel::System::SysConfig - Functions to manage system configuration settings interactions with the database.</p>
+<p>Kernel::System::SysConfig::DB - Functions to manage system configuration settings interactions with the database.</p>
 
 <h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
@@ -409,7 +411,7 @@ $(document).ready(function() {
         UserPreferencesGroup     =&gt; &#39;Some Group&#39;,
         Navigation               =&gt; &#39;ASimple::Path::Structure&#39;,
         Locked                   =&gt; 1, # check for locked settings
-        Category                 =&gt; &#39;OTRSFree&#39;,                         # optional (requires CategoryFiles)
+        Category                 =&gt; &#39;OTRS&#39;,                             # optional (requires CategoryFiles)
         CategoryFiles            =&gt; [&#39;Framework.xml&#39;, &#39;Ticket.xml&#39;, ],  # optional (requires Category)
         NoCache                  =&gt; 0,                                  # (optional) Default 0. If set, system will not generate cache.
     );</code></pre>
@@ -1059,7 +1061,7 @@ $(document).ready(function() {
 
 <p>Check if there are not deployed changes on system configuration.</p>
 
-<pre><code>    my $Result = $SysConfigObject-&gt;ConfigurationIsDirty(
+<pre><code>    my $Result = $SysConfigDBObject-&gt;ConfigurationIsDirty(
         UserID =&gt; 123,      # optional, the user that changes a modified setting
     );</code></pre>
 
@@ -1092,6 +1094,7 @@ $(document).ready(function() {
 
 <pre><code>    my %Deployment = $SysConfigDBObject-&gt;DeploymentGet(
         DeploymentID =&gt; 123,
+        Valid        =&gt; 1,      # optional (this is deprecated and will be removed in next mayor release).
     );</code></pre>
 
 <p>Returns:</p>
@@ -1251,6 +1254,18 @@ $(document).ready(function() {
 
 <pre><code>    $Success = 1;       # or false in case of an error</code></pre>
 
+<h2 id="DeploymentListCleanup">DeploymentListCleanup()</h2>
+
+<p>Removes invalid deployments from the database.</p>
+
+<pre><code>    my $Success = $SysConfigDBObject-&gt;DeploymentListCleanup( );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $Success = 1;       # Returns 1 if all records are valid (or all invalid was removed)
+                        # Returns -1 if there is an invalid deployment that could be in adding process
+                        # Returns false in case of an error</code></pre>
+
 <h1 id="PRIVATE-INTERFACE">PRIVATE INTERFACE</h1>
 
 <h2 id="DeploymentLockGet">_DeploymentLockGet()</h2>
@@ -1290,6 +1305,16 @@ $(document).ready(function() {
             ...
         ],
     );</code></pre>
+
+<h2 id="GetUID">_GetUID()</h2>
+
+<p>Generates a unique identifier.</p>
+
+<pre><code>    my $UID = $TicketNumberObject-&gt;_GetUID();</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    my $UID = 14906327941360ed8455f125d0450277;</code></pre>
 
 <h1 id="TERMS-AND-CONDITIONS">TERMS AND CONDITIONS</h1>
 
