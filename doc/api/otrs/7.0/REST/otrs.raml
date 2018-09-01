@@ -51,7 +51,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"UserAvatar":"image content...","ValidID":"1","UserEmail":"theo@example.com","UserCity":"","UserMobile":"","UserComment":"","UserPhone":"","UserTitle":"","ChangeBy":"1","CustomerCompanyValidID":null,"CreateTime":"2018-02-23 08:28:32","UserLastLoginTimestamp":"2018-04-06 12:56:38","TicketListOrderBy":"Down","CreateBy":"1","TicketListTicketsPerPage":"10","UserRefreshTime":"0","UserCustomerID":"example.com","UserStreet":"","UserShowTickets":"25","UserFullname":"Theo Test","UserFirstname":"Theo","UserMailString":"\"Theo Test\" <theo@example.com>","UserLastname":"Test","UserLastLogin":"1523019398","UserID":"theo","UserLoginFailed":"0","Source":"CustomerUser","UserCountry":"","UserZip":"","UserLogin":"theo","ChangeTime":"2018-02-23 08:28:32","TicketListSortBy":"Created","UserFax":"","MultipleArticlesView":"0"}
+                            example: {"UserTitle":"","UserMobile":"","UserLoginFailed":"0","ValidID":"1","CreateTime":"2018-02-23 08:28:32","UserPhone":"","UserAvatar":"image content...","UserLastLoginTimestamp":"2018-04-06 12:56:38","Source":"CustomerUser","UserLastLogin":"1523019398","UserRefreshTime":"0","CustomerCompanyValidID":null,"UserCity":"","UserFirstname":"Theo","UserFax":"","UserCountry":"","UserFullname":"Theo Test","UserLogin":"theo","UserLastname":"Test","TicketListTicketsPerPage":"10","UserShowTickets":"25","TicketListOrderBy":"Down","UserEmail":"theo@example.com","CreateBy":"1","MultipleArticlesView":"0","UserComment":"","UserStreet":"","UserID":"theo","UserMailString":"\"Theo Test\" <theo@example.com>","ChangeBy":"1","UserZip":"","ChangeTime":"2018-02-23 08:28:32","TicketListSortBy":"Created","UserCustomerID":"example.com"}
                     description: Return the customer user related data.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -89,7 +89,7 @@ securitySchemes:
                 422: 
                     body: 
                         application/json: 
-                            example: {"Errors":{"Password":{"Message":"Password must have at least %d character(s).","Data":["8"]}}}
+                            example: {"Errors":{"Password":{"Data":["8"],"Message":"Password must have at least %d character(s)."}}}
                     description: Indicates that was some problem while validating the data
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -105,7 +105,7 @@ securitySchemes:
                 900: 
                     body: 
                         application/json: 
-                            example: [{"ErrorIdentifier":"CouldNotSaveUserPreference","ErrorMessage":"The system was unable to save the user preference setting."}]
+                            example: [{"ErrorMessage":"The system was unable to save the user preference setting.","ErrorIdentifier":"CouldNotSaveUserPreference"}]
                     description: Custom error response, see example for a list of possible responses.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -164,7 +164,7 @@ securitySchemes:
                 900: 
                     body: 
                         application/json: 
-                            example: [{"ErrorMessage":"Could not send password recovery instructions via email. Please contact the administrator.","ErrorIdentifier":"EmailSendingFailed"},{"ErrorIdentifier":"MultipleAccountsFound","ErrorMessage":"Multiple accounts with the same email address were found. Please contact the administrator."}]
+                            example: [{"ErrorMessage":"Could not send password recovery instructions via email. Please contact the administrator.","ErrorIdentifier":"EmailSendingFailed"},{"ErrorMessage":"Multiple accounts with the same email address were found. Please contact the administrator.","ErrorIdentifier":"MultipleAccountsFound"}]
                     description: Custom error response, see example for a list of possible responses.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -229,7 +229,7 @@ securitySchemes:
                 900: 
                     body: 
                         application/json: 
-                            example: [{"ErrorIdentifier":"AddingCustomerFailed","ErrorMessage":"Could not add new customer user."},{"ErrorMessage":"This e-mail address already exists. Please log in or reset your password.","ErrorIdentifier":"EmailAddressAlreadyExists"},{"ErrorMessage":"This email address is not allowed to register. Please contact support staff.","ErrorIdentifier":"EmailAddressBlacklisted"},{"ErrorMessage":"Could not send email with new customer user account information.","ErrorIdentifier":"EmailSendingFailed"}]
+                            example: [{"ErrorMessage":"Could not add new customer user.","ErrorIdentifier":"AddingCustomerFailed"},{"ErrorMessage":"This e-mail address already exists. Please log in or reset your password.","ErrorIdentifier":"EmailAddressAlreadyExists"},{"ErrorMessage":"This email address is not allowed to register. Please contact support staff.","ErrorIdentifier":"EmailAddressBlacklisted"},{"ErrorMessage":"Could not send email with new customer user account information.","ErrorIdentifier":"EmailSendingFailed"}]
                     description: Custom error response, see example for a list of possible responses.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -287,7 +287,7 @@ securitySchemes:
                 900: 
                     body: 
                         application/json: 
-                            example: [{"ErrorMessage":"Could not send new password via email. Please contact the administrator.","ErrorIdentifier":"EmailSendingFailed"},{"ErrorIdentifier":"PasswordResetFailed","ErrorMessage":"Reset password was unsuccessful. Please contact the administrator."},{"ErrorIdentifier":"PasswordResetTokenInvalid","ErrorMessage":"Supplied password reset token is invalid. Please check your link."}]
+                            example: [{"ErrorIdentifier":"EmailSendingFailed","ErrorMessage":"Could not send new password via email. Please contact the administrator."},{"ErrorMessage":"Reset password was unsuccessful. Please contact the administrator.","ErrorIdentifier":"PasswordResetFailed"},{"ErrorMessage":"Supplied password reset token is invalid. Please check your link.","ErrorIdentifier":"PasswordResetTokenInvalid"}]
                     description: Custom error response, see example for a list of possible responses.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -463,6 +463,103 @@ securitySchemes:
                             description: Provides endpoint version information.
                             example: 1.0.0
                             required: true
+    /personal-notifications/list: 
+        get: 
+            body: 
+                application/json: 
+                    properties: 
+                        NotificationsPerPage: 
+                            required: false
+                        ObjectType: 
+                            required: false
+                        Page: 
+                            required: false
+                        Seen: 
+                            required: false
+            description: Get personal notifications.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"List":[{"Marker":{"NotificationID":123,"Status":"Unread"},"Content":{"Title":"some title","Description":"some description","UserID":123,"Seen":0,"ObjectType":"Ticket","ObjectID":123,"CreateTime":"2018-08-27 14:24:20","TicketNumber":"123456","ObjectReference":"54321","NotificationID":"68","Body":"some body","Comment":"","UserType":"Customer"}}],"TotalNotifications":1}
+                    description: Returns a list of personal notifications.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /personal-notifications/seen-set: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        Filter: 
+                            required: true
+                        NotificationID: 
+                            required: false
+            description: Set personal notifications as read.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Seen flag was set.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
     /ticket: 
         post: 
             body: 
@@ -528,7 +625,7 @@ securitySchemes:
                 900: 
                     body: 
                         application/json: 
-                            example: [{"ErrorIdentifier":"CouldNotCreateArticle","ErrorMessage":"The system was unable to create the article."},{"ErrorIdentifier":"CouldNotCreateTicket","ErrorMessage":"The system was unable to create the ticket."},{"ErrorMessage":"The system was unable to set a dynamic field value.","ErrorIdentifier":"CouldNotSetDynamicField"}]
+                            example: [{"ErrorMessage":"The system was unable to create the article.","ErrorIdentifier":"CouldNotCreateArticle"},{"ErrorIdentifier":"CouldNotCreateTicket","ErrorMessage":"The system was unable to create the ticket."},{"ErrorMessage":"The system was unable to set a dynamic field value.","ErrorIdentifier":"CouldNotSetDynamicField"}]
                     description: Custom error response, see example for a list of possible responses.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -662,7 +759,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"List":[{"ChangeBy":1,"Owner":"root@localhost","ResponsibleID":1,"Changed":"2018-08-13 07:28:21","TypeID":1,"EscalationResponseTime":0,"ArchiveFlag":"n","UntilTime":0,"Lock":"unlock","EscalationTime":0,"CustomerUserID":"customer-1","SLAID":"","Age":97123,"OwnerID":1,"EscalationUpdateTime":0,"Created":"2018-08-13 07:28:21","DynamicField_Checkbox":{"Value":"","TranslatableValues":1},"Queue":"Misc","PriorityID":3,"EscalationSolutionTime":0,"RealTillTimeNotUsed":0,"ServiceID":"","StateID":1,"State":"new","QueueID":4,"Responsible":"root@localhost","UnlockTimeout":0,"StateType":"new","Priority":"3 normal","LockID":1,"TicketNumber":"2018081354000023","CustomerID":"customer-1","Marker":"Unread","CreateBy":1,"Title":"Ticket #2","Type":"Unclassified","GroupID":1,"TicketID":13}],"TotalTickets":1}
+                            example: {"TotalTickets":1,"List":[{"UnlockTimeout":0,"StateType":"new","EscalationUpdateTime":0,"SLAID":"","Priority":"3 normal","CustomerUserID":"customer-1","Title":"Ticket #2","UntilTime":0,"TicketNumber":"2018081354000023","ResponsibleID":1,"OwnerID":1,"Queue":"Misc","QueueID":4,"TypeID":1,"Owner":"root@localhost","Lock":"unlock","RealTillTimeNotUsed":0,"ServiceID":"","ArchiveFlag":"n","EscalationResponseTime":0,"LockID":1,"CreateBy":1,"EscalationSolutionTime":0,"GroupID":1,"Age":97123,"Changed":"2018-08-13 07:28:21","Responsible":"root@localhost","Type":"Unclassified","DynamicField_Checkbox":{"TranslatableValues":1,"Value":""},"CustomerID":"customer-1","Marker":"Unread","EscalationTime":0,"StateID":1,"State":"new","ChangeBy":1,"TicketID":13,"Created":"2018-08-13 07:28:21","PriorityID":3}]}
                     description: Return the ticket list.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -820,7 +917,7 @@ securitySchemes:
                 422: 
                     body: 
                         application/json: 
-                            example: {"Errors":{"Field2":{"Validator":"Required","Attributes":{"Value":null,"Source":null,"Arguments":null}},"Field3":{"Validator":"IncorrectDisplayConfig"},"Field1":{"Validator":"Required","Attributes":{"Arguments":null,"Source":null,"Value":null}}}}
+                            example: {"Errors":{"Field2":{"Attributes":{"Arguments":null,"Value":null,"Source":null},"Validator":"Required"},"Field3":{"Validator":"IncorrectDisplayConfig"},"Field1":{"Validator":"Required","Attributes":{"Source":null,"Value":null,"Arguments":null}}}}
                     description: Invalid ticket data.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -836,7 +933,7 @@ securitySchemes:
                 900: 
                     body: 
                         application/json: 
-                            example: [{"ErrorIdentifier":"CouldNotCreateTicket","ErrorMessage":"The system was unable to create the ticket."},{"ErrorIdentifier":"CouldNotCreateTicketArticle","ErrorMessage":"The system was unable to create the ticket article."},{"ErrorIdentifier":"CouldNotPrepareData","ErrorMessage":"The system was unable to prepare the data to store it."},{"ErrorMessage":"The system was unable to set dynamic ticket data.","ErrorIdentifier":"CouldNotSetDynamicFieldValue"},{"ErrorIdentifier":"CouldNotSetTicketProcessState","ErrorMessage":"The system was unable to set the ticket process state."},{"ErrorIdentifier":"CouldNotUpdateTicket","ErrorMessage":"The system was unable to update ticket information."}]
+                            example: [{"ErrorIdentifier":"CouldNotCreateTicket","ErrorMessage":"The system was unable to create the ticket."},{"ErrorMessage":"The system was unable to create the ticket article.","ErrorIdentifier":"CouldNotCreateTicketArticle"},{"ErrorMessage":"The system was unable to prepare the data to store it.","ErrorIdentifier":"CouldNotPrepareData"},{"ErrorIdentifier":"CouldNotSetDynamicFieldValue","ErrorMessage":"The system was unable to set dynamic ticket data."},{"ErrorIdentifier":"CouldNotSetTicketProcessState","ErrorMessage":"The system was unable to set the ticket process state."},{"ErrorIdentifier":"CouldNotUpdateTicket","ErrorMessage":"The system was unable to update ticket information."}]
                     description: Custom error response, see example for a list of possible responses.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -1435,7 +1532,7 @@ securitySchemes:
                 422: 
                     body: 
                         application/json: 
-                            example: {"Errors":{"Field1":{"Validator":"Required","Attributes":{"Source":null,"Arguments":null,"Value":null}},"Field3":{"Validator":"IncorrectDisplayConfig"},"Field2":{"Attributes":{"Arguments":null,"Source":null,"Value":null},"Validator":"Required"}}}
+                            example: {"Errors":{"Field1":{"Attributes":{"Value":null,"Source":null,"Arguments":null},"Validator":"Required"},"Field3":{"Validator":"IncorrectDisplayConfig"},"Field2":{"Attributes":{"Arguments":null,"Value":null,"Source":null},"Validator":"Required"}}}
                     description: Invalid ticket data.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -1451,7 +1548,7 @@ securitySchemes:
                 900: 
                     body: 
                         application/json: 
-                            example: [{"ErrorMessage":"The system was unable to create the ticket.","ErrorIdentifier":"CouldNotCreateTicket"},{"ErrorIdentifier":"CouldNotCreateTicketArticle","ErrorMessage":"The system was unable to create the ticket article."},{"ErrorIdentifier":"CouldNotPrepareData","ErrorMessage":"The system was unable to prepare the data to store it."},{"ErrorIdentifier":"CouldNotSetDynamicFieldValue","ErrorMessage":"The system was unable to set dynamic ticket data."},{"ErrorIdentifier":"CouldNotSetTicketProcessState","ErrorMessage":"The system was unable to set the ticket process state."},{"ErrorIdentifier":"CouldNotUpdateTicket","ErrorMessage":"The system was unable to update ticket information."}]
+                            example: [{"ErrorIdentifier":"CouldNotCreateTicket","ErrorMessage":"The system was unable to create the ticket."},{"ErrorMessage":"The system was unable to create the ticket article.","ErrorIdentifier":"CouldNotCreateTicketArticle"},{"ErrorMessage":"The system was unable to prepare the data to store it.","ErrorIdentifier":"CouldNotPrepareData"},{"ErrorMessage":"The system was unable to set dynamic ticket data.","ErrorIdentifier":"CouldNotSetDynamicFieldValue"},{"ErrorMessage":"The system was unable to set the ticket process state.","ErrorIdentifier":"CouldNotSetTicketProcessState"},{"ErrorMessage":"The system was unable to update ticket information.","ErrorIdentifier":"CouldNotUpdateTicket"}]
                     description: Custom error response, see example for a list of possible responses.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -1473,131 +1570,12 @@ securitySchemes:
                 example: "1234"
                 required: false
     /upload/{FormID}: 
-        get: 
-            description: Get a file upload from a FormID in the WebUploadCache.
-            headers: 
-                X-OTRS-API-Debug: 
-                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
-                    required: false
-            queryParameters: 
-                ContentID: 
-                    required: true
-            responses: 
-                200: 
-                    body: 
-                        application/octet-stream: 
-                            example: Some file content
-                    description: Returning the related attachment.
-                    headers: 
-                        X-OTRS-API-Debug-SQLTrace: 
-                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
-                            required: false
-                        X-OTRS-API-Debug-STDERRLog: 
-                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
-                            required: false
-                        X-OTRS-API-Version: 
-                            description: Provides endpoint version information.
-                            example: 1.0.0
-                            required: true
-                422: 
-                    body: 
-                        application/json: 
-                            example: {"Errors":{"Field1":{"Message":"..."}}}
-                    description: Invalid input data.
-                    headers: 
-                        X-OTRS-API-Debug-SQLTrace: 
-                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
-                            required: false
-                        X-OTRS-API-Debug-STDERRLog: 
-                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
-                            required: false
-                        X-OTRS-API-Version: 
-                            description: Provides endpoint version information.
-                            example: 1.0.0
-                            required: true
-            securedBy: [CustomerAccessToken]
-        post: 
-            description: Add a file upload to a FormID in the WebUploadCache.
-            headers: 
-                X-OTRS-API-Debug: 
-                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
-                    required: false
-            queryParameters: 
-                Upload: 
-                    required: false
-                upload: 
-                    required: false
-            responses: 
-                200: 
-                    body: 
-                        application/json: 
-                            example: {"uploaded":1,"FileID":1,"url":"/api/customer/upload/bbcbda800-31f3-11e8-a39e-6ba2f50ba514%40localhost"}
-                    description: Attachment successfully saved.
-                    headers: 
-                        X-OTRS-API-Debug-SQLTrace: 
-                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
-                            required: false
-                        X-OTRS-API-Debug-STDERRLog: 
-                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
-                            required: false
-                        X-OTRS-API-Version: 
-                            description: Provides endpoint version information.
-                            example: 1.0.0
-                            required: true
-                413: 
-                    body: 
-                        application/json: 
-                            example: {"Errors":{"Upload":{"Message":"Size limit exceeded!"}}}
-                    description: The attachment is too big to be uploaded.
-                    headers: 
-                        X-OTRS-API-Debug-SQLTrace: 
-                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
-                            required: false
-                        X-OTRS-API-Debug-STDERRLog: 
-                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
-                            required: false
-                        X-OTRS-API-Version: 
-                            description: Provides endpoint version information.
-                            example: 1.0.0
-                            required: true
-                422: 
-                    body: 
-                        application/json: 
-                            example: {"Errors":{"Upload":{"Message":"Invalid upload or UploadFile!"}}}
-                    description: Invalid upload or UploadFile!
-                    headers: 
-                        X-OTRS-API-Debug-SQLTrace: 
-                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
-                            required: false
-                        X-OTRS-API-Debug-STDERRLog: 
-                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
-                            required: false
-                        X-OTRS-API-Version: 
-                            description: Provides endpoint version information.
-                            example: 1.0.0
-                            required: true
-                900: 
-                    body: 
-                        application/json: 
-                            example: [{"ErrorIdentifier":"CouldNotAddFile","ErrorMessage":"The system was unable to add the attachment in the upload cache."}]
-                    description: Custom error response, see example for a list of possible responses.
-                    headers: 
-                        X-OTRS-API-Debug-SQLTrace: 
-                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
-                            required: false
-                        X-OTRS-API-Debug-STDERRLog: 
-                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
-                            required: false
-                        X-OTRS-API-Version: 
-                            description: Provides endpoint version information.
-                            example: 1.0.0
-                            required: true
-            securedBy: [CustomerAccessToken]
-        uriParameters: 
-            FormID: 
-                required: true
-    /upload/{FormID}/{FileID}: 
         delete: 
+            body: 
+                application/json: 
+                    properties: 
+                        Filename: 
+                            required: true
             description: Delete a file upload from a FormID in the WebUploadCache.
             headers: 
                 X-OTRS-API-Debug: 
@@ -1663,9 +1641,127 @@ securitySchemes:
                             example: 1.0.0
                             required: true
             securedBy: [CustomerAccessToken]
+        get: 
+            description: Get a file upload from a FormID in the WebUploadCache.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            queryParameters: 
+                ContentID: 
+                    required: true
+            responses: 
+                200: 
+                    body: 
+                        application/octet-stream: 
+                            example: Some file content
+                    description: Returning the related attachment.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        post: 
+            description: Add a file upload to a FormID in the WebUploadCache.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            queryParameters: 
+                Upload: 
+                    required: false
+                upload: 
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"uploaded":1,"url":"/api/customer/upload/bbcbda800-31f3-11e8-a39e-6ba2f50ba514%40localhost","FileID":1}
+                    description: Attachment successfully saved.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                413: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Upload":{"Message":"Size limit exceeded!"}}}
+                    description: The attachment is too big to be uploaded.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Upload":{"Message":"Invalid upload or UploadFile!"}}}
+                    description: Invalid upload or UploadFile!
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorMessage":"The system was unable to add the attachment in the upload cache.","ErrorIdentifier":"CouldNotAddFile"}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
         uriParameters: 
-            FileID: 
-                required: true
             FormID: 
                 required: true
 /api/frontend: 
@@ -1831,30 +1927,6 @@ securitySchemes:
                         application/json: 
                             example: {"Errors":{"Field1":{"Message":"..."}}}
                     description: Invalid input data.
-                    headers: 
-                        X-OTRS-API-Debug-SQLTrace: 
-                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
-                            required: false
-                        X-OTRS-API-Debug-STDERRLog: 
-                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
-                            required: false
-                        X-OTRS-API-Version: 
-                            description: Provides endpoint version information.
-                            example: 1.0.0
-                            required: true
-    /external/documentsearch/section-config: 
-        get: 
-            description: Get current section config for the document search field for authenticated or unauthenticated users.
-            headers: 
-                X-OTRS-API-Debug: 
-                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
-                    required: false
-            responses: 
-                200: 
-                    body: 
-                        application/json: 
-                            example: {"FAQ":{"Limit":5},"Ticket":{"Limit":5}}
-                    description: Return document search field section config entries for authenticated or unauthenticated users.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
                             description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
@@ -2210,7 +2282,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"ChangeBy":1,"Value":{"TicketList":{"Show":"1","RowTitle":"Titel"},"HeroUnit":{"BackgroundStyle":"BackgroundO{ydient","Title":"Titel","BackgroundImage":"path","BackgroundColor":"#111"}},"Key":"HomePage::de","ChangeTime":"2018-08-14 22:45:00","CreateTime":"2018-08-14 22:45:00","CreateBy":1}
+                            example: {"CreateBy":1,"Key":"HomePage::de","CreateTime":"2018-08-14 22:45:00","Value":{"TicketList":{"RowTitle":"Titel","Show":"1"},"HeroUnit":{"BackgroundStyle":"BackgroundO{ydient","BackgroundImage":"path","Title":"Titel","BackgroundColor":"#111"}},"ChangeBy":1,"ChangeTime":"2018-08-14 22:45:00"}
                     description: Return home page configuration.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -2382,7 +2454,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"Top":[{"Prio":"100","IsPublic":"1","Target":"","ExternalLink":"","RouteLink":"/home","Group":[],"GroupRo":[],"Name":"Custom Link","Description":"Custom link."}],"Main":[{"ExternalLink":"","Prio":"100","Target":"","IsPublic":"1","GroupRo":[],"Name":"Knowledge Base","Description":"Knowledge base.","RouteLink":"/knowledge-base","Group":[]},{"ExternalLink":"","Prio":"100","Target":"","IsPublic":"","Description":"This is a private resource.","Name":"Private Resource","GroupRo":[],"Group":[],"RouteLink":"/private-resource"}],"Bottom":[{"Target":"","Prio":"100","IsPublic":"1","ExternalLink":"","RouteLink":"/knowledge-base","Group":[],"GroupRo":[],"Name":"Knowledge Base","Description":"Knowledge base."}]}
+                            example: {"Bottom":[{"GroupRo":[],"Description":"Knowledge base.","ExternalLink":"","Group":[],"Target":"","RouteLink":"/knowledge-base","Name":"Knowledge Base","IsPublic":"1","Prio":"100"}],"Top":[{"Group":[],"ExternalLink":"","Description":"Custom link.","GroupRo":[],"Prio":"100","IsPublic":"1","Name":"Custom Link","Target":"","RouteLink":"/home"}],"Main":[{"Name":"Knowledge Base","Target":"","RouteLink":"/knowledge-base","Prio":"100","IsPublic":"1","GroupRo":[],"Group":[],"ExternalLink":"","Description":"Knowledge base."},{"GroupRo":[],"Description":"This is a private resource.","ExternalLink":"","Group":[],"RouteLink":"/private-resource","Target":"","Name":"Private Resource","IsPublic":"","Prio":"100"}]}
                     description: Return the navigation structure.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -2482,7 +2554,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"Language":"en","Categories":[{"Title":"Home","CategoryID":"1"},{"Title":"Product 1","ParentID":"1","CategoryID":"2"},{"ParentID":"1","CategoryID":"3","Title":"Product 2"}]}
+                            example: {"Language":"en","Categories":[{"Title":"Home","CategoryID":"1"},{"ParentID":"1","CategoryID":"2","Title":"Product 1"},{"ParentID":"1","CategoryID":"3","Title":"Product 2"}]}
                     description: List of categories and assumed language.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -2551,7 +2623,7 @@ securitySchemes:
                 900: 
                     body: 
                         application/json: 
-                            example: [{"ErrorIdentifier":"UsageCounterIncreaseFailed","ErrorMessage":"Increase of the service usage counter failed. Please contact the administrator."}]
+                            example: [{"ErrorMessage":"Increase of the service usage counter failed. Please contact the administrator.","ErrorIdentifier":"UsageCounterIncreaseFailed"}]
                     description: Custom error response, see example for a list of possible responses.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -2587,7 +2659,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"Items":[{"Description":"Consectetur adipiscing elit, donec id fermentum ligula finibus venenatis dui. Ut eget rutrum eros. Praesent vulputate laoreet tortor. Aliquam in massa vel erat euismod pellentesque. Aenean eget porttitor nisl, non viverra dui. Cras posuere pellentesque metus id gravida. Sed lacinia lacus vitae elementum convallis. Praesent nec rhoncus augue.","CategoryID":[1],"Title":"Lorem ipsum dolor sit amet","RouteLink":"/home","ItemID":1}]}
+                            example: {"Items":[{"ItemID":1,"CategoryID":[1],"Description":"Consectetur adipiscing elit, donec id fermentum ligula finibus venenatis dui. Ut eget rutrum eros. Praesent vulputate laoreet tortor. Aliquam in massa vel erat euismod pellentesque. Aenean eget porttitor nisl, non viverra dui. Cras posuere pellentesque metus id gravida. Sed lacinia lacus vitae elementum convallis. Praesent nec rhoncus augue.","RouteLink":"/home","Title":"Lorem ipsum dolor sit amet"}]}
                     description: List of services with their common and localization data.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -2680,7 +2752,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"Ticket::Frontend::ExternalTicketOverview":{"ColumnHeader":"TicketTitle","Owner":1,"CustomEmptyText":{"Title":"Welcome!","Text":"Please click the button below to create your first ticket.","Button":"Create your first ticket"},"Queue":0,"DynamicField":{"DFCheckbox":1}},"DynamicFieldsConfig":[{"Config":{"DefaultValue":0},"ValidID":1,"Label":"My Checkbox","ID":21,"InternalField":0,"FieldOrder":4,"FieldType":"Checkbox","ObjectType":"Ticket","CreateTime":"2018-08-11 08:39:10","Name":"Checkbox","ChangeTime":"2018-08-11 08:39:10"}],"StatusMap":{"open":"something open"}}
+                            example: {"Ticket::Frontend::ExternalTicketOverview":{"Owner":1,"ColumnHeader":"TicketTitle","Queue":0,"DynamicField":{"DFCheckbox":1},"CustomEmptyText":{"Button":"Create your first ticket","Text":"Please click the button below to create your first ticket.","Title":"Welcome!"}},"DynamicFieldsConfig":[{"FieldOrder":4,"InternalField":0,"Label":"My Checkbox","Config":{"DefaultValue":0},"ValidID":1,"ObjectType":"Ticket","CreateTime":"2018-08-11 08:39:10","FieldType":"Checkbox","Name":"Checkbox","ID":21,"ChangeTime":"2018-08-11 08:39:10"}],"StatusMap":{"open":"something open"}}
                     description: Return Ticket List configuration.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -2726,7 +2798,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"CurrentDocumentSearchType":{"Identifier":"Ticket","Hits":10,"Filters":[{"Identifier":"State","Label":"State","SubFilters":[{"Label":"open","Identifier":"StateOpen","Hits":5},{"Label":"closed successful","Identifier":"StateClosedSuccessful","Hits":5}]}]},"SearchResult":[{"Title":"Example article title","DocumentID":123,"DocumentSearchType":"Ticket","ChildDocumentSearchType":"ArticleMIME","TicketNumber":"20180101407878","Teasertext":"Some teaser <em>text</em> for the documentation.","Score":"4.123123"},{"Title":"Example ticket title","DocumentID":100,"DocumentSearchType":"Ticket","TicketNumber":"20180101407878","Teasertext":"Some teaser <em>text</em> for the documentation.","Score":"3.523123"}],"DocumentSearchTypes":[{"Hits":10,"Identifier":"Ticket","Label":"Tickets"},{"Identifier":"FAQ","Hits":5,"Label":"Knowledge Base Articles"}]}
+                            example: {"CurrentDocumentSearchType":{"Hits":10,"Identifier":"Ticket","Filters":[{"Identifier":"State","Label":"State","SubFilters":[{"Hits":5,"Identifier":"StateOpen","Label":"open"},{"Hits":5,"Label":"closed successful","Identifier":"StateClosedSuccessful"}]}]},"DocumentSearchTypes":[{"Label":"Tickets","Identifier":"Ticket","Hits":10},{"Label":"Knowledge Base Articles","Identifier":"FAQ","Hits":5}],"SearchResult":[{"ChildDocumentSearchType":"ArticleMIME","DocumentID":123,"DocumentSearchType":"Ticket","Title":"Example article title","Teasertext":"Some teaser <em>text</em> for the documentation.","Score":"4.123123","TicketNumber":"20180101407878"},{"TicketNumber":"20180101407878","Score":"3.523123","Teasertext":"Some teaser <em>text</em> for the documentation.","DocumentSearchType":"Ticket","Title":"Example ticket title","DocumentID":100}]}
                     description: Result for the normal document search.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -2773,7 +2845,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"Result":[{"SectionResult":[{"Score":"4.123123","DocumentSearchType":"Ticket","Title":"Example article title","DocumentID":123,"TicketNumber":"20180101407878","ChildDocumentSearchType":"ArticleMIME"},{"DocumentID":100,"Title":"Example ticket title","DocumentSearchType":"Ticket","TicketNumber":"20180101407878","Score":"3.523123"}],"SectionType":"Ticket","SectionTitle":"Tickets"},{"SectionResult":[{"Score":"4.123123","DocumentID":120,"Title":"Example faq title","DocumentSearchType":"FAQ","TicketNumber":["Software","Misc"]},{"DocumentSearchType":"FAQ","DocumentID":111,"Title":"Example faq title","Categories":["Software","Example"],"Score":"3.523123"}],"SectionType":"FAQ","SectionTitle":"Knowledge Base Articles"}]}
+                            example: {"Result":[{"SectionType":"Ticket","SectionTitle":"Tickets","SectionResult":[{"ChildDocumentSearchType":"ArticleMIME","DocumentID":123,"Title":"Example article title","DocumentSearchType":"Ticket","Score":"4.123123","TicketNumber":"20180101407878"},{"DocumentID":100,"Title":"Example ticket title","DocumentSearchType":"Ticket","TicketNumber":"20180101407878","Score":"3.523123"}]},{"SectionType":"FAQ","SectionTitle":"Knowledge Base Articles","SectionResult":[{"TicketNumber":["Software","Misc"],"Score":"4.123123","DocumentSearchType":"FAQ","Title":"Example faq title","DocumentID":120},{"DocumentID":111,"Score":"3.523123","DocumentSearchType":"FAQ","Categories":["Software","Example"],"Title":"Example faq title"}]}]}
                     description: Simple search result for the given search query.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -2818,7 +2890,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"Articles":[{"Title":"Windows 95 problem...","ID":1},{"Title":"Computer is broken...","ID":2}],"TotalArticles":0}
+                            example: {"Articles":[{"ID":1,"Title":"Windows 95 problem..."},{"Title":"Computer is broken...","ID":2}],"TotalArticles":0}
                     description: Result for the normal category list.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -2906,7 +2978,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"CategoryID":2,"Fields":[{"Caption":"Symptom","Content":"New created pending states do not stop escalations with OTRSEscalationSuspend"},{"Caption":"Problem","Content":"Description of the problem..."},{"Caption":"Solution","Content":"The solution.... "},{"Caption":"Comment","Content":"A comment..."}],"ID":32,"Number":100032,"Title":"Article Title"}
+                            example: {"Title":"Article Title","Number":100032,"ID":32,"Fields":[{"Caption":"Symptom","Content":"New created pending states do not stop escalations with OTRSEscalationSuspend"},{"Content":"Description of the problem...","Caption":"Problem"},{"Caption":"Solution","Content":"The solution.... "},{"Content":"A comment...","Caption":"Comment"}],"CategoryID":2}
                     description: Result for an existing knowledgebase article.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -3212,7 +3284,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: [{"ID":1,"Title":"Article Title Test 1"},{"Title":"Article Title Test 2","ID":2},{"ID":3,"Title":"Article Title Test 3"}]
+                            example: [{"ID":1,"Title":"Article Title Test 1"},{"ID":2,"Title":"Article Title Test 2"},{"Title":"Article Title Test 3","ID":3}]
                     description: Result for an existing knowledgebase article.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -3316,7 +3388,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"ShowVotingButtons":1,"VoteSuccess":1}
+                            example: {"VoteSuccess":1,"ShowVotingButtons":1}
                     description: Check if voting buttons should be shown. Voting success for an existing knowledgebase article vote.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -3378,7 +3450,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"SubCategories":[{"Comment":"This is my second category.","CategoryID":"2","Name":"Special"},{"Name":"Product A","Comment":"This is my third category.","CategoryID":"3"},{"Name":"Product B","Comment":"This is my fourth category.","CategoryID":"4"}],"Category":{"Name":"Home","CategoryID":"1","Comment":"This is my first category."},"CategoryPath":[{"Name":"Hardware","Comment":"For all Hardware questions.","CategoryID":2},{"CategoryID":4,"Comment":"For Computer.","Name":"Computer"},{"Name":"Notebook","Comment":"For Notebooks.","CategoryID":5}]}
+                            example: {"CategoryPath":[{"Comment":"For all Hardware questions.","CategoryID":2,"Name":"Hardware"},{"Name":"Computer","CategoryID":4,"Comment":"For Computer."},{"Comment":"For Notebooks.","CategoryID":5,"Name":"Notebook"}],"SubCategories":[{"Comment":"This is my second category.","CategoryID":"2","Name":"Special"},{"Comment":"This is my third category.","CategoryID":"3","Name":"Product A"},{"Comment":"This is my fourth category.","CategoryID":"4","Name":"Product B"}],"Category":{"CategoryID":"1","Comment":"This is my first category.","Name":"Home"}}
                     description: Result for the normal category list.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -3418,7 +3490,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"CategoryPath":[{"Name":"Hardware","CategoryID":2,"Comment":"For all Hardware questions."},{"CategoryID":4,"Comment":"For Computer.","Name":"Computer"},{"Name":"Notebook","CategoryID":5,"Comment":"For Notebooks."}],"SubCategories":[{"Comment":"This is my second category.","CategoryID":"2","Name":"Special"},{"Comment":"This is my third category.","CategoryID":"3","Name":"Product A"},{"Name":"Product B","Comment":"This is my fourth category.","CategoryID":"4"}],"Category":{"Comment":"This is my first category.","CategoryID":"1","Name":"Home"}}
+                            example: {"SubCategories":[{"CategoryID":"2","Comment":"This is my second category.","Name":"Special"},{"Comment":"This is my third category.","CategoryID":"3","Name":"Product A"},{"Name":"Product B","Comment":"This is my fourth category.","CategoryID":"4"}],"Category":{"CategoryID":"1","Comment":"This is my first category.","Name":"Home"},"CategoryPath":[{"CategoryID":2,"Comment":"For all Hardware questions.","Name":"Hardware"},{"CategoryID":4,"Comment":"For Computer.","Name":"Computer"},{"Comment":"For Notebooks.","CategoryID":5,"Name":"Notebook"}]}
                     description: Result for the normal category list.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 

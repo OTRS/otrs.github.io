@@ -56,7 +56,7 @@ $(document).ready(function() {
   <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
   <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
     <ul>
-      <li><a href="#new">new()</a></li>
+      <li><a href="#BUILD">BUILD()</a></li>
       <li><a href="#NotificationAdd">NotificationAdd()</a></li>
       <li><a href="#NotificationGet">NotificationGet()</a></li>
       <li><a href="#NotificationDelete">NotificationDelete()</a></li>
@@ -86,28 +86,24 @@ $(document).ready(function() {
 
 <h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
-<h2 id="new">new()</h2>
+<h2 id="BUILD">BUILD()</h2>
 
-<p>create an object. Do not use it directly, instead use:</p>
-
-<pre><code>    use Kernel::System::ObjectManager;
-    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
-    my $NotificationViewObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::NotificationView&#39;);</code></pre>
+<p>Moose constructor method, that is executed on <code>instantiation</code> of the object.</p>
 
 <h2 id="NotificationAdd">NotificationAdd()</h2>
 
 <p>adds a new notification to the database</p>
 
 <pre><code>    my $NotificationID = $NotificationViewObject-&gt;NotificationAdd(
-        Name            =&gt; &#39;some notification name&#39;,
-        Comment         =&gt; &#39;some notification comments&#39;,    # optional
-        Subject         =&gt; &#39;some subject&#39;,
-        Body            =&gt; &#39;some body&#39;,
-        ObjectType      =&gt; &#39;some object type&#39;,              # e.g. Ticket
-        ObjectID        =&gt; 123,
-        ObjectReference =&gt; &#39;54321&#39;,                         # optional, but very useful (like the TicketNumber)
-        UserID          =&gt; 123,
-        UserType        =&gt; &#39;Agent&#39;                           # (Agent|Customer)
+        Name            =&gt; &#39;some notification name&#39;,        # (required)
+        Comment         =&gt; &#39;some notification comments&#39;,    # (optional)
+        Subject         =&gt; &#39;some subject&#39;,                  # (required)
+        Body            =&gt; &#39;some body&#39;,                     # (required)
+        ObjectType      =&gt; &#39;some object type&#39;,              # (required) e.g. Ticket
+        ObjectID        =&gt; 123,                             # (required)
+        ObjectReference =&gt; &#39;54321&#39;,                         # (optional) usefull (like the TicketNumber)
+        UserID          =&gt; 123,                             # (required)
+        UserType        =&gt; &#39;Agent&#39;,                         # (required) &#39;Agent&#39; or &#39;Customer&#39;
     );</code></pre>
 
 <p>returns:</p>
@@ -119,7 +115,7 @@ $(document).ready(function() {
 <p>returns the notification data</p>
 
 <pre><code>    my %Notification = $NotificationViewObject-&gt;NotificationGet(
-        NotificationID =&gt; 123,
+        NotificationID =&gt; 123,          # (required)
     );</code></pre>
 
 <p>returns:</p>
@@ -145,21 +141,22 @@ $(document).ready(function() {
 
 <pre><code>    my $Success = $NotificationViewObject-&gt;NotificationDelete(
         NotificationID =&gt; 123,
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my $Success = $NotificationViewObject-&gt;NotificationDelete(
         UserID         =&gt; 123,
+        UserType       =&gt; &#39;Agent&#39;,
+        ObjectType     =&gt; &#39;Ticket&#39;,
+        ObjectID       =&gt; 123,
     );</code></pre>
 
 <p>or</p>
 
 <pre><code>    my $Success = $NotificationViewObject-&gt;NotificationDelete(
-        ObjectType =&gt; &#39;Ticket&#39;,
-        ObjectID   =&gt; 123,
-        UserID     =&gt; 123,
-    );</code></pre>
-
-<p>or</p>
-
-<pre><code>    my $Success = $NotificationViewObject-&gt;NotificationDelete(
-        UserID   =&gt; 123,
+        UserID         =&gt; 123,
+        UserType       =&gt; &#39;Agent&#39;,
     );</code></pre>
 
 <p>returns</p>
@@ -171,8 +168,9 @@ $(document).ready(function() {
 <p>returns a list of notifications (filtered by a user id if given)</p>
 
 <pre><code>    my %NotificationList = $NotificationViewObject-&gt;NotificationList(
-        UserID     =&gt; 123,      # optional
-        ObjectType =&gt; &#39;Ticket&#39;  # optional
+        UserID     =&gt; 123,      # (optional)
+        UserType   =&gt; &#39;Agent&#39;,  # (required if UserID is present)
+        ObjectType =&gt; &#39;Ticket&#39;  # (optional)
     );</code></pre>
 
 <p>returns</p>
@@ -184,12 +182,13 @@ $(document).ready(function() {
 
 <h2 id="NotificationListGet">NotificationListGet()</h2>
 
-<p>returns a list of notifications and its details (filtered by a user id if given)</p>
+<p>returns a list of notifications and it&#39;s details for certain user (filtered by ObjectType)</p>
 
 <pre><code>    my %NotificationList = $NotificationViewObject-&gt;NotificationListGet(
-        UserID     =&gt; 123,      # optional
-        ObjectType =&gt; &#39;Ticket&#39;, # optional
-        UserType   =&gt; &#39;Agent&#39;,  # optional (Agent|Customer)
+        UserID     =&gt; 123,      # (required)
+        UserType   =&gt; &#39;Agent&#39;,  # (required) &#39;Agent&#39; or &#39;Customer&#39;
+        ObjectType =&gt; &#39;Ticket&#39;, # (optional)
+        Seen       =&gt; 1,        # (optional) 0, 1 or undef
     );</code></pre>
 
 <p>returns</p>
@@ -214,9 +213,10 @@ $(document).ready(function() {
 <p>mark a notification as seen or unseen</p>
 
 <pre><code>    my $Success = $NotificationViewObject-&gt;NotificationSeenSet(
-        NotificationID =&gt; 123,
-        Seen           =&gt; 1,    # optional 1 or 0
-        UserID         =&gt; 123,
+        NotificationID =&gt; 123,      # (required)
+        Seen           =&gt; 1,        # (optional) 1 or 0
+        UserID         =&gt; 123,      # (required)
+        UserType       =&gt; &#39;Agent&#39;,  # (required) &#39;Agent&#39; or &#39;Customer&#39;
     );</code></pre>
 
 <p>returns</p>
