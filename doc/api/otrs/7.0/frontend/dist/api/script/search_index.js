@@ -48,12 +48,6 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
-    "plugins/apiclient~plugin",
-    "class/Frontend/Plugins/APIClient/index.js~Plugin.html",
-    "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/APIClient</span>",
-    "class"
-  ],
-  [
     "plugins/eventbus~plugin",
     "class/Frontend/Plugins/EventBus/index.js~Plugin.html",
     "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/EventBus</span>",
@@ -207,6 +201,12 @@ window.esdocSearchIndex = [
     "helpers/formvalidators~getformvalidators",
     "function/index.html#static-function-getFormValidators",
     "<span>getFormValidators</span> <span class=\"search-result-import-path\">Helpers/FormValidators</span>",
+    "function"
+  ],
+  [
+    "helpers/querystring~getquerystring",
+    "function/index.html#static-function-getQueryString",
+    "<span>getQueryString</span> <span class=\"search-result-import-path\">Helpers/QueryString</span>",
     "function"
   ],
   [
@@ -630,6 +630,12 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/apps/external/plugins/store/index.js",
+    "file/Frontend/Apps/External/Plugins/Store/index.js.html",
+    "Frontend/Apps/External/Plugins/Store/index.js",
+    "file"
+  ],
+  [
     "frontend/apps/external/index.js",
     "file/Frontend/Apps/External/index.js.html",
     "Frontend/Apps/External/index.js",
@@ -753,6 +759,12 @@ window.esdocSearchIndex = [
     "frontend/helpers/formvalidators.js",
     "file/Frontend/Helpers/FormValidators.js.html",
     "Frontend/Helpers/FormValidators.js",
+    "file"
+  ],
+  [
+    "frontend/helpers/querystring.js",
+    "file/Frontend/Helpers/QueryString.js.html",
+    "Frontend/Helpers/QueryString.js",
     "file"
   ],
   [
@@ -886,18 +898,6 @@ window.esdocSearchIndex = [
     "file/Frontend/Mixins/RouteDetection.js.html",
     "Frontend/Mixins/RouteDetection.js",
     "file"
-  ],
-  [
-    "frontend/plugins/apiclient/index.js",
-    "file/Frontend/Plugins/APIClient/index.js.html",
-    "Frontend/Plugins/APIClient/index.js",
-    "file"
-  ],
-  [
-    "frontend/plugins/apiclient/index.js~plugin.install",
-    "class/Frontend/Plugins/APIClient/index.js~Plugin.html#static-method-install",
-    "Frontend/Plugins/APIClient/index.js~Plugin.install",
-    "method"
   ],
   [
     "frontend/plugins/eventbus/index.js",
