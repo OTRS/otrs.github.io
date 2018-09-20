@@ -106,7 +106,7 @@ $(document).ready(function() {
                     Version:  '6.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 6',
-                    Languages: ['en']
+                    Languages: ['en', 'hu']
                 },
                 {
                     Version:  '5.0',
