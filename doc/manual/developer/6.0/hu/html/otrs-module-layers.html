@@ -51,8 +51,8 @@ példát.
         </p><p>
         </p><pre class="programlisting">
 # --
-# Kernel/System/Auth/CustomAuth.pm - a CustomAuth hitelesítést biztosítja
-# Martin Edenhofer Kernel::System::Auth::DB osztálya alapján
+# Kernel/System/Auth/CustomAuth.pm - provides the CustomAuth authentication
+# based on Martin Edenhofer's Kernel::System::Auth::DB
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # ID: CustomAuth.pm,v 1.1 2010/05/10 15:30:34 fk Exp $
@@ -72,27 +72,27 @@ use Authen::CustomAuth;
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # a szükséges objektumok ellenőrzése
+    # check needed objects
     for (qw(LogObject ConfigObject DBObject)) {
-        $Self-&gt;{$_} = $Param{$_} || die "Nincs $_!";
+        $Self-&gt;{$_} = $Param{$_} || die "No $_!";
     }
 
-    # Hibakeresés: 0=ki 1=be
+    # Debug 0=off 1=on
     $Self-&gt;{Debug} = 0;
 
-    # beállítás lekérése
+    # get config
     $Self-&gt;{Die} = $Self-&gt;{ConfigObject}-&gt;Get( 'AuthModule::CustomAuth::Die' . $Param{Count} );
 
-    # felhasználótábla lekérése
+    # get user table
     $Self-&gt;{CustomAuthHost} = $Self-&gt;{ConfigObject}-&gt;Get( 'AuthModule::CustomAuth::Host' . $Param{Count} )
-        || die "Szükséges: AuthModule::CustomAuth::Host$Param{Count}.";
+        || die "Need AuthModule::CustomAuth::Host$Param{Count}.";
     $Self-&gt;{CustomAuthSecret}
         = $Self-&gt;{ConfigObject}-&gt;Get( 'AuthModule::CustomAuth::Password' . $Param{Count} )
-        || die "Szükséges: AuthModule::CustomAuth::Password$Param{Count}.";
+        || die "Need AuthModule::CustomAuth::Password$Param{Count}.";
 
     return $Self;
 }
@@ -100,94 +100,94 @@ sub new {
 sub GetOption {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     if ( !$Param{What} ) {
-        $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Mi szükséges!" );
+        $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need What!" );
         return;
     }
 
-    # modulbeállítások
+    # module options
     my %Option = ( PreAuth =&gt; 0, );
 
-    # beállítás visszaadása
+    # return option
     return $Option{ $Param{What} };
 }
 
 sub Auth {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     if ( !$Param{User} ) {
-        $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Felhasználó szükséges!" );
+        $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need User!" );
         return;
     }
 
-    # paraméterek lekérése
+    # get params
     my $User       = $Param{User}      || '';
     my $Pw         = $Param{Pw}        || '';
-    my $RemoteAddr = $ENV{REMOTE_ADDR} || 'Nincs REMOTE_ADDR környezet!';
+    my $RemoteAddr = $ENV{REMOTE_ADDR} || 'Got no REMOTE_ADDR env!';
     my $UserID     = '';
     my $GetPw      = '';
 
-    # csak hibakeresés esetén!
+    # just in case for debug!
     if ( $Self-&gt;{Debug} &gt; 0 ) {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Felhasználó: „$User” megpróbált hitelesíteni ezzel a jelszóval: „$Pw” ($RemoteAddr)",
+            Message  =&gt; "User: '$User' tried to authenticate with Pw: '$Pw' ($RemoteAddr)",
         );
     }
 
-    # csak egy jegyzet
+    # just a note
     if ( !$User ) {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Nincs felhasználó megadva!!! (REMOTE_ADDR: $RemoteAddr)",
+            Message  =&gt; "No User given!!! (REMOTE_ADDR: $RemoteAddr)",
         );
         return;
     }
 
-    # csak egy jegyzet
+    # just a note
     if ( !$Pw ) {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Felhasználó: $User hitelesítés jelszó nélkül!!! (REMOTE_ADDR: $RemoteAddr)",
+            Message  =&gt; "User: $User authentication without Pw!!! (REMOTE_ADDR: $RemoteAddr)",
         );
         return;
     }
 
-    # Egy RADIUS objektum létrehozása
+    # Create a RADIUS object
     my $CustomAuth = Authen::CustomAuth-&gt;new(
         Host   =&gt; $Self-&gt;{CustomAuthHost},
         Secret =&gt; $Self-&gt;{CustomAuthecret},
     );
     if ( !$CustomAuth ) {
         if ( $Self-&gt;{Die} ) {
-            die "Nem lehet kapcsolódni ehhez: $Self-&gt;{CustomAuthHost}: $@";
+            die "Can't connect to $Self-&gt;{CustomAuthHost}: $@";
         }
         else {
             $Self-&gt;{LogObject}-&gt;Log(
                 Priority =&gt; 'error',
-                Message  =&gt; "Nem lehet kapcsolódni ehhez: $Self-&gt;{CustomAuthHost}: $@",
+                Message  =&gt; "Can't connect to $Self-&gt;{CustomAuthHost}: $@",
             );
             return;
         }
     }
     my $AuthResult = $CustomAuth-&gt;check_pwd( $User, $Pw );
 
-    # bejelentkezési jegyzet
+    # login note
     if ( defined($AuthResult) &amp;&amp; $AuthResult == 1 ) {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Felhasználó: $User hitelesítése rendben (REMOTE_ADDR: $RemoteAddr).",
+            Message  =&gt; "User: $User authentication ok (REMOTE_ADDR: $RemoteAddr).",
         );
         return $User;
     }
 
-    # csak egy jegyzet
+    # just a note
     else {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Felhasználó: $User hitelesítése rossz jelszóval!!! (REMOTE_ADDR: $RemoteAddr)"
+            Message  =&gt; "User: $User authentication with wrong Pw!!! (REMOTE_ADDR: $RemoteAddr)"
         );
         return;
     }
@@ -229,7 +229,7 @@ találhat egy példát.
         </p><p>
         </p><pre class="programlisting">
 # --
-# Kernel/System/Auth/Sync/CustomAuthSync.pm - az ügyfél hitelesítésének szinkronizációját biztosítja
+# Kernel/System/Auth/Sync/CustomAuthSync.pm - provides the CustomAuthSync
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # Id: CustomAuthSync.pm,v 1.9 2010/03/25 14:42:45 martin Exp $
@@ -248,16 +248,16 @@ use Net::LDAP;
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumnak
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # szükséges objektumok ellenőrzése
+    # check needed objects
     for (qw(LogObject ConfigObject DBObject UserObject GroupObject EncodeObject)) {
         $Self-&gt;{$_} = $Param{$_} || die "No $_!";
     }
 
-    # Hibakeresés: 0=ki 1=be
+    # Debug 0=off 1=on
     $Self-&gt;{Debug} = 0;
 
 ...
@@ -268,7 +268,7 @@ sub new {
 sub Sync {
     my ( $Self, %Param ) = @_;
 
-    # szükséges dolgok ellenőrzése
+    # check needed stuff
     for (qw(User)) {
         if ( !$Param{$_} ) {
             $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need $_!" );
@@ -317,8 +317,8 @@ találhat egy példát.
         </p><p>
         </p><pre class="programlisting">
 # --
-# Kernel/System/CustomerAuth/CustomAuth.pm - az egyéni hitelesítést biztosítja
-# Martin Edenhofer Kernel::System::Auth::DB osztálya alapján
+# Kernel/System/CustomerAuth/CustomAuth.pm - provides the custom Authentication
+# based on Martin Edenhofer's Kernel::System::Auth::DB
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # Id: CustomAuth.pm,v 1.11 2009/09/22 15:16:05 mb Exp $
@@ -338,29 +338,29 @@ use Authen::CustomAuth;
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # a szükséges objektumok ellenőrzése
+    # check needed objects
     for (qw(LogObject ConfigObject DBObject)) {
-        $Self-&gt;{$_} = $Param{$_} || die "Nincs $_!";
+        $Self-&gt;{$_} = $Param{$_} || die "No $_!";
     }
 
-    # Hibakeresés: 0 = ki, 1 = be
+    # Debug 0=off 1=on
     $Self-&gt;{Debug} = 0;
 
-    # beállítás lekérése
+    # get config
     $Self-&gt;{Die}
         = $Self-&gt;{ConfigObject}-&gt;Get( 'Customer::AuthModule::CustomAuth::Die' . $Param{Count} );
 
-    # felhasználótábla lekérése
+    # get user table
     $Self-&gt;{CustomAuthHost}
         = $Self-&gt;{ConfigObject}-&gt;Get( 'Customer::AuthModule::CustomAuth::Host' . $Param{Count} )
-        || die "Customer::AuthModule::CustomAuth::Host$Param{Count} szükséges ebben: Kernel/Config.pm";
+        || die "Need Customer::AuthModule::CustomAuth::Host$Param{Count} in Kernel/Config.pm";
     $Self-&gt;{CustomAuthSecret}
         = $Self-&gt;{ConfigObject}-&gt;Get( 'Customer::AuthModule::CustomAuth::Password' . $Param{Count} )
-        || die "Customer::AuthModule::CustomAuth::Password$Param{Count} szükséges ebben: Kernel/Config.pm";
+        || die "Need Customer::AuthModule::CustomAuth::Password$Param{Count} in Kernel/Config.pm";
 
     return $Self;
 }
@@ -368,94 +368,94 @@ sub new {
 sub GetOption {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     if ( !$Param{What} ) {
-        $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Mi szükséges!" );
+        $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need What!" );
         return;
     }
 
-    # modul beállítások
+    # module options
     my %Option = ( PreAuth =&gt; 0, );
 
-    # beállítás visszaadása
+    # return option
     return $Option{ $Param{What} };
 }
 
 sub Auth {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     if ( !$Param{User} ) {
-        $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Felhasználó szükséges!" );
+        $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need User!" );
         return;
     }
 
-    # paraméterek lekérése
+    # get params
     my $User       = $Param{User}      || '';
     my $Pw         = $Param{Pw}        || '';
-    my $RemoteAddr = $ENV{REMOTE_ADDR} || 'A REMOTE_ADDR környezetet nem sikerült lekérni!';
+    my $RemoteAddr = $ENV{REMOTE_ADDR} || 'Got no REMOTE_ADDR env!';
     my $UserID     = '';
     my $GetPw      = '';
 
-    # csak hibakeresés esetén!
+    # just in case for debug!
     if ( $Self-&gt;{Debug} &gt; 0 ) {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Felhasználó: „$User” megpróbált a következő jelszóval hitelesíteni: „$Pw” ($RemoteAddr)",
+            Message  =&gt; "User: '$User' tried to authentificate with Pw: '$Pw' ($RemoteAddr)",
         );
     }
 
-    # csak egy megjegyzés
+    # just a note
     if ( !$User ) {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Nincs felhasználó megadva!!! (REMOTE_ADDR: $RemoteAddr)",
+            Message  =&gt; "No User given!!! (REMOTE_ADDR: $RemoteAddr)",
         );
         return;
     }
 
-    # csak egy megjegyzés
+    # just a note
     if ( !$Pw ) {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Felhasználó: $User hitelesítés jelszó nélkül!!! (REMOTE_ADDR: $RemoteAddr)",
+            Message  =&gt; "User: $User Authentication without Pw!!! (REMOTE_ADDR: $RemoteAddr)",
         );
         return;
     }
 
-    # Egyéni objektum létrehozása
+    # Create a custom object
     my $CustomAuth = Authen::CustomAuth-&gt;new(
         Host   =&gt; $Self-&gt;{CustomAuthHost},
         Secret =&gt; $Self-&gt;{CustomAuthSecret},
     );
     if ( !$CustomAuth ) {
         if ( $Self-&gt;{Die} ) {
-            die "Nem lehet kapcsolódni ehhez: $Self-&gt;{CustomAuthHost}: $@";
+            die "Can't connect to $Self-&gt;{CustomAuthHost}: $@";
         }
         else {
             $Self-&gt;{LogObject}-&gt;Log(
                 Priority =&gt; 'error',
-                Message  =&gt; "Nem lehet kapcsolódni ehhez: $Self-&gt;{CustomAuthHost}: $@",
+                Message  =&gt; "Can't connect to $Self-&gt;{CustomAuthHost}: $@",
             );
             return;
         }
     }
     my $AuthResult = $CustomAuth-&gt;check_pwd( $User, $Pw );
 
-    # bejelentkezési jegyzet
+    # login note
     if ( defined($AuthResult) &amp;&amp; $AuthResult == 1 ) {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Felhasználó: $User hitelesítése OK (REMOTE_ADDR: $RemoteAddr).",
+            Message  =&gt; "User: $User Authentication ok (REMOTE_ADDR: $RemoteAddr).",
         );
         return $User;
     }
 
-    # csak egy jegyzet
+    # just a note
     else {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'notice',
-            Message  =&gt; "Felhasználó: $User hitelesítése rossz jelszóval!!! (REMOTE_ADDR: $RemoteAddr)"
+            Message  =&gt; "User: $User Authentication with wrong Pw!!! (REMOTE_ADDR: $RemoteAddr)"
         );
         return;
     }
@@ -503,7 +503,7 @@ néven. Lent találhat egy példát.
         </p><p>
         </p><pre class="programlisting">
 # --
-# Kernel/System/CustomerUser/Preferences/Custom.pm - néhány ügyfél-felhasználó függvény
+# Kernel/System/CustomerUser/Preferences/Custom.pm - some customer user functions
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # Id: Custom.pm,v 1.20 2009/10/07 20:41:50 martin Exp $
@@ -523,16 +523,16 @@ use vars qw(@ISA $VERSION);
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # szükséges objektumok ellenőrzése
+    # check needed objects
     for my $Object (qw(DBObject ConfigObject LogObject)) {
         $Self-&gt;{$Object} = $Param{$Object} || die "Got no $Object!";
     }
 
-    # beállítások tábla adatai
+    # preferences table data
     $Self-&gt;{PreferencesTable} = $Self-&gt;{ConfigObject}-&gt;Get('CustomerPreferences')-&gt;{Params}-&gt;{Table}
         || 'customer_preferences';
     $Self-&gt;{PreferencesTableKey}
@@ -555,7 +555,7 @@ sub SetPreferences {
     my $Key    = $Param{Key}    || return;
     my $Value = defined( $Param{Value} ) ? $Param{Value} : '';
 
-    # régi adatok törlése
+    # delete old data
     return if !$Self-&gt;{DBObject}-&gt;Do(
         SQL =&gt; "DELETE FROM $Self-&gt;{PreferencesTable} WHERE "
             . " $Self-&gt;{PreferencesTableUserID} = ? AND $Self-&gt;{PreferencesTableKey} = ?",
@@ -564,7 +564,7 @@ sub SetPreferences {
 
     $Value .= 'Custom';
 
-    # új adatok beszúrása
+    # insert new data
     return if !$Self-&gt;{DBObject}-&gt;Do(
         SQL =&gt; "INSERT INTO $Self-&gt;{PreferencesTable} ($Self-&gt;{PreferencesTableUserID}, "
             . " $Self-&gt;{PreferencesTableKey}, $Self-&gt;{PreferencesTableValue}) "
@@ -581,7 +581,7 @@ sub GetPreferences {
     my $UserID = $Param{UserID} || return;
     my %Data;
 
-    # beállítások lekérése
+    # get preferences
 
     return if !$Self-&gt;{DBObject}-&gt;Prepare(
         SQL =&gt; "SELECT $Self-&gt;{PreferencesTableKey}, $Self-&gt;{PreferencesTableValue} "
@@ -592,7 +592,7 @@ sub GetPreferences {
         $Data{ $Row[0] } = $Row[1];
     }
 
-    # adatok visszaadása
+    # return data
     return %Data;
 }
 
@@ -603,7 +603,7 @@ sub SearchPreferences {
     my $Key   = $Param{Key}   || '';
     my $Value = $Param{Value} || '';
 
-    # beállítások lekérése
+    # get preferences
     my $SQL = "SELECT $Self-&gt;{PreferencesTableUserID}, $Self-&gt;{PreferencesTableValue} "
         . " FROM "
         . " $Self-&gt;{PreferencesTable} "
@@ -618,7 +618,7 @@ sub SearchPreferences {
         $UserID{ $Row[0] } = $Row[1];
     }
 
-    # adatok visszaadása
+    # return data
     return %UserID;
 }
 
@@ -675,7 +675,7 @@ találhat egy példát.
         </p><p>
         </p><pre class="programlisting">
 # --
-# Kernel/System/Queue/PreferencesCustom.pm - néhány felhasználói függvény
+# Kernel/System/Queue/PreferencesCustom.pm - some user functions
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # Id: PreferencesCustom.pm,v 1.5 2009/02/16 11:47:34 tr Exp $
@@ -695,16 +695,16 @@ use vars qw(@ISA $VERSION);
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # a szükséges objektumok ellenőrzése
+    # check needed objects
     for (qw(DBObject ConfigObject LogObject)) {
-        $Self-&gt;{$_} = $Param{$_} || die "Nincs $_!";
+        $Self-&gt;{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    # beállítások tábla adatai
+    # preferences table data
     $Self-&gt;{PreferencesTable}        = 'queue_preferences';
     $Self-&gt;{PreferencesTableKey}     = 'preferences_key';
     $Self-&gt;{PreferencesTableValue}   = 'preferences_value';
@@ -716,15 +716,15 @@ sub new {
 sub QueuePreferencesSet {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     for (qw(QueueID Key Value)) {
         if ( !defined( $Param{$_} ) ) {
-            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Szükséges: $_!" );
+            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need $_!" );
             return;
         }
     }
 
-    # régi adatok törlése
+    # delete old data
     return if !$Self-&gt;{DBObject}-&gt;Do(
         SQL =&gt; "DELETE FROM $Self-&gt;{PreferencesTable} WHERE "
             . "$Self-&gt;{PreferencesTableQueueID} = ? AND $Self-&gt;{PreferencesTableKey} = ?",
@@ -733,7 +733,7 @@ sub QueuePreferencesSet {
 
     $Self-&gt;{PreferencesTableValue} .= 'PreferencesCustom';
 
-    # új adatok beszúrása
+    # insert new data
     return $Self-&gt;{DBObject}-&gt;Do(
         SQL =&gt; "INSERT INTO $Self-&gt;{PreferencesTable} ($Self-&gt;{PreferencesTableQueueID}, "
             . " $Self-&gt;{PreferencesTableKey}, $Self-&gt;{PreferencesTableValue}) "
@@ -745,20 +745,20 @@ sub QueuePreferencesSet {
 sub QueuePreferencesGet {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     for (qw(QueueID)) {
         if ( !$Param{$_} ) {
-            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Szükséges: $_!" );
+            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need $_!" );
             return;
         }
     }
 
-    # annak ellenőrzése, hogy a várólista beállítások elérhetők-e
+    # check if queue preferences are available
     if ( !$Self-&gt;{ConfigObject}-&gt;Get('QueuePreferences') ) {
         return;
     }
 
-    # beállítások lekérése
+    # get preferences
     return if !$Self-&gt;{DBObject}-&gt;Prepare(
         SQL =&gt; "SELECT $Self-&gt;{PreferencesTableKey}, $Self-&gt;{PreferencesTableValue} "
             . " FROM $Self-&gt;{PreferencesTable} WHERE $Self-&gt;{PreferencesTableQueueID} = ?",
@@ -769,7 +769,7 @@ sub QueuePreferencesGet {
         $Data{ $Row[0] } = $Row[1];
     }
 
-    # adatok visszaadása
+    # return data
     return %Data;
 }
 
@@ -817,7 +817,7 @@ találhat egy példát.
         </p><p>
         </p><pre class="programlisting">
 # --
-# Kernel/System/Service/PreferencesCustom - néhány felhasználói függvény
+# Kernel/System/Service/PreferencesCustom - some user functions
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # Id: PreferencesCustom.pm,v 1.2 2009/02/16 11:47:34 tr Exp $
@@ -837,16 +837,16 @@ use vars qw(@ISA $VERSION);
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # a szükséges objektumok ellenőrzése
+    # check needed objects
     for (qw(DBObject ConfigObject LogObject)) {
-        $Self-&gt;{$_} = $Param{$_} || die "Nincs $_!";
+        $Self-&gt;{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    # beállítások tábla adatai
+    # preferences table data
     $Self-&gt;{PreferencesTable}          = 'service_preferences';
     $Self-&gt;{PreferencesTableKey}       = 'preferences_key';
     $Self-&gt;{PreferencesTableValue}     = 'preferences_value';
@@ -858,15 +858,15 @@ sub new {
 sub ServicePreferencesSet {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     for (qw(ServiceID Key Value)) {
         if ( !defined( $Param{$_} ) ) {
-            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Szükséges: $_!" );
+            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need $_!" );
             return;
         }
     }
 
-    # régi adatok törlése
+    # delete old data
     return if !$Self-&gt;{DBObject}-&gt;Do(
         SQL =&gt; "DELETE FROM $Self-&gt;{PreferencesTable} WHERE "
             . "$Self-&gt;{PreferencesTableServiceID} = ? AND $Self-&gt;{PreferencesTableKey} = ?",
@@ -875,7 +875,7 @@ sub ServicePreferencesSet {
 
 $Self-&gt;{PreferencesTableValue} .= 'PreferencesCustom';
 
-    # új adatok beszúrása
+    # insert new data
     return $Self-&gt;{DBObject}-&gt;Do(
         SQL =&gt; "INSERT INTO $Self-&gt;{PreferencesTable} ($Self-&gt;{PreferencesTableServiceID}, "
             . " $Self-&gt;{PreferencesTableKey}, $Self-&gt;{PreferencesTableValue}) "
@@ -887,20 +887,20 @@ $Self-&gt;{PreferencesTableValue} .= 'PreferencesCustom';
 sub ServicePreferencesGet {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     for (qw(ServiceID)) {
         if ( !$Param{$_} ) {
-            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Szükséges: $_!" );
+            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need $_!" );
             return;
         }
     }
 
-    # annak ellenőrzése, hogy a szolgáltatás beállítások elérhetők-e
+    # check if service preferences are available
     if ( !$Self-&gt;{ConfigObject}-&gt;Get('ServicePreferences') ) {
         return;
     }
 
-    # beállítások lekérése
+    # get preferences
     return if !$Self-&gt;{DBObject}-&gt;Prepare(
         SQL =&gt; "SELECT $Self-&gt;{PreferencesTableKey}, $Self-&gt;{PreferencesTableValue} "
             . " FROM $Self-&gt;{PreferencesTable} WHERE $Self-&gt;{PreferencesTableServiceID} = ?",
@@ -911,7 +911,7 @@ sub ServicePreferencesGet {
         $Data{ $Row[0] } = $Row[1];
     }
 
-    # adatok visszaadása
+    # return data
     return %Data;
 }
 
@@ -958,7 +958,7 @@ találhat egy példát.
         </p><p>
         </p><pre class="programlisting">
 # --
-# Kernel/System/SLA/PreferencesCustom.pm - néhány felhasználói függvény
+# Kernel/System/SLA/PreferencesCustom.pm - some user functions
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -976,16 +976,16 @@ use vars qw(@ISA);
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # a szükséges objektumok ellenőrzése
+    # check needed objects
     for (qw(DBObject ConfigObject LogObject)) {
-        $Self-&gt;{$_} = $Param{$_} || die "Nincs $_!";
+        $Self-&gt;{$_} = $Param{$_} || die "Got no $_!";
     }
 
-    # beállítások tábla adatai
+    # preferences table data
     $Self-&gt;{PreferencesTable}      = 'sla_preferences';
     $Self-&gt;{PreferencesTableKey}   = 'preferences_key';
     $Self-&gt;{PreferencesTableValue} = 'preferences_value';
@@ -997,15 +997,15 @@ sub new {
 sub SLAPreferencesSet {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     for (qw(SLAID Key Value)) {
         if ( !defined( $Param{$_} ) ) {
-            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Szükséges: $_!" );
+            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need $_!" );
             return;
         }
     }
 
-    # régi adatok törlése
+    # delete old data
     return if !$Self-&gt;{DBObject}-&gt;Do(
         SQL =&gt; "DELETE FROM $Self-&gt;{PreferencesTable} WHERE "
             . "$Self-&gt;{PreferencesTableSLAID} = ? AND $Self-&gt;{PreferencesTableKey} = ?",
@@ -1014,7 +1014,7 @@ sub SLAPreferencesSet {
 
 $Self-&gt;{PreferencesTableValue} .= 'PreferencesCustom';
 
-    # új adatok beszúrása
+    # insert new data
     return $Self-&gt;{DBObject}-&gt;Do(
         SQL =&gt; "INSERT INTO $Self-&gt;{PreferencesTable} ($Self-&gt;{PreferencesTableSLAID}, "
             . " $Self-&gt;{PreferencesTableKey}, $Self-&gt;{PreferencesTableValue}) "
@@ -1026,20 +1026,20 @@ $Self-&gt;{PreferencesTableValue} .= 'PreferencesCustom';
 sub SLAPreferencesGet {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     for (qw(SLAID)) {
         if ( !$Param{$_} ) {
-            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Szükséges: $_!" );
+            $Self-&gt;{LogObject}-&gt;Log( Priority =&gt; 'error', Message =&gt; "Need $_!" );
             return;
         }
     }
 
-    # annak ellenőrzése, hogy az SLA beállítások elérhetők-e
+    # check if SLA preferences are available
     if ( !$Self-&gt;{ConfigObject}-&gt;Get('SLAPreferences') ) {
         return;
     }
 
-    # beállítások lekérése
+    # get preferences
     return if !$Self-&gt;{DBObject}-&gt;Prepare(
         SQL =&gt; "SELECT $Self-&gt;{PreferencesTableKey}, $Self-&gt;{PreferencesTableValue} "
             . " FROM $Self-&gt;{PreferencesTable} WHERE $Self-&gt;{PreferencesTableSLAID} = ?",
@@ -1050,7 +1050,7 @@ sub SLAPreferencesGet {
         $Data{ $Row[0] } = $Row[1];
     }
 
-    # adatok visszaadása
+    # return data
     return %Data;
 }
 
@@ -1088,7 +1088,7 @@ de egy szöveget fűz minden naplóbejegyzés elé.
         </p><p>
         </p><pre class="programlisting">
 # --
-# Kernel/System/Log/CustomFile.pm - fájlnaplózó háttérprogram
+# Kernel/System/Log/CustomFile.pm - file log backend
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -1106,32 +1106,31 @@ umask "002";
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # a szükséges objektumok lekérése
+    # get needed objects
     for (qw(ConfigObject EncodeObject)) {
         if ( $Param{$_} ) {
             $Self-&gt;{$_} = $Param{$_};
         }
         else {
-            die "Nincs $_!";
+            die "Got no $_!";
         }
     }
 
-    # a naplófájl helyének lekérése
+    # get logfile location
     $Self-&gt;{LogFile} = '/var/log/CustomFile.log';
 
-    # egyéni előtag beállítása
+    # set custom prefix
     $Self-&gt;{CustomPrefix} = 'CustomFileExample';
 
-    # A 2265. hiba javítása - IIS-nél létre kell hoznunk egy saját hibanapló fájlt.
-    # A szabványos hibakimenet kötése a naplófájlhoz, mert az IIS nem írja
-    # ki a szabványos hibakimenetet a weboldalra.
+    # Fixed bug# 2265 - For IIS we need to create a own error log file.
+    # Bind stderr to log file, because IIS do print stderr to web page.
     if ( $ENV{SERVER_SOFTWARE} &amp;&amp; $ENV{SERVER_SOFTWARE} =~ /^microsoft\-iis/i ) {
         if ( !open STDERR, '&gt;&gt;', $Self-&gt;{LogFile} . '.error' ) {
-            print STDERR "HIBA: nem lehet írni: $Self-&gt;{LogFile}.error: $!";
+            print STDERR "ERROR: Can't write $Self-&gt;{LogFile}.error: $!";
         }
     }
 
@@ -1143,17 +1142,17 @@ sub Log {
 
     my $FH;
 
-    # naplófájl megnyitása
+    # open logfile
     if ( !open $FH, '&gt;&gt;', $Self-&gt;{LogFile} ) {
 
-        # hibaképernyő kiírása
+        # print error screen
         print STDERR "\n";
-        print STDERR " &gt;&gt; Nem lehet írni: $Self-&gt;{LogFile}: $! &lt;&lt;\n";
+        print STDERR " &gt;&gt; Can't write $Self-&gt;{LogFile}: $! &lt;&lt;\n";
         print STDERR "\n";
         return;
     }
 
-    # naplófájl írása
+    # write log file
     $Self-&gt;{EncodeObject}-&gt;SetIO($FH);
     print $FH '[' . localtime() . ']';
     if ( lc $Param{Priority} eq 'debug' ) {
@@ -1170,16 +1169,16 @@ sub Log {
     }
     else {
 
-        # hibaüzenetek írása a szabványos hibakimenetre
+        # print error messages to STDERR
         print STDERR
-            "[Error][$Param{Module}] $Self-&gt;{CustomPrefix} prioritás: '$Param{Priority}' nincs meghatározva! Üzenet: $Param{Message}\n";
+            "[Error][$Param{Module}] $Self-&gt;{CustomPrefix} Priority: '$Param{Priority}' not defined! Message: $Param{Message}\n";
 
-        # és természetesen a naplófájlba
+        # and of course to logfile
         print $FH
-            "[Error][$Param{Module}] $Self-&gt;{CustomPrefix} prioritás: '$Param{Priority}' nincs meghatározva! Üzenet: $Param{Message}\n";
+            "[Error][$Param{Module}] $Self-&gt;{CustomPrefix} Priority: '$Param{Priority}' not defined! Message: $Param{Message}\n";
     }
 
-    # fájlkezelő lezárása
+    # close file handle
     close $FH;
     return 1;
 }
@@ -1352,7 +1351,7 @@ szubrutin elmagyarázásra kerül.
             </p><p>
                 </p><pre class="programlisting">
 # --
-# Kernel/System/Stats/Dynamic/DynamicStatsTemplate.pm - minden javasolt függvény
+# Kernel/System/Stats/Dynamic/DynamicStatsTemplate.pm - all advice functions
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -1762,7 +1761,7 @@ statisztikák modul.
             </p><p>
                 </p><pre class="programlisting">
 # --
-# Kernel/System/Stats/Dynamic/DynamicStatsTemplate.pm - minden javasolt függvény
+# Kernel/System/Stats/Dynamic/DynamicStatsTemplate.pm - all advice functions
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -1782,19 +1781,19 @@ use Kernel::System::Ticket;
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # a szükséges objektumok ellenőrzése
+    # check needed objects
     for my $Object (
         qw(DBObject ConfigObject LogObject UserObject TimeObject MainObject EncodeObject)
         )
     {
-        $Self-&gt;{$Object} = $Param{$Object} || die "Nincs $Object!";
+        $Self-&gt;{$Object} = $Param{$Object} || die "Got no $Object!";
     }
 
-    # a létrehozott szükséges objektumok
+    # created needed objects
     $Self-&gt;{QueueObject}    = Kernel::System::Queue-&gt;new( %{$Self} );
     $Self-&gt;{TicketObject}   = Kernel::System::Ticket-&gt;new( %{$Self} );
     $Self-&gt;{StateObject}    = Kernel::System::State-&gt;new( %{$Self} );
@@ -1805,28 +1804,28 @@ sub new {
 sub GetObjectName {
     my ( $Self, %Param ) = @_;
 
-    return 'Minta statisztikák';
+    return 'Sample Statistics';
 }
 
 sub GetObjectAttributes {
     my ( $Self, %Param ) = @_;
 
-    # állapotlista lekérése
+    # get state list
     my %StateList = $Self-&gt;{StateObject}-&gt;StateList(
         UserID =&gt; 1,
     );
 
-    # várólisták listájának lekérése
+    # get queue list
     my %QueueList = $Self-&gt;{QueueObject}-&gt;GetAllQueues();
 
-    # a jelenlegi idő lekérése a 3830. hiba javításához
+    # get current time to fix bug#3830
     my $TimeStamp = $Self-&gt;{TimeObject}-&gt;CurrentTimestamp();
     my ($Date) = split /\s+/, $TimeStamp;
     my $Today = sprintf "%s 23:59:59", $Date;
 
     my @ObjectAttributes = (
         {
-            Name             =&gt; 'Állapot',
+            Name             =&gt; 'State',
             UseAsXvalue      =&gt; 1,
             UseAsValueSeries =&gt; 1,
             UseAsRestriction =&gt; 1,
@@ -1835,7 +1834,7 @@ sub GetObjectAttributes {
             Values           =&gt; \%StateList,
         },
         {
-            Name             =&gt; 'Létrehozva várólistában',
+            Name             =&gt; 'Created in Queue',
             UseAsXvalue      =&gt; 1,
             UseAsValueSeries =&gt; 1,
             UseAsRestriction =&gt; 1,
@@ -1845,7 +1844,7 @@ sub GetObjectAttributes {
             Values           =&gt; \%QueueList,
         },
         {
-            Name             =&gt; 'Létrehozás ideje',
+            Name             =&gt; 'Create Time',
             UseAsXvalue      =&gt; 1,
             UseAsValueSeries =&gt; 1,
             UseAsRestriction =&gt; 1,
@@ -1866,7 +1865,7 @@ sub GetObjectAttributes {
 sub GetStatElement {
     my ( $Self, %Param ) = @_;
 
-    # jegyek keresése
+    # search tickets
     return $Self-&gt;{TicketObject}-&gt;TicketSearch(
         UserID     =&gt; 1,
         Result     =&gt; 'COUNT',
@@ -1879,7 +1878,7 @@ sub GetStatElement {
 sub ExportWrapper {
     my ( $Self, %Param ) = @_;
 
-    # azonosítók átalakítása a használt helyesíráshoz
+    # wrap ids to used spelling
     for my $Use (qw(UseAsValueSeries UseAsRestriction UseAsXvalue)) {
         ELEMENT:
         for my $Element ( @{ $Param{$Use} } ) {
@@ -1910,7 +1909,7 @@ sub ExportWrapper {
 sub ImportWrapper {
     my ( $Self, %Param ) = @_;
 
-    # a használt helyesírás átalakítása az azonosítókhoz
+    # wrap used spelling to ids
     for my $Use (qw(UseAsValueSeries UseAsRestriction UseAsXvalue)) {
         ELEMENT:
         for my $Element ( @{ $Param{$Use} } ) {
@@ -1950,7 +1949,7 @@ sub ImportWrapper {
                     else {
                         $Self-&gt;{LogObject}-&gt;Log(
                             Priority =&gt; 'error',
-                            Message  =&gt; "Importálás: Nem található az állapot: $ID-&gt;{Content}!"
+                            Message  =&gt; "Import: Can' find state $ID-&gt;{Content}!"
                         );
                         $ID = undef;
                     }
@@ -2150,11 +2149,11 @@ use Kernel::System::Queue;
 
 =head1 NAME
 
-StaticStatsTemplate.pm - a modul, amely létrehozza a statisztikákat a várólistákban lévő jegyekről
+StaticStatsTemplate.pm - the module that creates the stats about tickets in a queue
 
 =head1 SYNOPSIS
 
-Az összes függvény
+All functions
 
 =head1 PUBLIC INTERFACE
 
@@ -2164,7 +2163,7 @@ Az összes függvény
 
 =item new()
 
-egy objektum létrehozása
+create an object
 
     use Kernel::Config;
     use Kernel::System::Encode;
@@ -2208,20 +2207,20 @@ egy objektum létrehozása
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {%Param};
     bless( $Self, $Type );
 
-    # az összes szükséges objektum ellenőrzése
+    # check all needed objects
     for my $Needed (
         qw(DBObject ConfigObject LogObject
         TimeObject MainObject EncodeObject)
         )
     {
-        $Self-&gt;{$Needed} = $Param{$Needed} || die "Nincs $Needed";
+        $Self-&gt;{$Needed} = $Param{$Needed} || die "Got no $Needed";
     }
 
-    # a szükséges objektumok létrehozása
+    # create needed objects
     $Self-&gt;{TypeObject}   = Kernel::System::Type-&gt;new( %{$Self} );
     $Self-&gt;{TicketObject} = Kernel::System::Ticket-&gt;new( %{$Self} );
     $Self-&gt;{QueueObject}  = Kernel::System::Queue-&gt;new( %{$Self} );
@@ -2231,7 +2230,7 @@ sub new {
 
 =item Param()
 
-Az összes paraméter lekérése, amelyet egy felhasználó megadhat.
+Get all parameters a user can specify.
 
     my @Params = $StatsObject-&gt;Param();
 
@@ -2267,7 +2266,7 @@ sub Param {
 
 =item Run()
 
-A statisztika előállítása.
+generate the statistic.
 
     my $StatsInfo = $StatsObject-&gt;Run(
         TypeIDs  =&gt; [
@@ -2283,25 +2282,25 @@ A statisztika előállítása.
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     for my $Needed (qw(TypeIDs QueueIDs)) {
         if ( !$Param{$Needed} ) {
             $Self-&gt;{LogObject}-&gt;Log(
                 Priority =&gt; 'error',
-                Message  =&gt; "Szükséges: $Needed!",
+                Message  =&gt; "Need $Needed!",
             );
             return;
         }
     }
 
-    # a jelentés címének beállítása
-    my $Title = 'Jegyek várólistánként';
+    # set report title
+    my $Title = 'Tickets per Queue';
 
-    # táblázat címsorok
+    # table headlines
     my @HeadData = (
-        'Jegyszám',
-        'Várólista',
-        'Típus',
+        'Ticket Number',
+        'Queue',
+        'Type',
     );
 
     my @Data;
@@ -2324,8 +2323,6 @@ sub Run {
 }
 
 1;
-
-=back
                 </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="module-stats-static-configuration"></a>Beállítási példa</h6></div></div></div><p>
 Nincs szükség beállításokra. Közvetlenül telepítés után a modul elérhető egy
@@ -2448,7 +2445,7 @@ Vezérlőpult modul statisztikák megjelenítéséhez vonaldiagram formájában.
         </p><p>
             </p><pre class="programlisting">
 # --
-# Kernel/Output/HTML/DashboardTicketStatsGeneric.pm - napi üzenet
+# Kernel/Output/HTML/DashboardTicketStatsGeneric.pm - message of the day
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -2464,11 +2461,11 @@ use warnings;
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {%Param};
     bless( $Self, $Type );
 
-    # szükséges objektumok lekérése
+    # get needed objects
     for (
         qw(Config Name ConfigObject LogObject DBObject LayoutObject ParamObject TicketObject UserID)
         )
@@ -2530,19 +2527,19 @@ sub Run {
 
         my $CountCreated = $Self-&gt;{TicketObject}-&gt;TicketSearch(
 
-            # keresési eredmények gyorsítótárazása 20 percre
+            # cache search result 20 min
             CacheTTL =&gt; 60 * 20,
 
-            # jegyek ez utáni létrehozásai idővel ... (ennél a dátumnál újabb jegyek) (elhagyható)
+            # tickets with create time after ... (ticket newer than this date) (optional)
             TicketCreateTimeNewerDate =&gt; "$Year-$Month-$Day 00:00:00",
 
-            # jegyek ez előtti létrehozásai idővel ... (ennél a dátumnál régebbi jegyek) (elhagyható)
+            # tickets with created time before ... (ticket older than this date) (optional)
             TicketCreateTimeOlderDate =&gt; "$Year-$Month-$Day 23:59:59",
 
             CustomerID =&gt; $Param{Data}-&gt;{UserCustomerID},
             Result     =&gt; 'COUNT',
 
-            # keresés felhasználói jogosultságokkal
+            # search with user permissions
             Permission =&gt; $Self-&gt;{Config}-&gt;{Permission} || 'ro',
             UserID =&gt; $Self-&gt;{UserID},
         );
@@ -2553,19 +2550,19 @@ sub Run {
 
         my $CountClosed = $Self-&gt;{TicketObject}-&gt;TicketSearch(
 
-            # keresési eredmények gyorsítótárazása 20 percre
+            # cache search result 20 min
             CacheTTL =&gt; 60 * 20,
 
-            # jegyek ez utáni létrehozásai idővel ... (ennél a dátumnál újabb jegyek) (elhagyható)
+            # tickets with create time after ... (ticket newer than this date) (optional)
             TicketCloseTimeNewerDate =&gt; "$Year-$Month-$Day 00:00:00",
 
-            # jegyek ez előtti létrehozásai idővel ... (ennél a dátumnál régebbi jegyek) (elhagyható)
+            # tickets with created time before ... (ticket older than this date) (optional)
             TicketCloseTimeOlderDate =&gt; "$Year-$Month-$Day 23:59:59",
 
             CustomerID =&gt; $Param{Data}-&gt;{UserCustomerID},
             Result     =&gt; 'COUNT',
 
-            # keresés felhasználói jogosultságokkal
+            # search with user permissions
             Permission =&gt; $Self-&gt;{Config}-&gt;{Permission} || 'ro',
             UserID =&gt; $Self-&gt;{UserID},
         );
@@ -2660,13 +2657,13 @@ use Kernel::System::Custom;
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # a szükséges objektumok lekérése
+    # get needed objects
     for my $Object (qw(ConfigObject LogObject DBObject LayoutObject TimeObject UserID)) {
-        $Self-&gt;{$Object} = $Param{$Object} || die "Nincs $Object!";
+        $Self-&gt;{$Object} = $Param{$Object} || die "Got no $Object!";
     }
     $Self-&gt;{CustomObject} = Kernel::System::Custom-&gt;new(%Param);
     return $Self;
@@ -2675,7 +2672,7 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    # munkamenet-információk lekérése
+    # get session info
     my %CustomParam      = ();
     my @Customs    = $Self-&gt;{CustomObject}-&gt;GetAllCustomIDs();
     my $IdleMinutes = $Param{Config}-&gt;{IdleMinutes} || 60 * 2;
@@ -2772,13 +2769,13 @@ use warnings;
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless( $Self, $Type );
 
-    # a szükséges objektumok lekérése
+    # get needed objects
     for my $Object (qw(ConfigObject LogObject DBObject LayoutObject UserID TicketObject)) {
-        $Self-&gt;{$Object} = $Param{$Object} || die "Nincs $Object!";
+        $Self-&gt;{$Object} = $Param{$Object} || die "Got no $Object!";
     }
 
     return $Self;
@@ -2787,22 +2784,22 @@ sub new {
 sub Run {
     my ( $Self, %Param ) = @_;
 
-    # a szükséges dolgok ellenőrzése
+    # check needed stuff
     if ( !$Param{Ticket} ) {
         $Self-&gt;{LogObject}-&gt;Log(
             Priority =&gt; 'error',
-            Message  =&gt; 'Jegy szükséges!'
+            Message  =&gt; 'Need Ticket!'
         );
         return;
     }
 
-    # annak ellenőrzése, hogy az előtétprogram modul regisztrálva van-e,     # és ha nincs, akkor ne jelenítse meg a műveletet
+    # check if frontend module registered, if not, do not show action
     if ( $Param{Config}-&gt;{Action} ) {
         my $Module = $Self-&gt;{ConfigObject}-&gt;Get('Frontend::Module')-&gt;{ $Param{Config}-&gt;{Action} };
         return if !$Module;
     }
 
-    # jogosultság ellenőrzése
+    # check permission
     my $AccessOk = $Self-&gt;{TicketObject}-&gt;Permission(
         Type     =&gt; 'rw',
         TicketID =&gt; $Param{Ticket}-&gt;{TicketID},
@@ -2811,7 +2808,7 @@ sub Run {
     );
     return if !$AccessOk;
 
-    # jogosultság ellenőrzése
+    # check permission
     if ( $Self-&gt;{TicketObject}-&gt;CustomIsTicketCustom( TicketID =&gt; $Param{Ticket}-&gt;{TicketID} ) ) {
         my $AccessOk = $Self-&gt;{TicketObject}-&gt;OwnerCheck(
             TicketID =&gt; $Param{Ticket}-&gt;{TicketID},
@@ -2820,35 +2817,35 @@ sub Run {
         return if !$AccessOk;
     }
 
-    # ACL ellenőrzése
+    # check acl
     return
         if defined $Param{ACL}-&gt;{ $Param{Config}-&gt;{Action} }
             &amp;&amp; !$Param{ACL}-&gt;{ $Param{Config}-&gt;{Action} };
 
-    # ha a jegy személyre van szabva
+    # if ticket is customized
     if ( $Param{Ticket}-&gt;{Custom} eq 'lock' ) {
 
-        # ha zárolva van valaki más számára
+        # if it is locked for somebody else
         return if $Param{Ticket}-&gt;{OwnerID} ne $Self-&gt;{UserID};
 
-        # egyéni művelet megjelenítése
+        # show custom action
         return {
             %{ $Param{Config} },
             %{ $Param{Ticket} },
             %Param,
             Name        =&gt; 'Custom',
-            Description =&gt; 'Egyéni a várólistába történő visszaadáshoz!',
+            Description =&gt; 'Custom to give it back to the queue!',
             Link        =&gt; 'Action=AgentTicketCustom;Subaction=Custom;TicketID=$QData{"TicketID"}',
         };
     }
 
-    # ha a jegy személyre van szabva
+    # if ticket is customized
     return {
         %{ $Param{Config} },
         %{ $Param{Ticket} },
         %Param,
         Name        =&gt; 'Custom',
-        Description =&gt; 'Szabja személyre, hogy dolgozhasson vele!',
+        Description =&gt; 'Custom it to work on it!',
         Link        =&gt; 'Action=AgentTicketCustom;Subaction=Custom;TicketID=$QData{"TicketID"}',
     };
 }
@@ -2945,7 +2942,7 @@ ehelyett ez az egyéni modul működik visszacsatolási felületként.
             </p><p>
                 </p><pre class="programlisting">
 # --
-# Kernel/GenericInterface/Transport/HTTP/Test.pm - általános felület hálózati átviteli felület teszteléshez
+# Kernel/GenericInterface/Transport/HTTP/Test.pm - GenericInterface network transport interface for testing
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -2962,7 +2959,7 @@ use HTTP::Request::Common;
 use LWP::UserAgent;
 use LWP::Protocol;
 
-# A „Used once” figyelmeztetés megakadályozása a Kernel::OM objektumnál
+# prevent 'Used once' warning for Kernel::OM
 use Kernel::System::ObjectManager;
 
 our $ObjectManagerDisabled = 1;
@@ -3171,10 +3168,6 @@ ahol a távoli rendszerek nem érhetők el.
             </p><p>
                 Egy új modul kifejlesztéséhez nem ajánljuk ezen megközelítés használatát,
 egy valódi protokollt kell megvalósítani.
-            </p><p>
-                </p><pre class="programlisting">
-1;
-                </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="transport-configuration"></a>Beállítási példa</h6></div></div></div><p>
                 Szükség van ezen hálózati átviteli modul regisztrálására, hogy elérhető
 legyen az OTRS grafikus felhasználói felületén. Ezt a lenti XML beállítás
@@ -3278,7 +3271,7 @@ szubrutin elmagyarázásra kerül.
             </p><p>
                 </p><pre class="programlisting">
 # --
-# Kernel/GenericInterface/Mapping/Test.pm - Általános felület teszt adatleképező háttérprogram
+# Kernel/GenericInterface/Mapping/Test.pm - GenericInterface test data mapping backend
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -3477,10 +3470,6 @@ sub _Empty {
             </p><p>
                 Ezek azok a segédfüggvények, amelyek ténylegesen végrehajtják a
 szövegátalakításokat.
-            </p><p>
-                </p><pre class="programlisting">
-1;
-                </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="mapping-configuration"></a>Beállítási példa</h6></div></div></div><p>
                 Szükség van ezen leképezőmodul regisztrálására, hogy elérhető legyen az OTRS
 grafikus felhasználói felületén. Ezt a lenti XML beállítás használatával
@@ -3519,7 +3508,7 @@ szubrutin elmagyarázásra kerül.
             </p><p>
                 </p><pre class="programlisting">
 # --
-# Kernel/GenericInterface/Invoker/Test.pm - általános felület tesztadat meghívó háttérprogram
+# Kernel/GenericInterface/Invoker/Test.pm - GenericInterface test data Invoker backend
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -3534,7 +3523,7 @@ use warnings;
 
 use Kernel::System::VariableCheck qw(IsString IsStringWithData);
 
-# A „Used once” figyelmeztetés megakadályozása a Kernel::OM objektumnál
+# prevent 'Used once' warning for Kernel::OM
 use Kernel::System::ObjectManager;
 
 our $ObjectManagerDisabled = 1;
@@ -3699,11 +3688,7 @@ hogy a válasz a távoli rendszer által leírt formátumban volt-e, és
 végrehajthat néhány műveletet, mint például: egy másik meghívó meghívása,
 egy hívás végrehajtása egy alapmodulhoz, az adatbázis frissítése, hiba
 küldése, stb.
-                </p></div><p>
-                </p><pre class="programlisting">
-=back
-                </pre><p>
-            </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="invoker-configuration"></a>Beállítási példa</h6></div></div></div><p>
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="invoker-configuration"></a>Beállítási példa</h6></div></div></div><p>
                 Szükség van ezen meghívómodul regisztrálására, hogy elérhető legyen az OTRS
 grafikus felhasználói felületén. Ezt a lenti XML beállítás használatával
 lehet megtenni.
@@ -3743,8 +3728,8 @@ végrehajtani a szolgáltató által kezelt műveletet
 szubrutin elmagyarázásra kerül.
             </p><p>
                 </p><pre class="programlisting">
---
-# Kernel/GenericInterface/Operation/Test/Test.pm - Általános felület teszt műveleti háttérprogram
+# --
+# Kernel/GenericInterface/Operation/Test/Test.pm - GenericInterface test operation backend
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -3848,10 +3833,6 @@ valamint visszaszállítja a távoli rendszerhez.
                 Ez a bizonyos példa ugyanúgy adja vissza az adatokat, ahogy azok a távoli
 rendszertől jönnek, hacsak a <code class="literal">TestError</code> paraméter át nincs
 adva. Ebben az esetben egy hibát ad vissza.
-            </p><p>
-                </p><pre class="programlisting">
-1;
-                </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="operation-configuration"></a>Beállítási példa</h6></div></div></div><p>
                 Szükség van ezen műveletmodul regisztrálására, hogy elérhető legyen az OTRS
 grafikus felhasználói felületén. Ezt a lenti XML beállítás használatával
@@ -3903,7 +3884,7 @@ use Kernel::GenericInterface::Operation::Test::Test;
 
 use Kernel::System::VariableCheck qw(:all);
 
-# SSL-tanúsítvány ellenőrzésének kihagyása (a RestoreDatabase használata tilos ebben a tesztben).
+# Skip SSL certificate verification (RestoreDatabase must not be used in this test).
 $Kernel::OM-&gt;ObjectParamAdd(
     'Kernel::System::UnitTest::Helper' =&gt; {
         SkipSSLVerify =&gt; 1,
@@ -3911,10 +3892,10 @@ $Kernel::OM-&gt;ObjectParamAdd(
 );
 my $Helper = $Kernel::OM-&gt;Get('Kernel::System::UnitTest::Helper');
 
-# véletlen szám kérése
+# get a random number
 my $RandomID = $Helper-&gt;GetRandomNumber();
 
-# új felhasználó létrehozása a jelenlegi teszthez
+# create a new user for current test
 my $UserLogin = $Helper-&gt;TestUserCreate(
     Groups =&gt; ['users'],
 );
@@ -3924,15 +3905,15 @@ my $UserID = $Kernel::OM-&gt;Get('Kernel::System::User')-&gt;UserLookup(
     UserLogin =&gt; $UserLogin,
 );
 
-# webszolgáltatás nevének beállítása
+# set web-service name
 my $WebserviceName = '-Test-' . $RandomID;
 
-# webszolgáltatás objektum létrehozása
+# create web-service object
 my $WebserviceObject = $Kernel::OM-&gt;Get('Kernel::System::GenericInterface::Webservice');
 $Self-&gt;Is(
     'Kernel::System::GenericInterface::Webservice',
     ref $WebserviceObject,
-    "Webszolgáltatás objektum létrehozása",
+    "Create web service object",
 );
 
 my $WebserviceID = $WebserviceObject-&gt;WebserviceAdd(
@@ -3952,15 +3933,15 @@ my $WebserviceID = $WebserviceObject-&gt;WebserviceAdd(
 );
 $Self-&gt;True(
     $WebserviceID,
-    "Webszolgáltatás hozzáadása",
+    "Added Web Service",
 );
 
-# távoli gép lekérése néhány óvintézkedéssel bizonyos egységteszt rendszereknél
+# get remote host with some precautions for certain unit test systems
 my $Host = $Helper-&gt;GetTestHTTPHostname();
 
 my $ConfigObject = $Kernel::OM-&gt;Get('Kernel::Config');
 
-# webszolgáltatás beállításának előkészítése
+# prepare web-service config
 my $RemoteSystem =
     $ConfigObject-&gt;Get('HttpType')
     . '://'
@@ -3972,7 +3953,7 @@ my $RemoteSystem =
 
 my $WebserviceConfig = {
     Description =&gt;
-        'Teszt a SOAP-átviteli háttérprogramot használó jegycsatlakozóhoz.',
+        'Test for Ticket Connector using SOAP transport backend.',
     Debugger =&gt; {
         DebugThreshold =&gt; 'debug',
         TestMode       =&gt; 1,
@@ -4004,16 +3985,15 @@ my $WebserviceConfig = {
         Invoker =&gt; {
             Test =&gt; {
                 Type =&gt; 'Test::TestSimple'
-                ,    # a meghívónak Test::TestSimple típusúnak kell lennie azért,
-                     # hogy egy kérést szimuláljon egy távoli rendszerhez
+                ,    # requester needs to be Test::TestSimple in order to simulate a request to a remote system
             },
         },
     },
 };
 
-# webszolgáltatás frissítése valódi beállítással
-# a frissítés szükséges, mert a webszolgáltatás-azonosítót
-# használjuk a végponthoz a beállításban
+# update web-service with real config
+# the update is needed because we are using
+# the WebserviceID for the Endpoint in config
 my $WebserviceUpdate = $WebserviceObject-&gt;WebserviceUpdate(
     ID      =&gt; $WebserviceID,
     Name    =&gt; $WebserviceName,
@@ -4023,10 +4003,10 @@ my $WebserviceUpdate = $WebserviceObject-&gt;WebserviceUpdate(
 );
 $Self-&gt;True(
     $WebserviceUpdate,
-    "A webszolgáltatás frissítve: $WebserviceID - $WebserviceName",
+    "Updated Web Service $WebserviceID - $WebserviceName",
 );
 
-# hibakereső objektum
+# debugger object
 my $DebuggerObject = Kernel::GenericInterface::Debugger-&gt;new(
     DebuggerConfig =&gt; {
         DebugThreshold =&gt; 'debug',
@@ -4038,42 +4018,42 @@ my $DebuggerObject = Kernel::GenericInterface::Debugger-&gt;new(
 $Self-&gt;Is(
     ref $DebuggerObject,
     'Kernel::GenericInterface::Debugger',
-    'A hibakereső-objektum helyesen lett példányosítva',
+    'DebuggerObject instantiate correctly',
 );
 
-# tesztesetek meghatározása
+# define test cases
 my @Tests = (
     {
-        Name           =&gt; 'Teszteset neve',
-        SuccessRequest =&gt; 1,                  # 1 vagy 0
+        Name           =&gt; 'Test case name',
+        SuccessRequest =&gt; 1,                  # 1 or 0
         RequestData    =&gt; {
 
-            # ...és a tesztadatok
+            # ... add test data
         },
         ExpectedReturnLocalData =&gt; {
             Data =&gt; {
 
-                # ...elvárt helyi eredmények hozzáadása
+                # ... add expected local results
             },
-            Success =&gt; 1,                     # 1 vagy 0
+            Success =&gt; 1,                     # 1 or 0
         },
         ExpectedReturnRemoteData =&gt; {
             Data =&gt; {
 
-                # ...elvárt távoli eredmények hozzáadása
+                # ... add expected remote results
             },
-            Success =&gt; 1,                     # 1 vagy 0
+            Success =&gt; 1,                     # 1 or 0
         },
         Operation =&gt; 'Test',
     },
 
-    # ...további tesztesetek hozzáadása
+    # ... add more test cases
 );
 
 TEST:
 for my $Test (@Tests) {
 
-    # helyi objektum létrehozása
+    # create local object
     my $LocalObject = "Kernel::GenericInterface::Operation::Test::$Test-&gt;{Operation}"-&gt;new(
         DebuggerObject =&gt; $DebuggerObject,
         WebserviceID   =&gt; $WebserviceID,
@@ -4082,7 +4062,7 @@ for my $Test (@Tests) {
     $Self-&gt;Is(
         "Kernel::GenericInterface::Operation::Test::$Test-&gt;{Operation}",
         ref $LocalObject,
-        "$Test-&gt;{Name} - Helyi objektum létrehozása",
+        "$Test-&gt;{Name} - Create local object",
     );
 
     my %Auth = (
@@ -4093,7 +4073,7 @@ for my $Test (@Tests) {
         %Auth = %{ $Test-&gt;{Auth} };
     }
 
-    # kérő indítása a webszolgáltatásunkkal
+    # start requester with our web-service
     my $LocalResult = $LocalObject-&gt;Run(
         WebserviceID =&gt; $WebserviceID,
         Invoker      =&gt; $Test-&gt;{Operation},
@@ -4103,22 +4083,22 @@ for my $Test (@Tests) {
         },
     );
 
-    # eredmény ellenőrzése
+    # check result
     $Self-&gt;Is(
         'HASH',
         ref $LocalResult,
-        "$Test-&gt;{Name} - A helyi eredményszerkezet helyes",
+        "$Test-&gt;{Name} - Local result structure is valid",
     );
 
-    # kérő objektum létrehozása
+    # create requester object
     my $RequesterObject = $Kernel::OM-&gt;Get('Kernel::GenericInterface::Requester');
     $Self-&gt;Is(
         'Kernel::GenericInterface::Requester',
         ref $RequesterObject,
-        "$Test-&gt;{Name} - Kérő objektum létrehozása",
+        "$Test-&gt;{Name} - Create requester object",
     );
 
-    # kérő indítása a webszolgáltatásunkkal
+    # start requester with our web-service
     my $RequesterResult = $RequesterObject-&gt;Run(
         WebserviceID =&gt; $WebserviceID,
         Invoker      =&gt; $Test-&gt;{Operation},
@@ -4128,41 +4108,41 @@ for my $Test (@Tests) {
         },
     );
 
-    # eredmény ellenőrzése
+    # check result
     $Self-&gt;Is(
         'HASH',
         ref $RequesterResult,
-        "$Test-&gt;{Name} - A kérő eredményszerkezete helyes",
+        "$Test-&gt;{Name} - Requester result structure is valid",
     );
 
     $Self-&gt;Is(
         $RequesterResult-&gt;{Success},
         $Test-&gt;{SuccessRequest},
-        "$Test-&gt;{Name} - A kérő sikeres eredményt adott",
+        "$Test-&gt;{Name} - Requester successful result",
     );
 
-    # ...tesztek hozzáadása az eredményekhez
+    # ... add tests for the results
 }
 
-# webszolgáltatás törlése
+# delete web service
 my $WebserviceDelete = $WebserviceObject-&gt;WebserviceDelete(
     ID     =&gt; $WebserviceID,
     UserID =&gt; $UserID,
 );
 $Self-&gt;True(
     $WebserviceDelete,
-    "Webszolgáltatás törölve: $WebserviceID",
+    "Deleted Web Service $WebserviceID",
 );
 
-# törölni kell a teszt alatt minden egyéb hozzáadott adatot, mivel a RestoreDatabase használata tilos.
+# also delete any other added data during the this test, since RestoreDatabase must not be used.
 
 1;
                 </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="operation-wsdl"></a>WSDL-kiterjesztés példa</h6></div></div></div><p>
-                A WSDL-fájlok tartalmazzák a webszolgáltatás és a SOAP-üzenethez tartozó
-műveleteinek meghatározásait abban az esetben, a kibővítjük a
+                WSDL files contain the definitions of the web services and its operations
+for SOAP messages, in case we will extend
 <code class="filename">development/webservices/GenericTickeConnectorSOAP.wsdl</code>
-fájlt néhány helyen:
+in some places:
             </p><p>
                 Port típusa:
             </p><p>
@@ -4234,9 +4214,9 @@ fájlt néhány helyen:
     &lt;!-- ... --&gt;
                 </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="operation-wadl"></a>WADL-kiterjesztés példa</h6></div></div></div><p>
-                A WADL-fájlok tartalmazzák a webszolgáltatás és a REST-felülethez tartozó
-műveleteinek meghatározásait. Adjon hozzá egy új erőforrást a
-<code class="filename">development/webservices/GenericTickeConnectorREST.wadl</code>fájlhoz.
+                WADL files contain the definitions of the web services and its operations
+for REST interface, add a new resource to
+<code class="filename">development/webservices/GenericTickeConnectorREST.wadl</code>.
             </p><p>
                 </p><pre class="programlisting">
   &lt;resources base="http://localhost/otrs/nph-genericinterface.pl/Webservice/GenericTicketConnectorREST"&gt;
@@ -4258,10 +4238,10 @@ műveleteinek meghatározásait. Adjon hozzá egy új erőforrást a
   &lt;/resources&gt;
                 </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="operation-soap"></a>Webszolgáltatás SOAP-kiterjesztés példa</h6></div></div></div><p>
-                A webszolgáltatások importálhatók az OTRS-be egy előre meghatározott
-szerkezettel rendelkező YAML-fájllal. Ebben az esetben a
+                Web services can be imported into OTRS by a YAML with a predefined structure
+in this case we will extend
 <code class="filename">development/webservices/GenericTickeConnectorSOAP.yml</code>
-fájlt bővítjük ki egy SOAP webszolgáltatáshoz.
+for a SOAP web service.
             </p><p>
                 </p><pre class="programlisting">
 Provider:
@@ -4274,10 +4254,10 @@ Provider:
       Type: Test::Test
                 </pre><p>
             </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="operation-rest"></a>Webszolgáltatás REST-kiterjesztés példa</h6></div></div></div><p>
-                A webszolgáltatások importálhatók az OTRS-be egy előre meghatározott
-szerkezettel rendelkező YAML-fájllal. Ebben az esetben a
+                Web services can be imported into OTRS by a YAML with a predefined structure
+in this case we will extend
 <code class="filename">development/webservices/GenericTickeConnectorREST.yml</code>
-fájlt bővítjük ki egy REST webszolgáltatáshoz.
+for a REST web service.
             </p><p>
                 </p><pre class="programlisting">
 Provider:
@@ -4373,9 +4353,8 @@ our @ObjectDependencies = (
 );
                     </pre><p>
                 </p><p>
-                    Ez egy gyakori fejléc, amely megtalálható a legtöbb OTRS modulban. Az
-osztály/csomag neve a <code class="literal">package</code> kulcsszón keresztül van
-deklarálva.
+                    This is common header that can be found in most OTRS modules. The
+class/package name is declared via the <code class="literal">package</code> keyword.
                 </p><p>
                     Ebben az esetben a <code class="literal">BaseDaemon</code> osztályból származtatunk
 le, és az objektumkezelő függőségei be vannak állítva.
@@ -4596,9 +4575,8 @@ our @ObjectDependencies = (
 );
                         </pre><p>
                     </p><p>
-                        Ez egy gyakori fejléc, amely megtalálható a legtöbb OTRS modulban. Az
-osztály/csomag neve a <code class="literal">package</code> kulcsszón keresztül van
-deklarálva.
+                        This is common header that can be found in most OTRS modules. The
+class/package name is declared via the <code class="literal">package</code> keyword.
                     </p><p>
                         Ebben az esetben a <code class="literal">BaseTaskWorker</code> osztályból
 származtatunk le, és az objektumkezelő függőségei be vannak állítva.
@@ -5157,7 +5135,7 @@ párbeszédablak van megjelenítve és elmagyarázva.
             </p><p>
             </p><pre class="programlisting">
 # --
-# Kernel/Modules/AdminDynamicFieldPassword.pm - dinamikus mezők jelszó beállítási nézetét biztosítja az adminisztrátoroknak
+# Kernel/Modules/AdminDynamicFieldPassword.pm - provides a dynamic fields password config view for admins
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -5745,7 +5723,7 @@ párbeszédablak sablon van megjelenítve és elmagyarázva.
             </p><p>
             </p><pre class="programlisting">
 # --
-# AdminDynamicFieldPassword.tt - HTML űrlapot biztosít az AdminDynamicFieldPassword modulhoz
+# AdminDynamicFieldPassword.tt - provides HTML form for AdminDynamicFieldPassword
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -5957,7 +5935,7 @@ eredményeket igényelnek.
          </p><p>
             </p><pre class="programlisting">
 # --
-# Kernel/System/DynamicField/Driver/Password.pm - Illesztőprogram a dinamikus mező jelszó háttérprogramjához
+# Kernel/System/DynamicField/Driver/Password.pm - Driver for DynamicField Password backend
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -6263,14 +6241,6 @@ sub ReadableValueRender {
         </p><p>
             Ez a függvény hasonló a <code class="code">DisplayValueRender()</code> függvényhez, de
 olyan helyeken használják, ahol nincs <code class="literal">LayoutObject</code>.
-        </p><p>
-            </p><pre class="programlisting">
-1;
-
-=back
-            </pre><p>
-        </p><p>
-            A normál OTRS lábléc egy Perl-modul fájlhoz.
         </p></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-new-field-driver-other-functions"></a>Egyéb függvények:</h6></div></div></div><p>
             A következők olyan egyéb függvények, amelyek talán szükségesek lehetnek, ha
 egy új dinamikus mező nem örököl más osztályokból. Ezen függvények teljes
@@ -6555,7 +6525,7 @@ kiterjesztés van megjelenítve és elmagyarázva. A kiterjesztés csak a
          </p><p>
             </p><pre class="programlisting">
 # --
-# Kernel/System/DynamicField/FooExtensionBackend.pm - Kiterjesztés a dinamikus mező háttérprogramhoz
+# Kernel/System/DynamicField/FooExtensionBackend.pm - Extension for DynamicField backend
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -6576,7 +6546,7 @@ Kernel::System::DynamicField::FooExtensionBackend
 
 =head1 SYNOPSIS
 
-Dinamikus mezők kiterjesztés a háttérprogramhoz
+DynamicFields Extension for Backend
 
 =head1 PUBLIC INTERFACE
 
@@ -6674,15 +6644,7 @@ illesztőprogram képes-e végrehajtani a függvényt. Ennek elvégzéséhez
 szükséges egy mechanizmus megvalósítása az előtétprogram modulban egy
 különleges viselkedés megköveteléséhez a dinamikus mezőnél, és csak azután
 hívja meg a függvényt a háttérprogram objektumban.
-            </p></div><p>
-            </p><pre class="programlisting">
-1;
-
-=back
-            </pre><p>
-        </p><p>
-            A normál OTRS lábléc egy Perl-modul fájlhoz.
-        </p></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-extend-field-driver"></a>Dinamikus mező illesztőprogram kiterjesztés példa</h6></div></div></div><p>
+            </p></div></div></div><div class="section"><div class="titlepage"><div><div><h6 class="title"><a name="dynamic-fields-extend-field-driver"></a>Dinamikus mező illesztőprogram kiterjesztés példa</h6></div></div></div><p>
         Az illesztőprogram kiterjesztések átláthatóan lesznek betöltve magába az
 illesztőprogramba egy alaposztályként. Az illesztőprogramból az összes
 meghatározott objektum és tulajdonság elérhető lesz a kiterjesztésben.
@@ -6697,8 +6659,7 @@ kiterjesztés csak a <code class="code">Foo()</code> függvényt valósítja meg
          </p><p>
             </p><pre class="programlisting">
 # --
-# Kernel/System/DynamicField/Driver/FooExtensionText.pm - Kiterjesztés a
-#     dinamikus mező szöveg illesztőprogramjához
+# Kernel/System/DynamicField/Driver/FooExtensionText.pm - Extension for DynamicField Text Driver
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This software comes with ABSOLUTELY NO WARRANTY. For details, see
@@ -6742,14 +6703,6 @@ sub Foo {
         </p><p>
             A <code class="code">Foo()</code> függvénynek nincs különleges logikája. Csak tesztelésre
 van, és mindig 1-et ad vissza.
-        </p><p>
-            </p><pre class="programlisting">
-1;
-
-=back
-            </pre><p>
-        </p><p>
-            A normál OTRS lábléc egy Perl-modul fájlhoz.
         </p></div></div></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="email-handling-modules"></a>E-mail kezelés</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="ticket-postmaster-module"></a>Jegy levelezési modul</h4></div></div></div><p>
         A levelezési modulokat a levelezési folyamat során használják. Kétféle
 levelezési modul létezik: <code class="literal">PostMasterPre</code> (egy e-mail
@@ -6816,7 +6769,7 @@ our @ObjectDependencies = (
 sub new {
     my ( $Type, %Param ) = @_;
 
-    # új kivonat lefoglalása az objektumhoz
+    # allocate new hash for object
     my $Self = {};
     bless ($Self, $Type);
 
@@ -6827,7 +6780,7 @@ sub new {
 
 sub Run {
     my ( $Self, %Param ) = @_;
-    # beállítási lehetőségek lekérése
+    # get config options
     my %Config = ();
     my %Match = ();
     my %Set = ();
@@ -6840,7 +6793,7 @@ sub Run {
             %Set = %{$Config{Set}};
         }
         }
-        # a „Match =&gt; ???” dolog illesztése
+        # match 'Match =&gt; ???' stuff
         my $Matched = '';
         my $MatchedNot = 0;
         for (sort keys %Match) {
@@ -6849,7 +6802,7 @@ sub Run {
             if ($Self-&gt;{Debug} &gt; 1) {
                 $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
                     Priority =&gt; 'debug',
-                    Message =&gt; "'$Param{GetParam}-&gt;{$_}' =~ /$Match{$_}/i illeszkedik!",
+                    Message =&gt; "'$Param{GetParam}-&gt;{$_}' =~ /$Match{$_}/i matched!",
                 );
             }
         }
@@ -6858,12 +6811,12 @@ sub Run {
             if ($Self-&gt;{Debug} &gt; 1) {
                 $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
                     Priority =&gt; 'debug',
-                    Message =&gt; "'$Param{GetParam}-&gt;{$_}' =~ /$Match{$_}/i NEM illeszkedik!",
+                    Message =&gt; "'$Param{GetParam}-&gt;{$_}' =~ /$Match{$_}/i matched NOT!",
                 );
             }
         }
         }
-        # mellőznöm kell a bejövő levelet?
+        # should I ignore the incoming mail?
         if ($Matched &amp;&amp; !$MatchedNot) {
         for (keys %Set) {
             if ($Set{$_} =~ /\[\*\*\*\]/i) {
@@ -6872,7 +6825,7 @@ sub Run {
             $Param{GetParam}-&gt;{$_} = $Set{$_};
             $Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(
                 Priority =&gt; 'notice',
-                Message =&gt; "„$_” paraméter beállítása erre: „$Set{$_}” (Üzenet-azonosító: $Param{GetParam}-&gt;{'Message-ID'}) ",
+                Message =&gt; "Set param '$_' to '$Set{$_}' (Message-ID: $Param{GetParam}-&gt;{'Message-ID'}) ",
             );
         }
     }
