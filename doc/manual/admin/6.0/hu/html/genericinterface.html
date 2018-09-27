@@ -2341,8 +2341,7 @@ ezen modulokat használni, mielőtt megpróbálná a parancsfájlt futtatni.
                     
 #!/usr/bin/perl -w
 # --
-# otrs.SOAPRequest.pl - minta egy SOAP kérés küldéséhez az OTRS általános
-#                       felület jegy csatlakozójának
+# otrs.SOAPRequest.pl - sample to send a SOAP request to OTRS Generic Interface Ticket Connector
 # Copyright (C) 2001-2018 OTRS AG, https://otrs.com/
 # --
 # This program is free software: you can redistribute it and/or modify
@@ -2362,7 +2361,7 @@ ezen modulokat használni, mielőtt megpróbálná a parancsfájlt futtatni.
 use strict;
 use warnings;
 
-# A ../ használata a lib helyeként
+# use ../ as lib location
 use File::Basename;
 use FindBin qw($RealBin);
 use lib dirname($RealBin);
@@ -2371,46 +2370,45 @@ use SOAP::Lite;
 use Data::Dumper;
 
 # ---
-# Meghatározandó változók.
+# Variables to be defined.
 
-# Ez az URL a webszolgáltatáshoz
-# A formátum:
-# &lt;HTTP_TYPE&gt;:://&lt;OTRS_FQDN&gt;/nph-genericinterface.pl/Webservice/&lt;WEBSZOLGÁLTATÁS_NEVE&gt;
-# vagy
-# &lt;HTTP_TYPE&gt;:://&lt;OTRS_FQDN&gt;/nph-genericinterface.pl/WebserviceID/&lt;WEBSZOLGÁLTATÁS_AZONOSÍTÓJA&gt;
+# this is the URL for the web service
+# the format is
+# &lt;HTTP_TYPE&gt;:://&lt;OTRS_FQDN&gt;/nph-genericinterface.pl/Webservice/&lt;WEB_SERVICE_NAME&gt;
+# or
+# &lt;HTTP_TYPE&gt;:://&lt;OTRS_FQDN&gt;/nph-genericinterface.pl/WebserviceID/&lt;WEB_SERVICE_ID&gt;
 my $URL = 'http://localhost/otrs/nph-genericinterface.pl/Webservice/GenericTicketConnector';
 
-# Ennek a névtérnek egyeznie kell a SOAP-átvitelben megadott névtérrel a webszolgáltatásnál.
+# this name space should match the specified name space in the SOAP transport for the web service.
 my $NameSpace = 'http://www.otrs.org/TicketConnector/';
 
-# Ez a végrehajtandó művelet, amely lehet: TicketCreate, TicketUpdate, TicketGet, TicketSearch
-# vagy SessionCreate. És ezeket meg kell határozni a webszolgáltatásban.
+# this is operation to execute, it could be TicketCreate, TicketUpdate, TicketGet, TicketSearch
+# or SessionCreate. and they must to be defined in the web service.
 my $Operation = 'TicketCreate';
 
-# Ez a változó egy kérésnél felvenni kívánt összes paraméter tárolásához használható
-# XML-formátumban. Minden egyes műveletnek egy meghatározott kötelező és nem kötelező
-# paraméterek halmaza van a helyes működéshez. Nézze meg az OTRS adminisztrációs
-# kézikönyvet azért, hogy beszerezhesse a paraméterek teljes listáját.
+# this variable is used to store all the parameters to be included on a request in XML format. Each
+# operation has a determined set of mandatory and non mandatory parameters to work correctly. Please
+# check the OTRS Admin Manual in order to get a complete list of parameters.
 my $XMLData = '
-&lt;UserLogin&gt;valamilyen felhasználói bejelentkezés&lt;/UserLogin&gt;
-&lt;Password&gt;valamilyen jelszó&lt;/Password&gt;
+&lt;UserLogin&gt;some user login&lt;/UserLogin&gt;
+&lt;Password&gt;some password&lt;/Password&gt;
 &lt;Ticket&gt;
-    &lt;Title&gt;valamilyen cím&lt;/Title&gt;
-    &lt;CustomerUser&gt;valamilyen ügyfél-felhasználó bejelentkezés&lt;/CustomerUser&gt;
-    &lt;Queue&gt;valamilyen várólista&lt;/Queue&gt;
-    &lt;State&gt;valamilyen állapot&lt;/State&gt;
-    &lt;Priority&gt;valamilyen prioritás&lt;/Priority&gt;
+    &lt;Title&gt;some title&lt;/Title&gt;
+    &lt;CustomerUser&gt;some customer user login&lt;/CustomerUser&gt;
+    &lt;Queue&gt;some queue&lt;/Queue&gt;
+    &lt;State&gt;some state&lt;/State&gt;
+    &lt;Priority&gt;some priority&lt;/Priority&gt;
 &lt;/Ticket&gt;
 &lt;Article&gt;
-    &lt;Subject&gt;valamilyen tárgy&lt;/Subject&gt;
-    &lt;Body&gt;valamilyen törzs&lt;/Body&gt;
+    &lt;Subject&gt;some subject&lt;/Subject&gt;
+    &lt;Body&gt;some body&lt;/Body&gt;
     &lt;ContentType&gt;text/plain; charset=utf8&lt;/ContentType&gt;
 &lt;/Article&gt;
 ';
 
 # ---
 
-# Egy SOAP::Lite adatszerkezet létrehozása a megadott XML-adatszerkezetből.
+# create a SOAP::Lite data structure from the provided XML data structure.
 my $SOAPData = SOAP::Data
     -&gt;type( 'xml' =&gt; $XMLData );
 
@@ -2419,27 +2417,26 @@ my $SOAPObject = SOAP::Lite
     -&gt;proxy($URL)
     -&gt;$Operation($SOAPData);
 
-# Hiba keresése a SOAP-kódban.
+# check for a fault in the soap code.
 if ( $SOAPObject-&gt;fault ) {
     print $SOAPObject-&gt;faultcode, " ", $SOAPObject-&gt;faultstring, "\n";
 }
 
-# Egyébként az eredmények kiírása.
+# otherwise print the results.
 else {
 
-    # Az XML-válaszrész lekérése a SOAP-üzenetből.
+    # get the XML response part from the SOAP message.
     my $XMLResponse = $SOAPObject-&gt;context()-&gt;transport()-&gt;proxy()-&gt;http_response()-&gt;content();
 
-    # A válasz visszaalakítása (átalakítás egy Perl-szerkezetre).
+    # deserialize response (convert it into a perl structure).
     my $Deserialized = eval {
         SOAP::Deserializer-&gt;deserialize($XMLResponse);
     };
 
-    # Az összes fejléc és a SOAP-üzenet egyéb nem szükséges részeinek eltávolítása.
+    # remove all the headers and other not needed parts of the SOAP message.
     my $Body = $Deserialized-&gt;body();
 
-    # Csak a fontos adatok kiírása, és a műveletnév kulcsot nem (mint például
-    # TicketCreateResponse).
+    # just output relevant data and no the operation name key (like TicketCreateResponse).
     for my $ResponseKey ( keys %{$Body} ) {
         print Dumper( $Body-&gt;{$ResponseKey} );
     }
@@ -2479,7 +2476,7 @@ use utf8;
 
 ## nofilter(TidyAll::Plugin::OTRS::Perl::Dumper)
 
-# A ../ használata a lib helyeként
+# use ../ as lib location
 use File::Basename;
 use FindBin qw($RealBin);
 use lib dirname($RealBin);
@@ -2487,7 +2484,7 @@ use lib dirname($RealBin);
 use JSON;
 use REST::Client;
 
-# Ez a HOST a webszolgáltatásnál. A formátum:
+# This is the HOST for the web service the format is:
 # &lt;HTTP_TYPE&gt;:://&lt;OTRS_FQDN&gt;/nph-genericinterface.pl
 my $Host = 'http://localhost/otrs/nph-genericinterface.pl';
 
@@ -2497,42 +2494,39 @@ my $RestClient = REST::Client-&gt;new(
     }
 );
 
-# Ezek a vezérlők és a szolgáltatók. A formátum:
-# /Webservice/&lt;WEBSZOLGÁLTATÁS_NEVE/&lt;ERŐFORRÁS&gt;/&lt;KÉRÉS_ÉRTÉK&gt;
-# vagy
-# /WebserviceID/&lt;WEBSZOLGÁLTATÁS_AZONOSÍTÓJA&gt;/&lt;ERŐFORRÁS&gt;/&lt;KÉRÉS_ÉRTÉK&gt;
+# These are the Controllers and Providers the format is:
+# /Webservice/&lt;WEB_SERVICE_NAME&gt;/&lt;RESOURCE&gt;/&lt;REQUEST_VALUE&gt;
+# or
+# /WebserviceID/&lt;WEB_SERVICE_ID&gt;/&lt;RESOURCE&gt;/&lt;REQUEST_VALUE&gt;
 #
-# Nézze meg a dokumentációt a szolgáltatók beállításához.
+# See the documentation on how to setup Providers.
 #
-# Ez a példa le fogja kérni a TicketID = 1 azonosítóval rendelkező jegyet.
-(&lt;KÉRÉS_ÉRTÉK&gt;)
+# This example will retrieve the Ticket with the TicketID = 1 (&lt;REQUEST_VALUE&gt;)
 my $GetControllerAndRequest = '/Webservice/GenericTicketConnectorREST/Ticket/1';
 
-# Ez a példa az alap URL a jegylétrehozáshoz
+# This example is the base URL for Ticket Create
 my $CreateControllerAndRequest = '/Webservice/GenericTicketConnectorREST/Ticket';
 
-# Ez a példa frissíteni fogja a TicketID = 1 azonosítóval rendelkező jegyet (&lt;KÉRÉS_ÉRTÉK&gt;)
+# This example will update the Ticket with the TicketID = 1 (&lt;REQUEST_VALUE&gt;)
 my $UpdateControllerAndRequest = '/Webservice/GenericTicketConnectorREST/Ticket/1';
 
-# Ez az alap URL a jegkereséshez
+# This is the base URL for Ticket Search
 my $SearchControllerAndRequest = '/Webservice/GenericTicketConnectorREST/Ticket';
 
-# Ez az alap URL a TicketID = 1 azonosítóval rendelkező jegy előzményéhez (&lt;KÉRÉS_ÉRTÉK&gt;)
+# This is the base URL for Ticket history with the TicketID = 1 (&lt;REQUEST_VALUE&gt;)
 my $HistoryControllerAndRequest = '/Webservice/GenericTicketConnectorREST/TicketHistory/1';
 
-# Jegylekérés példa
-# Nézze meg az OTRSGenericInterfaceREST dokumentációját a beállításhoz
-#   - webszolgáltatás
-#   - átvitel
-#   - műveletek
+# TicketGet Example
+# See the documentation of OTRSGenericInterfaceREST on how to setup
+#   - webservice
+#   - transport
+#   - operations
 my $GetParams = {
-    # érvényes ügyintézői felhasználónévvel kell kitölteni
-    UserLogin =&gt; "valamilyen ügyintéző-felhasználó bejelentkezés",
-    # érvényes ügyintézői jelszóval kell kitölteni
-    Password  =&gt; "valamilyen ügyintéző-felhasználó jelszó",
+    UserLogin =&gt; "some agent user login",       # to be filled with valid agent login
+    Password  =&gt; "some agent user password",    # to be filled with valid agent password
 };
 
-# A GetParams összeállítása az URL részeként a REST-GET kérésekhez
+# Build GetParams as part of the URL for REST-GET requests
 my $QueryParams = $RestClient-&gt;buildQuery( %{$GetParams} );
 $GetControllerAndRequest .= $QueryParams;
 
@@ -2545,38 +2539,36 @@ if ( $GetResponseCode ne '200' ) {
 }
 else {
 
-    # Ha a kérést helyesen válaszolták meg, itt egy JSON szöveget kapunk.
+    # If the request was answered correctly, we receive a JSON string here.
     my $ResponseContent = $RestClient-&gt;responseContent();
 
     my $Data = decode_json $ResponseContent;
 
-    # Egyszerűen kiírjuk a kapott adatszerkezetet:
+    # Just to print out the returned Data structure:
     use Data::Dumper;
     print "Get response was:\n";
     print Dumper($Data);
 
 }
 
-# Jegykeresés példa
-# Nézze meg az OTRSGenericInterfaceREST dokumentációját a beállításhoz
-#   - webszolgáltatás
-#   - átvitel
-#   - műveletek
+# TicketSearch Example
+# See the documentation of OTRSGenericInterfaceREST on how to setup
+#   - webservice
+#   - transport
+#   - operations
 my $SearchParams = {
-    # érvényes ügyintézői felhasználónévvel kell kitölteni
-    UserLogin =&gt; "valamilyen ügyintéző-felhasználó bejelentkezés",
-    # érvényes ügyintézői jelszóval kell kitölteni
-    Password  =&gt; "valamilyen ügyintéző-felhasználó jelszó",
+    UserLogin =&gt; "some agent user login",       # to be filled with valid agent login
+    Password  =&gt; "some agent user password",    # to be filled with valid agent password
     Queues    =&gt; ['Raw'],
 };
 
-# A SearchParams összeállítása az URL részeként a REST-GET kérésekhez
+# Build SearchParams as part of the URL for REST-GET requests
 $QueryParams = $RestClient-&gt;buildQuery( %{$SearchParams} );
 $SearchControllerAndRequest .= $QueryParams;
 
 $RestClient-&gt;GET($SearchControllerAndRequest);
 
-# Ha a gép nem érhető el, rosszul van beállítva vagy nem tudta kiszolgálni a kért oldalt:
+# If the host isn't reachable, wrong configured or couldn't serve the requested page:
 my $SearchResponseCode = $RestClient-&gt;responseCode();
 
 if ( $SearchResponseCode ne '200' ) {
@@ -2584,41 +2576,39 @@ if ( $SearchResponseCode ne '200' ) {
 }
 else {
 
-    # Ha a kérést helyesen válaszolták meg, itt egy JSON szöveget kapunk.
+    # If the request was answered correctly, we receive a JSON string here.
     my $ResponseContent = $RestClient-&gt;responseContent();
 
     my $Data = decode_json $ResponseContent;
 
-    # Egyszerűen kiírjuk a kapott adatszerkezetet:
+    # Just to print out the returned Data structure:
     use Data::Dumper;
     print "Search Response was:\n";
     print Dumper($Data);
 
 }
 
-# Jegylétrehozás példa
-# Nézze meg az OTRSGenericInterfaceREST dokumentációját a beállításhoz
-#   - webszolgáltatás
-#   - átvitel
-#   - műveletek
+# TicketCreate Example
+# See the documentation of OTRSGenericInterfaceREST on how to setup
+# - webservice
+# - transport
+# - operations
 my $CreateOrUpdateParams = {
-    # érvényes ügyintézői felhasználónévvel kell kitölteni
-    UserLogin =&gt; "valamilyen ügyintéző-felhasználó bejelentkezés",
-    # érvényes ügyintézői jelszóval kell kitölteni
-    Password  =&gt; "valamilyen ügyintéző-felhasználó jelszó",
+    UserLogin =&gt; "some agent user login",       # to be filled with valid agent login
+    Password  =&gt; "some agent user password",    # to be filled with valid agent password
     Ticket    =&gt; {
-        Title        =&gt; 'valamilyen jegycím',
+        Title        =&gt; 'some ticket title',
         Queue        =&gt; 'Raw',
         Lock         =&gt; 'unlock',
         Type         =&gt; 'Unclassified',
         State        =&gt; 'new',
         Priority     =&gt; '3 normal',
-        Owner        =&gt; 'valamilyen ügyintéző-felhasználó bejelentkezés',
-        CustomerUser =&gt; 'felhasználó-1',
+        Owner        =&gt; 'some agent user login',
+        CustomerUser =&gt; 'customer-1',
     },
     Article =&gt; {
-        Subject     =&gt; 'valamilyen tárgy',
-        Body        =&gt; 'valamilyen törzs',
+        Subject     =&gt; 'some subject',
+        Body        =&gt; 'some body',
         ContentType =&gt; 'text/plain; charset=utf8',
     },
 };
@@ -2630,12 +2620,11 @@ my @CreateRequestParam = (
     $CreateJSONParams
 );
 
-# REST-POST kéréseket kell használnunk annak érdekében, hogy a UserLogin
-# és a Password értékét helyesen át tudjuk küldeni, bár a másik REST
-# metódusnak jobban kellene illeszkednie.
+# We have to use REST-POST requests in order to send UserLogin and Password correctly
+# though other REST methods would fit better.
 $RestClient-&gt;POST(@CreateRequestParam);
 
-# Ha a gép nem érhető el, rosszul van beállítva vagy nem tudta kiszolgálni a kért oldalt:
+# If the host isn't reachable, wrong configured or couldn't serve the requested page:
 my $CreateResponseCode = $RestClient-&gt;responseCode();
 
 if ( $CreateResponseCode ne '200' ) {
@@ -2643,23 +2632,23 @@ if ( $CreateResponseCode ne '200' ) {
 }
 else {
 
-    # Ha a kérést helyesen válaszolták meg, itt egy JSON szöveget kapunk.
+    # If the request was answered correctly, we receive a JSON string here.
     my $ResponseContent = $RestClient-&gt;responseContent();
 
     my $Data = decode_json $ResponseContent;
 
-    # Egyszerűen kiírjuk a kapott adatszerkezetet:
+    # Just to print out the returned Data structure:
     use Data::Dumper;
     print "Create Response was:\n";
     print Dumper($Data);
 
 }
 
-# Jegyfrissítés példa
-# Nézze meg az OTRSGenericInterfaceREST dokumentációját a beállításhoz
-#   - webszolgáltatás
-#   - átvitel
-#   - műveletek
+# TicketUpdate Example
+# See the documentation of OTRSGenericInterfaceREST on how to setup
+#   - webservice
+#   - transport
+#   - operations
 my $UpdateJSONParams = encode_json $CreateOrUpdateParams;
 
 my @UpdateRequestParam = (
@@ -2667,50 +2656,47 @@ my @UpdateRequestParam = (
     $UpdateJSONParams
 );
 
-# REST-PATCH kéréseket kell használnunk annak érdekében, hogy a UserLogin
-# és a Password értékét helyesen át tudjuk küldeni, bár a másik REST
-# metódusnak jobban kellene illeszkednie.
+# We have to use REST-PATCH requests in order to send UserLogin and Password correctly
+# though other REST methods would fit better.
 $RestClient-&gt;PATCH(@UpdateRequestParam);
 
-# Ha a gép nem érhető el, rosszul van beállítva vagy nem tudta kiszolgálni a kért oldalt:
+# If the host isn't reachable, wrong configured or couldn't serve the requested page:
 my $UpdateResponseCode = $RestClient-&gt;responseCode();
 if ( $UpdateResponseCode ne '200' ) {
     print "Update request failed, response code was: $UpdateResponseCode\n";
 }
 else {
 
-    # Ha a kérést helyesen válaszolták meg, itt egy JSON szöveget kapunk.
+    # If the request was answered correctly, we receive a JSON string here.
     my $ResponseContent = $RestClient-&gt;responseContent();
 
     my $Data = decode_json $ResponseContent;
 
-    # Egyszerűen kiírjuk a kapott adatszerkezetet:
+    # Just to print out the returned Data structure:
     use Data::Dumper;
     print "Update response was:\n";
     print Dumper($Data);
 
 }
 
-# Jegy előzményeinek lekérése példa
-# Nézze meg az OTRSGenericInterfaceREST dokumentációját a beállításhoz
-#   - webszolgáltatás
-#   - átvitel
-#   - műveletek
+# TicketHistoryGet Example
+# See the documentation of OTRSGenericInterfaceREST on how to setup
+#   - webservice
+#   - transport
+#   - operations
 my $HistoryParams = {
-    # érvényes ügyintézői felhasználónévvel kell kitölteni
-    UserLogin =&gt; "valamilyen ügyintéző-felhasználó bejelentkezés",
-    # érvényes ügyintézői jelszóval kell kitölteni
-    Password  =&gt; "valamilyen ügyintéző-felhasználó jelszó",
+    UserLogin =&gt; "some agent user login",       # to be filled with valid agent login
+    Password  =&gt; "some agent user password",    # to be filled with valid agent password
     TicketID  =&gt; [1],
 };
 
-# A SearchParams összeállítása az URL részeként a REST-GET kérésekhez
+# Build SearchParams as part of the URL for REST-GET requests
 $QueryParams = $RestClient-&gt;buildQuery( %{$HistoryParams} );
 $HistoryControllerAndRequest .= $QueryParams;
 
 $RestClient-&gt;GET($HistoryControllerAndRequest);
 
-# Ha a gép nem érhető el, rosszul van beállítva vagy nem tudta kiszolgálni a kért oldalt:
+# If the host isn't reachable, wrong configured or couldn't serve the requested page:
 my $HistoryResponseCode = $RestClient-&gt;responseCode();
 
 if ( $HistoryResponseCode ne '200' ) {
@@ -2718,12 +2704,12 @@ if ( $HistoryResponseCode ne '200' ) {
 }
 else {
 
-    # Ha a kérést helyesen válaszolták meg, itt egy JSON szöveget kapunk.
+    # If the request was answered correctly, we receive a JSON string here.
     my $ResponseContent = $RestClient-&gt;responseContent();
 
     my $Data = decode_json $ResponseContent;
 
-    # Egyszerűen kiírjuk a kapott adatszerkezetet:
+    # Just to print out the returned Data structure:
     use Data::Dumper;
     print "History Response was:\n";
     print Dumper($Data);
