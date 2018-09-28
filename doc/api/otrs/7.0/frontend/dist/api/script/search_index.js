@@ -210,9 +210,33 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "apps/chatintegration/helpers/scriptattributes~getscriptattribute",
+    "function/index.html#static-function-getScriptAttribute",
+    "<span>getScriptAttribute</span> <span class=\"search-result-import-path\">Apps/ChatIntegration/Helpers/ScriptAttributes</span>",
+    "function"
+  ],
+  [
     "helpers/formvalidators~getvalidators",
     "function/index.html#static-function-getValidators",
     "<span>getValidators</span> <span class=\"search-result-import-path\">Helpers/FormValidators</span>",
+    "function"
+  ],
+  [
+    "apps/chatintegration/helpers/elementinjector~injectelement",
+    "function/index.html#static-function-injectElement",
+    "<span>injectElement</span> <span class=\"search-result-import-path\">Apps/ChatIntegration/Helpers/ElementInjector</span>",
+    "function"
+  ],
+  [
+    "apps/chatintegration/helpers/elementinjector~injectelementtobody",
+    "function/index.html#static-function-injectElementToBody",
+    "<span>injectElementToBody</span> <span class=\"search-result-import-path\">Apps/ChatIntegration/Helpers/ElementInjector</span>",
+    "function"
+  ],
+  [
+    "apps/chatintegration/helpers/elementinjector~injectelementtohead",
+    "function/index.html#static-function-injectElementToHead",
+    "<span>injectElementToHead</span> <span class=\"search-result-import-path\">Apps/ChatIntegration/Helpers/ElementInjector</span>",
     "function"
   ],
   [
@@ -588,6 +612,36 @@ window.esdocSearchIndex = [
     "external"
   ],
   [
+    "frontend/apps/chat/plugins/store/index.js",
+    "file/Frontend/Apps/Chat/Plugins/Store/index.js.html",
+    "Frontend/Apps/Chat/Plugins/Store/index.js",
+    "file"
+  ],
+  [
+    "frontend/apps/chat/index.js",
+    "file/Frontend/Apps/Chat/index.js.html",
+    "Frontend/Apps/Chat/index.js",
+    "file"
+  ],
+  [
+    "frontend/apps/chatintegration/helpers/elementinjector.js",
+    "file/Frontend/Apps/ChatIntegration/Helpers/ElementInjector.js.html",
+    "Frontend/Apps/ChatIntegration/Helpers/ElementInjector.js",
+    "file"
+  ],
+  [
+    "frontend/apps/chatintegration/helpers/scriptattributes.js",
+    "file/Frontend/Apps/ChatIntegration/Helpers/ScriptAttributes.js.html",
+    "Frontend/Apps/ChatIntegration/Helpers/ScriptAttributes.js",
+    "file"
+  ],
+  [
+    "frontend/apps/chatintegration/index.js",
+    "file/Frontend/Apps/ChatIntegration/index.js.html",
+    "Frontend/Apps/ChatIntegration/index.js",
+    "file"
+  ],
+  [
     "frontend/apps/external/helpers/communicationchannelregistration.js",
     "file/Frontend/Apps/External/Helpers/CommunicationChannelRegistration.js.html",
     "Frontend/Apps/External/Helpers/CommunicationChannelRegistration.js",
@@ -871,13 +925,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1099,13 +1153,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1251,6 +1305,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/common/commonsidebar.js",
     "file/Frontend/Tests/Components/Common/CommonSidebar.js.html",
     "Frontend/Tests/Components/Common/CommonSidebar.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commonticker.js",
+    "file/Frontend/Tests/Components/Common/CommonTicker.js.html",
+    "Frontend/Tests/Components/Common/CommonTicker.js",
     "file"
   ],
   [
