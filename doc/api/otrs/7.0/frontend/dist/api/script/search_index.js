@@ -948,6 +948,12 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/mixins/autofocus.js",
+    "file/Frontend/Mixins/Autofocus.js.html",
+    "Frontend/Mixins/Autofocus.js",
+    "file"
+  ],
+  [
     "frontend/mixins/diacriticslookup.js",
     "file/Frontend/Mixins/DiacriticsLookup.js.html",
     "Frontend/Mixins/DiacriticsLookup.js",
@@ -1159,13 +1165,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1335,6 +1341,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/form/field/formcheckbox.js",
     "file/Frontend/Tests/Components/Form/Field/FormCheckbox.js.html",
     "Frontend/Tests/Components/Form/Field/FormCheckbox.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formeditor.js",
+    "file/Frontend/Tests/Components/Form/Field/FormEditor.js.html",
+    "Frontend/Tests/Components/Form/Field/FormEditor.js",
     "file"
   ],
   [
