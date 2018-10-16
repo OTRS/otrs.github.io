@@ -1165,13 +1165,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1323,6 +1323,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/common/commonticker.js",
     "file/Frontend/Tests/Components/Common/CommonTicker.js.html",
     "Frontend/Tests/Components/Common/CommonTicker.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formautocomplete.js",
+    "file/Frontend/Tests/Components/Form/Field/FormAutocomplete.js.html",
+    "Frontend/Tests/Components/Form/Field/FormAutocomplete.js",
     "file"
   ],
   [
