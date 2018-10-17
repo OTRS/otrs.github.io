@@ -180,6 +180,30 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "apps/external/helpers/documentsearchtypelinks/custompagecontent~getdocumentlink",
+    "function/index.html#static-function-getDocumentLink",
+    "<span>getDocumentLink</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeLinks/CustomPageContent</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/documentsearchtypelinks/faq~getdocumentlink",
+    "function/index.html#static-function-getDocumentLink",
+    "<span>getDocumentLink</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeLinks/FAQ</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/documentsearchtypelinks/servicecataloguecontent~getdocumentlink",
+    "function/index.html#static-function-getDocumentLink",
+    "<span>getDocumentLink</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeLinks/ServiceCatalogueContent</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/documentsearchtypelinks/ticket~getdocumentlink",
+    "function/index.html#static-function-getDocumentLink",
+    "<span>getDocumentLink</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeLinks/Ticket</span>",
+    "function"
+  ],
+  [
     "apps/external/helpers/documentsearchtyperegistration~getdocumentsearchtypecomponents",
     "function/index.html#static-function-getDocumentSearchTypeComponents",
     "<span>getDocumentSearchTypeComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeRegistration</span>",
@@ -648,6 +672,30 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/external/helpers/documentsearchtypelinks/custompagecontent.js",
+    "file/Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/CustomPageContent.js.html",
+    "Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/CustomPageContent.js",
+    "file"
+  ],
+  [
+    "frontend/apps/external/helpers/documentsearchtypelinks/faq.js",
+    "file/Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/FAQ.js.html",
+    "Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/FAQ.js",
+    "file"
+  ],
+  [
+    "frontend/apps/external/helpers/documentsearchtypelinks/servicecataloguecontent.js",
+    "file/Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/ServiceCatalogueContent.js.html",
+    "Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/ServiceCatalogueContent.js",
+    "file"
+  ],
+  [
+    "frontend/apps/external/helpers/documentsearchtypelinks/ticket.js",
+    "file/Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/Ticket.js.html",
+    "Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/Ticket.js",
+    "file"
+  ],
+  [
     "frontend/apps/external/helpers/documentsearchtyperegistration.js",
     "file/Frontend/Apps/External/Helpers/DocumentSearchTypeRegistration.js.html",
     "Frontend/Apps/External/Helpers/DocumentSearchTypeRegistration.js",
@@ -931,13 +979,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1165,13 +1213,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
