@@ -948,6 +948,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/logger/index.js~logger#clear",
+    "class/Frontend/Logger/index.js~Logger.html#instance-method-clear",
+    "Frontend/Logger/index.js~Logger#clear",
+    "method"
+  ],
+  [
     "frontend/logger/index.js~logger#constructor",
     "class/Frontend/Logger/index.js~Logger.html#instance-constructor-constructor",
     "Frontend/Logger/index.js~Logger#constructor",
@@ -979,14 +985,20 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
+    "member"
+  ],
+  [
+    "frontend/logger/index.js~logger#recording",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-recording",
+    "Frontend/Logger/index.js~Logger#recording",
     "member"
   ],
   [
@@ -1335,6 +1347,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/common/commonchips.js",
     "file/Frontend/Tests/Components/Common/CommonChips.js.html",
     "Frontend/Tests/Components/Common/CommonChips.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commondebugger.js",
+    "file/Frontend/Tests/Components/Common/CommonDebugger.js.html",
+    "Frontend/Tests/Components/Common/CommonDebugger.js",
     "file"
   ],
   [
