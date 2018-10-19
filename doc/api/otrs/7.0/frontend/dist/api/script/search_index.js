@@ -48,6 +48,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "server/perlprofiler~perlprofiler",
+    "class/Frontend/Server/PerlProfiler/index.js~PerlProfiler.html",
+    "<span>PerlProfiler</span> <span class=\"search-result-import-path\">Server/PerlProfiler</span>",
+    "class"
+  ],
+  [
     "plugins/eventbus~plugin",
     "class/Frontend/Plugins/EventBus/index.js~Plugin.html",
     "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/EventBus</span>",
@@ -69,6 +75,12 @@ window.esdocSearchIndex = [
     "plugins/logger~plugin",
     "class/Frontend/Plugins/Logger/index.js~Plugin.html",
     "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/Logger</span>",
+    "class"
+  ],
+  [
+    "plugins/perlprofiler~plugin",
+    "class/Frontend/Plugins/PerlProfiler/index.js~Plugin.html",
+    "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/PerlProfiler</span>",
     "class"
   ],
   [
@@ -297,6 +309,12 @@ window.esdocSearchIndex = [
     "logger~logger",
     "variable/index.html#static-variable-logger",
     "<span>logger</span> <span class=\"search-result-import-path\">Logger</span>",
+    "variable"
+  ],
+  [
+    "server/perlprofiler~perlprofiler",
+    "variable/index.html#static-variable-perlProfiler",
+    "<span>perlProfiler</span> <span class=\"search-result-import-path\">Server/PerlProfiler</span>",
     "variable"
   ],
   [
@@ -985,13 +1003,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1071,6 +1089,18 @@ window.esdocSearchIndex = [
     "frontend/plugins/logger/index.js~plugin.install",
     "class/Frontend/Plugins/Logger/index.js~Plugin.html#static-method-install",
     "Frontend/Plugins/Logger/index.js~Plugin.install",
+    "method"
+  ],
+  [
+    "frontend/plugins/perlprofiler/index.js",
+    "file/Frontend/Plugins/PerlProfiler/index.js.html",
+    "Frontend/Plugins/PerlProfiler/index.js",
+    "file"
+  ],
+  [
+    "frontend/plugins/perlprofiler/index.js~plugin.install",
+    "class/Frontend/Plugins/PerlProfiler/index.js~Plugin.html#static-method-install",
+    "Frontend/Plugins/PerlProfiler/index.js~Plugin.install",
     "method"
   ],
   [
@@ -1225,13 +1255,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1270,6 +1300,48 @@ window.esdocSearchIndex = [
     "typedef/index.html#static-typedef-Options",
     "Frontend/Server/APIClient/index.js~Options",
     "typedef"
+  ],
+  [
+    "frontend/server/perlprofiler/index.js",
+    "file/Frontend/Server/PerlProfiler/index.js.html",
+    "Frontend/Server/PerlProfiler/index.js",
+    "file"
+  ],
+  [
+    "frontend/server/perlprofiler/index.js~perlprofiler#addfromobject",
+    "class/Frontend/Server/PerlProfiler/index.js~PerlProfiler.html#instance-method-addFromObject",
+    "Frontend/Server/PerlProfiler/index.js~PerlProfiler#addFromObject",
+    "method"
+  ],
+  [
+    "frontend/server/perlprofiler/index.js~perlprofiler#constructor",
+    "class/Frontend/Server/PerlProfiler/index.js~PerlProfiler.html#instance-constructor-constructor",
+    "Frontend/Server/PerlProfiler/index.js~PerlProfiler#constructor",
+    "method"
+  ],
+  [
+    "frontend/server/perlprofiler/index.js~perlprofiler#disable",
+    "class/Frontend/Server/PerlProfiler/index.js~PerlProfiler.html#instance-method-disable",
+    "Frontend/Server/PerlProfiler/index.js~PerlProfiler#disable",
+    "method"
+  ],
+  [
+    "frontend/server/perlprofiler/index.js~perlprofiler#enable",
+    "class/Frontend/Server/PerlProfiler/index.js~PerlProfiler.html#instance-method-enable",
+    "Frontend/Server/PerlProfiler/index.js~PerlProfiler#enable",
+    "method"
+  ],
+  [
+    "frontend/server/perlprofiler/index.js~perlprofiler#profileforpath",
+    "class/Frontend/Server/PerlProfiler/index.js~PerlProfiler.html#instance-method-profileForPath",
+    "Frontend/Server/PerlProfiler/index.js~PerlProfiler#profileForPath",
+    "method"
+  ],
+  [
+    "frontend/server/perlprofiler/index.js~perlprofiler#toobject",
+    "class/Frontend/Server/PerlProfiler/index.js~PerlProfiler.html#instance-method-toObject",
+    "Frontend/Server/PerlProfiler/index.js~PerlProfiler#toObject",
+    "method"
   ],
   [
     "frontend/styles/globals.js",
@@ -1515,6 +1587,12 @@ window.esdocSearchIndex = [
     "frontend/tests/server/apiclient/pubsub.js",
     "file/Frontend/Tests/Server/APIClient/PubSub.js.html",
     "Frontend/Tests/Server/APIClient/PubSub.js",
+    "file"
+  ],
+  [
+    "frontend/tests/server/perlprofiler.js",
+    "file/Frontend/Tests/Server/PerlProfiler.js.html",
+    "Frontend/Tests/Server/PerlProfiler.js",
     "file"
   ]
 ]
