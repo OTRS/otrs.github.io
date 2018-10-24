@@ -750,6 +750,12 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/apps/external/plugins/store/privacynotice.js",
+    "file/Frontend/Apps/External/Plugins/Store/PrivacyNotice.js.html",
+    "Frontend/Apps/External/Plugins/Store/PrivacyNotice.js",
+    "file"
+  ],
+  [
     "frontend/apps/external/plugins/store/index.js",
     "file/Frontend/Apps/External/Plugins/Store/index.js.html",
     "Frontend/Apps/External/Plugins/Store/index.js",
@@ -1255,13 +1261,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
