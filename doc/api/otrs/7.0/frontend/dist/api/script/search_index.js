@@ -258,6 +258,24 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "plugins/store/loggeroptions~initloggeroptionsstore",
+    "function/index.html#static-function-initLoggerOptionsStore",
+    "<span>initLoggerOptionsStore</span> <span class=\"search-result-import-path\">Plugins/Store/LoggerOptions</span>",
+    "function"
+  ],
+  [
+    "plugins/store/perlprofiler~initperlprofilerstore",
+    "function/index.html#static-function-initPerlProfilerStore",
+    "<span>initPerlProfilerStore</span> <span class=\"search-result-import-path\">Plugins/Store/PerlProfiler</span>",
+    "function"
+  ],
+  [
+    "plugins/store/publicchat~initpublicchatstore",
+    "function/index.html#static-function-initPublicChatStore",
+    "<span>initPublicChatStore</span> <span class=\"search-result-import-path\">Plugins/Store/PublicChat</span>",
+    "function"
+  ],
+  [
     "apps/chatintegration/helpers/elementinjector~injectelement",
     "function/index.html#static-function-injectElement",
     "<span>injectElement</span> <span class=\"search-result-import-path\">Apps/ChatIntegration/Helpers/ElementInjector</span>",
@@ -1108,6 +1126,24 @@ window.esdocSearchIndex = [
     "class/Frontend/Plugins/PerlProfiler/index.js~Plugin.html#static-method-install",
     "Frontend/Plugins/PerlProfiler/index.js~Plugin.install",
     "method"
+  ],
+  [
+    "frontend/plugins/store/loggeroptions.js",
+    "file/Frontend/Plugins/Store/LoggerOptions.js.html",
+    "Frontend/Plugins/Store/LoggerOptions.js",
+    "file"
+  ],
+  [
+    "frontend/plugins/store/perlprofiler.js",
+    "file/Frontend/Plugins/Store/PerlProfiler.js.html",
+    "Frontend/Plugins/Store/PerlProfiler.js",
+    "file"
+  ],
+  [
+    "frontend/plugins/store/publicchat.js",
+    "file/Frontend/Plugins/Store/PublicChat.js.html",
+    "Frontend/Plugins/Store/PublicChat.js",
+    "file"
   ],
   [
     "frontend/plugins/store/index.js",
