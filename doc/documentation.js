@@ -21,6 +21,14 @@ $(document).ready(function() {
             Type: 'manual',
             Path: 'admin',
             Versions: [
+                /*
+                {
+                    Version:  '7.0',
+                    HTMLPath: '7.0',
+                    Name:     'OTRS 7',
+                    Languages: ['en']
+                },
+                */
                 {
                     Version:  '6.0',
                     HTMLPath: 'stable',
@@ -173,9 +181,20 @@ $(document).ready(function() {
 
                     ID = ID.replace(/\./g, '_');
 
+                    function CreateHTMLPath(Version, Language) {
+                        if (parseFloat(Version.Version) >= 7.0) {
+                            return BaseURL + 'manual/' + Category.Path + '-beta/' + Version.HTMLPath + '/' + Language + '/index.html';
+                        }
+                        return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/html/index.html';
+                    }
+
+                    function CreatePDFPath(Version, Language, PDFPath, PDFFileName) {
+                        return 'http://ftp.otrs.org/pub/otrs/doc/' + PDFPath + '/' + Version.Version + '/' + Language + '/pdf/' + PDFFileName;
+                    }
+
                     Navigation += '<li id="' + ID + '"><a href="#">' + Version.Name + '</a><ul class="Hidden">';
-                    if (Version.Languages.length === 1) {
-                        var Language    = Version.Languages[0];
+                    $.each(Version.Languages, function(){
+                        var Language = this;
                         var PDFPath     = 'doc-' + Category.Path;
                         var PDFFileName = 'otrs_' + Category.Path + '_book.pdf';
 
@@ -186,29 +205,15 @@ $(document).ready(function() {
                             PDFFileName = Version.PDFFileName;
                         }
 
-                        Navigation += '<li><a href="' + BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/html/index.html">HTML</a></li>';
-                        Navigation += '<li><a href="http://ftp.otrs.org/pub/otrs/doc/' + PDFPath + '/' + Version.Version + '/' + Language + '/pdf/' + PDFFileName + '">PDF</a></li>';
-
-                    }
-                    else {
-                        $.each(Version.Languages, function(){
-                            var Language = this;
-                            var PDFPath     = 'doc-' + Category.Path;
-                            var PDFFileName = 'otrs_' + Category.Path + '_book.pdf';
-
-                            if (Version.PDFPath) {
-                                PDFPath = Version.PDFPath;
-                            }
-                            if (Version.PDFFileName) {
-                                PDFFileName = Version.PDFFileName;
-                            }
-
+                        if (Version.Languages.length > 1) {
                             Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul class="Hidden">';
-                            Navigation += '<li><a href="' + BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/html/index.html">HTML</a></li>';
-                            Navigation += '<li><a href="http://ftp.otrs.org/pub/otrs/doc/' + PDFPath + '/' + Version.Version + '/' + Language + '/pdf/' + PDFFileName + '">PDF</a></li>';
+                        }
+                        Navigation += '<li><a href="' + CreateHTMLPath(Version, Language) + '">HTML</a></li>';
+                        Navigation += '<li><a href="' + CreatePDFPath(Version, Language, PDFPath, PDFFileName) + '">PDF</a></li>';
+                        if (Version.Languages.length > 1) {
                             Navigation += '</ul></li>';
-                        });
-                    }
+                        }
+                    });
                     Navigation += '</ul></li>';
                 });
             }
