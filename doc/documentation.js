@@ -138,25 +138,69 @@ $(document).ready(function() {
                 {
                     Version:  '7.0',
                     HTMLPath: '7.0',
-                    Types:    ['Perl', 'JavaScript', 'REST'],
+                    Types:    [
+                        { 
+                            Name: 'Perl',
+                            Path: 'Perl',
+                        },
+                        {
+                            Name: 'Design System (External Interface)',
+                            Path: 'frontend/dist/designsystem',
+                        },
+                        {
+                            Name: 'JavaScript (External Interface)',
+                            Path: 'frontend/dist/api',
+                        },
+                        {
+                            Name: 'JavaScript (Agent Interface)',
+                            Path: 'JavaScript',
+                        },
+                        {
+                            Name: 'Webapp REST Interface',
+                            Path: 'REST',
+                        }
+                    ],
                     Name:     'OTRS git (development)'
                 },
                 {
                     Version:  '6.0',
                     HTMLPath: 'stable',
-                    Types:    ['Perl', 'JavaScript'],
+                    Types:    [
+                        { 
+                            Name: 'Perl',
+                            Path: 'Perl',
+                        },
+                        {
+                            Name: 'JavaScript',
+                            Path: 'JavaScript',
+                        },
+                    ],
                     Name:     'OTRS 6'
                 },
                 {
                     Version:  '5.0',
                     HTMLPath: '5.0',
-                    Types:    ['Perl', 'JavaScript'],
+                    Types:    [
+                        { 
+                            Name: 'Perl',
+                            Path: 'Perl',
+                        },
+                        {
+                            Name: 'JavaScript',
+                            Path: 'JavaScript',
+                        },
+                    ],
                     Name:     'OTRS 5'
                 },
                 {
                     Version:  '4.0',
                     HTMLPath: '4.0',
-                    Types:    ['Perl'],
+                    Types:    [
+                        { 
+                            Name: 'Perl',
+                            Path: 'Perl',
+                        },
+                    ],
                     Name:     'OTRS 4'
                 }
             ]
@@ -228,11 +272,11 @@ $(document).ready(function() {
                     Navigation += '<li id="' + ID + '"><a href="#">' + Version.Name + '</a><ul class="Hidden">';
                     $.each(Version.Types, function(){
                         var Type = this;
-                        Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type + '"';
-                        if (Type === 'REST') {
+                        Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type.Path + '"';
+                        if (Type.Path === 'REST') {
                             Navigation += ' target="_blank"'
                         }
-                        Navigation += '>' + Type + '</a></li>';
+                        Navigation += '>' + Type.Name + '</a></li>';
                     });
                     Navigation += '</ul></li>';
                 });
