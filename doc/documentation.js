@@ -158,7 +158,7 @@ $(document).ready(function() {
                             Path: 'JavaScript',
                         },
                         {
-                            Name: 'Webapp REST Interface',
+                            Name: 'REST Interface',
                             Path: 'REST',
                             NewTab: true,
                         }
