@@ -146,10 +146,12 @@ $(document).ready(function() {
                         {
                             Name: 'Design System (External Interface)',
                             Path: 'frontend/dist/designsystem',
+                            NewTab: true,
                         },
                         {
                             Name: 'JavaScript (External Interface)',
                             Path: 'frontend/dist/api',
+                            NewTab: true,
                         },
                         {
                             Name: 'JavaScript (Agent Interface)',
@@ -158,6 +160,7 @@ $(document).ready(function() {
                         {
                             Name: 'Webapp REST Interface',
                             Path: 'REST',
+                            NewTab: true,
                         }
                     ],
                     Name:     'OTRS git (development)'
@@ -273,7 +276,7 @@ $(document).ready(function() {
                     $.each(Version.Types, function(){
                         var Type = this;
                         Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type.Path + '"';
-                        if (Type.Path === 'REST') {
+                        if (Type.NewTab) {
                             Navigation += ' target="_blank"'
                         }
                         Navigation += '>' + Type.Name + '</a></li>';
