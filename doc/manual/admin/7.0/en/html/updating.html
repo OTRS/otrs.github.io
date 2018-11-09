@@ -41,24 +41,23 @@ $(document).ready(function() {
         This will depend on your service configuration, here is an example:
         </p><p>
             </p><pre class="screen">
-root&gt; /etc/init.d/cron stop
-root&gt; /etc/init.d/postfix stop
-root&gt; /etc/init.d/apache stop
+root&gt; systemctl stop postfix
+root&gt; systemctl stop apache2
+
+# If you do a patch level update within OTRS 7 (using the new systemd files),
+#   stop the OTRS services via systemd:
+
+root&gt; systemctl stop otrs-daemon
+root&gt; systemctl stop otrs-webserver
             </pre><p>
         </p><p>
-        Stop OTRS cron jobs and the daemon (in this order):
+            If you do a major update form OTRS 6, you need to stop the old OTRS
+            cron jobs and daemon:
         </p><p>
             </p><pre class="screen">
 otrs&gt; cd /opt/otrs/
 otrs&gt; bin/Cron.sh stop
 otrs&gt; bin/otrs.Daemon.pl stop
-            </pre><p>
-        </p><p>
-            If you perform a patch level update of OTRS 7, you need to also stop the built-in OTRS web server:
-
-            </p><pre class="screen">
-otrs&gt; cd /opt/otrs/
-otrs&gt; bin/otrs.WebServer.pl --stop
             </pre><p>
         </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.4.5"></a>Step 2: Backup files and database</h3></div></div></div><p>
             </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/WebApp.conf</code> (only in case of a patch level update of OTRS 7, and only if the file was modified)</p></li><li class="listitem"><p><code class="filename">var/*</code></p></li><li class="listitem"><p>as well as the database</p></li></ul></div><p>
@@ -133,9 +132,8 @@ otrs&gt; bin/otrs.Console.pl Admin::Package::UpgradeAll
             This will depend on your service configuration, here is an example:
         </p><p>
         </p><pre class="screen">
-root&gt; /etc/init.d/apache start
-root&gt; /etc/init.d/postfix start
-root&gt; /etc/init.d/cron start
+root&gt; systemctl stop postfix
+root&gt; systemctl stop apache2
         </pre><p>
         </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
                 The OTRS Daemon is required for correct operation of OTRS such as sending emails.
@@ -148,8 +146,16 @@ root&gt; /etc/init.d/cron start
             </p><pre class="screen">
 otrs&gt; cd /opt/otrs/
 otrs&gt; bin/otrs.Daemon.pl start
-otrs&gt; bin/Cron.sh start
 otrs&gt; bin/otrs.WebServer.pl
+            </pre><p>
+        </p><p>
+            OTRS comes with example systemd configuration files that can be used
+            to make sure that the OTRS Daemon and web server are started automatically
+            after the system starts.
+        </p><p>
+            </p><pre class="screen">
+root&gt; cd /opt/otrs/scripts/systemd
+root&gt; for UNIT in *.service; do cp -vf $UNIT /usr/lib/systemd/system/; systemctl enable $UNIT; done
             </pre><p>
         </p><p>
             Now you can log into your system.
