@@ -57,7 +57,7 @@ sub FindHTMLFiles {
         return if (substr($File::Find::name, -5) ne '.html');
 
         # Don't modify the new RST documentations - not compatible.
-        return if ($File::Find::name =~ m{/admin-beta/});
+        return if ($File::Find::name =~ m{/manual/.*/7});
 
         # Don't modify the REST API documentation at this point - not compatible.
         return if ($File::Find::name =~ m{/REST/});
