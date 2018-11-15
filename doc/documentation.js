@@ -49,6 +49,34 @@ $(document).ready(function() {
                 }
             ]
         },
+        /*
+        {
+            Name: 'OTRS Installation Guide',
+            Type: 'manual',
+            Path: 'installation',
+            Versions: [
+                {
+                    Version:  '7.0',
+                    HTMLPath: '7.0',
+                    Name:     'OTRS 7',
+                    Languages: ['en']
+                }
+            ]
+        },
+        {
+            Name: 'OTRS Configuration Reference',
+            Type: 'manual',
+            Path: 'config-reference',
+            Versions: [
+                {
+                    Version:  '7.0',
+                    HTMLPath: '7.0',
+                    Name:     'OTRS 7',
+                    Languages: ['en']
+                }
+            ]
+        },
+        */
         {
             Name: 'OTRS Business Solution™ Manual',
             Type: 'manual',
@@ -136,6 +164,36 @@ $(document).ready(function() {
             Path: 'otrs',
             Versions: [
                 {
+                    Version:  '8.0',
+                    HTMLPath: '8.0',
+                    Types:    [
+                        { 
+                            Name: 'Perl',
+                            Path: 'Perl',
+                        },
+                        {
+                            Name: 'Design System (External Interface)',
+                            Path: 'frontend/dist/designsystem',
+                            NewTab: true,
+                        },
+                        {
+                            Name: 'JavaScript (External Interface)',
+                            Path: 'frontend/dist/api',
+                            NewTab: true,
+                        },
+                        {
+                            Name: 'JavaScript (Agent Interface)',
+                            Path: 'JavaScript',
+                        },
+                        {
+                            Name: 'REST Interface',
+                            Path: 'REST',
+                            NewTab: true,
+                        }
+                    ],
+                    Name:     'OTRS git (development)'
+                },
+                {
                     Version:  '7.0',
                     HTMLPath: '7.0',
                     Types:    [
@@ -163,7 +221,7 @@ $(document).ready(function() {
                             NewTab: true,
                         }
                     ],
-                    Name:     'OTRS git (development)'
+                    Name:     'OTRS 7'
                 },
                 {
                     Version:  '6.0',
@@ -230,7 +288,7 @@ $(document).ready(function() {
 
                     function CreateHTMLPath(Version, Language) {
                         if (parseFloat(Version.Version) >= 7.0) {
-                            return BaseURL + 'manual/' + Category.Path + '-beta/' + Version.HTMLPath + '/' + Language + '/index.html';
+                            return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/index.html';
                         }
                         return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/html/index.html';
                     }
@@ -256,7 +314,9 @@ $(document).ready(function() {
                             Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul class="Hidden">';
                         }
                         Navigation += '<li><a href="' + CreateHTMLPath(Version, Language) + '">HTML</a></li>';
-                        Navigation += '<li><a href="' + CreatePDFPath(Version, Language, PDFPath, PDFFileName) + '">PDF</a></li>';
+                        if (parseFloat(Version.Version) < 7.0) {
+                            Navigation += '<li><a href="' + CreatePDFPath(Version, Language, PDFPath, PDFFileName) + '">PDF</a></li>';
+                        }
                         if (Version.Languages.length > 1) {
                             Navigation += '</ul></li>';
                         }
