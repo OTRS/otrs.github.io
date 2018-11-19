@@ -23,13 +23,13 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '7.0',
-                    HTMLPath: '7.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS 7',
                     Languages: ['en']
                 },
                 {
                     Version:  '6.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '6.0',
                     Name:     'OTRS 6',
                     Languages: ['en', 'hu', 'zh_CN']
                 },
@@ -56,7 +56,7 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '7.0',
-                    HTMLPath: '7.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS 7',
                     Languages: ['en']
                 }
@@ -69,7 +69,7 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '7.0',
-                    HTMLPath: '7.0',
+                    HTMLPath: 'stable',
                     Name:     'OTRS 7',
                     Languages: ['en']
                 }
@@ -199,7 +199,7 @@ $(document).ready(function() {
                 },
                 {
                     Version:  '7.0',
-                    HTMLPath: '7.0',
+                    HTMLPath: 'stable',
                     Types:    [
                         { 
                             Name: 'Perl',
@@ -229,7 +229,7 @@ $(document).ready(function() {
                 },
                 {
                     Version:  '6.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '6.0',
                     Types:    [
                         { 
                             Name: 'Perl',
