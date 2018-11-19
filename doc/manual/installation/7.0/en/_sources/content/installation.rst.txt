@@ -33,8 +33,8 @@ Here's how to disable SELinux for RHEL/CentOS/Fedora.
 
    ::
 
-       root> getenforce
-       Disabled
+      root> getenforce
+      Disabled
 
 
 Step 1: Unpack and Install the Application
@@ -44,8 +44,8 @@ Unpack the source archive (for example, using ``tar``) into the directory ``/opt
 
 ::
 
-    root> tar xzf /tmp/otrs-x.x.x.tar.gz
-    root> mv otrs-x.x.x /opt/otrs
+   root> tar xzf /tmp/otrs-x.x.x.tar.gz
+   root> mv otrs-x.x.x /opt/otrs
 
 
 Step 2: Install Additional Programs and Perl Modules
@@ -55,12 +55,12 @@ Use the following script to get an overview of all installed and required CPAN m
 
 ::
 
-    root> perl /opt/otrs/bin/otrs.CheckEnvironment.pl
-    Checking for Perl Modules:
-      o Archive::Tar.....................ok (v1.90)
-      o Archive::Zip.....................ok (v1.37)
-      o Crypt::Eksblowfish::Bcrypt.......ok (v0.009)
-    ...
+   root> perl /opt/otrs/bin/otrs.CheckEnvironment.pl
+   Checking for Perl Modules:
+     o Archive::Tar.....................ok (v1.90)
+     o Archive::Zip.....................ok (v1.37)
+     o Crypt::Eksblowfish::Bcrypt.......ok (v0.009)
+   ...
 
 .. note::
 
@@ -76,7 +76,7 @@ Create a dedicated user for OTRS:
 
 ::
 
-    root> useradd -d /opt/otrs -c 'OTRS user' otrs
+   root> useradd -d /opt/otrs -c 'OTRS user' otrs
 
 
 Step 4: Activate the Default Config File
@@ -86,7 +86,7 @@ There is one OTRS config file bundled in ``$OTRS_HOME/Kernel/Config.pm.dist``. Y
 
 ::
 
-    root> cp /opt/otrs/Kernel/Config.pm.dist /opt/otrs/Kernel/Config.pm
+   root> cp /opt/otrs/Kernel/Config.pm.dist /opt/otrs/Kernel/Config.pm
 
 
 Step 5: Configure the Apache Web Server
@@ -98,9 +98,9 @@ On some systems like Debian and SuSE, these modules need to be specifically enab
 
 ::
 
-    root> a2enmod proxy
-    root> a2enmod proxy_http
-    root> a2enmod proxy_wstunnel
+   root> a2enmod proxy
+   root> a2enmod proxy_http
+   root> a2enmod proxy_wstunnel
             
 Most Apache installations have a ``conf.d`` directory included. On Linux systems you can usually find this directory under ``/etc/apache`` or ``/etc/apache2``. Log in as root, change to the ``conf.d`` directory and
 link the appropriate template in ``/opt/otrs/scripts/apache2-httpd.include.conf`` to a file called
@@ -108,21 +108,24 @@ link the appropriate template in ``/opt/otrs/scripts/apache2-httpd.include.conf`
 
 ::
 
-    # Debian/Ubuntu:
-    root> ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-enabled/zzz_otrs.conf
+   # Debian/Ubuntu:
+   root> ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-enabled/zzz_otrs.conf
 
-Now you can restart your web server to load the new configuration settings. On most systems you can do that with the command ``systemctl restart apache2.service``.
+Now you can restart your web server to load the new configuration settings. On most systems you can do that with the command:
+
+::
+
+   root> systemctl restart apache2.service
 
 
 Step 6: Set File Permissions
 ----------------------------
 
-Please execute the following command as root user to set the file and directory permissions for OTRS. It will try to detect the correct user and group settings needed for your setup.
+Please execute the following command to set the file and directory permissions for OTRS. It will try to detect the correct user and group settings needed for your setup.
 
 ::
 
-    root> cd /opt/otrs/
-    root> bin/otrs.SetPermissions.pl
+   root> /opt/otrs/bin/otrs.SetPermissions.pl
 
 
 Step 7: Setup the Database
@@ -130,23 +133,23 @@ Step 7: Setup the Database
 
 The following steps need to be taken to setup the database for OTRS properly:
 
--  Create a dedicated database user and database.
--  Create the database structure.
--  Insert the initial data.
--  Configure the database connection in ``Kernel/Config.pm``.
+- Create a dedicated database user and database.
+- Create the database structure.
+- Insert the initial data.
+- Configure the database connection in ``Kernel/Config.pm``.
 
 .. note::
 
-   Please note that OTRS requires utf8 as database storage encoding.
+   Please note that OTRS requires ``utf8`` as database storage encoding.
 
 MySQL
 ~~~~~
 
-Run the following commands in mysql as admin user:
+Run the following commands in MySQL as database admin user:
 
 ::
 
-   mysql -uroot -p
+   root> mysql -uroot -p
 
       # Create database
       CREATE DATABASE otrs CHARACTER SET utf8;
@@ -161,14 +164,13 @@ Run the following commands in mysql as admin user:
       GRANT ALL PRIVILEGES ON otrs.* TO 'otrs'@'localhost';
       FLUSH PRIVILEGES;
 
-Run the following commands on the shell:
+Run the following commands on the shell to create schema and insert data:
 
 ::
 
-   # Create schema and insert data.
-   mysql -uroot -p otrs < /opt/otrs/scripts/database/otrs-schema.mysql.sql
-   mysql -uroot -p otrs < /opt/otrs/scripts/database/otrs-initial_insert.mysql.sql
-   mysql -uroot -p otrs < /opt/otrs/scripts/database/otrs-schema-post.mysql.sql
+   root> mysql -uroot -p otrs < /opt/otrs/scripts/database/otrs-schema.mysql.sql
+   root> mysql -uroot -p otrs < /opt/otrs/scripts/database/otrs-initial_insert.mysql.sql
+   root> mysql -uroot -p otrs < /opt/otrs/scripts/database/otrs-schema-post.mysql.sql
 
 Configure database settings in ``Kernel/Config.pm``:
 
@@ -182,7 +184,7 @@ Configure database settings in ``Kernel/Config.pm``:
                     
 .. note::
 
-   The following configuration settings are recommended for MySQL setups. Please add the following lines to ``/etc/my.cnf`` under the [mysqld] section:
+   The following configuration settings are recommended for MySQL setups. Please add the following lines to ``/etc/my.cnf`` under the ``[mysqld]`` section:
 
    ::
 
@@ -198,23 +200,24 @@ Run these commands as ``postgres`` user:
 
 ::
 
-    sudo su - postgres
+   # Switch user
+   root> sudo su - postgres
 
-       # Create database
-       createdb --encoding=utf8 --owner=otrs otrs
+   # Create database
+   postgres> createdb --encoding=utf8 --owner=otrs otrs
 
-       # Create database user
-       echo "create user otrs password 'choose-your-password';" | psql
+   # Create database user
+   postgres> echo "create user otrs password 'choose-your-password';" | psql
 
 Run these commands on the shell as ``otrs`` user.
 
 ::
 
    # Create schema and insert data.
-   export PGPASSWORD=some-pass
-   psql otrs otrs -h localhost < /opt/otrs/scripts/database/otrs-schema.postgresql.sql
-   psql otrs otrs -h localhost < /opt/otrs/scripts/database/otrs-initial_insert.postgresql.sql
-   psql otrs otrs -h localhost < /opt/otrs/scripts/database/otrs-schema-post.postgresql.sql
+   otrs> export PGPASSWORD=some-pass
+   otrs> psql otrs otrs -h localhost < /opt/otrs/scripts/database/otrs-schema.postgresql.sql
+   otrs> psql otrs otrs -h localhost < /opt/otrs/scripts/database/otrs-initial_insert.postgresql.sql
+   otrs> psql otrs otrs -h localhost < /opt/otrs/scripts/database/otrs-schema-post.postgresql.sql
 
 Configure database settings in ``Kernel/Config.pm``:
 
@@ -230,7 +233,7 @@ Configure database settings in ``Kernel/Config.pm``:
 Finishing the Database Setup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To verify your database setup, run the following command (as ``otrs`` user):
+To verify your database setup, run the following command:
 
 ::
 
@@ -248,7 +251,7 @@ Once the database is configured correctly, please initialize the system configur
                 
 .. note::
 
-   For security reasons, please change the default password ``root`` of the admin user ``root@localhost``.
+   For security reasons, please change the default password of the admin user ``root@localhost``.
 
    ::
 
@@ -312,16 +315,20 @@ With this step, the basic system setup is finished.
 Step 12: Setup Bash Autocompletion (optional)
 ---------------------------------------------
 
-All regular OTRS commandline operations happen via the OTRS console interface ``bin/otrs.Console.pl``. This provides an auto completion for the bash shell which makes finding the right command and options much easier.
+All regular OTRS command line operations happen via the OTRS console interface. This provides an auto completion for the bash shell which makes finding the right command and options much easier.
 
 You can activate the bash autocompletion by installing the package ``bash-completion``. It will automatically detect and load the file ``/opt/otrs/.bash_completion`` for the ``otrs`` user.
 
-After restarting your shell, you can just type ``bin/otrs.Console.pl`` followed by TAB, and it will list all available commands. If you type a few characters of the command name, TAB will show all matching commands. After typing a complete command, all possible options and arguments will be shown by pressing TAB.
+After restarting your shell, you can just type this command followed by TAB, and it will list all available commands:
+
+::
+
+   otrs> /opt/otrs/bin/otrs.Console.pl
+
+If you type a few characters of the command name, TAB will show all matching commands. After typing a complete command, all possible options and arguments will be shown by pressing TAB.
 
 
 Step 13: Further Information
 ----------------------------
 
-We advise you to read the OTRS `performance tuning chapter <#performance-tuning>`__.
-
-Please have a look at the list of `additional resources <#additional-resources>`__ for information about OTRS Group, the creator of and service provider for `OTRS <https://www.otrs.com>`__, and futher resources.
+We advise you to read the OTRS :doc:`performance-tuning` chapter.
