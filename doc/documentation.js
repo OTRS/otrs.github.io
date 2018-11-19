@@ -21,14 +21,12 @@ $(document).ready(function() {
             Type: 'manual',
             Path: 'admin',
             Versions: [
-                /*
                 {
                     Version:  '7.0',
                     HTMLPath: '7.0',
                     Name:     'OTRS 7',
                     Languages: ['en']
                 },
-                */
                 {
                     Version:  '6.0',
                     HTMLPath: 'stable',
@@ -41,15 +39,16 @@ $(document).ready(function() {
                     Name:     'OTRS 5',
                     Languages: ['en', 'hu', 'zh_CN']
                 },
+                /*
                 {
                     Version:  '4.0',
                     HTMLPath: '4.0',
                     Name:     'OTRS 4',
                     Languages: ['en', 'de', 'hu', 'ja', 'ru', 'sw']
                 }
+                */
             ]
         },
-        /*
         {
             Name: 'OTRS Installation Guide',
             Type: 'manual',
@@ -76,7 +75,6 @@ $(document).ready(function() {
                 }
             ]
         },
-        */
         {
             Name: 'OTRS Business Solution™ Manual',
             Type: 'manual',
@@ -98,6 +96,7 @@ $(document).ready(function() {
                     PDFPath:     'doc-otrsbusiness',
                     PDFFileName: 'otrs_business_solution_book.pdf'
                 },
+                /*
                 {
                     Version:     '4.0',
                     HTMLPath:    '4.0',
@@ -106,6 +105,7 @@ $(document).ready(function() {
                     PDFPath:     'doc-otrsbusiness',
                     PDFFileName: 'otrs_business_solution_book.pdf'
                 }
+                */
             ]
         },
         {
@@ -125,12 +125,14 @@ $(document).ready(function() {
                     Name:     'OTRS::ITSM 5',
                     Languages: ['en', 'hu', 'ru', 'zh_CN']
                 },
+                /*
                 {
                     Version:  '4.0',
                     HTMLPath: '4.0',
                     Name:     'OTRS::ITSM 4',
                     Languages: ['en', 'ru']
                 }
+                */
             ]
         },
         {
@@ -150,12 +152,14 @@ $(document).ready(function() {
                     Name:     'OTRS 5',
                     Languages: ['en', 'hu']
                 },
+                /*
                 {
                     Version:  '4.0',
                     HTMLPath: '4.0',
                     Name:     'OTRS 4',
                     Languages: ['en']
                 }
+                */
             ]
         },
         {
@@ -253,6 +257,7 @@ $(document).ready(function() {
                     ],
                     Name:     'OTRS 5'
                 },
+                /*
                 {
                     Version:  '4.0',
                     HTMLPath: '4.0',
@@ -264,6 +269,7 @@ $(document).ready(function() {
                     ],
                     Name:     'OTRS 4'
                 }
+                */
             ]
         }
     ];
@@ -288,7 +294,7 @@ $(document).ready(function() {
 
                     function CreateHTMLPath(Version, Language) {
                         if (parseFloat(Version.Version) >= 7.0) {
-                            return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/index.html';
+                            return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/index.html" target="_blank';
                         }
                         return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/html/index.html';
                     }
