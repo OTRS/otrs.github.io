@@ -359,6 +359,8 @@ $(document).ready(function() {
         return Navigation;
     }
 
+    var CurrentDate = new Date();
+
     BasicHTML = '\
 <div id="Header">\
     <h1 class="CompanyName">Portal</h1>\
@@ -389,7 +391,7 @@ $(document).ready(function() {
         </div>\
         <div id="footer">\
             <p class="copyright">\
-                &copy; 2001-2017 <a href="https://www.otrs.com/company/imprint/">OTRS Group</a>\
+                &copy; 2001-' + CurrentDate.getFullYear() + ' <a href="https://www.otrs.com/company/imprint/">OTRS Group</a>\
             </p>\
         </div>\
     </div>\
