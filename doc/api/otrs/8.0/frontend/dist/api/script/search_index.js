@@ -1062,6 +1062,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/mixins/forminputplaceholder.js",
+    "file/Frontend/Mixins/FormInputPlaceholder.js.html",
+    "Frontend/Mixins/FormInputPlaceholder.js",
+    "file"
+  ],
+  [
     "frontend/mixins/routedetection.js",
     "file/Frontend/Mixins/RouteDetection.js.html",
     "Frontend/Mixins/RouteDetection.js",
