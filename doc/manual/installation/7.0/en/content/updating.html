@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Performance Tuning" href="performance-tuning.html" />
+    <link rel="next" title="Backup and Restore" href="backup-restore.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
 
   
@@ -87,6 +87,8 @@
             
               <p class="caption"><span class="caption-text">Contents</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="requirements.html">Hardware and Software Requirements</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Updating</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#step-1-stop-all-relevant-services-and-the-otrs-daemon">Step 1: Stop All Relevant Services and the OTRS Daemon</a></li>
@@ -106,6 +108,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#step-8-manual-migration-tasks-and-changes">Step 8: Manual Migration Tasks and Changes</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="backup-restore.html">Backup and Restore</a></li>
 <li class="toctree-l1"><a class="reference internal" href="performance-tuning.html">Performance Tuning</a></li>
 </ul>
 
@@ -177,36 +180,34 @@
 <p class="first admonition-title">Note</p>
 <p class="last">It is highly recommended to perform a test update on a separate testing machine first.</p>
 </div>
-<ul>
-<li><p class="first">Updating from an earlier version of OTRS 7</p>
-<p>You can update directly from any previous to the latest available patch level release.</p>
-</li>
-<li><p class="first">Updating from OTRS 6</p>
-<p>You can update from any OTRS 6 patch level to the latest available OTRS 7 patch level release.</p>
-</li>
-<li><p class="first">Updating from OTRS 5 or earlier</p>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">You cannot update from OTRS 5 or earlier directly to OTRS 7. Full updates to all available minor versions have to be made sequentially instead. For example, if you come from OTRS 4.0, you first have to perform a full update to OTRS 5, then to 6 and finally to OTRS 7.</p>
+<dl class="docutils">
+<dt>Updating from an earlier version of OTRS 7</dt>
+<dd>You can update directly from any previous to the latest available patch level release.</dd>
+<dt>Updating from OTRS 6</dt>
+<dd>You can update from any OTRS 6 patch level to the latest available OTRS 7 patch level release.</dd>
+<dt>Updating from OTRS 5 or earlier</dt>
+<dd><p class="first">You cannot update from OTRS 5 or earlier directly to OTRS 7. Full updates to all available minor versions have to be made sequentially instead. For example, if you come from OTRS 4.0, you first have to perform a full update to OTRS 5, then to 6 and finally to OTRS 7.</p>
+<div class="last admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">See the admin manual of the previous versions of OTRS for the update instructions.</p>
 </div>
-</li>
-</ul>
+</dd>
+</dl>
 <div class="section" id="step-1-stop-all-relevant-services-and-the-otrs-daemon">
 <h2>Step 1: Stop All Relevant Services and the OTRS Daemon<a class="headerlink" href="#step-1-stop-all-relevant-services-and-the-otrs-daemon" title="Permalink to this headline">¶</a></h2>
 <p>Please make sure there are no more running services or cron jobs that try to access OTRS. This will depend on your service configuration and OTRS version.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">&gt;</span> <span class="n">systemctl</span> <span class="n">stop</span> <span class="n">postfix</span>
-<span class="n">root</span><span class="o">&gt;</span> <span class="n">systemctl</span> <span class="n">stop</span> <span class="n">apache2</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; systemctl stop postfix
+root&gt; systemctl stop apache2
 </pre></div>
 </div>
 <p>If you do a major update form OTRS 6, you need to stop the old OTRS cron jobs and daemon (in this order):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">otrs</span><span class="o">&gt;</span> <span class="n">cd</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">otrs</span><span class="o">/</span>
-<span class="n">otrs</span><span class="o">&gt;</span> <span class="nb">bin</span><span class="o">/</span><span class="n">Cron</span><span class="o">.</span><span class="n">sh</span> <span class="n">stop</span>
-<span class="n">otrs</span><span class="o">&gt;</span> <span class="nb">bin</span><span class="o">/</span><span class="n">otrs</span><span class="o">.</span><span class="n">Daemon</span><span class="o">.</span><span class="n">pl</span> <span class="n">stop</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/Cron.sh stop
+otrs&gt; /opt/otrs/bin/otrs.Daemon.pl stop
 </pre></div>
 </div>
 <p>If you do a patch level update within OTRS 7 (using the new systemd files), stop the OTRS services via systemd:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">&gt;</span> <span class="n">systemctl</span> <span class="n">stop</span> <span class="n">otrs</span><span class="o">-</span><span class="n">daemon</span>
-<span class="n">root</span><span class="o">&gt;</span> <span class="n">systemctl</span> <span class="n">stop</span> <span class="n">otrs</span><span class="o">-</span><span class="n">webserver</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; systemctl stop otrs-daemon
+root&gt; systemctl stop otrs-webserver
 </pre></div>
 </div>
 </div>
@@ -221,7 +222,7 @@
 </ul>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
-<p class="last">Don’t proceed without a complete backup of your system.</p>
+<p class="last">Don’t proceed without a complete backup of your system. Use the <a class="reference internal" href="backup-restore.html#backup"><span class="std std-ref">Backup</span></a> script for this.</p>
 </div>
 </div>
 <div class="section" id="step-3-install-the-new-release">
@@ -230,10 +231,10 @@
 <p class="first admonition-title">Note</p>
 <p class="last">With OTRS 7 RPMs are no longer provided. RPM based installations need to switch by uninstalling the RPM (this will not drop your database) and using the source archives instead.</p>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">&gt;</span> <span class="n">cd</span> <span class="o">/</span><span class="n">opt</span>
-<span class="n">root</span><span class="o">&gt;</span> <span class="n">mv</span> <span class="n">otrs</span> <span class="n">otrs</span><span class="o">-</span><span class="n">old</span>
-<span class="n">root</span><span class="o">&gt;</span> <span class="n">tar</span> <span class="o">-</span><span class="n">xzf</span> <span class="n">otrs</span><span class="o">-</span><span class="n">x</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">tar</span><span class="o">.</span><span class="n">gz</span>
-<span class="n">root</span><span class="o">&gt;</span> <span class="n">mv</span> <span class="n">otrs</span><span class="o">-</span><span class="n">x</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">x</span> <span class="n">otrs</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; <span class="nb">cd</span> /opt
+root&gt; mv otrs otrs-old
+root&gt; tar -xzf otrs-x.x.x.tar.gz
+root&gt; mv otrs-x.x.x otrs
 </pre></div>
 </div>
 <div class="section" id="restore-old-configuration-files">
@@ -250,16 +251,15 @@
 <div class="section" id="restore-already-installed-default-statistics">
 <h3>Restore Already Installed Default Statistics<a class="headerlink" href="#restore-already-installed-default-statistics" title="Permalink to this headline">¶</a></h3>
 <p>If you have additional packages with default statistics you have to restore the stats XML files with the suffix <code class="docutils literal notranslate"><span class="pre">*.installed</span></code> to <code class="docutils literal notranslate"><span class="pre">/opt/otrs/var/stats</span></code>.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">&gt;</span> <span class="n">cd</span> <span class="n">OTRS</span><span class="o">-</span><span class="n">BACKUP</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">stats</span>
-<span class="n">root</span><span class="o">&gt;</span> <span class="n">cp</span> <span class="o">*.</span><span class="n">installed</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">otrs</span><span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">stats</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; <span class="nb">cd</span> OTRS-BACKUP/var/stats
+root&gt; cp *.installed /opt/otrs/var/stats
 </pre></div>
 </div>
 </div>
 <div class="section" id="set-file-permissions">
 <h3>Set File Permissions<a class="headerlink" href="#set-file-permissions" title="Permalink to this headline">¶</a></h3>
 <p>Please execute the following command as root user to set the file and directory permissions for OTRS. It will try to detect the correct user and group settings needed for your setup.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">&gt;</span> <span class="n">cd</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">otrs</span><span class="o">/</span>
-<span class="n">root</span><span class="o">&gt;</span> <span class="nb">bin</span><span class="o">/</span><span class="n">otrs</span><span class="o">.</span><span class="n">SetPermissions</span><span class="o">.</span><span class="n">pl</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; /opt/otrs/bin/otrs.SetPermissions.pl
 </pre></div>
 </div>
 </div>
@@ -276,9 +276,8 @@
 <p class="last">If you have any custom Perl or XML configuration files in <code class="docutils literal notranslate"><span class="pre">Kernel/Config/Files</span></code>, these need to be <a class="reference external" href="http://doc.otrs.com/doc/manual/developer/6.0/en/html/package-porting.html#packge-porting-5-to-6-configuration-files">converted to the new formats supported by OTRS 7</a> before running the migration script.</p>
 </div>
 <p>The migration script will perform many checks on your system and give you advice on how to install missing Perl modules etc., if that is required. If all checks succeeded, the necessary migration steps will be performed. Please also run this script in case of patch level updates.</p>
-<p>Run the migration script (as user <code class="docutils literal notranslate"><span class="pre">otrs</span></code>, NOT as <code class="docutils literal notranslate"><span class="pre">root</span></code>):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">otrs</span><span class="o">&gt;</span> <span class="n">cd</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">otrs</span><span class="o">/</span>
-<span class="n">otrs</span><span class="o">&gt;</span> <span class="n">scripts</span><span class="o">/</span><span class="n">DBUpdate</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="mf">7.</span><span class="n">pl</span>
+<p>Run the migration script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/scripts/DBUpdate-to-7.pl
 </pre></div>
 </div>
 <div class="admonition warning">
@@ -295,8 +294,7 @@
 <p class="last">Packages for OTRS 6 are not compatible with OTRS 7 and have to be updated.</p>
 </div>
 <p>You can use the command below to update all installed packages. This works for all packages that are available from online repositories. You can update other packages later via the package manager (this requires a running OTRS Daemon).</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">otrs</span><span class="o">&gt;</span> <span class="n">cd</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">otrs</span><span class="o">/</span>
-<span class="n">otrs</span><span class="o">&gt;</span> <span class="nb">bin</span><span class="o">/</span><span class="n">otrs</span><span class="o">.</span><span class="n">Console</span><span class="o">.</span><span class="n">pl</span> <span class="n">Admin</span><span class="p">::</span><span class="n">Package</span><span class="p">::</span><span class="n">UpgradeAll</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Admin::Package::UpgradeAll
 </pre></div>
 </div>
 </div>
@@ -304,8 +302,8 @@
 <h2>Step 6: Restart your Services<a class="headerlink" href="#step-6-restart-your-services" title="Permalink to this headline">¶</a></h2>
 <p>OTRS 7 comes with an own built-in web server that is used behind apache as a reverse proxy (or any other reverse proxy server). For major updates from OTRS 6, the apache configuration must be updated with the new version in <code class="docutils literal notranslate"><span class="pre">/opt/otrs/scripts/apache2-httpd.include.conf</span></code>, if it was copied and not just linked. Please also note that while <code class="docutils literal notranslate"><span class="pre">mod_perl</span></code> is no longer needed, other Apache modules are required now: <code class="docutils literal notranslate"><span class="pre">proxy_module</span></code>, <code class="docutils literal notranslate"><span class="pre">proxy_http_module</span></code> and <code class="docutils literal notranslate"><span class="pre">proxy_wstunnel_module</span></code>.</p>
 <p>After that, the services can be restarted. This will depend on your service configuration, here is an example:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="o">&gt;</span> <span class="n">systemctl</span> <span class="n">stop</span> <span class="n">postfix</span>
-<span class="n">root</span><span class="o">&gt;</span> <span class="n">systemctl</span> <span class="n">stop</span> <span class="n">apache2</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; systemctl stop postfix
+root&gt; systemctl stop apache2
 </pre></div>
 </div>
 <div class="admonition note">
@@ -316,15 +314,14 @@
 <div class="section" id="step-7-start-the-otrs-daemon-web-server-and-cron-job">
 <h2>Step 7: Start the OTRS Daemon, Web Server and Cron Job<a class="headerlink" href="#step-7-start-the-otrs-daemon-web-server-and-cron-job" title="Permalink to this headline">¶</a></h2>
 <p>The OTRS Daemon is responsible for handling any asynchronous and recurring tasks in OTRS. The daemon and its keepalive cron job must be started as the <code class="docutils literal notranslate"><span class="pre">otrs</span></code> user. The built-in OTRS web server process handles the web requests handed over from Apache.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">otrs</span><span class="o">&gt;</span> <span class="n">cd</span> <span class="o">/</span><span class="n">opt</span><span class="o">/</span><span class="n">otrs</span><span class="o">/</span>
-<span class="n">otrs</span><span class="o">&gt;</span> <span class="nb">bin</span><span class="o">/</span><span class="n">otrs</span><span class="o">.</span><span class="n">Daemon</span><span class="o">.</span><span class="n">pl</span> <span class="n">start</span>
-<span class="n">otrs</span><span class="o">&gt;</span> <span class="nb">bin</span><span class="o">/</span><span class="n">Cron</span><span class="o">.</span><span class="n">sh</span> <span class="n">start</span>
-<span class="n">otrs</span><span class="o">&gt;</span> <span class="nb">bin</span><span class="o">/</span><span class="n">otrs</span><span class="o">.</span><span class="n">WebServer</span><span class="o">.</span><span class="n">pl</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Daemon.pl start
+otrs&gt; /opt/otrs/bin/Cron.sh start
+otrs&gt; /opt/otrs/bin/otrs.WebServer.pl
 </pre></div>
 </div>
 <p>OTRS comes with example systemd configuration files that can be used to make sure that the OTRS Daemon and web server are started automatically after the system starts.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>root&gt; cd /opt/otrs/scripts/systemd
-root&gt; for UNIT in *.service; do cp -vf $UNIT /usr/lib/systemd/system/; systemctl enable $UNIT; done
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; <span class="nb">cd</span> /opt/otrs/scripts/systemd
+root&gt; <span class="k">for</span> UNIT in *.service<span class="p">;</span> <span class="k">do</span> cp -vf <span class="nv">$UNIT</span> /usr/lib/systemd/system/<span class="p">;</span> systemctl <span class="nb">enable</span> <span class="nv">$UNIT</span><span class="p">;</span> <span class="k">done</span>
 </pre></div>
 </div>
 <p>Now you can log into your system.</p>
@@ -374,7 +371,7 @@ root&gt; for UNIT in *.service; do cp -vf $UNIT /usr/lib/systemd/system/; system
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="performance-tuning.html" class="btn btn-neutral float-right" title="Performance Tuning" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="backup-restore.html" class="btn btn-neutral float-right" title="Backup and Restore" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="installation.html" class="btn btn-neutral" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

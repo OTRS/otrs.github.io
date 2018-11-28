@@ -8,6 +8,9 @@ This work is copyrighted by |doc-vendor| (|doc-url|), Zimmersmühlenweg 11, 6144
    :maxdepth: 3
    :caption: Contents
 
+   content/introduction
+   content/requirements
    content/installation
    content/updating
+   content/backup-restore
    content/performance-tuning
