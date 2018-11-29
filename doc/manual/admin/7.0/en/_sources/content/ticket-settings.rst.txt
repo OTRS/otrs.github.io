@@ -3,7 +3,7 @@ Ticket Settings
 
 This is the chapter *Ticket Settings*.
 
-Find here, an example of a :term:`ticket`.
+Find here an example of a :term:`ticket`.
 
 .. figure:: ticket-settings/images/ticket-settings-ticket-screen.png
    :alt: Ticket screen
