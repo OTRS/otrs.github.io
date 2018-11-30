@@ -141,8 +141,14 @@ $(document).ready(function() {
             Path: 'developer',
             Versions: [
                 {
-                    Version:  '6.0',
+                    Version:  '7.0',
                     HTMLPath: 'stable',
+                    Name:     'OTRS 7',
+                    Languages: ['en']
+                },
+                {
+                    Version:  '6.0',
+                    HTMLPath: '6.0',
                     Name:     'OTRS 6',
                     Languages: ['en', 'hu']
                 },
