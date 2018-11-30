@@ -159,6 +159,14 @@ To search for archived tickets:
 3. Perform the search.
 
 
+Tuning the Web Server
+---------------------
+
+The built-in web server of OTRS can handle small and medium setups out of the box. When OTRS serves many users simultaneously, it may be necessary to tweak the web server configuration to increase the number of worker processes, for example.
+
+The web server configuration file is located in ``Kernel/WebApp.conf``, and all settings there are documented. The ``worker`` setting can be increased to deploy more processes for serving HTTP requests on capable servers.
+
+
 Caching
 -------
 
