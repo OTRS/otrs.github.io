@@ -108,6 +108,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "apps/agent/plugins/routergenerator~routergenerator",
+    "class/Frontend/Apps/Agent/Plugins/RouterGenerator/index.js~RouterGenerator.html",
+    "<span>RouterGenerator</span> <span class=\"search-result-import-path\">Apps/Agent/Plugins/RouterGenerator</span>",
+    "class"
+  ],
+  [
     "apps/external/plugins/routergenerator~routergenerator",
     "class/Frontend/Apps/External/Plugins/RouterGenerator/index.js~RouterGenerator.html",
     "<span>RouterGenerator</span> <span class=\"search-result-import-path\">Apps/External/Plugins/RouterGenerator</span>",
@@ -672,6 +678,36 @@ window.esdocSearchIndex = [
     "external"
   ],
   [
+    "frontend/apps/agent/mixins/metaheader.js",
+    "file/Frontend/Apps/Agent/Mixins/MetaHeader.js.html",
+    "Frontend/Apps/Agent/Mixins/MetaHeader.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/plugins/routergenerator/index.js",
+    "file/Frontend/Apps/Agent/Plugins/RouterGenerator/index.js.html",
+    "Frontend/Apps/Agent/Plugins/RouterGenerator/index.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/plugins/routergenerator/index.js~routergenerator#constructor",
+    "class/Frontend/Apps/Agent/Plugins/RouterGenerator/index.js~RouterGenerator.html#instance-constructor-constructor",
+    "Frontend/Apps/Agent/Plugins/RouterGenerator/index.js~RouterGenerator#constructor",
+    "method"
+  ],
+  [
+    "frontend/apps/agent/plugins/store/index.js",
+    "file/Frontend/Apps/Agent/Plugins/Store/index.js.html",
+    "Frontend/Apps/Agent/Plugins/Store/index.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/index.js",
+    "file/Frontend/Apps/Agent/index.js.html",
+    "Frontend/Apps/Agent/index.js",
+    "file"
+  ],
+  [
     "frontend/apps/chat/plugins/store/index.js",
     "file/Frontend/Apps/Chat/Plugins/Store/index.js.html",
     "Frontend/Apps/Chat/Plugins/Store/index.js",
@@ -1027,13 +1063,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1303,13 +1339,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1395,6 +1431,12 @@ window.esdocSearchIndex = [
     "frontend/styles/globals.js",
     "file/Frontend/Styles/globals.js.html",
     "Frontend/Styles/globals.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/testcomponent.js",
+    "file/Frontend/Tests/Apps/Agent/Components/TestComponent.js.html",
+    "Frontend/Tests/Apps/Agent/Components/TestComponent.js",
     "file"
   ],
   [
