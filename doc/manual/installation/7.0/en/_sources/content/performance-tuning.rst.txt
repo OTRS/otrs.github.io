@@ -194,10 +194,4 @@ OTRS caches a lot of temporary data in ``/opt/otrs/var/tmp``. Please make sure t
 Clustering
 ----------
 
-For very high loads, it can be required to operate OTRS on a cluster of multiple front-end servers. This is a complex task, and it is recommended to `contact OTRS group for consulting <mailto:sales@otrs.com>`__.
-
-The following restrictions have to be considered:
-
-1. The `/opt/otrs` directory must be shared or synchronized.
-2. The contents of the directory `/opt/otrs/var/run` must not be shared. You can use a symlink to `/run/otrs` to point to a local directory, for example.
-3. The OTRS cache must be shared. You can either use the default file-based cache that OTRS provides on a shared file system in `/opt/otrs/var/tmp/CacheFileStorable` (which could be slow), or use the `memcached based cache backend <https://otrs.com/otrs-feature/feature-add-on-cache-memcached-fast/>`__ mentioned above.
+For very high loads, it can be required to operate OTRS on a cluster of multiple front-end servers. This is a complex task with many pitfalls. Therefore, OTRS Group provides support for clusters in its `managed OTRS <https://otrs.com/how-to-buy/>`__ environment exclusively.
