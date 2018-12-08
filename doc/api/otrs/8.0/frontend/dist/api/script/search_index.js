@@ -702,6 +702,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/styles/globals.js",
+    "file/Frontend/Apps/Agent/Styles/globals.js.html",
+    "Frontend/Apps/Agent/Styles/globals.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/index.js",
     "file/Frontend/Apps/Agent/index.js.html",
     "Frontend/Apps/Agent/index.js",
@@ -711,6 +717,12 @@ window.esdocSearchIndex = [
     "frontend/apps/chat/plugins/store/index.js",
     "file/Frontend/Apps/Chat/Plugins/Store/index.js.html",
     "Frontend/Apps/Chat/Plugins/Store/index.js",
+    "file"
+  ],
+  [
+    "frontend/apps/chat/styles/globals.js",
+    "file/Frontend/Apps/Chat/Styles/globals.js.html",
+    "Frontend/Apps/Chat/Styles/globals.js",
     "file"
   ],
   [
@@ -813,6 +825,12 @@ window.esdocSearchIndex = [
     "frontend/apps/external/plugins/store/index.js",
     "file/Frontend/Apps/External/Plugins/Store/index.js.html",
     "Frontend/Apps/External/Plugins/Store/index.js",
+    "file"
+  ],
+  [
+    "frontend/apps/external/styles/globals.js",
+    "file/Frontend/Apps/External/Styles/globals.js.html",
+    "Frontend/Apps/External/Styles/globals.js",
     "file"
   ],
   [
@@ -1339,13 +1357,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
