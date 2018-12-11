@@ -9,6 +9,13 @@ After installation of the package a new menu will be available in the agent inte
 
    The menu items that were added by this package will be visible after you log-in to the system again.
 
+The implementation of a change, including all required work orders, follows the underlying workflow shown below:
+
+1. Creation of a change.
+2. Creation of needed work orders.
+3. Definition of conditions and actions.
+4. Execution of a change.
+
 .. toctree::
    :maxdepth: 4
    :caption: Contents

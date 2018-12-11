@@ -1,7 +1,7 @@
 Groups
 ======
 
-After installation of the package some new groups are added to the system. The group management screen is available in the *Groups* module of the *Users, Groups & Roles* group.
+Access to the change management module is managed on a role-based access concept. After installation of the package some new groups are added to the system. The group management screen is available in the *Groups* module of the *Users, Groups & Roles* group.
 
 .. figure:: images/group-management.png
    :alt: Group Management Screen

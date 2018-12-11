@@ -9,4 +9,5 @@ This chapter describes the new features that are available in the administrator 
 
    admin/ticket-settings
    admin/users-groups-roles
+   admin/processes-automation
    admin/administration

@@ -12,12 +12,6 @@ After installation of the package some new dynamic fields are added to the syste
 New Dynamic Fields
 ------------------
 
-``ITSMCriticality``
-   This is a drop-down dynamic field that contains criticality levels from *1 very low* to *5 very high*.
-
-``ITSMImpact``
-   This is a drop-down dynamic field that contains impact levels from *1 very low* to *5 very high*.
-
 ``ITSMReviewRequired``
    This is a drop-down dynamic field that contains *Yes* and *No* to indicate if a review is required.
 
