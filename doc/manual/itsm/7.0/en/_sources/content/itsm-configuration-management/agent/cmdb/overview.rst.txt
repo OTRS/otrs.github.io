@@ -12,7 +12,7 @@ Configuration items can be filtered by clicking on a class name in the header of
 
 To limit the number of displayed configuration items per page:
 
-1. Clink on the gear icon in the top right corner of the overview header.
+1. Click on the gear icon in the top right corner of the overview header.
 2. Select the maximum number of configuration items displayed per page.
 3. Click on the *Submit* button.
 
