@@ -25,28 +25,26 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en']
+                    Languages: ['en'],
+                    AssetPath:     'doc-admin',
+                    AssetFilename: 'otrs_admin_manual'
                 },
                 {
                     Version:  '6.0',
                     HTMLPath: '6.0',
                     Name:     'OTRS 6',
-                    Languages: ['en', 'hu', 'zh_CN']
+                    Languages: ['en', 'hu', 'zh_CN'],
+                    AssetPath:     'doc-admin',
+                    AssetFilename: 'otrs_admin_book'
                 },
                 {
                     Version:  '5.0',
                     HTMLPath: '5.0',
                     Name:     'OTRS 5',
-                    Languages: ['en', 'hu', 'zh_CN']
+                    Languages: ['en', 'hu', 'zh_CN'],
+                    AssetPath:     'doc-admin',
+                    AssetFilename: 'otrs_admin_book'
                 },
-                /*
-                {
-                    Version:  '4.0',
-                    HTMLPath: '4.0',
-                    Name:     'OTRS 4',
-                    Languages: ['en', 'de', 'hu', 'ja', 'ru', 'sw']
-                }
-                */
             ]
         },
         {
@@ -58,7 +56,9 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en']
+                    Languages: ['en'],
+                    AssetPath:     'doc-installation',
+                    AssetFilename: 'otrs_installation_guide'
                 }
             ]
         },
@@ -71,7 +71,9 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en', 'de', 'hu', 'zh_CN']
+                    Languages: ['en', 'de', 'hu', 'zh_CN'],
+                    AssetPath:     'doc-config-reference',
+                    AssetFilename: 'otrs_config_reference'
                 }
             ]
         },
@@ -85,27 +87,17 @@ $(document).ready(function() {
                     HTMLPath:    'stable',
                     Name:        'OTRS 6',
                     Languages:   ['en', 'hu'],
-                    PDFPath:     'doc-otrsbusiness',
-                    PDFFileName: 'otrs_business_solution_book.pdf'
+                    AssetPath:     'doc-otrsbusiness',
+                    AssetFilename: 'otrs_business_solution_book'
                 },
                 {
                     Version:     '5.0',
                     HTMLPath:    '5.0',
                     Name:        'OTRS 5',
                     Languages:   ['en', 'pt_BR', 'hu'],
-                    PDFPath:     'doc-otrsbusiness',
-                    PDFFileName: 'otrs_business_solution_book.pdf'
+                    AssetPath:     'doc-otrsbusiness',
+                    AssetFilename: 'otrs_business_solution_book'
                 },
-                /*
-                {
-                    Version:     '4.0',
-                    HTMLPath:    '4.0',
-                    Name:        'OTRS 4',
-                    Languages:   ['en', 'hu'],
-                    PDFPath:     'doc-otrsbusiness',
-                    PDFFileName: 'otrs_business_solution_book.pdf'
-                }
-                */
             ]
         },
         {
@@ -114,25 +106,29 @@ $(document).ready(function() {
             Path: 'itsm',
             Versions: [
                 {
-                    Version:  '6.0',
+                    Version:  '7.0',
                     HTMLPath: 'stable',
+                    Name:     'OTRS::ITSM 7',
+                    Languages: ['en'],
+                    AssetPath:     'doc-itsm',
+                    AssetFilename: 'otrs_itsm_manual'
+                },
+                {
+                    Version:  '6.0',
+                    HTMLPath: '6.0',
                     Name:     'OTRS::ITSM 6',
-                    Languages: ['en', 'hu', 'ru', 'zh_CN']
+                    Languages: ['en', 'hu', 'ru', 'zh_CN'],
+                    AssetPath:     'doc-itsm',
+                    AssetFilename: 'otrs_itsm_book'
                 },
                 {
                     Version:  '5.0',
                     HTMLPath: '5.0',
                     Name:     'OTRS::ITSM 5',
-                    Languages: ['en', 'hu', 'ru', 'zh_CN']
+                    Languages: ['en', 'hu', 'ru', 'zh_CN'],
+                    AssetPath:     'doc-itsm',
+                    AssetFilename: 'otrs_itsm_book'
                 },
-                /*
-                {
-                    Version:  '4.0',
-                    HTMLPath: '4.0',
-                    Name:     'OTRS::ITSM 4',
-                    Languages: ['en', 'ru']
-                }
-                */
             ]
         },
         {
@@ -144,28 +140,26 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en']
+                    Languages: ['en'],
+                    AssetPath:     'doc-developer',
+                    AssetFilename: 'otrs_developer_manual'
                 },
                 {
                     Version:  '6.0',
                     HTMLPath: '6.0',
                     Name:     'OTRS 6',
-                    Languages: ['en', 'hu']
+                    Languages: ['en', 'hu'],
+                    AssetPath:     'doc-developer',
+                    AssetFilename: 'otrs_developer_book'
                 },
                 {
                     Version:  '5.0',
                     HTMLPath: '5.0',
                     Name:     'OTRS 5',
-                    Languages: ['en', 'hu']
+                    Languages: ['en', 'hu'],
+                    AssetPath:     'doc-developer',
+                    AssetFilename: 'otrs_developer_book'
                 },
-                /*
-                {
-                    Version:  '4.0',
-                    HTMLPath: '4.0',
-                    Name:     'OTRS 4',
-                    Languages: ['en']
-                }
-                */
             ]
         },
         {
@@ -263,19 +257,6 @@ $(document).ready(function() {
                     ],
                     Name:     'OTRS 5'
                 },
-                /*
-                {
-                    Version:  '4.0',
-                    HTMLPath: '4.0',
-                    Types:    [
-                        { 
-                            Name: 'Perl',
-                            Path: 'Perl',
-                        },
-                    ],
-                    Name:     'OTRS 4'
-                }
-                */
             ]
         }
     ];
@@ -305,30 +286,32 @@ $(document).ready(function() {
                         return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/html/index.html';
                     }
 
-                    function CreatePDFPath(Version, Language, PDFPath, PDFFileName) {
-                        return 'http://ftp.otrs.org/pub/otrs/doc/' + PDFPath + '/' + Version.Version + '/' + Language + '/pdf/' + PDFFileName;
+                    function CreatePDFPath(Version, Language, AssetPath, AssetFilename) {
+                        if (Version.Version < 7.0) {
+                            return 'http://ftp.otrs.org/pub/otrs/doc/' + AssetPath + '/' + Version.Version + '/' + Language + '/pdf/' + AssetFilename + '.pdf';
+                        }
+                        else {
+                            return 'http://ftp.otrs.org/pub/otrs/doc/' + AssetPath + '/' + Version.Version + '/' + Language + '/' + AssetFilename + '_' + Version.Version + '_' + Language + '.pdf';
+                        }
+                    }
+
+                    function CreateEPUBPath(Version, Language, AssetPath, AssetFilename) {
+                        return 'http://ftp.otrs.org/pub/otrs/doc/' + AssetPath + '/' + Version.Version + '/' + Language + '/' + AssetFilename + '_' + Version.Version + '_' + Language + '.epub';
                     }
 
                     Navigation += '<li id="' + ID + '"><a href="#">' + Version.Name + '</a><ul class="Hidden">';
                     $.each(Version.Languages, function(){
                         var Language = this;
-                        var PDFPath     = 'doc-' + Category.Path;
-                        var PDFFileName = 'otrs_' + Category.Path + '_book.pdf';
-
-                        if (Version.PDFPath) {
-                            PDFPath = Version.PDFPath;
-                        }
-                        if (Version.PDFFileName) {
-                            PDFFileName = Version.PDFFileName;
-                        }
 
                         if (Version.Languages.length > 1) {
                             Navigation += '<li><a href="#">' + Languages[Language] + '</a><ul class="Hidden">';
                         }
                         Navigation += '<li><a href="' + CreateHTMLPath(Version, Language) + '">HTML</a></li>';
-                        if (parseFloat(Version.Version) < 7.0) {
-                            Navigation += '<li><a href="' + CreatePDFPath(Version, Language, PDFPath, PDFFileName) + '">PDF</a></li>';
+                        if (Version.Version >= 7.0) {
+                            Navigation += '<li><a href="' + CreateEPUBPath(Version, Language, Version.AssetPath, Version.AssetFilename) + '">EPUB</a></li>';
                         }
+                        Navigation += '<li><a href="' + CreatePDFPath(Version, Language, Version.AssetPath, Version.AssetFilename) + '">PDF</a></li>';
+
                         if (Version.Languages.length > 1) {
                             Navigation += '</ul></li>';
                         }
