@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Package Porting &mdash; OTRS Developer Manual 7.0 documentation</title>
+  <title>Package Porting &mdash; OTRS Developer Manual 8.0 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                7.0
+                8.0
               </div>
             
           
@@ -94,17 +94,9 @@
 <li class="toctree-l2"><a class="reference internal" href="package-management.html">Package Management</a></li>
 <li class="toctree-l2"><a class="reference internal" href="package-building.html">Package Building</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Package Porting</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#sessions-always-require-cookies">Sessions Always Require Cookies</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#the-groups-table-was-renamed">The <code class="docutils literal notranslate"><span class="pre">groups</span></code> Table Was Renamed</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#new-external-interface">New External Interface</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#changes-in-process-management">Changes in Process Management</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#new-activity-types">New Activity Types</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#renamed-process-management-components">Renamed Process Management Components</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="#changes-in-the-layoutobject">Changes in the <code class="docutils literal notranslate"><span class="pre">LayoutObject</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#not-shown-empty-tables-in-screens">Not Shown/Empty Tables in Screens</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#encoding-issues-in-legacy-front-end-modules">Encoding Issues in Legacy Front End Modules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#styling-improvements">Styling Improvements</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#application-specific-styling-in-shared-components">Application Specific Styling in Shared Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renamed-scss-literals">Renamed SCSS Literals</a></li>
 </ul>
 </li>
 </ul>
@@ -167,7 +159,7 @@
         
             
             
-              <a href="https://github.com/OTRS/doc-developer/blob/rel-7_0/content/how-to-publish-otrs-extensions/package-porting.rst" class="fa fa-github"> Edit on GitHub</a>
+              <a href="https://github.com/OTRS/doc-developer/blob/master/content/how-to-publish-otrs-extensions/package-porting.rst" class="fa fa-github"> Edit on GitHub</a>
             
           
         
@@ -184,59 +176,283 @@
   <div class="section" id="package-porting">
 <h1>Package Porting<a class="headerlink" href="#package-porting" title="Permalink to this headline">¶</a></h1>
 <p>With every new minor or major version of OTRS, you need to port your packages and make sure they still work with the OTRS API.</p>
-<p>This section lists changes that you need to examine when porting your package from OTRS 6 to 7.</p>
-<div class="section" id="sessions-always-require-cookies">
-<h2>Sessions Always Require Cookies<a class="headerlink" href="#sessions-always-require-cookies" title="Permalink to this headline">¶</a></h2>
-<p>Starting from OTRS 7, <a class="reference external" href="https://github.com/OTRS/otrs/commit/831aba1cfe6893d0633af6f18584216e89198072">sessions always require cookies to be enabled</a>. Therefore, the <code class="docutils literal notranslate"><span class="pre">SessionIDCookie</span></code> value was removed from <code class="docutils literal notranslate"><span class="pre">LayoutObject</span></code>, <a class="reference internal" href="../how-it-works/templates.html"><span class="doc">Templating Mechanism</span></a> and JavaScript. It is no longer necessary to append session variables to URLs or HTTP request payloads.</p>
+<p>This section lists changes that you need to examine when porting your package from OTRS 7 to 8.</p>
+<div class="section" id="styling-improvements">
+<h2>Styling Improvements<a class="headerlink" href="#styling-improvements" title="Permalink to this headline">¶</a></h2>
+<p>In OTRS 7, new frontend stack has been introduced. However, since only one major frontend application was shipped (for the external interface), there was no need to make sure that components living in the shared namespace have support for different styling. With OTRS 8, this was bound to change, and now OTRS supports app-specific styling in components.</p>
+<div class="section" id="application-specific-styling-in-shared-components">
+<h3>Application Specific Styling in Shared Components<a class="headerlink" href="#application-specific-styling-in-shared-components" title="Permalink to this headline">¶</a></h3>
+<p>Usage is quite simple: whenever you need to apply an app-specific style, wrap your SCSS code in the following mixin:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>@include Mixin__StylesForApp(&#39;External&#39;) {
+    .ElementName {
+        &amp;__SubElement {
+            color: $Color__External__Primary;
+
+            &amp;:hover {
+                color: $Color__External__Highlight;
+            }
+        }
+    }
+}
+</pre></div>
 </div>
-<div class="section" id="the-groups-table-was-renamed">
-<h2>The <code class="docutils literal notranslate"><span class="pre">groups</span></code> Table Was Renamed<a class="headerlink" href="#the-groups-table-was-renamed" title="Permalink to this headline">¶</a></h2>
-<p>Due to a change in MySQL 8, the table <code class="docutils literal notranslate"><span class="pre">groups</span></code> had to be renamed to <code class="docutils literal notranslate"><span class="pre">groups_table</span></code>. If you use this table directly in any SQL statements, they will need to be adapted. For more information, see <a class="reference external" href="https://bugs.otrs.org/show_bug.cgi?id=13866">bug#13866</a>.</p>
+<p>Usage of the mixin guarantees your block will only be loaded where appropriate (in this example in the external interface app). In the block you are free to use application specific global variables and functions, without any restrictions. Everything that is available within the app will be allowed.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Design system will load appropriate style depending on current choice. For example, there will be a dropdown menu shown above the component example, allowing the user to switch the styles. All you have to do is make sure your component lives in the shared namespace and implements the mixin above, as needed.</p>
 </div>
-<div class="section" id="new-external-interface">
-<h2>New External Interface<a class="headerlink" href="#new-external-interface" title="Permalink to this headline">¶</a></h2>
-<p>The existing customer (<code class="docutils literal notranslate"><span class="pre">customer.pl</span></code>) and public (<code class="docutils literal notranslate"><span class="pre">public.pl</span></code>) interfaces were replaced by a new REST backend (<code class="docutils literal notranslate"><span class="pre">Kernel/WebApp</span></code>) and a modern Vue.js based frontend application. This means that all related code has to be ported and/or rewritten.</p>
-<p>There is one special case for public front end modules that don’t serve an HTML application. These can be ported rather easily to the new REST backend (see also <a class="reference external" href="http://doc.otrs.com/doc/api/otrs/7.0/REST/">the REST API docs</a>). See for example <code class="docutils literal notranslate"><span class="pre">Kernel/WebApp/Controller/API/Public/Package/Repository.pm</span></code>. This example also shows how endpoints can support both new REST-like URLs but at the same time the legacy URLs based on the <code class="docutils literal notranslate"><span class="pre">/otrs/customer.pl?Action=MyAction</span></code> routes at the same time.</p>
-<p>For some important URLs in the customer interface that are linked from legacy systems, redirect controllers may need to be provided to make sure the old URLs keep working.</p>
+<p>In order to provide this mechanism, it was required to refactor all the styles to conform to the BEM specification. This now applies to any variable names, mixins, functions, etc. By looking at their names, now it will be perfectly clear where they are coming from, and the chance for any possible collisions is decreased to the minimum.</p>
 </div>
-<div class="section" id="changes-in-process-management">
-<h2>Changes in Process Management<a class="headerlink" href="#changes-in-process-management" title="Permalink to this headline">¶</a></h2>
-<p>The migration script <code class="docutils literal notranslate"><span class="pre">scripts/DBUpdate-to-7.pl</span></code> will upgrade all processes that are already in the database. Manual action is only needed to make use of any new features that OTRS 7 provides.</p>
-<div class="section" id="new-activity-types">
-<h3>New Activity Types<a class="headerlink" href="#new-activity-types" title="Permalink to this headline">¶</a></h3>
-<p>Since OTRS 7 is capable of managing more activity types, all existing activities now become <em>User Task</em> activities. To update a task definition on a YAML file, please add <code class="docutils literal notranslate"><span class="pre">Type:</span> <span class="pre">UserTask</span></code> with the same indentation as <code class="docutils literal notranslate"><span class="pre">Name</span></code> or <code class="docutils literal notranslate"><span class="pre">ID</span></code>.</p>
-</div>
-<div class="section" id="renamed-process-management-components">
-<h3>Renamed Process Management Components<a class="headerlink" href="#renamed-process-management-components" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt><code class="docutils literal notranslate"><span class="pre">Transition</span></code> to <code class="docutils literal notranslate"><span class="pre">SequenceFlow</span></code></dt>
-<dd>This process component was renamed to be more aligned with BPMN. Files, classes and methods has been renamed accordingly. Customized files needs to be updated following the new conventions.</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">TransitionAction</span></code> to <code class="docutils literal notranslate"><span class="pre">SequenceFlowAction</span></code></dt>
-<dd>This process component does not exists in BPMN but has to be also renamed to be consistent with the other changes. Files, classes and methods has been renames accordingly. Customized files needs to be updated following the new conventions.</dd>
-<dt><code class="docutils literal notranslate"><span class="pre">TransitionActionModules</span></code> to <code class="docutils literal notranslate"><span class="pre">ProcessManagementModules</span></code></dt>
-<dd>This process components are not only used by <em>Sequence Flow Actions</em> but also for <em>Script Tasks</em> activities and has been moved from <code class="docutils literal notranslate"><span class="pre">Kernel/System/ProcessManagement/TransitionAction</span></code> to <code class="docutils literal notranslate"><span class="pre">Kernel/System/ProcessManagement/Modules</span></code>.</dd>
-</dl>
-<p>The new process management modules can offer more field types and options to present the parameters to the process designer, please follow the instructions in the <a class="reference internal" href="../how-to-extend-otrs/otrs-module-layers/process-management-modules.html"><span class="doc">Process Management</span></a> documentation to learn more about this new feature and how to improve existing modules.</p>
-<p>It is needed to update any shipped process definitions to use the new name schema.</p>
-<ul class="simple">
-<li>Replace <code class="docutils literal notranslate"><span class="pre">Transition</span></code> with <code class="docutils literal notranslate"><span class="pre">SequenceFlow</span></code>.</li>
-<li>Replace <code class="docutils literal notranslate"><span class="pre">Transitions</span></code> with <code class="docutils literal notranslate"><span class="pre">SequenceFlows</span></code>.</li>
-<li>Replace <code class="docutils literal notranslate"><span class="pre">TransitionAction</span></code> with <code class="docutils literal notranslate"><span class="pre">SequenceFlowAction</span></code>.</li>
-<li>Replace <code class="docutils literal notranslate"><span class="pre">TransitionActions</span></code> with <code class="docutils literal notranslate"><span class="pre">SequenceFlowActions</span></code>.</li>
-<li>Remove <code class="docutils literal notranslate"><span class="pre">Kernel::System::ProcessManagement::TransitionAction</span></code> from the <code class="docutils literal notranslate"><span class="pre">Module:</span></code> on all <code class="docutils literal notranslate"><span class="pre">SequenceFlowAction</span></code>. For example: <code class="docutils literal notranslate"><span class="pre">Module:</span> <span class="pre">Kernel::System::ProcessManagement::TransitionAction::TicketLockSet</span></code> should become <code class="docutils literal notranslate"><span class="pre">Module:</span> <span class="pre">TicketLockSet</span></code>.</li>
-</ul>
-</div>
-</div>
-<div class="section" id="changes-in-the-layoutobject">
-<h2>Changes in the <code class="docutils literal notranslate"><span class="pre">LayoutObject</span></code><a class="headerlink" href="#changes-in-the-layoutobject" title="Permalink to this headline">¶</a></h2>
-<p>There are changes in <code class="docutils literal notranslate"><span class="pre">Kernel/Output/HTML/Layout.pm</span></code> which are necessary to properly render content using Mojolicious real-time web framework.</p>
-<div class="section" id="not-shown-empty-tables-in-screens">
-<h3>Not Shown/Empty Tables in Screens<a class="headerlink" href="#not-shown-empty-tables-in-screens" title="Permalink to this headline">¶</a></h3>
-<p>Please make sure to check every screen which produces table-like output (e.g. <code class="docutils literal notranslate"><span class="pre">Kernel/Modules/AgentTicketStatusView.pm</span></code>). If the list of e.g. tickets is empty or even not shown at all, check if the parameter <code class="docutils literal notranslate"><span class="pre">Output</span> <span class="pre">=&gt;</span> <span class="pre">1</span></code> is used in creating the output for the page.</p>
-</div>
-<div class="section" id="encoding-issues-in-legacy-front-end-modules">
-<h3>Encoding Issues in Legacy Front End Modules<a class="headerlink" href="#encoding-issues-in-legacy-front-end-modules" title="Permalink to this headline">¶</a></h3>
-<p>If you are getting into trouble with broken characters like umlauts, it could be that the content which is meant to be shown is rendered by the <code class="docutils literal notranslate"><span class="pre">Print()</span></code> method. To fix this, please switch the code from using the <code class="docutils literal notranslate"><span class="pre">Print()</span></code> method to the normal way of returning the complete response from the frontend module.</p>
+<div class="section" id="renamed-scss-literals">
+<h3>Renamed SCSS Literals<a class="headerlink" href="#renamed-scss-literals" title="Permalink to this headline">¶</a></h3>
+<p>Since some SCSS literals had to be renamed, it will be expected from you to port existing packages that use them to conform to the new format. Please find a table below containing all affected literals.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="11%" />
+<col width="14%" />
+<col width="30%" />
+<col width="45%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Namespace</th>
+<th class="head">Origin</th>
+<th class="head">Old name</th>
+<th class="head">New name</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$base</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Base</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$base</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Base</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$white</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__White</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$alert</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Alert</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$warning</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Warning</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$success</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Success</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$shadow</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Shadow</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$black100</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Black100</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$black90</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Black90</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$black80</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Black80</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$black70</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Black70</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$black50</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Black50</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$black30</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Black30</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$black20</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Black20</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$black10</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Black10</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$black4</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__Black4</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_functions</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">calculateRem</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Function__CalculateRem</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">border-radius</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__BorderRadius</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">list-reset</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__ListReset</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">FontSize</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__FontSize</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">MarginBottom--Responsive</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__MarginBottom--Responsive</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">shadow</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__Shadow</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">placeholder</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__Placeholder</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">float-label-container</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__FloatLabel__Container</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">float-label</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__FloatLabel</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">float-label-input</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__FloatLabel__Input</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">float-label-scaled</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__FloatLabel--Scaled</span></code></td>
+</tr>
+<tr class="row-odd"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">linearGradient</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__LinearGradient</span></code></td>
+</tr>
+<tr class="row-even"><td>Shared</td>
+<td><em>_mixins</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">linearGradientoverlay</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">Mixin__LinearGradient--Overlay</span></code></td>
+</tr>
+<tr class="row-odd"><td>External</td>
+<td><em>_variables</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$container-max-width</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Variable__External__ContainerMaxWidth</span></code></td>
+</tr>
+<tr class="row-even"><td>External</td>
+<td><em>_variables</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$spacing-small</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Variable__External__Spacing--Small</span></code></td>
+</tr>
+<tr class="row-odd"><td>External</td>
+<td><em>_variables</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$spacing-medium</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Variable__External__Spacing--Medium</span></code></td>
+</tr>
+<tr class="row-even"><td>External</td>
+<td><em>_variables</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$font-small</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Variable__External__FontSize--Small</span></code></td>
+</tr>
+<tr class="row-odd"><td>External</td>
+<td><em>_variables</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$font-smaller</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Variable__External__FontSize--Smaller</span></code></td>
+</tr>
+<tr class="row-even"><td>External</td>
+<td><em>_variables</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$font-smallest</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Variable__External__FontSize--Smallest</span></code></td>
+</tr>
+<tr class="row-odd"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$primary</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Primary</span></code></td>
+</tr>
+<tr class="row-even"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$primary-darker</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Primary--Darker</span></code></td>
+</tr>
+<tr class="row-odd"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$primary-dark</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Primary--Dark</span></code></td>
+</tr>
+<tr class="row-even"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$primary-lighter</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Primary--Lighter</span></code></td>
+</tr>
+<tr class="row-odd"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$primary-light</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Primary--Light</span></code></td>
+</tr>
+<tr class="row-even"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$highlight</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Highlight</span></code></td>
+</tr>
+<tr class="row-odd"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$highlight-darker</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Highlight--Darker</span></code></td>
+</tr>
+<tr class="row-even"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$highlight-dark</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Highlight--Dark</span></code></td>
+</tr>
+<tr class="row-odd"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$highlight-lighter</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Highlight--Lighter</span></code></td>
+</tr>
+<tr class="row-even"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$highlight-light</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Highlight--Light</span></code></td>
+</tr>
+<tr class="row-odd"><td>External</td>
+<td><em>_colors</em></td>
+<td><code class="docutils literal notranslate"><span class="pre">$gray-light</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">$Color__External__Gray--Light</span></code></td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 </div>
