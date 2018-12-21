@@ -1081,13 +1081,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1357,13 +1357,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1500,12 +1500,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/apps/external/components/layout/notify/notifyglobal.js",
-    "file/Frontend/Tests/Apps/External/Components/Layout/Notify/NotifyGlobal.js.html",
-    "Frontend/Tests/Apps/External/Components/Layout/Notify/NotifyGlobal.js",
-    "file"
-  ],
-  [
     "frontend/tests/components/common/commonalert.js",
     "file/Frontend/Tests/Components/Common/CommonAlert.js.html",
     "Frontend/Tests/Components/Common/CommonAlert.js",
@@ -1551,6 +1545,18 @@ window.esdocSearchIndex = [
     "frontend/tests/components/common/commonlink.js",
     "file/Frontend/Tests/Components/Common/CommonLink.js.html",
     "Frontend/Tests/Components/Common/CommonLink.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commonmessages.js",
+    "file/Frontend/Tests/Components/Common/CommonMessages.js.html",
+    "Frontend/Tests/Components/Common/CommonMessages.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commonmessages/appreloadmessage.js",
+    "file/Frontend/Tests/Components/Common/CommonMessages/AppReloadMessage.js.html",
+    "Frontend/Tests/Components/Common/CommonMessages/AppReloadMessage.js",
     "file"
   ],
   [
