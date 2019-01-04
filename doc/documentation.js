@@ -1,8 +1,18 @@
+// --
+// Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
+// --
+// This software comes with ABSOLUTELY NO WARRANTY. For details, see
+// the enclosed file COPYING for license information (GPL). If you
+// did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
+// --
+
 "use strict";
 /*jshint multistr:true */
+/*global ga */
 
 $(document).ready(function() {
-    var NavigationConfig, Languages, BasicHTML, $OriginalContent;
+    var NavigationConfig, Languages, BasicHTML, $OriginalContent,
+        CurrentDate = new Date();
 
     Languages = {
         en: 'English (en)',
@@ -171,7 +181,7 @@ $(document).ready(function() {
                     Version:  '8.0',
                     HTMLPath: '8.0',
                     Types:    [
-                        { 
+                        {
                             Name: 'Perl',
                             Path: 'Perl',
                         },
@@ -201,7 +211,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Types:    [
-                        { 
+                        {
                             Name: 'Perl',
                             Path: 'Perl',
                         },
@@ -231,7 +241,7 @@ $(document).ready(function() {
                     Version:  '6.0',
                     HTMLPath: '6.0',
                     Types:    [
-                        { 
+                        {
                             Name: 'Perl',
                             Path: 'Perl',
                         },
@@ -246,7 +256,7 @@ $(document).ready(function() {
                     Version:  '5.0',
                     HTMLPath: '5.0',
                     Types:    [
-                        { 
+                        {
                             Name: 'Perl',
                             Path: 'Perl',
                         },
@@ -263,17 +273,19 @@ $(document).ready(function() {
 
     function CreateNavigation () {
 
-        var BaseURL = window.location.href;
+        var BaseURL = window.location.href,
+            Navigation = '<ul id="marginalia">';
+
         BaseURL = BaseURL.replace(/\/doc\/.*/, '/doc/');
 
-        var Navigation = '<ul id="marginalia">';
         $.each(NavigationConfig, function() {
             var Category = this;
+
             Navigation += '<li><a href="#">' + Category.Name + '</a><ul>';
 
             // Manual
             if (Category.Type === 'manual') {
-                $.each(Category.Versions, function(){
+                $.each(Category.Versions, function() {
                     var Version = this,
                         ID = 'manual_' + Category.Path + '_' + Version.Version;
 
@@ -330,11 +342,32 @@ $(document).ready(function() {
                     Navigation += '<li id="' + ID + '"><a href="#">' + Version.Name + '</a><ul class="Hidden">';
                     $.each(Version.Types, function(){
                         var Type = this;
-                        Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type.Path + '"';
-                        if (Type.NewTab) {
-                            Navigation += ' target="_blank"'
+                        if (Type.Path == 'REST') {
+                            Navigation += '<li><a href="#">' + Type.Name + '</a><ul class="Hidden">';
+
+                            // HTML
+                            Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type.Path + '"';
+                            if (Type.NewTab) {
+                                Navigation += ' target="_blank"'
+                            }
+                            Navigation += '>HTML</a></li>';
+
+                            // RAML
+                            Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type.Path + '/otrs.raml"';
+                            if (Type.NewTab) {
+                                Navigation += ' target="_blank"'
+                            }
+                            Navigation += '>RAML</a></li>';
+
+                            Navigation += '</ul></li>';
                         }
-                        Navigation += '>' + Type.Name + '</a></li>';
+                        else {
+                            Navigation += '<li><a href="' + BaseURL + 'api/' + Category.Path + '/' + Version.HTMLPath + '/' + Type.Path + '"';
+                            if (Type.NewTab) {
+                                Navigation += ' target="_blank"'
+                            }
+                            Navigation += '>' + Type.Name + '</a></li>';
+                        }
                     });
                     Navigation += '</ul></li>';
                 });
@@ -348,12 +381,10 @@ $(document).ready(function() {
         return Navigation;
     }
 
-    var CurrentDate = new Date();
-
     BasicHTML = '\
 <div id="Header">\
     <h1 class="CompanyName">Portal</h1>\
-    <div id="Logo"></div>\
+    <!-- <div id="Logo"></div> -->\
 </div>\
 <div id="Navigation">\
 <!--\
@@ -422,7 +453,7 @@ $(document).ready(function() {
         $('div.toc p b').append('<a href="" class="toc-hide">Toggle</a>');
 
         // Article navigation, decorate if it has content, remove otherwise.
-        if ( $('.section div.toc dl > dt').length ) {
+        if ($('.section div.toc dl > dt').length) {
             $('.section div.toc').prepend('<p><b>Article navigation <a href="">Toggle</a></b></p>');
         }
         else {
@@ -439,11 +470,10 @@ $(document).ready(function() {
 
     $('#marginalia a').each(function() {
         var LinkHref     = $(this).attr('href'),
-            LocationHref = window.location.href,
-            IsActive = false;
+            LocationHref = window.location.href;
 
-        LinkHref     = LinkHref.replace(/[\w\d-]+\.html[#\w\d-\.]*/g, '');
-        LocationHref = LocationHref.replace(/[\w\d-]+\.html[#\w\d-\.]*/g, '');
+        LinkHref     = LinkHref.replace(/[\w\d-]+\.html[#\w\d-.]*/g, '');
+        LocationHref = LocationHref.replace(/[\w\d-]+\.html[#\w\d-.]*/g, '');
 
         if (LocationHref.indexOf(LinkHref) > -1) {
             $(this).addClass('Active').parents('ul').removeClass('Hidden');
