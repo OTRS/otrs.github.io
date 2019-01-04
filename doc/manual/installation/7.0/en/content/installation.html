@@ -94,11 +94,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#step-1-unpack-and-install-the-application">Step 1: Unpack and Install the Application</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-2-install-additional-programs-and-perl-modules">Step 2: Install Additional Programs and Perl Modules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-3-create-the-otrs-user">Step 3: Create the OTRS User</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#step-4-activate-the-default-config-file">Step 4: Activate the Default Config File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-4-activate-the-default-configuration-file">Step 4: Activate the Default Configuration File</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-5-configure-the-apache-web-server">Step 5: Configure the Apache Web Server</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-6-set-file-permissions">Step 6: Set File Permissions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-7-setup-the-database">Step 7: Setup the Database</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#mysql">MySQL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mysql-or-mariadb">MySQL or MariaDB</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#postgresql">PostgreSQL</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#finishing-the-database-setup">Finishing the Database Setup</a></li>
 </ul>
@@ -107,7 +107,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#step-9-start-the-otrs-daemon-and-web-server">Step 9: Start the OTRS Daemon and Web Server</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-10-first-login">Step 10: First Login</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-11-setup-systemd-files">Step 11: Setup Systemd Files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#step-12-setup-bash-autocompletion-optional">Step 12: Setup Bash Autocompletion (optional)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-12-setup-bash-auto-completion-optional">Step 12: Setup Bash Auto-Completion (optional)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-13-further-information">Step 13: Further Information</a></li>
 </ul>
 </li>
@@ -216,9 +216,22 @@ Disabled
 </div>
 <div class="section" id="step-1-unpack-and-install-the-application">
 <h2>Step 1: Unpack and Install the Application<a class="headerlink" href="#step-1-unpack-and-install-the-application" title="Permalink to this headline">¶</a></h2>
-<p>Unpack the source archive (for example, using <code class="docutils literal notranslate"><span class="pre">tar</span></code>) into the directory <code class="docutils literal notranslate"><span class="pre">/opt</span></code>, and rename the directory from <code class="docutils literal notranslate"><span class="pre">otrs-x.x.x</span></code> to <code class="docutils literal notranslate"><span class="pre">otrs</span></code> (see script below).</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; tar xzf /tmp/otrs-x.x.x.tar.gz
-root&gt; mv otrs-x.x.x /opt/otrs
+<p>You can obtain either <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.gz</span></code> or <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.bz2</span></code>. Unpack the source archive (for example, using <code class="docutils literal notranslate"><span class="pre">tar</span></code>) into the directory <code class="docutils literal notranslate"><span class="pre">/opt</span></code>, and create a symbolic link <code class="docutils literal notranslate"><span class="pre">/opt/otrs</span></code> that points to <code class="docutils literal notranslate"><span class="pre">/opt/otrs-x.y.z</span></code>. <strong>Do not forget</strong> to replace the version numbers!</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Package <code class="docutils literal notranslate"><span class="pre">bzip2</span></code> is not installed in some systems by default. Make sure, that <code class="docutils literal notranslate"><span class="pre">bzip2</span></code> is installed before unpacking <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.bz2</span></code>.</p>
+</div>
+<p>Unpack command for <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.gz</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; tar -xzf otrs-x.y.z.tar.gz -C /opt
+</pre></div>
+</div>
+<p>Unpack command for <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.bz2</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; tar -xjf otrs-x.y.z.tar.bz2 -C /opt
+</pre></div>
+</div>
+<p>It is recommended to create a symbolic link named <code class="docutils literal notranslate"><span class="pre">/opt/otrs</span></code> that always points to the latest OTRS version. Using symbolic link makes easy to manage the OTRS updates, because you can leave untouched the directory of the previous version, only the symbolic link needs to change. If you need to revert the update, you can change the target of the symbolic link back.</p>
+<p>Execute this command to create a symbolic link:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; ln -fns /opt/otrs-x.y.z /opt/otrs
 </pre></div>
 </div>
 </div>
@@ -237,18 +250,23 @@ Checking for Perl Modules:
 <p class="first admonition-title">Note</p>
 <p class="last">Please note that OTRS requires a working Perl installation with all <em>core</em> modules such as the module <code class="docutils literal notranslate"><span class="pre">version</span></code>. These modules are not explicitly checked by the script. You may need to install a <code class="docutils literal notranslate"><span class="pre">perl-core</span></code> package on some systems like RHEL that do not install the Perl core packages by default.</p>
 </div>
+<p>To install the required and optional packages, you can use either CPAN or the package manager of your Linux distribution.</p>
+<p>Execute this command to get an install command to install the missing dependencies:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; /opt/otrs/bin/otrs.CheckEnvironment.pl --list
+</pre></div>
+</div>
 <p>OTRS requires a supported stable version of Node.js to be installed. Please refer to the <a class="reference external" href="https://nodejs.org/en/download/package-manager/">Node.js installation instructions</a>.</p>
 </div>
 <div class="section" id="step-3-create-the-otrs-user">
 <h2>Step 3: Create the OTRS User<a class="headerlink" href="#step-3-create-the-otrs-user" title="Permalink to this headline">¶</a></h2>
 <p>Create a dedicated user for OTRS:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; useradd -r -d /opt/otrs -c <span class="s1">&#39;OTRS user&#39;</span> otrs
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; useradd -r -d /opt/otrs -c <span class="s1">&#39;OTRS user&#39;</span> otrs -s /bin/bash
 </pre></div>
 </div>
 </div>
-<div class="section" id="step-4-activate-the-default-config-file">
-<h2>Step 4: Activate the Default Config File<a class="headerlink" href="#step-4-activate-the-default-config-file" title="Permalink to this headline">¶</a></h2>
-<p>There is one OTRS config file bundled in <code class="docutils literal notranslate"><span class="pre">$OTRS_HOME/Kernel/Config.pm.dist</span></code>. You must activate it by copying it without the <code class="docutils literal notranslate"><span class="pre">.dist</span></code> filename extension.</p>
+<div class="section" id="step-4-activate-the-default-configuration-file">
+<h2>Step 4: Activate the Default Configuration File<a class="headerlink" href="#step-4-activate-the-default-configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>There is an OTRS configuration file bundled in <code class="docutils literal notranslate"><span class="pre">$OTRS_HOME/Kernel/Config.pm.dist</span></code>. You must activate it by copying it without the <code class="docutils literal notranslate"><span class="pre">.dist</span></code> filename extension.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; cp /opt/otrs/Kernel/Config.pm.dist /opt/otrs/Kernel/Config.pm
 </pre></div>
 </div>
@@ -294,8 +312,8 @@ root&gt; ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-e
 <p class="first admonition-title">Note</p>
 <p class="last">Please note that OTRS requires <code class="docutils literal notranslate"><span class="pre">utf8</span></code> as database storage encoding.</p>
 </div>
-<div class="section" id="mysql">
-<h3>MySQL<a class="headerlink" href="#mysql" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="mysql-or-mariadb">
+<h3>MySQL or MariaDB<a class="headerlink" href="#mysql-or-mariadb" title="Permalink to this headline">¶</a></h3>
 <p>Run the following commands in MySQL as database admin user:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>root&gt; mysql -uroot -p
 
@@ -339,23 +357,26 @@ root&gt; mysql -uroot -p otrs &lt; /opt/otrs/scripts/database/otrs-schema-post.m
 </div>
 <div class="section" id="postgresql">
 <h3>PostgreSQL<a class="headerlink" href="#postgresql" title="Permalink to this headline">¶</a></h3>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We assume, that OTRS and PostgreSQL server run on the same machine and PostgreSQL uses <em>Peer</em> authentication method. For more information see the <a class="reference external" href="https://www.postgresql.org/docs/current/client-authentication.html">Client Authentication</a> section in the PostgreSQL manual.</p>
+</div>
 <p>Run these commands as <code class="docutils literal notranslate"><span class="pre">postgres</span></code> user:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Switch user</span>
-root&gt; sudo su - postgres
-
-<span class="c1"># Create database</span>
-postgres&gt; createdb --encoding<span class="o">=</span>utf8 --owner<span class="o">=</span>otrs otrs
+root&gt; su - postgres
 
 <span class="c1"># Create database user</span>
-postgres&gt; <span class="nb">echo</span> <span class="s2">&quot;create user otrs password &#39;choose-your-password&#39;;&quot;</span> <span class="p">|</span> psql
+postgres&gt; createuser otrs
+
+<span class="c1"># Create database</span>
+postgres&gt; createdb --encoding<span class="o">=</span>UTF8 --owner<span class="o">=</span>otrs otrs
 </pre></div>
 </div>
 <p>Run these commands on the shell as <code class="docutils literal notranslate"><span class="pre">otrs</span></code> user.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create schema and insert data.</span>
-otrs&gt; <span class="nb">export</span> <span class="nv">PGPASSWORD</span><span class="o">=</span>some-pass
-otrs&gt; psql otrs otrs -h localhost &lt; /opt/otrs/scripts/database/otrs-schema.postgresql.sql
-otrs&gt; psql otrs otrs -h localhost &lt; /opt/otrs/scripts/database/otrs-initial_insert.postgresql.sql
-otrs&gt; psql otrs otrs -h localhost &lt; /opt/otrs/scripts/database/otrs-schema-post.postgresql.sql
+otrs&gt; psql &lt; /opt/otrs/scripts/database/otrs-schema.postgresql.sql
+otrs&gt; psql &lt; /opt/otrs/scripts/database/otrs-initial_insert.postgresql.sql
+otrs&gt; psql &lt; /opt/otrs/scripts/database/otrs-schema-post.postgresql.sql
 </pre></div>
 </div>
 <p>Configure database settings in <code class="docutils literal notranslate"><span class="pre">Kernel/Config.pm</span></code>:</p>
@@ -390,7 +411,7 @@ Successfully set password for user &#39;root@localhost&#39;.
 </pre></div>
 </div>
 <p>You can also choose to set your own password.</p>
-<div class="last highlight-none notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Admin::User::SetPassword root@localhost geheim
+<div class="last highlight-none notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Admin::User::SetPassword root@localhost your-own-password
 Successfully set password for user &#39;root@localhost&#39;
 </pre></div>
 </div>
@@ -408,7 +429,7 @@ root&gt; /usr/share/elasticsearch/bin/elasticsearch-plugin install --batch analy
 </div>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Restart elasticsearch afterwards, or indexes will not be built.</p>
+<p class="last">Restart Elasticsearch afterwards, or indexes will not be built.</p>
 </div>
 <p>To verify the Elasticsearch installation, you can use the following command:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::DocumentSearch::Check
@@ -428,10 +449,7 @@ otrs&gt; /opt/otrs/bin/otrs.WebServer.pl
 <div class="section" id="step-10-first-login">
 <h2>Step 10: First Login<a class="headerlink" href="#step-10-first-login" title="Permalink to this headline">¶</a></h2>
 <p>Now you are ready to login to your system at <a class="reference external" href="http://localhost/otrs/index.pl">http://localhost/otrs/index.pl</a> as user <code class="docutils literal notranslate"><span class="pre">root&#64;localhost</span></code> with the password that was generated (see above).</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Accessing the external interface using <a class="reference external" href="http://localhost">http://localhost</a></p>
-</div>
+<p>Use <a class="reference external" href="http://localhost">http://localhost</a> to access the external interface.</p>
 </div>
 <div class="section" id="step-11-setup-systemd-files">
 <h2>Step 11: Setup Systemd Files<a class="headerlink" href="#step-11-setup-systemd-files" title="Permalink to this headline">¶</a></h2>
@@ -442,10 +460,10 @@ root&gt; <span class="k">for</span> UNIT in *.service<span class="p">;</span> <s
 </div>
 <p>With this step, the basic system setup is finished.</p>
 </div>
-<div class="section" id="step-12-setup-bash-autocompletion-optional">
-<h2>Step 12: Setup Bash Autocompletion (optional)<a class="headerlink" href="#step-12-setup-bash-autocompletion-optional" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="step-12-setup-bash-auto-completion-optional">
+<h2>Step 12: Setup Bash Auto-Completion (optional)<a class="headerlink" href="#step-12-setup-bash-auto-completion-optional" title="Permalink to this headline">¶</a></h2>
 <p>All regular OTRS command line operations happen via the OTRS console interface. This provides an auto completion for the bash shell which makes finding the right command and options much easier.</p>
-<p>You can activate the bash autocompletion by installing the package <code class="docutils literal notranslate"><span class="pre">bash-completion</span></code>. It will automatically detect and load the file <code class="docutils literal notranslate"><span class="pre">/opt/otrs/.bash_completion</span></code> for the <code class="docutils literal notranslate"><span class="pre">otrs</span></code> user.</p>
+<p>You can activate the bash auto-completion by installing the package <code class="docutils literal notranslate"><span class="pre">bash-completion</span></code>. It will automatically detect and load the file <code class="docutils literal notranslate"><span class="pre">/opt/otrs/.bash_completion</span></code> for the <code class="docutils literal notranslate"><span class="pre">otrs</span></code> user.</p>
 <p>After restarting your shell, you can just type this command followed by TAB, and it will list all available commands:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl
 </pre></div>
