@@ -42,6 +42,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "form/validator/options~pattern",
+    "class/Frontend/Form/Validator/Options.js~Pattern.html",
+    "<span>Pattern</span> <span class=\"search-result-import-path\">Form/Validator/Options</span>",
+    "class"
+  ],
+  [
     "form/validator/pattern~pattern",
     "class/Frontend/Form/Validator/Pattern.js~Pattern.html",
     "<span>Pattern</span> <span class=\"search-result-import-path\">Form/Validator/Pattern</span>",
@@ -369,6 +375,12 @@ window.esdocSearchIndex = [
     "form/validator/fileupload~validator",
     "variable/index.html#static-variable-validator",
     "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/FileUpload</span>",
+    "variable"
+  ],
+  [
+    "form/validator/options~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/Options</span>",
     "variable"
   ],
   [
@@ -900,6 +912,30 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/form/validator/options.js",
+    "file/Frontend/Form/Validator/Options.js.html",
+    "Frontend/Form/Validator/Options.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/options.js~pattern#errormessage",
+    "class/Frontend/Form/Validator/Options.js~Pattern.html#instance-method-errorMessage",
+    "Frontend/Form/Validator/Options.js~Pattern#errorMessage",
+    "method"
+  ],
+  [
+    "frontend/form/validator/options.js~pattern#optionexists",
+    "class/Frontend/Form/Validator/Options.js~Pattern.html#instance-method-optionExists",
+    "Frontend/Form/Validator/Options.js~Pattern#optionExists",
+    "method"
+  ],
+  [
+    "frontend/form/validator/options.js~pattern#validate",
+    "class/Frontend/Form/Validator/Options.js~Pattern.html#instance-method-validate",
+    "Frontend/Form/Validator/Options.js~Pattern#validate",
+    "method"
+  ],
+  [
     "frontend/form/validator/pattern.js",
     "file/Frontend/Form/Validator/Pattern.js.html",
     "Frontend/Form/Validator/Pattern.js",
@@ -1081,13 +1117,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1357,13 +1393,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1659,6 +1695,12 @@ window.esdocSearchIndex = [
     "frontend/tests/form/validator/fileupload.js",
     "file/Frontend/Tests/Form/Validator/FileUpload.js.html",
     "Frontend/Tests/Form/Validator/FileUpload.js",
+    "file"
+  ],
+  [
+    "frontend/tests/form/validator/options.js",
+    "file/Frontend/Tests/Form/Validator/Options.js.html",
+    "Frontend/Tests/Form/Validator/Options.js",
     "file"
   ],
   [
