@@ -96,6 +96,8 @@ sub ProcessHTMLFile {
 <link rel="stylesheet" href="$PathToJS/documentation.css">
 <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
 <script type="text/javascript" src="$PathToJS/documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="$PathToJS/../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="$PathToJS/../images/favicon-16x16.png">
 EOF
 
     $HTMLInject .=<<'EOF';
