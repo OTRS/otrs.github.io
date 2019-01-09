@@ -293,7 +293,7 @@ $(document).ready(function() {
 
                     function CreateHTMLPath(Version, Language) {
                         if (parseFloat(Version.Version) >= 7.0) {
-                            return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/index.html" target="_blank';
+                            return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/content/index.html" target="_blank';
                         }
                         return BaseURL + 'manual/' + Category.Path + '/' + Version.HTMLPath + '/' + Language + '/html/index.html';
                     }
