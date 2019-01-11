@@ -10,6 +10,14 @@
 /*jshint multistr:true */
 /*global ga */
 
+// Redirect to canonical URL https://doc.otrs.com/...
+if (window.location.hostname == 'otrs.github.io') {
+    window.location.hostname = 'doc.otrs.com';
+}
+if (window.location.protocol == 'http:') {
+    window.location.protocol = 'https:';
+}
+
 $(document).ready(function() {
     var NavigationConfig, Languages, BasicHTML, $OriginalContent,
         CurrentDate = new Date();
