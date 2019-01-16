@@ -168,6 +168,12 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
+    "helpers/textmatch~diacriticslookup",
+    "variable/index.html#static-variable-diacriticsLookup",
+    "<span>diacriticsLookup</span> <span class=\"search-result-import-path\">Helpers/TextMatch</span>",
+    "variable"
+  ],
+  [
     "helpers/browserlanguage~getbrowserlanguage",
     "function/index.html#static-function-getBrowserLanguage",
     "<span>getBrowserLanguage</span> <span class=\"search-result-import-path\">Helpers/BrowserLanguage</span>",
@@ -348,6 +354,12 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
+    "helpers/textmatch~removediacritics",
+    "function/index.html#static-function-removeDiacritics",
+    "<span>removeDiacritics</span> <span class=\"search-result-import-path\">Helpers/TextMatch</span>",
+    "function"
+  ],
+  [
     "tests/components/vueinstance~store",
     "variable/index.html#static-variable-store",
     "<span>store</span> <span class=\"search-result-import-path\">Tests/Components/VueInstance</span>",
@@ -358,6 +370,12 @@ window.esdocSearchIndex = [
     "variable/index.html#static-variable-testFlags",
     "<span>testFlags</span> <span class=\"search-result-import-path\">Helpers/TestFlags</span>",
     "variable"
+  ],
+  [
+    "helpers/textmatch~textmatch",
+    "function/index.html#static-function-textMatch",
+    "<span>textMatch</span> <span class=\"search-result-import-path\">Helpers/TextMatch</span>",
+    "function"
   ],
   [
     "form/validator/datatype~validator",
@@ -1038,6 +1056,12 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/helpers/textmatch.js",
+    "file/Frontend/Helpers/TextMatch.js.html",
+    "Frontend/Helpers/TextMatch.js",
+    "file"
+  ],
+  [
     "frontend/helpers/webrtc.js",
     "file/Frontend/Helpers/WebRtc.js.html",
     "Frontend/Helpers/WebRtc.js",
@@ -1117,13 +1141,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1149,6 +1173,12 @@ window.esdocSearchIndex = [
     "frontend/mixins/diacriticslookup.js",
     "file/Frontend/Mixins/DiacriticsLookup.js.html",
     "Frontend/Mixins/DiacriticsLookup.js",
+    "file"
+  ],
+  [
+    "frontend/mixins/formfieldfilter.js",
+    "file/Frontend/Mixins/FormFieldFilter.js.html",
+    "Frontend/Mixins/FormFieldFilter.js",
     "file"
   ],
   [
@@ -1554,6 +1584,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/common/commoncheckicon.js",
+    "file/Frontend/Tests/Components/Common/CommonCheckIcon.js.html",
+    "Frontend/Tests/Components/Common/CommonCheckIcon.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/common/commonchips.js",
     "file/Frontend/Tests/Components/Common/CommonChips.js.html",
     "Frontend/Tests/Components/Common/CommonChips.js",
@@ -1650,6 +1686,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formplaceholder.js",
+    "file/Frontend/Tests/Components/Form/Field/FormPlaceholder.js.html",
+    "Frontend/Tests/Components/Form/Field/FormPlaceholder.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/form/field/formradio.js",
     "file/Frontend/Tests/Components/Form/Field/FormRadio.js.html",
     "Frontend/Tests/Components/Form/Field/FormRadio.js",
@@ -1719,6 +1761,12 @@ window.esdocSearchIndex = [
     "frontend/tests/helpers/stylefunctions.js",
     "file/Frontend/Tests/Helpers/StyleFunctions.js.html",
     "Frontend/Tests/Helpers/StyleFunctions.js",
+    "file"
+  ],
+  [
+    "frontend/tests/helpers/textmatch.js",
+    "file/Frontend/Tests/Helpers/TextMatch.js.html",
+    "Frontend/Tests/Helpers/TextMatch.js",
     "file"
   ],
   [

@@ -31,9 +31,39 @@ securitySchemes:
                         Use this to send the token in browser based contexts where custom HTTP headers cannot be set. Cookie authentication is only supported by some endpoints that cannot operate with the normal authentication header.
                     type: string
                     required: false
-                    example: "Authentication=[token]"
+                    example: "AuthenticationCustomer=[token]"
                 X-OTRS-API-FakeCustomerLogin:
                     description: 'Fake customer authentication (works on development server only!)'
+                    type: string
+                    required: false
+                    example: "testuser_login"
+            responses:
+                401:
+                    description: |
+                        Bad token.
+                403:
+                    description: |
+                        Access denied.
+    AgentAccessToken:
+        description: |
+            JSON Web Token (RFC 7519) based agent authentication via header or cookie.
+        type: x-custom
+        describedBy:
+            headers:
+                Authentication:
+                    description: |
+                        Used to send the JSON Web Token. Alternatively, you can send an 'AuthenticationAgent' cookie header value that contains the token.
+                    type: string
+                    required: false
+                    example: "Bearer [token]"
+                Cookie:
+                    description: |
+                        Use this to send the token in browser based contexts where custom HTTP headers cannot be set. Cookie authentication is only supported by some endpoints that cannot operate with the normal authentication header.
+                    type: string
+                    required: false
+                    example: "AuthenticationAgent=[token]"
+                X-OTRS-API-FakeAgentLogin:
+                    description: 'Fake agent authentication (works on development server only!)'
                     type: string
                     required: false
                     example: "testuser_login"
@@ -69,6 +99,61 @@ securitySchemes:
                             description: Provides endpoint version information.
                             example: 1.0.0
                             required: true
+            securedBy: [AgentAccessToken]
+    /account/personal-preferences: 
+        post: 
+            description: Save personal preferences of the currently logged in user.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that the data was successfully saved
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Password":{"Data":["8"],"Message":"Password must have at least %d character(s)."}}}
+                    description: Indicates that was some problem while validating the data
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"CouldNotSaveUserPreference","ErrorMessage":"The system was unable to save the user preference setting."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
     /account/recover: 
         post: 
             body: 
@@ -219,6 +304,7 @@ securitySchemes:
                             description: Provides endpoint version information.
                             example: 1.0.0
                             required: true
+            securedBy: [AgentAccessToken]
     /auth/cookie: 
         get: 
             description: Some endpoints cannot be accessed via the usual HTTP Authorize header, for example the fetching of inline images. Only for these, we use cookies. This endpoint is used to generate an httpOnly cookie with the token information in case the user does have a valid token. Otherwise, the cookie will be deleted.
@@ -358,7 +444,7 @@ securitySchemes:
             securedBy: [CustomerAccessToken]
     /account/personal-preferences: 
         post: 
-            description: Save personal preferences of the currently logged in customer user.
+            description: Save personal preferences of the currently logged in user.
             headers: 
                 X-OTRS-API-Debug: 
                     description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
@@ -2210,6 +2296,53 @@ securitySchemes:
                             description: Provides endpoint version information.
                             example: 1.0.0
                             required: true
+    /agent/form/personal-preferences/{Category}: 
+        post: 
+            description: Get the personal preferences for the user.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+                X-OTRS-API-ValidateFormData: 
+                    description: Signal that the form data should be validated.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Schema":{"Fields":[{"Description":"Description of the field","Label":"Label"}]}}
+                    description: Returns personal preferences form schema.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"FieldName":{"Data":{"SomeField":1},"Message":"Some error message"}}}
+                    description: Indicates that the given category or some fields are invalid.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
+        uriParameters: 
+            Category: 
+                required: false
     /agent/layout/favicon: 
         get: 
             description: Returns favorites icon.
@@ -2234,6 +2367,28 @@ securitySchemes:
                             description: Provides endpoint version information.
                             example: 1.0.0
                             required: true
+    /agent/personal-preferences/categories: 
+        get: 
+            description: Returns the available personal preferences categories.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Indicates that data was successfully returned.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
     /external/chat/{FromChatID}/messages: 
         get: 
             description: Returns a list of chat messages.
