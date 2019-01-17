@@ -42,6 +42,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "form/validator/password~password",
+    "class/Frontend/Form/Validator/Password.js~Password.html",
+    "<span>Password</span> <span class=\"search-result-import-path\">Form/Validator/Password</span>",
+    "class"
+  ],
+  [
     "form/validator/options~pattern",
     "class/Frontend/Form/Validator/Options.js~Pattern.html",
     "<span>Pattern</span> <span class=\"search-result-import-path\">Form/Validator/Options</span>",
@@ -144,6 +150,12 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
+    "apps/agent/helpers/loginpostauthregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/LoginPostAuthRegistration</span>",
+    "variable"
+  ],
+  [
     "apps/external/helpers/communicationchannelregistration~componentindex",
     "variable/index.html#static-variable-componentIndex",
     "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
@@ -153,6 +165,12 @@ window.esdocSearchIndex = [
     "apps/external/helpers/documentsearchtyperegistration~componentindex",
     "variable/index.html#static-variable-componentIndex",
     "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeRegistration</span>",
+    "variable"
+  ],
+  [
+    "apps/external/helpers/loginpostauthregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/LoginPostAuthRegistration</span>",
     "variable"
   ],
   [
@@ -186,6 +204,12 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "apps/agent/helpers/loginpostauthregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/LoginPostAuthRegistration</span>",
+    "function"
+  ],
+  [
     "apps/external/helpers/communicationchannelregistration~getcomponents",
     "function/index.html#static-function-getComponents",
     "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
@@ -195,6 +219,12 @@ window.esdocSearchIndex = [
     "apps/external/helpers/documentsearchtyperegistration~getcomponents",
     "function/index.html#static-function-getComponents",
     "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/loginpostauthregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/LoginPostAuthRegistration</span>",
     "function"
   ],
   [
@@ -255,6 +285,18 @@ window.esdocSearchIndex = [
     "helpers/formvalidators~getformvalidators",
     "function/index.html#static-function-getFormValidators",
     "<span>getFormValidators</span> <span class=\"search-result-import-path\">Helpers/FormValidators</span>",
+    "function"
+  ],
+  [
+    "apps/agent/helpers/loginpostauthregistration~getpostauthcomponents",
+    "function/index.html#static-function-getPostAuthComponents",
+    "<span>getPostAuthComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/LoginPostAuthRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/loginpostauthregistration~getpostauthcomponents",
+    "function/index.html#static-function-getPostAuthComponents",
+    "<span>getPostAuthComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/LoginPostAuthRegistration</span>",
     "function"
   ],
   [
@@ -399,6 +441,12 @@ window.esdocSearchIndex = [
     "form/validator/options~validator",
     "variable/index.html#static-variable-validator",
     "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/Options</span>",
+    "variable"
+  ],
+  [
+    "form/validator/password~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/Password</span>",
     "variable"
   ],
   [
@@ -708,6 +756,12 @@ window.esdocSearchIndex = [
     "external"
   ],
   [
+    "frontend/apps/agent/helpers/loginpostauthregistration.js",
+    "file/Frontend/Apps/Agent/Helpers/LoginPostAuthRegistration.js.html",
+    "Frontend/Apps/Agent/Helpers/LoginPostAuthRegistration.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/metaheader.js",
     "file/Frontend/Apps/Agent/Mixins/MetaHeader.js.html",
     "Frontend/Apps/Agent/Mixins/MetaHeader.js",
@@ -813,6 +867,12 @@ window.esdocSearchIndex = [
     "frontend/apps/external/helpers/documentsearchtyperegistration.js",
     "file/Frontend/Apps/External/Helpers/DocumentSearchTypeRegistration.js.html",
     "Frontend/Apps/External/Helpers/DocumentSearchTypeRegistration.js",
+    "file"
+  ],
+  [
+    "frontend/apps/external/helpers/loginpostauthregistration.js",
+    "file/Frontend/Apps/External/Helpers/LoginPostAuthRegistration.js.html",
+    "Frontend/Apps/External/Helpers/LoginPostAuthRegistration.js",
     "file"
   ],
   [
@@ -951,6 +1011,18 @@ window.esdocSearchIndex = [
     "frontend/form/validator/options.js~pattern#validate",
     "class/Frontend/Form/Validator/Options.js~Pattern.html#instance-method-validate",
     "Frontend/Form/Validator/Options.js~Pattern#validate",
+    "method"
+  ],
+  [
+    "frontend/form/validator/password.js",
+    "file/Frontend/Form/Validator/Password.js.html",
+    "Frontend/Form/Validator/Password.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/password.js~password#errormessage",
+    "class/Frontend/Form/Validator/Password.js~Password.html#instance-method-errorMessage",
+    "Frontend/Form/Validator/Password.js~Password#errorMessage",
     "method"
   ],
   [
@@ -1141,13 +1213,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1423,13 +1495,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],

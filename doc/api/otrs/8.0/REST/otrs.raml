@@ -100,6 +100,65 @@ securitySchemes:
                             example: 1.0.0
                             required: true
             securedBy: [AgentAccessToken]
+    /account/password-change: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        NewPassword: 
+                            required: true
+            description: Change the password for a agent account.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Changed the password for the current account
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"PasswordChangeFailed","ErrorMessage":"Could not change password. Please contact the administrator."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
     /account/personal-preferences: 
         post: 
             description: Save personal preferences of the currently logged in user.
@@ -350,7 +409,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"Token":"eyJhbGciOiJIUzI1NiJeyJhdWQiOiJjdXN0b21lc"}
+                            example: {"PostAuth":{"Config":{},"Modules":"PasswordChange"},"Token":"eyJhbGciOiJIUzI1NiJeyJhdWQiOiJjdXN0b21lc"}
                     description: Return access token after successful login.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -416,6 +475,59 @@ securitySchemes:
                             description: Provides endpoint version information.
                             example: 1.0.0
                             required: true
+    /auth/postauth: 
+        get: 
+            description: Checks if some additional steps after the authentication are needed.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Config":{"ChangeAfterFirstLogin":1},"Modules":"PasswordChange"}
+                    description: Return the next post auth steps if a step is needed or nothing, if no step is needed.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
+    /auth/postauth/{Check}: 
+        get: 
+            description: Checks if some additional steps after the authentication are needed.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Config":{"ChangeAfterFirstLogin":1},"Modules":"PasswordChange"}
+                    description: Return the next post auth steps if a step is needed or nothing, if no step is needed.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
+        uriParameters: 
+            Check: 
+                required: false
 /api/customer: 
     /account: 
         get: 
@@ -430,6 +542,65 @@ securitySchemes:
                         application/json: 
                             example: {"ChangeBy":"1","ChangeTime":"2018-02-23 08:28:32","CreateBy":"1","CreateTime":"2018-02-23 08:28:32","CustomerCompanyValidID":null,"MultipleArticlesView":"0","Source":"CustomerUser","TicketListOrderBy":"Down","TicketListSortBy":"Created","TicketListTicketsPerPage":"10","UserAvatar":"image content...","UserCity":"","UserComment":"","UserCountry":"","UserCustomerID":"example.com","UserEmail":"theo@example.com","UserFax":"","UserFirstname":"Theo","UserFullname":"Theo Test","UserID":"theo","UserLastLogin":"1523019398","UserLastLoginTimestamp":"2018-04-06 12:56:38","UserLastname":"Test","UserLogin":"theo","UserLoginFailed":"0","UserMailString":"\"Theo Test\" <theo@example.com>","UserMobile":"","UserPhone":"","UserRefreshTime":"0","UserShowTickets":"25","UserStreet":"","UserTitle":"","UserZip":"","ValidID":"1"}
                     description: Return the customer user related data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /account/password-change: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        NewPassword: 
+                            required: true
+            description: Change the password for a customer account.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    description: Changed the password for the current account
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"PasswordChangeFailed","ErrorMessage":"Could not change password. Please contact the administrator."}]
+                    description: Custom error response, see example for a list of possible responses.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
                             description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
@@ -757,7 +928,7 @@ securitySchemes:
                 200: 
                     body: 
                         application/json: 
-                            example: {"Token":"eyJhbGciOiJIUzI1NiJeyJhdWQiOiJjdXN0b21lc"}
+                            example: {"PostAuth":{"Config":{},"Modules":"PasswordChange"},"Token":"eyJhbGciOiJIUzI1NiJeyJhdWQiOiJjdXN0b21lc"}
                     description: Return access token after successful login.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
@@ -823,6 +994,59 @@ securitySchemes:
                             description: Provides endpoint version information.
                             example: 1.0.0
                             required: true
+    /auth/postauth: 
+        get: 
+            description: Checks if some additional steps after the authentication are needed.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Config":{"ChangeAfterFirstLogin":1},"Modules":"PasswordChange"}
+                    description: Return the next post auth steps if a step is needed or nothing, if no step is needed.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+    /auth/postauth/{Check}: 
+        get: 
+            description: Checks if some additional steps after the authentication are needed.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Config":{"ChangeAfterFirstLogin":1},"Modules":"PasswordChange"}
+                    description: Return the next post auth steps if a step is needed or nothing, if no step is needed.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
+        uriParameters: 
+            Check: 
+                required: false
     /personal-notifications/list: 
         get: 
             description: Get personal notifications.
@@ -2248,6 +2472,31 @@ securitySchemes:
                             description: Provides endpoint version information.
                             example: 1.0.0
                             required: true
+    /agent/form/account/password-change: 
+        post: 
+            description: Get password change form schema, which will be used after the login.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+                X-OTRS-API-ValidateFormData: 
+                    description: Signal that the form data should be validated.
+                    required: false
+            responses: 
+                200: 
+                    description: Returns the form schema.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
     /agent/form/account/recover: 
         post: 
             description: Get password recovery form schema.
@@ -2541,6 +2790,31 @@ securitySchemes:
                             description: Provides endpoint version information.
                             example: 1.0.0
                             required: true
+    /external/form/account/password-change: 
+        post: 
+            description: Get password change form schema, which will be used after the login.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+                X-OTRS-API-ValidateFormData: 
+                    description: Signal that the form data should be validated.
+                    required: false
+            responses: 
+                200: 
+                    description: Returns the form schema.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [CustomerAccessToken]
     /external/form/account/recover: 
         post: 
             description: Get password recovery form schema.
