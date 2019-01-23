@@ -118,6 +118,7 @@ $(document).ready(function() {
       <li><a href="#SettingTranslatedGet">_SettingTranslatedGet()</a></li>
       <li><a href="#ValueTypesList">_ValueTypesList()</a></li>
       <li><a href="#DefaultSettingAddBulk">_DefaultSettingAddBulk()</a></li>
+      <li><a href="#UserConfigDirectory">_UserConfigDirectory()</a></li>
     </ul>
   </li>
 </ul>
@@ -146,7 +147,6 @@ $(document).ready(function() {
         Name            =&gt; &#39;Setting::Name&#39;,  # (required) Setting name
         Default         =&gt; 1,                # (optional) Returns the default setting attributes only
         ModifiedID      =&gt; &#39;123&#39;,            # (optional) Get setting value for given ModifiedID.
-        TargetUserID    =&gt; 1,                # (optional) Get setting value for specific user.
         Deployed        =&gt; 1,                # (optional) Get deployed setting value. Default 0.
         OverriddenInXML =&gt; 1,                # (optional) Consider changes made in perl files. Default 0.
         Translate       =&gt; 1,                # (optional) Translate translatable strings in EffectiveValue. Default 0.
@@ -169,9 +169,6 @@ $(document).ready(function() {
         IsModified               =&gt; 1,           # 1 or 0
         IsValid                  =&gt; 1,           # 1 or 0
         HasConfigLevel           =&gt; 200,
-        UserModificationPossible =&gt; 0,           # 1 or 0
-        UserModificationActive   =&gt; 0,           # 1 or 0
-        UserPreferencesGroup     =&gt; &#39;Advanced&#39;,  # optional
         XMLContentRaw            =&gt; &quot;The XML structure as it is on the config file&quot;,
         XMLContentParsed         =&gt; &quot;XML parsed to Perl&quot;,
         XMLFilename              =&gt; &quot;Framework.xml&quot;,
@@ -196,9 +193,6 @@ $(document).ready(function() {
         Name                   =&gt; &#39;Setting::Name&#39;,           # (required) setting name
         IsValid                =&gt; 1,                         # (optional) 1 or 0, modified 0
         EffectiveValue         =&gt; $SettingEffectiveValue,    # (optional)
-        UserModificationActive =&gt; 0,                         # (optional) 1 or 0, modified 0
-        TargetUserID           =&gt; 2,                         # (optional) ID of the user for which the modified setting is meant,
-                                                             #   leave it undef for global changes.
         ExclusiveLockGUID      =&gt; $LockingString,            # the GUID used to locking the setting
         UserID                 =&gt; 1,                         # (required) UserID
         NoValidation           =&gt; 1,                         # (optional) no value type validation.
@@ -435,8 +429,6 @@ $(document).ready(function() {
 
 <pre><code>    my $Result = $SysConfigObject-&gt;SettingReset(
         Name                  =&gt; &#39;Setting Name&#39;,                # (required) Setting name
-        TargetUserID          =&gt; 2,                             # (optional) UserID for settings in AgentPreferences
-                                                                # or
         ExclusiveLockGUID     =&gt; $LockingString,                # (optional) the GUID used to locking the setting
         UserID                =&gt; 1,                             # (required) UserID that creates modification
     );</code></pre>
@@ -571,7 +563,6 @@ Cache-Zeit in Sekunden f\x{fc}r Datenbank ACL-Backends.&quot;,
 
 <pre><code>    my %Result = $SysConfigObject-&gt;ConfigurationNavigationTree(
         RootNavigation         =&gt; &#39;Parent&#39;,     # (optional) If provided only sub groups of the root navigation are returned.
-        UserModificationActive =&gt; 1,            # (optional) Return settings that can be modified on user level only.
         IsValid                =&gt; 1,            # (optional) By default, display all settings.
         Category               =&gt; &#39;OTRS&#39;    # (optional)
     );</code></pre>
@@ -599,11 +590,8 @@ Cache-Zeit in Sekunden f\x{fc}r Datenbank ACL-Backends.&quot;,
 
 <pre><code>    my @List = $SysConfigObject-&gt;ConfigurationListGet(
         Navigation           =&gt; &#39;SomeNavigationGroup&#39;,  # (optional) limit to the settings that have provided navigation
-        TargetUserID         =&gt; 2,                      # (optional) if provided, system returns setting for particular user only,
-                                                        #       otherwise, returns global setting list
         IsValid              =&gt; 1,                      # (optional) by default returns valid and invalid settings.
         Invisible            =&gt; 0,                      # (optional) Include Invisible settings. By default, not included.
-        UserPreferencesGroup =&gt; &#39;Advanced&#39;,             # (optional) filter list by group.
         Translate            =&gt; 0,                      # (optional) Translate translatable string in EffectiveValue. Default 0.
         OverriddenInXML      =&gt; 1,                      # (optional) Consider changes made in Perl files. Default 0. Use it in modules only!
         UserID               =&gt; 1,                      # Required if OverriddenInXML is set.
@@ -623,9 +611,6 @@ Cache-Zeit in Sekunden f\x{fc}r Datenbank ACL-Backends.&quot;,
             IsRequired               =&gt; 1,
             IsValid                  =&gt; 1,
             HasConfigLevel           =&gt; 200,
-            UserModificationPossible =&gt; 0,          # 1 or 0
-            UserModificationActive   =&gt; 0,          # 1 or 0
-            UserPreferencesGroup     =&gt; &#39;Advanced&#39;, # optional
             XMLContentRaw            =&gt; &quot;The XML structure as it is on the config file&quot;,
             XMLContentParsed         =&gt; &quot;XML parsed to Perl&quot;,
             XMLFilename              =&gt; &quot;Daemon.xml&quot;,
@@ -819,7 +804,6 @@ Cache-Zeit in Sekunden f\x{fc}r Datenbank ACL-Backends.&quot;,
             IsRequired               =&gt; 1,
             IsValid                  =&gt; 1,
             HasConfigLevel           =&gt; 200,
-            UserModificationPossible =&gt; 0,       # 1 or 0
             XMLContentRaw            =&gt; &quot;The XML structure as it is on the config file&quot;,
             XMLContentParsed         =&gt; &quot;XML parsed to Perl&quot;,
             EffectiveValue           =&gt; &quot;Product 6&quot;,
@@ -864,7 +848,6 @@ Cache-Zeit in Sekunden f\x{fc}r Datenbank ACL-Backends.&quot;,
         OnlyValues           =&gt; 0,  # optional, default 0, dumps only the setting effective value instead of the whole setting attributes.
         SkipDefaultSettings  =&gt; 0,  # optional, default 0, do not include default settings
         SkipModifiedSettings =&gt; 0,  # optional, default 0, do not include modified settings
-        SkipUserSettings     =&gt; 0,  # optional, default 0, do not include user settings
         DeploymentID         =&gt; 123, # optional, if it is provided the modified settings are retrieved from versions
     );</code></pre>
 
@@ -1022,7 +1005,6 @@ JDoe:
                 Name                   =&gt; &#39;Setting::Name&#39;,  # (required)
                 EffectiveValue         =&gt; &#39;Value&#39;,          # (optional)
                 IsValid                =&gt; 1,                # (optional)
-                UserModificationActive =&gt; 1,                # (optional)
             },
             ...
         ],
@@ -1265,9 +1247,6 @@ JDoe:
             IsRequired               =&gt; 1,
             IsValid                  =&gt; 1,
             HasConfigLevel           =&gt; 200,
-            UserModificationPossible =&gt; 0,          # 1 or 0
-            UserModificationActive   =&gt; 0,          # 1 or 0
-            UserPreferencesGroup     =&gt; &#39;Advanced&#39;, # optional
             XMLContentRaw            =&gt; &quot;The XML structure as it is on the config file&quot;,
             XMLContentParsed         =&gt; &quot;XML parsed to Perl&quot;,
             EffectiveValue           =&gt; &quot;Product 6&quot;,
@@ -1360,6 +1339,12 @@ Cache-Zeit in Sekunden f\x{fc}r Datenbank ACL-Backends.&quot;,
         ],
         UserID =&gt; 1,                    # (required) UserID
     );</code></pre>
+
+<h2 id="UserConfigDirectory">_UserConfigDirectory()</h2>
+
+<p>Returns the directory where the files of the user specific settings are located.</p>
+
+<pre><code>    my $Path = $SysConfigObject-&gt;_UserConfigDirectory();</code></pre>
 
 </div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 

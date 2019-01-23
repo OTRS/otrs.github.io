@@ -1495,13 +1495,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1590,15 +1590,21 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/apps/agent/components/testcomponent.js",
-    "file/Frontend/Tests/Apps/Agent/Components/TestComponent.js.html",
-    "Frontend/Tests/Apps/Agent/Components/TestComponent.js",
+    "frontend/tests/apps/agent/components/common/commonavataragent.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Common/CommonAvatarAgent.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Common/CommonAvatarAgent.js",
     "file"
   ],
   [
     "frontend/tests/apps/external/components/common/commonarticleteaser.js",
     "file/Frontend/Tests/Apps/External/Components/Common/CommonArticleTeaser.js.html",
     "Frontend/Tests/Apps/External/Components/Common/CommonArticleTeaser.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/external/components/common/commonavatarexternal.js",
+    "file/Frontend/Tests/Apps/External/Components/Common/CommonAvatarExternal.js.html",
+    "Frontend/Tests/Apps/External/Components/Common/CommonAvatarExternal.js",
     "file"
   ],
   [
@@ -1641,6 +1647,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/common/commonalert.js",
     "file/Frontend/Tests/Components/Common/CommonAlert.js.html",
     "Frontend/Tests/Components/Common/CommonAlert.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commonavatar.js",
+    "file/Frontend/Tests/Components/Common/CommonAvatar.js.html",
+    "Frontend/Tests/Components/Common/CommonAvatar.js",
     "file"
   ],
   [
