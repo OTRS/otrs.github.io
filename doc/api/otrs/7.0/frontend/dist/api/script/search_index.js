@@ -6,6 +6,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "announcer~announcer",
+    "class/Frontend/Announcer/index.js~Announcer.html",
+    "<span>Announcer</span> <span class=\"search-result-import-path\">Announcer</span>",
+    "class"
+  ],
+  [
     "form/validator/datatype~datatype",
     "class/Frontend/Form/Validator/DataType.js~DataType.html",
     "<span>DataType</span> <span class=\"search-result-import-path\">Form/Validator/DataType</span>",
@@ -57,6 +63,12 @@ window.esdocSearchIndex = [
     "server/perlprofiler~perlprofiler",
     "class/Frontend/Server/PerlProfiler/index.js~PerlProfiler.html",
     "<span>PerlProfiler</span> <span class=\"search-result-import-path\">Server/PerlProfiler</span>",
+    "class"
+  ],
+  [
+    "plugins/announcer~plugin",
+    "class/Frontend/Plugins/Announcer/index.js~Plugin.html",
+    "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/Announcer</span>",
     "class"
   ],
   [
@@ -684,6 +696,30 @@ window.esdocSearchIndex = [
     "external"
   ],
   [
+    "frontend/announcer/index.js",
+    "file/Frontend/Announcer/index.js.html",
+    "Frontend/Announcer/index.js",
+    "file"
+  ],
+  [
+    "frontend/announcer/index.js~announcer#$bus",
+    "class/Frontend/Announcer/index.js~Announcer.html#instance-member-$bus",
+    "Frontend/Announcer/index.js~Announcer#$bus",
+    "member"
+  ],
+  [
+    "frontend/announcer/index.js~announcer#constructor",
+    "class/Frontend/Announcer/index.js~Announcer.html#instance-constructor-constructor",
+    "Frontend/Announcer/index.js~Announcer#constructor",
+    "method"
+  ],
+  [
+    "frontend/announcer/index.js~announcer#setmessage",
+    "class/Frontend/Announcer/index.js~Announcer.html#instance-method-setMessage",
+    "Frontend/Announcer/index.js~Announcer#setMessage",
+    "method"
+  ],
+  [
     "frontend/apps/chat/plugins/store/index.js",
     "file/Frontend/Apps/Chat/Plugins/Store/index.js.html",
     "Frontend/Apps/Chat/Plugins/Store/index.js",
@@ -1110,6 +1146,18 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/plugins/announcer/index.js",
+    "file/Frontend/Plugins/Announcer/index.js.html",
+    "Frontend/Plugins/Announcer/index.js",
+    "file"
+  ],
+  [
+    "frontend/plugins/announcer/index.js~plugin.install",
+    "class/Frontend/Plugins/Announcer/index.js~Plugin.html#static-method-install",
+    "Frontend/Plugins/Announcer/index.js~Plugin.install",
+    "method"
+  ],
+  [
     "frontend/plugins/eventbus/index.js",
     "file/Frontend/Plugins/EventBus/index.js.html",
     "Frontend/Plugins/EventBus/index.js",
@@ -1339,13 +1387,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1431,6 +1479,12 @@ window.esdocSearchIndex = [
     "frontend/styles/globals.js",
     "file/Frontend/Styles/globals.js.html",
     "Frontend/Styles/globals.js",
+    "file"
+  ],
+  [
+    "frontend/tests/announcer.js",
+    "file/Frontend/Tests/Announcer.js.html",
+    "Frontend/Tests/Announcer.js",
     "file"
   ],
   [
