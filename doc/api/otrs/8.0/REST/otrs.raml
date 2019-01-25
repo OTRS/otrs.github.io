@@ -528,6 +528,161 @@ securitySchemes:
         uriParameters: 
             Check: 
                 required: false
+    /auth/switchtouser: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        CustomerUserID: 
+                            example: "customeruser1"
+                            required: false
+                        UserLogin: 
+                            example: "MyAgentLogin"
+                            required: false
+            description: Switch to another agent or customer
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Token":"eyJhbGcajE1NDc0ODQ1MDN9.UuECuGKYRWgTFSSQIPSDxPn5EIBEx2PlC1-aMB4B-DM"}
+                    description: Returns permission flag based on admin membership and active SwitchToUser feature.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"CouldNotGenerateToken","ErrorMessage":"The system was unable to generate the token."},{"ErrorIdentifier":"NoSwitchPermission","ErrorMessage":"You are not allowed to switch to another user."},{"ErrorIdentifier":"SessionLimitPerUserReached","ErrorMessage":"Session per user limit reached!"},{"ErrorIdentifier":"SessionLimitReached","ErrorMessage":"Session limit reached! Please try again later."},{"ErrorIdentifier":"SystemContractSessionLimitReached","ErrorMessage":"Login rejected! You have exceeded the maximum number of concurrent Agents! Contact sales@otrs.com immediately"}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
+    /auth/switchtousercheck: 
+        get: 
+            description: Checks permissions of the currently logged in user to switch to other agent or customer
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            queryParameters: 
+                Check: 
+                    example: "Agent"
+                    required: true
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Permitted":1}
+                    description: Returns permission flag based on admin membership and active SwitchToUser feature.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
+    /customer/user/search: 
+        get: 
+            description: Returns list of customer users that match provided search term.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    required: false
+            queryParameters: 
+                SearchTerm: 
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: [{"id":"customer-1","label":"customer-1 customer-1 customer-1@localhost"},{"id":"customer-2","label":"customer-2 customer-2 customer-2@localhost"},{"id":"customer-3","label":"customer-3 customer-3 customer-3@localhost"}]
+                    description: List of customer users suitable for an autocomplete field.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
 /api/customer: 
     /account: 
         get: 
