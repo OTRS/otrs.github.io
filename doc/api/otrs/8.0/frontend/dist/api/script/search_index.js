@@ -48,9 +48,15 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
-    "form/validator/password~password",
-    "class/Frontend/Form/Validator/Password.js~Password.html",
-    "<span>Password</span> <span class=\"search-result-import-path\">Form/Validator/Password</span>",
+    "form/validator/passwordconfirmation~passwordconfirmation",
+    "class/Frontend/Form/Validator/PasswordConfirmation.js~PasswordConfirmation.html",
+    "<span>PasswordConfirmation</span> <span class=\"search-result-import-path\">Form/Validator/PasswordConfirmation</span>",
+    "class"
+  ],
+  [
+    "form/validator/passwordpolicyrules~passwordpolicyrules",
+    "class/Frontend/Form/Validator/PasswordPolicyRules.js~PasswordPolicyRules.html",
+    "<span>PasswordPolicyRules</span> <span class=\"search-result-import-path\">Form/Validator/PasswordPolicyRules</span>",
     "class"
   ],
   [
@@ -168,6 +174,12 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
+    "apps/agent/helpers/rootapplicationmoduleregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/RootApplicationModuleRegistration</span>",
+    "variable"
+  ],
+  [
     "apps/external/helpers/communicationchannelregistration~componentindex",
     "variable/index.html#static-variable-componentIndex",
     "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
@@ -183,6 +195,12 @@ window.esdocSearchIndex = [
     "apps/external/helpers/loginpostauthregistration~componentindex",
     "variable/index.html#static-variable-componentIndex",
     "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/LoginPostAuthRegistration</span>",
+    "variable"
+  ],
+  [
+    "apps/external/helpers/rootapplicationmoduleregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/RootApplicationModuleRegistration</span>",
     "variable"
   ],
   [
@@ -222,6 +240,12 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "apps/agent/helpers/rootapplicationmoduleregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/RootApplicationModuleRegistration</span>",
+    "function"
+  ],
+  [
     "apps/external/helpers/communicationchannelregistration~getcomponents",
     "function/index.html#static-function-getComponents",
     "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
@@ -237,6 +261,12 @@ window.esdocSearchIndex = [
     "apps/external/helpers/loginpostauthregistration~getcomponents",
     "function/index.html#static-function-getComponents",
     "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/LoginPostAuthRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/rootapplicationmoduleregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/RootApplicationModuleRegistration</span>",
     "function"
   ],
   [
@@ -315,6 +345,18 @@ window.esdocSearchIndex = [
     "helpers/querystring~getquerystring",
     "function/index.html#static-function-getQueryString",
     "<span>getQueryString</span> <span class=\"search-result-import-path\">Helpers/QueryString</span>",
+    "function"
+  ],
+  [
+    "apps/agent/helpers/rootapplicationmoduleregistration~getrootapplicationmodulecomponents",
+    "function/index.html#static-function-getRootApplicationModuleComponents",
+    "<span>getRootApplicationModuleComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/RootApplicationModuleRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/external/helpers/rootapplicationmoduleregistration~getrootapplicationmodulecomponents",
+    "function/index.html#static-function-getRootApplicationModuleComponents",
+    "<span>getRootApplicationModuleComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/RootApplicationModuleRegistration</span>",
     "function"
   ],
   [
@@ -456,9 +498,15 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
-    "form/validator/password~validator",
+    "form/validator/passwordconfirmation~validator",
     "variable/index.html#static-variable-validator",
-    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/Password</span>",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/PasswordConfirmation</span>",
+    "variable"
+  ],
+  [
+    "form/validator/passwordpolicyrules~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/PasswordPolicyRules</span>",
     "variable"
   ],
   [
@@ -798,6 +846,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/helpers/rootapplicationmoduleregistration.js",
+    "file/Frontend/Apps/Agent/Helpers/RootApplicationModuleRegistration.js.html",
+    "Frontend/Apps/Agent/Helpers/RootApplicationModuleRegistration.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/metaheader.js",
     "file/Frontend/Apps/Agent/Mixins/MetaHeader.js.html",
     "Frontend/Apps/Agent/Mixins/MetaHeader.js",
@@ -909,6 +963,12 @@ window.esdocSearchIndex = [
     "frontend/apps/external/helpers/loginpostauthregistration.js",
     "file/Frontend/Apps/External/Helpers/LoginPostAuthRegistration.js.html",
     "Frontend/Apps/External/Helpers/LoginPostAuthRegistration.js",
+    "file"
+  ],
+  [
+    "frontend/apps/external/helpers/rootapplicationmoduleregistration.js",
+    "file/Frontend/Apps/External/Helpers/RootApplicationModuleRegistration.js.html",
+    "Frontend/Apps/External/Helpers/RootApplicationModuleRegistration.js",
     "file"
   ],
   [
@@ -1050,15 +1110,45 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
-    "frontend/form/validator/password.js",
-    "file/Frontend/Form/Validator/Password.js.html",
-    "Frontend/Form/Validator/Password.js",
+    "frontend/form/validator/passwordconfirmation.js",
+    "file/Frontend/Form/Validator/PasswordConfirmation.js.html",
+    "Frontend/Form/Validator/PasswordConfirmation.js",
     "file"
   ],
   [
-    "frontend/form/validator/password.js~password#errormessage",
-    "class/Frontend/Form/Validator/Password.js~Password.html#instance-method-errorMessage",
-    "Frontend/Form/Validator/Password.js~Password#errorMessage",
+    "frontend/form/validator/passwordconfirmation.js~passwordconfirmation#errormessage",
+    "class/Frontend/Form/Validator/PasswordConfirmation.js~PasswordConfirmation.html#instance-method-errorMessage",
+    "Frontend/Form/Validator/PasswordConfirmation.js~PasswordConfirmation#errorMessage",
+    "method"
+  ],
+  [
+    "frontend/form/validator/passwordconfirmation.js~passwordconfirmation#validate",
+    "class/Frontend/Form/Validator/PasswordConfirmation.js~PasswordConfirmation.html#instance-method-validate",
+    "Frontend/Form/Validator/PasswordConfirmation.js~PasswordConfirmation#validate",
+    "method"
+  ],
+  [
+    "frontend/form/validator/passwordpolicyrules.js",
+    "file/Frontend/Form/Validator/PasswordPolicyRules.js.html",
+    "Frontend/Form/Validator/PasswordPolicyRules.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/passwordpolicyrules.js~passwordpolicyrules#errormessage",
+    "class/Frontend/Form/Validator/PasswordPolicyRules.js~PasswordPolicyRules.html#instance-method-errorMessage",
+    "Frontend/Form/Validator/PasswordPolicyRules.js~PasswordPolicyRules#errorMessage",
+    "method"
+  ],
+  [
+    "frontend/form/validator/passwordpolicyrules.js~passwordpolicyrules#isvalid",
+    "class/Frontend/Form/Validator/PasswordPolicyRules.js~PasswordPolicyRules.html#instance-method-isValid",
+    "Frontend/Form/Validator/PasswordPolicyRules.js~PasswordPolicyRules#isValid",
+    "method"
+  ],
+  [
+    "frontend/form/validator/passwordpolicyrules.js~passwordpolicyrules#validate",
+    "class/Frontend/Form/Validator/PasswordPolicyRules.js~PasswordPolicyRules.html#instance-method-validate",
+    "Frontend/Form/Validator/PasswordPolicyRules.js~PasswordPolicyRules#validate",
     "method"
   ],
   [
@@ -1249,13 +1339,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1543,13 +1633,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1830,6 +1920,18 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formpassword.js",
+    "file/Frontend/Tests/Components/Form/Field/FormPassword.js.html",
+    "Frontend/Tests/Components/Form/Field/FormPassword.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formpasswordchange.js",
+    "file/Frontend/Tests/Components/Form/Field/FormPasswordChange.js.html",
+    "Frontend/Tests/Components/Form/Field/FormPasswordChange.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/form/field/formplaceholder.js",
     "file/Frontend/Tests/Components/Form/Field/FormPlaceholder.js.html",
     "Frontend/Tests/Components/Form/Field/FormPlaceholder.js",
@@ -1887,6 +1989,18 @@ window.esdocSearchIndex = [
     "frontend/tests/form/validator/options.js",
     "file/Frontend/Tests/Form/Validator/Options.js.html",
     "Frontend/Tests/Form/Validator/Options.js",
+    "file"
+  ],
+  [
+    "frontend/tests/form/validator/passwordconfirmation.js",
+    "file/Frontend/Tests/Form/Validator/PasswordConfirmation.js.html",
+    "Frontend/Tests/Form/Validator/PasswordConfirmation.js",
+    "file"
+  ],
+  [
+    "frontend/tests/form/validator/passwordpolicyrules.js",
+    "file/Frontend/Tests/Form/Validator/PasswordPolicyRules.js.html",
+    "Frontend/Tests/Form/Validator/PasswordPolicyRules.js",
     "file"
   ],
   [
