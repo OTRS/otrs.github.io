@@ -74,7 +74,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en', 'hu'],
+                    Languages: ['en', 'de', 'hu'],
                     AssetPath:     'doc-installation',
                     AssetFilename: 'otrs_installation_guide'
                 }
@@ -89,7 +89,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en', 'de', 'hu', 'zh_CN'],
+                    Languages: ['en', 'de', 'hu', 'pt_BR', 'zh_CN'],
                     AssetPath:     'doc-config-reference',
                     AssetFilename: 'otrs_config_reference'
                 }
