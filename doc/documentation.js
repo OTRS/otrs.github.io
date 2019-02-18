@@ -29,6 +29,7 @@ $(document).ready(function() {
         ja: '日本語 (ja)',
         pt_BR: 'português brasileiro (pt_BR)',
         ru: 'Русский (ru)',
+        sr: 'Српски (sr)',
         sw: 'Swahili (sw)',
         zh_CN: '简体中文 (zh_CN)'
     };
@@ -89,7 +90,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en', 'de', 'hu', 'pt_BR', 'zh_CN'],
+                    Languages: ['en', 'de', 'hu', 'pt_BR', 'sr', 'zh_CN'],
                     AssetPath:     'doc-config-reference',
                     AssetFilename: 'otrs_config_reference'
                 }
