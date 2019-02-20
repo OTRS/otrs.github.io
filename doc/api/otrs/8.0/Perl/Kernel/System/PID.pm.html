@@ -58,7 +58,6 @@ $(document).ready(function() {
   <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
   <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
     <ul>
-      <li><a href="#new">new()</a></li>
       <li><a href="#PIDCreate">PIDCreate()</a></li>
       <li><a href="#PIDGet">PIDGet()</a></li>
       <li><a href="#PIDDelete">PIDDelete()</a></li>
@@ -77,18 +76,16 @@ $(document).ready(function() {
 
 <h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
-<h2 id="new">new()</h2>
-
-<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
-
-<pre><code>    my $PIDObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::PID&#39;);</code></pre>
-
 <h2 id="PIDCreate">PIDCreate()</h2>
 
 <p>create a new process id lock</p>
 
 <pre><code>    $PIDObject-&gt;PIDCreate(
-        Name =&gt; &#39;PostMasterPOP3&#39;,
+        Name         =&gt; &#39;PostMasterPOP3&#39;,  # (required)
+        TimeDelay    =&gt; 123,               # (optional) If PID couldn&#39;t be created, attempt again after provided delay.
+                                           #            Default 1 sec.
+        AttemptCount =&gt; 1,                 # (optional) If PID couldn&#39;t be created, attempt again n times.
+                                           #            Default 1 (doesn&#39;t attempt again).
     );
 
     or to create a new PID forced, without check if already exists (this will delete any process
@@ -114,18 +111,26 @@ $(document).ready(function() {
         Name =&gt; &#39;PostMasterPOP3&#39;,
     );</code></pre>
 
+<p>Returns:</p>
+
+<pre><code>    %PID = (
+        ID      =&gt; 1234,
+        Name    =&gt; &#39;Process name&#39;,
+        PID     =&gt; 12345,
+        Host    =&gt; &#39;localhost&#39;,
+        Created =&gt; 1548861275,
+        Changed =&gt; 1548861275,
+    );</code></pre>
+
 <h2 id="PIDDelete">PIDDelete()</h2>
 
 <p>delete the process id lock</p>
 
 <pre><code>    my $Success = $PIDObject-&gt;PIDDelete(
-        Name  =&gt; &#39;PostMasterPOP3&#39;,
-    );
-
-    or to force delete even if the PID is registered by another host
-    my $Success = $PIDObject-&gt;PIDDelete(
-        Name  =&gt; &#39;PostMasterPOP3&#39;,
-        Force =&gt; 1,
+        Name      =&gt; &#39;PostMasterPOP3&#39;,      # (required)
+        ProcessID =&gt; 123,                   # (optional) delete only process with this PID
+        Force     =&gt; 1,                     # (optional) force delete even if the PID is registered by another host.
+                                            #            defaule 0.
     );</code></pre>
 
 <h2 id="PIDUpdate">PIDUpdate()</h2>
