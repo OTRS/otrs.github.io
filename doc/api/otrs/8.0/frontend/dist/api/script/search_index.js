@@ -72,6 +72,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "form/validator/phonenumber~pattern",
+    "class/Frontend/Form/Validator/PhoneNumber.js~Pattern.html",
+    "<span>Pattern</span> <span class=\"search-result-import-path\">Form/Validator/PhoneNumber</span>",
+    "class"
+  ],
+  [
     "server/perlprofiler~perlprofiler",
     "class/Frontend/Server/PerlProfiler/index.js~PerlProfiler.html",
     "<span>PerlProfiler</span> <span class=\"search-result-import-path\">Server/PerlProfiler</span>",
@@ -216,6 +222,12 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
+    "helpers/twofactorsetupmethodregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/TwoFactorSetupMethodRegistration</span>",
+    "variable"
+  ],
+  [
     "helpers/textmatch~diacriticslookup",
     "variable/index.html#static-variable-diacriticsLookup",
     "<span>diacriticsLookup</span> <span class=\"search-result-import-path\">Helpers/TextMatch</span>",
@@ -279,6 +291,12 @@ window.esdocSearchIndex = [
     "helpers/formfieldregistration~getcomponents",
     "function/index.html#static-function-getComponents",
     "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/FormFieldRegistration</span>",
+    "function"
+  ],
+  [
+    "helpers/twofactorsetupmethodregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/TwoFactorSetupMethodRegistration</span>",
     "function"
   ],
   [
@@ -363,6 +381,12 @@ window.esdocSearchIndex = [
     "apps/chatintegration/helpers/scriptattributes~getscriptattribute",
     "function/index.html#static-function-getScriptAttribute",
     "<span>getScriptAttribute</span> <span class=\"search-result-import-path\">Apps/ChatIntegration/Helpers/ScriptAttributes</span>",
+    "function"
+  ],
+  [
+    "helpers/twofactorsetupmethodregistration~gettwofactorsetupmethodcomponents",
+    "function/index.html#static-function-getTwoFactorSetupMethodComponents",
+    "<span>getTwoFactorSetupMethodComponents</span> <span class=\"search-result-import-path\">Helpers/TwoFactorSetupMethodRegistration</span>",
     "function"
   ],
   [
@@ -513,6 +537,12 @@ window.esdocSearchIndex = [
     "form/validator/pattern~validator",
     "variable/index.html#static-variable-validator",
     "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/Pattern</span>",
+    "variable"
+  ],
+  [
+    "form/validator/phonenumber~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/PhoneNumber</span>",
     "variable"
   ],
   [
@@ -1170,6 +1200,24 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/form/validator/phonenumber.js",
+    "file/Frontend/Form/Validator/PhoneNumber.js.html",
+    "Frontend/Form/Validator/PhoneNumber.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/phonenumber.js~pattern#errormessage",
+    "class/Frontend/Form/Validator/PhoneNumber.js~Pattern.html#instance-method-errorMessage",
+    "Frontend/Form/Validator/PhoneNumber.js~Pattern#errorMessage",
+    "method"
+  ],
+  [
+    "frontend/form/validator/phonenumber.js~pattern#validate",
+    "class/Frontend/Form/Validator/PhoneNumber.js~Pattern.html#instance-method-validate",
+    "Frontend/Form/Validator/PhoneNumber.js~Pattern#validate",
+    "method"
+  ],
+  [
     "frontend/form/validator/required.js",
     "file/Frontend/Form/Validator/Required.js.html",
     "Frontend/Form/Validator/Required.js",
@@ -1257,6 +1305,12 @@ window.esdocSearchIndex = [
     "frontend/helpers/textmatch.js",
     "file/Frontend/Helpers/TextMatch.js.html",
     "Frontend/Helpers/TextMatch.js",
+    "file"
+  ],
+  [
+    "frontend/helpers/twofactorsetupmethodregistration.js",
+    "file/Frontend/Helpers/TwoFactorSetupMethodRegistration.js.html",
+    "Frontend/Helpers/TwoFactorSetupMethodRegistration.js",
     "file"
   ],
   [
@@ -1633,13 +1687,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1956,6 +2010,18 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formtrustdevice.js",
+    "file/Frontend/Tests/Components/Form/Field/FormTrustDevice.js.html",
+    "Frontend/Tests/Components/Form/Field/FormTrustDevice.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formtwofactortoken.js",
+    "file/Frontend/Tests/Components/Form/Field/FormTwoFactorToken.js.html",
+    "Frontend/Tests/Components/Form/Field/FormTwoFactorToken.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/form/field/formupload.js",
     "file/Frontend/Tests/Components/Form/Field/FormUpload.js.html",
     "Frontend/Tests/Components/Form/Field/FormUpload.js",
@@ -2007,6 +2073,12 @@ window.esdocSearchIndex = [
     "frontend/tests/form/validator/pattern.js",
     "file/Frontend/Tests/Form/Validator/Pattern.js.html",
     "Frontend/Tests/Form/Validator/Pattern.js",
+    "file"
+  ],
+  [
+    "frontend/tests/form/validator/phonenumber.js",
+    "file/Frontend/Tests/Form/Validator/PhoneNumber.js.html",
+    "Frontend/Tests/Form/Validator/PhoneNumber.js",
     "file"
   ],
   [
