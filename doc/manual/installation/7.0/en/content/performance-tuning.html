@@ -101,6 +101,11 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Performance Tuning</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#ticket-index-module">Ticket Index Module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#ticket-search-index">Ticket Search Index</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#document-search">Document Search</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#heap-size">Heap Size</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#disk-allocation">Disk Allocation</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#article-storage">Article Storage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#archiving-tickets">Archiving Tickets</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#tuning-the-web-server">Tuning the Web Server</a></li>
@@ -256,6 +261,43 @@
 </dd>
 </dl>
 </div>
+<div class="section" id="document-search">
+<h2>Document Search<a class="headerlink" href="#document-search" title="Permalink to this headline">¶</a></h2>
+<p>OTRS uses Elasticsearch for its document search functionality. For a good introduction into the concepts, installation and usage of Elasticsearch, please follow the <a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/getting-started.html">Getting Started guide</a>.</p>
+<div class="section" id="heap-size">
+<h3>Heap Size<a class="headerlink" href="#heap-size" title="Permalink to this headline">¶</a></h3>
+<p>Elasticsearch is written in Java and therefore runs in a Java Virtual Machine (JVM) on any cluster node. Such a JVM uses a part of the memory, called <em>heap</em>, which size can be configured in configuration file <code class="docutils literal notranslate"><span class="pre">jvm.options</span></code>.</p>
+<p>The heap minimum and maximum configurations are by default set to a value of 1 GB and can be modified with the following options:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">Xms1g</span></code>: minimum heap size.</li>
+<li><code class="docutils literal notranslate"><span class="pre">Xmx1g</span></code>: maximum heap size.</li>
+</ul>
+<p>If the <code class="docutils literal notranslate"><span class="pre">Xms</span></code> has a lower value than <code class="docutils literal notranslate"><span class="pre">Xmx</span></code>, the JVM will resize the used heap anytime the current limit is exceeded, until the value of <code class="docutils literal notranslate"><span class="pre">Xmx</span></code> is reached. Such a resizing causes the service to pause until it is finished, which may decrease the speed and reactivity of the search or indexing actions. Therefore it is highly recommended to set those configurations to an equal value.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">If the maximum heap size is exceeded, the related cluster node stops working and might even shutdown the service.</p>
+</div>
+<p>The higher the heap maximum value is set, the more memory can be used by Elasticsearch, which also increases the possible pauses for garbage collection, done by the JVM. Therefore it is recommended to set a value for <code class="docutils literal notranslate"><span class="pre">Xmx</span></code>, that is not higher than 50% of the physical memory.</p>
+<p>For more information and good rules of thumb about the heap size, please follow <a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html">the official documentation</a>.</p>
+</div>
+<div class="section" id="disk-allocation">
+<h3>Disk Allocation<a class="headerlink" href="#disk-allocation" title="Permalink to this headline">¶</a></h3>
+<p>During the run-time of the service, Elasticsearch inspects the available disk space and therefore decides whether to allocate new shards to the related cluster node or even relocate shards away from that particular node. Such behavior will be controlled by the current disk capacity and can be configured in configuration file <code class="docutils literal notranslate"><span class="pre">elasticsearch.yml</span></code>. Enclosed are some important configurations, that come with good default values, but might be important:</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">cluster.routing.allocation.disk.watermark.low</span></code></dt>
+<dd>Default value of 85%. If this limit is exceeded, Elasticsearch will not allocate more shards to the related cluster node. The operation of that node is not influenced and data can still be indexed and searched.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cluster.routing.allocation.disk.watermark.high</span></code></dt>
+<dd>Default value of 90%. If this limit is exceeded, Elasticsearch will try to relocate existing shards to other nodes (if possible), that have enough space available.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cluster.routing.allocation.disk.watermark.flood_stage</span></code></dt>
+<dd>Default value of 95%. If this limit is exceeded, Elasticsearch will update the configuration of all indices to read-only index blocks <code class="docutils literal notranslate"><span class="pre">index.blocks.read_only_allow_delete</span></code>, that have at least one shard allocated to the related cluster node. Since then, it is not possible to index new data to such indices and restricted to searches and delete actions.</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If the flood stage was exceeded and certain indices are configured to read-only mode, such configuration <em>will not</em> automatically be changed by Elasticsearch. If the related disks contains enough free space again, due to manual actions, it is needed change the configuration back to normal mode manually.</p>
+</div>
+<p>For more information about disk watermarks and disk-based shard allocation, please follow <a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/disk-allocator.html">the official documentation</a>.</p>
+</div>
+</div>
 <div class="section" id="article-storage">
 <h2>Article Storage<a class="headerlink" href="#article-storage" title="Permalink to this headline">¶</a></h2>
 <p>There are two different back end modules for the article storage of phone, email and internal articles. The used article storage can be configured in the setting <code class="docutils literal notranslate"><span class="pre">Ticket::Article::Backend::MIMEBase::ArticleStorage</span></code>.</p>
@@ -382,7 +424,7 @@ ga('send', 'pageview');
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, OTRS AG
+        &copy; Copyright 2001-2019 OTRS AG, https://otrs.com/
 
     </p>
   </div> 
