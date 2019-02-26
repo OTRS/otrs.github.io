@@ -12,6 +12,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "components/form/field/formdatetime/flatpickr/plugins/calendarselect/calendarselect~calendarselectplugin",
+    "function/index.html#static-function-CalendarSelectPlugin",
+    "<span>CalendarSelectPlugin</span> <span class=\"search-result-import-path\">Components/Form/Field/FormDateTime/FlatPickr/Plugins/CalendarSelect/CalendarSelect</span>",
+    "function"
+  ],
+  [
     "form/validator/datatype~datatype",
     "class/Frontend/Form/Validator/DataType.js~DataType.html",
     "<span>DataType</span> <span class=\"search-result-import-path\">Form/Validator/DataType</span>",
@@ -333,6 +339,12 @@ window.esdocSearchIndex = [
     "helpers/dynamicfieldregistration~getdynamicfieldcomponents",
     "function/index.html#static-function-getDynamicFieldComponents",
     "<span>getDynamicFieldComponents</span> <span class=\"search-result-import-path\">Helpers/DynamicFieldRegistration</span>",
+    "function"
+  ],
+  [
+    "helpers/filetypemapping~getfiletype",
+    "function/index.html#static-function-getFileType",
+    "<span>getFileType</span> <span class=\"search-result-import-path\">Helpers/FileTypeMapping</span>",
     "function"
   ],
   [
@@ -1056,6 +1068,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/components/form/field/formdatetime/flatpickr/plugins/calendarselect/calendarselect.js",
+    "file/Frontend/Components/Form/Field/FormDateTime/FlatPickr/Plugins/CalendarSelect/CalendarSelect.js.html",
+    "Frontend/Components/Form/Field/FormDateTime/FlatPickr/Plugins/CalendarSelect/CalendarSelect.js",
+    "file"
+  ],
+  [
     "frontend/components/form/field/formeditor/dummyuploadadapter.js",
     "file/Frontend/Components/Form/Field/FormEditor/DummyUploadAdapter.js.html",
     "Frontend/Components/Form/Field/FormEditor/DummyUploadAdapter.js",
@@ -1248,6 +1266,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/helpers/filetypemapping.js",
+    "file/Frontend/Helpers/FileTypeMapping.js.html",
+    "Frontend/Helpers/FileTypeMapping.js",
+    "file"
+  ],
+  [
     "frontend/helpers/formfieldregistration.js",
     "file/Frontend/Helpers/FormFieldRegistration.js.html",
     "Frontend/Helpers/FormFieldRegistration.js",
@@ -1393,13 +1417,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
