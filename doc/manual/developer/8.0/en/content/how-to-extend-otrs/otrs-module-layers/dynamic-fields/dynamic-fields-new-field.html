@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Creating A New Dynamic Field &mdash; OTRS Developer Manual 8.0 documentation</title>
+  <title>Create New Dynamic Field &mdash; OTRS Developer Manual 8.0 documentation</title>
   
 
   
@@ -126,8 +126,8 @@
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-framework.html">Dynamic Fields Framework</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-interaction.html">Dynamic Field Interaction With Front End Modules</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-extend-options.html">How To Extend The Dynamic Fields</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Creating A New Dynamic Field</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#dynamic-field-password-files">Dynamic Field Password files</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Create New Dynamic Field</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-field-password-files">Dynamic Field Password Files</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-extend.html">Creating a Dynamic Field Functionality Extension</a></li>
@@ -190,7 +190,7 @@
         
           <li><a href="../../otrs-module-layers.html">Using the power of the OTRS module layers</a> &raquo;</li>
         
-      <li>Creating A New Dynamic Field</li>
+      <li>Create New Dynamic Field</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -211,19 +211,20 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="creating-a-new-dynamic-field">
-<h1>Creating A New Dynamic Field<a class="headerlink" href="#creating-a-new-dynamic-field" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="create-new-dynamic-field">
+<h1>Create New Dynamic Field<a class="headerlink" href="#create-new-dynamic-field" title="Permalink to this headline">¶</a></h1>
 <p>To illustrate this process a new dynamic field <em>Password</em> will be created. This new dynamic field type will show a new password field to ticket or article objects. Since is very similar to a text dynamic field
-we will use the <code class="docutils literal notranslate"><span class="pre">Base</span></code> and <code class="docutils literal notranslate"><span class="pre">BaseText</span></code> drivers as a basis to build this new field.</p>
+we will use the <code class="docutils literal notranslate"><span class="pre">Base</span></code> and <code class="docutils literal notranslate"><span class="pre">BaseText</span></code> drivers (for the legacy API) and <code class="docutils literal notranslate"><span class="pre">Base/Text</span></code> (for the new API) as a basis to build this new field.</p>
 <div class="admonition warning">
 <p class="first admonition-title">Warning</p>
 <p class="last">This new password field implementation is just for educational purposes, it does not provide any level of security and is not recommended for production systems.</p>
 </div>
-<p>To create this new dynamic field we will create 4 files:</p>
+<p>To create this new dynamic field, we will create 5 files:</p>
 <ol class="arabic simple">
 <li>A configuration file (XML) to register the modules.</li>
 <li>An admin dialog module (Perl) to setup the field options.</li>
 <li>A template module for the admin dialog.</li>
+<li>A dynamic field legacy driver (Perl).</li>
 <li>A dynamic field driver (Perl).</li>
 </ol>
 <p>File structure:</p>
@@ -245,6 +246,10 @@ we will use the <code class="docutils literal notranslate"><span class="pre">Bas
 |   |   |   |   |AdminDynamicFieldPassword.tt
 ...
 |   |--/System/
+|   |   |--/DynamicFieldLegacy/
+|   |   |   |--/Driver/
+|   |   |   |   |Password.pm
+...
 |   |   |--/DynamicField/
 |   |   |   |--/Driver/
 |   |   |   |   |Password.pm
@@ -252,7 +257,7 @@ we will use the <code class="docutils literal notranslate"><span class="pre">Bas
 </pre></div>
 </div>
 <div class="section" id="dynamic-field-password-files">
-<h2>Dynamic Field Password files<a class="headerlink" href="#dynamic-field-password-files" title="Permalink to this headline">¶</a></h2>
+<h2>Dynamic Field Password Files<a class="headerlink" href="#dynamic-field-password-files" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="dynamic-field-configuration-file-example">
 <h3>Dynamic Field Configuration File Example<a class="headerlink" href="#dynamic-field-configuration-file-example" title="Permalink to this headline">¶</a></h3>
 <p>The configuration files are used to register the dynamic field types (driver) and the object type drivers for the back end object. They also store standard registrations for admin modules in the framework.</p>
@@ -262,7 +267,20 @@ we will use the <code class="docutils literal notranslate"><span class="pre">Bas
 </pre></div>
 </div>
 <p>This is the normal header for a configuration file.</p>
-<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ConfigItem</span> <span class="na">Name=</span><span class="s">&quot;DynamicFields::Driver###Password&quot;</span> <span class="na">Required=</span><span class="s">&quot;0&quot;</span> <span class="na">Valid=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ConfigItem</span> <span class="na">Name=</span><span class="s">&quot;DynamicFieldsLegacy::Driver###Password&quot;</span> <span class="na">Required=</span><span class="s">&quot;0&quot;</span> <span class="na">Valid=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Description</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>DynamicField legacy backend registration.<span class="nt">&lt;/Description&gt;</span>
+    <span class="nt">&lt;Group&gt;</span>DynamicFieldPassword<span class="nt">&lt;/Group&gt;</span>
+    <span class="nt">&lt;SubGroup&gt;</span>DynamicFields::Backend::Registration<span class="nt">&lt;/SubGroup&gt;</span>
+    <span class="nt">&lt;Setting&gt;</span>
+        <span class="nt">&lt;Hash&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;DisplayName&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Password<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;Module&quot;</span><span class="nt">&gt;</span>Kernel::System::DynamicFieldLegacy::Driver::Password<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;ConfigDialog&quot;</span><span class="nt">&gt;</span>AdminDynamicFieldPassword<span class="nt">&lt;/Item&gt;</span>
+        <span class="nt">&lt;/Hash&gt;</span>
+    <span class="nt">&lt;/Setting&gt;</span>
+<span class="nt">&lt;/ConfigItem&gt;</span>
+
+<span class="nt">&lt;ConfigItem</span> <span class="na">Name=</span><span class="s">&quot;DynamicFields::Driver###Password&quot;</span> <span class="na">Required=</span><span class="s">&quot;0&quot;</span> <span class="na">Valid=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
     <span class="nt">&lt;Description</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>DynamicField backend registration.<span class="nt">&lt;/Description&gt;</span>
     <span class="nt">&lt;Group&gt;</span>DynamicFieldPassword<span class="nt">&lt;/Group&gt;</span>
     <span class="nt">&lt;SubGroup&gt;</span>DynamicFields::Backend::Registration<span class="nt">&lt;/SubGroup&gt;</span>
@@ -276,8 +294,7 @@ we will use the <code class="docutils literal notranslate"><span class="pre">Bas
 <span class="nt">&lt;/ConfigItem&gt;</span>
 </pre></div>
 </div>
-<p>This setting registers the password dynamic field driver for the back end module so it can be included in the list of available dynamic fields types. It also specify its own admin dialog in the key <code class="docutils literal notranslate"><span class="pre">ConfigDialog</span></code>.
-This key is used by the master dynamic field admin module to manage this new dynamic field type.</p>
+<p>These settings registers the password dynamic field driver for the back end module (legacy and new API) so it can be included in the list of available dynamic fields types. It also specify its own admin dialog in the key <code class="docutils literal notranslate"><span class="pre">ConfigDialog</span></code>. This key is used by the master dynamic field admin module to manage this new dynamic field type.</p>
 <div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ConfigItem</span> <span class="na">Name=</span><span class="s">&quot;Frontend::Module###AdminDynamicFieldPassword&quot;</span> <span class="na">Required=</span><span class="s">&quot;0&quot;</span> <span class="na">Valid=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
     <span class="nt">&lt;Description</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Frontend module registration for the agent interface.<span class="nt">&lt;/Description&gt;</span>
     <span class="nt">&lt;Group&gt;</span>DynamicFieldPassword<span class="nt">&lt;/Group&gt;</span>
@@ -1018,14 +1035,17 @@ Core.Agent.Admin.DynamicField.ValidationInit();
 </div>
 <div class="section" id="dynamic-field-driver-example">
 <h3>Dynamic Field Driver Example<a class="headerlink" href="#dynamic-field-driver-example" title="Permalink to this headline">¶</a></h3>
-<p>The driver <em>is</em> the dynamic field. It contains several functions that are used wide in the OTRS framework. A driver can inherit some functions form base classes, for example <code class="docutils literal notranslate"><span class="pre">TextArea</span></code> driver inherits most of the functions from <code class="docutils literal notranslate"><span class="pre">Base.pm</span></code> and <code class="docutils literal notranslate"><span class="pre">BaseText.pm</span></code> and it only implements the functions that requires different logic or results. Checkbox field driver only inherits from <code class="docutils literal notranslate"><span class="pre">Base.pm</span></code> as all other functions are very different from any other base driver.</p>
+<p>The driver <em>represents</em> the dynamic field. It contains several functions that are used wide in the OTRS framework.</p>
+<p>A driver can inherit some functions from base classes, for example the <code class="docutils literal notranslate"><span class="pre">TextArea</span></code> driver inherits most of the functions from <code class="docutils literal notranslate"><span class="pre">Base.pm</span></code> and <code class="docutils literal notranslate"><span class="pre">BaseText.pm</span></code> (<code class="docutils literal notranslate"><span class="pre">Base/Text.pm</span></code> in the new API) and it only implements the functions that requires different logic or results. The checkbox field driver only inherits from <code class="docutils literal notranslate"><span class="pre">Base.pm</span></code>, as all other functions are very different from any other base driver.</p>
 <div class="admonition seealso">
 <p class="first admonition-title">See also</p>
-<p class="last">Please refer to the Perl online documentation (POD) of the module <code class="docutils literal notranslate"><span class="pre">/Kernel/System/DynmicField/Backend.pm</span></code> to have the list of all attributes and possible return data for each function.</p>
+<p class="last">Please refer to the Perl online documentation (POD) of the module <code class="docutils literal notranslate"><span class="pre">/Kernel/System/DynmicFieldLegacy/Backend.pm</span></code> and <code class="docutils literal notranslate"><span class="pre">/Kernel/System/DynmicFieldLegacy/Driver/Base.pm</span></code> to have the list of all attributes and possible return data for each function.</p>
 </div>
-<p>In this section the password dynamic field driver is shown and explained. This driver inherits some functions from <code class="docutils literal notranslate"><span class="pre">Base.pm</span></code> and <code class="docutils literal notranslate"><span class="pre">BaseText.pm</span></code> and only implements the functions that needs different results.</p>
+<p>In this section the password dynamic field driver is shown and explained. This driver inherits some functions from <code class="docutils literal notranslate"><span class="pre">Base.pm</span></code> and <code class="docutils literal notranslate"><span class="pre">BaseText.pm</span></code> (<code class="docutils literal notranslate"><span class="pre">Base/Text.pm</span></code> in the new API) and only implements the functions that needs different results.</p>
+<div class="section" id="dynamic-field-driver-example-legacy-api">
+<h4>Dynamic Field Driver Example (Legacy API)<a class="headerlink" href="#dynamic-field-driver-example-legacy-api" title="Permalink to this headline">¶</a></h4>
 <div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="c1"># --</span>
-<span class="c1"># Kernel/System/DynamicField/Driver/Password.pm - Driver for DynamicField Password backend</span>
+<span class="c1"># Kernel/System/DynamicFieldLegacy/Driver/Password.pm - Driver for DynamicField Legacy Password backend</span>
 <span class="c1"># Copyright (C) 2001-2019 OTRS AG, https://otrs.com/</span>
 <span class="c1"># --</span>
 <span class="c1"># This software comes with ABSOLUTELY NO WARRANTY. For details, see</span>
@@ -1033,24 +1053,23 @@ Core.Agent.Admin.DynamicField.ValidationInit();
 <span class="c1"># did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.</span>
 <span class="c1"># --</span>
 
-<span class="k">package</span> <span class="nn">Kernel::System::DynamicField::Driver::Password</span><span class="p">;</span>
+<span class="k">package</span> <span class="nn">Kernel::System::DynamicFieldLegacy::Driver::Password</span><span class="p">;</span>
 
 <span class="k">use</span> <span class="nn">strict</span><span class="p">;</span>
 <span class="k">use</span> <span class="nn">warnings</span><span class="p">;</span>
 
-<span class="k">use</span> <span class="nn">Kernel::System::VariableCheck</span> <span class="sx">qw(:all)</span><span class="p">;</span>
-<span class="k">use</span> <span class="nn">Kernel::System::DynamicFieldValue</span><span class="p">;</span>
+<span class="k">use</span> <span class="nn">parent</span> <span class="sx">qw(Kernel::System::DynamicFieldLegacy::Driver::BaseText)</span><span class="p">;</span>
 
-<span class="k">use</span> <span class="nn">base</span> <span class="sx">qw(Kernel::System::DynamicField::Driver::BaseText)</span><span class="p">;</span>
+<span class="k">use</span> <span class="nn">Kernel::System::VariableCheck</span> <span class="sx">qw(:all)</span><span class="p">;</span>
 
 <span class="k">our</span> <span class="nv">@ObjectDependencies</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s">&#39;Kernel::Config&#39;</span><span class="p">,</span>
-    <span class="s">&#39;Kernel::System::DynamicFieldValue&#39;</span><span class="p">,</span>
+    <span class="s">&#39;Kernel::System::DynamicFieldLegacy::Value&#39;</span><span class="p">,</span>
     <span class="s">&#39;Kernel::System::Main&#39;</span><span class="p">,</span>
 <span class="p">);</span>
 </pre></div>
 </div>
-<p>This is the common header that can be found in common OTRS modules. The class/package name is declared via the <code class="docutils literal notranslate"><span class="pre">package</span></code> keyword. Notice that <code class="docutils literal notranslate"><span class="pre">BaseText</span></code> is used as base class.</p>
+<p>This is the common header, that can be found in common OTRS modules. The class/package name is declared via the <code class="docutils literal notranslate"><span class="pre">package</span></code> keyword. Note that <code class="docutils literal notranslate"><span class="pre">BaseText</span></code> is used as the base class.</p>
 <div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">new</span> <span class="p">{</span>
     <span class="k">my</span> <span class="p">(</span> <span class="nv">$Type</span><span class="p">,</span> <span class="nv">%Param</span> <span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
 
@@ -1070,7 +1089,7 @@ Core.Agent.Admin.DynamicField.ValidationInit();
 
     <span class="c1"># get the Dynamic Field Backend custom extensions</span>
     <span class="k">my</span> <span class="nv">$DynamicFieldDriverExtensions</span>
-        <span class="o">=</span> <span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Kernel::Config&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;DynamicFields::Extension::Driver::Password&#39;</span><span class="p">);</span>
+        <span class="o">=</span> <span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Kernel::Config&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;DynamicFieldsLegacy::Extension::Driver::Password&#39;</span><span class="p">);</span>
 
     <span class="n">EXTENSION:</span>
     <span class="k">for</span> <span class="k">my</span> <span class="nv">$ExtensionKey</span> <span class="p">(</span> <span class="nb">sort</span> <span class="nb">keys</span> <span class="nv">%</span><span class="p">{</span><span class="nv">$DynamicFieldDriverExtensions</span><span class="p">}</span> <span class="p">)</span> <span class="p">{</span>
@@ -1108,8 +1127,8 @@ Core.Agent.Admin.DynamicField.ValidationInit();
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>The constructor <code class="docutils literal notranslate"><span class="pre">new</span></code> creates a new instance of the class. According to the coding guidelines objects of other classes that are needed in this module have to be created in <code class="docutils literal notranslate"><span class="pre">new</span></code>.</p>
-<p>It is important to define the behaviors correctly as the field might or might not be used in certain screens, functions that depends on behaviors that are not active for this particular field might not be needed to be implemented.</p>
+<p>The constructor <code class="docutils literal notranslate"><span class="pre">new</span></code> creates a new instance of the class. According to the coding guidelines, objects of other classes, that are needed in this module, have to be created in subroutine <code class="docutils literal notranslate"><span class="pre">new</span></code>.</p>
+<p>It is important to define the behaviors correctly, as the field might or might not be used in certain screens, functions that depends on behaviors, that are not active for this particular field, might not be needed to be implemented.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Drivers are created only by the <code class="docutils literal notranslate"><span class="pre">BackendObject</span></code> and not directly from any other module.</p>
@@ -1201,7 +1220,7 @@ Core.Agent.Admin.DynamicField.ValidationInit();
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>This function is the responsible to create the HTML representation of the field and its label, and is used in the edit screens like <code class="docutils literal notranslate"><span class="pre">AgentTicketPhone</span></code>, <code class="docutils literal notranslate"><span class="pre">AgentTicketNote</span></code>, etc.</p>
+<p>This function is responsible to create the HTML representation of the field and its label. It is used in the edit screens like <code class="docutils literal notranslate"><span class="pre">AgentTicketPhone</span></code>, <code class="docutils literal notranslate"><span class="pre">AgentTicketNote</span></code>, etc.</p>
 <div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">DisplayValueRender</span> <span class="p">{</span>
     <span class="k">my</span> <span class="p">(</span> <span class="nv">$Self</span><span class="p">,</span> <span class="nv">%Param</span> <span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
 
@@ -1262,7 +1281,7 @@ Core.Agent.Admin.DynamicField.ValidationInit();
 <span class="p">}</span>
 </pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">DisplayValueRender()</span></code> function returns the field value as a plain text as well as its title (both can be translated). For this particular example we are checking if the password should be revealed or display a predefined mask by a configuration parameter in the dynamic field.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">DisplayValueRender()</span></code> function returns the field value as plain text, as well as its title (both can be translated). For this particular example we are checking if the password should be revealed or display a predefined mask by a configuration parameter in the dynamic field.</p>
 <div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">ReadableValueRender</span> <span class="p">{</span>
     <span class="k">my</span> <span class="p">(</span> <span class="nv">$Self</span><span class="p">,</span> <span class="nv">%Param</span> <span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
 
@@ -1305,11 +1324,11 @@ Core.Agent.Admin.DynamicField.ValidationInit();
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>This function is similar to <code class="docutils literal notranslate"><span class="pre">DisplayValueRender()</span></code> but is used in places where there is no <code class="docutils literal notranslate"><span class="pre">LayoutObject</span></code>.</p>
-</div>
-<div class="section" id="other-functions">
-<h3>Other Functions<a class="headerlink" href="#other-functions" title="Permalink to this headline">¶</a></h3>
-<p>The following are other functions that are might needed if the new dynamic field does not inherit from other classes. To see the complete code of this functions please take a look directly into the files <code class="docutils literal notranslate"><span class="pre">Kernel/System/DynamicField/Driver/Base.pm</span></code> and <code class="docutils literal notranslate"><span class="pre">Kernel/System/DynamicField/Driver/BaseText.pm</span></code></p>
+<p>This function is similar to <code class="docutils literal notranslate"><span class="pre">DisplayValueRender()</span></code> but it is used in locations, where no <code class="docutils literal notranslate"><span class="pre">LayoutObject</span></code> is available.</p>
+<div class="section" id="other-functions-legacy-api">
+<h5>Other Functions (Legacy API)<a class="headerlink" href="#other-functions-legacy-api" title="Permalink to this headline">¶</a></h5>
+<p>The following are other functions, that might be needed, if the new dynamic field does not inherit from other classes.</p>
+<p>To see the complete code of this functions, please take a look directly into the file <code class="docutils literal notranslate"><span class="pre">Kernel/System/DynamicFieldLegacy/Driver/Base.pm</span></code>.</p>
 <div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">ValueGet</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
 </pre></div>
 </div>
@@ -1384,6 +1403,88 @@ latter gets the value from the search profile and this one gets the value direct
 </pre></div>
 </div>
 <p>Used by the notification modules. This function returns 1 if the field is present in the <code class="docutils literal notranslate"><span class="pre">$Param{ObjectAttributes}</span></code> parameter and if it matches the given value.</p>
+</div>
+</div>
+<div class="section" id="dynamic-field-driver-example-new-api">
+<h4>Dynamic Field Driver Example (New API)<a class="headerlink" href="#dynamic-field-driver-example-new-api" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="c1"># --</span>
+<span class="c1"># Kernel/System/DynamicField/Driver/Password.pm - Driver for DynamicField backend</span>
+<span class="c1"># Copyright (C) 2001-2019 OTRS AG, https://otrs.com/</span>
+<span class="c1"># --</span>
+<span class="c1"># This software comes with ABSOLUTELY NO WARRANTY. For details, see</span>
+<span class="c1"># the enclosed file COPYING for license information (GPL). If you</span>
+<span class="c1"># did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.</span>
+<span class="c1"># --</span>
+
+<span class="k">package</span> <span class="nn">Kernel::System::DynamicField::Driver::Password</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nn">strict</span><span class="p">;</span>
+<span class="k">use</span> <span class="nn">warnings</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nn">Moose</span><span class="p">;</span>
+
+<span class="n">extends</span> <span class="s">&#39;Kernel::System::DynamicField::Driver::Base::Text&#39;</span><span class="p">;</span>
+
+<span class="k">our</span> <span class="nv">@ObjectDependencies</span> <span class="o">=</span> <span class="p">();</span>
+</pre></div>
+</div>
+<p>This is the common header that can be found in the new OTRS modules since OTRS 7.</p>
+<p>The class/package name is declared via the <code class="docutils literal notranslate"><span class="pre">package</span></code> keyword. Note that the <code class="docutils literal notranslate"><span class="pre">Base::Text</span></code> is used as the base class.</p>
+<p>There’s no need to declare the constructor <code class="docutils literal notranslate"><span class="pre">BUILD</span></code>, unless you need to do something really specific to the driver, during the creation of a new class instance.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Drivers are created only by the <code class="docutils literal notranslate"><span class="pre">DynamicFieldObject</span></code> and not directly from any other module.</p>
+</div>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="n">override</span> <span class="s">&#39;FormFieldSchema&#39;</span> <span class="o">=&gt;</span> <span class="k">sub</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="nv">%</span><span class="p">{</span> <span class="n">super</span><span class="p">()</span> <span class="p">},</span>
+        <span class="n">Type</span> <span class="o">=&gt;</span> <span class="s">&#39;FormPassword&#39;</span><span class="p">,</span>
+    <span class="p">};</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>This function is responsible to return the schema of the field, that should be used in edit screens, like <code class="docutils literal notranslate"><span class="pre">AgentTicketPhone</span></code>, <code class="docutils literal notranslate"><span class="pre">AgentTicketNote</span></code>, etc.</p>
+<div class="section" id="other-functions-new-api">
+<h5>Other Functions (New API)<a class="headerlink" href="#other-functions-new-api" title="Permalink to this headline">¶</a></h5>
+<p>The following are other functions, that are might be needed to implement or override, according to the specification of the driver. Please refer to the file <code class="docutils literal notranslate"><span class="pre">Kernel/System/DynamicField/Driver/Base.pm</span></code>.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">ValueGet</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>This function retrieves the value from the field, on a specific object. In this case, we are returning the first text value, since the field only stores one text value at a time.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">ValueSet</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>This function is used to store a dynamic field value. In this case, this field only stores one text type value. Other fields could store more than one value on either <code class="docutils literal notranslate"><span class="pre">Text</span></code>, <code class="docutils literal notranslate"><span class="pre">DateTime</span></code> or <code class="docutils literal notranslate"><span class="pre">Integer</span></code> format.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">ValueDelete</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>This function is used to delete the values of a certain dynamic field. If no filter is passed, all the values will be deleted. To execute the deletion only for one object, we can pass the filter <code class="docutils literal notranslate"><span class="pre">Filters</span> <span class="pre">=&gt;</span> <span class="pre">{</span> <span class="pre">ObjectID</span> <span class="pre">=&gt;</span> <span class="pre">'...'</span> <span class="pre">}</span></code>.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">ValueValidate</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>This function is used to check, if the value is consistent to its type and dynamic field instance.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span>sub ValueList { ... }
+</pre></div>
+</div>
+<p>This function is used to get the list of the values for the dynamic field instance.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">SearchSQLGet</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>This function is used by <code class="docutils literal notranslate"><span class="pre">TicketSearch</span></code> core module, to build the internal query that searches for a ticket, based on this field as a search parameter.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">SearchSQLOrderFieldGet</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>This function is also a helper for <code class="docutils literal notranslate"><span class="pre">TicketSearch</span></code> module. <code class="docutils literal notranslate"><span class="pre">$Param{TableAlias}</span></code> should be kept and <code class="docutils literal notranslate"><span class="pre">_ValueDBColumn()</span></code> changed in case the driver uses multiple columns, to store it’s data.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">SearchConditionGet</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>This function is used by the ticket search and statistics module, to set the correct operator and value to the search on this field.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">RandomValueSet</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>This function is used by <code class="docutils literal notranslate"><span class="pre">otrs.FillDB.pl</span></code> script, to populate the database with some test and random data. The value inserted by this function is not really relevant. The only restriction is, that the value must be compatible with the field value type.</p>
+</div>
+</div>
 </div>
 </div>
 </div>

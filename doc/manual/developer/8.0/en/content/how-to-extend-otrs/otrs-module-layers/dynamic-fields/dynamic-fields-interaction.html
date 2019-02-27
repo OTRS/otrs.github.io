@@ -124,9 +124,13 @@
 <li class="toctree-l3"><a class="reference internal" href="../daemon/scheduler-task-worker-modules.html">OTRS Scheduler</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-overview.html">Overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-framework.html">Dynamic Fields Framework</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Dynamic Field Interaction With Front End Modules</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Dynamic Field Interaction With Front End Modules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-field-interaction-legacy-api">Dynamic Field Interaction (Legacy API)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dynamic-field-interaction-new-api">Dynamic Field Interaction (New API)</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-extend-options.html">How To Extend The Dynamic Fields</a></li>
-<li class="toctree-l3"><a class="reference internal" href="dynamic-fields-new-field.html">Creating A New Dynamic Field</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamic-fields-new-field.html">Create New Dynamic Field</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-extend.html">Creating a Dynamic Field Functionality Extension</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../ticket-postmaster-modules.html">Ticket Postmaster Module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../process-management-modules.html">Process Management</a></li>
@@ -211,22 +215,42 @@
   <div class="section" id="dynamic-field-interaction-with-front-end-modules">
 <h1>Dynamic Field Interaction With Front End Modules<a class="headerlink" href="#dynamic-field-interaction-with-front-end-modules" title="Permalink to this headline">¶</a></h1>
 <p>Knowing about how front end modules interact with dynamic fields is not strictly necessary to extend dynamic fields for the ticket or article objects, since all the screens that could use the dynamic fields are already prepared. But in case of custom developments or to extend the dynamic fields to other objects is very useful to know how to access dynamic fields framework from a front end module.</p>
-<p>The following picture shows a simple example of how the dynamic fields interact with other OTRS framework parts.</p>
+<p>The following pictures are showing a simple example of how the dynamic fields interact with other OTRS framework parts.</p>
+<div class="section" id="dynamic-field-interaction-legacy-api">
+<h2>Dynamic Field Interaction (Legacy API)<a class="headerlink" href="#dynamic-field-interaction-legacy-api" title="Permalink to this headline">¶</a></h2>
 <div class="figure" id="id1">
 <img alt="Dynamic Field Interaction" src="../../../../_images/dfInteraction.png" />
 <p class="caption"><span class="caption-text">Dynamic Field Interaction</span></p>
 </div>
-<p>The first step is that the front end module reads the configured dynamic fields. For example <code class="docutils literal notranslate"><span class="pre">AgentTicketNote</span></code> should read <code class="docutils literal notranslate"><span class="pre">Ticket::Frontend::AgentTicketNote###DynamicField</span></code> setting. This setting can be used as the filter parameter for <code class="docutils literal notranslate"><span class="pre">DynamicField</span></code> core module function <code class="docutils literal notranslate"><span class="pre">DynamicFieldListGet()</span></code>. The screen can store the results of this function to have the list of the dynamic fields activated for this particular screen.</p>
-<p>Next, the screen should try to get the values from the web request. It can use the back end object function <code class="docutils literal notranslate"><span class="pre">EditFieldValueGet()</span></code> for this purpose, and can use this values to trigger ACLs. The back end object will use each driver to perform the specific actions for all functions.</p>
-<p>To continue, the screen should get the HTML for each field to display it. The back end object function <code class="docutils literal notranslate"><span class="pre">EditFieldRender()</span></code> can be used to perform this action and the ACLs restriction as well as the values from
-the web request can be passed to this function in order to get better results. In case of a submit the screen could also use the back end object function <code class="docutils literal notranslate"><span class="pre">EditFieldValueValidate()</span></code> to check the mandatory fields.</p>
+<p>The first step is, that the front end module reads the configured dynamic fields.</p>
+<p>For example <code class="docutils literal notranslate"><span class="pre">AgentTicketNote</span></code> should read <code class="docutils literal notranslate"><span class="pre">Ticket::Frontend::AgentTicketNote###DynamicField</span></code> setting. This setting can be used as the filter parameter for <code class="docutils literal notranslate"><span class="pre">DynamicField</span></code> core module function <code class="docutils literal notranslate"><span class="pre">DynamicFieldListGet()</span></code>. The screen can store the results of this function, to have the list of the dynamic fields activated for this particular screen.</p>
+<p>The screen should try to get the values from the web request subsequently. It can use the back end object function <code class="docutils literal notranslate"><span class="pre">EditFieldValueGet()</span></code> for this purpose and might use this values to trigger ACLs. The back end object will use each driver, to perform the specific actions for all functions.</p>
+<p>Afterwards the screen should get the HTML for each field to display. The back end object function <code class="docutils literal notranslate"><span class="pre">EditFieldRender()</span></code> can be used to perform this action and the ACLs restrictions. On top of that, the values from the web request can be passed to this function, in order to get better results. In case of a submit, the screen could also use the back end object function <code class="docutils literal notranslate"><span class="pre">EditFieldValueValidate()</span></code>, to check the mandatory fields.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">Other screens could use <code class="docutils literal notranslate"><span class="pre">DisplayFieldRender()</span></code> instead of <code class="docutils literal notranslate"><span class="pre">EditFieldRender()</span></code> if the screen only shows the field value, and in such case no value validation is needed.</p>
+<p class="last">Other screens could use <code class="docutils literal notranslate"><span class="pre">DisplayFieldRender()</span></code> instead of <code class="docutils literal notranslate"><span class="pre">EditFieldRender()</span></code>, if the screen only shows the field value and in such case, no value validation is needed.</p>
 </div>
-<p>To store the value of the dynamic field is necessary to get the object ID. For this example if the dynamic field is linked to a ticket object, the screen should already have the <code class="docutils literal notranslate"><span class="pre">TicketID</span></code>, otherwise if the field is linked to an article object in order to set the value of the field is necessary to create the article first. <code class="docutils literal notranslate"><span class="pre">ValueSet()</span></code> from the back end object can be used to set the dynamic field value.</p>
-<p>In summary the front end modules does not need to know how each dynamic field works internally to get or set their values or to display them. It just needs to call the back end object module and use the fields in a
-generic way.</p>
+<p>To store the value of the dynamic field, it is necessary to get the object ID.</p>
+<p>For this example, if the dynamic field is linked to a ticket object, the screen should already have the <code class="docutils literal notranslate"><span class="pre">TicketID</span></code>, otherwise if the field is linked to an article object, in order to set the value of the field, it is necessary to create the article first. <code class="docutils literal notranslate"><span class="pre">ValueSet()</span></code> from the back end object can be used to set the dynamic field value.</p>
+<p>In summary, the front end modules does not need to know, how each dynamic field works internally, to get or set their values or to display them. It just needs to call the back end object module and use the fields in a generic way.</p>
+</div>
+<div class="section" id="dynamic-field-interaction-new-api">
+<h2>Dynamic Field Interaction (New API)<a class="headerlink" href="#dynamic-field-interaction-new-api" title="Permalink to this headline">¶</a></h2>
+<div class="figure" id="id2">
+<img alt="Dynamic Field Interaction" src="../../../../_images/dfInteraction-new.png" />
+<p class="caption"><span class="caption-text">Dynamic Field Interaction</span></p>
+</div>
+<p>The first step is, that the front end module reads the configured dynamic fields.</p>
+<p>For example <code class="docutils literal notranslate"><span class="pre">AgentTicketNote</span></code> should read <code class="docutils literal notranslate"><span class="pre">Ticket::Frontend::AgentTicketNote###DynamicField</span></code> setting. This setting can be used as the filter parameter for <code class="docutils literal notranslate"><span class="pre">DynamicField</span></code> core module function <code class="docutils literal notranslate"><span class="pre">FieldListGet()</span></code>. The screen can store the results of this function, to have the list of the dynamic fields activated for this particular screen.</p>
+<p>After that, the screen should load the role <code class="docutils literal notranslate"><span class="pre">ProvidesForm</span></code> and define the method <code class="docutils literal notranslate"><span class="pre">FormSchema()</span></code>, to build the full schema, including the dynamic fields. For each dynamic field, we should call the function <code class="docutils literal notranslate"><span class="pre">FormFieldSchema()</span></code> that will return the specific schema for the field.</p>
+<p>In case of a submit, the screen could also use the dynamic field driver instance function <code class="docutils literal notranslate"><span class="pre">ValueValidate()</span></code>, to check the submitted value according to the field configuration.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Other screens could use <code class="docutils literal notranslate"><span class="pre">DisplayFieldData()</span></code> instead of <code class="docutils literal notranslate"><span class="pre">FormFieldSchema()</span></code>, if the screen only shows the field value and in such case, no value validation is needed.</p>
+</div>
+<p>To store the value of the dynamic field, it is necessary to get the object ID.</p>
+<p>For this example, if the dynamic field is linked to a ticket object, the screen should already have the <code class="docutils literal notranslate"><span class="pre">TicketID</span></code>, otherwise if the field is linked to an article object, in order to set the value of the field, it is necessary to create the article first. <code class="docutils literal notranslate"><span class="pre">ValueSet()</span></code> from the dynamic field driver can be used to set the dynamic field value.</p>
+</div>
 </div>
 
 

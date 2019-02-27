@@ -29,7 +29,7 @@
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
     <link rel="next" title="Ticket Postmaster Module" href="../ticket-postmaster-modules.html" />
-    <link rel="prev" title="Creating A New Dynamic Field" href="dynamic-fields-new-field.html" /> 
+    <link rel="prev" title="Create New Dynamic Field" href="dynamic-fields-new-field.html" /> 
 
   
   <script src="../../../../_static/js/modernizr.min.js"></script>
@@ -126,7 +126,7 @@
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-framework.html">Dynamic Fields Framework</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-interaction.html">Dynamic Field Interaction With Front End Modules</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dynamic-fields-extend-options.html">How To Extend The Dynamic Fields</a></li>
-<li class="toctree-l3"><a class="reference internal" href="dynamic-fields-new-field.html">Creating A New Dynamic Field</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dynamic-fields-new-field.html">Create New Dynamic Field</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Creating a Dynamic Field Functionality Extension</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#dynamic-field-foo-extension-files">Dynamic Field Foo Extension files</a></li>
 </ul>
@@ -214,11 +214,12 @@
   <div class="section" id="creating-a-dynamic-field-functionality-extension">
 <h1>Creating a Dynamic Field Functionality Extension<a class="headerlink" href="#creating-a-dynamic-field-functionality-extension" title="Permalink to this headline">¶</a></h1>
 <p>To illustrate this process a new dynamic field functionality extension for the function <code class="docutils literal notranslate"><span class="pre">Foo</span></code> will be added to the back end object as well as in the text field driver.</p>
-<p>To create this extension we will create 3 files:</p>
+<p>To create this extension we will create 4 files:</p>
 <ol class="arabic simple">
 <li>A configuration file (XML) to register the modules.</li>
-<li>A back end extension (Perl) to define the new function.</li>
-<li>A text field driver extension (Perl) that implements the new function for text fields.</li>
+<li>A back end extension (Perl) to define the new function (legacy API).</li>
+<li>A text field driver extension (Perl) that implements the new function for text fields (legacy API).</li>
+<li>A text field driver role (Perl) that implements the new function for the text fields (new API).</li>
 </ol>
 <p>File structure:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$HOME (e. g. /opt/otrs/)
@@ -231,17 +232,22 @@
 |   |   |   |DynamicFieldFooExtension.xml
 ...
 |   |--/System/
-|   |   |--/DynamicField/
+|   |   |--/DynamicFieldLegacy/
 |   |   |   FooExtensionBackend.pm
 |   |   |   |--/Driver/
 |   |   |   |   |FooExtensionText.pm
 ...
+|   |--/System/
+|   |   |--/DynamicField/
+|   |   |   |--/Driver/
+|   |   |   |   |--/Role/
+|   |   |   |   |   |FooExtensionText.pm
 </pre></div>
 </div>
 <div class="section" id="dynamic-field-foo-extension-files">
 <h2>Dynamic Field Foo Extension files<a class="headerlink" href="#dynamic-field-foo-extension-files" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="dynamic-field-extension-configuration-file-example">
-<h3>Dynamic Field Extension Configuration File Example<a class="headerlink" href="#dynamic-field-extension-configuration-file-example" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="dynamic-field-extension-configuration-file-example-legacy-api">
+<h3>Dynamic Field Extension Configuration File Example (Legacy API)<a class="headerlink" href="#dynamic-field-extension-configuration-file-example-legacy-api" title="Permalink to this headline">¶</a></h3>
 <p>The configuration files are used to register the extensions for the back end and drivers as well as new behaviors for each drivers.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -289,8 +295,8 @@
 </div>
 <p>Standard closure of a configuration file.</p>
 </div>
-<div class="section" id="dynamic-field-back-end-extension-example">
-<h3>Dynamic Field Back End Extension Example<a class="headerlink" href="#dynamic-field-back-end-extension-example" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="dynamic-field-back-end-extension-example-legacy-api">
+<h3>Dynamic Field Back End Extension Example (Legacy API)<a class="headerlink" href="#dynamic-field-back-end-extension-example-legacy-api" title="Permalink to this headline">¶</a></h3>
 <p>Back end extensions will be loaded transparently into the back end itself as a base class. All defined object and properties from the back end will be accessible in the extension.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -405,8 +411,8 @@
 <p class="last">It is also possible to skip the step that tests if the driver can execute the function. To do that it is necessary to implement a mechanism in the front end module to require a special behavior on the dynamic field, and only after call the function in the back end object.</p>
 </div>
 </div>
-<div class="section" id="dynamic-field-driver-extension-example">
-<h3>Dynamic Field Driver Extension Example<a class="headerlink" href="#dynamic-field-driver-extension-example" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="dynamic-field-driver-extension-example-legacy-api">
+<h3>Dynamic Field Driver Extension Example (Legacy API)<a class="headerlink" href="#dynamic-field-driver-extension-example-legacy-api" title="Permalink to this headline">¶</a></h3>
 <p>Driver extensions will be loaded transparently into the driver itself as a base class. All defined object and properties from the driver will be accessible in the extension.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
@@ -431,7 +437,7 @@
 
 <span class="cm">Kernel::System::DynamicField::Driver::FooExtensionText</span>
 
-<span class="cm">=head1 SYNOPSIS</span>
+<span class="cm">=head1 DESCRIPTION</span>
 
 <span class="cm">DynamicFields Text Driver Extension</span>
 
@@ -439,8 +445,6 @@
 
 <span class="cm">This module extends the public interface of L&lt;Kernel::System::DynamicField::Backend&gt;.</span>
 <span class="cm">Please look there for a detailed reference of the functions.</span>
-
-<span class="cm">=over 4</span>
 
 <span class="cm">=cut</span>
 </pre></div>
@@ -453,6 +457,72 @@
 </pre></div>
 </div>
 <p>The function <code class="docutils literal notranslate"><span class="pre">Foo()</span></code> has no special logic. It is only for testing and it always returns 1.</p>
+</div>
+<div class="section" id="dynamic-field-driver-extension-example-new-api">
+<h3>Dynamic Field Driver Extension Example (New API)<a class="headerlink" href="#dynamic-field-driver-extension-example-new-api" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="c1"># --</span>
+<span class="c1"># Kernel/System/DynamicField/Driver/Role/FooExtensionText.pm - Extension for DynamicField Text Driver</span>
+<span class="c1"># Copyright (C) 2001-2019 OTRS AG, https://otrs.com/</span>
+<span class="c1"># --</span>
+<span class="c1"># This software comes with ABSOLUTELY NO WARRANTY. For details, see</span>
+<span class="c1"># the enclosed file COPYING for license information (GPL). If you</span>
+<span class="c1"># did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.</span>
+<span class="c1"># --</span>
+
+<span class="k">package</span> <span class="nn">Kernel::System::DynamicField::Driver::Role::FooExtensionText</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nn">strict</span><span class="p">;</span>
+<span class="k">use</span> <span class="nn">warnings</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nn">Moose::Role</span><span class="p">;</span>
+
+<span class="cm">=head1 NAME</span>
+
+<span class="cm">Kernel::System::DynamicField::Driver::Role::FooExtensionText</span>
+
+<span class="cm">=head1 DESCRIPTION</span>
+
+<span class="cm">DynamicFields Text Driver Extension</span>
+
+<span class="cm">=head1 PUBLIC INTERFACE</span>
+
+<span class="cm">This module extends the public interface of L&lt;Kernel::System::DynamicField::Driver::Text&gt;.</span>
+<span class="cm">Please look there for a detailed reference of the functions.</span>
+
+<span class="cm">=cut</span>
+</pre></div>
+</div>
+<p>This is common header that can be found in common OTRS role modules. The class/package name is declared via the <code class="docutils literal notranslate"><span class="pre">package</span></code> keyword.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">Foo</span> <span class="p">{</span>
+    <span class="k">my</span> <span class="p">(</span> <span class="nv">$Self</span><span class="p">,</span> <span class="nv">%Param</span> <span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The function <code class="docutils literal notranslate"><span class="pre">Foo()</span></code> has no special logic. It is only for testing and it always returns 1.</p>
+<p>Now, to apply the role to the driver we need to create an <code class="docutils literal notranslate"><span class="pre">Mojolicious</span></code> plugin that will take care of that.</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="c1"># --</span>
+<span class="c1"># Kernel/WebApp/Plugin/4500DynamicFields.pm - Dynamic fields extensions.</span>
+<span class="c1"># Copyright (C) 2001-2019 OTRS AG, https://otrs.com/</span>
+<span class="c1"># --</span>
+<span class="c1"># This software comes with ABSOLUTELY NO WARRANTY. For details, see</span>
+<span class="c1"># the enclosed file COPYING for license information (GPL). If you</span>
+<span class="c1"># did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.</span>
+<span class="c1"># --</span>
+
+<span class="k">use</span> <span class="nn">Moose::Util</span><span class="p">;</span>
+
+<span class="k">sub</span> <span class="nf">register</span> <span class="p">{</span>    <span class="c1">## no critic</span>
+
+    <span class="nn">Moose::Util::</span><span class="n">ensure_all_roles</span><span class="p">(</span>
+        <span class="s">&#39;Kernel::System::DynamicField::Driver::Text&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Kernel::System::DynamicField::Driver::Role::FooExtensionText&#39;</span><span class="p">,</span>
+    <span class="p">);</span>
+
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -481,7 +551,7 @@ ga('send', 'pageview');
         <a href="../ticket-postmaster-modules.html" class="btn btn-neutral float-right" title="Ticket Postmaster Module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="dynamic-fields-new-field.html" class="btn btn-neutral" title="Creating A New Dynamic Field" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="dynamic-fields-new-field.html" class="btn btn-neutral" title="Create New Dynamic Field" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
