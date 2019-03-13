@@ -1,0 +1,605 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Package Building &mdash; OTRS Developer Manual 7.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/otrs.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Package Porting" href="package-porting.html" />
+    <link rel="prev" title="Package Management" href="package-management.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+    
+    <a href="https://doc.otrs.com/doc" class="icon fa-rocket DocumentationOverview"> OTRS Documentation</a>
+
+    
+
+          
+            <a href="../index.html" class="icon icon-home"> OTRS Developer Manual
+          
+
+          
+            
+            <img src="../../_static/otrs-logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                7.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../get-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how-it-works.html">OTRS Internals - How it Works</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how-to-extend-otrs.html">How to Extend OTRS</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../how-to-publish-otrs-extensions.html">How to Publish Your OTRS Extensions</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="package-management.html">Package Management</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Package Building</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#package-spec-file">Package Spec File</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#example-sopm">Example .sopm</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#package-build">Package Build</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#package-life-cycle">Package Life Cycle</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="package-porting.html">Package Porting</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing to OTRS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../additional-resources.html">Additional Resources</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">OTRS Developer Manual</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../how-to-publish-otrs-extensions.html">How to Publish Your OTRS Extensions</a> &raquo;</li>
+        
+      <li>Package Building</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/OTRS/doc-developer/blob/rel-7_0/content/how-to-publish-otrs-extensions/package-building.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="package-building">
+<h1>Package Building<a class="headerlink" href="#package-building" title="Permalink to this headline">¶</a></h1>
+<p>If you want to create an OPM package (<code class="docutils literal notranslate"><span class="pre">.opm</span></code>) you need to create a spec file (<code class="docutils literal notranslate"><span class="pre">.sopm</span></code>) which includes the properties of the package.</p>
+<div class="section" id="package-spec-file">
+<h2>Package Spec File<a class="headerlink" href="#package-spec-file" title="Permalink to this headline">¶</a></h2>
+<p>The OPM package is XML based. You can create/edit the <code class="docutils literal notranslate"><span class="pre">.sopm</span></code> via a text or XML editor. It contains meta data, a file list and database options.</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;Name&gt;</span></code> *</dt>
+<dd><p class="first">The package name.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Name&gt;</span>Calendar<span class="nt">&lt;/Name&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;Version&gt;</span></code> *</dt>
+<dd><p class="first">The package version.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Version&gt;</span>1.2.3<span class="nt">&lt;/Version&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;Framework&gt;</span></code> *</dt>
+<dd><p class="first">The targeted framework version (7.0.x means e.g. 7.0.1 or 7.0.2).</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Framework&gt;</span>7.0.x<span class="nt">&lt;/Framework&gt;</span>
+</pre></div>
+</div>
+<p>Can also be used several times.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Framework&gt;</span>5.0.x<span class="nt">&lt;/Framework&gt;</span>
+<span class="nt">&lt;Framework&gt;</span>6.0.x<span class="nt">&lt;/Framework&gt;</span>
+<span class="nt">&lt;Framework&gt;</span>7.0.x<span class="nt">&lt;/Framework&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;Vendor&gt;</span></code> *</dt>
+<dd><p class="first">The package vendor.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Vendor&gt;</span>OTRS AG<span class="nt">&lt;/Vendor&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;URL&gt;</span></code> *</dt>
+<dd><p class="first">The vendor URL.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;URL&gt;</span>https://otrs.com/<span class="nt">&lt;/URL&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;License&gt;</span></code> *</dt>
+<dd><p class="first">The license of the package.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;License&gt;</span>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007<span class="nt">&lt;/License&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;ChangeLog&gt;</span></code></dt>
+<dd><p class="first">The package change log.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ChangeLog</span> <span class="na">Version=</span><span class="s">&quot;1.1.2&quot;</span> <span class="na">Date=</span><span class="s">&quot;2018-11-15 18:45:21&quot;</span><span class="nt">&gt;</span>Added some feature.<span class="nt">&lt;/ChangeLog&gt;</span>
+<span class="nt">&lt;ChangeLog</span> <span class="na">Version=</span><span class="s">&quot;1.1.1&quot;</span> <span class="na">Date=</span><span class="s">&quot;2018-11-15 16:17:51&quot;</span><span class="nt">&gt;</span>New package.<span class="nt">&lt;/ChangeLog&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;Description&gt;</span></code> *</dt>
+<dd><p class="first">The package description in different languages.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Description</span> <span class="na">Lang=</span><span class="s">&quot;en&quot;</span><span class="nt">&gt;</span>A web calendar.<span class="nt">&lt;/Description&gt;</span>
+<span class="nt">&lt;Description</span> <span class="na">Lang=</span><span class="s">&quot;de&quot;</span><span class="nt">&gt;</span>Ein Web Kalender.<span class="nt">&lt;/Description&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt>Package Actions</dt>
+<dd><p class="first">The possible actions for the package after installation. If one of these actions is not defined on the package, it will be considered as possible.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;PackageIsVisible&gt;</span>1<span class="nt">&lt;/PackageIsVisible&gt;</span>
+<span class="nt">&lt;PackageIsDownloadable&gt;</span>0<span class="nt">&lt;/PackageIsDownloadable&gt;</span>
+<span class="nt">&lt;PackageIsRemovable&gt;</span>1<span class="nt">&lt;/PackageIsRemovable&gt;</span>
+</pre></div>
+</div>
+<p>A special package action is <code class="docutils literal notranslate"><span class="pre">PackageAllowDirectUpdate</span></code>. Only if it is defined on the package and set to true, a package can be upgraded from a lower major version (earlier than the last one) to the latest version. (e.g. a package for OTRS 5 updated to OTRS 7).</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;PackageAllowDirectUpdate&gt;</span>1<span class="nt">&lt;/PackageAllowDirectUpdate&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;BuildHost&gt;</span></code></dt>
+<dd><p class="first">This will be filled in automatically by OPM.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;BuildHost&gt;</span>?<span class="nt">&lt;/BuildHost&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;BuildDate&gt;</span></code></dt>
+<dd><p class="first">This will be filled in automatically by OPM.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;BuildDate&gt;</span>?<span class="nt">&lt;/BuildDate&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;PackageRequired&gt;</span></code></dt>
+<dd><p class="first">Packages that must be installed beforehand. If <code class="docutils literal notranslate"><span class="pre">PackageRequired</span></code> is used, a version of the required package must be specified.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;PackageRequired</span> <span class="na">Version=</span><span class="s">&quot;1.0.3&quot;</span><span class="nt">&gt;</span>SomeOtherPackage<span class="nt">&lt;/PackageRequired&gt;</span>
+<span class="nt">&lt;PackageRequired</span> <span class="na">Version=</span><span class="s">&quot;5.3.2&quot;</span><span class="nt">&gt;</span>SomeotherPackage2<span class="nt">&lt;/PackageRequired&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;ModuleRequired&gt;</span></code></dt>
+<dd><p class="first">Perl modules that must be installed beforehand.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;ModuleRequired</span> <span class="na">Version=</span><span class="s">&quot;1.03&quot;</span><span class="nt">&gt;</span>Encode<span class="nt">&lt;/ModuleRequired&gt;</span>
+<span class="nt">&lt;ModuleRequired</span> <span class="na">Version=</span><span class="s">&quot;5.32&quot;</span><span class="nt">&gt;</span>MIME::Tools<span class="nt">&lt;/ModuleRequired&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;OS&gt;</span></code></dt>
+<dd><p class="first">Required OS.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;OS&gt;</span>linux<span class="nt">&lt;/OS&gt;</span>
+<span class="nt">&lt;OS&gt;</span>darwin<span class="nt">&lt;/OS&gt;</span>
+<span class="nt">&lt;OS&gt;</span>mswin32<span class="nt">&lt;/OS&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;Filelist&gt;</span></code></dt>
+<dd><p class="first">This is a list of files included in the package.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Filelist&gt;</span>
+    <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/Config/Files/Calendar.pm&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/System/CalendarEvent.pm&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/Modules/AgentCalendar.pm&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/Language/de_AgentCalendar.pm&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/Filelist&gt;</span>
+</pre></div>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;DatabaseInstall&gt;</span></code></dt>
+<dd><p class="first">Database entries that have to be created when a package is installed.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;DatabaseInstall&gt;</span>
+    <span class="nt">&lt;TableCreate</span> <span class="na">Name=</span><span class="s">&quot;calendar_event&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;id&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">PrimaryKey=</span><span class="s">&quot;true&quot;</span> <span class="na">AutoIncrement=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;BIGINT&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;title&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Size=</span><span class="s">&quot;250&quot;</span> <span class="na">Type=</span><span class="s">&quot;VARCHAR&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;content&quot;</span> <span class="na">Required=</span><span class="s">&quot;false&quot;</span> <span class="na">Size=</span><span class="s">&quot;250&quot;</span> <span class="na">Type=</span><span class="s">&quot;VARCHAR&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;start_time&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;DATE&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;end_time&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;DATE&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;owner_id&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;INTEGER&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;event_status&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Size=</span><span class="s">&quot;50&quot;</span> <span class="na">Type=</span><span class="s">&quot;VARCHAR&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/TableCreate&gt;</span>
+<span class="nt">&lt;/DatabaseInstall&gt;</span>
+</pre></div>
+</div>
+<p class="last">You also can choose <code class="docutils literal notranslate"><span class="pre">&lt;DatabaseInstall</span> <span class="pre">Type=&quot;post&quot;&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;DatabaseInstall</span> <span class="pre">Type=&quot;pre&quot;&gt;</span></code> to define the time of execution separately (<code class="docutils literal notranslate"><span class="pre">post</span></code> is default). For more info see <a class="reference internal" href="#package-life-cycle"><span class="std std-ref">Package Life Cycle</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;DatabaseUpgrade&gt;</span></code></dt>
+<dd><p class="first">Information on which actions have to be performed in case of an upgrade.</p>
+<p>Example if already installed package version is below 1.3.4 (e. g. 1.2.6), the defined action will be performed:</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;DatabaseUpgrade&gt;</span>
+    <span class="nt">&lt;TableCreate</span> <span class="na">Name=</span><span class="s">&quot;calendar_event_involved&quot;</span> <span class="na">Version=</span><span class="s">&quot;1.3.4&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;event_id&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;BIGINT&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;user_id&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;INTEGER&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/TableCreate&gt;</span>
+<span class="nt">&lt;/DatabaseUpgrade&gt;</span>
+</pre></div>
+</div>
+<p class="last">You also can choose <code class="docutils literal notranslate"><span class="pre">&lt;DatabaseUpgrade</span> <span class="pre">Type=&quot;post&quot;&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;DatabaseUpgrade</span> <span class="pre">Type=&quot;pre&quot;&gt;</span></code> to define the time of execution separately (<code class="docutils literal notranslate"><span class="pre">post</span></code> is default). For more info see <a class="reference internal" href="#package-life-cycle"><span class="std std-ref">Package Life Cycle</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;DatabaseReinstall&gt;</span></code></dt>
+<dd><p class="first">Information on which actions have to be performed if the package is reinstalled.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;DatabaseReinstall&gt;&lt;/DatabaseReinstall&gt;</span>
+</pre></div>
+</div>
+<p class="last">You also can choose <code class="docutils literal notranslate"><span class="pre">&lt;DatabaseReinstall</span> <span class="pre">Type=&quot;post&quot;&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;DatabaseReinstall</span> <span class="pre">Type=&quot;pre&quot;&gt;</span></code> to define the time of execution separately (<code class="docutils literal notranslate"><span class="pre">post</span></code> is default). For more info see <a class="reference internal" href="#package-life-cycle"><span class="std std-ref">Package Life Cycle</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;DatabaseUninstall&gt;</span></code></dt>
+<dd><p class="first">Actions to be performed on package uninstall.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;DatabaseUninstall&gt;</span>
+    <span class="nt">&lt;TableDrop</span> <span class="na">Name=</span><span class="s">&quot;calendar_event&quot;</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/DatabaseUninstall&gt;</span>
+</pre></div>
+</div>
+<p class="last">You also can choose <code class="docutils literal notranslate"><span class="pre">&lt;DatabaseUninstall</span> <span class="pre">Type=&quot;post&quot;&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;DatabaseUninstall</span> <span class="pre">Type=&quot;pre&quot;&gt;</span></code> to define the time of execution separately (<code class="docutils literal notranslate"><span class="pre">post</span></code> is default). For more info see <a class="reference internal" href="#package-life-cycle"><span class="std std-ref">Package Life Cycle</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;IntroInstall&gt;</span></code></dt>
+<dd><p class="first">To show a pre or post install introduction in installation dialog.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;IntroInstall</span> <span class="na">Type=</span><span class="s">&quot;post&quot;</span> <span class="na">Lang=</span><span class="s">&quot;en&quot;</span> <span class="na">Title=</span><span class="s">&quot;Some Title&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[</span>
+<span class="cp">    Some information formatted in HTML.</span>
+<span class="cp">]]&gt;</span><span class="nt">&lt;/IntroInstall&gt;</span>
+</pre></div>
+</div>
+<p class="last">You can also use the <code class="docutils literal notranslate"><span class="pre">Format</span></code> attribute to define if you want to use <code class="docutils literal notranslate"><span class="pre">html</span></code> (which is default) or <code class="docutils literal notranslate"><span class="pre">plain</span></code> to use automatically a <code class="docutils literal notranslate"><span class="pre">&lt;pre&gt;&lt;/pre&gt;</span></code> tag when intro is shown (to keep the newlines and whitespace of the content).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;IntroUninstall&gt;</span></code></dt>
+<dd><p class="first">To show a pre or post uninstall introduction in uninstallation dialog.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;IntroUninstall</span> <span class="na">Type=</span><span class="s">&quot;post&quot;</span> <span class="na">Lang=</span><span class="s">&quot;en&quot;</span> <span class="na">Title=</span><span class="s">&quot;Some Title&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[</span>
+<span class="cp">    Some information formatted in HTML.</span>
+<span class="cp">]]&gt;</span><span class="nt">&lt;/IntroUninstall&gt;</span>
+</pre></div>
+</div>
+<p class="last">You can also use the <code class="docutils literal notranslate"><span class="pre">Format</span></code> attribute to define if you want to use <code class="docutils literal notranslate"><span class="pre">html</span></code> (which is default) or <code class="docutils literal notranslate"><span class="pre">plain</span></code> to use automatically a <code class="docutils literal notranslate"><span class="pre">&lt;pre&gt;&lt;/pre&gt;</span></code> tag when intro is shown (to keep the newlines and whitespace of the content).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;IntroReinstall&gt;</span></code></dt>
+<dd><p class="first">To show a pre or post reinstall introduction in re-installation dialog.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;IntroReinstall</span> <span class="na">Type=</span><span class="s">&quot;post&quot;</span> <span class="na">Lang=</span><span class="s">&quot;en&quot;</span> <span class="na">Title=</span><span class="s">&quot;Some Title&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[</span>
+<span class="cp">    Some information formatted in HTML.</span>
+<span class="cp">]]&gt;</span><span class="nt">&lt;/IntroReinstall&gt;</span>
+</pre></div>
+</div>
+<p class="last">You can also use the <code class="docutils literal notranslate"><span class="pre">Format</span></code> attribute to define if you want to use <code class="docutils literal notranslate"><span class="pre">html</span></code> (which is default) or <code class="docutils literal notranslate"><span class="pre">plain</span></code> to use automatically a <code class="docutils literal notranslate"><span class="pre">&lt;pre&gt;&lt;/pre&gt;</span></code> tag when intro is shown (to keep the newlines and whitespace of the content).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;IntroUpgrade&gt;</span></code></dt>
+<dd><p class="first">To show a pre or post upgrade introduction in upgrading dialog.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;IntroUpgrade</span> <span class="na">Type=</span><span class="s">&quot;post&quot;</span> <span class="na">Lang=</span><span class="s">&quot;en&quot;</span> <span class="na">Title=</span><span class="s">&quot;Some Title&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[</span>
+<span class="cp">    Some information formatted in HTML.</span>
+<span class="cp">]]&gt;</span><span class="nt">&lt;/IntroUpgrade&gt;</span>
+</pre></div>
+</div>
+<p class="last">You can also use the <code class="docutils literal notranslate"><span class="pre">Format</span></code> attribute to define if you want to use <code class="docutils literal notranslate"><span class="pre">html</span></code> (which is default) or <code class="docutils literal notranslate"><span class="pre">plain</span></code> to use automatically a <code class="docutils literal notranslate"><span class="pre">&lt;pre&gt;&lt;/pre&gt;</span></code> tag when intro is shown (to keep the newlines and whitespace of the content).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;CodeInstall&gt;</span></code></dt>
+<dd><p class="first">Perl code to be executed when the package is installed.</p>
+<div class="last highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;CodeInstall&gt;</span><span class="cp">&lt;![CDATA[</span>
+<span class="cp"># log example</span>
+<span class="cp">$Kernel::OM-&gt;Get(&#39;Kernel::System::Log&#39;)-&gt;Log(</span>
+<span class="cp">    Priority =&gt; &#39;notice&#39;,</span>
+<span class="cp">    Message =&gt; &quot;Some Message!&quot;,</span>
+<span class="cp">);</span>
+<span class="cp"># database example</span>
+<span class="cp">$Kernel::OM-&gt;Get(&#39;Kernel::System::DB&#39;)-&gt;Do(SQL =&gt; &quot;SOME SQL&quot;);</span>
+<span class="cp">]]&gt;</span><span class="nt">&lt;/CodeInstall&gt;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>You also can choose <code class="docutils literal notranslate"><span class="pre">&lt;CodeInstall</span> <span class="pre">Type=&quot;post&quot;&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;CodeInstall</span> <span class="pre">Type=&quot;pre&quot;&gt;</span></code> to define the time of execution separately (<code class="docutils literal notranslate"><span class="pre">post</span></code> is default). For more info see <a class="reference internal" href="#package-life-cycle"><span class="std std-ref">Package Life Cycle</span></a>.</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;CodeUninstall&gt;</span></code></dt>
+<dd><p class="first">Perl code to be executed when the package is uninstalled. On pre or post time of package uninstallation.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;CodeUninstall&gt;</span><span class="cp">&lt;![CDATA[</span>
+<span class="cp"># Some Perl code.</span>
+<span class="cp">]]&gt;</span><span class="nt">&lt;/CodeUninstall&gt;</span>
+</pre></div>
+</div>
+<p class="last">You also can choose <code class="docutils literal notranslate"><span class="pre">&lt;CodeUninstall</span> <span class="pre">Type=&quot;post&quot;&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;CodeUninstall</span> <span class="pre">Type=&quot;pre&quot;&gt;</span></code> to define the time of execution separately (<code class="docutils literal notranslate"><span class="pre">post</span></code> is default). For more info see <a class="reference internal" href="#package-life-cycle"><span class="std std-ref">Package Life Cycle</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;CodeReinstall&gt;</span></code></dt>
+<dd><p class="first">Perl code to be executed when the package is reinstalled.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;CodeReinstall&gt;</span><span class="cp">&lt;![CDATA[</span>
+<span class="cp"># Some Perl code.</span>
+<span class="cp">]]&gt;</span><span class="nt">&lt;/CodeReinstall&gt;</span>
+</pre></div>
+</div>
+<p class="last">You also can choose <code class="docutils literal notranslate"><span class="pre">&lt;CodeReinstall</span> <span class="pre">Type=&quot;post&quot;&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;CodeReinstall</span> <span class="pre">Type=&quot;pre&quot;&gt;</span></code> to define the time of execution separately (<code class="docutils literal notranslate"><span class="pre">post</span></code> is default). For more info see <a class="reference internal" href="#package-life-cycle"><span class="std std-ref">Package Life Cycle</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;CodeUpgrade&gt;</span></code></dt>
+<dd><p class="first">Perl code to be executed when the package is upgraded (subject to <code class="docutils literal notranslate"><span class="pre">version</span></code> tag).</p>
+<p>Example if already installed package version is below 1.3.4 (e. g. 1.2.6), the defined action will be performed:</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;CodeUpgrade</span> <span class="na">Version=</span><span class="s">&quot;1.3.4&quot;</span><span class="nt">&gt;</span><span class="cp">&lt;![CDATA[</span>
+<span class="cp"># Some Perl code.</span>
+<span class="cp">]]&gt;</span><span class="nt">&lt;/CodeUpgrade&gt;</span>
+</pre></div>
+</div>
+<p class="last">You also can choose <code class="docutils literal notranslate"><span class="pre">&lt;CodeUpgrade</span> <span class="pre">Type=&quot;post&quot;&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;CodeUpgrade</span> <span class="pre">Type=&quot;pre&quot;&gt;</span></code> to define the time of execution separately (<code class="docutils literal notranslate"><span class="pre">post</span></code> is default). For more info see <a class="reference internal" href="#package-life-cycle"><span class="std std-ref">Package Life Cycle</span></a>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">&lt;PackageMerge&gt;</span></code></dt>
+<dd><p class="first">This tag signals that a package has been merged into another package. In this case the original package needs to be removed from the file system and the packages database, but all data must be kept.</p>
+<p>Let’s assume that <code class="docutils literal notranslate"><span class="pre">PackageOne</span></code> was merged into <code class="docutils literal notranslate"><span class="pre">PackageTwo</span></code>. Then <code class="docutils literal notranslate"><span class="pre">PackageTwo.sopm</span></code> should contain this:</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;PackageMerge</span> <span class="na">Name=</span><span class="s">&quot;MergeOne&quot;</span> <span class="na">TargetVersion=</span><span class="s">&quot;2.0.0&quot;</span><span class="nt">&gt;&lt;/PackageMerge&gt;</span>
+</pre></div>
+</div>
+<p>If <code class="docutils literal notranslate"><span class="pre">PackageOne</span></code> also contained database structures, we need to be sure that it was at the latest available version of the package to have a consistent state in the database after merging the package. The attribute <code class="docutils literal notranslate"><span class="pre">TargetVersion</span></code> does just this: it signifies the last known version of <code class="docutils literal notranslate"><span class="pre">PackageOne</span></code> at the time <code class="docutils literal notranslate"><span class="pre">PackageTwo</span></code> was created. This is mainly to stop the upgrade process if in the user’s system a version of <code class="docutils literal notranslate"><span class="pre">PackageOne</span></code> was found that is <em>newer</em> than the one specified in <code class="docutils literal notranslate"><span class="pre">TargetVersion</span></code> as this could lead to problems.</p>
+<p>Additionally it is possible to add required database and code upgrade tags for <code class="docutils literal notranslate"><span class="pre">PackageOne</span></code> to make sure that it gets properly upgraded to the <code class="docutils literal notranslate"><span class="pre">TargetVersion</span></code> <em>before</em> merging it - to avoid inconsistency problems. Here’s how this could look like:</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;PackageMerge</span> <span class="na">Name=</span><span class="s">&quot;MergeOne&quot;</span> <span class="na">TargetVersion=</span><span class="s">&quot;2.0.0&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;DatabaseUpgrade</span> <span class="na">Type=</span><span class="s">&quot;merge&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;TableCreate</span> <span class="na">Name=</span><span class="s">&quot;merge_package&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;id&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">PrimaryKey=</span><span class="s">&quot;true&quot;</span> <span class="na">AutoIncrement=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;INTEGER&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;description&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Size=</span><span class="s">&quot;200&quot;</span> <span class="na">Type=</span><span class="s">&quot;VARCHAR&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/TableCreate&gt;</span>
+    <span class="nt">&lt;/DatabaseUpgrade&gt;</span>
+<span class="nt">&lt;/PackageMerge&gt;</span>
+</pre></div>
+</div>
+<p class="last">As you can see the attribute <code class="docutils literal notranslate"><span class="pre">Type=&quot;merge&quot;</span></code> needs to be set in this case. These sections will only be executed if a package merge is possible.</p>
+</dd>
+</dl>
+<dl class="docutils" id="package-conditions-ifpackage-ifnotpackage">
+<dt>Package Conditions</dt>
+<dd><p class="first"><code class="docutils literal notranslate"><span class="pre">IfPackage</span></code> and <code class="docutils literal notranslate"><span class="pre">IfNotPackage</span></code> attributes can be added to the regular <code class="docutils literal notranslate"><span class="pre">Database*</span></code> and <code class="docutils literal notranslate"><span class="pre">Code*</span></code> sections. If they are present, the section will only be executed if another package is or is not in the local package repository.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;DatabaseInstall</span> <span class="na">IfPackage=</span><span class="s">&quot;AnyPackage&quot;</span><span class="nt">&gt;</span>
+    # ...
+<span class="nt">&lt;/DatabaseInstall&gt;</span>
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;CodeUpgrade</span> <span class="na">IfNotPackage=</span><span class="s">&quot;OtherPackage&quot;</span><span class="nt">&gt;</span>
+    # ...
+<span class="nt">&lt;/CodeUpgrade&gt;</span>
+</pre></div>
+</div>
+<p class="last">These attributes can be also set in the <code class="docutils literal notranslate"><span class="pre">Database*</span></code> and <code class="docutils literal notranslate"><span class="pre">Code*</span></code> sections inside the <code class="docutils literal notranslate"><span class="pre">PackageMerge</span></code> tags.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="example-sopm">
+<h2>Example .sopm<a class="headerlink" href="#example-sopm" title="Permalink to this headline">¶</a></h2>
+<p>This is an example spec file looks with some of the above tags.</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
+<span class="nt">&lt;otrs_package</span> <span class="na">version=</span><span class="s">&quot;1.0&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Name&gt;</span>Calendar<span class="nt">&lt;/Name&gt;</span>
+    <span class="nt">&lt;Version&gt;</span>0.0.1<span class="nt">&lt;/Version&gt;</span>
+    <span class="nt">&lt;Framework&gt;</span>7.0.x<span class="nt">&lt;/Framework&gt;</span>
+    <span class="nt">&lt;Vendor&gt;</span>OTRS AG<span class="nt">&lt;/Vendor&gt;</span>
+    <span class="nt">&lt;URL&gt;</span>https://otrs.com/<span class="nt">&lt;/URL&gt;</span>
+    <span class="nt">&lt;License&gt;</span>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007<span class="nt">&lt;/License&gt;</span>
+    <span class="nt">&lt;ChangeLog</span> <span class="na">Version=</span><span class="s">&quot;1.1.2&quot;</span> <span class="na">Date=</span><span class="s">&quot;2018-11-15 18:45:21&quot;</span><span class="nt">&gt;</span>Added some feature.<span class="nt">&lt;/ChangeLog&gt;</span>
+    <span class="nt">&lt;ChangeLog</span> <span class="na">Version=</span><span class="s">&quot;1.1.1&quot;</span> <span class="na">Date=</span><span class="s">&quot;2018-11-15 16:17:51&quot;</span><span class="nt">&gt;</span>New package.<span class="nt">&lt;/ChangeLog&gt;</span>
+    <span class="nt">&lt;Description</span> <span class="na">Lang=</span><span class="s">&quot;en&quot;</span><span class="nt">&gt;</span>A web calendar.<span class="nt">&lt;/Description&gt;</span>
+    <span class="nt">&lt;Description</span> <span class="na">Lang=</span><span class="s">&quot;de&quot;</span><span class="nt">&gt;</span>Ein Web Kalender.<span class="nt">&lt;/Description&gt;</span>
+    <span class="nt">&lt;IntroInstall</span> <span class="na">Type=</span><span class="s">&quot;post&quot;</span> <span class="na">Lang=</span><span class="s">&quot;en&quot;</span> <span class="na">Title=</span><span class="s">&quot;Thank you!&quot;</span><span class="nt">&gt;</span>Thank you for choosing the Calendar module.<span class="nt">&lt;/IntroInstall&gt;</span>
+    <span class="nt">&lt;IntroInstall</span> <span class="na">Type=</span><span class="s">&quot;post&quot;</span> <span class="na">Lang=</span><span class="s">&quot;de&quot;</span> <span class="na">Title=</span><span class="s">&quot;Vielen Dank!&quot;</span><span class="nt">&gt;</span>Vielen Dank fuer die Auswahl des Kalender Modules.<span class="nt">&lt;/IntroInstall&gt;</span>
+    <span class="nt">&lt;BuildDate&gt;</span>?<span class="nt">&lt;/BuildDate&gt;</span>
+    <span class="nt">&lt;BuildHost&gt;</span>?<span class="nt">&lt;/BuildHost&gt;</span>
+    <span class="nt">&lt;Filelist&gt;</span>
+        <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/Config/Files/Calendar.pm&quot;</span><span class="nt">&gt;&lt;/File&gt;</span>
+        <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/System/CalendarEvent.pm&quot;</span><span class="nt">&gt;&lt;/File&gt;</span>
+        <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/Modules/AgentCalendar.pm&quot;</span><span class="nt">&gt;&lt;/File&gt;</span>
+        <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/Language/de_AgentCalendar.pm&quot;</span><span class="nt">&gt;&lt;/File&gt;</span>
+        <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/Output/HTML/Standard/AgentCalendar.tt&quot;</span><span class="nt">&gt;&lt;/File&gt;</span>
+        <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;Kernel/Output/HTML/NotificationCalendar.pm&quot;</span><span class="nt">&gt;&lt;/File&gt;</span>
+        <span class="nt">&lt;File</span> <span class="na">Permission=</span><span class="s">&quot;644&quot;</span> <span class="na">Location=</span><span class="s">&quot;var/httpd/htdocs/images/Standard/calendar.png&quot;</span><span class="nt">&gt;&lt;/File&gt;</span>
+    <span class="nt">&lt;/Filelist&gt;</span>
+    <span class="nt">&lt;DatabaseInstall&gt;</span>
+        <span class="nt">&lt;TableCreate</span> <span class="na">Name=</span><span class="s">&quot;calendar_event&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;id&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">PrimaryKey=</span><span class="s">&quot;true&quot;</span> <span class="na">AutoIncrement=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;BIGINT&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;title&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Size=</span><span class="s">&quot;250&quot;</span> <span class="na">Type=</span><span class="s">&quot;VARCHAR&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;content&quot;</span> <span class="na">Required=</span><span class="s">&quot;false&quot;</span> <span class="na">Size=</span><span class="s">&quot;250&quot;</span> <span class="na">Type=</span><span class="s">&quot;VARCHAR&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;start_time&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;DATE&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;end_time&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;DATE&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;owner_id&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Type=</span><span class="s">&quot;INTEGER&quot;</span><span class="nt">/&gt;</span>
+            <span class="nt">&lt;Column</span> <span class="na">Name=</span><span class="s">&quot;event_status&quot;</span> <span class="na">Required=</span><span class="s">&quot;true&quot;</span> <span class="na">Size=</span><span class="s">&quot;50&quot;</span> <span class="na">Type=</span><span class="s">&quot;VARCHAR&quot;</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;/TableCreate&gt;</span>
+    <span class="nt">&lt;/DatabaseInstall&gt;</span>
+    <span class="nt">&lt;DatabaseUninstall&gt;</span>
+        <span class="nt">&lt;TableDrop</span> <span class="na">Name=</span><span class="s">&quot;calendar_event&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/DatabaseUninstall&gt;</span>
+<span class="nt">&lt;/otrs_package&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="package-build">
+<h2>Package Build<a class="headerlink" href="#package-build" title="Permalink to this headline">¶</a></h2>
+<p>To build an .opm package from the spec opm.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">shell</span><span class="o">&gt;</span> <span class="nb">bin</span><span class="o">/</span><span class="n">otrs</span><span class="o">.</span><span class="n">Console</span><span class="o">.</span><span class="n">pl</span> <span class="n">Dev</span><span class="p">::</span><span class="n">Package</span><span class="p">::</span><span class="n">Build</span> <span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">example</span><span class="o">.</span><span class="n">sopm</span> <span class="o">/</span><span class="n">tmp</span>
+<span class="n">Building</span> <span class="n">package</span><span class="o">...</span>
+<span class="n">Done</span><span class="o">.</span>
+<span class="n">shell</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="package-life-cycle">
+<h2>Package Life Cycle<a class="headerlink" href="#package-life-cycle" title="Permalink to this headline">¶</a></h2>
+<p>The following image shows you how the life cycle of a package installation, upgrade and uninstallation works in the back end step by step.</p>
+<div class="figure" id="id1">
+<img alt="Package Life Cycle" src="../../_images/package-life-cycle.png" />
+<p class="caption"><span class="caption-text">Package Life Cycle</span></p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          
+
+<script>
+// Start Google Analytics Tracking
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-28118796-2', 'auto');
+ga('send', 'pageview');
+// End Google Analytics Tracking
+</script>
+
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="package-porting.html" class="btn btn-neutral float-right" title="Package Porting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="package-management.html" class="btn btn-neutral" title="Package Management" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2001-2019 OTRS AG, https://otrs.com/
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
