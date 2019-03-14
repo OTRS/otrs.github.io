@@ -44,7 +44,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en', 'hu'],
+                    Languages: ['en', 'hu', 'zh_CN'],
                     AssetPath:     'doc-admin',
                     AssetFilename: 'otrs_admin_manual'
                 },
@@ -75,7 +75,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en', 'de', 'hu'],
+                    Languages: ['en', 'de', 'hu', 'zh_CN'],
                     AssetPath:     'doc-installation',
                     AssetFilename: 'otrs_installation_guide'
                 }
@@ -128,7 +128,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS::ITSM 7',
-                    Languages: ['en', 'hu'],
+                    Languages: ['en', 'hu', 'zh_CN'],
                     AssetPath:     'doc-itsm',
                     AssetFilename: 'otrs_itsm_manual'
                 },
