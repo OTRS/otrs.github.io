@@ -159,7 +159,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en', 'hu'],
+                    Languages: ['en', 'hu', 'zh_CN'],
                     AssetPath:     'doc-developer',
                     AssetFilename: 'otrs_developer_manual'
                 },
