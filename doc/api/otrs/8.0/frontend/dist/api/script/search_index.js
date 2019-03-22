@@ -126,6 +126,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "plugins/relativetime~plugin",
+    "class/Frontend/Plugins/RelativeTime/index.js~Plugin.html",
+    "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/RelativeTime</span>",
+    "class"
+  ],
+  [
     "plugins/testflags~plugin",
     "class/Frontend/Plugins/TestFlags/index.js~Plugin.html",
     "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/TestFlags</span>",
@@ -135,6 +141,12 @@ window.esdocSearchIndex = [
     "server/apiclient/pubsub~pubsub",
     "class/Frontend/Server/APIClient/PubSub.js~PubSub.html",
     "<span>PubSub</span> <span class=\"search-result-import-path\">Server/APIClient/PubSub</span>",
+    "class"
+  ],
+  [
+    "server/apiclient/pushevents~pushevents",
+    "class/Frontend/Server/APIClient/PushEvents.js~PushEvents.html",
+    "<span>PushEvents</span> <span class=\"search-result-import-path\">Server/APIClient/PushEvents</span>",
     "class"
   ],
   [
@@ -1542,6 +1554,24 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/plugins/relativetime/index.js",
+    "file/Frontend/Plugins/RelativeTime/index.js.html",
+    "Frontend/Plugins/RelativeTime/index.js",
+    "file"
+  ],
+  [
+    "frontend/plugins/relativetime/index.js~plugin.date",
+    "class/Frontend/Plugins/RelativeTime/index.js~Plugin.html#static-member-date",
+    "Frontend/Plugins/RelativeTime/index.js~Plugin.date",
+    "member"
+  ],
+  [
+    "frontend/plugins/relativetime/index.js~plugin.install",
+    "class/Frontend/Plugins/RelativeTime/index.js~Plugin.html#static-method-install",
+    "Frontend/Plugins/RelativeTime/index.js~Plugin.install",
+    "method"
+  ],
+  [
     "frontend/plugins/store/loggeroptions.js",
     "file/Frontend/Plugins/Store/LoggerOptions.js.html",
     "Frontend/Plugins/Store/LoggerOptions.js",
@@ -1620,6 +1650,48 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/server/apiclient/pushevents.js",
+    "file/Frontend/Server/APIClient/PushEvents.js.html",
+    "Frontend/Server/APIClient/PushEvents.js",
+    "file"
+  ],
+  [
+    "frontend/server/apiclient/pushevents.js~pushevents#clearallsubscriptions",
+    "class/Frontend/Server/APIClient/PushEvents.js~PushEvents.html#instance-method-clearAllSubscriptions",
+    "Frontend/Server/APIClient/PushEvents.js~PushEvents#clearAllSubscriptions",
+    "method"
+  ],
+  [
+    "frontend/server/apiclient/pushevents.js~pushevents#constructor",
+    "class/Frontend/Server/APIClient/PushEvents.js~PushEvents.html#instance-constructor-constructor",
+    "Frontend/Server/APIClient/PushEvents.js~PushEvents#constructor",
+    "method"
+  ],
+  [
+    "frontend/server/apiclient/pushevents.js~pushevents#publish",
+    "class/Frontend/Server/APIClient/PushEvents.js~PushEvents.html#instance-method-publish",
+    "Frontend/Server/APIClient/PushEvents.js~PushEvents#publish",
+    "method"
+  ],
+  [
+    "frontend/server/apiclient/pushevents.js~pushevents#subscribe",
+    "class/Frontend/Server/APIClient/PushEvents.js~PushEvents.html#instance-method-subscribe",
+    "Frontend/Server/APIClient/PushEvents.js~PushEvents#subscribe",
+    "method"
+  ],
+  [
+    "frontend/server/apiclient/pushevents.js~pushevents#subscriptions",
+    "class/Frontend/Server/APIClient/PushEvents.js~PushEvents.html#instance-method-subscriptions",
+    "Frontend/Server/APIClient/PushEvents.js~PushEvents#subscriptions",
+    "method"
+  ],
+  [
+    "frontend/server/apiclient/pushevents.js~pushevents#unsubscribe",
+    "class/Frontend/Server/APIClient/PushEvents.js~PushEvents.html#instance-method-unsubscribe",
+    "Frontend/Server/APIClient/PushEvents.js~PushEvents#unsubscribe",
+    "method"
+  ],
+  [
     "frontend/server/apiclient/requests.js",
     "file/Frontend/Server/APIClient/Requests.js.html",
     "Frontend/Server/APIClient/Requests.js",
@@ -1668,6 +1740,12 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/server/apiclient/index.js~apiclient#cleanuppushevents",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-method-cleanupPushEvents",
+    "Frontend/Server/APIClient/index.js~APIClient#cleanupPushEvents",
+    "method"
+  ],
+  [
     "frontend/server/apiclient/index.js~apiclient#close",
     "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-method-close",
     "Frontend/Server/APIClient/index.js~APIClient#close",
@@ -1677,6 +1755,12 @@ window.esdocSearchIndex = [
     "frontend/server/apiclient/index.js~apiclient#constructor",
     "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-constructor-constructor",
     "Frontend/Server/APIClient/index.js~APIClient#constructor",
+    "method"
+  ],
+  [
+    "frontend/server/apiclient/index.js~apiclient#initializepushevents",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-method-initializePushEvents",
+    "Frontend/Server/APIClient/index.js~APIClient#initializePushEvents",
     "method"
   ],
   [
@@ -1722,6 +1806,12 @@ window.esdocSearchIndex = [
     "member"
   ],
   [
+    "frontend/server/apiclient/index.js~apiclient#refreshpusheventsubscriptions",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-method-refreshPushEventSubscriptions",
+    "Frontend/Server/APIClient/index.js~APIClient#refreshPushEventSubscriptions",
+    "method"
+  ],
+  [
     "frontend/server/apiclient/index.js~apiclient#removeeventlistener",
     "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-method-removeEventListener",
     "Frontend/Server/APIClient/index.js~APIClient#removeEventListener",
@@ -1740,15 +1830,39 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/server/apiclient/index.js~apiclient#subscribepushevent",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-method-subscribePushEvent",
+    "Frontend/Server/APIClient/index.js~APIClient#subscribePushEvent",
+    "method"
+  ],
+  [
     "frontend/server/apiclient/index.js~apiclient#unsubscribe",
     "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-method-unsubscribe",
     "Frontend/Server/APIClient/index.js~APIClient#unsubscribe",
     "method"
   ],
   [
+    "frontend/server/apiclient/index.js~apiclient#unsubscribepushevent",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-method-unsubscribePushEvent",
+    "Frontend/Server/APIClient/index.js~APIClient#unsubscribePushEvent",
+    "method"
+  ],
+  [
     "frontend/server/apiclient/index.js~apiclient.subscription",
     "typedef/index.html#static-typedef-Subscription",
     "Frontend/Server/APIClient/index.js~APIClient.Subscription",
+    "typedef"
+  ],
+  [
+    "frontend/server/apiclient/index.js~apiclient.subscriptionpushevent",
+    "typedef/index.html#static-typedef-SubscriptionPushEvent",
+    "Frontend/Server/APIClient/index.js~APIClient.SubscriptionPushEvent",
+    "typedef"
+  ],
+  [
+    "frontend/server/apiclient/index.js~apiclient.subscriptionpushevent",
+    "typedef/index.html#static-typedef-SubscriptionPushEvent",
+    "Frontend/Server/APIClient/index.js~APIClient.SubscriptionPushEvent",
     "typedef"
   ],
   [
@@ -2139,6 +2253,12 @@ window.esdocSearchIndex = [
     "frontend/tests/server/apiclient/pubsub.js",
     "file/Frontend/Tests/Server/APIClient/PubSub.js.html",
     "Frontend/Tests/Server/APIClient/PubSub.js",
+    "file"
+  ],
+  [
+    "frontend/tests/server/apiclient/pushevents.js",
+    "file/Frontend/Tests/Server/APIClient/PushEvents.js.html",
+    "Frontend/Tests/Server/APIClient/PushEvents.js",
     "file"
   ],
   [
