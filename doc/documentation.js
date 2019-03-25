@@ -36,6 +36,21 @@ $(document).ready(function() {
 
     NavigationConfig = [
         {
+            Name: 'OTRS User Manual',
+            Type: 'manual',
+            Path: 'user',
+            Versions: [
+                {
+                    Version:  '7.0',
+                    HTMLPath: 'stable',
+                    Name:     'OTRS 7',
+                    Languages: ['en'],
+                    AssetPath:     'doc-user',
+                    AssetFilename: 'otrs_user_manual'
+                },
+            ]
+        },
+        {
             Name: 'OTRS Admin Manual',
             Type: 'manual',
             Path: 'admin',
