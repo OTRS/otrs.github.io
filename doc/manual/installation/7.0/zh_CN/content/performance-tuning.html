@@ -1,0 +1,465 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="zh-CN" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="zh-CN" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>性能优化 &mdash; OTRS Installation Guide 7.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/otrs.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="prev" title="备份和恢复" href="backup-restore.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+    
+    <a href="https://doc.otrs.com/doc" class="icon fa-rocket DocumentationOverview"> OTRS Documentation</a>
+
+    
+
+          
+            <a href="index.html" class="icon icon-home"> OTRS Installation Guide
+          
+
+          
+            
+            <img src="../_static/otrs-logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                7.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">目录</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">介绍</a></li>
+<li class="toctree-l1"><a class="reference internal" href="requirements.html">硬件和软件要求</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">安装</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updating.html">更新</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backup-restore.html">备份和恢复</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">性能优化</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ticket-index-module">工单索引模块</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ticket-search-index">工单搜索索引</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#document-search">文件搜索</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#heap-size">堆大小</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#disk-allocation">磁盘分配</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#article-storage">信件存储</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#archiving-tickets">归档工单</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tuning-the-web-server">优化 Web 服务器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#caching">缓存</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#clustering">集群</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OTRS Installation Guide</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>性能优化</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/OTRS/doc-installation/blob/rel-7_0/content/performance-tuning.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="performance-tuning">
+<h1>性能优化<a class="headerlink" href="#performance-tuning" title="永久链接至标题">¶</a></h1>
+<p>下面是用于 OTRS 安装的性能增强技术清单，包括配置、编码、内存使用等。</p>
+<div class="section" id="ticket-index-module">
+<h2>工单索引模块<a class="headerlink" href="#ticket-index-module" title="永久链接至标题">¶</a></h2>
+<p>可以在系统配置设置 <code class="docutils literal notranslate"><span class="pre">Ticket::IndexModule</span></code> 中设置工单索引模块。 工单队列视图的索引有两个后端模块：</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">Kernel::System::Ticket::IndexAccelerator::RuntimeDB</span></code></dt>
+<dd>这是默认选项，并将从工单表中即时生成每个队列视图。 在有6万个处理工单之前，系统都不会遇到性能问题。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Kernel::System::Ticket::IndexAccelerator::StaticDB</span></code></dt>
+<dd><p class="first">当您有超过80,000个处理中的工单时，应该使用这个最强大的模块。 它使用一个额外的 <code class="docutils literal notranslate"><span class="pre">ticket_index</span></code> 表，用基于工单数据的关键字填充。 在切换后端模块后使用下列命令生成初始索引：</p>
+<div class="last highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Ticket::QueueIndexRebuild
+</pre></div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="ticket-search-index">
+<h2>工单搜索索引<a class="headerlink" href="#ticket-search-index" title="永久链接至标题">¶</a></h2>
+<p>OTRS 使用特殊的搜索索引对来自不同通信渠道的信件中的字段进行全文搜索。</p>
+<p>使用这个命令生成初始索引：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Ticket::FulltextIndex --rebuild
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">注解</p>
+<p class="last">实际的信件索引通过后台的 OTRS 守护进程任务进行。 虽然刚刚添加到系统中的信件被标记为立即进行索引，但其索引可能在几分钟后才可用。</p>
+</div>
+<p>有一些选项可用于微调搜索索引：</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::IndexArchivedTickets</span></code></dt>
+<dd>定义归档工单是否包含在搜索索引中（默认情况下未启用）。 建议在有归档工单的大型系统上保持较小的索引。 如果这个选项启用了，全文搜索将能搜索到归档的工单。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::Attribute</span></code></dt>
+<dd><p class="first">全文索引的基本设置。</p>
+<div class="figure" id="id1">
+<img alt="``Ticket::SearchIndex::Attribute`` Setting" src="../_images/sysconfig-ticket-searchindex-attribute.png" />
+<p class="caption"><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::Attribute</span></code> 设置</span></p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">注解</p>
+<p>运行以下命令以生成新索引：</p>
+<div class="last highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Ticket::FulltextIndexRebuild
+</pre></div>
+</div>
+</div>
+<dl class="last docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">WordCountMax</span></code></dt>
+<dd>定义用以构建索引的最大字数。 例如，只有信件正文的前1000个单词存储在信件搜索索引中。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">WordLengthMin</span></code> 和 <code class="docutils literal notranslate"><span class="pre">WordLengthMax</span></code></dt>
+<dd>用作字长边界。 只有具有这两个值之间长度的单词才会存储在信件搜索索引中。</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::Filters</span></code></dt>
+<dd><p class="first">全文索引正则表达式过滤器，用于删除部分文本。</p>
+<div class="figure" id="id2">
+<img alt="``Ticket::SearchIndex::Filters`` Setting" src="../_images/sysconfig-ticket-searchIndex-filters.png" />
+<p class="caption"><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::Filters</span></code> 设置</span></p>
+</div>
+<p>定义了三个默认过滤器：</p>
+<ul class="last simple">
+<li>第一个过滤器剥离特殊的字符，如： , &amp; &lt; &gt; ? ” ! * | ; [ ] ( ) + $ ^ =</li>
+<li>第二个过滤器剥离使用以下字符之一开始或结束的字词： ‘ :&nbsp;。</li>
+<li>第三个过滤器剥离不包含字符的单词：a-z, A-Z, 0-9, _</li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::StopWords</span></code></dt>
+<dd><p class="first">全文索引的英语停止词，这些词将从搜索索引中移除。</p>
+<div class="figure" id="id3">
+<img alt="``Ticket::SearchIndex::StopWords###en`` Setting" src="../_images/sysconfig-ticket-searchindex-stopwords.png" />
+<p class="caption"><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::StopWords###en</span></code> 设置</span></p>
+</div>
+<p>有一些语言定义了所谓的停止词。 创建搜索索引时将跳过这些停止词。</p>
+<div class="last admonition seealso">
+<p class="first admonition-title">参见</p>
+<p>如果您的语言不在系统配置设置中，或者您想要添加更多单词，则可以将它们添加到此设置：</p>
+<ul class="last simple">
+<li><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::StopWords###Custom</span></code></li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="document-search">
+<h2>文件搜索<a class="headerlink" href="#document-search" title="永久链接至标题">¶</a></h2>
+<p>OTRS 使用 Elasticsearch 进行文档搜索。有关 Elasticsearch 的概念、安装和使用的详细介绍，请遵循 <a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/getting-started.html">入门指南</a>。</p>
+<div class="section" id="heap-size">
+<h3>堆大小<a class="headerlink" href="#heap-size" title="永久链接至标题">¶</a></h3>
+<p>Elasticsearch 是用 Java 编写的，因此可以在任何集群节点上的 Java 虚拟机（JVM）中运行。 JVM使用称为 <em>heap（堆）</em> 的一部分内存，其大小可以在配置文件 <code class="docutils literal notranslate"><span class="pre">jvm.options</span></code> 中配置。</p>
+<p>堆最小和最大配置默认设置为 1 GB，可以使用以下选项进行修改：</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">Xms1g</span></code>：堆最小值为1GB。</li>
+<li><code class="docutils literal notranslate"><span class="pre">Xmx1g</span></code>：堆最大值为1GB。</li>
+</ul>
+<p>如果 <code class="docutils literal notranslate"><span class="pre">Xms</span></code> 的值低于 <code class="docutils literal notranslate"><span class="pre">Xmx</span></code>，则 JVM 将在超过当前限制时调整使用的堆的大小，直到达到 <code class="docutils literal notranslate"><span class="pre">Xmx</span></code> 的值。 这样的大小调整导致服务暂停直到它完成，这可能降低搜索或索引动作的速度和反应性。 因此，强烈建议将它们设置为相等的值。</p>
+<div class="admonition warning">
+<p class="first admonition-title">警告</p>
+<p class="last">如果超出了最大堆大小，则相关的群集节点将停止工作，甚至可能会关闭该服务。</p>
+</div>
+<p>设置的堆最大值越高，Elasticsearch 可以使用的内存越多，这也会增加 JVM 完成垃圾收集可能的暂停。 因此，建议为 <code class="docutils literal notranslate"><span class="pre">Xmx</span></code> 设置一个不高于物理内存 50％ 的值。</p>
+<p>有关堆大小的更多信息和经验法则，请遵循 <a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html">官方文档</a>。</p>
+</div>
+<div class="section" id="disk-allocation">
+<h3>磁盘分配<a class="headerlink" href="#disk-allocation" title="永久链接至标题">¶</a></h3>
+<p>在服务运行期间，Elasticsearch 会检查可用磁盘空间，因此决定是否将新分片分配给相关群集节点，甚至是将分片重新定位到特定节点之外。 这种行为将由当前磁盘容量控制，可以在配置文件 <code class="docutils literal notranslate"><span class="pre">elasticsearch.yml</span></code> 中配置。 随附一些重要的配置，它们具有良好但可能很重要的默认值：</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">cluster.routing.allocation.disk.watermark.low</span></code></dt>
+<dd>默认值为85％。 如果超出此限制，Elasticsearch 将不会将更多分片分配给相关的群集节点。 该节点的操作不受影响，仍然可以索引和搜索数据。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cluster.routing.allocation.disk.watermark.high</span></code></dt>
+<dd>默认值为90％。 如果超出此限制，Elasticsearch 将尝试将现有分片重定位到具有足够可用空间的其它节点（如果有）。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cluster.routing.allocation.disk.watermark.flood_stage</span></code></dt>
+<dd>默认值为95％。 如果超出此限制，Elasticsearch 会将所有索引的配置更新为只读索引块 <code class="docutils literal notranslate"><span class="pre">index.blocks.read_only_allow_delete</span></code>，其中至少有一个分片分配给相关的群集节点。 从那时起，无法将新数据索引到此类索引并限制为仅搜索和删除操作。</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">注解</p>
+<p class="last">如果超出泛洪阶段并且某些索引配置为只读模式，则 Elasticsearch <em>不会</em> 自动更改此配置。 如果相关磁盘由于手动操作而再次包含足够的可用空间，则需要手动将配置更改回正常模式。</p>
+</div>
+<p>有关磁盘水位线和基于磁盘的分片分配的更多信息，请参阅 <a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/disk-allocator.html">官方文档</a>。</p>
+</div>
+</div>
+<div class="section" id="article-storage">
+<h2>信件存储<a class="headerlink" href="#article-storage" title="永久链接至标题">¶</a></h2>
+<p>有两种不同的后端模块可用于存储电话、电子邮件和内部信件。 使用的信件存储可以在设置 <code class="docutils literal notranslate"><span class="pre">Ticket::Article::Backend::MIMEBase::ArticleStorage</span></code> 中配置。</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">Kernel::System::Ticket::Article::Backend::MIMEBase::ArticleStorageDB</span></code></dt>
+<dd><p class="first">此默认模块将附件存储在数据库中。 它也适用于多个前端服务器，但在数据库中需要很多存储空间。</p>
+<div class="last admonition note">
+<p class="first admonition-title">注解</p>
+<p class="last">在大型安装环境中不要使用它。</p>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Kernel::System::Ticket::Article::Backend::MIMEBase::ArticleStorageFS</span></code></dt>
+<dd><p class="first">使用此模块可在本地文件系统上存储附件。 它很快，但如果您有多个前端服务器，则必须确保文件系统在服务器之间共享。 将其放在 NFS 共享上或者最好是 SAN 或类似的解决方案中。</p>
+<div class="last admonition note">
+<p class="first admonition-title">注解</p>
+<p class="last">在大型安装环境中推荐使用。</p>
+</div>
+</dd>
+</dl>
+<p>您可以在运行中从一个后端切换到另一个后端。 您可以在系统配置中切换后端，然后运行此命令行实用程序将数据库中的信件放到文件系统上，反之亦然：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Admin::Article::StorageSwitch --target ArticleStorageFS
+</pre></div>
+</div>
+<p>您可以使用 <code class="docutils literal notranslate"><span class="pre">--target</span></code> 选项指定目标后端。</p>
+<div class="admonition note">
+<p class="first admonition-title">注解</p>
+<p class="last">整个过程可能需要相当长的时间，具体取决于您拥有的信件数量以及可用的 CPU 资源和/或网络容量。</p>
+</div>
+<p>如果要在数据库中保留原有附件，可以激活系统配置选项 <code class="docutils literal notranslate"><span class="pre">Ticket::Article::Backend::MIMEBase::CheckAllStorageBackends</span></code> 以确保 OTRS 仍然可以找到它们。</p>
+</div>
+<div class="section" id="archiving-tickets">
+<h2>归档工单<a class="headerlink" href="#archiving-tickets" title="永久链接至标题">¶</a></h2>
+<p>由于 OTRS 可以用作审核系统，删除关闭的工单可能不是一个好主意。 因此，我们实现了一个可以让您归档工单的功能。</p>
+<p>匹配某个条件的工单可以标记为“已归档”。这些工单在使用常规的工单搜索或运行一个自动任务时无法访问。系统本身不再需要处理大量的工单，而只考虑 <em>最近的</em> 工单就可以了。这在大型系统中能带来巨大的性能提升。</p>
+<p>要使用归档功能：</p>
+<ol class="arabic">
+<li><p class="first">激活系统配置中的 <code class="docutils literal notranslate"><span class="pre">Ticket::ArchiveSystem</span></code> 设置。</p>
+</li>
+<li><p class="first">定义一个自动任务：</p>
+<ul class="simple">
+<li>在 <em>自动任务</em> 屏幕中点击 <em>添加任务</em> 按钮。</li>
+<li><em>任务设置</em>：提供归档任务的名称。</li>
+<li><em>自动执行</em>：为计划该任务选择合适的选项。</li>
+<li><em>选择工单</em>：最好只将几个月前就关闭了的处于关闭状态的工单归档。</li>
+<li><em>更新/添加工单属性</em>：设置 <em>归档选中的工单</em> 字段为 <em>归档工单</em>。</li>
+<li>在页面底部保存该任务。</li>
+<li>点击概览表格中的 <em>运行该任务</em> 链接以查看受影响的工单。</li>
+<li>点击 <em>运行任务</em> 按钮。</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">注解</p>
+<p class="last">手动运行此任务最多可以修改5000个工单。</p>
+</div>
+</li>
+</ol>
+<p>当你搜索工单时，系统默认搜索未归档的工单。</p>
+<p>为了搜索归档的工单：</p>
+<ol class="arabic simple">
+<li>打开工单搜索屏幕。</li>
+<li>设置 <em>归档搜索</em> 为 <em>未归档工单</em> 或 <em>所有工单</em>。</li>
+<li>执行搜索。</li>
+</ol>
+</div>
+<div class="section" id="tuning-the-web-server">
+<h2>优化 Web 服务器<a class="headerlink" href="#tuning-the-web-server" title="永久链接至标题">¶</a></h2>
+<p>OTRS 的内置 Web 服务器可以开箱即用地处理中小型安装。 当 OTRS 同时为许多用户提供服务时，可能需要调整 Web 服务器配置，比如增加工作进程的数量。</p>
+<p>Web 服务器配置文件位于 <code class="docutils literal notranslate"><span class="pre">Kernel/WebApp.conf</span></code>，并且所有设置均有文档说明。 可以增加 <code class="docutils literal notranslate"><span class="pre">worker</span></code> 设置，以在有能力的服务器上部署更多进程，用于处理 HTTP 请求。</p>
+</div>
+<div class="section" id="caching">
+<h2>缓存<a class="headerlink" href="#caching" title="永久链接至标题">¶</a></h2>
+<p>OTRS 在 <code class="docutils literal notranslate"><span class="pre">/opt/otrs/var/tmp</span></code> 中缓存了大量临时数据。 请确保它使用高性能文件系统和存储。 如果你有足够的 RAM，你也可以尝试将这个目录放在 ramdisk 上，如下所示：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Session::DeleteAll
+otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Cache::Delete
+root&gt; mount -o <span class="nv">size</span><span class="o">=</span>16G -t tmpfs none /opt/otrs/var/tmp
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">注解</p>
+<p class="last">在 <code class="docutils literal notranslate"><span class="pre">/etc/fstab</span></code> 中添加永久性挂载点。</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">警告</p>
+<p class="last">这将是一个非永久性存储，在服务器重启时会丢失，所有的会话（如果将它们存储在文件系统中）和缓存数据都将丢失。</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">参见</p>
+<p class="last">还有一个集中的 <a class="reference external" href="https://otrs.com/otrs-feature/feature-add-on-cache-memcached-fast/">基于 memcached 的缓存后端</a> 可从 OTRS 集团购买。</p>
+</div>
+</div>
+<div class="section" id="clustering">
+<h2>集群<a class="headerlink" href="#clustering" title="永久链接至标题">¶</a></h2>
+<p>对于非常高的负载，可能需要在多个前端服务器的集群上运行 OTRS。 这是一项复杂的任务，存在许多陷阱。 因此，OTRS 集团专门为其 <a class="reference external" href="https://otrs.com/how-to-buy/">托管的OTRS</a> 环境中的集群提供支持。</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          
+
+<script>
+// Start Google Analytics Tracking
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-28118796-2', 'auto');
+ga('send', 'pageview');
+// End Google Analytics Tracking
+</script>
+
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="backup-restore.html" class="btn btn-neutral" title="备份和恢复" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2001-2019 OTRS AG, https://otrs.com/
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
