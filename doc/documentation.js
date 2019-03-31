@@ -44,7 +44,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en'],
+                    Languages: ['en', 'hu', 'zh_CN'],
                     AssetPath:     'doc-user',
                     AssetFilename: 'otrs_user_manual'
                 },
