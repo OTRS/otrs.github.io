@@ -781,7 +781,7 @@ Search.setIndex({docnames:["content/cloudservice","content/core","content/daemon
 :2,mailer
 :1,mailqueu:5,mailqueue
 :2,mailserverlogin:1,mailserverpassword:1,main
-:[3,4],mainmenu:5,mainten:3,maintenant
+:3,mainmenu:5,mainten:3,maintenant
 :1,mais
 :1,make
 :3,maken
