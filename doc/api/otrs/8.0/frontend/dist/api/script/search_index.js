@@ -198,6 +198,18 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
+    "apps/agent/helpers/organizeritemcustomizeregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemCustomizeRegistration</span>",
+    "variable"
+  ],
+  [
+    "apps/agent/helpers/organizeritemsidebarregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemSidebarRegistration</span>",
+    "variable"
+  ],
+  [
     "apps/agent/helpers/rootapplicationmoduleregistration~componentindex",
     "variable/index.html#static-variable-componentIndex",
     "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/RootApplicationModuleRegistration</span>",
@@ -267,6 +279,18 @@ window.esdocSearchIndex = [
     "apps/agent/helpers/loginpostauthregistration~getcomponents",
     "function/index.html#static-function-getComponents",
     "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/LoginPostAuthRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/agent/helpers/organizeritemcustomizeregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemCustomizeRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/agent/helpers/organizeritemsidebarregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemSidebarRegistration</span>",
     "function"
   ],
   [
@@ -369,6 +393,18 @@ window.esdocSearchIndex = [
     "helpers/formvalidators~getformvalidators",
     "function/index.html#static-function-getFormValidators",
     "<span>getFormValidators</span> <span class=\"search-result-import-path\">Helpers/FormValidators</span>",
+    "function"
+  ],
+  [
+    "apps/agent/helpers/organizeritemcustomizeregistration~getorganizeritemcustomizecomponents",
+    "function/index.html#static-function-getOrganizerItemCustomizeComponents",
+    "<span>getOrganizerItemCustomizeComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemCustomizeRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/agent/helpers/organizeritemsidebarregistration~getorganizeritemsidebarcomponents",
+    "function/index.html#static-function-getOrganizerItemSidebarComponents",
+    "<span>getOrganizerItemSidebarComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemSidebarRegistration</span>",
     "function"
   ],
   [
@@ -900,6 +936,18 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/helpers/organizeritemcustomizeregistration.js",
+    "file/Frontend/Apps/Agent/Helpers/OrganizerItemCustomizeRegistration.js.html",
+    "Frontend/Apps/Agent/Helpers/OrganizerItemCustomizeRegistration.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/helpers/organizeritemsidebarregistration.js",
+    "file/Frontend/Apps/Agent/Helpers/OrganizerItemSidebarRegistration.js.html",
+    "Frontend/Apps/Agent/Helpers/OrganizerItemSidebarRegistration.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/helpers/rootapplicationmoduleregistration.js",
     "file/Frontend/Apps/Agent/Helpers/RootApplicationModuleRegistration.js.html",
     "Frontend/Apps/Agent/Helpers/RootApplicationModuleRegistration.js",
@@ -922,6 +970,12 @@ window.esdocSearchIndex = [
     "class/Frontend/Apps/Agent/Plugins/RouterGenerator/index.js~RouterGenerator.html#instance-constructor-constructor",
     "Frontend/Apps/Agent/Plugins/RouterGenerator/index.js~RouterGenerator#constructor",
     "method"
+  ],
+  [
+    "frontend/apps/agent/plugins/store/organizer.js",
+    "file/Frontend/Apps/Agent/Plugins/Store/Organizer.js.html",
+    "Frontend/Apps/Agent/Plugins/Store/Organizer.js",
+    "file"
   ],
   [
     "frontend/apps/agent/plugins/store/index.js",
@@ -2097,6 +2151,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/form/field/formeditor.js",
     "file/Frontend/Tests/Components/Form/Field/FormEditor.js.html",
     "Frontend/Tests/Components/Form/Field/FormEditor.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formiconchooser.js",
+    "file/Frontend/Tests/Components/Form/Field/FormIconChooser.js.html",
+    "Frontend/Tests/Components/Form/Field/FormIconChooser.js",
     "file"
   ],
   [
