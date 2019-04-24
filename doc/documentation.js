@@ -143,7 +143,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS::ITSM 7',
-                    Languages: ['en', 'hu', 'zh_CN'],
+                    Languages: ['en', 'de', 'hu', 'zh_CN'],
                     AssetPath:     'doc-itsm',
                     AssetFilename: 'otrs_itsm_manual'
                 },
