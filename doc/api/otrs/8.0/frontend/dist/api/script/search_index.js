@@ -954,6 +954,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/handleuseractivity.js",
+    "file/Frontend/Apps/Agent/Mixins/HandleUserActivity.js.html",
+    "Frontend/Apps/Agent/Mixins/HandleUserActivity.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/metaheader.js",
     "file/Frontend/Apps/Agent/Mixins/MetaHeader.js.html",
     "Frontend/Apps/Agent/Mixins/MetaHeader.js",
