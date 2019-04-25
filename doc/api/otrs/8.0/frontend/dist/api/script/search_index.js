@@ -1489,13 +1489,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1515,6 +1515,12 @@ window.esdocSearchIndex = [
     "frontend/mixins/autofocus.js",
     "file/Frontend/Mixins/Autofocus.js.html",
     "Frontend/Mixins/Autofocus.js",
+    "file"
+  ],
+  [
+    "frontend/mixins/avatarinitials.js",
+    "file/Frontend/Mixins/AvatarInitials.js.html",
+    "Frontend/Mixins/AvatarInitials.js",
     "file"
   ],
   [
