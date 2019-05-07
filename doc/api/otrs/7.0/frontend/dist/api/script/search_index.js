@@ -132,12 +132,6 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
-    "plugins/store~store",
-    "class/Frontend/Plugins/Store/index.js~Store.html",
-    "<span>Store</span> <span class=\"search-result-import-path\">Plugins/Store</span>",
-    "class"
-  ],
-  [
     "helpers/testflags~testflags",
     "class/Frontend/Helpers/TestFlags.js~TestFlags.html",
     "<span>TestFlags</span> <span class=\"search-result-import-path\">Helpers/TestFlags</span>",
@@ -1099,13 +1093,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1234,18 +1228,6 @@ window.esdocSearchIndex = [
     "file/Frontend/Plugins/Store/PublicChat.js.html",
     "Frontend/Plugins/Store/PublicChat.js",
     "file"
-  ],
-  [
-    "frontend/plugins/store/index.js",
-    "file/Frontend/Plugins/Store/index.js.html",
-    "Frontend/Plugins/Store/index.js",
-    "file"
-  ],
-  [
-    "frontend/plugins/store/index.js~store#constructor",
-    "class/Frontend/Plugins/Store/index.js~Store.html#instance-constructor-constructor",
-    "Frontend/Plugins/Store/index.js~Store#constructor",
-    "method"
   ],
   [
     "frontend/plugins/testflags/index.js",
