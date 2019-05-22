@@ -1122,6 +1122,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/mixins/componentloaded.js",
+    "file/Frontend/Mixins/ComponentLoaded.js.html",
+    "Frontend/Mixins/ComponentLoaded.js",
+    "file"
+  ],
+  [
     "frontend/mixins/diacriticslookup.js",
     "file/Frontend/Mixins/DiacriticsLookup.js.html",
     "Frontend/Mixins/DiacriticsLookup.js",
@@ -1369,13 +1375,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
