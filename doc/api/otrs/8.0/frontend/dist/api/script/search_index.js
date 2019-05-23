@@ -12,6 +12,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "form/validator/availablecolumns~availablecolumns",
+    "class/Frontend/Form/Validator/AvailableColumns.js~AvailableColumns.html",
+    "<span>AvailableColumns</span> <span class=\"search-result-import-path\">Form/Validator/AvailableColumns</span>",
+    "class"
+  ],
+  [
     "components/form/field/formdatetime/flatpickr/plugins/calendarselect/calendarselect~calendarselectplugin",
     "function/index.html#static-function-CalendarSelectPlugin",
     "<span>CalendarSelectPlugin</span> <span class=\"search-result-import-path\">Components/Form/Field/FormDateTime/FlatPickr/Plugins/CalendarSelect/CalendarSelect</span>",
@@ -556,6 +562,12 @@ window.esdocSearchIndex = [
     "function/index.html#static-function-textMatch",
     "<span>textMatch</span> <span class=\"search-result-import-path\">Helpers/TextMatch</span>",
     "function"
+  ],
+  [
+    "form/validator/availablecolumns~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/AvailableColumns</span>",
+    "variable"
   ],
   [
     "form/validator/datatype~validator",
@@ -1158,6 +1170,30 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/form/validator/availablecolumns.js",
+    "file/Frontend/Form/Validator/AvailableColumns.js.html",
+    "Frontend/Form/Validator/AvailableColumns.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/availablecolumns.js~availablecolumns#errormessage",
+    "class/Frontend/Form/Validator/AvailableColumns.js~AvailableColumns.html#instance-method-errorMessage",
+    "Frontend/Form/Validator/AvailableColumns.js~AvailableColumns#errorMessage",
+    "method"
+  ],
+  [
+    "frontend/form/validator/availablecolumns.js~availablecolumns#iscolumnavailable",
+    "class/Frontend/Form/Validator/AvailableColumns.js~AvailableColumns.html#instance-method-isColumnAvailable",
+    "Frontend/Form/Validator/AvailableColumns.js~AvailableColumns#isColumnAvailable",
+    "method"
+  ],
+  [
+    "frontend/form/validator/availablecolumns.js~availablecolumns#validate",
+    "class/Frontend/Form/Validator/AvailableColumns.js~AvailableColumns.html#instance-method-validate",
+    "Frontend/Form/Validator/AvailableColumns.js~AvailableColumns#validate",
+    "method"
+  ],
+  [
     "frontend/form/validator/datatype.js",
     "file/Frontend/Form/Validator/DataType.js.html",
     "Frontend/Form/Validator/DataType.js",
@@ -1489,13 +1525,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -2256,9 +2292,21 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formvisiblecolumns.js",
+    "file/Frontend/Tests/Components/Form/Field/FormVisibleColumns.js.html",
+    "Frontend/Tests/Components/Form/Field/FormVisibleColumns.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/vueinstance.js",
     "file/Frontend/Tests/Components/VueInstance.js.html",
     "Frontend/Tests/Components/VueInstance.js",
+    "file"
+  ],
+  [
+    "frontend/tests/form/validator/availablecolumns.js",
+    "file/Frontend/Tests/Form/Validator/AvailableColumns.js.html",
+    "Frontend/Tests/Form/Validator/AvailableColumns.js",
     "file"
   ],
   [
