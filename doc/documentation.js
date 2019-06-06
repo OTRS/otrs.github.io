@@ -120,7 +120,7 @@ $(document).ready(function() {
                     Version:     '6.0',
                     HTMLPath:    'stable',
                     Name:        'OTRS 6',
-                    Languages:   ['en', 'hu', 'zh_CN'],
+                    Languages:   ['en', 'de', 'hu', 'zh_CN'],
                     AssetPath:     'doc-otrsbusiness',
                     AssetFilename: 'otrs_business_solution_book'
                 },
