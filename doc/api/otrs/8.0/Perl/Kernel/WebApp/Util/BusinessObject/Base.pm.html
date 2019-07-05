@@ -59,25 +59,35 @@ $(document).ready(function() {
   <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
     <ul>
       <li><a href="#has-UserID">has UserID</a></li>
+      <li><a href="#has-UserData">has UserData</a></li>
+      <li><a href="#has-ItemDetailDataDynamicFields">has ItemDetailDataDynamicFields</a></li>
+      <li><a href="#has-LookupItemDetailDataDynamicFieldsObject">has LookupItemDetailDataDynamicFieldsObject</a></li>
       <li><a href="#MethodParamValidationSchema">MethodParamValidationSchema()</a></li>
       <li><a href="#TransformActiveFilterValue">TransformActiveFilterValue()</a></li>
       <li><a href="#IdentifierKey">IdentifierKey()</a></li>
       <li><a href="#DefaultSorting">DefaultSorting()</a></li>
       <li><a href="#ColumnTitles">ColumnTitles()</a></li>
+      <li><a href="#SortableColumns">SortableColumns()</a></li>
       <li><a href="#ClickableColumns">ClickableColumns()</a></li>
       <li><a href="#TextTruncatableColumns">TextTruncatableColumns()</a></li>
       <li><a href="#TranslatableColumns">TranslatableColumns()</a></li>
+      <li><a href="#DynamicFieldObjectTypes">DynamicFieldObjectTypes()</a></li>
+      <li><a href="#CleanupVisibleColumns">CleanupVisibleColumns()</a></li>
       <li><a href="#ItemDetailDataGet">ItemDetailDataGet()</a></li>
       <li><a href="#ItemUpdateCheck">ItemUpdateCheck()</a></li>
       <li><a href="#FiltersGet">FiltersGet()</a></li>
       <li><a href="#FormSchemaPermanentConfigurationGet">FormSchemaPermanentConfigurationGet()</a></li>
       <li><a href="#FormSchemaFilterConfigurationGet">FormSchemaFilterConfigurationGet()</a></li>
+      <li><a href="#DynamicFieldObjectsGet">DynamicFieldObjectsGet()</a></li>
     </ul>
   </li>
   <li><a href="#PRIVATE-INTERFACE">PRIVATE INTERFACE</a>
     <ul>
       <li><a href="#ProvideFilters">_ProvideFilters()</a></li>
       <li><a href="#FormSchemaFilterConfigurationGetFilters">_FormSchemaFilterConfigurationGetFilters()</a></li>
+      <li><a href="#BuildLookupItemDetailDataDynamicFieldsObject">_BuildLookupItemDetailDataDynamicFieldsObject()</a></li>
+      <li><a href="#ProvideFilterDynamicFieldsObject">_ProvideFilterDynamicFieldsObject()</a></li>
+      <li><a href="#BuildUserData">_BuildUserData()</a></li>
     </ul>
   </li>
 </ul>
@@ -95,6 +105,18 @@ $(document).ready(function() {
 <h2 id="has-UserID">has UserID</h2>
 
 <p>Attribute that holds the record user id.</p>
+
+<h2 id="has-UserData">has UserData</h2>
+
+<p>Attribute that holds all user information.</p>
+
+<h2 id="has-ItemDetailDataDynamicFields">has ItemDetailDataDynamicFields</h2>
+
+<p>Attribute that holds the dynamic fields which should be included in the item detail data.</p>
+
+<h2 id="has-LookupItemDetailDataDynamicFieldsObject">has LookupItemDetailDataDynamicFieldsObject</h2>
+
+<p>Lookup attribute that holds the dynamic fields object which should be included in the item detail data.</p>
 
 <h2 id="MethodParamValidationSchema">MethodParamValidationSchema()</h2>
 
@@ -114,7 +136,7 @@ $(document).ready(function() {
 
 <h2 id="IdentifierKey">IdentifierKey()</h2>
 
-<p>Holds the identifier key for the web notification list entries.</p>
+<p>Holds the identifier key for the list entries.</p>
 
 <h2 id="DefaultSorting">DefaultSorting()</h2>
 
@@ -123,6 +145,10 @@ $(document).ready(function() {
 <h2 id="ColumnTitles">ColumnTitles()</h2>
 
 <p>Holds the column titles for the ticket list columns.</p>
+
+<h2 id="SortableColumns">SortableColumns()</h2>
+
+<p>Holds the sort-able columns for the table.</p>
 
 <h2 id="ClickableColumns">ClickableColumns()</h2>
 
@@ -135,6 +161,14 @@ $(document).ready(function() {
 <h2 id="TranslatableColumns">TranslatableColumns()</h2>
 
 <p>Holds the columns which should the translated in the frontend.</p>
+
+<h2 id="DynamicFieldObjectTypes">DynamicFieldObjectTypes()</h2>
+
+<p>Holds the dynamic field object types, if the business object supports dynamic fields.</p>
+
+<h2 id="CleanupVisibleColumns">CleanupVisibleColumns()</h2>
+
+<p>Filter out columns based on configuration options. e.g. Watch column should only be shown when the watch feature is enabled.</p>
 
 <h2 id="ItemDetailDataGet">ItemDetailDataGet()</h2>
 
@@ -154,7 +188,7 @@ $(document).ready(function() {
 
 <pre><code>    my $FormSchema = $BusinessObjectTypeObject-&gt;FormSchemaPermanentConfigurationGet(
         Config =&gt; {                     # (required)
-             &quot;AvailableFilters&quot; =&gt; [
+             &quot;HideAvailableFilters&quot; =&gt; [
                 &quot;Name&quot;,
                 &quot;ObjectType&quot;,
                 &quot;ObjectReference&quot;,
@@ -204,6 +238,16 @@ $(document).ready(function() {
         },
     };</code></pre>
 
+<h2 id="DynamicFieldObjectsGet">DynamicFieldObjectsGet()</h2>
+
+<p>This method returns the dynamic field objects as an array reference.</p>
+
+<pre><code>    my $DynamicFieldsConfig = $BusinessObjectTypeObject-&gt;DynamicFieldObjectsGet(
+        Valid        =&gt; 1,
+        ObjectType   =&gt; [ &#39;Ticket&#39;, &#39;Article&#39; ],
+        FieldDisplay =&gt; $Self-&gt;_TicketDetailViewConfig()-&gt;{FollowUpDynamicField} || {}, # optional
+     );</code></pre>
+
 <h1 id="PRIVATE-INTERFACE">PRIVATE INTERFACE</h1>
 
 <h2 id="ProvideFilters">_ProvideFilters()</h2>
@@ -243,6 +287,18 @@ $(document).ready(function() {
 <h2 id="FormSchemaFilterConfigurationGetFilters">_FormSchemaFilterConfigurationGetFilters()</h2>
 
 <p>Helper function to disable the active filters for the non permanent form schema.</p>
+
+<h2 id="BuildLookupItemDetailDataDynamicFieldsObject">_BuildLookupItemDetailDataDynamicFieldsObject()</h2>
+
+<p>Initializes the attribute <code>LookupItemDetailDataDynamicFieldsObject</code>.</p>
+
+<h2 id="ProvideFilterDynamicFieldsObject">_ProvideFilterDynamicFieldsObject()</h2>
+
+<p>Provided the dynamic fields which can be used as a filter.</p>
+
+<h2 id="BuildUserData">_BuildUserData()</h2>
+
+<p>Initializes the attribute <code>UserData</code>.</p>
 
 </div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
