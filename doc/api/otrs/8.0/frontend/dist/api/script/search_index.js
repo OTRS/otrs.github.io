@@ -246,6 +246,12 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
+    "helpers/detailviewwidgetregistration~componentindex",
+    "variable/index.html#static-variable-componentIndex",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/DetailViewWidgetRegistration</span>",
+    "variable"
+  ],
+  [
     "helpers/dynamicfieldregistration~componentindex",
     "variable/index.html#static-variable-componentIndex",
     "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/DynamicFieldRegistration</span>",
@@ -330,6 +336,12 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "helpers/detailviewwidgetregistration~getcomponents",
+    "function/index.html#static-function-getComponents",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/DetailViewWidgetRegistration</span>",
+    "function"
+  ],
+  [
     "helpers/dynamicfieldregistration~getcomponents",
     "function/index.html#static-function-getComponents",
     "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/DynamicFieldRegistration</span>",
@@ -345,6 +357,12 @@ window.esdocSearchIndex = [
     "helpers/twofactorsetupmethodregistration~getcomponents",
     "function/index.html#static-function-getComponents",
     "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/TwoFactorSetupMethodRegistration</span>",
+    "function"
+  ],
+  [
+    "helpers/detailviewwidgetregistration~getdetailviewwidgetcomponents",
+    "function/index.html#static-function-getDetailViewWidgetComponents",
+    "<span>getDetailViewWidgetComponents</span> <span class=\"search-result-import-path\">Helpers/DetailViewWidgetRegistration</span>",
     "function"
   ],
   [
@@ -1368,6 +1386,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/helpers/detailviewwidgetregistration.js",
+    "file/Frontend/Helpers/DetailViewWidgetRegistration.js.html",
+    "Frontend/Helpers/DetailViewWidgetRegistration.js",
+    "file"
+  ],
+  [
     "frontend/helpers/dynamicfieldregistration.js",
     "file/Frontend/Helpers/DynamicFieldRegistration.js.html",
     "Frontend/Helpers/DynamicFieldRegistration.js",
@@ -1525,13 +1549,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
