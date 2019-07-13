@@ -1596,6 +1596,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/mixins/formfield.js",
+    "file/Frontend/Mixins/FormField.js.html",
+    "Frontend/Mixins/FormField.js",
+    "file"
+  ],
+  [
     "frontend/mixins/formfieldfilter.js",
     "file/Frontend/Mixins/FormFieldFilter.js.html",
     "Frontend/Mixins/FormFieldFilter.js",
@@ -1927,13 +1933,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
