@@ -24,6 +24,12 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "form/validator/compareoperatorfilter~compareoperatorfilter",
+    "class/Frontend/Form/Validator/CompareOperatorFilter.js~CompareOperatorFilter.html",
+    "<span>CompareOperatorFilter</span> <span class=\"search-result-import-path\">Form/Validator/CompareOperatorFilter</span>",
+    "class"
+  ],
+  [
     "form/validator/datatype~datatype",
     "class/Frontend/Form/Validator/DataType.js~DataType.html",
     "<span>DataType</span> <span class=\"search-result-import-path\">Form/Validator/DataType</span>",
@@ -585,6 +591,12 @@ window.esdocSearchIndex = [
     "form/validator/availablecolumns~validator",
     "variable/index.html#static-variable-validator",
     "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/AvailableColumns</span>",
+    "variable"
+  ],
+  [
+    "form/validator/compareoperatorfilter~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/CompareOperatorFilter</span>",
     "variable"
   ],
   [
@@ -1212,6 +1224,24 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/form/validator/compareoperatorfilter.js",
+    "file/Frontend/Form/Validator/CompareOperatorFilter.js.html",
+    "Frontend/Form/Validator/CompareOperatorFilter.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/compareoperatorfilter.js~compareoperatorfilter#errormessage",
+    "class/Frontend/Form/Validator/CompareOperatorFilter.js~CompareOperatorFilter.html#instance-method-errorMessage",
+    "Frontend/Form/Validator/CompareOperatorFilter.js~CompareOperatorFilter#errorMessage",
+    "method"
+  ],
+  [
+    "frontend/form/validator/compareoperatorfilter.js~compareoperatorfilter#validate",
+    "class/Frontend/Form/Validator/CompareOperatorFilter.js~CompareOperatorFilter.html#instance-method-validate",
+    "Frontend/Form/Validator/CompareOperatorFilter.js~CompareOperatorFilter#validate",
+    "method"
+  ],
+  [
     "frontend/form/validator/datatype.js",
     "file/Frontend/Form/Validator/DataType.js.html",
     "Frontend/Form/Validator/DataType.js",
@@ -1549,13 +1579,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -2070,6 +2100,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/apps/agent/components/common/commonexportlistaction.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Common/CommonExportListAction.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Common/CommonExportListAction.js",
+    "file"
+  ],
+  [
     "frontend/tests/apps/agent/components/common/commonfilterpresets.js",
     "file/Frontend/Tests/Apps/Agent/Components/Common/CommonFilterPresets.js.html",
     "Frontend/Tests/Apps/Agent/Components/Common/CommonFilterPresets.js",
@@ -2304,6 +2340,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formratefilter.js",
+    "file/Frontend/Tests/Components/Form/Field/FormRateFilter.js.html",
+    "Frontend/Tests/Components/Form/Field/FormRateFilter.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/form/field/formselect.js",
     "file/Frontend/Tests/Components/Form/Field/FormSelect.js.html",
     "Frontend/Tests/Components/Form/Field/FormSelect.js",
@@ -2337,6 +2379,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/form/field/formvisiblecolumns.js",
     "file/Frontend/Tests/Components/Form/Field/FormVisibleColumns.js.html",
     "Frontend/Tests/Components/Form/Field/FormVisibleColumns.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formvotefilter.js",
+    "file/Frontend/Tests/Components/Form/Field/FormVoteFilter.js.html",
+    "Frontend/Tests/Components/Form/Field/FormVoteFilter.js",
     "file"
   ],
   [
