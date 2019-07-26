@@ -1591,13 +1591,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1872,6 +1872,12 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/server/apiclient/pushevents.js~pushevents.subscriptionpushevent",
+    "typedef/index.html#static-typedef-SubscriptionPushEvent",
+    "Frontend/Server/APIClient/PushEvents.js~PushEvents.SubscriptionPushEvent",
+    "typedef"
+  ],
+  [
     "frontend/server/apiclient/requests.js",
     "file/Frontend/Server/APIClient/Requests.js.html",
     "Frontend/Server/APIClient/Requests.js",
@@ -2028,21 +2034,15 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/server/apiclient/index.js~apiclient#updateauthenticateduserid",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-method-updateAuthenticatedUserId",
+    "Frontend/Server/APIClient/index.js~APIClient#updateAuthenticatedUserId",
+    "method"
+  ],
+  [
     "frontend/server/apiclient/index.js~apiclient.subscription",
     "typedef/index.html#static-typedef-Subscription",
     "Frontend/Server/APIClient/index.js~APIClient.Subscription",
-    "typedef"
-  ],
-  [
-    "frontend/server/apiclient/index.js~apiclient.subscriptionpushevent",
-    "typedef/index.html#static-typedef-SubscriptionPushEvent",
-    "Frontend/Server/APIClient/index.js~APIClient.SubscriptionPushEvent",
-    "typedef"
-  ],
-  [
-    "frontend/server/apiclient/index.js~apiclient.subscriptionpushevent",
-    "typedef/index.html#static-typedef-SubscriptionPushEvent",
-    "Frontend/Server/APIClient/index.js~APIClient.SubscriptionPushEvent",
     "typedef"
   ],
   [
