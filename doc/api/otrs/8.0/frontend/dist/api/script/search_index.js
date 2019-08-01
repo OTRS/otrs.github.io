@@ -198,81 +198,21 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "apps/agent/helpers/agentcomponentregistration~agentcomponentindex",
+    "variable/index.html#static-variable-agentComponentIndex",
+    "<span>agentComponentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/AgentComponentRegistration</span>",
+    "variable"
+  ],
+  [
     "server/apiclient~client",
     "variable/index.html#static-variable-client",
     "<span>client</span> <span class=\"search-result-import-path\">Server/APIClient</span>",
     "variable"
   ],
   [
-    "apps/agent/helpers/loginpostauthregistration~componentindex",
+    "helpers/componentregistration~componentindex",
     "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/LoginPostAuthRegistration</span>",
-    "variable"
-  ],
-  [
-    "apps/agent/helpers/organizeritemcustomizeregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemCustomizeRegistration</span>",
-    "variable"
-  ],
-  [
-    "apps/agent/helpers/organizeritemsidebarregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemSidebarRegistration</span>",
-    "variable"
-  ],
-  [
-    "apps/agent/helpers/rootapplicationmoduleregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/RootApplicationModuleRegistration</span>",
-    "variable"
-  ],
-  [
-    "apps/external/helpers/communicationchannelregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
-    "variable"
-  ],
-  [
-    "apps/external/helpers/documentsearchtyperegistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeRegistration</span>",
-    "variable"
-  ],
-  [
-    "apps/external/helpers/loginpostauthregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/LoginPostAuthRegistration</span>",
-    "variable"
-  ],
-  [
-    "apps/external/helpers/rootapplicationmoduleregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/RootApplicationModuleRegistration</span>",
-    "variable"
-  ],
-  [
-    "helpers/detailviewwidgetregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/DetailViewWidgetRegistration</span>",
-    "variable"
-  ],
-  [
-    "helpers/dynamicfieldregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/DynamicFieldRegistration</span>",
-    "variable"
-  ],
-  [
-    "helpers/formfieldregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/FormFieldRegistration</span>",
-    "variable"
-  ],
-  [
-    "helpers/twofactorsetupmethodregistration~componentindex",
-    "variable/index.html#static-variable-componentIndex",
-    "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/TwoFactorSetupMethodRegistration</span>",
+    "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/ComponentRegistration</span>",
     "variable"
   ],
   [
@@ -282,93 +222,39 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
+    "apps/external/helpers/externalcomponentregistration~externalcomponentindex",
+    "variable/index.html#static-variable-externalComponentIndex",
+    "<span>externalComponentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/ExternalComponentRegistration</span>",
+    "variable"
+  ],
+  [
+    "apps/agent/helpers/agentcomponentregistration~getagentcomponentregistration",
+    "function/index.html#static-function-getAgentComponentRegistration",
+    "<span>getAgentComponentRegistration</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/AgentComponentRegistration</span>",
+    "function"
+  ],
+  [
+    "apps/agent/helpers/agentcomponentregistration~getagentcomponents",
+    "function/index.html#static-function-getAgentComponents",
+    "<span>getAgentComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/AgentComponentRegistration</span>",
+    "function"
+  ],
+  [
     "helpers/browserlanguage~getbrowserlanguage",
     "function/index.html#static-function-getBrowserLanguage",
     "<span>getBrowserLanguage</span> <span class=\"search-result-import-path\">Helpers/BrowserLanguage</span>",
     "function"
   ],
   [
-    "apps/external/helpers/communicationchannelregistration~getchannelcomponents",
-    "function/index.html#static-function-getChannelComponents",
-    "<span>getChannelComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
+    "helpers/componentregistration~getcomponentregistration",
+    "function/index.html#static-function-getComponentRegistration",
+    "<span>getComponentRegistration</span> <span class=\"search-result-import-path\">Helpers/ComponentRegistration</span>",
     "function"
   ],
   [
-    "apps/agent/helpers/loginpostauthregistration~getcomponents",
+    "helpers/componentregistration~getcomponents",
     "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/LoginPostAuthRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/agent/helpers/organizeritemcustomizeregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemCustomizeRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/agent/helpers/organizeritemsidebarregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemSidebarRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/agent/helpers/rootapplicationmoduleregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/RootApplicationModuleRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/external/helpers/communicationchannelregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/CommunicationChannelRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/external/helpers/documentsearchtyperegistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/external/helpers/loginpostauthregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/LoginPostAuthRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/external/helpers/rootapplicationmoduleregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/RootApplicationModuleRegistration</span>",
-    "function"
-  ],
-  [
-    "helpers/detailviewwidgetregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/DetailViewWidgetRegistration</span>",
-    "function"
-  ],
-  [
-    "helpers/dynamicfieldregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/DynamicFieldRegistration</span>",
-    "function"
-  ],
-  [
-    "helpers/formfieldregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/FormFieldRegistration</span>",
-    "function"
-  ],
-  [
-    "helpers/twofactorsetupmethodregistration~getcomponents",
-    "function/index.html#static-function-getComponents",
-    "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/TwoFactorSetupMethodRegistration</span>",
-    "function"
-  ],
-  [
-    "helpers/detailviewwidgetregistration~getdetailviewwidgetcomponents",
-    "function/index.html#static-function-getDetailViewWidgetComponents",
-    "<span>getDetailViewWidgetComponents</span> <span class=\"search-result-import-path\">Helpers/DetailViewWidgetRegistration</span>",
+    "<span>getComponents</span> <span class=\"search-result-import-path\">Helpers/ComponentRegistration</span>",
     "function"
   ],
   [
@@ -396,15 +282,15 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
-    "apps/external/helpers/documentsearchtyperegistration~getdocumentsearchtypecomponents",
-    "function/index.html#static-function-getDocumentSearchTypeComponents",
-    "<span>getDocumentSearchTypeComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/DocumentSearchTypeRegistration</span>",
+    "apps/external/helpers/externalcomponentregistration~getexternalcomponentregistration",
+    "function/index.html#static-function-getExternalComponentRegistration",
+    "<span>getExternalComponentRegistration</span> <span class=\"search-result-import-path\">Apps/External/Helpers/ExternalComponentRegistration</span>",
     "function"
   ],
   [
-    "helpers/dynamicfieldregistration~getdynamicfieldcomponents",
-    "function/index.html#static-function-getDynamicFieldComponents",
-    "<span>getDynamicFieldComponents</span> <span class=\"search-result-import-path\">Helpers/DynamicFieldRegistration</span>",
+    "apps/external/helpers/externalcomponentregistration~getexternalcomponents",
+    "function/index.html#static-function-getExternalComponents",
+    "<span>getExternalComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/ExternalComponentRegistration</span>",
     "function"
   ],
   [
@@ -414,39 +300,9 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
-    "helpers/formfieldregistration~getformfields",
-    "function/index.html#static-function-getFormFields",
-    "<span>getFormFields</span> <span class=\"search-result-import-path\">Helpers/FormFieldRegistration</span>",
-    "function"
-  ],
-  [
     "helpers/formvalidators~getformvalidators",
     "function/index.html#static-function-getFormValidators",
     "<span>getFormValidators</span> <span class=\"search-result-import-path\">Helpers/FormValidators</span>",
-    "function"
-  ],
-  [
-    "apps/agent/helpers/organizeritemcustomizeregistration~getorganizeritemcustomizecomponents",
-    "function/index.html#static-function-getOrganizerItemCustomizeComponents",
-    "<span>getOrganizerItemCustomizeComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemCustomizeRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/agent/helpers/organizeritemsidebarregistration~getorganizeritemsidebarcomponents",
-    "function/index.html#static-function-getOrganizerItemSidebarComponents",
-    "<span>getOrganizerItemSidebarComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/OrganizerItemSidebarRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/agent/helpers/loginpostauthregistration~getpostauthcomponents",
-    "function/index.html#static-function-getPostAuthComponents",
-    "<span>getPostAuthComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/LoginPostAuthRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/external/helpers/loginpostauthregistration~getpostauthcomponents",
-    "function/index.html#static-function-getPostAuthComponents",
-    "<span>getPostAuthComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/LoginPostAuthRegistration</span>",
     "function"
   ],
   [
@@ -456,27 +312,9 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
-    "apps/agent/helpers/rootapplicationmoduleregistration~getrootapplicationmodulecomponents",
-    "function/index.html#static-function-getRootApplicationModuleComponents",
-    "<span>getRootApplicationModuleComponents</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/RootApplicationModuleRegistration</span>",
-    "function"
-  ],
-  [
-    "apps/external/helpers/rootapplicationmoduleregistration~getrootapplicationmodulecomponents",
-    "function/index.html#static-function-getRootApplicationModuleComponents",
-    "<span>getRootApplicationModuleComponents</span> <span class=\"search-result-import-path\">Apps/External/Helpers/RootApplicationModuleRegistration</span>",
-    "function"
-  ],
-  [
     "apps/chatintegration/helpers/scriptattributes~getscriptattribute",
     "function/index.html#static-function-getScriptAttribute",
     "<span>getScriptAttribute</span> <span class=\"search-result-import-path\">Apps/ChatIntegration/Helpers/ScriptAttributes</span>",
-    "function"
-  ],
-  [
-    "helpers/twofactorsetupmethodregistration~gettwofactorsetupmethodcomponents",
-    "function/index.html#static-function-getTwoFactorSetupMethodComponents",
-    "<span>getTwoFactorSetupMethodComponents</span> <span class=\"search-result-import-path\">Helpers/TwoFactorSetupMethodRegistration</span>",
     "function"
   ],
   [
@@ -972,27 +810,9 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
-    "frontend/apps/agent/helpers/loginpostauthregistration.js",
-    "file/Frontend/Apps/Agent/Helpers/LoginPostAuthRegistration.js.html",
-    "Frontend/Apps/Agent/Helpers/LoginPostAuthRegistration.js",
-    "file"
-  ],
-  [
-    "frontend/apps/agent/helpers/organizeritemcustomizeregistration.js",
-    "file/Frontend/Apps/Agent/Helpers/OrganizerItemCustomizeRegistration.js.html",
-    "Frontend/Apps/Agent/Helpers/OrganizerItemCustomizeRegistration.js",
-    "file"
-  ],
-  [
-    "frontend/apps/agent/helpers/organizeritemsidebarregistration.js",
-    "file/Frontend/Apps/Agent/Helpers/OrganizerItemSidebarRegistration.js.html",
-    "Frontend/Apps/Agent/Helpers/OrganizerItemSidebarRegistration.js",
-    "file"
-  ],
-  [
-    "frontend/apps/agent/helpers/rootapplicationmoduleregistration.js",
-    "file/Frontend/Apps/Agent/Helpers/RootApplicationModuleRegistration.js.html",
-    "Frontend/Apps/Agent/Helpers/RootApplicationModuleRegistration.js",
+    "frontend/apps/agent/helpers/agentcomponentregistration.js",
+    "file/Frontend/Apps/Agent/Helpers/AgentComponentRegistration.js.html",
+    "Frontend/Apps/Agent/Helpers/AgentComponentRegistration.js",
     "file"
   ],
   [
@@ -1092,12 +912,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/apps/external/helpers/communicationchannelregistration.js",
-    "file/Frontend/Apps/External/Helpers/CommunicationChannelRegistration.js.html",
-    "Frontend/Apps/External/Helpers/CommunicationChannelRegistration.js",
-    "file"
-  ],
-  [
     "frontend/apps/external/helpers/documentsearchtypelinks/custompagecontent.js",
     "file/Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/CustomPageContent.js.html",
     "Frontend/Apps/External/Helpers/DocumentSearchTypeLinks/CustomPageContent.js",
@@ -1122,21 +936,9 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/apps/external/helpers/documentsearchtyperegistration.js",
-    "file/Frontend/Apps/External/Helpers/DocumentSearchTypeRegistration.js.html",
-    "Frontend/Apps/External/Helpers/DocumentSearchTypeRegistration.js",
-    "file"
-  ],
-  [
-    "frontend/apps/external/helpers/loginpostauthregistration.js",
-    "file/Frontend/Apps/External/Helpers/LoginPostAuthRegistration.js.html",
-    "Frontend/Apps/External/Helpers/LoginPostAuthRegistration.js",
-    "file"
-  ],
-  [
-    "frontend/apps/external/helpers/rootapplicationmoduleregistration.js",
-    "file/Frontend/Apps/External/Helpers/RootApplicationModuleRegistration.js.html",
-    "Frontend/Apps/External/Helpers/RootApplicationModuleRegistration.js",
+    "frontend/apps/external/helpers/externalcomponentregistration.js",
+    "file/Frontend/Apps/External/Helpers/ExternalComponentRegistration.js.html",
+    "Frontend/Apps/External/Helpers/ExternalComponentRegistration.js",
     "file"
   ],
   [
@@ -1428,27 +1230,15 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/helpers/detailviewwidgetregistration.js",
-    "file/Frontend/Helpers/DetailViewWidgetRegistration.js.html",
-    "Frontend/Helpers/DetailViewWidgetRegistration.js",
-    "file"
-  ],
-  [
-    "frontend/helpers/dynamicfieldregistration.js",
-    "file/Frontend/Helpers/DynamicFieldRegistration.js.html",
-    "Frontend/Helpers/DynamicFieldRegistration.js",
+    "frontend/helpers/componentregistration.js",
+    "file/Frontend/Helpers/ComponentRegistration.js.html",
+    "Frontend/Helpers/ComponentRegistration.js",
     "file"
   ],
   [
     "frontend/helpers/filetypemapping.js",
     "file/Frontend/Helpers/FileTypeMapping.js.html",
     "Frontend/Helpers/FileTypeMapping.js",
-    "file"
-  ],
-  [
-    "frontend/helpers/formfieldregistration.js",
-    "file/Frontend/Helpers/FormFieldRegistration.js.html",
-    "Frontend/Helpers/FormFieldRegistration.js",
     "file"
   ],
   [
@@ -1503,12 +1293,6 @@ window.esdocSearchIndex = [
     "frontend/helpers/textmatch.js",
     "file/Frontend/Helpers/TextMatch.js.html",
     "Frontend/Helpers/TextMatch.js",
-    "file"
-  ],
-  [
-    "frontend/helpers/twofactorsetupmethodregistration.js",
-    "file/Frontend/Helpers/TwoFactorSetupMethodRegistration.js.html",
-    "Frontend/Helpers/TwoFactorSetupMethodRegistration.js",
     "file"
   ],
   [
@@ -1981,13 +1765,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
