@@ -1410,6 +1410,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/mixins/businessobjectwidget.js",
+    "file/Frontend/Mixins/BusinessObjectWidget.js.html",
+    "Frontend/Mixins/BusinessObjectWidget.js",
+    "file"
+  ],
+  [
     "frontend/mixins/componentloaded.js",
     "file/Frontend/Mixins/ComponentLoaded.js.html",
     "Frontend/Mixins/ComponentLoaded.js",
@@ -1896,6 +1902,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/apps/agent/components/common/commonbreadcrumbagent.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Common/CommonBreadcrumbAgent.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Common/CommonBreadcrumbAgent.js",
+    "file"
+  ],
+  [
     "frontend/tests/apps/agent/components/common/commonexportlistaction.js",
     "file/Frontend/Tests/Apps/Agent/Components/Common/CommonExportListAction.js.html",
     "Frontend/Tests/Apps/Agent/Components/Common/CommonExportListAction.js",
@@ -1959,6 +1971,30 @@ window.esdocSearchIndex = [
     "frontend/tests/apps/external/components/layout/layoutsubpageheader.js",
     "file/Frontend/Tests/Apps/External/Components/Layout/LayoutSubPageHeader.js.html",
     "Frontend/Tests/Apps/External/Components/Layout/LayoutSubPageHeader.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/businessobject/businessobjectcolumnlayoutswitch.js",
+    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayoutSwitch.js.html",
+    "Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayoutSwitch.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/businessobject/businessobjectdetailcolumnlayout.js",
+    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectDetailColumnLayout.js.html",
+    "Frontend/Tests/Components/BusinessObject/BusinessObjectDetailColumnLayout.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/businessobject/businessobjectwidget/businessobjectwidgetstripepeople.js",
+    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js.html",
+    "Frontend/Tests/Components/BusinessObject/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/businessobject/businessobjectwidgetlayout.js",
+    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectWidgetLayout.js.html",
+    "Frontend/Tests/Components/BusinessObject/BusinessObjectWidgetLayout.js",
     "file"
   ],
   [

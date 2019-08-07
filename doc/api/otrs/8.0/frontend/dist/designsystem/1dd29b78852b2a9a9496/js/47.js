@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[47],{"3Hfo":function(a,e,t){"use strict";var l=t("8CHY");e.a={methods:{filter:function(a){var e=this,t="";t+=this.$locale.translate(this.label,this.labelPlaceholder);return["description","localPlaceholder"].forEach(function(a){t+=e.$locale.translate(e[a])}),Object(l.a)(t,a)}}}}}]);
