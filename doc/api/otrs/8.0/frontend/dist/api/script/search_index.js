@@ -1375,13 +1375,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1449,6 +1449,12 @@ window.esdocSearchIndex = [
     "frontend/mixins/routedetection.js",
     "file/Frontend/Mixins/RouteDetection.js.html",
     "Frontend/Mixins/RouteDetection.js",
+    "file"
+  ],
+  [
+    "frontend/mixins/uniqueidentifier.js",
+    "file/Frontend/Mixins/UniqueIdentifier.js.html",
+    "Frontend/Mixins/UniqueIdentifier.js",
     "file"
   ],
   [
