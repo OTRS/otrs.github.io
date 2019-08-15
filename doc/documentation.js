@@ -82,6 +82,21 @@ $(document).ready(function() {
             ]
         },
         {
+            Name: 'OTRS Feature Add-ons Manual',
+            Type: 'manual',
+            Path: 'fao',
+            Versions: [
+                {
+                    Version:  '7.0',
+                    HTMLPath: 'stable',
+                    Name:     'OTRS 7',
+                    Languages: ['en'],
+                    AssetPath:     'doc-fao',
+                    AssetFilename: 'otrs_fao_manual'
+                }
+            ]
+        },
+        {
             Name: 'OTRS Installation Guide',
             Type: 'manual',
             Path: 'installation',
