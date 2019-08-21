@@ -174,18 +174,6 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
-    "apps/agent/plugins/routergenerator~routergenerator",
-    "class/Frontend/Apps/Agent/Plugins/RouterGenerator/index.js~RouterGenerator.html",
-    "<span>RouterGenerator</span> <span class=\"search-result-import-path\">Apps/Agent/Plugins/RouterGenerator</span>",
-    "class"
-  ],
-  [
-    "apps/external/plugins/routergenerator~routergenerator",
-    "class/Frontend/Apps/External/Plugins/RouterGenerator/index.js~RouterGenerator.html",
-    "<span>RouterGenerator</span> <span class=\"search-result-import-path\">Apps/External/Plugins/RouterGenerator</span>",
-    "class"
-  ],
-  [
     "plugins/store~store",
     "class/Frontend/Plugins/Store/index.js~Store.html",
     "<span>Store</span> <span class=\"search-result-import-path\">Plugins/Store</span>",
@@ -840,18 +828,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/apps/agent/plugins/routergenerator/index.js",
-    "file/Frontend/Apps/Agent/Plugins/RouterGenerator/index.js.html",
-    "Frontend/Apps/Agent/Plugins/RouterGenerator/index.js",
-    "file"
-  ],
-  [
-    "frontend/apps/agent/plugins/routergenerator/index.js~routergenerator#constructor",
-    "class/Frontend/Apps/Agent/Plugins/RouterGenerator/index.js~RouterGenerator.html#instance-constructor-constructor",
-    "Frontend/Apps/Agent/Plugins/RouterGenerator/index.js~RouterGenerator#constructor",
-    "method"
-  ],
-  [
     "frontend/apps/agent/plugins/store/organizer.js",
     "file/Frontend/Apps/Agent/Plugins/Store/Organizer.js.html",
     "Frontend/Apps/Agent/Plugins/Store/Organizer.js",
@@ -958,18 +934,6 @@ window.esdocSearchIndex = [
     "file/Frontend/Apps/External/Mixins/MetaHeader.js.html",
     "Frontend/Apps/External/Mixins/MetaHeader.js",
     "file"
-  ],
-  [
-    "frontend/apps/external/plugins/routergenerator/index.js",
-    "file/Frontend/Apps/External/Plugins/RouterGenerator/index.js.html",
-    "Frontend/Apps/External/Plugins/RouterGenerator/index.js",
-    "file"
-  ],
-  [
-    "frontend/apps/external/plugins/routergenerator/index.js~routergenerator#constructor",
-    "class/Frontend/Apps/External/Plugins/RouterGenerator/index.js~RouterGenerator.html#instance-constructor-constructor",
-    "Frontend/Apps/External/Plugins/RouterGenerator/index.js~RouterGenerator#constructor",
-    "method"
   ],
   [
     "frontend/apps/external/plugins/store/privacynotice.js",
@@ -1777,13 +1741,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
