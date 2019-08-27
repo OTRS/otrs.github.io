@@ -18,6 +18,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "form/validator/availableitems~availableitems",
+    "class/Frontend/Form/Validator/AvailableItems.js~AvailableItems.html",
+    "<span>AvailableItems</span> <span class=\"search-result-import-path\">Form/Validator/AvailableItems</span>",
+    "class"
+  ],
+  [
     "components/form/field/formdatetime/flatpickr/plugins/calendarselect/calendarselect~calendarselectplugin",
     "function/index.html#static-function-CalendarSelectPlugin",
     "<span>CalendarSelectPlugin</span> <span class=\"search-result-import-path\">Components/Form/Field/FormDateTime/FlatPickr/Plugins/CalendarSelect/CalendarSelect</span>",
@@ -417,6 +423,12 @@ window.esdocSearchIndex = [
     "form/validator/availablecolumns~validator",
     "variable/index.html#static-variable-validator",
     "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/AvailableColumns</span>",
+    "variable"
+  ],
+  [
+    "form/validator/availableitems~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/AvailableItems</span>",
     "variable"
   ],
   [
@@ -999,6 +1011,30 @@ window.esdocSearchIndex = [
     "frontend/form/validator/availablecolumns.js~availablecolumns#validate",
     "class/Frontend/Form/Validator/AvailableColumns.js~AvailableColumns.html#instance-method-validate",
     "Frontend/Form/Validator/AvailableColumns.js~AvailableColumns#validate",
+    "method"
+  ],
+  [
+    "frontend/form/validator/availableitems.js",
+    "file/Frontend/Form/Validator/AvailableItems.js.html",
+    "Frontend/Form/Validator/AvailableItems.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/availableitems.js~availableitems#errormessage",
+    "class/Frontend/Form/Validator/AvailableItems.js~AvailableItems.html#instance-method-errorMessage",
+    "Frontend/Form/Validator/AvailableItems.js~AvailableItems#errorMessage",
+    "method"
+  ],
+  [
+    "frontend/form/validator/availableitems.js~availableitems#isitemavailable",
+    "class/Frontend/Form/Validator/AvailableItems.js~AvailableItems.html#instance-method-isItemAvailable",
+    "Frontend/Form/Validator/AvailableItems.js~AvailableItems#isItemAvailable",
+    "method"
+  ],
+  [
+    "frontend/form/validator/availableitems.js~availableitems#validate",
+    "class/Frontend/Form/Validator/AvailableItems.js~AvailableItems.html#instance-method-validate",
+    "Frontend/Form/Validator/AvailableItems.js~AvailableItems#validate",
     "method"
   ],
   [
@@ -1741,13 +1777,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -2184,6 +2220,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formvisibleitems.js",
+    "file/Frontend/Tests/Components/Form/Field/FormVisibleItems.js.html",
+    "Frontend/Tests/Components/Form/Field/FormVisibleItems.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/form/field/formvotefilter.js",
     "file/Frontend/Tests/Components/Form/Field/FormVoteFilter.js.html",
     "Frontend/Tests/Components/Form/Field/FormVoteFilter.js",
@@ -2199,6 +2241,12 @@ window.esdocSearchIndex = [
     "frontend/tests/form/validator/availablecolumns.js",
     "file/Frontend/Tests/Form/Validator/AvailableColumns.js.html",
     "Frontend/Tests/Form/Validator/AvailableColumns.js",
+    "file"
+  ],
+  [
+    "frontend/tests/form/validator/availableitems.js",
+    "file/Frontend/Tests/Form/Validator/AvailableItems.js.html",
+    "Frontend/Tests/Form/Validator/AvailableItems.js",
     "file"
   ],
   [
