@@ -66,7 +66,8 @@ Search.setIndex({docnames:["content/cloudservice","content/core","content/daemon
 :3,agentonline
 :3,agentsplitselect:1,agentticketattachmentview
 :3,agentticketbounce
-:[1,3],agentticketclose
+:[1,3],agentticketbulk
+:1,agentticketclose
 :[1,3],agentticketcompose
 :[1,3],agentticketcustomer
 :[1,3],agentticketemail
