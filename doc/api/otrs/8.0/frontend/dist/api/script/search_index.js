@@ -1416,6 +1416,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/mixins/businessobjectwidgetproperty.js",
+    "file/Frontend/Mixins/BusinessObjectWidgetProperty.js.html",
+    "Frontend/Mixins/BusinessObjectWidgetProperty.js",
+    "file"
+  ],
+  [
     "frontend/mixins/componentloaded.js",
     "file/Frontend/Mixins/ComponentLoaded.js.html",
     "Frontend/Mixins/ComponentLoaded.js",
@@ -1449,6 +1455,12 @@ window.esdocSearchIndex = [
     "frontend/mixins/routedetection.js",
     "file/Frontend/Mixins/RouteDetection.js.html",
     "Frontend/Mixins/RouteDetection.js",
+    "file"
+  ],
+  [
+    "frontend/mixins/switchtocustomer.js",
+    "file/Frontend/Mixins/SwitchToCustomer.js.html",
+    "Frontend/Mixins/SwitchToCustomer.js",
     "file"
   ],
   [
@@ -1777,13 +1789,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -2040,9 +2052,21 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/common/commonclock.js",
+    "file/Frontend/Tests/Components/Common/CommonClock.js.html",
+    "Frontend/Tests/Components/Common/CommonClock.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/common/commoncollisiondetectionmessage.js",
     "file/Frontend/Tests/Components/Common/CommonCollisionDetectionMessage.js.html",
     "Frontend/Tests/Components/Common/CommonCollisionDetectionMessage.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commoncopytoclipboard.js",
+    "file/Frontend/Tests/Components/Common/CommonCopyToClipboard.js.html",
+    "Frontend/Tests/Components/Common/CommonCopyToClipboard.js",
     "file"
   ],
   [
