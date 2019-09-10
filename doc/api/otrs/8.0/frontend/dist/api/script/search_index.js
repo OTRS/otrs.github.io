@@ -36,6 +36,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "form/validator/cronscheduler~cronscheduler",
+    "class/Frontend/Form/Validator/CronScheduler.js~CronScheduler.html",
+    "<span>CronScheduler</span> <span class=\"search-result-import-path\">Form/Validator/CronScheduler</span>",
+    "class"
+  ],
+  [
     "form/validator/datatype~datatype",
     "class/Frontend/Form/Validator/DataType.js~DataType.html",
     "<span>DataType</span> <span class=\"search-result-import-path\">Form/Validator/DataType</span>",
@@ -435,6 +441,12 @@ window.esdocSearchIndex = [
     "form/validator/compareoperatorfilter~validator",
     "variable/index.html#static-variable-validator",
     "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/CompareOperatorFilter</span>",
+    "variable"
+  ],
+  [
+    "form/validator/cronscheduler~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/CronScheduler</span>",
     "variable"
   ],
   [
@@ -1056,6 +1068,24 @@ window.esdocSearchIndex = [
     "method"
   ],
   [
+    "frontend/form/validator/cronscheduler.js",
+    "file/Frontend/Form/Validator/CronScheduler.js.html",
+    "Frontend/Form/Validator/CronScheduler.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/cronscheduler.js~cronscheduler#errormessage",
+    "class/Frontend/Form/Validator/CronScheduler.js~CronScheduler.html#instance-method-errorMessage",
+    "Frontend/Form/Validator/CronScheduler.js~CronScheduler#errorMessage",
+    "method"
+  ],
+  [
+    "frontend/form/validator/cronscheduler.js~cronscheduler#validate",
+    "class/Frontend/Form/Validator/CronScheduler.js~CronScheduler.html#instance-method-validate",
+    "Frontend/Form/Validator/CronScheduler.js~CronScheduler#validate",
+    "method"
+  ],
+  [
     "frontend/form/validator/datatype.js",
     "file/Frontend/Form/Validator/DataType.js.html",
     "Frontend/Form/Validator/DataType.js",
@@ -1375,13 +1405,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -2154,6 +2184,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formcronscheduler.js",
+    "file/Frontend/Tests/Components/Form/Field/FormCronScheduler.js.html",
+    "Frontend/Tests/Components/Form/Field/FormCronScheduler.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/form/field/formeditor.js",
     "file/Frontend/Tests/Components/Form/Field/FormEditor.js.html",
     "Frontend/Tests/Components/Form/Field/FormEditor.js",
@@ -2271,6 +2307,12 @@ window.esdocSearchIndex = [
     "frontend/tests/form/validator/availableitems.js",
     "file/Frontend/Tests/Form/Validator/AvailableItems.js.html",
     "Frontend/Tests/Form/Validator/AvailableItems.js",
+    "file"
+  ],
+  [
+    "frontend/tests/form/validator/cronscheduler.js",
+    "file/Frontend/Tests/Form/Validator/CronScheduler.js.html",
+    "Frontend/Tests/Form/Validator/CronScheduler.js",
     "file"
   ],
   [
