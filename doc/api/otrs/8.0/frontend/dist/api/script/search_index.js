@@ -1405,13 +1405,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1588,6 +1588,12 @@ window.esdocSearchIndex = [
     "class/Frontend/Plugins/RelativeTime/index.js~Plugin.html#static-method-install",
     "Frontend/Plugins/RelativeTime/index.js~Plugin.install",
     "method"
+  ],
+  [
+    "frontend/plugins/router/index.js",
+    "file/Frontend/Plugins/Router/index.js.html",
+    "Frontend/Plugins/Router/index.js",
+    "file"
   ],
   [
     "frontend/plugins/store/loggeroptions.js",
@@ -1819,13 +1825,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
