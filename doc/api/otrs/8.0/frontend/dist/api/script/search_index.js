@@ -828,6 +828,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/communicationchannelsbase.js",
+    "file/Frontend/Apps/Agent/Mixins/CommunicationChannelsBase.js.html",
+    "Frontend/Apps/Agent/Mixins/CommunicationChannelsBase.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/handlescreendetailview.js",
     "file/Frontend/Apps/Agent/Mixins/HandleScreenDetailView.js.html",
     "Frontend/Apps/Agent/Mixins/HandleScreenDetailView.js",
@@ -846,15 +852,39 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/mimebasecommon.js",
+    "file/Frontend/Apps/Agent/Mixins/MIMEBaseCommon.js.html",
+    "Frontend/Apps/Agent/Mixins/MIMEBaseCommon.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/metaheader.js",
     "file/Frontend/Apps/Agent/Mixins/MetaHeader.js.html",
     "Frontend/Apps/Agent/Mixins/MetaHeader.js",
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/widgetcommunicationarticlebase.js",
+    "file/Frontend/Apps/Agent/Mixins/WidgetCommunicationArticleBase.js.html",
+    "Frontend/Apps/Agent/Mixins/WidgetCommunicationArticleBase.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/plugins/store/organizer.js",
     "file/Frontend/Apps/Agent/Plugins/Store/Organizer.js.html",
     "Frontend/Apps/Agent/Plugins/Store/Organizer.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/plugins/store/screenbase.js",
+    "file/Frontend/Apps/Agent/Plugins/Store/ScreenBase.js.html",
+    "Frontend/Apps/Agent/Plugins/Store/ScreenBase.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/plugins/store/screendetailview.js",
+    "file/Frontend/Apps/Agent/Plugins/Store/ScreenDetailView.js.html",
+    "Frontend/Apps/Agent/Plugins/Store/ScreenDetailView.js",
     "file"
   ],
   [
@@ -1440,9 +1470,9 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/mixins/businessobjectwidget.js",
-    "file/Frontend/Mixins/BusinessObjectWidget.js.html",
-    "Frontend/Mixins/BusinessObjectWidget.js",
+    "frontend/mixins/businessobjectwidgetfilterpresets.js",
+    "file/Frontend/Mixins/BusinessObjectWidgetFilterPresets.js.html",
+    "Frontend/Mixins/BusinessObjectWidgetFilterPresets.js",
     "file"
   ],
   [
@@ -1956,6 +1986,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/apps/agent/components/common/commonbadgeagent.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Common/CommonBadgeAgent.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Common/CommonBadgeAgent.js",
+    "file"
+  ],
+  [
     "frontend/tests/apps/agent/components/common/commonbreadcrumbagent.js",
     "file/Frontend/Tests/Apps/Agent/Components/Common/CommonBreadcrumbAgent.js.html",
     "Frontend/Tests/Apps/Agent/Components/Common/CommonBreadcrumbAgent.js",
@@ -1977,6 +2013,114 @@ window.esdocSearchIndex = [
     "frontend/tests/apps/agent/components/common/commonpermanentconfiguration.js",
     "file/Frontend/Tests/Apps/Agent/Components/Common/CommonPermanentConfiguration.js.html",
     "Frontend/Tests/Apps/Agent/Components/Common/CommonPermanentConfiguration.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertyaccountedtime.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAccountedTime.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAccountedTime.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertyage.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAge.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAge.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertyarchiveflag.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyArchiveFlag.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyArchiveFlag.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertycreated.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreated.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreated.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertycreator.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreator.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreator.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertycustomer.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomer.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomer.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertycustomertickets.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerTickets.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerTickets.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertycustomeruser.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerUser.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerUser.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertydynamicfield.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyDynamicField.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyDynamicField.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertyescalations.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyEscalations.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyEscalations.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertylock.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyLock.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyLock.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertyowner.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyOwner.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyOwner.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertypriority.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyPriority.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyPriority.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertyprocess.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyProcess.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyProcess.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertyqueue.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyQueue.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyQueue.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertyresponsible.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyResponsible.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyResponsible.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertystate.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyState.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyState.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertytype.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyType.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyType.js",
     "file"
   ],
   [
@@ -2139,6 +2283,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/common/commonmessages/appreloadmessage.js",
     "file/Frontend/Tests/Components/Common/CommonMessages/AppReloadMessage.js.html",
     "Frontend/Tests/Components/Common/CommonMessages/AppReloadMessage.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commonpiechart.js",
+    "file/Frontend/Tests/Components/Common/CommonPieChart.js.html",
+    "Frontend/Tests/Components/Common/CommonPieChart.js",
     "file"
   ],
   [
