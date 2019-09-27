@@ -858,12 +858,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/apps/agent/mixins/metaheader.js",
-    "file/Frontend/Apps/Agent/Mixins/MetaHeader.js.html",
-    "Frontend/Apps/Agent/Mixins/MetaHeader.js",
-    "file"
-  ],
-  [
     "frontend/apps/agent/mixins/widgetcommunicationarticlebase.js",
     "file/Frontend/Apps/Agent/Mixins/WidgetCommunicationArticleBase.js.html",
     "Frontend/Apps/Agent/Mixins/WidgetCommunicationArticleBase.js",
@@ -981,12 +975,6 @@ window.esdocSearchIndex = [
     "frontend/apps/external/mixins/mimebasecommon.js",
     "file/Frontend/Apps/External/Mixins/MIMEBaseCommon.js.html",
     "Frontend/Apps/External/Mixins/MIMEBaseCommon.js",
-    "file"
-  ],
-  [
-    "frontend/apps/external/mixins/metaheader.js",
-    "file/Frontend/Apps/External/Mixins/MetaHeader.js.html",
-    "Frontend/Apps/External/Mixins/MetaHeader.js",
     "file"
   ],
   [
@@ -1509,6 +1497,12 @@ window.esdocSearchIndex = [
     "frontend/mixins/forminputplaceholder.js",
     "file/Frontend/Mixins/FormInputPlaceholder.js.html",
     "Frontend/Mixins/FormInputPlaceholder.js",
+    "file"
+  ],
+  [
+    "frontend/mixins/metaheader.js",
+    "file/Frontend/Mixins/MetaHeader.js.html",
+    "Frontend/Mixins/MetaHeader.js",
     "file"
   ],
   [
