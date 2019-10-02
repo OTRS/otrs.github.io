@@ -882,6 +882,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/plugins/store/screenoverview.js",
+    "file/Frontend/Apps/Agent/Plugins/Store/ScreenOverview.js.html",
+    "Frontend/Apps/Agent/Plugins/Store/ScreenOverview.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/plugins/store/index.js",
     "file/Frontend/Apps/Agent/Plugins/Store/index.js.html",
     "Frontend/Apps/Agent/Plugins/Store/index.js",
@@ -2010,6 +2016,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/apps/agent/components/common/commonsection.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Common/CommonSection.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Common/CommonSection.js",
+    "file"
+  ],
+  [
     "frontend/tests/apps/agent/components/ticket/property/propertyaccountedtime.js",
     "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAccountedTime.js.html",
     "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAccountedTime.js",
@@ -2166,15 +2178,15 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/components/businessobject/businessobjectcolumnlayoutswitch.js",
-    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayoutSwitch.js.html",
-    "Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayoutSwitch.js",
+    "frontend/tests/components/businessobject/businessobjectcolumnlayout.js",
+    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayout.js.html",
+    "Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayout.js",
     "file"
   ],
   [
-    "frontend/tests/components/businessobject/businessobjectdetailcolumnlayout.js",
-    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectDetailColumnLayout.js.html",
-    "Frontend/Tests/Components/BusinessObject/BusinessObjectDetailColumnLayout.js",
+    "frontend/tests/components/businessobject/businessobjectcolumnlayoutswitch.js",
+    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayoutSwitch.js.html",
+    "Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayoutSwitch.js",
     "file"
   ],
   [
