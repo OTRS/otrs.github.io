@@ -1429,13 +1429,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1855,13 +1855,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1995,6 +1995,12 @@ window.esdocSearchIndex = [
     "frontend/tests/apps/agent/components/common/commonbreadcrumbagent.js",
     "file/Frontend/Tests/Apps/Agent/Components/Common/CommonBreadcrumbAgent.js.html",
     "Frontend/Tests/Apps/Agent/Components/Common/CommonBreadcrumbAgent.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/common/commoncard.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Common/CommonCard.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Common/CommonCard.js",
     "file"
   ],
   [
