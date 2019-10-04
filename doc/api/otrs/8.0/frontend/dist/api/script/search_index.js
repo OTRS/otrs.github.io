@@ -834,12 +834,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/apps/agent/mixins/handlescreendetailview.js",
-    "file/Frontend/Apps/Agent/Mixins/HandleScreenDetailView.js.html",
-    "Frontend/Apps/Agent/Mixins/HandleScreenDetailView.js",
-    "file"
-  ],
-  [
     "frontend/apps/agent/mixins/handlescreenlist.js",
     "file/Frontend/Apps/Agent/Mixins/HandleScreenList.js.html",
     "Frontend/Apps/Agent/Mixins/HandleScreenList.js",
@@ -1429,13 +1423,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
   [
     "frontend/logger/index.js~logger#options",
-    "class/Frontend/Logger/index.js~Logger.html#instance-set-options",
+    "class/Frontend/Logger/index.js~Logger.html#instance-get-options",
     "Frontend/Logger/index.js~Logger#options",
     "member"
   ],
@@ -1855,13 +1849,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
