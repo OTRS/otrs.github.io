@@ -294,6 +294,12 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "helpers/filetypepreviewmapping~getfilepreviewtype",
+    "function/index.html#static-function-getFilePreviewType",
+    "<span>getFilePreviewType</span> <span class=\"search-result-import-path\">Helpers/FileTypePreviewMapping</span>",
+    "function"
+  ],
+  [
     "helpers/filetypemapping~getfiletype",
     "function/index.html#static-function-getFileType",
     "<span>getFileType</span> <span class=\"search-result-import-path\">Helpers/FileTypeMapping</span>",
@@ -1290,6 +1296,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/helpers/filetypepreviewmapping.js",
+    "file/Frontend/Helpers/FileTypePreviewMapping.js.html",
+    "Frontend/Helpers/FileTypePreviewMapping.js",
+    "file"
+  ],
+  [
     "frontend/helpers/formvalidators.js",
     "file/Frontend/Helpers/FormValidators.js.html",
     "Frontend/Helpers/FormValidators.js",
@@ -1849,13 +1861,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -2208,6 +2220,24 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/common/commonattachmentpreview/previewaudio.js",
+    "file/Frontend/Tests/Components/Common/CommonAttachmentPreview/PreviewAudio.js.html",
+    "Frontend/Tests/Components/Common/CommonAttachmentPreview/PreviewAudio.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commonattachmentpreview/previewimage.js",
+    "file/Frontend/Tests/Components/Common/CommonAttachmentPreview/PreviewImage.js.html",
+    "Frontend/Tests/Components/Common/CommonAttachmentPreview/PreviewImage.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commonattachmentpreview/previewvideo.js",
+    "file/Frontend/Tests/Components/Common/CommonAttachmentPreview/PreviewVideo.js.html",
+    "Frontend/Tests/Components/Common/CommonAttachmentPreview/PreviewVideo.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/common/commonavatar.js",
     "file/Frontend/Tests/Components/Common/CommonAvatar.js.html",
     "Frontend/Tests/Components/Common/CommonAvatar.js",
@@ -2265,6 +2295,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/common/commondialog.js",
     "file/Frontend/Tests/Components/Common/CommonDialog.js.html",
     "Frontend/Tests/Components/Common/CommonDialog.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/common/commondirection.js",
+    "file/Frontend/Tests/Components/Common/CommonDirection.js.html",
+    "Frontend/Tests/Components/Common/CommonDirection.js",
     "file"
   ],
   [
