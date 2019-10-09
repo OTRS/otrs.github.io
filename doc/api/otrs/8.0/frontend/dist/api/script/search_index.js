@@ -834,6 +834,18 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/businessobjectwidgetfilterpresets.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessObjectWidgetFilterPresets.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessObjectWidgetFilterPresets.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/mixins/businessobjectwidgetproperty.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessObjectWidgetProperty.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessObjectWidgetProperty.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/communicationchannelsbase.js",
     "file/Frontend/Apps/Agent/Mixins/CommunicationChannelsBase.js.html",
     "Frontend/Apps/Agent/Mixins/CommunicationChannelsBase.js",
@@ -1470,18 +1482,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/mixins/businessobjectwidgetfilterpresets.js",
-    "file/Frontend/Mixins/BusinessObjectWidgetFilterPresets.js.html",
-    "Frontend/Mixins/BusinessObjectWidgetFilterPresets.js",
-    "file"
-  ],
-  [
-    "frontend/mixins/businessobjectwidgetproperty.js",
-    "file/Frontend/Mixins/BusinessObjectWidgetProperty.js.html",
-    "Frontend/Mixins/BusinessObjectWidgetProperty.js",
-    "file"
-  ],
-  [
     "frontend/mixins/componentloaded.js",
     "file/Frontend/Mixins/ComponentLoaded.js.html",
     "Frontend/Mixins/ComponentLoaded.js",
@@ -1861,13 +1861,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -1983,6 +1983,12 @@ window.esdocSearchIndex = [
     "frontend/tests/announcer.js",
     "file/Frontend/Tests/Announcer.js.html",
     "Frontend/Tests/Announcer.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/businessobjectwidget/businessobjectwidgetstripepeople.js",
+    "file/Frontend/Tests/Apps/Agent/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js.html",
+    "Frontend/Tests/Apps/Agent/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js",
     "file"
   ],
   [
@@ -2199,12 +2205,6 @@ window.esdocSearchIndex = [
     "frontend/tests/components/businessobject/businessobjectcolumnlayoutswitch.js",
     "file/Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayoutSwitch.js.html",
     "Frontend/Tests/Components/BusinessObject/BusinessObjectColumnLayoutSwitch.js",
-    "file"
-  ],
-  [
-    "frontend/tests/components/businessobject/businessobjectwidget/businessobjectwidgetstripepeople.js",
-    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js.html",
-    "Frontend/Tests/Components/BusinessObject/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js",
     "file"
   ],
   [
