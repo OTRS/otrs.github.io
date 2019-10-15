@@ -864,6 +864,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/handlesticketwatch.js",
+    "file/Frontend/Apps/Agent/Mixins/HandlesTicketWatch.js.html",
+    "Frontend/Apps/Agent/Mixins/HandlesTicketWatch.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/mimebasecommon.js",
     "file/Frontend/Apps/Agent/Mixins/MIMEBaseCommon.js.html",
     "Frontend/Apps/Agent/Mixins/MIMEBaseCommon.js",
