@@ -24,6 +24,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "locale/businessobjecttypetexts/base~base",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/Base.js~Base.html",
+    "<span>Base</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/Base</span>",
+    "class"
+  ],
+  [
     "components/form/field/formdatetime/flatpickr/plugins/calendarselect/calendarselect~calendarselectplugin",
     "function/index.html#static-function-CalendarSelectPlugin",
     "<span>CalendarSelectPlugin</span> <span class=\"search-result-import-path\">Components/Form/Field/FormDateTime/FlatPickr/Plugins/CalendarSelect/CalendarSelect</span>",
@@ -63,6 +69,12 @@ window.esdocSearchIndex = [
     "form/validator/fileupload~fileupload",
     "class/Frontend/Form/Validator/FileUpload.js~FileUpload.html",
     "<span>FileUpload</span> <span class=\"search-result-import-path\">Form/Validator/FileUpload</span>",
+    "class"
+  ],
+  [
+    "locale/businessobjecttypetexts/knowledgebasearticle~knowledgebasearticle",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js~KnowledgeBaseArticle.html",
+    "<span>KnowledgeBaseArticle</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle</span>",
     "class"
   ],
   [
@@ -198,9 +210,39 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "locale/businessobjecttypetexts/ticket~ticket",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/Ticket.js~Ticket.html",
+    "<span>Ticket</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/Ticket</span>",
+    "class"
+  ],
+  [
+    "locale/businessobjecttypetexts/ticketarticle~ticketarticle",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/TicketArticle.js~TicketArticle.html",
+    "<span>TicketArticle</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/TicketArticle</span>",
+    "class"
+  ],
+  [
+    "locale/businessobjecttypetexts/ticketattachment~ticketattachment",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/TicketAttachment.js~TicketAttachment.html",
+    "<span>TicketAttachment</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/TicketAttachment</span>",
+    "class"
+  ],
+  [
+    "locale/businessobjecttypetexts/webnotification~webnotification",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/WebNotification.js~WebNotification.html",
+    "<span>WebNotification</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/WebNotification</span>",
+    "class"
+  ],
+  [
     "apps/agent/helpers/agentcomponentregistration~agentcomponentindex",
     "variable/index.html#static-variable-agentComponentIndex",
     "<span>agentComponentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/AgentComponentRegistration</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/base~basestrings",
+    "variable/index.html#static-variable-baseStrings",
+    "<span>baseStrings</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/Base</span>",
     "variable"
   ],
   [
@@ -243,6 +285,12 @@ window.esdocSearchIndex = [
     "helpers/browserlanguage~getbrowserlanguage",
     "function/index.html#static-function-getBrowserLanguage",
     "<span>getBrowserLanguage</span> <span class=\"search-result-import-path\">Helpers/BrowserLanguage</span>",
+    "function"
+  ],
+  [
+    "helpers/businessobjecttypetexts~getbusinessobjecttypetexts",
+    "function/index.html#static-function-getBusinessObjectTypeTexts",
+    "<span>getBusinessObjectTypeTexts</span> <span class=\"search-result-import-path\">Helpers/BusinessObjectTypeTexts</span>",
     "function"
   ],
   [
@@ -430,6 +478,36 @@ window.esdocSearchIndex = [
     "function/index.html#static-function-textMatch",
     "<span>textMatch</span> <span class=\"search-result-import-path\">Helpers/TextMatch</span>",
     "function"
+  ],
+  [
+    "locale/businessobjecttypetexts/knowledgebasearticle~texts",
+    "variable/index.html#static-variable-texts",
+    "<span>texts</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/ticket~texts",
+    "variable/index.html#static-variable-texts",
+    "<span>texts</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/Ticket</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/ticketarticle~texts",
+    "variable/index.html#static-variable-texts",
+    "<span>texts</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/TicketArticle</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/ticketattachment~texts",
+    "variable/index.html#static-variable-texts",
+    "<span>texts</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/TicketAttachment</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/webnotification~texts",
+    "variable/index.html#static-variable-texts",
+    "<span>texts</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/WebNotification</span>",
+    "variable"
   ],
   [
     "form/validator/availablecolumns~validator",
@@ -1302,6 +1380,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/helpers/businessobjecttypetexts.js",
+    "file/Frontend/Helpers/BusinessObjectTypeTexts.js.html",
+    "Frontend/Helpers/BusinessObjectTypeTexts.js",
+    "file"
+  ],
+  [
     "frontend/helpers/componentregistration.js",
     "file/Frontend/Helpers/ComponentRegistration.js.html",
     "Frontend/Helpers/ComponentRegistration.js",
@@ -1378,6 +1462,108 @@ window.esdocSearchIndex = [
     "file/Frontend/Helpers/WebRtc.js.html",
     "Frontend/Helpers/WebRtc.js",
     "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/base.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/Base.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/Base.js",
+    "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/base.js~base#strings",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/Base.js~Base.html#instance-method-strings",
+    "Frontend/Locale/BusinessObjectTypeTexts/Base.js~Base#strings",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/knowledgebasearticle.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js",
+    "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/knowledgebasearticle.js~knowledgebasearticle#getstring",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js~KnowledgeBaseArticle.html#instance-method-getString",
+    "Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js~KnowledgeBaseArticle#getString",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/knowledgebasearticle.js~knowledgebasearticle#strings",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js~KnowledgeBaseArticle.html#instance-method-strings",
+    "Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js~KnowledgeBaseArticle#strings",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/ticket.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/Ticket.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/Ticket.js",
+    "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/ticket.js~ticket#getstring",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/Ticket.js~Ticket.html#instance-method-getString",
+    "Frontend/Locale/BusinessObjectTypeTexts/Ticket.js~Ticket#getString",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/ticket.js~ticket#strings",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/Ticket.js~Ticket.html#instance-method-strings",
+    "Frontend/Locale/BusinessObjectTypeTexts/Ticket.js~Ticket#strings",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/ticketarticle.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/TicketArticle.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/TicketArticle.js",
+    "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/ticketarticle.js~ticketarticle#getstring",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/TicketArticle.js~TicketArticle.html#instance-method-getString",
+    "Frontend/Locale/BusinessObjectTypeTexts/TicketArticle.js~TicketArticle#getString",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/ticketarticle.js~ticketarticle#strings",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/TicketArticle.js~TicketArticle.html#instance-method-strings",
+    "Frontend/Locale/BusinessObjectTypeTexts/TicketArticle.js~TicketArticle#strings",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/ticketattachment.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/TicketAttachment.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/TicketAttachment.js",
+    "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/ticketattachment.js~ticketattachment#getstring",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/TicketAttachment.js~TicketAttachment.html#instance-method-getString",
+    "Frontend/Locale/BusinessObjectTypeTexts/TicketAttachment.js~TicketAttachment#getString",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/ticketattachment.js~ticketattachment#strings",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/TicketAttachment.js~TicketAttachment.html#instance-method-strings",
+    "Frontend/Locale/BusinessObjectTypeTexts/TicketAttachment.js~TicketAttachment#strings",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/webnotification.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/WebNotification.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/WebNotification.js",
+    "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/webnotification.js~webnotification#getstring",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/WebNotification.js~WebNotification.html#instance-method-getString",
+    "Frontend/Locale/BusinessObjectTypeTexts/WebNotification.js~WebNotification#getString",
+    "method"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/webnotification.js~webnotification#strings",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/WebNotification.js~WebNotification.html#instance-method-strings",
+    "Frontend/Locale/BusinessObjectTypeTexts/WebNotification.js~WebNotification#strings",
+    "method"
   ],
   [
     "frontend/locale/index.js",
@@ -1488,6 +1674,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/mixins/businessobjecttexts.js",
+    "file/Frontend/Mixins/BusinessObjectTexts.js.html",
+    "Frontend/Mixins/BusinessObjectTexts.js",
+    "file"
+  ],
+  [
     "frontend/mixins/componentloaded.js",
     "file/Frontend/Mixins/ComponentLoaded.js.html",
     "Frontend/Mixins/ComponentLoaded.js",
@@ -1497,6 +1689,12 @@ window.esdocSearchIndex = [
     "frontend/mixins/diacriticslookup.js",
     "file/Frontend/Mixins/DiacriticsLookup.js.html",
     "Frontend/Mixins/DiacriticsLookup.js",
+    "file"
+  ],
+  [
+    "frontend/mixins/disablebootstraptooltips.js",
+    "file/Frontend/Mixins/DisableBootstrapTooltips.js.html",
+    "Frontend/Mixins/DisableBootstrapTooltips.js",
     "file"
   ],
   [
@@ -1867,13 +2065,13 @@ window.esdocSearchIndex = [
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
   [
     "frontend/server/apiclient/index.js~apiclient#options",
-    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-set-options",
+    "class/Frontend/Server/APIClient/index.js~APIClient.html#instance-get-options",
     "Frontend/Server/APIClient/index.js~APIClient#options",
     "member"
   ],
@@ -2583,6 +2781,36 @@ window.esdocSearchIndex = [
     "frontend/tests/locale.js",
     "file/Frontend/Tests/Locale.js.html",
     "Frontend/Tests/Locale.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/knowledgebasearticle.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/ticket.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/Ticket.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/Ticket.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/ticketarticle.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/TicketArticle.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/TicketArticle.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/ticketattachment.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/TicketAttachment.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/TicketAttachment.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/webnotification.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/WebNotification.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/WebNotification.js",
     "file"
   ],
   [
