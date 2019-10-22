@@ -46,7 +46,7 @@ Search.setIndex({docnames:["content/cloudservice","content/core","content/daemon
 :3,agent
 :[1,3],agent:[1,5,6],agentappointmentagendaoverview
 :3,agentappointmentcalendaroverview
-:3,agentchat
+:[1,3],agentchat
 :3,agentcloudservicesdis:3,agentcustomerinformationcenter
 :3,agentcustomeruserinformationcenter
 :3,agentdashboard
