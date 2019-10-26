@@ -64,6 +64,7 @@ $(document).ready(function() {
       <li><a href="#PossibleLinkList">PossibleLinkList()</a></li>
       <li><a href="#LinkAdd">LinkAdd()</a></li>
       <li><a href="#LinkCleanup">LinkCleanup()</a></li>
+      <li><a href="#LinkGet">LinkGet()</a></li>
       <li><a href="#LinkDelete">LinkDelete()</a></li>
       <li><a href="#LinkDeleteAll">LinkDeleteAll()</a></li>
       <li><a href="#LinkList">LinkList()</a></li>
@@ -78,6 +79,7 @@ $(document).ready(function() {
       <li><a href="#PossibleType">PossibleType()</a></li>
       <li><a href="#StateLookup">StateLookup()</a></li>
       <li><a href="#StateList">StateList()</a></li>
+      <li><a href="#ObjectTypeNameForFrontend">ObjectTypeNameForFrontend()</a></li>
       <li><a href="#ObjectPermission">ObjectPermission()</a></li>
       <li><a href="#ObjectDescriptionGet">ObjectDescriptionGet()</a></li>
       <li><a href="#ObjectSearch">ObjectSearch()</a></li>
@@ -103,24 +105,33 @@ $(document).ready(function() {
 
 <h2 id="PossibleTypesList">PossibleTypesList()</h2>
 
-<p>return a hash of all possible types</p>
-
-<p>Return %PossibleTypesList = ( &#39;Normal&#39; =&gt; 1, &#39;ParentChild&#39; =&gt; 1, );</p>
+<p>Builds a hash of all possible types for the given object combination.</p>
 
 <pre><code>    my %PossibleTypesList = $LinkObject-&gt;PossibleTypesList(
         Object1 =&gt; &#39;Ticket&#39;,
         Object2 =&gt; &#39;FAQ&#39;,
     );</code></pre>
 
+<p>Return</p>
+
+<pre><code>    %PossibleTypesList = (
+        &#39;Normal&#39;      =&gt; 1,
+        &#39;ParentChild&#39; =&gt; 1,
+    );</code></pre>
+
 <h2 id="PossibleObjectsList">PossibleObjectsList()</h2>
 
 <p>return a hash of all possible objects</p>
 
-<p>Return %PossibleObjectsList = ( &#39;Ticket&#39; =&gt; 1, &#39;FAQ&#39; =&gt; 1, );</p>
-
 <pre><code>    my %PossibleObjectsList = $LinkObject-&gt;PossibleObjectsList(
         Object =&gt; &#39;Ticket&#39;,
-    );</code></pre>
+    );
+
+    or
+
+    my %PossibleObjectsList = $LinkObject-&gt;PossibleObjectsList();</code></pre>
+
+<p>Return %PossibleObjectsList = ( &#39;Ticket&#39; =&gt; 1, &#39;FAQ&#39; =&gt; 1, );</p>
 
 <h2 id="PossibleLinkList">PossibleLinkList()</h2>
 
@@ -134,7 +145,7 @@ $(document).ready(function() {
 
 <p>add a new link between two elements</p>
 
-<pre><code>    $True = $LinkObject-&gt;LinkAdd(
+<pre><code>    my $LinkID = $LinkObject-&gt;LinkAdd(
         SourceObject =&gt; &#39;Ticket&#39;,
         SourceKey    =&gt; &#39;321&#39;,
         TargetObject =&gt; &#39;FAQ&#39;,
@@ -155,6 +166,31 @@ $(document).ready(function() {
         Age    =&gt; ( 60 * 60 * 24 ),
     );</code></pre>
 
+<h2 id="LinkGet">LinkGet()</h2>
+
+<p>Returns a hash with link data for the given link id.</p>
+
+<pre><code>    my %LinkData = $LinkObject-&gt;LinkGet(
+        LinkID =&gt; 4,
+        UserID =&gt; 1,
+    );</code></pre>
+
+<p>The returned hash contains the following elements:</p>
+
+<pre><code>    $LinkData{LinkID}
+    $LinkData{SourceObjectID}
+    $LinkData{SourceObject}
+    $Existing{SourceKey}
+    $LinkData{TargetObjectID}
+    $LinkData{TargetObject}
+    $LinkData{TargetKey}
+    $LinkData{TypeID}
+    $LinkData{Type}
+    $LinkData{StateID}
+    $LinkData{State}
+    $LinkData{CreateTime}
+    $LinkData{CreateBy}</code></pre>
+
 <h2 id="LinkDelete">LinkDelete()</h2>
 
 <p>deletes a link</p>
@@ -162,12 +198,8 @@ $(document).ready(function() {
 <p>return true</p>
 
 <pre><code>    $True = $LinkObject-&gt;LinkDelete(
-        Object1 =&gt; &#39;Ticket&#39;,
-        Key1    =&gt; &#39;321&#39;,
-        Object2 =&gt; &#39;FAQ&#39;,
-        Key2    =&gt; &#39;5&#39;,
-        Type    =&gt; &#39;Normal&#39;,
-        UserID  =&gt; 1,
+        LinkID =&gt; 5,
+        UserID =&gt; 1,
     );</code></pre>
 
 <h2 id="LinkDeleteAll">LinkDeleteAll()</h2>
@@ -184,7 +216,7 @@ $(document).ready(function() {
 
 <p>get all existing links for a given object</p>
 
-<p>Return $LinkList = { Ticket =&gt; { Normal =&gt; { Source =&gt; { 12 =&gt; 1, 212 =&gt; 1, 332 =&gt; 1, }, }, ParentChild =&gt; { Source =&gt; { 5 =&gt; 1, 9 =&gt; 1, }, Target =&gt; { 4 =&gt; 1, 8 =&gt; 1, 15 =&gt; 1, }, }, }, FAQ =&gt; { ParentChild =&gt; { Source =&gt; { 5 =&gt; 1, }, }, }, };</p>
+<p>Return $LinkList = { Ticket =&gt; { Normal =&gt; { Source =&gt; { 12 =&gt; 198, # The value is the LinkID. 212 =&gt; 5, 332 =&gt; 7, }, }, ParentChild =&gt; { Source =&gt; { 5 =&gt; 3, 9 =&gt; 9, }, Target =&gt; { 4 =&gt; 14, 8 =&gt; 4, 15 =&gt; 8, }, }, }, FAQ =&gt; { ParentChild =&gt; { Source =&gt; { 5 =&gt; 89, }, }, }, };</p>
 
 <pre><code>    my $LinkList = $LinkObject-&gt;LinkList(
         Object    =&gt; &#39;Ticket&#39;,
@@ -337,6 +369,18 @@ $(document).ready(function() {
 <pre><code>    my %StateList = $LinkObject-&gt;StateList(
         Valid =&gt; 0,   # (optional) default 1 (0|1)
     );</code></pre>
+
+<h2 id="ObjectTypeNameForFrontend">ObjectTypeNameForFrontend()</h2>
+
+<p>Gives the object type name for the frontend from the different backends. Normally it&#39;s the same, but in same cases it&#39;s different.</p>
+
+<pre><code>    $ObjectTypeNameForFrontend = $LinkObject-&gt;ObjectTypeNameForFrontend(
+        Object  =&gt; &#39;FAQ&#39;,
+    );</code></pre>
+
+<p>Return</p>
+
+<pre><code>    $ObjectTypeNameForFrontend = &#39;KnowledgeBaseArticle&#39;;</code></pre>
 
 <h2 id="ObjectPermission">ObjectPermission()</h2>
 
