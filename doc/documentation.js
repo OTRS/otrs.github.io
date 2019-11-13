@@ -90,7 +90,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: 'stable',
                     Name:     'OTRS 7',
-                    Languages: ['en'],
+                    Languages: ['en', 'hu'],
                     AssetPath:     'doc-fao',
                     AssetFilename: 'otrs_fao_manual'
                 }
