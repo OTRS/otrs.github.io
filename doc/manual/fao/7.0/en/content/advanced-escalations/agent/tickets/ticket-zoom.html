@@ -253,7 +253,7 @@
 </div>
 <div class="section" id="debug-escalation">
 <h2>Debug escalation<a class="headerlink" href="#debug-escalation" title="Permalink to this headline">¶</a></h2>
-<p>It is not easy to understand how advanced escalations works. It cut the ticket history entries into snapshots to calculate the escalation. Each snapshot will contain the the current state of the ticket with all all related data of the current time of the snapshot. A snapshot is normally about 5 seconds of the ticket history.</p>
+<p>It is not easy to understand how advanced escalations work. It cuts the ticket history entries into snapshots to calculate the escalation. Each snapshot will contain the current state of the ticket with all related data of the current time of the snapshot. A snapshot is normally about 5 seconds of the ticket history.</p>
 <p>For more information about a single escalation and how it is calculated you can take a look at the ticket history. If your system has a customer ID and a SLA with related escalation bundles and types then you will be able to debug these, based on the ticket history of the current ticket.</p>
 <div class="figure" id="id1">
 <img alt="Escalation Debug Mode – Select Escalation Type" src="../../../../_images/DebugMode1.png" />
@@ -266,15 +266,22 @@
 </div>
 <div class="section" id="escalation-state">
 <h3>Escalation State<a class="headerlink" href="#escalation-state" title="Permalink to this headline">¶</a></h3>
-<p>The first block contains the state of the current escalation type. In the example it will calculate the start condition of the escalation type and it was successfully (success = green, red = no change of the state). Basically for each snapshot it is possible that the escalation will calculate multiple state if it don’t match to the first.</p>
-<p>The order of the calculated states is based on the running, suspend or not running state of the escalation. Here a short technical overview:</p>
-<p>So if the escalation is not running then it will only try to move to the <em>Start</em> state of the escalation. If suspended then only <em>Resume</em> or <em>Stop</em> are possible as next states.</p>
+<p>The first block contains the state of the current escalation type. In the example it will calculate the start condition of the escalation type and it was successfully (success = green, red = no change of the state). Basically for each snapshot it is possible that the escalation will calculate multiple state if it do not match to the first.</p>
+<p>The order of the calculated states is based on the running, suspend or not running state of the escalation. Here is a short technical overview:</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="nv">%EscalationStatesMachine</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">NotRunning</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="s">&#39;Start&#39;</span><span class="p">],</span>
+    <span class="n">Running</span>    <span class="o">=&gt;</span> <span class="p">[</span> <span class="s">&#39;Suspend&#39;</span><span class="p">,</span> <span class="s">&#39;Restart&#39;</span><span class="p">,</span> <span class="s">&#39;Stop&#39;</span> <span class="p">],</span>
+    <span class="n">Suspended</span>  <span class="o">=&gt;</span> <span class="p">[</span> <span class="s">&#39;Resume&#39;</span><span class="p">,</span> <span class="s">&#39;Stop&#39;</span> <span class="p">],</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>So if the escalation is not running then it will only try to move to the <em>Start</em> state of the escalation. If it is suspended then only <em>Resume</em> or <em>Stop</em> are possible as next states.</p>
 </div>
 <div class="section" id="escalation-filters">
 <h3>Escalation Filters<a class="headerlink" href="#escalation-filters" title="Permalink to this headline">¶</a></h3>
 <p>The filter values are relating to the agent and customer message send or present attributes which are set in the conditions. If a filter is green then the filter is matched and red if a filter is not matched.</p>
 <ul class="simple">
-<li><code class="docutils literal notranslate"><span class="pre">AgentMessagePresent</span></code>: A message from a agent is present.</li>
+<li><code class="docutils literal notranslate"><span class="pre">AgentMessagePresent</span></code>: A message from an agent is present.</li>
 <li><code class="docutils literal notranslate"><span class="pre">AgentMessageSent</span></code>: An agent sent a message.</li>
 <li><code class="docutils literal notranslate"><span class="pre">CustomerMessagePresent</span></code>: A message from a customer is present.</li>
 <li><code class="docutils literal notranslate"><span class="pre">CustomerMessageSent</span></code>: A customer sent a message.</li>
@@ -288,7 +295,7 @@
 <li><code class="docutils literal notranslate"><span class="pre">ATTR</span></code>: This column contains the ticket attribute.</li>
 <li><code class="docutils literal notranslate"><span class="pre">CURR</span></code>: This column contains the current value of the snapshot. This value will be used for the calculation of <em>equals now</em>, <em>doesn’t equals now</em> and <em>change to</em> conditions.</li>
 <li><code class="docutils literal notranslate"><span class="pre">PREV</span></code>: This column contains the value of the previous snapshot. This value will be used for the calculation of <em>equals previous</em>, <em>doesn’t equals previous</em> and <em>change to</em> conditions.</li>
-<li><code class="docutils literal notranslate"><span class="pre">WAS</span></code>: This column contains the value of all previous snapshot. This value will be used for the calculation of <em>did never equal</em>, <em>equaled</em> conditions.</li>
+<li><code class="docutils literal notranslate"><span class="pre">WAS</span></code>: This column contains the value of all previous snapshot. This value will be used for the calculation of <em>did never equal</em> and <em>equaled</em> conditions.</li>
 </ul>
 </div>
 <div class="section" id="escalation-attribute-sets">
@@ -298,20 +305,29 @@
 <ul>
 <li><p class="first"><code class="docutils literal notranslate"><span class="pre">SET</span></code>: This column contains the number of the attribute set in the escalation type. The number will be displayed green if it matches or red if not.</p>
 </li>
-<li><p class="first"><code class="docutils literal notranslate"><span class="pre">ATTRIBUTES</span></code>: This column shows the matched conditions of an attribute set. At this point it will use internal names for matching the attributes. Here some examples:</p>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">ATTRIBUTES</span></code>: This column shows the matched conditions of an attribute set. At this point it will use internal names for matching the attributes. Here are some examples:</p>
 <blockquote>
 <div><ul>
-<li><p class="first"><code class="docutils literal notranslate"><span class="pre">AgentMessagePresent</span></code>: A message from a agent is present.</p>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">AgentMessagePresent</span></code>: A message from an agent is present.</p>
 </li>
 <li><p class="first"><code class="docutils literal notranslate"><span class="pre">AgentMessageSent</span></code>: An agent sent a message.</p>
 </li>
-<li><p class="first"><code class="docutils literal notranslate"><span class="pre">CustomerMessagePresent</span></code>: A message from a customer is</p>
+<li><p class="first"><code class="docutils literal notranslate"><span class="pre">CustomerMessagePresent</span></code>: A message from a customer is present.</p>
 </li>
 <li><p class="first"><code class="docutils literal notranslate"><span class="pre">CustomerMessageSent</span></code>: A customer sent a message.</p>
 </li>
 <li><p class="first">For ticket attributes it will show the internal condition:</p>
 <blockquote>
-<div></div></blockquote>
+<div><div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="s">&#39;Is&#39;</span>        <span class="o">=&gt;</span> <span class="s">&#39;equals now&#39;</span><span class="p">,</span>
+<span class="s">&#39;IsNot&#39;</span>     <span class="o">=&gt;</span> <span class="s">&#39;doesn&#39;</span><span class="n">t</span> <span class="n">equal</span> <span class="n">now</span><span class="s">&#39;,</span>
+<span class="s">&#39;</span><span class="n">Was</span><span class="s">&#39;       =&gt; &#39;</span><span class="n">equaled</span><span class="s">&#39;,</span>
+<span class="s">&#39;</span><span class="n">WasNever</span><span class="s">&#39;  =&gt; &#39;</span><span class="n">did</span> <span class="n">never</span> <span class="n">equal</span><span class="s">&#39;,</span>
+<span class="s">&#39;</span><span class="n">ChangedTo</span><span class="s">&#39; =&gt; &#39;</span><span class="n">changed</span> <span class="n">to</span><span class="s">&#39;,</span>
+<span class="s">&#39;</span><span class="n">IsPrev</span><span class="s">&#39;    =&gt; &#39;</span><span class="n">equals</span> <span class="n">previous</span><span class="s">&#39;,</span>
+<span class="s">&#39;</span><span class="n">IsNotPrev</span><span class="s">&#39; =&gt; &#39;</span><span class="n">doesn</span><span class="s">&#39;t equal previous&#39;</span><span class="p">,</span>
+</pre></div>
+</div>
+</div></blockquote>
 </li>
 <li><p class="first"><code class="docutils literal notranslate"><span class="pre">Is_StateType</span></code>: The ticket attribute condition <code class="docutils literal notranslate"><span class="pre">StateType</span></code> of the attribute set of the current snapshot matched if green or matched not if red.</p>
 </li>
