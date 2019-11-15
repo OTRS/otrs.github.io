@@ -702,7 +702,7 @@ Search.setIndex({docnames:["content/cloudservice","content/core","content/daemon
 :1,ist
 :1,isvisibleforcustom:1,isvisibleforcustomer
 :1,it
-:1,it:3,italian
+:1,italian
 :3,italiano
 :3,item
 :3,item:[3,5],itemarea
