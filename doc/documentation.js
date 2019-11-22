@@ -225,17 +225,17 @@ $(document).ready(function() {
                             Path: 'Perl',
                         },
                         {
-                            Name: 'Design System (External Interface)',
+                            Name: 'Design System',
                             Path: 'frontend/dist/designsystem',
                             NewTab: true,
                         },
                         {
-                            Name: 'JavaScript (External Interface)',
+                            Name: 'JavaScript',
                             Path: 'frontend/dist/api',
                             NewTab: true,
                         },
                         {
-                            Name: 'JavaScript (Agent Interface)',
+                            Name: 'JavaScript (Admin Interface)',
                             Path: 'JavaScript',
                         },
                         {
