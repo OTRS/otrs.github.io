@@ -2040,6 +2040,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/common/commonrelativedatetime.js",
+    "file/Frontend/Tests/Components/Common/CommonRelativeDateTime.js.html",
+    "Frontend/Tests/Components/Common/CommonRelativeDateTime.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/common/commonsidebar.js",
     "file/Frontend/Tests/Components/Common/CommonSidebar.js.html",
     "Frontend/Tests/Components/Common/CommonSidebar.js",
