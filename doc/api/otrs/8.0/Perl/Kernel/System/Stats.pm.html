@@ -62,7 +62,7 @@ $(document).ready(function() {
   </li>
   <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
     <ul>
-      <li><a href="#new">new()</a></li>
+      <li><a href="#BUILD">BUILD()</a></li>
       <li><a href="#StatsAdd">StatsAdd()</a></li>
       <li><a href="#StatsGet">StatsGet()</a></li>
       <li><a href="#StatsUpdate">StatsUpdate()</a></li>
@@ -74,6 +74,7 @@ $(document).ready(function() {
       <li><a href="#GetStaticFiles">GetStaticFiles()</a></li>
       <li><a href="#GetDynamicFiles">GetDynamicFiles()</a></li>
       <li><a href="#GetObjectName">GetObjectName()</a></li>
+      <li><a href="#GetObjectType">GetObjectType()</a></li>
       <li><a href="#GetObjectBehaviours">GetObjectBehaviours()</a></li>
       <li><a href="#ObjectFileCheck">ObjectFileCheck()</a></li>
       <li><a href="#ObjectModuleCheck">ObjectModuleCheck()</a></li>
@@ -88,6 +89,8 @@ $(document).ready(function() {
       <li><a href="#StatsInstall">StatsInstall()</a></li>
       <li><a href="#StatsUninstall">StatsUninstall()</a></li>
       <li><a href="#StatsCleanUp">StatsCleanUp()</a></li>
+      <li><a href="#StatsConfigurationValidate">StatsConfigurationValidate()</a></li>
+      <li><a href="#StatisticSearch">StatisticSearch()</a></li>
     </ul>
   </li>
 </ul>
@@ -112,11 +115,9 @@ $(document).ready(function() {
 
 <h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
 
-<h2 id="new">new()</h2>
+<h2 id="BUILD">BUILD()</h2>
 
-<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
-
-<pre><code>    my $StatsObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Stats&#39;);</code></pre>
+<p>Moose constructor method, that is executed on <code>instantiation</code> of the object.</p>
 
 <h2 id="StatsAdd">StatsAdd()</h2>
 
@@ -133,6 +134,9 @@ $(document).ready(function() {
 <pre><code>    my $HashRef = $StatsObject-&gt;StatsGet(
         StatID             =&gt; &#39;123&#39;,
         NoObjectAttributes =&gt; 1,       # optional
+
+        # With this the check will be disabled, if a field is already used in one section.
+        AllObjectAttributes =&gt; 1,      # optional
     );</code></pre>
 
 <h2 id="StatsUpdate">StatsUpdate()</h2>
@@ -175,7 +179,7 @@ $(document).ready(function() {
 
 <pre><code>    my $ArrayRef = $StatsObject-&gt;GetStatsList(
         AccessRw  =&gt; 1, # Optional, indicates that user may see all statistics
-        OrderBy   =&gt; &#39;ID&#39; || &#39;Title&#39; || &#39;Object&#39;, # optional
+        OrderBy   =&gt; &#39;StatisticID&#39; || &#39;ID&#39; || &#39;Title&#39; || &#39;Object&#39;, # optional
         Direction =&gt; &#39;ASC&#39; || &#39;DESC&#39;,             # optional
         UserID    =&gt; $UserID,
     );</code></pre>
@@ -219,6 +223,15 @@ $(document).ready(function() {
 <p>Get the name of a dynamic object</p>
 
 <pre><code>    my $ObjectName = $StatsObject-&gt;GetObjectName(
+        ObjectModule =&gt; &#39;Kernel::System::Stats::Dynamic::TicketList&#39;,
+    );</code></pre>
+
+<h2 id="GetObjectType">GetObjectType()</h2>
+
+<p>Get the type of the object: &#39;Static&#39;, &#39;DynamicMatrix&#39;, &#39;DynamicList&#39;</p>
+
+<pre><code>    my $ObjectName = $StatsObject-&gt;GetObjectType(
+        Type =&gt; &#39;(static|dynamic)&#39;,
         ObjectModule =&gt; &#39;Kernel::System::Stats::Dynamic::TicketList&#39;,
     );</code></pre>
 
@@ -300,19 +313,20 @@ $(document).ready(function() {
 <p>computes stats results and adds them to the cache. This can be used to precompute stats data e. g. for dashboard widgets in a cron job.</p>
 
 <pre><code>    my $StatArray = $StatsObject-&gt;StatsResultCacheCompute(
-        StatID       =&gt; &#39;123&#39;,
-        UserID       =&gt; $UserID,        # target UserID
-        UserGetParam =&gt; \%UserGetParam, # user settings of non-fixed fields
+        StatisticID               =&gt; &#39;123&#39;,
+        ConfiguredExecutionParams =&gt; \%ConfiguredExecutionParams, # user settings of non-fixed fields
+        PushEventIdentifier       =&gt; &#39;&lt;UUID&gt;&#39;,
+        UserID                    =&gt; $UserID,                     # target UserID
     );</code></pre>
 
 <h2 id="StatsResultCacheGet">StatsResultCacheGet()</h2>
 
-<p>gets cached statistic results. Will never run the statistic. This can be used to fetch cached stats data e. g. for stats widgets in the dashboard.</p>
+<p>Gets cached statistic results. Will never run the statistic. This can be used to fetch cached stats data e. g. for stats widgets in the dashboard.</p>
 
 <pre><code>    my $StatArray = $StatsObject-&gt;StatsResultCacheGet(
-        StatID       =&gt; &#39;123&#39;,
-        UserID       =&gt; $UserID,    # target UserID
-        UserGetParam =&gt; \%GetParam,
+        StatisticID               =&gt; &#39;123&#39;,
+        ConfiguredExecutionParams =&gt; \%ConfiguredExecutionParams,
+        UserID                    =&gt; $UserID,                     # target UserID
     );</code></pre>
 
 <h2 id="StringAndTimestamp2Filename">StringAndTimestamp2Filename()</h2>
@@ -361,6 +375,29 @@ $(document).ready(function() {
         or
         CheckAllObjects =&gt; 1,
     );</code></pre>
+
+<h2 id="StatsConfigurationValidate">StatsConfigurationValidate()</h2>
+
+<p>Validates the configuration of a given statistic.</p>
+
+<pre><code>    my $StatCorrectlyConfigured = $StatsObject-&gt;StatsConfigurationValidate(
+        Stat =&gt; \%Stat,
+    );</code></pre>
+
+<p>Returns a hash with error keys + texts (if any).</p>
+
+<h2 id="StatisticSearch">StatisticSearch()</h2>
+
+<p>Search for stored statistics. Given parameters could be scalars or arrays. Each keys which are stored into the XML structure are usable within the parameters.</p>
+
+<pre><code>    my $StatisticIDs = $StatisticObject-&gt;StatisticSearch(
+        StatNumber =&gt; &#39;1000*&#39;,      # Wildcard support
+        StatType   =&gt; &#39;static&#39;,     # also possible: [ &#39;static&#39;, &#39;dynamic&#39; ]
+        Valid      =&gt; 0|1,
+        ...
+    );</code></pre>
+
+<p>Returns an array ref with statistic IDs.</p>
 
 </div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 

@@ -66,6 +66,30 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "form/validator/datetimeperiod~datetimeperiod",
+    "class/Frontend/Form/Validator/DateTimePeriod.js~DateTimePeriod.html",
+    "<span>DateTimePeriod</span> <span class=\"search-result-import-path\">Form/Validator/DateTimePeriod</span>",
+    "class"
+  ],
+  [
+    "form/validator/datetimerange~datetimerange",
+    "class/Frontend/Form/Validator/DateTimeRange.js~DateTimeRange.html",
+    "<span>DateTimeRange</span> <span class=\"search-result-import-path\">Form/Validator/DateTimeRange</span>",
+    "class"
+  ],
+  [
+    "form/validator/datetimerelative~datetimerelative",
+    "class/Frontend/Form/Validator/DateTimeRelative.js~DateTimeRelative.html",
+    "<span>DateTimeRelative</span> <span class=\"search-result-import-path\">Form/Validator/DateTimeRelative</span>",
+    "class"
+  ],
+  [
+    "form/validator/datetimescale~datetimescale",
+    "class/Frontend/Form/Validator/DateTimeScale.js~DateTimeScale.html",
+    "<span>DateTimeScale</span> <span class=\"search-result-import-path\">Form/Validator/DateTimeScale</span>",
+    "class"
+  ],
+  [
     "components/form/field/formeditor/dummyuploadadapter~dummyuploadadapter",
     "class/Frontend/Components/Form/Field/FormEditor/DummyUploadAdapter.js~DummyUploadAdapter.html",
     "<span>DummyUploadAdapter</span> <span class=\"search-result-import-path\">Components/Form/Field/FormEditor/DummyUploadAdapter</span>",
@@ -225,6 +249,18 @@ window.esdocSearchIndex = [
     "apps/external/plugins/routergenerator~routergenerator",
     "class/Frontend/Apps/External/Plugins/RouterGenerator/index.js~RouterGenerator.html",
     "<span>RouterGenerator</span> <span class=\"search-result-import-path\">Apps/External/Plugins/RouterGenerator</span>",
+    "class"
+  ],
+  [
+    "locale/businessobjecttypetexts/statistic~statistic",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/Statistic.js~Statistic.html",
+    "<span>Statistic</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/Statistic</span>",
+    "class"
+  ],
+  [
+    "locale/businessobjecttypetexts/statisticreport~statisticreport",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/StatisticReport.js~StatisticReport.html",
+    "<span>StatisticReport</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/StatisticReport</span>",
     "class"
   ],
   [
@@ -492,6 +528,18 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "locale/businessobjecttypetexts/statistic~statistic",
+    "variable/index.html#static-variable-statistic",
+    "<span>statistic</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/Statistic</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/statisticreport~statisticreport",
+    "variable/index.html#static-variable-statisticReport",
+    "<span>statisticReport</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/StatisticReport</span>",
+    "variable"
+  ],
+  [
     "tests/components/vueinstance~store",
     "variable/index.html#static-variable-store",
     "<span>store</span> <span class=\"search-result-import-path\">Tests/Components/VueInstance</span>",
@@ -567,6 +615,30 @@ window.esdocSearchIndex = [
     "form/validator/datetimegreater~validator",
     "variable/index.html#static-variable-validator",
     "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/DateTimeGreater</span>",
+    "variable"
+  ],
+  [
+    "form/validator/datetimeperiod~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/DateTimePeriod</span>",
+    "variable"
+  ],
+  [
+    "form/validator/datetimerange~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/DateTimeRange</span>",
+    "variable"
+  ],
+  [
+    "form/validator/datetimerelative~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/DateTimeRelative</span>",
+    "variable"
+  ],
+  [
+    "form/validator/datetimescale~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/DateTimeScale</span>",
     "variable"
   ],
   [
@@ -1038,6 +1110,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/handlesstatisticgraphdownload.js",
+    "file/Frontend/Apps/Agent/Mixins/HandlesStatisticGraphDownload.js.html",
+    "Frontend/Apps/Agent/Mixins/HandlesStatisticGraphDownload.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/handlesticketwatch.js",
     "file/Frontend/Apps/Agent/Mixins/HandlesTicketWatch.js.html",
     "Frontend/Apps/Agent/Mixins/HandlesTicketWatch.js",
@@ -1278,6 +1356,30 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/form/validator/datetimeperiod.js",
+    "file/Frontend/Form/Validator/DateTimePeriod.js.html",
+    "Frontend/Form/Validator/DateTimePeriod.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/datetimerange.js",
+    "file/Frontend/Form/Validator/DateTimeRange.js.html",
+    "Frontend/Form/Validator/DateTimeRange.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/datetimerelative.js",
+    "file/Frontend/Form/Validator/DateTimeRelative.js.html",
+    "Frontend/Form/Validator/DateTimeRelative.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/datetimescale.js",
+    "file/Frontend/Form/Validator/DateTimeScale.js.html",
+    "Frontend/Form/Validator/DateTimeScale.js",
+    "file"
+  ],
+  [
     "frontend/form/validator/fileupload.js",
     "file/Frontend/Form/Validator/FileUpload.js.html",
     "Frontend/Form/Validator/FileUpload.js",
@@ -1398,6 +1500,18 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/locale/businessobjecttypetexts/statistic.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/Statistic.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/Statistic.js",
+    "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/statisticreport.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/StatisticReport.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/StatisticReport.js",
+    "file"
+  ],
+  [
     "frontend/locale/businessobjecttypetexts/ticket.js",
     "file/Frontend/Locale/BusinessObjectTypeTexts/Ticket.js.html",
     "Frontend/Locale/BusinessObjectTypeTexts/Ticket.js",
@@ -1455,6 +1569,12 @@ window.esdocSearchIndex = [
     "frontend/mixins/componentloaded.js",
     "file/Frontend/Mixins/ComponentLoaded.js.html",
     "Frontend/Mixins/ComponentLoaded.js",
+    "file"
+  ],
+  [
+    "frontend/mixins/convertdotnotationtocomplex.js",
+    "file/Frontend/Mixins/ConvertDotNotationToComplex.js.html",
+    "Frontend/Mixins/ConvertDotNotationToComplex.js",
     "file"
   ],
   [
@@ -2094,6 +2214,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/data/datalist.js",
+    "file/Frontend/Tests/Components/Data/DataList.js.html",
+    "Frontend/Tests/Components/Data/DataList.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/data/datapager.js",
     "file/Frontend/Tests/Components/Data/DataPager.js.html",
     "Frontend/Tests/Components/Data/DataPager.js",
@@ -2109,6 +2235,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/form.js",
     "file/Frontend/Tests/Components/Form.js.html",
     "Frontend/Tests/Components/Form.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formactionbutton.js",
+    "file/Frontend/Tests/Components/Form/Field/FormActionButton.js.html",
+    "Frontend/Tests/Components/Form/Field/FormActionButton.js",
     "file"
   ],
   [
@@ -2160,9 +2292,21 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formdatetimeperiod.js",
+    "file/Frontend/Tests/Components/Form/Field/FormDateTimePeriod.js.html",
+    "Frontend/Tests/Components/Form/Field/FormDateTimePeriod.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/form/field/formdatetimerange.js",
     "file/Frontend/Tests/Components/Form/Field/FormDateTimeRange.js.html",
     "Frontend/Tests/Components/Form/Field/FormDateTimeRange.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formdatetimescale.js",
+    "file/Frontend/Tests/Components/Form/Field/FormDateTimeScale.js.html",
+    "Frontend/Tests/Components/Form/Field/FormDateTimeScale.js",
     "file"
   ],
   [
@@ -2232,6 +2376,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formradiobutton.js",
+    "file/Frontend/Tests/Components/Form/Field/FormRadioButton.js.html",
+    "Frontend/Tests/Components/Form/Field/FormRadioButton.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/form/field/formratefilter.js",
     "file/Frontend/Tests/Components/Form/Field/FormRateFilter.js.html",
     "Frontend/Tests/Components/Form/Field/FormRateFilter.js",
@@ -2265,6 +2415,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/form/field/formsortby.js",
     "file/Frontend/Tests/Components/Form/Field/FormSortBy.js.html",
     "Frontend/Tests/Components/Form/Field/FormSortBy.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formstatisticpreview.js",
+    "file/Frontend/Tests/Components/Form/Field/FormStatisticPreview.js.html",
+    "Frontend/Tests/Components/Form/Field/FormStatisticPreview.js",
     "file"
   ],
   [
@@ -2430,6 +2586,18 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/locale/businessobjecttypetexts/statistic.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/Statistic.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/Statistic.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/statisticreport.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/StatisticReport.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/StatisticReport.js",
+    "file"
+  ],
+  [
     "frontend/tests/locale/businessobjecttypetexts/ticket.js",
     "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/Ticket.js.html",
     "Frontend/Tests/Locale/BusinessObjectTypeTexts/Ticket.js",
@@ -2457,6 +2625,12 @@ window.esdocSearchIndex = [
     "frontend/tests/logger.js",
     "file/Frontend/Tests/Logger.js.html",
     "Frontend/Tests/Logger.js",
+    "file"
+  ],
+  [
+    "frontend/tests/mixins/convertdotnotationtocomplex.js",
+    "file/Frontend/Tests/Mixins/ConvertDotNotationToComplex.js.html",
+    "Frontend/Tests/Mixins/ConvertDotNotationToComplex.js",
     "file"
   ],
   [
