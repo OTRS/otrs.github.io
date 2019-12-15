@@ -102,6 +102,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "locale/businessobjecttypetexts/formdraft~formdraft",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/FormDraft.js~FormDraft.html",
+    "<span>FormDraft</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/FormDraft</span>",
+    "class"
+  ],
+  [
     "locale/businessobjecttypetexts/knowledgebasearticle~knowledgebasearticle",
     "class/Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js~KnowledgeBaseArticle.html",
     "<span>KnowledgeBaseArticle</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle</span>",
@@ -327,6 +333,12 @@ window.esdocSearchIndex = [
     "apps/external/helpers/externalcomponentregistration~externalcomponentindex",
     "variable/index.html#static-variable-externalComponentIndex",
     "<span>externalComponentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/ExternalComponentRegistration</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/formdraft~formdraft",
+    "variable/index.html#static-variable-formDraft",
+    "<span>formDraft</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/FormDraft</span>",
     "variable"
   ],
   [
@@ -1068,6 +1080,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/formdraft.js",
+    "file/Frontend/Apps/Agent/Mixins/FormDraft.js.html",
+    "Frontend/Apps/Agent/Mixins/FormDraft.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/handlescreenbase.js",
     "file/Frontend/Apps/Agent/Mixins/HandleScreenBase.js.html",
     "Frontend/Apps/Agent/Mixins/HandleScreenBase.js",
@@ -1491,6 +1509,12 @@ window.esdocSearchIndex = [
     "frontend/locale/businessobjecttypetexts/base.js",
     "file/Frontend/Locale/BusinessObjectTypeTexts/Base.js.html",
     "Frontend/Locale/BusinessObjectTypeTexts/Base.js",
+    "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/formdraft.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/FormDraft.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/FormDraft.js",
     "file"
   ],
   [
