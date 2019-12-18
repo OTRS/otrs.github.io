@@ -2160,6 +2160,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/common/commondelete.js",
+    "file/Frontend/Tests/Components/Common/CommonDelete.js.html",
+    "Frontend/Tests/Components/Common/CommonDelete.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/common/commondialog.js",
     "file/Frontend/Tests/Components/Common/CommonDialog.js.html",
     "Frontend/Tests/Components/Common/CommonDialog.js",
