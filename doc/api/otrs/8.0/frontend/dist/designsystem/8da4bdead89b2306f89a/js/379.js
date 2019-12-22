@@ -1,0 +1,1 @@
+(window.webpackJsonp=window.webpackJsonp||[]).push([[379],{r1j1:function(t,e,r){"use strict";r.r(e);var n={name:"PreviewVideo",props:{url:{type:String}}},s=r("psIG"),i=Object(s.a)(n,function(){var t=this.$createElement;return(this._self._c||t)("video",{attrs:{controls:"",autoplay:"",width:"250",src:this.url}})},[],!1,null,null,null);e.default=i.exports}}]);
