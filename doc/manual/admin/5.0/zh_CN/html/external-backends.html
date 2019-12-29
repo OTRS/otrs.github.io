@@ -1,0 +1,830 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>使用外部后端</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 5 - 系统管理员手册"><link rel="up" href="administration.html" title="第 4 章 管理"><link rel="prev" href="email-settings.html" title="邮件设置"><link rel="next" href="ticket-settings.html" title="工单设置"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">使用外部后端</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="email-settings.html">上一页</a> </td><th width="60%" align="center">第 4 章 管理</th><td width="20%" align="right"> <a accesskey="n" href="ticket-settings.html">下一页</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="external-backends"></a>使用外部后端</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="external-backends.html#customer-data">客户数据</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-user-backend">客户联系人后端</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#customer-backend-db">数据库(默认)</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#multi-customer-ids-db">多ID的客户联系人（公司工单）</a></span></dt></dl></dd><dt><span class="section"><a href="external-backends.html#customer-backend-ldap">LDAP</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#multi-customer-ids-ldap">多ID的客户联系人（公司工单）</a></span></dt></dl></dd><dt><span class="section"><a href="external-backends.html#multiple-customer-backends">在OTRS中使用多个客户后端</a></span></dt><dt><span class="section"><a href="external-backends.html#dynamicfield-from-customeruser">在动态字段中存储客户联系人数据</a></span></dt></dl></dd><dt><span class="section"><a href="external-backends.html#auth-backends">服务人员和客户联系人身份认证后端</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#agent-auth-backends">服务人员身份认证后端</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#agent-auth-backend-db">数据库认证(默认)</a></span></dt><dt><span class="section"><a href="external-backends.html#agent-auth-backend-ldap">LDAP</a></span></dt><dt><span class="section"><a href="external-backends.html#agent-auth-backend-httpbasic">用于服务人员的HTTPBasicAuth模块</a></span></dt><dt><span class="section"><a href="external-backends.html#agent-auth-backend-radius">Radius</a></span></dt></dl></dd><dt><span class="section"><a href="external-backends.html#customer-auth-backends">客户联系人身份认证后端</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#customer-auth-backend-db">数据库(默认)</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-auth-backend-ldap">LDAP</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-auth-backend-httpbasic">用于客户联系人的HTTPBasicAuth模块</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-auth-backend-radius">Radius</a></span></dt></dl></dd></dl></dd><dt><span class="section"><a href="external-backends.html#customer-self-registration">定制客户联系人自助注册</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#customer-self-registration-tt">定制WEB界面</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-self-registration-mapping">客户联系人映射</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-self-registration-customer-table">定制OTRS数据库中的<code class="literal">customer_user</code>表</a></span></dt></dl></dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="customer-data"></a>客户数据</h3></div></div></div><p>
+OTRS会使用许多客户联系人数据属性如用户名、邮件地址、电话号码等等，这些属性在服务人员和客户联系人前端界面都会显示，还用于客户联系人的身份验证。
+</p><p>
+在OTRS中使用或显示的客户联系人数据是高度可定制的，但下面的信息始终需要用于客户联系人身份验证。
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+      用户登录名
+    </p></li><li class="listitem"><p>
+      电子邮件地址
+    </p></li><li class="listitem"><p>
+      客户联系人ID
+    </p></li></ul></div><p>
+</p><p>
+如果你要在服务人员界面显示客户联系人信息，使用下面的系统配置参数。
+</p><p>
+</p><pre class="programlisting">
+    # Ticket::Frontend::CustomerInfo*
+    # （在编写电话/邮件工单、工单详情和队列视图窗口显示客户联系人信息）
+    $Self-&gt;{'Ticket::Frontend::CustomerInfoCompose'} = 1;
+    $Self-&gt;{'Ticket::Frontend::CustomerInfoZoom'} = 1;
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本：系统配置参数</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="customer-user-backend"></a>客户联系人后端</h3></div></div></div><p>
+你可以使用两种类型的客户联系人后端：DB和LDAP。如果你已经有另外的客户联系人后端（如SAP），当然可用写一个模块来使用它。
+</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-backend-db"></a>数据库(默认)</h4></div></div></div><p>
+下面的示例显示一个客户联系人数据库后端的配置，使用了存储在OTRS数据库中的客户联系人数据。
+</p><div class="example"><a name="db-customer-backend"></a><p class="title"><b>例 4.7. 配置客户联系人的数据库后端</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# CustomerUser (customer database backend and settings)
+$Self-&gt;{CustomerUser} = {
+    Name =&gt; 'Database Datasource',
+    Module =&gt; 'Kernel::System::CustomerUser::DB',
+    Params =&gt; {
+        # if you want to use an external database, add the required settings
+#            DSN =&gt; 'DBI:odbc:yourdsn',
+#            Type =&gt; 'mssql', # only for ODBC connections
+#            DSN =&gt; 'DBI:mysql:database=customerdb;host=customerdbhost',
+#            User =&gt; '',
+#            Password =&gt; '',
+            Table =&gt; 'customer_user',
+
+            # CaseSensitive will control if the SQL statements need LOWER()
+            #   function calls to work case insensitively. Setting this to
+            #   1 will improve performance dramatically on large databases.
+            CaseSensitive =&gt; 0,
+        },
+# customer unique id
+CustomerKey =&gt; 'login',
+
+# customer #
+CustomerID =&gt; 'customer_id',
+CustomerValid =&gt; 'valid_id',
+    CustomerUserListFields =&gt; ['first_name', 'last_name', 'email'],
+    CustomerUserSearchFields =&gt; ['login', 'last_name', 'customer_id'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['email'],
+    CustomerUserNameFields =&gt; ['title','first_name','last_name'],
+    CustomerUserEmailUniqCheck =&gt; 1,
+#    # show not own tickets in customer panel, CompanyTickets
+#    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+#    # generate auto logins
+#    AutoLoginCreation =&gt; 0,
+#    AutoLoginCreationPrefix =&gt; 'auto',
+#    # admin can change customer preferences
+#    AdminSetPreferences =&gt; 1,
+#    # cache time to live in sec. - cache any database queries
+#    CacheTTL =&gt; 0,
+#    # just a read only source
+#    ReadOnly =&gt; 1,
+    Map =&gt; [
+        # note: Login, Email and CustomerID needed!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+        [ 'UserTitle',      'Title',      'title',      1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'first_name', 1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'last_name',  1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'login',      1, 1, 'var', '', 0 ],
+        [ 'UserPassword',   'Password',   'pw',         0, 0, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'email',      1, 1, 'var', '', 0 ],
+#        [ 'UserEmail',      Translatable('Email'), 'email',           1, 1, 'var', '[% Env("CGIHandle") %]?Action=AgentTicketCompose;ResponseID=1;TicketID=[% Data.TicketID | uri %];ArticleID=[% Data.ArticleID | uri %]', 0, '', 'AsPopup OTRSPopup_TicketAction' ],
+        [ 'UserCustomerID', 'CustomerID', 'customer_id', 0, 1, 'var', '', 0 ],
+#        [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
+        [ 'UserPhone',        'Phone',       'phone',        1, 0, 'var', '', 0 ],
+        [ 'UserFax',          'Fax',         'fax',          1, 0, 'var', '', 0 ],
+        [ 'UserMobile',       'Mobile',      'mobile',       1, 0, 'var', '', 0 ],
+        [ 'UserStreet',       'Street',      'street',       1, 0, 'var', '', 0 ],
+        [ 'UserZip',          'Zip',         'zip',          1, 0, 'var', '', 0 ],
+        [ 'UserCity',         'City',        'city',         1, 0, 'var', '', 0 ],
+        [ 'UserCountry',      'Country',     'country',      1, 0, 'var', '', 0 ],
+        [ 'UserComment',      'Comment',     'comments',     1, 0, 'var', '', 0 ],
+        [ 'ValidID',          'Valid',       'valid_id',     0, 1, 'int', '', 0 ],
+
+        # Dynamic field example
+#        [ 'DynamicField_Name_X', undef, 'Name_X', 0, 0, 'dynamic_field', undef, 0, undef, undef, ],
+    ],
+    # default selections
+    Selections =&gt; {
+        UserTitle =&gt; {
+            'Mr.' =&gt; 'Mr.',
+            'Mrs.' =&gt; 'Mrs.',
+        },
+    },
+};
+</pre><p>
+</p></div></div><br class="example-break"><p>
+如果你要定制客户联系人数据，修改OTRS数据库中customer_user表的列标题或添加一个新列。作为一个示例，下面的脚本显示了如果添加一个房间号的新列。
+</p><p>
+</p><pre class="screen">
+linux:~# mysql -p
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 116 to server version: 5.0.18-Debian_7-log
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt; use otrs;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; ALTER TABLE customer_user ADD room VARCHAR (250);
+Query OK, 1 rows affected (0.01 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql&gt; quit
+Bye
+linux:~#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本：添加一个房间字段到customer_user表。</em></span>
+</p><p>
+现在添加新列到文件<code class="filename">Kernel/Config.pm</code>中的MAP数组，如下面的脚本所示。
+</p><p>
+</p><pre class="programlisting">
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+    [...]
+    [ 'UserRoom',      'Room',      'room',       0, 1, 'var', '', 0 ],
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本：添加一个房间列到Kernel/Config.pm文件。</em></span>
+</p><p>
+还可以在服务人员界面通过客户链接编辑所有的客户联系人信息。
+</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
+        Please note that you may omit <code class="literal">http-link-target</code> and
+<code class="literal">link class</code> keys in map array elements, if they are not to
+be used. These keys add <code class="literal">target=""</code> and
+<code class="literal">class=""</code> attributes to the HTTP link element,
+respectively. They are ignored if <code class="literal">http-link</code> is not set.
+    </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="multi-customer-ids-db"></a>多ID的客户联系人（公司工单）</h5></div></div></div><p>
+给一个客户联系人分配多个ID是可能的。这在一个客户联系人必须访问另一个客户联系人的工单时很有用，例如：一名主管想关注他的助手的工单。如果一个客户联系人能够访问另一个客户联系人的工单，需要使用OTRS的公司工单功能。可通过客户界面的“公司工单”链接来访问公司工单。
+</p><p>
+要使用公司工单，必须给OTRS数据库中的customer_user表添加一个新列，以保存一个客户联系人的ID。
+</p><p>
+</p><pre class="screen">
+linux:~# mysql -p
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 124 to server version: 5.0.18-Debian_7-log
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt; use otrs;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; ALTER TABLE customer_user ADD customer_ids VARCHAR (250);
+Query OK, 1 rows affected (0.02 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql&gt; quit
+Bye
+linux:~#
+</pre><p>
+</p><p>
+    <span class="emphasis"><em>脚本：给customer_user表添加一个customer_ids列。</em></span>
+</p><p>
+现在必须将新列添加到文件<code class="filename">Kernel/Config.pm</code>中的MAP数组，如下面的脚本所示。
+</p><p>
+</p><pre class="programlisting">
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+    [...]
+    [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本：在文件Kernel/Config.pm中添加UserCustomerIDs列。</em></span>
+</p><p>
+现在，这个用于多ID的新列能够通过服务人员界面客户联系人管理部分进行编辑。
+</p><p>
+要确保一个客户联系人能够访问其它客户联系人的工单，将其它客户联系人的ID添加到这个新列，每个ID要用分号分隔（见下面的示例）。
+</p><div class="example"><a name="company-tickets-db"></a><p class="title"><b>例 4.8. 通过数据库后端使用公司工单</b></p><div class="example-contents"><p>
+系统中有客户联系人A、B和C，A想要通过客户界面访问B和C的工单，B和C不能访问其他人的工单。
+</p><p>
+要实现这个设置，修改表customer_user并按以上描述修改文件<code class="filename">Kernel/Config.pm</code>中的映射。然后在服务人员界面中或者通过系统管理页面载入客户联系人A的设置，设置显示出来后，将CustomerIDs字段输入值“B;C;”。
+</p></div></div><br class="example-break"></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-backend-ldap"></a>LDAP</h4></div></div></div><p>
+如果你有一个客户联系人的LDAP目录，你可以用它作为OTRS的客户后端，如下面的例子所示。
+</p><div class="example"><a name="ldap-customer-backend"></a><p class="title"><b>例 4.9. 配置一个LDAP客户后端</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# CustomerUser
+# (customer ldap backend and settings)
+$Self-&gt;{CustomerUser} = {
+    Name =&gt; 'LDAP Data Source',
+    Module =&gt; 'Kernel::System::CustomerUser::LDAP',
+    Params =&gt; {
+        # ldap host
+        Host =&gt; 'bay.csuhayward.edu',
+        # ldap base dn
+        BaseDN =&gt; 'ou=seas,o=csuh',
+        # search scope (one|sub)
+        SSCOPE =&gt; 'sub',
+        # The following is valid but would only be necessary if the
+        # anonymous user does NOT have permission to read from the LDAP tree
+        UserDN =&gt; '',
+        UserPw =&gt; '',
+        # in case you want to add always one filter to each ldap query, use
+        # this option. e. g. AlwaysFilter =&gt; '(mail=*)' or AlwaysFilter =&gt; '(objectclass=user)'
+        AlwaysFilter =&gt; '',
+            # if the charset of your ldap server is iso-8859-1, use this:
+#            SourceCharset =&gt; 'iso-8859-1',
+
+            # Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
+            Params =&gt; {
+                port =&gt; 389,
+                timeout =&gt; 120,
+                async =&gt; 0,
+                version =&gt; 3,
+            },
+    },
+    # customer unique id
+    CustomerKey =&gt; 'uid',
+    # customer #
+    CustomerID =&gt; 'mail',
+    CustomerUserListFields =&gt; ['cn', 'mail'],
+    CustomerUserSearchFields =&gt; ['uid', 'cn', 'mail'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['mail'],
+    CustomerUserNameFields =&gt; ['givenname', 'sn'],
+    # show not own tickets in customer panel, CompanyTickets
+    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+    # add an ldap filter for valid users (expert setting)
+#    CustomerUserValidFilter =&gt; '(!(description=locked))',
+    # administrator can't change customer preferences
+    AdminSetPreferences =&gt; 0,
+#    # cache time to live in sec. - cache any database queries
+#    CacheTTL =&gt; 0,
+    Map =&gt; [
+        # note: Login, Email and CustomerID are mandatory!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+        [ 'UserTitle',      'Title',      'title',           1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'givenname',       1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'sn',              1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'uid',             1, 1, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'mail',            1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'CustomerID', 'mail',            0, 1, 'var', '', 0 ],
+#        [ 'UserCustomerIDs', 'CustomerIDs', 'second_customer_ids', 1, 0, 'var', '', 0 ],
+        [ 'UserPhone',      'Phone',      'telephonenumber', 1, 0, 'var', '', 0 ],
+        [ 'UserAddress',    'Address',    'postaladdress',   1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Comment',    'description',     1, 0, 'var', '', 0 ],
+    ],
+};
+</pre><p>
+</p></div></div><br class="example-break"><p>
+如果你的LDAP目录存储有附加的客户信息如经理的姓名、手机号或部分，并且你想在OTRS中显示这些信息，只需用这些属性条目扩展文件<code class="filename">Kernel/Config.pm</code>中的MAP数组即可，如下面的脚本所示。
+</p><p>
+</p><pre class="programlisting">
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+    [...]
+    [ 'UserPhone',      'Phone',      'telephonenumber', 1, 0, 'var', '', 0 ],
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本：添加新的字段到 Kernel/Config.pm文件。</em></span>
+</p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="multi-customer-ids-ldap"></a>多ID的客户联系人（公司工单）</h5></div></div></div><p>
+使用LDAP后端时同样可以给一个客户联系人分配多个ID。要使用公司工单，需要在LDAP中添加一个新的字段以包含其它客户联系人的ID。
+</p><p>
+如果这个新的字段已经在LDAP目录中创建成功，必须将新的条目添加到文件<code class="filename">Kernel/Config.pm</code>的MAP数组中，如下面的脚本所示。
+</p><p>
+</p><pre class="programlisting">
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly
+    [...]
+    [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本：映射新的字段到 Kernel/Config.pm文件中。</em></span>
+</p><p>
+用于多ID的字段必须在LDAP目录中直接编辑。OTRS只能从LDAP读取数据，而不能写入数据。
+</p><p>
+要确保一个客户联系人能够访问其它客户联系人的工单，将其它客户联系人的ID添加到这个在LDAP中的新字段，每个ID要用分号分隔（见下面的示例）。
+</p><div class="example"><a name="company-tickets-ldap"></a><p class="title"><b>例 4.10. 通过LDAP后端使用公司工单</b></p><div class="example-contents"><p>
+系统中有客户联系人A、B和C，A想要通过客户界面访问B和C的工单，B和C不能访问其他人的工单。
+</p><p>
+要实现这个设置，按上述方法修改LDAP目录和文件<code class="filename">Kernel/Config.pm</code>中的映射。然后在LDAP目录中为客户联系人A的新字段输入值“B;C;”。
+</p></div></div><br class="example-break"></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="multiple-customer-backends"></a>在OTRS中使用多个客户后端</h4></div></div></div><p>
+如果你要在OTRS中利用多个客户数据源（例如：一个LDAP和一个数据库后端），配置参数CustomerUser的后面要加个数字后缀，如“CustomerUser1”、“CustomerUser2”（见下面的示例）。
+</p><div class="example"><a name="multiple-customer-backend-example"></a><p class="title"><b>例 4.11. 在OTRS中利用多个客户数据后端</b></p><div class="example-contents"><p>
+下面的配置示例显示了OTRS中使用一个LDAP和一个数据库后端的用法。
+</p><p>
+</p><pre class="programlisting">
+# 1. Customer user backend: DB
+# (customer database backend and settings)
+$Self-&gt;{CustomerUser1} = {
+    Name =&gt; 'Customer Database',
+    Module =&gt; 'Kernel::System::CustomerUser::DB',
+    Params =&gt; {
+        # if you want to use an external database, add the
+        # required settings
+#        DSN =&gt; 'DBI:odbc:yourdsn',
+#        Type =&gt; 'mssql', # only for ODBC connections
+#        DSN =&gt; 'DBI:mysql:database=customerdb;host=customerdbhost',
+#        User =&gt; '',
+#        Password =&gt; '',
+        Table =&gt; 'customer_user',
+    },
+    # customer unique id
+    CustomerKey =&gt; 'login',
+    # customer #
+    CustomerID =&gt; 'customer_id',
+    CustomerValid =&gt; 'valid_id',
+    CustomerUserListFields =&gt; ['first_name', 'last_name', 'email'],
+    CustomerUserSearchFields =&gt; ['login', 'last_name', 'customer_id'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['email'],
+    CustomerUserNameFields =&gt; ['title','first_name','last_name'],
+    CustomerUserEmailUniqCheck =&gt; 1,
+#    # show not own tickets in customer panel, CompanyTickets
+#    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+#    # generate auto logins
+#    AutoLoginCreation =&gt; 0,
+#    AutoLoginCreationPrefix =&gt; 'auto',
+#    # admin can change customer preferences
+#    AdminSetPreferences =&gt; 1,
+#    # cache time to live in sec. - cache any database queries
+#    CacheTTL =&gt; 0,
+#    # just a read only source
+#    ReadOnly =&gt; 1,
+    Map =&gt; [
+
+        # note: Login, Email and CustomerID needed!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target
+        [ 'UserTitle',      'Title',      'title',        1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'first_name',   1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'last_name',    1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'login',        1, 1, 'var', '', 0 ],
+        [ 'UserPassword',   'Password',   'pw',           0, 0, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'email',        1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'CustomerID', 'customer_id',  0, 1, 'var', '', 0 ],
+        [ 'UserPhone',      'Phone',      'phone',        1, 0, 'var', '', 0 ],
+        [ 'UserFax',        'Fax',        'fax',          1, 0, 'var', '', 0 ],
+        [ 'UserMobile',     'Mobile',     'mobile',       1, 0, 'var', '', 0 ],
+        [ 'UserStreet',     'Street',     'street',       1, 0, 'var', '', 0 ],
+        [ 'UserZip',        'Zip',        'zip',          1, 0, 'var', '', 0 ],
+        [ 'UserCity',       'City',       'city',         1, 0, 'var', '', 0 ],
+        [ 'UserCountry',    'Country',    'country',      1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Comment',    'comments',     1, 0, 'var', '', 0 ],
+        [ 'ValidID',        'Valid',      'valid_id',     0, 1, 'int', '', 0 ],
+    ],
+    # default selections
+    Selections =&gt; {
+        UserTitle =&gt; {
+            'Mr.' =&gt; 'Mr.',
+            'Mrs.' =&gt; 'Mrs.',
+        },
+    },
+};
+
+# 2. Customer user backend: LDAP
+# (customer ldap backend and settings)
+$Self-&gt;{CustomerUser2} = {
+    Name =&gt; 'LDAP Datasource',
+    Module =&gt; 'Kernel::System::CustomerUser::LDAP',
+    Params =&gt; {
+        # ldap host
+        Host =&gt; 'bay.csuhayward.edu',
+        # ldap base dn
+        BaseDN =&gt; 'ou=seas,o=csuh',
+        # search scope (one|sub)
+        SSCOPE =&gt; 'sub',
+        # The following is valid but would only be necessary if the
+        # anonymous user does NOT have permission to read from the LDAP tree
+        UserDN =&gt; '',
+        UserPw =&gt; '',
+        # in case you want to add always one filter to each ldap query, use
+        # this option. e. g. AlwaysFilter =&gt; '(mail=*)' or AlwaysFilter =&gt; '(objectclass=user)'
+        AlwaysFilter =&gt; '',
+        # if the charset of your ldap server is iso-8859-1, use this:
+#        SourceCharset =&gt; 'iso-8859-1',
+
+        # Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
+        Params =&gt; {
+            port =&gt; 389,
+            timeout =&gt; 120,
+            async =&gt; 0,
+            version =&gt; 3,
+        },
+    },
+    # customer unique id
+    CustomerKey =&gt; 'uid',
+    # customer #
+    CustomerID =&gt; 'mail',
+    CustomerUserListFields =&gt; ['cn', 'mail'],
+    CustomerUserSearchFields =&gt; ['uid', 'cn', 'mail'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['mail'],
+    CustomerUserNameFields =&gt; ['givenname', 'sn'],
+    # show not own tickets in customer panel, CompanyTickets
+    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+    # add a ldap filter for valid users (expert setting)
+#    CustomerUserValidFilter =&gt; '(!(description=locked))',
+    # admin can't change customer preferences
+    AdminSetPreferences =&gt; 0,
+    Map =&gt; [
+        # note: Login, Email and CustomerID needed!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly
+        [ 'UserTitle',      'Title',      'title',           1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'givenname',       1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'sn',              1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'uid',             1, 1, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'mail',            1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'CustomerID', 'mail',            0, 1, 'var', '', 0 ],
+#        [ 'UserCustomerIDs', 'CustomerIDs', 'second_customer_ids', 1, 0, 'var', '', 0 ],
+        [ 'UserPhone',      'Phone',      'telephonenumber', 1, 0, 'var', '', 0 ],
+        [ 'UserAddress',    'Address',    'postaladdress',   1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Comment',    'description',     1, 0, 'var', '', 0 ],
+    ],
+};
+</pre><p>
+</p></div></div><br class="example-break"><p>
+最多可以集成10个不同的客户数据后端，在OTRS中使用客户管理界面来查看或编辑（需要写入权限）所有的客户联系人数据。
+</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfield-from-customeruser"></a>在动态字段中存储客户联系人数据</h4></div></div></div><p>
+        有些时候在工单中直接存储客户联系人数据也是有用的，例如在这些数据上创建一些特殊的统计。
+    </p><p>
+        当创建一个工单或修改了工单的客户联系人时设置动态字段的值。动态字段的值来源于客户联系人数据，这适用于所有的客户数据后端，但对LDAP后端特别有用。
+    </p><p>
+        To activate this optional feature of OTRS, please activate the settings
+"Ticket::EventModulePost###950-DynamicFieldFromCustomerUser" and
+"DynamicFieldFromCustomerUser::Mapping". The latter setting contains the
+configuration of which CustomerUser field entry should be stored in which
+ticket dynamic field. The fields must be present in the system and should be
+enabled for AgentTicketFreeText, so that they can be set manually. They
+mustn't be enabled for AgentTicketPhone, AgentTicketEmail and
+AgentTicketCustomer. If they were, they would have precedence over the
+automatically set values.
+    </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="auth-backends"></a>服务人员和客户联系人身份认证后端</h3></div></div></div><p>
+OTRS提供了不同的服务人员和客户联系人身份认证后端。
+</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="agent-auth-backends"></a>服务人员身份认证后端</h4></div></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-db"></a>数据库认证(默认)</h5></div></div></div><p>
+服务人员身份认证后端默认是OTRS数据库，可以通过<a class="link" href="administration.html#adminarea" title="OTRS系统管理区">系统管理页面</a>中的<a class="link" href="administration.html#adminarea-agents" title="服务人员">服务人员管理界面</a>来添加和编辑服务人员（见下面的例子）。
+</p><div class="example"><a name="configuration-agent-auth-backend-db"></a><p class="title"><b>例 4.12. 使用数据库后端认证服务人员</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+    $Self-&gt;{'AuthModule'} = 'Kernel::System::Auth::DB';
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-ldap"></a>LDAP</h5></div></div></div><p>
+如果你所有的服务人员数据存储在LDAP目录中，你可以使用LDAP模块来对OTRS中的用户进行身份认证（见下面例子）。这个模块只对LDAP树有读取权限，这意味着你不能通过<a class="link" href="administration.html#adminarea-agents" title="服务人员">服务人员管理界面</a>来编辑用户数据。
+</p><div class="example"><a name="configuration-agent-auth-backend-ldap"></a><p class="title"><b>例 4.13. 使用LDAP后端认证服务人员</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is an example configuration for an LDAP auth. backend.
+# (Make sure Net::LDAP is installed!)
+$Self-&gt;{'AuthModule'} = 'Kernel::System::Auth::LDAP';
+$Self-&gt;{'AuthModule::LDAP::Host'} = 'ldap.example.com';
+$Self-&gt;{'AuthModule::LDAP::BaseDN'} = 'dc=example,dc=com';
+$Self-&gt;{'AuthModule::LDAP::UID'} = 'uid';
+
+# Check if the user is allowed to auth in a posixGroup
+# (e. g. user needs to be in a group xyz to use otrs)
+$Self-&gt;{'AuthModule::LDAP::GroupDN'} = 'cn=otrsallow,ou=posixGroups,dc=example,dc=com';
+$Self-&gt;{'AuthModule::LDAP::AccessAttr'} = 'memberUid';
+# for ldap posixGroups objectclass (just uid)
+#  $Self-&gt;{'AuthModule::LDAP::UserAttr'} = 'UID';
+# for non ldap posixGroups objectclass (with full user dn)
+#  $Self-&gt;{'AuthModule::LDAP::UserAttr'} = 'DN';
+
+# The following is valid but would only be necessary if the
+# anonymous user do NOT have permission to read from the LDAP tree
+$Self-&gt;{'AuthModule::LDAP::SearchUserDN'} = '';
+$Self-&gt;{'AuthModule::LDAP::SearchUserPw'} = '';
+
+# in case you want to add always one filter to each ldap query, use
+# this option. e. g. AlwaysFilter =&gt; '(mail=*)' or AlwaysFilter =&gt; '(objectclass=user)'
+$Self-&gt;{'AuthModule::LDAP::AlwaysFilter'} = '';
+
+# in case you want to add a suffix to each login name, then
+# you can use this option. e. g. user just want to use user but
+# in your ldap directory exists user@domain.com
+#    $Self-&gt;{'AuthModule::LDAP::UserSuffix'} = '@domain.com';
+
+# Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
+$Self-&gt;{'AuthModule::LDAP::Params'} = {
+    port =&gt; 389,
+    timeout =&gt; 120,
+    async =&gt; 0,
+    version =&gt; 3,
+};
+</pre><p>
+</p></div></div><br class="example-break"><p>
+下面脚本中显示的配置参数可用来从LDAP目录同步用户数据到本地OTRS数据库。这减少了到LDAP的请求时间，加快了OTRS身份认证的速度。当服务人员首次认证后就会完成数据同步。虽然数据已经同步到本地的OTRS数据库，但LDAP目录是身份认证的最后实例，所以一个在LDAP中非活动的用户是不能通过OTRS认证的，即使帐户数据已经存储到OTRS数据库中。不能通过OTRS的WEB界面编辑LDAP中的服务人员数据，所以需要直接在LDAP目录中管理这些数据。
+</p><p>
+</p><pre class="programlisting">
+# defines AuthSyncBackend (AuthSyncModule) for AuthModule
+# if this key exists and is empty, there won't be a sync.
+# example values: AuthSyncBackend, AuthSyncBackend2
+$Self-&gt;{'AuthModule::UseSyncBackend'} = 'AuthSyncBackend';
+
+# agent data sync against ldap
+$Self-&gt;{'AuthSyncModule'} = 'Kernel::System::Auth::Sync::LDAP';
+$Self-&gt;{'AuthSyncModule::LDAP::Host'} = 'ldap://ldap.example.com/';
+$Self-&gt;{'AuthSyncModule::LDAP::BaseDN'} = 'dc=otrs, dc=org';
+$Self-&gt;{'AuthSyncModule::LDAP::UID'} = 'uid';
+$Self-&gt;{'AuthSyncModule::LDAP::SearchUserDN'} = 'uid=sys, ou=user, dc=otrs, dc=org';
+$Self-&gt;{'AuthSyncModule::LDAP::SearchUserPw'} = 'some_pass';
+$Self-&gt;{'AuthSyncModule::LDAP::UserSyncMap'} = {
+    # DB -&gt; LDAP
+    UserFirstname =&gt; 'givenName',
+    UserLastname  =&gt; 'sn',
+    UserEmail     =&gt; 'mail',
+};
+[...]
+
+# AuthSyncModule::LDAP::UserSyncInitialGroups
+# (sync following group with rw permission after initial create of first agent
+# login)
+$Self-&gt;{'AuthSyncModule::LDAP::UserSyncInitialGroups'} = [
+    'users',
+];
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本：同步LDAP目录中的用户数据到OTRS数据库。</em></span>
+</p><p>
+    做为选择，你可以使用LDAP组信息来确定OTRS中的组成员或角色。更多的信息和示例，请查看<code class="filename">Kernel/Config/Defaults.pm</code>，这里有一个同步LDAP组信息到OTRS组的例子。
+</p><p>
+    </p><pre class="programlisting">
+# Attributes needed for group syncs
+# (attribute name for group value key)
+$Self-&gt;{'AuthSyncModule::LDAP::AccessAttr'} = 'memberUid';
+# (select the attribute for type of group content UID/DN for full ldap name)
+# $Self-&gt;{'AuthSyncModule::LDAP::UserAttr'} = 'UID';
+# $Self-&gt;{'AuthSyncModule::LDAP::UserAttr'} = 'DN';
+
+AuthSyncModule::LDAP::UserSyncGroupsDefinition
+# (If "LDAP" was selected for AuthModule and you want to sync LDAP
+# groups to otrs groups, define the following.)
+$Self-&gt;{'AuthSyncModule::LDAP::UserSyncGroupsDefinition'} = {
+    # your ldap group
+    'cn=agent,o=otrs' =&gt; {
+        # otrs group(s)
+        'admin' =&gt; {
+            # permission
+            rw =&gt; 1,
+            ro =&gt; 1,
+        },
+        'faq' =&gt; {
+            rw =&gt; 0,
+            ro =&gt; 1,
+        },
+    },
+    'cn=agent2,o=otrs' =&gt; {
+        'users' =&gt; {
+            rw =&gt; 1,
+            ro =&gt; 1,
+        },
+    }
+};
+    </pre><p>
+</p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-httpbasic"></a>用于服务人员的HTTPBasicAuth模块</h5></div></div></div><p>
+如果你要为所有的服务人员部署一套“单点登录”解决方案，可以使用HTTP基本认证（对所有需要单点登录的系统）和OTRS的HTTPBasicAuth模块（见下面的例子）。
+</p><div class="example"><a name="configuration-agent-auth-backend-htbasic"></a><p class="title"><b>例 4.14. 使用HTTPBasic认证服务人员</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is an example configuration for an apache ($ENV{REMOTE_USER})
+# auth. backend. Use it if you want to have a singe login through
+# apache http-basic-auth
+$Self-&gt;{'AuthModule'} = 'Kernel::System::Auth::HTTPBasicAuth';
+
+# Note:
+#
+# If you use this module, you should use as fallback
+# the following configuration settings if the user is not authorized
+# apache ($ENV{REMOTE_USER})
+$Self-&gt;{LoginURL} = 'http://host.example.com/not-authorised-for-otrs.html';
+$Self-&gt;{LogoutURL} = 'http://host.example.com/thanks-for-using-otrs.html';
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-radius"></a>Radius</h5></div></div></div><p>
+下面例子中显示的配置参数使用一个Radius服务器来认证服务人员。
+</p><div class="example"><a name="configuration-agent-auth-backend-radius"></a><p class="title"><b>例 4.15. 用Radius后端认证服务人员</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is example configuration to auth. agents against a radius server
+$Self-&gt;{'AuthModule'} = 'Kernel::System::Auth::Radius';
+$Self-&gt;{'AuthModule::Radius::Host'} = 'radiushost';
+$Self-&gt;{'AuthModule::Radius::Password'} = 'radiussecret';
+</pre><p>
+</p></div></div><br class="example-break"></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-auth-backends"></a>客户联系人身份认证后端</h4></div></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="customer-auth-backend-db"></a>数据库(默认)</h5></div></div></div><p>
+OTRS中客户联系人身份认证后端默认是OTRS数据库，可以通过OTRS的WEB界面编辑所有的客户联系人数据（见下面的例子）。
+</p><div class="example"><a name="configuration-customer-auth-backend-db"></a><p class="title"><b>例 4.16. 用数据库后端认证客户联系人</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is the auth. module against the otrs db
+$Self-&gt;{'Customer::AuthModule'} = 'Kernel::System::CustomerAuth::DB';
+$Self-&gt;{'Customer::AuthModule::DB::Table'} = 'customer_user';
+$Self-&gt;{'Customer::AuthModule::DB::CustomerKey'} = 'login';
+$Self-&gt;{'Customer::AuthModule::DB::CustomerPassword'} = 'pw';
+#$Self-&gt;{'Customer::AuthModule::DB::DSN'} = "DBI:mysql:database=customerdb;host=customerdbhost";
+#$Self-&gt;{'Customer::AuthModule::DB::User'} = "some_user";
+#$Self-&gt;{'Customer::AuthModule::DB::Password'} = "some_password";
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="customer-auth-backend-ldap"></a>LDAP</h5></div></div></div><p>
+如果你所有的客户联系人数据在LDAP目录中，可以使用OTRS的LDAP模块来认证你的客户联系人（见下面的例子）。因为这个模块只有LDAP后端的只读权限，所以不能通过OTRS的WEB界面编辑客户联系人数据。
+</p><div class="example"><a name="configuration-customer-auth-backend-ldap"></a><p class="title"><b>例 4.17. 用LDAP后端认证客户联系人</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is an example configuration for an LDAP auth. backend.
+# (make sure Net::LDAP is installed!)
+$Self-&gt;{'Customer::AuthModule'} = 'Kernel::System::CustomerAuth::LDAP';
+$Self-&gt;{'Customer::AuthModule::LDAP::Host'} = 'ldap.example.com';
+$Self-&gt;{'Customer::AuthModule::LDAP::BaseDN'} = 'dc=example,dc=com';
+$Self-&gt;{'Customer::AuthModule::LDAP::UID'} = 'uid';
+
+# Check if the user is allowed to auth in a posixGroup
+# (e. g. user needs to be in a group xyz to use otrs)
+$Self-&gt;{'Customer::AuthModule::LDAP::GroupDN'} = 'cn=otrsallow,ou=posixGroups,dc=example,dc=com';
+$Self-&gt;{'Customer::AuthModule::LDAP::AccessAttr'} = 'memberUid';
+# for ldap posixGroups objectclass (just uid)
+$Self-&gt;{'Customer::AuthModule::LDAP::UserAttr'} = 'UID';
+# for non ldap posixGroups objectclass (full user dn)
+#$Self-&gt;{'Customer::AuthModule::LDAP::UserAttr'} = 'DN';
+
+# The following is valid but would only be necessary if the
+# anonymous user does NOT have permission to read from the LDAP tree
+$Self-&gt;{'Customer::AuthModule::LDAP::SearchUserDN'} = '';
+$Self-&gt;{'Customer::AuthModule::LDAP::SearchUserPw'} = '';
+
+# in case you want to add always one filter to each ldap query, use
+# this option. e. g. AlwaysFilter =&gt; '(mail=*)' or AlwaysFilter =&gt; '(objectclass=user)'
+$Self-&gt;{'Customer::AuthModule::LDAP::AlwaysFilter'} = '';
+
+# in case you want to add a suffix to each customer login name, then
+# you can use this option. e. g. user just want to use user but
+# in your ldap directory exists user@domain.com
+#$Self-&gt;{'Customer::AuthModule::LDAP::UserSuffix'} = '@domain.com';
+
+# Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
+$Self-&gt;{'Customer::AuthModule::LDAP::Params'} = {
+    port =&gt; 389,
+    timeout =&gt; 120,
+    async =&gt; 0,
+    version =&gt; 3,
+};
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="customer-auth-backend-httpbasic"></a>用于客户联系人的HTTPBasicAuth模块</h5></div></div></div><p>
+如果你要为所有的客户联系人部署一套“单点登录”解决方案，可以使用HTTP基本认证（对所有需要单点登录的系统）和OTRS的HTTPBasicAuth模块（客户联系人使用OTRS不再需要登录），见下面的例子。
+</p><div class="example"><a name="configuration-customer-auth-backend-htbasic"></a><p class="title"><b>例 4.18. 为客户联系人配置HTTP基本认证</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is an example configuration for an apache ($ENV{REMOTE_USER})
+# auth. backend. Use it if you want to have a singe login through
+# apache http-basic-auth
+$Self-&gt;{'Customer::AuthModule'} = 'Kernel::System::CustomerAuth::HTTPBasicAuth';
+
+# Note:
+# If you use this module, you should use the following
+# config settings as fallback, if user isn't login through
+# apache ($ENV{REMOTE_USER})
+$Self-&gt;{CustomerPanelLoginURL} = 'http://host.example.com/not-authorised-for-otrs.html';
+$Self-&gt;{CustomerPanelLogoutURL} = 'http://host.example.com/thanks-for-using-otrs.html';
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="customer-auth-backend-radius"></a>Radius</h5></div></div></div><p>
+下面例子中显示的配置参数使用一个Radius服务器来认证客户联系人。
+</p><div class="example"><a name="configuration-customer-auth-backend-radius"></a><p class="title"><b>例 4.19. 使用一个Radius后端的客户联系人身份认证</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is a example configuration to auth. customer against a radius server
+$Self-&gt;{'Customer::AuthModule'} = 'Kernel::System::Auth::Radius';
+$Self-&gt;{'Customer::AuthModule::Radius::Host'} = 'radiushost';
+$Self-&gt;{'Customer::AuthModule::Radius::Password'} = 'radiussecret';
+</pre><p>
+</p></div></div><br class="example-break"></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="customer-self-registration"></a>定制客户联系人自助注册</h3></div></div></div><p>
+可以定制新的客户联系人通过customer.pl面板访问的自助注册。可以添加新的可选或必填字段如房间号、地址或状态等。
+</p><p>
+下面的例子显示了如何在客户联系人数据库中指定一个必填字段，在这个例子中是存储客户联系人的房间号。
+</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-self-registration-tt"></a>定制WEB界面</h4></div></div></div><p>
+To display the new field for the room number in the customer.pl web
+interface, the .tt file responsible for the layout in this interface has to
+be modified. Edit the
+<code class="filename">Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt</code>
+file, adding the new field around line 130 (see Script below).
+</p><p>
+</p><pre class="programlisting">
+[...]
+&lt;div class="NewLine"&gt;
+    &lt;label for="Room"&gt;[% Translate("Room{CustomerUser}") | html %]&lt;/label&gt;
+    &lt;input title="[% Translate("Room Number") | html %]" name="Room" type="text" id="UserRoom" maxlength="50" /&gt;
+&lt;/div&gt;
+[...]
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本：在WEB界面显示一个新字段。</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-self-registration-mapping"></a>客户联系人映射</h4></div></div></div><p>
+下一步用新的房间号条目扩展客户联系人映射。为确保OTRS更新后不会丢失自定义的修改内容，将“CustomerUser”设置从文件<code class="filename">Kernel/Config/Defaults.pm</code>放到文件<code class="filename">Kernel/Config.pm</code>中。现在修改MAP数组并添加新的房间号字段，如下面脚本所示。
+</p><p>
+</p><pre class="programlisting">
+# CustomerUser
+# (customer database backend and settings)
+$Self-&gt;{CustomerUser} = {
+    Name =&gt; 'Database Backend',
+    Module =&gt; 'Kernel::System::CustomerUser::DB',
+    Params =&gt; {
+        # if you want to use an external database, add the
+        # required settings
+#        DSN =&gt; 'DBI:odbc:yourdsn',
+#        Type =&gt; 'mssql', # only for ODBC connections
+#        DSN =&gt; 'DBI:mysql:database=customerdb;host=customerdbhost',
+#        User =&gt; '',
+#        Password =&gt; '',
+        Table =&gt; 'customer_user',
+    },
+    # customer unique id
+    CustomerKey =&gt; 'login',
+    # customer #
+    CustomerID =&gt; 'customer_id',
+    CustomerValid =&gt; 'valid_id',
+    CustomerUserListFields =&gt; ['first_name', 'last_name', 'email'],
+#    CustomerUserListFields =&gt; ['login', 'first_name', 'last_name', 'customer_id', 'email'],
+    CustomerUserSearchFields =&gt; ['login', 'last_name', 'customer_id'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['email'],
+    CustomerUserNameFields =&gt; ['title', 'first_name', 'last_name'],
+    CustomerUserEmailUniqCheck =&gt; 1,
+#    # show not own tickets in customer panel, CompanyTickets
+#    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+#    # generate auto logins
+#    AutoLoginCreation =&gt; 0,
+#    AutoLoginCreationPrefix =&gt; 'auto',
+#    # admin can change customer preferences
+#    AdminSetPreferences =&gt; 1,
+#    # cache time to live in sec. - cache database queries
+#    CacheTTL =&gt; 0,
+#    # just a read only source
+#    ReadOnly =&gt; 1,
+    Map =&gt; [
+
+        # note: Login, Email and CustomerID needed!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target
+        [ 'UserTitle',      'Title',      'title',       1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'first_name',  1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'last_name',   1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'login',       1, 1, 'var', '', 0 ],
+        [ 'UserPassword',   'Password',   'pw',          0, 0, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'email',       1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'CustomerID', 'customer_id', 0, 1, 'var', '', 0 ],
+        [ 'UserPhone',      'Phone',      'phone',       1, 0, 'var', '', 0 ],
+        [ 'UserFax',        'Fax',        'fax',         1, 0, 'var', '', 0 ],
+        [ 'UserMobile',     'Mobile',     'mobile',      1, 0, 'var', '', 0 ],
+        [ 'UserRoom',       'Room',       'room',        1, 0, 'var', '', 0 ],
+        [ 'UserStreet',     'Street',     'street',      1, 0, 'var', '', 0 ],
+        [ 'UserZip',        'Zip',        'zip',         1, 0, 'var', '', 0 ],
+        [ 'UserCity',       'City',       'city',        1, 0, 'var', '', 0 ],
+        [ 'UserCountry',    'Country',    'country',     1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Comment',    'comments',    1, 0, 'var', '', 0 ],
+        [ 'ValidID',        'Valid',      'valid_id',    0, 1, 'int', '', 0 ],
+    ],
+    # default selections
+    Selections =&gt; {
+        UserTitle =&gt; {
+            'Mr.' =&gt; 'Mr.',
+            'Mrs.' =&gt; 'Mrs.',
+        },
+    },
+};
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本：修改映射数组。</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-self-registration-customer-table"></a>定制OTRS数据库中的<code class="literal">customer_user</code>表</h4></div></div></div><p>
+最后一步是将新的房间号列添加到OTRS数据库（见下面的脚本）。这个列会存储房间号信息。
+</p><p>
+</p><pre class="screen">
+linux:~# mysql -p
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 6 to server version: 5.0.18-Debian_7-log
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt; use otrs;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; ALTER TABLE customer_user ADD room VARCHAR (200);
+Query OK, 3 rows affected (0.01 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql&gt; quit
+Bye
+linux:~#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>脚本: 添加一个新列到customer_user表。</em></span>
+</p><p>
+现在新的房间字段（若填写了）会在客户信息面板中显示，在客户联系人管理窗口也会显示。另外，新的客户联系人在注册新帐户时应该输入他们的房间号。
+</p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="email-settings.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="administration.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="ticket-settings.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">邮件设置 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 工单设置</td></tr></table></div></body></html>

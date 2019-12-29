@@ -1,0 +1,127 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>OTRS守护进程</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 5 - 系统管理员手册"><link rel="up" href="administration.html" title="第 4 章 管理"><link rel="prev" href="genericinterface.html" title="通用接口"><link rel="next" href="customization.html" title="第 5 章 定制"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">OTRS守护进程</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="genericinterface.html">上一页</a> </td><th width="60%" align="center">第 4 章 管理</th><td width="20%" align="right"> <a accesskey="n" href="customization.html">下一页</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="daemon"></a>OTRS守护进程</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="daemon.html#daemon-gui">OTRS守护进程图形界面</a></span></dt><dt><span class="section"><a href="daemon.html#daemon-cli">OTRS守护进程命令行接口</a></span></dt><dd><dl><dt><span class="section"><a href="daemon.html#daemon-cli-main">主守护进程工具</a></span></dt><dt><span class="section"><a href="daemon.html#daemon-cli-other">其它守护进程的工具</a></span></dt></dl></dd></dl></div><p>
+        OTRS守护进程是一组计划和执行后台任务（循环任务或事件触发任务）的独立的系统进程。OTRS守护进程是正确系统操作的基础保障。
+    </p><p>
+        在OTRS之前的版本中（从3.1到4）有另外的进程叫做OTRS调度器，它做了OTRS
+5中OTRS守护进程的一部分工作。原来的进程被OTRS守护进程替换，从底重写的OTRS守护进程比它的前任更稳定、更具伸缩性和更健壮。
+    </p><p>
+        OTRS守护进程能够同时处理多达10个任务，还能与群集中不同前端服务器的OTRS守护进程进行协同工作。
+    </p><p>
+        OTRS守护进程在空闲时包含5个进程：
+        </p><div class="itemizedlist"><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                    主守护进程（<code class="filename">bin/otrs.Daemon.pl</code>）
+                </p><p>
+                    这个进程负责启动其它子进程并保持其正常运行。
+                </p></li><li class="listitem"><p>
+                    任务工作者守护进程（<code class="filename">Kernel/System/Daemon/DaemonModules/SchedulerTaskWorker.pm</code>）
+                </p><p>
+                    这个进程负责按先进先出的原则执行列表中的所有任务。它可以通过创建子进程来处理同时的任务，并每秒检查几次任务列表。任务列表可以由任务管理器进程、事件处理器和系统的其它部分填充。
+                </p><p>
+                    它的主要使命是尽可能快地处理任务列表中的所有任务。
+                </p></li><li class="listitem"><p>
+                    未来任务管理器守护进程（<code class="filename">Kernel/System/Daemon/DaemonModules/SchedulerFutureTaskManager.pm</code>）
+                </p><p>
+                    这个守护进程检查在未来某个时间执行的非循环任务（例如：当一个通用接口调用程序试图抵达一个服务器时而不能抵达时，会产生一个5分钟后执行的计划任务）。在到达正确的时间时它将这个任务发送给任务工作者守护进程。
+                </p></li><li class="listitem"><p>
+                    Cron任务管理器守护进程（<code class="filename">Kernel/System/Daemon/DaemonModules/SchedulerCronTaskManager.pm</code>）
+                </p><p>
+                    这个守护进程计算所有循环任务的下一次执行时间（例如：每周清理一次缓存）。这种任务在系统配置中指定。在每个任务合适的时间它将需要的信息发送给任务工作者守护进程以执行它们。
+                </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
+                        如果在系统配置中修改了一个任务执行时间定义，OTRS守护进程可能要花最多1个小时才能自动获得修改后的时间。另外也可以通过重启OTRS守护进程来立即应用修改了的执行时间。
+                    </p></div></li><li class="listitem"><p>
+                    自动任务管理器守护进程（<code class="filename">Kernel/System/Daemon/DaemonModules/SchedulerGenericAgentTaskManager.pm</code>）
+                </p><p>
+                    这个守护进程扫描存储在数据库中的定时自动任务（丢弃所有事件触发的自动任务）。当自动任务运行时间到了时，它将需要的信息发送给任务工作者守护进程以处理任务。
+                </p></li></ul></div><p>
+    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
+            活动进程数取决于一个时间点上OTRS守护进程同时执行的任务数。
+        </p></div><p>
+        默认每个守护进程在一个单独的文件（位于
+<code class="filename">/opt/otrs/var/log/Daemon/*.log</code>）中记录所有错误消息的日志。这些日志在系统中保留一个预定义的周期。要修改保留时间和/或还要记录非错误消息，请更新系统配置<code class="literal">Daemon</code>
+-&gt; <code class="literal">Core::Log</code>中的设置参数。
+    </p><p>
+        当一个任务因为某个原因不能成功执行时，会给预定义的收件人发送一封邮件来报告这个问题，邮件内容包括错误消息和可用的跟踪信息。
+    </p><p>
+        OTRS守护进程是一个自动进程，通常不需要人工交互。但是也可以在需要时查询它的状态和启动/停止它。
+    </p><p>
+        为了确保OTRS守护进程正常运行，有一个Cron任务持续检查这个进程是活的。主守护进程甚至在没有数据库连接时就能工作，所以在系统启动时数据库进程启动之前Cron任务就启动OTRS守护进程是完全没有问题的，它还能容忍数据库失连。
+    </p><p>
+        如果因为某个原因需要停止OTRS守护进程（例如在系统维护期间），会保存所有未处理的任务，一旦这个进程重新启动它会继续执行所有保存的任务，对于循环任务它只执行最近一次的任务（如果它的到期时间是在停机时间内的话）。
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="daemon-gui"></a>OTRS守护进程图形界面</h3></div></div></div><p>
+            除非OTRS守护停止运行，否则它在OTRS图形界面中不可见。
+        </p><p>
+            当系统检测到OTRS守护进程没有运行时，会给预定义组（默认是“admin”组）的用户显示一条通知消息。
+        </p><p>
+            要禁用这个通知（不推荐），修改或添加通知的组，请在系统配置中编辑<code class="literal">Frontend::NotifyModule###800-Daemon-Check</code>的设置。
+        </p><p>
+            </p><div class="figure"><a name="id-1.6.13.12.5.1"></a><p class="title"><b>图 4.114. 守护进程通知</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/adminarea/daemon-notify.png" alt="守护进程通知"></div></div></div></div><p><br class="figure-break">
+        </p><p>
+            点击这个通知系统会显示一个重叠窗口来解释启动OTRS守护进程的步骤。
+        </p><p>
+            </p><div class="figure"><a name="id-1.6.13.12.7.1"></a><p class="title"><b>图 4.115. 启动OTRS守护进程</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/adminarea/daemon-start.png" alt="启动OTRS守护进程"></div></div></div></div><p><br class="figure-break">
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="daemon-cli"></a>OTRS守护进程命令行接口</h3></div></div></div><p>
+            OTRS守护进程命令行工具能让你控制主守护进程（启动或停止）或查询它的状态。还有获取其它四个子进程的详细信息的工具。
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="daemon-cli-main"></a>主守护进程工具</h4></div></div></div><p>
+                要启动、停止或查询守护进程状态，使用<code class="filename">bin/otrs.Daemon.pl</code>脚本。
+            </p><div class="example"><a name="id-1.6.13.13.3.3"></a><p class="title"><b>例 4.30. 启动OTRS守护进程示例</b></p><div class="example-contents"><p>
+                    </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; OTRS_HOME/bin/otrs.Daemon.pl start
+                    </pre><p>
+                </p></div></div><br class="example-break"><div class="itemizedlist"><p class="title"><b>可用的选项</b></p><ul class="itemizedlist" type="round"><li class="listitem"><p>
+                            <span class="command"><strong>start</strong></span> - 启动OTRS守护进程。
+                        </p></li><li class="listitem"><p>
+                            <span class="command"><strong>stop</strong></span> - 停止OTRS守护进程。
+                        </p></li><li class="listitem"><p>
+                            <span class="command"><strong>status</strong></span> - 查询OTRS守护进程状态。
+                        </p></li><li class="listitem"><p>
+                            <span class="command"><strong>start --debug</strong></span> - 以调试模式启动OTRS守护进程。
+                        </p><p>
+                            在这个模式下每个守护进程报告不同的消息（取决于已经执行的操作）。这个模式不推荐在生产环境中使用。
+                        </p></li><li class="listitem"><p>
+                            <span class="command"><strong>stop --force</strong></span> - 不等待子进程完成立即停止OTRS守护进程。
+                        </p><p>
+                            强制停止减少了主守护进程等待其它子进程成功完成的时间，从30秒（正常）减少到5秒（强制）。
+                        </p></li></ul></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="daemon-cli-other"></a>其它守护进程的工具</h4></div></div></div><p>
+                列出所有配置的子守护进程，即主守护进程要使用控制台命令<code class="literal">Maint::Daemon::List</code>启动并保持其运行的：
+            </p><div class="example"><a name="id-1.6.13.13.4.3"></a><p class="title"><b>例 4.31. 列出所有配置的子守护进程的示例</b></p><div class="example-contents"><p>
+                    </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.Console.pl Maint::Daemon::List
+                    </pre><p>
+                </p></div></div><br class="example-break"><p>
+                要列出所有守护进程的详细信息，使用控制台命令：<code class="literal">Maint::Daemon::Summary</code>。
+            </p><div class="example"><a name="id-1.6.13.13.4.5"></a><p class="title"><b>例 4.32. 汇总所有守护进程信息的示例</b></p><div class="example-contents"><p>
+                    </p><pre class="screen">
+shell&gt; cd /opt/otrs/
+shell&gt; bin/otrs.Console.pl Maint::Daemon::Summary
+                    </pre><p>
+                </p></div></div><br class="example-break"></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="genericinterface.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="administration.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="customization.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">通用接口 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 第 5 章 定制</td></tr></table></div></body></html>

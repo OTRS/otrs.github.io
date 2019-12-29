@@ -1,0 +1,953 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Using External backends</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 5 - Admin Manual"><link rel="up" href="administration.html" title="Chapter 4. Utawala"><link rel="prev" href="email-settings.html" title="Mipangilio ya barua pepe"><link rel="next" href="ticket-settings.html" title="Mipangilio ya tiketi"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Using External backends</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="email-settings.html">Prev</a> </td><th width="60%" align="center">Chapter 4. Utawala</th><td width="20%" align="right"> <a accesskey="n" href="ticket-settings.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="external-backends"></a>Using External backends</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="external-backends.html#customer-data">Customer Data</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-user-backend">Customer User Backend</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#customer-backend-db">Hifadhidata (Chaguo-msingi)</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#multi-customer-ids-db">Customer with Multiple IDs (Company Tickets)</a></span></dt></dl></dd><dt><span class="section"><a href="external-backends.html#customer-backend-ldap">LDAP</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#multi-customer-ids-ldap">Customer with Multiple IDs (Company Tickets)</a></span></dt></dl></dd><dt><span class="section"><a href="external-backends.html#multiple-customer-backends">Using More than One Customer Backend with OTRS</a></span></dt><dt><span class="section"><a href="external-backends.html#dynamicfield-from-customeruser">Storing CustomerUser Data in Dynamic Fields</a></span></dt></dl></dd><dt><span class="section"><a href="external-backends.html#auth-backends">Backends to Authenticate Agents and Customers</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#agent-auth-backends">Mazingira ya nyuma ya kuthibitisha Mawakala</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#agent-auth-backend-db">DB (Chaguo-msingi)</a></span></dt><dt><span class="section"><a href="external-backends.html#agent-auth-backend-ldap">LDAP</a></span></dt><dt><span class="section"><a href="external-backends.html#agent-auth-backend-httpbasic">HTTPBasicAuth za Wakala</a></span></dt><dt><span class="section"><a href="external-backends.html#agent-auth-backend-radius">Nusukipenyo</a></span></dt></dl></dd><dt><span class="section"><a href="external-backends.html#customer-auth-backends">Authentication Backends for Customers</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#customer-auth-backend-db">Hifadhidata (Chaguo-msingi)</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-auth-backend-ldap">LDAP</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-auth-backend-httpbasic">HTTPBasicAuth for Customers</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-auth-backend-radius">Nusukipenyo</a></span></dt></dl></dd></dl></dd><dt><span class="section"><a href="external-backends.html#customer-self-registration">Customizing the Customer Self-Registration</a></span></dt><dd><dl><dt><span class="section"><a href="external-backends.html#customer-self-registration-tt">Customizing the Web Interface</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-self-registration-mapping">Customer Mapping</a></span></dt><dt><span class="section"><a href="external-backends.html#customer-self-registration-customer-table">Customizing the <code class="literal">customer_user</code> Table in the OTRS DB</a></span></dt></dl></dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="customer-data"></a>Customer Data</h3></div></div></div><p>
+OTRS works with many customer data attributes such as username, email
+address, phone number, etc. These attributes are displayed in both the Agent
+and the Customer frontends, and also used for the authentication of
+customers.
+</p><p>
+Data za mteja zinazotumika au kuonyeshwa kwenye OTRS zinauwezekano mkubwa wa
+kugeuzwa kukufaa. Taarifa ifuatayo hata hivyo inahitajika muda wote kwa
+ajili ya uthibitisho wa mteja:
+</p><p>
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+      Mtumiaji ingia
+    </p></li><li class="listitem"><p>
+      Anwani ya barua pepe
+    </p></li><li class="listitem"><p>
+      Kitambulisho cha mteja
+    </p></li></ul></div><p>
+</p><p>
+Tumia parameta zifuatazo za SysConfig kama unataka kuonyesha taarifa za
+mteja katika kiolesura cha wakala wako.
+</p><p>
+</p><pre class="programlisting">
+    # Ticket::Frontend::CustomerInfo*
+    # (show customer info on Compose (Phone and Email), Zoom and
+    # Queue view)
+    $Self-&gt;{'Ticket::Frontend::CustomerInfoCompose'} = 1;
+    $Self-&gt;{'Ticket::Frontend::CustomerInfoZoom'} = 1;
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: parameta za usanidi za SysConfig.</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="customer-user-backend"></a>Customer User Backend</h3></div></div></div><p>
+Unaweza kutumia aina mbili za mazingira ya nyuma ya mtumiaji, DB na
+LDAP. Kama tayari una mazingira mengine ya nyuma ya mteja (mf. SAP),
+inawezekana pia kuandika moduli ambayo inaitumia.
+</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-backend-db"></a>Hifadhidata (Chaguo-msingi)</h4></div></div></div><p>
+The Example below shows the configuration of a DB customer backend, which
+uses customer data stored in the OTRS database.
+</p><div class="example"><a name="db-customer-backend"></a><p class="title"><b>Example 4.7. Usanidi wa hifadhidata ya mazingira ya nyuma ya mteja</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# CustomerUser (customer database backend and settings)
+$Self-&gt;{CustomerUser} = {
+    Name =&gt; 'Database Datasource',
+    Module =&gt; 'Kernel::System::CustomerUser::DB',
+    Params =&gt; {
+        # if you want to use an external database, add the required settings
+#            DSN =&gt; 'DBI:odbc:yourdsn',
+#            Type =&gt; 'mssql', # only for ODBC connections
+#            DSN =&gt; 'DBI:mysql:database=customerdb;host=customerdbhost',
+#            User =&gt; '',
+#            Password =&gt; '',
+            Table =&gt; 'customer_user',
+
+            # CaseSensitive will control if the SQL statements need LOWER()
+            #   function calls to work case insensitively. Setting this to
+            #   1 will improve performance dramatically on large databases.
+            CaseSensitive =&gt; 0,
+        },
+# customer unique id
+CustomerKey =&gt; 'login',
+
+# customer #
+CustomerID =&gt; 'customer_id',
+CustomerValid =&gt; 'valid_id',
+    CustomerUserListFields =&gt; ['first_name', 'last_name', 'email'],
+    CustomerUserSearchFields =&gt; ['login', 'last_name', 'customer_id'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['email'],
+    CustomerUserNameFields =&gt; ['title','first_name','last_name'],
+    CustomerUserEmailUniqCheck =&gt; 1,
+#    # show not own tickets in customer panel, CompanyTickets
+#    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+#    # generate auto logins
+#    AutoLoginCreation =&gt; 0,
+#    AutoLoginCreationPrefix =&gt; 'auto',
+#    # admin can change customer preferences
+#    AdminSetPreferences =&gt; 1,
+#    # cache time to live in sec. - cache any database queries
+#    CacheTTL =&gt; 0,
+#    # just a read only source
+#    ReadOnly =&gt; 1,
+    Map =&gt; [
+        # note: Login, Email and CustomerID needed!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+        [ 'UserTitle',      'Title',      'title',      1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'first_name', 1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'last_name',  1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'login',      1, 1, 'var', '', 0 ],
+        [ 'UserPassword',   'Password',   'pw',         0, 0, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'email',      1, 1, 'var', '', 0 ],
+#        [ 'UserEmail',      Translatable('Email'), 'email',           1, 1, 'var', '[% Env("CGIHandle") %]?Action=AgentTicketCompose;ResponseID=1;TicketID=[% Data.TicketID | uri %];ArticleID=[% Data.ArticleID | uri %]', 0, '', 'AsPopup OTRSPopup_TicketAction' ],
+        [ 'UserCustomerID', 'CustomerID', 'customer_id', 0, 1, 'var', '', 0 ],
+#        [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
+        [ 'UserPhone',        'Phone',       'phone',        1, 0, 'var', '', 0 ],
+        [ 'UserFax',          'Fax',         'fax',          1, 0, 'var', '', 0 ],
+        [ 'UserMobile',       'Mobile',      'mobile',       1, 0, 'var', '', 0 ],
+        [ 'UserStreet',       'Street',      'street',       1, 0, 'var', '', 0 ],
+        [ 'UserZip',          'Zip',         'zip',          1, 0, 'var', '', 0 ],
+        [ 'UserCity',         'City',        'city',         1, 0, 'var', '', 0 ],
+        [ 'UserCountry',      'Country',     'country',      1, 0, 'var', '', 0 ],
+        [ 'UserComment',      'Comment',     'comments',     1, 0, 'var', '', 0 ],
+        [ 'ValidID',          'Valid',       'valid_id',     0, 1, 'int', '', 0 ],
+
+        # Dynamic field example
+#        [ 'DynamicField_Name_X', undef, 'Name_X', 0, 0, 'dynamic_field', undef, 0, undef, undef, ],
+    ],
+    # default selections
+    Selections =&gt; {
+        UserTitle =&gt; {
+            'Mr.' =&gt; 'Mr.',
+            'Mrs.' =&gt; 'Mrs.',
+        },
+    },
+};
+</pre><p>
+</p></div></div><br class="example-break"><p>
+Ukitaka kugeuza data za mteja kukufaa, badili vichwa vya safuwima au ongeza
+mpya kwenye jedwali la mteja_mtumiaji kwenye hifadhidata ya OTRS. Kama
+mfano, hati hapa chini inaonyesha jinsi ya kuongeza sehemu mpya kwa ajili ya
+nambari ya chumba.
+</p><p>
+</p><pre class="screen">
+linux:~# mysql -p
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 116 to server version: 5.0.18-Debian_7-log
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt; use otrs;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; ALTER TABLE customer_user ADD room VARCHAR (250);
+Query OK, 1 rows affected (0.01 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql&gt; quit
+Bye
+linux:~#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kuongeza sehemu ya chumba katika jedwali la
+mteja_mtumiaji.</em></span>
+</p><p>
+Sasa ongeza safuwima mpya kwenye mkusanyiko wa RAMANI katika
+<code class="filename">Kernel/Config.pm</code>, kama inavyoonyeshwa katika hati
+inayofuata.
+</p><p>
+</p><pre class="programlisting">
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+    [...]
+    [ 'UserRoom',      'Room',      'room',       0, 1, 'var', '', 0 ],
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kuongeza sehemu ya chumba kweye faili
+Kernel/Config.pm.</em></span>
+</p><p>
+Pia inawezekana kuhariri taarifa zote za mteja kupitia kiungo cha mteja
+kwenye kiolesura cha Wakala.
+</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+        Please note that you may omit <code class="literal">http-link-target</code> and
+<code class="literal">link class</code> keys in map array elements, if they are not to
+be used. These keys add <code class="literal">target=""</code> and
+<code class="literal">class=""</code> attributes to the HTTP link element,
+respectively. They are ignored if <code class="literal">http-link</code> is not set.
+    </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="multi-customer-ids-db"></a>Customer with Multiple IDs (Company Tickets)</h5></div></div></div><p>
+Inawezekana kugawia zaidi ya kitambulisho cha mteja kimoja kwa mteja. Hii
+inakuwa na manufaa kama mteja anatakiwa kufikia tiketi za wateja wengine,
+mf. msimamizi anataka kuangalia tiketi za wasaidizi wake. Kama mteja anaweza
+kufikia tiketi za mteja mwingine, kipengele cha tiketi za kampuni cha OTRS
+kinatumika. Tiketi za kampuni zinaweza kufikiwa kupitia kiungo "Tiketi za
+Kampuni" katika paneli ya wateja.
+</p><p>
+Kutumia tiketi za kampuni, safuwima mpya yenye Vitambulisho ambavyo vinaweza
+kufikiwa na mteja, inabidi viongezwe kwenye jedwali la mteja_mtumiaji katika
+hifadhidata ya OTRS (ona Hati chini).
+</p><p>
+</p><pre class="screen">
+linux:~# mysql -p
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 124 to server version: 5.0.18-Debian_7-log
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt; use otrs;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; ALTER TABLE customer_user ADD customer_ids VARCHAR (250);
+Query OK, 1 rows affected (0.02 sec)
+Records: 1  Duplicates: 0  Warnings: 0
+
+mysql&gt; quit
+Bye
+linux:~#
+</pre><p>
+</p><p>
+    <span class="emphasis"><em>Hati: Kuongeza sehemu ya mteja_vitambulisho kwenye jedwali la
+mteja_mtumiaji.</em></span>
+</p><p>
+Sasa safuwima mpya inabidi iongezwe kwenye mkusanyiko wa RAMANI katika
+<code class="filename">Kernel/Config.pm</code>, kama ilivyoonyeshwa kwenye hati
+chini.
+</p><p>
+</p><pre class="programlisting">
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+    [...]
+    [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kuongeza sehemu ya Vitambulisho vya MtumiajiMteja kwenye
+faili Kernel/Config.pm.</em></span>
+</p><p>
+Sasa safuwima mpya kwa ajili ya Vitambulisho vingi vya mteja inaweza
+kuhaririwa kupitia kiolesura cha Wakala, katika kifungu cha usimamizi wa
+mteja.
+</p><p>
+To ensure that one customer can access the tickets of other customers, add
+the IDs of these other users into the new field for the multiple customer
+IDs. Each ID has to be separated by a semicolon (see Example below).
+</p><div class="example"><a name="company-tickets-db"></a><p class="title"><b>Example 4.8. Using Company Tickets with a DB Backend</b></p><div class="example-contents"><p>
+Wateja A,B na C wapo kwenye mfumo wako, na A anataka kufikia tiketi za B na
+C kupitia paneli ya mteja. B na C hawatakiwi kufikia tiketi za watumiaji
+wengine.
+</p><p>
+Kutambua mpangilio huu, badilisha jedwali la mteja_mtumiaji na miunganiko
+katika <code class="filename">Kernel/Config.pm</code> kama ilivyoelezwa hapo
+juu. Kisha pakia mipangilio ya mteja A kupitia kiungo cha Mteja katika
+kiolesura cha Wakala au kupitia kurasa ya Msimamizi. Kama mipangilio
+imeonyeshwa, ongeza kwenye sehemu ya Vitambulisho vya Wateja thamani "B;C".
+</p></div></div><br class="example-break"></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-backend-ldap"></a>LDAP</h4></div></div></div><p>
+If you have an LDAP directory with your customer data, you can use it as the
+customer backend with OTRS, as shown in Example below.
+</p><div class="example"><a name="ldap-customer-backend"></a><p class="title"><b>Example 4.9. Usanidi wa LDAP ya mazingira yanyuma ya mteja</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# CustomerUser
+# (customer ldap backend and settings)
+$Self-&gt;{CustomerUser} = {
+    Name =&gt; 'LDAP Data Source',
+    Module =&gt; 'Kernel::System::CustomerUser::LDAP',
+    Params =&gt; {
+        # ldap host
+        Host =&gt; 'bay.csuhayward.edu',
+        # ldap base dn
+        BaseDN =&gt; 'ou=seas,o=csuh',
+        # search scope (one|sub)
+        SSCOPE =&gt; 'sub',
+        # The following is valid but would only be necessary if the
+        # anonymous user does NOT have permission to read from the LDAP tree
+        UserDN =&gt; '',
+        UserPw =&gt; '',
+        # in case you want to add always one filter to each ldap query, use
+        # this option. e. g. AlwaysFilter =&gt; '(mail=*)' or AlwaysFilter =&gt; '(objectclass=user)'
+        AlwaysFilter =&gt; '',
+            # if the charset of your ldap server is iso-8859-1, use this:
+#            SourceCharset =&gt; 'iso-8859-1',
+
+            # Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
+            Params =&gt; {
+                port =&gt; 389,
+                timeout =&gt; 120,
+                async =&gt; 0,
+                version =&gt; 3,
+            },
+    },
+    # customer unique id
+    CustomerKey =&gt; 'uid',
+    # customer #
+    CustomerID =&gt; 'mail',
+    CustomerUserListFields =&gt; ['cn', 'mail'],
+    CustomerUserSearchFields =&gt; ['uid', 'cn', 'mail'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['mail'],
+    CustomerUserNameFields =&gt; ['givenname', 'sn'],
+    # show not own tickets in customer panel, CompanyTickets
+    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+    # add an ldap filter for valid users (expert setting)
+#    CustomerUserValidFilter =&gt; '(!(description=locked))',
+    # administrator can't change customer preferences
+    AdminSetPreferences =&gt; 0,
+#    # cache time to live in sec. - cache any database queries
+#    CacheTTL =&gt; 0,
+    Map =&gt; [
+        # note: Login, Email and CustomerID are mandatory!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+        [ 'UserTitle',      'Title',      'title',           1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'givenname',       1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'sn',              1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'uid',             1, 1, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'mail',            1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'CustomerID', 'mail',            0, 1, 'var', '', 0 ],
+#        [ 'UserCustomerIDs', 'CustomerIDs', 'second_customer_ids', 1, 0, 'var', '', 0 ],
+        [ 'UserPhone',      'Phone',      'telephonenumber', 1, 0, 'var', '', 0 ],
+        [ 'UserAddress',    'Address',    'postaladdress',   1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Comment',    'description',     1, 0, 'var', '', 0 ],
+    ],
+};
+</pre><p>
+</p></div></div><br class="example-break"><p>
+Kama sifa za ziada za mteja zimehifadhiwa kwenye mpangilio orodha wa LDAP
+yako, kwa mfano jina la meneja, namba ya simu ya mkononi, au idara, na kama
+unataka kuonyesha taarifa hizi kwenye OTRS, panua mkusanyiko wa RAMANI
+kwenye <code class="filename">Kernel/Config.pm</code> na maingizo kwa sifa hizi, kama
+ilivyoonyeshwa kwenye hati ifuatayo.
+</p><p>
+</p><pre class="programlisting">
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target, link class(es)
+    [...]
+    [ 'UserPhone',      'Phone',      'telephonenumber', 1, 0, 'var', '', 0 ],
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kuongeza sehemu mpya kwenye Kernel/Config.pm
+file.</em></span>
+</p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="multi-customer-ids-ldap"></a>Customer with Multiple IDs (Company Tickets)</h5></div></div></div><p>
+Inawezekana kugawia zaidi ya Kitambulisho kimoja cha Mteja kwa mteja, ukiwa
+unatumia mazingira ya nyuma ya LDAP. Kutumia tiketi za kampuni, sehemu mpya
+inabidi iongezwe kwenye mpangilio orodha wa LDAP ambayo ina vitambulisho
+vinavyofikika na mteja.
+</p><p>
+Kama sehemu mpya kwenye mpangilio orodha wa LDAP imetengenezwa, ingizo jipya
+inabidi liongezwe kwenye mkusanyiko wa RAMANI katika
+<code class="filename">Kernel/Config.pm</code>, kama ilivyoonyeshwa kwenye hati
+chini.
+</p><p>
+</p><pre class="programlisting">
+    # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly
+    [...]
+    [ 'UserCustomerIDs', 'CustomerIDs', 'customer_ids', 1, 0, 'var', '', 0 ],
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kuunganisha sehemu mpya kwenye Kernel/Config.pm
+file.</em></span>
+</p><p>
+Sehemu kwa ajili ya vitambulisho vingi vya mteja inabidi kuhaririwa moja kwa
+moja katika mpangilio orodha wa LDAP. OTRS inaweza kusoma tu kutoka kwenye
+LDAp, sio kuandika.
+</p><p>
+To ensure access by a customer to the tickets of other customers, add the
+customer IDs of the customers whose tickets should be accessed to the new
+field in your LDAP directory. Each ID has to be separated by a semicolon
+(see Example below).
+</p><div class="example"><a name="company-tickets-ldap"></a><p class="title"><b>Example 4.10. Kutumia tiketi za Kampuni na mazingira ya nyuma ya LDAP</b></p><div class="example-contents"><p>
+Wateja A,B na C wapo kwenye mfumo wako, na A anataka kufikia tiketi za B na
+C kupitia paneli ya mteja. B na C hawatakiwi kufikia tiketi za watumiaji
+wengine.
+</p><p>
+Kutambua mpangilio huu, badilisha mpangilio orodha wa LDAP na miunganiko
+katika <code class="filename">Kernel/Config.pm</code> kama ilivyoelezwa juu. Kisha
+ongeza kwenye sehemu ya Vitambulisho vya wateja thamani "B;C" kwa mteja A
+katika mpangilio orodha wa LDAP.
+</p></div></div><br class="example-break"></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="multiple-customer-backends"></a>Using More than One Customer Backend with OTRS</h4></div></div></div><p>
+If you want to utilize more than one customer data source used with OTRS
+(e.g. an LDAP and a database backend), the CustomerUser config parameter
+should be expanded with a number, e.g. "CustomerUser1", "CustomerUser2" (see
+Example below).
+</p><div class="example"><a name="multiple-customer-backend-example"></a><p class="title"><b>Example 4.11. Kutumia zaidi ya mazingira ya nyuma ya mteja ya aina moja na OTRS</b></p><div class="example-contents"><p>
+Mfano unaofuata wa usanidi unaonyesha matumizi ya mazingira ya nyuma ya
+mteja ya LDAP na hifadhidata katika OTRS.
+</p><p>
+</p><pre class="programlisting">
+# 1. Customer user backend: DB
+# (customer database backend and settings)
+$Self-&gt;{CustomerUser1} = {
+    Name =&gt; 'Customer Database',
+    Module =&gt; 'Kernel::System::CustomerUser::DB',
+    Params =&gt; {
+        # if you want to use an external database, add the
+        # required settings
+#        DSN =&gt; 'DBI:odbc:yourdsn',
+#        Type =&gt; 'mssql', # only for ODBC connections
+#        DSN =&gt; 'DBI:mysql:database=customerdb;host=customerdbhost',
+#        User =&gt; '',
+#        Password =&gt; '',
+        Table =&gt; 'customer_user',
+    },
+    # customer unique id
+    CustomerKey =&gt; 'login',
+    # customer #
+    CustomerID =&gt; 'customer_id',
+    CustomerValid =&gt; 'valid_id',
+    CustomerUserListFields =&gt; ['first_name', 'last_name', 'email'],
+    CustomerUserSearchFields =&gt; ['login', 'last_name', 'customer_id'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['email'],
+    CustomerUserNameFields =&gt; ['title','first_name','last_name'],
+    CustomerUserEmailUniqCheck =&gt; 1,
+#    # show not own tickets in customer panel, CompanyTickets
+#    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+#    # generate auto logins
+#    AutoLoginCreation =&gt; 0,
+#    AutoLoginCreationPrefix =&gt; 'auto',
+#    # admin can change customer preferences
+#    AdminSetPreferences =&gt; 1,
+#    # cache time to live in sec. - cache any database queries
+#    CacheTTL =&gt; 0,
+#    # just a read only source
+#    ReadOnly =&gt; 1,
+    Map =&gt; [
+
+        # note: Login, Email and CustomerID needed!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target
+        [ 'UserTitle',      'Title',      'title',        1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'first_name',   1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'last_name',    1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'login',        1, 1, 'var', '', 0 ],
+        [ 'UserPassword',   'Password',   'pw',           0, 0, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'email',        1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'CustomerID', 'customer_id',  0, 1, 'var', '', 0 ],
+        [ 'UserPhone',      'Phone',      'phone',        1, 0, 'var', '', 0 ],
+        [ 'UserFax',        'Fax',        'fax',          1, 0, 'var', '', 0 ],
+        [ 'UserMobile',     'Mobile',     'mobile',       1, 0, 'var', '', 0 ],
+        [ 'UserStreet',     'Street',     'street',       1, 0, 'var', '', 0 ],
+        [ 'UserZip',        'Zip',        'zip',          1, 0, 'var', '', 0 ],
+        [ 'UserCity',       'City',       'city',         1, 0, 'var', '', 0 ],
+        [ 'UserCountry',    'Country',    'country',      1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Comment',    'comments',     1, 0, 'var', '', 0 ],
+        [ 'ValidID',        'Valid',      'valid_id',     0, 1, 'int', '', 0 ],
+    ],
+    # default selections
+    Selections =&gt; {
+        UserTitle =&gt; {
+            'Mr.' =&gt; 'Mr.',
+            'Mrs.' =&gt; 'Mrs.',
+        },
+    },
+};
+
+# 2. Customer user backend: LDAP
+# (customer ldap backend and settings)
+$Self-&gt;{CustomerUser2} = {
+    Name =&gt; 'LDAP Datasource',
+    Module =&gt; 'Kernel::System::CustomerUser::LDAP',
+    Params =&gt; {
+        # ldap host
+        Host =&gt; 'bay.csuhayward.edu',
+        # ldap base dn
+        BaseDN =&gt; 'ou=seas,o=csuh',
+        # search scope (one|sub)
+        SSCOPE =&gt; 'sub',
+        # The following is valid but would only be necessary if the
+        # anonymous user does NOT have permission to read from the LDAP tree
+        UserDN =&gt; '',
+        UserPw =&gt; '',
+        # in case you want to add always one filter to each ldap query, use
+        # this option. e. g. AlwaysFilter =&gt; '(mail=*)' or AlwaysFilter =&gt; '(objectclass=user)'
+        AlwaysFilter =&gt; '',
+        # if the charset of your ldap server is iso-8859-1, use this:
+#        SourceCharset =&gt; 'iso-8859-1',
+
+        # Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
+        Params =&gt; {
+            port =&gt; 389,
+            timeout =&gt; 120,
+            async =&gt; 0,
+            version =&gt; 3,
+        },
+    },
+    # customer unique id
+    CustomerKey =&gt; 'uid',
+    # customer #
+    CustomerID =&gt; 'mail',
+    CustomerUserListFields =&gt; ['cn', 'mail'],
+    CustomerUserSearchFields =&gt; ['uid', 'cn', 'mail'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['mail'],
+    CustomerUserNameFields =&gt; ['givenname', 'sn'],
+    # show not own tickets in customer panel, CompanyTickets
+    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+    # add a ldap filter for valid users (expert setting)
+#    CustomerUserValidFilter =&gt; '(!(description=locked))',
+    # admin can't change customer preferences
+    AdminSetPreferences =&gt; 0,
+    Map =&gt; [
+        # note: Login, Email and CustomerID needed!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly
+        [ 'UserTitle',      'Title',      'title',           1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'givenname',       1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'sn',              1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'uid',             1, 1, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'mail',            1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'CustomerID', 'mail',            0, 1, 'var', '', 0 ],
+#        [ 'UserCustomerIDs', 'CustomerIDs', 'second_customer_ids', 1, 0, 'var', '', 0 ],
+        [ 'UserPhone',      'Phone',      'telephonenumber', 1, 0, 'var', '', 0 ],
+        [ 'UserAddress',    'Address',    'postaladdress',   1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Comment',    'description',     1, 0, 'var', '', 0 ],
+    ],
+};
+</pre><p>
+</p></div></div><br class="example-break"><p>
+Inawezekana kuunganisha mpaka mazingira ya nyuma 10 tofauti ya mteja. Tumia
+kiolesura cha usimamizi cha mteja katika OTRS kuona au kuhariri (tukiamini
+utawala data umewezeshwa) data zote za mteja.
+</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfield-from-customeruser"></a>Storing CustomerUser Data in Dynamic Fields</h4></div></div></div><p>
+        Mara nyingine inaweza kuwa na manufaa kuhifadhi data za MtejaMtumiaji katika
+sehemu zinazobadilika za tiketi, kwa fano kutengeneza takwimu muhimu kwenye
+data hizi.
+    </p><p>
+        Thamani za sehemu zinazobadilika zinasetiwa tiketi inapotengenezwa au pale
+mteja wa tiketi anapobadilishwa. Thamani za sehemu zinazobadilika
+zinachukuliwa kutoka kwenye data za mteja. Hii inafanya kazi kwa mazingira
+yoye ya nyuma, lakini ni ya manufaa zaidi kwa mazingir aya nyuma ya LDAP.
+    </p><p>
+        To activate this optional feature of OTRS, please activate the settings
+"Ticket::EventModulePost###950-DynamicFieldFromCustomerUser" and
+"DynamicFieldFromCustomerUser::Mapping". The latter setting contains the
+configuration of which CustomerUser field entry should be stored in which
+ticket dynamic field. The fields must be present in the system and should be
+enabled for AgentTicketFreeText, so that they can be set manually. They
+mustn't be enabled for AgentTicketPhone, AgentTicketEmail and
+AgentTicketCustomer. If they were, they would have precedence over the
+automatically set values.
+    </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="auth-backends"></a>Backends to Authenticate Agents and Customers</h3></div></div></div><p>
+OTRS inatoa chaguo la kuthibitisha mawakala na wateja katika mazingira
+tofauti ya nyuma.
+</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="agent-auth-backends"></a>Mazingira ya nyuma ya kuthibitisha Mawakala</h4></div></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-db"></a>DB (Chaguo-msingi)</h5></div></div></div><p>
+The backend to authenticate agents which is used by default is the OTRS
+database. Agents can be added and edited via the <a class="link" href="administration.html#adminarea-agents" title="Mawakala">agent management interface</a> in the <a class="link" href="administration.html#adminarea" title="The Administration Area of OTRS">Admin page</a> (see Example below).
+</p><div class="example"><a name="configuration-agent-auth-backend-db"></a><p class="title"><b>Example 4.12. Thibitisha mawakala katika mazingira ya nyuma ya DB.</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+    $Self-&gt;{'AuthModule'} = 'Kernel::System::Auth::DB';
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-ldap"></a>LDAP</h5></div></div></div><p>
+If an LDAP directory has all your agent data stored, you can use the LDAP
+module to authenticate your users in OTRS (see Example below). This module
+has only read access to the LDAP tree, which means that you cannot edit your
+user data via the <a class="link" href="administration.html#adminarea-agents" title="Mawakala">agent management
+interface</a>.
+</p><div class="example"><a name="configuration-agent-auth-backend-ldap"></a><p class="title"><b>Example 4.13. Thibitisha mawakala katika mazingira ya nyuma ya LDAP.</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is an example configuration for an LDAP auth. backend.
+# (Make sure Net::LDAP is installed!)
+$Self-&gt;{'AuthModule'} = 'Kernel::System::Auth::LDAP';
+$Self-&gt;{'AuthModule::LDAP::Host'} = 'ldap.example.com';
+$Self-&gt;{'AuthModule::LDAP::BaseDN'} = 'dc=example,dc=com';
+$Self-&gt;{'AuthModule::LDAP::UID'} = 'uid';
+
+# Check if the user is allowed to auth in a posixGroup
+# (e. g. user needs to be in a group xyz to use otrs)
+$Self-&gt;{'AuthModule::LDAP::GroupDN'} = 'cn=otrsallow,ou=posixGroups,dc=example,dc=com';
+$Self-&gt;{'AuthModule::LDAP::AccessAttr'} = 'memberUid';
+# for ldap posixGroups objectclass (just uid)
+#  $Self-&gt;{'AuthModule::LDAP::UserAttr'} = 'UID';
+# for non ldap posixGroups objectclass (with full user dn)
+#  $Self-&gt;{'AuthModule::LDAP::UserAttr'} = 'DN';
+
+# The following is valid but would only be necessary if the
+# anonymous user do NOT have permission to read from the LDAP tree
+$Self-&gt;{'AuthModule::LDAP::SearchUserDN'} = '';
+$Self-&gt;{'AuthModule::LDAP::SearchUserPw'} = '';
+
+# in case you want to add always one filter to each ldap query, use
+# this option. e. g. AlwaysFilter =&gt; '(mail=*)' or AlwaysFilter =&gt; '(objectclass=user)'
+$Self-&gt;{'AuthModule::LDAP::AlwaysFilter'} = '';
+
+# in case you want to add a suffix to each login name, then
+# you can use this option. e. g. user just want to use user but
+# in your ldap directory exists user@domain.com
+#    $Self-&gt;{'AuthModule::LDAP::UserSuffix'} = '@domain.com';
+
+# Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
+$Self-&gt;{'AuthModule::LDAP::Params'} = {
+    port =&gt; 389,
+    timeout =&gt; 120,
+    async =&gt; 0,
+    version =&gt; 3,
+};
+</pre><p>
+</p></div></div><br class="example-break"><p>
+Mipangilio ya usanidi iliyoonyeshwa kwenye hati hapo chini inaweza kutumika
+kulandanisha data zote za mtumiaji kutoka kwenye mpangilio orodha wako wa
+LDAP kwenda kwenye hifadhidata yako ya OTRS ya ndani. Hii inapunguza idadi
+ya maombi kwenda kwenye seva yako ya LDAP na inaongeza kasi ya uthibitisho
+na OTRS. Ulandanishi wa data unafanyika pale wakala anapojithibitisha kwa
+mara ya kwanza.  Hata hivyo hiyo data inaweza kulandanishwa na hifadhidata
+ya ndani ya OTRS, mpangilio orodha wa LDAP ni mfano wa mwisho wa
+uthibitisho, kwa hiyo mtumiaji aliye lemaa aliye katika matawi ya LDAP
+hawezi kujithibitisha kwenye OTRS, hata kama data za akaunti tayari
+zimehifadhiwa kwenye hifadhidata ya OTRS. Data za wakala kwenye mpangilio
+orodha wa LDAP haziwezi kuhaririwa kupitia kiolesura cha tovuti cha OTRS,
+kwa hiyo data inabidi isimamiwe moja kwa moja katika matawi ya LDAP.
+</p><p>
+</p><pre class="programlisting">
+# defines AuthSyncBackend (AuthSyncModule) for AuthModule
+# if this key exists and is empty, there won't be a sync.
+# example values: AuthSyncBackend, AuthSyncBackend2
+$Self-&gt;{'AuthModule::UseSyncBackend'} = 'AuthSyncBackend';
+
+# agent data sync against ldap
+$Self-&gt;{'AuthSyncModule'} = 'Kernel::System::Auth::Sync::LDAP';
+$Self-&gt;{'AuthSyncModule::LDAP::Host'} = 'ldap://ldap.example.com/';
+$Self-&gt;{'AuthSyncModule::LDAP::BaseDN'} = 'dc=otrs, dc=org';
+$Self-&gt;{'AuthSyncModule::LDAP::UID'} = 'uid';
+$Self-&gt;{'AuthSyncModule::LDAP::SearchUserDN'} = 'uid=sys, ou=user, dc=otrs, dc=org';
+$Self-&gt;{'AuthSyncModule::LDAP::SearchUserPw'} = 'some_pass';
+$Self-&gt;{'AuthSyncModule::LDAP::UserSyncMap'} = {
+    # DB -&gt; LDAP
+    UserFirstname =&gt; 'givenName',
+    UserLastname  =&gt; 'sn',
+    UserEmail     =&gt; 'mail',
+};
+[...]
+
+# AuthSyncModule::LDAP::UserSyncInitialGroups
+# (sync following group with rw permission after initial create of first agent
+# login)
+$Self-&gt;{'AuthSyncModule::LDAP::UserSyncInitialGroups'} = [
+    'users',
+];
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kulandanisha data za mtumiaji kutoka kwenye mpangilio orodha
+wa LDAP kwenda kwenye hifadhidata ya OTRS.</em></span>
+</p><p>
+    Alternatively, you can use LDAP groups to determine group memberships or
+roles in OTRS. For more information and examples, see
+<code class="filename">Kernel/Config/Defaults.pm</code>. Here is an example for
+synchronizing from LDAP into OTRS groups.
+</p><p>
+    </p><pre class="programlisting">
+# Attributes needed for group syncs
+# (attribute name for group value key)
+$Self-&gt;{'AuthSyncModule::LDAP::AccessAttr'} = 'memberUid';
+# (select the attribute for type of group content UID/DN for full ldap name)
+# $Self-&gt;{'AuthSyncModule::LDAP::UserAttr'} = 'UID';
+# $Self-&gt;{'AuthSyncModule::LDAP::UserAttr'} = 'DN';
+
+AuthSyncModule::LDAP::UserSyncGroupsDefinition
+# (If "LDAP" was selected for AuthModule and you want to sync LDAP
+# groups to otrs groups, define the following.)
+$Self-&gt;{'AuthSyncModule::LDAP::UserSyncGroupsDefinition'} = {
+    # your ldap group
+    'cn=agent,o=otrs' =&gt; {
+        # otrs group(s)
+        'admin' =&gt; {
+            # permission
+            rw =&gt; 1,
+            ro =&gt; 1,
+        },
+        'faq' =&gt; {
+            rw =&gt; 0,
+            ro =&gt; 1,
+        },
+    },
+    'cn=agent2,o=otrs' =&gt; {
+        'users' =&gt; {
+            rw =&gt; 1,
+            ro =&gt; 1,
+        },
+    }
+};
+    </pre><p>
+</p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-httpbasic"></a>HTTPBasicAuth za Wakala</h5></div></div></div><p>
+If you want to implement a "single sign on" solution for all your agents,
+you can use HTTP basic authentication (for all your systems) and the
+HTTPBasicAuth module for OTRS (see Example below).
+</p><div class="example"><a name="configuration-agent-auth-backend-htbasic"></a><p class="title"><b>Example 4.14. Halalisha Wakala kwa kutumia HTTPBasic</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is an example configuration for an apache ($ENV{REMOTE_USER})
+# auth. backend. Use it if you want to have a singe login through
+# apache http-basic-auth
+$Self-&gt;{'AuthModule'} = 'Kernel::System::Auth::HTTPBasicAuth';
+
+# Note:
+#
+# If you use this module, you should use as fallback
+# the following configuration settings if the user is not authorized
+# apache ($ENV{REMOTE_USER})
+$Self-&gt;{LoginURL} = 'http://host.example.com/not-authorised-for-otrs.html';
+$Self-&gt;{LogoutURL} = 'http://host.example.com/thanks-for-using-otrs.html';
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="agent-auth-backend-radius"></a>Nusukipenyo</h5></div></div></div><p>
+The configuration parameters shown in Example below can be used to
+authenticate agents against a Radius server.
+</p><div class="example"><a name="configuration-agent-auth-backend-radius"></a><p class="title"><b>Example 4.15. Thibitisha mawakala katika mazingira ya nyuma ya Radius.</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is example configuration to auth. agents against a radius server
+$Self-&gt;{'AuthModule'} = 'Kernel::System::Auth::Radius';
+$Self-&gt;{'AuthModule::Radius::Host'} = 'radiushost';
+$Self-&gt;{'AuthModule::Radius::Password'} = 'radiussecret';
+</pre><p>
+</p></div></div><br class="example-break"></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-auth-backends"></a>Authentication Backends for Customers</h4></div></div></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="customer-auth-backend-db"></a>Hifadhidata (Chaguo-msingi)</h5></div></div></div><p>
+The default user authentication backend for customers in OTRS is the OTRS
+database. With this backend, all customer data can be edited via the web
+interface of OTRS (see Example below).
+</p><div class="example"><a name="configuration-customer-auth-backend-db"></a><p class="title"><b>Example 4.16. Uthibitisho wa mtumiaji mteja katika mazingira ya nyuma ya DB</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is the auth. module against the otrs db
+$Self-&gt;{'Customer::AuthModule'} = 'Kernel::System::CustomerAuth::DB';
+$Self-&gt;{'Customer::AuthModule::DB::Table'} = 'customer_user';
+$Self-&gt;{'Customer::AuthModule::DB::CustomerKey'} = 'login';
+$Self-&gt;{'Customer::AuthModule::DB::CustomerPassword'} = 'pw';
+#$Self-&gt;{'Customer::AuthModule::DB::DSN'} = "DBI:mysql:database=customerdb;host=customerdbhost";
+#$Self-&gt;{'Customer::AuthModule::DB::User'} = "some_user";
+#$Self-&gt;{'Customer::AuthModule::DB::Password'} = "some_password";
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="customer-auth-backend-ldap"></a>LDAP</h5></div></div></div><p>
+If you have an LDAP directory with all your customer data, you can use the
+LDAP module to authenticate your customers to OTRS (see Example
+below). Because this module has only read-access to the LDAP backend, it is
+not possible to edit the customer data via the OTRS web interface.
+</p><div class="example"><a name="configuration-customer-auth-backend-ldap"></a><p class="title"><b>Example 4.17. Uthibitisho wa mtumiaji mteja katika mazingira ya nyuma ya LDAP</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is an example configuration for an LDAP auth. backend.
+# (make sure Net::LDAP is installed!)
+$Self-&gt;{'Customer::AuthModule'} = 'Kernel::System::CustomerAuth::LDAP';
+$Self-&gt;{'Customer::AuthModule::LDAP::Host'} = 'ldap.example.com';
+$Self-&gt;{'Customer::AuthModule::LDAP::BaseDN'} = 'dc=example,dc=com';
+$Self-&gt;{'Customer::AuthModule::LDAP::UID'} = 'uid';
+
+# Check if the user is allowed to auth in a posixGroup
+# (e. g. user needs to be in a group xyz to use otrs)
+$Self-&gt;{'Customer::AuthModule::LDAP::GroupDN'} = 'cn=otrsallow,ou=posixGroups,dc=example,dc=com';
+$Self-&gt;{'Customer::AuthModule::LDAP::AccessAttr'} = 'memberUid';
+# for ldap posixGroups objectclass (just uid)
+$Self-&gt;{'Customer::AuthModule::LDAP::UserAttr'} = 'UID';
+# for non ldap posixGroups objectclass (full user dn)
+#$Self-&gt;{'Customer::AuthModule::LDAP::UserAttr'} = 'DN';
+
+# The following is valid but would only be necessary if the
+# anonymous user does NOT have permission to read from the LDAP tree
+$Self-&gt;{'Customer::AuthModule::LDAP::SearchUserDN'} = '';
+$Self-&gt;{'Customer::AuthModule::LDAP::SearchUserPw'} = '';
+
+# in case you want to add always one filter to each ldap query, use
+# this option. e. g. AlwaysFilter =&gt; '(mail=*)' or AlwaysFilter =&gt; '(objectclass=user)'
+$Self-&gt;{'Customer::AuthModule::LDAP::AlwaysFilter'} = '';
+
+# in case you want to add a suffix to each customer login name, then
+# you can use this option. e. g. user just want to use user but
+# in your ldap directory exists user@domain.com
+#$Self-&gt;{'Customer::AuthModule::LDAP::UserSuffix'} = '@domain.com';
+
+# Net::LDAP new params (if needed - for more info see perldoc Net::LDAP)
+$Self-&gt;{'Customer::AuthModule::LDAP::Params'} = {
+    port =&gt; 389,
+    timeout =&gt; 120,
+    async =&gt; 0,
+    version =&gt; 3,
+};
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="customer-auth-backend-httpbasic"></a>HTTPBasicAuth for Customers</h5></div></div></div><p>
+If you want to implement a "single sign on" solution for all your customer
+users, you can use HTTPBasic authentication (for all your systems) and use
+the HTTPBasicAuth module with OTRS (no login is needed with OTRS any
+more). See Example below.
+</p><div class="example"><a name="configuration-customer-auth-backend-htbasic"></a><p class="title"><b>Example 4.18. Uthibitisho wa Mteja kwa kutumia HTTPBasic</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is an example configuration for an apache ($ENV{REMOTE_USER})
+# auth. backend. Use it if you want to have a singe login through
+# apache http-basic-auth
+$Self-&gt;{'Customer::AuthModule'} = 'Kernel::System::CustomerAuth::HTTPBasicAuth';
+
+# Note:
+# If you use this module, you should use the following
+# config settings as fallback, if user isn't login through
+# apache ($ENV{REMOTE_USER})
+$Self-&gt;{CustomerPanelLoginURL} = 'http://host.example.com/not-authorised-for-otrs.html';
+$Self-&gt;{CustomerPanelLogoutURL} = 'http://host.example.com/thanks-for-using-otrs.html';
+</pre><p>
+</p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="customer-auth-backend-radius"></a>Nusukipenyo</h5></div></div></div><p>
+The settings shown in Example below can be used to authenticate your
+customers against a Radius server.
+</p><div class="example"><a name="configuration-customer-auth-backend-radius"></a><p class="title"><b>Example 4.19. Uthibitisho wa mtumiaji mteja katika mazingira ya nyuma ya Radius</b></p><div class="example-contents"><p>
+</p><pre class="programlisting">
+# This is a example configuration to auth. customer against a radius server
+$Self-&gt;{'Customer::AuthModule'} = 'Kernel::System::Auth::Radius';
+$Self-&gt;{'Customer::AuthModule::Radius::Host'} = 'radiushost';
+$Self-&gt;{'Customer::AuthModule::Radius::Password'} = 'radiussecret';
+</pre><p>
+</p></div></div><br class="example-break"></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="customer-self-registration"></a>Customizing the Customer Self-Registration</h3></div></div></div><p>
+Inawezekana kugeuza kukufaa usajili binafsi kwa ajili ya wateja wapya,
+inafikika kupitia paneli ya customer.pl. Sehemu mpya za hiari au
+zinazohitajika, kama nambari ya chumba, anwani au hali zinaweza kuongezwa.
+</p><p>
+Mfano ufwatao unaonyesha jinsi unaweza kubainisha sehemu inayohitajika
+katika hifadhidata ya mteja, katika kesi hii hifadhi nambari ya chumba cha
+mteja.
+</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-self-registration-tt"></a>Customizing the Web Interface</h4></div></div></div><p>
+To display the new field for the room number in the customer.pl web
+interface, the .tt file responsible for the layout in this interface has to
+be modified. Edit the
+<code class="filename">Kernel/Output/HTML/Templates/Standard/CustomerLogin.tt</code>
+file, adding the new field around line 130 (see Script below).
+</p><p>
+</p><pre class="programlisting">
+[...]
+&lt;div class="NewLine"&gt;
+    &lt;label for="Room"&gt;[% Translate("Room{CustomerUser}") | html %]&lt;/label&gt;
+    &lt;input title="[% Translate("Room Number") | html %]" name="Room" type="text" id="UserRoom" maxlength="50" /&gt;
+&lt;/div&gt;
+[...]
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kuonyesha sehemu mpya katika kiolesura cha
+wavuti.</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-self-registration-mapping"></a>Customer Mapping</h4></div></div></div><p>
+Katika hatua inayofuata, muunganiko wa mteja inabidi upanuliwe na ingizo
+jipya kutoka kwenye nambari mpya. Kuhakikisha kwamba mabadiliko hayapotei
+baada ya usasishaji, weka mipangilio ya "MtumiajiMteja" kutoka kwenye
+<code class="filename">Kernel/Config/Defaults.pm</code> kwenda kwenye
+<code class="filename">Kernel/Config.pm</code>. Sasa badilisha mkusanyiko wa RAMANI
+na ongeza sehemu mpya ya nambari ya chumba, kama ilivyoonyeshwa kwenye hati
+chini.
+</p><p>
+</p><pre class="programlisting">
+# CustomerUser
+# (customer database backend and settings)
+$Self-&gt;{CustomerUser} = {
+    Name =&gt; 'Database Backend',
+    Module =&gt; 'Kernel::System::CustomerUser::DB',
+    Params =&gt; {
+        # if you want to use an external database, add the
+        # required settings
+#        DSN =&gt; 'DBI:odbc:yourdsn',
+#        Type =&gt; 'mssql', # only for ODBC connections
+#        DSN =&gt; 'DBI:mysql:database=customerdb;host=customerdbhost',
+#        User =&gt; '',
+#        Password =&gt; '',
+        Table =&gt; 'customer_user',
+    },
+    # customer unique id
+    CustomerKey =&gt; 'login',
+    # customer #
+    CustomerID =&gt; 'customer_id',
+    CustomerValid =&gt; 'valid_id',
+    CustomerUserListFields =&gt; ['first_name', 'last_name', 'email'],
+#    CustomerUserListFields =&gt; ['login', 'first_name', 'last_name', 'customer_id', 'email'],
+    CustomerUserSearchFields =&gt; ['login', 'last_name', 'customer_id'],
+    CustomerUserSearchPrefix =&gt; '',
+    CustomerUserSearchSuffix =&gt; '*',
+    CustomerUserSearchListLimit =&gt; 250,
+    CustomerUserPostMasterSearchFields =&gt; ['email'],
+    CustomerUserNameFields =&gt; ['title', 'first_name', 'last_name'],
+    CustomerUserEmailUniqCheck =&gt; 1,
+#    # show not own tickets in customer panel, CompanyTickets
+#    CustomerUserExcludePrimaryCustomerID =&gt; 0,
+#    # generate auto logins
+#    AutoLoginCreation =&gt; 0,
+#    AutoLoginCreationPrefix =&gt; 'auto',
+#    # admin can change customer preferences
+#    AdminSetPreferences =&gt; 1,
+#    # cache time to live in sec. - cache database queries
+#    CacheTTL =&gt; 0,
+#    # just a read only source
+#    ReadOnly =&gt; 1,
+    Map =&gt; [
+
+        # note: Login, Email and CustomerID needed!
+        # var, frontend, storage, shown (1=always,2=lite), required, storage-type, http-link, readonly, http-link-target
+        [ 'UserTitle',      'Title',      'title',       1, 0, 'var', '', 0 ],
+        [ 'UserFirstname',  'Firstname',  'first_name',  1, 1, 'var', '', 0 ],
+        [ 'UserLastname',   'Lastname',   'last_name',   1, 1, 'var', '', 0 ],
+        [ 'UserLogin',      'Username',   'login',       1, 1, 'var', '', 0 ],
+        [ 'UserPassword',   'Password',   'pw',          0, 0, 'var', '', 0 ],
+        [ 'UserEmail',      'Email',      'email',       1, 1, 'var', '', 0 ],
+        [ 'UserCustomerID', 'CustomerID', 'customer_id', 0, 1, 'var', '', 0 ],
+        [ 'UserPhone',      'Phone',      'phone',       1, 0, 'var', '', 0 ],
+        [ 'UserFax',        'Fax',        'fax',         1, 0, 'var', '', 0 ],
+        [ 'UserMobile',     'Mobile',     'mobile',      1, 0, 'var', '', 0 ],
+        [ 'UserRoom',       'Room',       'room',        1, 0, 'var', '', 0 ],
+        [ 'UserStreet',     'Street',     'street',      1, 0, 'var', '', 0 ],
+        [ 'UserZip',        'Zip',        'zip',         1, 0, 'var', '', 0 ],
+        [ 'UserCity',       'City',       'city',        1, 0, 'var', '', 0 ],
+        [ 'UserCountry',    'Country',    'country',     1, 0, 'var', '', 0 ],
+        [ 'UserComment',    'Comment',    'comments',    1, 0, 'var', '', 0 ],
+        [ 'ValidID',        'Valid',      'valid_id',    0, 1, 'int', '', 0 ],
+    ],
+    # default selections
+    Selections =&gt; {
+        UserTitle =&gt; {
+            'Mr.' =&gt; 'Mr.',
+            'Mrs.' =&gt; 'Mrs.',
+        },
+    },
+};
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kubadilisha miunganiko ya mkusanyiko.</em></span>
+</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="customer-self-registration-customer-table"></a>Customizing the <code class="literal">customer_user</code> Table in the OTRS DB</h4></div></div></div><p>
+Hatua ya mwisho ni kuongeza nambari mpya ya safuwima ya chumba katika
+jedwali la mteja_mtumiaji kwenye hifadhidata ya OTRS (ona Kielelezo
+chini). Katika safuwima hii, maingizo ya nambari ya chumba yatahifadhiwa.
+</p><p>
+</p><pre class="screen">
+linux:~# mysql -p
+Enter password:
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 6 to server version: 5.0.18-Debian_7-log
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+mysql&gt; use otrs;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql&gt; ALTER TABLE customer_user ADD room VARCHAR (200);
+Query OK, 3 rows affected (0.01 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+mysql&gt; quit
+Bye
+linux:~#
+</pre><p>
+</p><p>
+<span class="emphasis"><em>Hati: Kuongeza safuwima mpya kwenye jedwali la
+mteja_mtumiaji.</em></span>
+</p><p>
+Now the new field for the room should be displayed in the Customer
+Information panel if filled, and in the Customer User administration
+screens. Also, new customers should have to insert their room number if they
+register a new account.
+</p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="email-settings.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="administration.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="ticket-settings.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Mipangilio ya barua pepe </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Mipangilio ya tiketi</td></tr></table></div></body></html>
