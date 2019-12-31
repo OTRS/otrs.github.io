@@ -1,0 +1,301 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>A webszolgáltatás dinamikus mező</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS Business Solution™ 6 kézikönyv"><link rel="up" href="otrs-business-solution-features.html" title="3. fejezet - Az OTRS Business Solution™ funkciói"><link rel="prev" href="dynamicfield-database.html" title="Az adatbázis dinamikus mező"><link rel="next" href="import-example-process.html" title="Használatra kész folyamat importálása"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">A <span class="emphasis"><em>webszolgáltatás</em></span> dinamikus mező</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="dynamicfield-database.html">Vissza</a> </td><th width="60%" align="center">3. fejezet - Az <span class="bold"><strong>OTRS Business Solution</strong></span>™ funkciói</th><td width="20%" align="right"> <a accesskey="n" href="import-example-process.html">Előre</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="dynamicfield-webservice"></a>A <span class="emphasis"><em>webszolgáltatás</em></span> dinamikus mező</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.5.3">Leírás</a></span></dt><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.5.4">Beállítás</a></span></dt><dd><dl><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.5.4.3">Egy webszolgáltatás (legalább kérelmezőként beállítva)</a></span></dt><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.5.4.4">Egy webszolgáltatás dinamikus mező meghatározása</a></span></dt><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.5.4.5">Képernyő beállítások</a></span></dt></dl></dd><dt><span class="section"><a href="dynamicfield-webservice.html#id-1.4.5.5">Használat</a></span></dt></dl></div><p>
+        Ez a funkció egy <span class="emphasis"><em>webszolgáltatás</em></span> típusú dinamikus mezőt
+valósít meg.
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.5.3"></a>Leírás</h3></div></div></div><p>
+            Ez a funkció egy olyan általános dinamikus mező típust valósít meg, amely a
+választható lehetőségeit egy webszolgáltatást használó külső rendszerből
+gyűjti be. A külső rendszerből érkező válasz határozza meg a lehetséges
+megjelenítendő lehetőségeket, és változhatnak azoktól az adatoktól attól
+függően, amelyek a kérésben kerülnek elküldésre.
+        </p><p>
+            Általános esetben, amikor egy mező megváltozik a képernyőn (például a jegy
+prioritása az <span class="emphasis"><em>Új telefonos jegy</em></span> képernyőn), akkor más
+mezők értékei frissítve lehetnek. Ez a helyzet az ilyen típusú dinamikus
+mezőknél, mivel felvehetik a képernyő összes mezőjének értékét a kérésbe, és
+a távoli kiszolgáló lehetőség szerint teljesen eltérő értékeket adhat vissza
+a bemenet függvényében.
+        </p><p>
+             Továbbá, ha a dinamikus mező forrásobjektuma már létezik (például egy jegy,
+és a mező be van állítva a <span class="emphasis"><em>Szabad mezők</em></span> képernyőn),
+akkor a már létrehozott jegy részleteit is tartalmazni fogja a kérés.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.5.4"></a>Beállítás</h3></div></div></div><p>
+            A funkció működtetéséhez a következő összetevők megléte szükséges:
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.5.4.3"></a>Egy webszolgáltatás (legalább kérelmezőként beállítva)</h4></div></div></div><p>
+                Egy új <span class="emphasis"><em>webszolgáltatás</em></span> dinamikus mező létrehozásához
+szükséges, hogy már rendelkezzen egy működő webszolgáltatással, valamint
+legyen legalább egy <code class="literal">Generic::PassThrough</code> típusú
+meghívója. Ez a meghívó kerül meghívásra a távoli kiszolgálóról történő
+adatlekéréshez.
+            </p><p>
+                Az eredeti adatok, amelyek egy kérésben lesznek elküldve, a következő
+példához hasonlóak.
+            </p><p>
+                </p><pre class="screen">
+{
+  DynamicFieldID    =&gt; 123,
+  DynamicFieldLabel =&gt; 'NévX',
+  DynamicFieldName  =&gt; 'NévX',
+  DynamicFieldValue =&gt; 'Érték',
+  Form =&gt; {
+    # Űrlapmezők
+    # ...
+  },
+  Ticket =&gt; {
+    # Jegyattribútumok
+    # ...
+  },
+  DynamicField =&gt; {
+    NameX =&gt; 'Érték'
+    NameY =&gt; [  Érték ],
+  },
+  UserID =&gt; 123,
+},
+                </pre><p>
+            </p><p>
+                A <code class="literal">Form</code> szakasz tartalmazza a mezőket a webböngészőben
+lévő jelenlegi űrlapon. Ez az információ változik, amikor a képernyőt
+kitöltik.
+            </p><p>
+                A <code class="literal">Ticket</code> szakasz (vagy egy másik forrásobjektum, például
+<code class="literal">CustomerUser</code>) tartalmazza az objektum attribútumait,
+ahova a dinamikus mező tartozik. Például az <span class="emphasis"><em>Új telefonos
+jegy</em></span> képernyőn a szakasz üres, mivel a jegyet még nem hozták
+létre, de a <span class="emphasis"><em>Szabad mezők</em></span> képernyőn tartalmazza az
+aktuális jegy információit.
+            </p><p>
+                A <code class="literal">DynamicField</code> szakasz tartalmazza az összes beállított
+dinamikus mező nem üres értékeit az aktuális objektumnál.
+            </p><p>
+                A legtöbb esetben azok az adatok, amelyeket a távoli kiszolgáló megkövetel,
+nagyban eltérőek lesznek a szolgáltatott adatoktól, ezért erősen ajánlott
+egy leképező modul használata a kimenő adatoknál, hogy kifejezetten a távoli
+kiszolgáló hívásához formálja azt.
+            </p><p>
+                A következő példa egy XSLT leképezést jelenít meg, amely minden adatot
+eldob, és egy rögzített <code class="literal">UserLogin</code>,
+<code class="literal">Password</code> and <code class="literal">TicketID</code> értéket állít be
+(ahogy a <code class="literal">TicketGet</code> művelethez szükséges).
+            </p><p>
+                </p><div class="figure"><a name="id-1.4.5.4.3.10.1"></a><p class="title"><b>3.24. ábra - <span class="emphasis"><em>Webszolgáltatás</em></span> dinamikus mező – kimenő leképezés példa</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/dynamicfield-webservice/OutgoingMapping.png" alt="Webszolgáltatás dinamikus mező – kimenő leképezés példa"></div></div></div></div><p><br class="figure-break">
+            </p><p>
+                A kiszolgálótól érkező válasz is nagyon eltérő lehet, így ebben az esetben
+szintén erősen ajánlott egy leképező modul használata a bejövő adatoknál
+annak érdekében, hogy képes legyen feldolgozni az információkat. A válasznak
+kulcs és értéke elemek listájának kell lennie.
+            </p><p>
+                A következő példa egy XSLT leképezést jelenít meg, amely átalakítja a távoli
+kiszolgálótól érkező <code class="literal">TicketGet</code> művelet válaszának
+eredményeit, valamint kibontja és megformázza az állapotot és a várólistát
+ahogy szükséges, hogy lehetőségekként legyen használható a dinamikus
+mezőnél.
+            </p><p>
+                </p><div class="figure"><a name="id-1.4.5.4.3.13.1"></a><p class="title"><b>3.25. ábra - <span class="emphasis"><em>Webszolgáltatás</em></span> dinamikus mező – bejövő leképezés példa</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/dynamicfield-webservice/IncomingMapping.png" alt="Webszolgáltatás dinamikus mező – bejövő leképezés példa"></div></div></div></div><p><br class="figure-break">
+            </p><p>
+                A következő webszolgáltatás meghatározás (importálható YAML-fájl)
+használható a mező teszteléséhez, de a végpontot módosítani kell, hogy
+illeszkedjen az aktuális rendszerhez. Ez a webszolgáltatás kérelmezőként és
+szolgáltatóként viselkedik, és mindig az 1-es jegyazonosítóból adja vissza
+az állapotot és a várólistát, mint a mező lehetséges értékeit.
+            </p><p>
+                </p><pre class="screen">
+---
+Debugger:
+  DebugThreshold: debug
+  TestMode: '0'
+Description: Webszolgáltatás dinamikus mező teszt
+FrameworkVersion: 6.0.x git
+Provider:
+  ErrorHandling: {}
+  ErrorHandlingPriority: []
+  Operation:
+    TicketGet:
+      Description: ''
+      IncludeTicketData: ''
+      MappingInbound: {}
+      MappingOutbound: {}
+      Type: Ticket::TicketGet
+  Transport:
+    Config:
+      AdditionalHeaders: ~
+      MaxLength: '100000000'
+      NameSpace: http://www.otrs.org/TicketConnector/
+      RequestNameFreeText: ''
+      RequestNameScheme: Plain
+      ResponseNameFreeText: ''
+      ResponseNameScheme: Response
+    Type: HTTP::SOAP
+RemoteSystem: ''
+Requester:
+  ErrorHandling: {}
+  ErrorHandlingPriority: []
+  Invoker:
+    TicketGet:
+      Description: Lehetséges értékek lekérése a másik oldalról.
+      Events: []
+      MappingInbound:
+        Config:
+          Template: "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\r\n&lt;!--\r\nCopyright
+            (C) 2001-2018 OTRS AG, https://otrs.com/\r\nThis software comes with ABSOLUTELY
+            NO WARRANTY. For details, see\r\nthe enclosed file COPYING for license
+            information (GPL). If you\r\ndid not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.\r\n--&gt;\r\n\r\n&lt;!--
+            DOKUMENTÁCIÓ\r\n\r\n* Példa XML bemenet *\r\n&lt;RootElement&gt;\r\n    ...\r\n&lt;/RootElement&gt;\r\n\r\n\r\n*
+            Példa XML kimenet *\r\n&lt;RootElement&gt;\r\n    &lt;PossibleValues&gt;\r\n        &lt;Key&gt;???&lt;/Key&gt;\r\n
+            \       &lt;Value&gt;???&lt;/Value&gt;\r\n    &lt;/PossibleValues&gt;\r\n    &lt;PossibleValues&gt;\r\n
+            \       &lt;Key&gt;???&lt;/Key&gt;\r\n        &lt;Value&gt;???&lt;/Value&gt;\r\n    &lt;/PossibleValues&gt;\r\n
+            \   ...\r\n&lt;/RootElement&gt;\r\n\r\n--&gt;\r\n\r\n\r\n&lt;xsl:transform\r\n    xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"\r\n
+            \   xmlns:date=\"http://exslt.org/dates-and-times\"\r\n    version=\"1.0\"\r\n
+            \   extension-element-prefixes=\"date\"&gt;\r\n    \r\n    &lt;xsl:output method=\"xml\"
+            encoding=\"utf-8\" indent=\"yes\" /&gt;\r\n    \r\n    &lt;!-- Ne adja vissza a nem
+            illeszkedő címkéket --&gt;\r\n    &lt;xsl:template match=\"text()\" /&gt;\r\n    \r\n
+            \   &lt;!-- Üres elemek eltávolítása --&gt;\r\n    &lt;xsl:template match=\"*[not(node())]\"
+            /&gt;\r\n    \r\n    &lt;!-- Gyökérsablon --&gt;\r\n    &lt;xsl:template match=\"/\"&gt;\r\n
+            \       &lt;RootElement&gt;\r\n            &lt;xsl:apply-templates /&gt;\r\n        &lt;/RootElement&gt;\r\n
+            \   &lt;/xsl:template&gt;\r\n\r\n    &lt;xsl:template match=\"/*/Ticket\"&gt;\r\n
+            \       &lt;PossibleValue&gt;\r\n            &lt;Key&gt;State&lt;/Key&gt;\r\n            &lt;Value&gt;&lt;xsl:value-of
+            select=\"/*/Ticket/State\"/&gt;&lt;/Value&gt;\r\n        &lt;/PossibleValue&gt;\r\n        &lt;PossibleValue&gt;\r\n
+            \           &lt;Key&gt;Queue&lt;/Key&gt;\r\n            &lt;Value&gt;&lt;xsl:value-of select=\"/*/Ticket/Queue\"/&gt;&lt;/Value&gt;\r\n
+            \       &lt;/PossibleValue&gt;\r\n    &lt;/xsl:template&gt;\r\n    \r\n&lt;/xsl:transform&gt;"
+        Type: XSLT
+      MappingOutbound:
+        Config:
+          Template: "&lt;?xml version=\"1.0\" encoding=\"UTF-8\"?&gt;\r\n&lt;!--\r\nCopyright
+            (C) 2001-2018 OTRS AG, https://otrs.com/\r\n\r\nThis software comes with
+            ABSOLUTELY NO WARRANTY. For details, see\r\nthe enclosed file COPYING
+            for license information (GPL). If you\r\ndid not receive this file, see
+            https://www.gnu.org/licenses/gpl-3.0.txt.\r\n--&gt;\r\n\r\n&lt;!-- DOKUMENTÁCIÓ\r\n\r\n*
+            Példa XML bemenet *\r\n&lt;RootElement&gt;\r\n    ...\r\n&lt;/RootElement&gt;\r\n\r\n\r\n*
+            Példa XML kimenet *\r\n&lt;RootElement&gt;\r\n    &lt;PossibleValues&gt;\r\n        &lt;Key&gt;???&lt;/Key&gt;\r\n
+            \       &lt;Value&gt;???&lt;/Value&gt;\r\n    &lt;/PossibleValues&gt;\r\n    &lt;PossibleValues&gt;\r\n
+            \       &lt;Key&gt;???&lt;/Key&gt;\r\n        &lt;Value&gt;???&lt;/Value&gt;\r\n    &lt;/PossibleValues&gt;\r\n
+            \   ...\r\n&lt;/RootElement&gt;\r\n\r\n--&gt;\r\n\r\n&lt;xsl:transform\r\n    xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"\r\n
+            \   xmlns:date=\"http://exslt.org/dates-and-times\"\r\n    version=\"1.0\"\r\n
+            \   extension-element-prefixes=\"date\"&gt;\r\n    &lt;xsl:output method=\"xml\"
+            encoding=\"utf-8\" indent=\"yes\" /&gt;\r\n\r\n    &lt;!-- Ne adja vissza a nem
+            illeszkedő címkéket --&gt;\r\n    &lt;xsl:template match=\"text()\" /&gt;\r\n\r\n    &lt;!-- Üres
+            elemek eltávolítása --&gt;\r\n    &lt;xsl:template match=\"*[not(node())]\" /&gt;\r\n\r\n
+            \   &lt;!-- Gyökérsablon --&gt;\r\n    &lt;xsl:template match=\"/\"&gt;\r\n        &lt;RootElement&gt;\r\n
+            \           &lt;UserLogin&gt;felhasználó&lt;/UserLogin&gt;\r\n            &lt;Password&gt;jelszó&lt;/Password&gt;\r\n
+            \           &lt;TicketID&gt;1&lt;/TicketID&gt;\r\n        &lt;/RootElement&gt;\r\n    &lt;/xsl:template&gt;\r\n\r\n&lt;/xsl:transform&gt;"
+        Type: XSLT
+      Type: Generic::PassThrough
+  Transport:
+    Config:
+      Encoding: ''
+      Endpoint: http://localhost/otrs/nph-genericinterface.pl/Webservice/GenericConfigItemConnectorSOAP
+      NameSpace: http://www.otrs.org/TicketConnector/
+      RequestNameFreeText: ''
+      RequestNameScheme: Plain
+      ResponseNameFreeText: ''
+      ResponseNameScheme: Response
+      SOAPAction: Yes
+      SOAPActionSeparator: '#'
+      SSL:
+        SSLProxy: ''
+        SSLProxyPassword: ''
+        SSLProxyUser: ''
+    Type: HTTP::SOAP
+  UseMappedData: '1'
+                </pre><p>
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.5.4.4"></a>Egy webszolgáltatás dinamikus mező meghatározása</h4></div></div></div><p>
+                A webszolgáltatások megfelelő beállítása után lehetőség van a dinamikus
+mezők beállítására, amelyek az ilyen webszolgáltatásokat használják.
+            </p><p>
+                </p><div class="figure"><a name="id-1.4.5.4.4.3.1"></a><p class="title"><b>3.26. ábra - <span class="emphasis"><em>Webszolgáltatás</em></span> dinamikus mező – meghatározás példa</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/dynamicfield-webservice/IncomingMapping.png" alt="Webszolgáltatás dinamikus mező – meghatározás példa"></div></div></div></div><p><br class="figure-break">
+            </p><p>
+                Lent látható a dinamikus mező lehetőségeinek leírása.
+            </p><p>
+                </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">Webszolgáltatás</span></dt><dd><p>
+                                A beállított webszolgáltatás, amely meghívói aktiválva lesznek, amikor egy
+dinamikus megjelenik.
+                            </p></dd><dt><span class="term">Meghívó</span></dt><dd><p>
+                                Az a meghívó, amelyet a külső rendszernek történő kérések küldéséhez
+használnak. A mezőn belül csak <code class="literal">Generic::PassThrough</code>
+típusú meghívók lesznek megjelenítve.
+                            </p></dd><dt><span class="term">Többválasztós</span></dt><dd><p>
+                                Egy legördülő menü annak meghatározásához, hogy a megjelenített dinamikus
+mezőnek többválasztós mezőként kell szerepelnie egy legördülő mező helyett.
+                            </p></dd><dt><span class="term">Gyorsítótár élettartam</span></dt><dd><p>
+                                Egy gyorsítótár idő az érték életben tartásához, amely egy értéket tartalmaz
+(percben). Ha az érték 0 vagy üres, akkor nem lesz gyorsítótárazás
+bekapcsolva.
+                            </p><p>
+                                Ez a gyorsítótár a távoli kiszolgálónak küldendő, ugyanazokat az értékeket
+használó, szükségtelen kérések megakadályozásához van.
+                            </p></dd><dt><span class="term">Üres érték hozzáadása</span></dt><dd><p>
+                                Meghatározza, hogy lehetséges-e üres értéket elmenteni a mezőben.
+                            </p></dd><dt><span class="term">Fanézet</span></dt><dd><p>
+                                Ez a lehetőség bekapcsolja a lehetséges értékek fanézetét, ha azok a helyes
+formátumban vannak megadva.
+                            </p></dd><dt><span class="term">Lefordítható értékek</span></dt><dd><p>
+                                Meghatározza, hogy a megjelenített lehetséges értékek le legyenek-e fordítva
+az aktuális felhasználói nyelvre.
+                            </p></dd></dl></div><p>
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.5.4.5"></a>Képernyő beállítások</h4></div></div></div><p>
+                A <span class="emphasis"><em>webszolgáltatás</em></span> típusú dinamikus mezőket az egyéb
+típusú dinamikus mezőkhöz hasonlóan be kell kapcsolni számos olyan maszknál,
+amelyben azokat meg kell jeleníteni az egyéb típusú dinamikus mezőkhöz
+hasonlóan. A következő lista lefedi a jegyalapú dinamikus mezők eseteit.
+            </p><p>
+                Ez az <span class="emphasis"><em>Adminisztráció → Adminisztrációs áttekintő →
+Rendszerbeállítások</em></span> menüponton keresztül végezhető el, majd
+navigáljon a <span class="emphasis"><em>Frontend → Agent → View</em></span> csoportra.
+            </p><p>
+                Minden <code class="literal">Ticket*</code> beállításnál, amelyen a
+<span class="emphasis"><em>webszolgáltatás</em></span> típusú dinamikus mezőt meg kell
+jeleníteni, az adminisztrátornak be kell állítania azt az igényei
+kielégítéséhez. Példák:
+            </p><p>
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                            <code class="literal">TicketZoom</code> a jegy nagyított nézeténél.
+                        </p></li><li class="listitem"><p>
+                            <code class="literal">TicketPhoneNew</code> az új telefonos jegyeknél.
+                        </p></li><li class="listitem"><p>
+                            <code class="literal">TicketEmailNew</code> az új e-mail jegyeknél.
+                        </p></li><li class="listitem"><p>
+                            A dinamikus mező akkor adható hozzá, ha létezik egy
+<code class="literal">Ticket::Frontend::AgentTicket*###DynamicField</code> nevű
+bejegyzés. Ez a beállítás határozza meg, hogy mely dinamikus mezőket kell
+megjeleníteni ebben a nézetben. Egy dinamikus mező hozzáadásához a mező
+belső nevét ki kell tölteni az első mezőben. Megerősítés után egy második
+mező lesz kitöltve a megjelenítési lehetőségekkel. Válassza az <span class="emphasis"><em>1 -
+engedélyezve</em></span> lehetőséget, ha csak megjeleníteni szeretné a mezőt,
+vagy a <span class="emphasis"><em>2 - engedélyezve és kötelező</em></span> lehetőséget, ha
+kötelezővé szeretné tenni.
+                        </p></li></ul></div><p>
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.5.5"></a>Használat</h3></div></div></div><p>
+            A <span class="emphasis"><em>webszolgáltatás</em></span> dinamikus mező használata hasonló a
+többi dinamikus mezőhöz (mint például <span class="emphasis"><em>Legördülő</em></span> vagy
+<span class="emphasis"><em>Többválasztós</em></span>), de a felhasználók elvárhatják, hogy
+különböző választási lehetőségeik legyenek még aktív ACL-ek nélkül is a
+webkérésben lévő paraméterek megváltozása miatt, amint más mezők
+megváltoztak.
+        </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="dynamicfield-database.html">Vissza</a> </td><td width="20%" align="center"><a accesskey="u" href="otrs-business-solution-features.html">Fel</a></td><td width="40%" align="right"> <a accesskey="n" href="import-example-process.html">Előre</a></td></tr><tr><td width="40%" align="left" valign="top">Az <span class="emphasis"><em>adatbázis</em></span> dinamikus mező </td><td width="20%" align="center"><a accesskey="h" href="index.html">Főoldal</a></td><td width="40%" align="right" valign="top"> Használatra kész folyamat importálása</td></tr></table></div></body></html>
