@@ -1,0 +1,301 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>2. fejezet - OTRS belsőségek - hogyan működik</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 5 - Fejlesztői kézikönyv"><link rel="up" href="index.html" title="OTRS 5 - Fejlesztői kézikönyv"><link rel="prev" href="architecture-overview.html" title="Szerkezeti áttekintés"><link rel="next" href="ch02s02.html" title="Adatbázis mechanizmus"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">2. fejezet - OTRS belsőségek - hogyan működik</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="architecture-overview.html">Vissza</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch02s02.html">Előre</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="how-it-works"></a>2. fejezet - OTRS belsőségek - hogyan működik</h1></div></div></div><div class="toc"><p><b>Tartalom</b></p><dl class="toc"><dt><span class="section"><a href="how-it-works.html#id-1.3.2">Beállítási mechanizmus</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#default-config"><code class="filename">Defaults.pm</code>: az OTRS alapértelmezett beállításai</a></span></dt><dt><span class="section"><a href="how-it-works.html#auto-generated-config-files">Automatikusan előállított beállítófájlok</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config">XML beállítási lehetőségek</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#xml-config-variable">Az XML beállítási változók típusai</a></span></dt></dl></dd><dt><span class="section"><a href="how-it-works.html#accessing-config-options">Hozzáférés a beállítási lehetőségekhez futási időben</a></span></dt></dl></dd><dt><span class="section"><a href="ch02s02.html">Adatbázis mechanizmus</a></span></dt><dd><dl><dt><span class="section"><a href="ch02s02.html#database-how-it-works">Hogyan működik</a></span></dt><dd><dl><dt><span class="section"><a href="ch02s02.html#database-sql">SQL</a></span></dt><dt><span class="section"><a href="ch02s02.html#database-xml">XML</a></span></dt></dl></dd><dt><span class="section"><a href="ch02s02.html#database-driver">Adatbázis-meghajtók</a></span></dt><dt><span class="section"><a href="ch02s02.html#database-supported">Támogatott adatbázisok</a></span></dt></dl></dd><dt><span class="section"><a href="ch02s03.html">Naplózó mechanizmus</a></span></dt><dt><span class="section"><a href="skins.html">Felszínek</a></span></dt><dd><dl><dt><span class="section"><a href="skins.html#id-1.3.5.4">Felszín alapok</a></span></dt><dt><span class="section"><a href="skins.html#id-1.3.5.5">Hogyan töltődnek be a felszínek</a></span></dt><dt><span class="section"><a href="skins.html#id-1.3.5.6">Új felszín létrehozása</a></span></dt></dl></dd><dt><span class="section"><a href="loader.html">A CSS és JavaScript „betöltő”</a></span></dt><dd><dl><dt><span class="section"><a href="loader.html#id-1.3.6.3">Hogyan működik</a></span></dt><dt><span class="section"><a href="loader.html#id-1.3.6.4">Alapvető működés</a></span></dt><dt><span class="section"><a href="loader.html#loader-javascript">A betöltő beállítása: JavaScript</a></span></dt><dd><dl><dt><span class="section"><a href="loader.html#loader-common-javascript">Közös JavaScript</a></span></dt><dt><span class="section"><a href="loader.html#loader-module-javascript">Modulspecifikus JavaScript</a></span></dt></dl></dd><dt><span class="section"><a href="loader.html#id-1.3.6.6">A betöltő beállítása: CSS</a></span></dt><dd><dl><dt><span class="section"><a href="loader.html#id-1.3.6.6.3">Közös CSS</a></span></dt><dt><span class="section"><a href="loader.html#id-1.3.6.6.4">Modulspecifikus CSS</a></span></dt></dl></dd></dl></dd><dt><span class="section"><a href="TemplatingMechanism.html">Sablonozó mechanizmus</a></span></dt><dd><dl><dt><span class="section"><a href="TemplatingMechanism.html#TemplateCommands">Sablonparancsok</a></span></dt><dd><dl><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.7.5.2">Dinamikus adatok beszúrása</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.7.5.3">Honosítási parancsok</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.7.5.4">Sablonfeldolgozó parancsok</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.7.5.5"><code class="literal">[% WRAPPER JSOnDocumentComplete %]...[% END %]</code></a></span></dt></dl></dd><dt><span class="section"><a href="TemplatingMechanism.html#using-templates">Egy sablonfájl használata</a></span></dt></dl></dd><dt><span class="section"><a href="localization-translation-mechanism.html">Honosítási és fordítási mechanizmus</a></span></dt><dd><dl><dt><span class="section"><a href="localization-translation-mechanism.html#id-1.3.8.3">Lefordítható szövegek megjelölése a forrásfájlokban</a></span></dt><dt><span class="section"><a href="localization-translation-mechanism.html#id-1.3.8.4">Lefordítható szövegek összegyűjtése a fordítási adatbázisba</a></span></dt><dd><dl><dt><span class="section"><a href="localization-translation-mechanism.html#default-framework-translation-file2">Alapértelmezett keretrendszer fordítási fájl</a></span></dt><dt><span class="section"><a href="localization-translation-mechanism.html#custom-translation-file">Egyéni fordítási fájl</a></span></dt></dl></dd><dt><span class="section"><a href="localization-translation-mechanism.html#id-1.3.8.5">Maga a fordítási folyamat</a></span></dt><dt><span class="section"><a href="localization-translation-mechanism.html#id-1.3.8.6">A kódból lefordított adatok használata</a></span></dt></dl></dd></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="id-1.3.2"></a>Beállítási mechanizmus</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="how-it-works.html#default-config"><code class="filename">Defaults.pm</code>: az OTRS alapértelmezett beállításai</a></span></dt><dt><span class="section"><a href="how-it-works.html#auto-generated-config-files">Automatikusan előállított beállítófájlok</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config">XML beállítási lehetőségek</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#xml-config-variable">Az XML beállítási változók típusai</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#xml-config-string">Szöveg</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-textarea">Szövegdoboz</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-option">Lehetőségek</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-array">Tömb</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-hash">Kivonat</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-navbar">FrontendModuleReg (NavBar)</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-navbarmodule">FrontendModuleReg (NavBarModule)</a></span></dt></dl></dd></dl></dd><dt><span class="section"><a href="how-it-works.html#accessing-config-options">Hozzáférés a beállítási lehetőségekhez futási időben</a></span></dt></dl></div><p>
+        Az OTRS dedikált mechanizmussal érkezik a konfigurációs beállítások
+kezeléséhez egy grafikus felületen (rendszerbeállításokon) keresztül. Ez a
+szakasz azt írja le, hogy hogyan működik belsőleg, és hogyan adhat meg új
+konfigurációs beállításokat, vagy hogyan változtathatja meg a meglévő
+alapértelmezett értékeket.
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="default-config"></a><code class="filename">Defaults.pm</code>: az OTRS alapértelmezett beállításai</h3></div></div></div><p>
+            Az OTRS alapértelmezett beállítófájlja a
+<code class="filename">Kernel/Config/Defaults.pm</code>. Ezt a fájlt érintetlenül
+kell hagyni, mivel automatikusan frissítésre kerül a keretrendszer
+frissítéseikor.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="auto-generated-config-files"></a>Automatikusan előállított beállítófájlok</h3></div></div></div><p>
+            A <code class="filename">Kernel/Config/Files</code> mappában néhány automatikusan
+előállított beállítófájl található:
+        </p><p>
+</p><pre class="screen">
+ZZZAAuto.pm              # Az XML beállítások alapértelmezett értékeinek Perl gyorsítótára
+ZZZACL.pm                # Az ACL beállítások Perl gyorsítótára az adatbázisból
+ZZZAuto.pm               # A felhasználó által a rendszerbeállításokban megváltoztatott
+                         #   összes beállítást tartalmazza
+ZZZProcessManagement.pm  # A ProcessManagement beállítások Perl gyorsítótára az adatbázisból
+</pre><p>
+        </p><p>
+            Ezeket a fájlokat sosem szabad kézzel megváltoztatni, mivel az OTRS
+felülírja azokat.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="xml-config"></a>XML beállítási lehetőségek</h3></div></div></div><p>
+            Az OTRS-ben azok a beállítási lehetőségek, amelyeket az adminisztrátor a
+rendszerbeállításokon keresztül tud beállítani, XML-fájlokban vannak megadva
+egy speciális formátumban. Az XML beállítófájlok az
+<code class="filename">$OTRS_HOME/Kernel/Config/Files/*.xml</code> fájlokban
+találhatók. A <code class="filename">Kernel/Config/Files/ZZZAAuto.pm</code> fájl
+annak az XML-nek a gyorsítótárazott Perl-verziója, amely az összes
+beállítást tartalmazza az alapértelmezett értékükkel. Ez (újra) előállítható
+a <code class="filename">bin/otrs.Console.pl Maint::Config::Rebuild</code>
+parancsfájllal. Az adminisztrátor által elvégzett összes változtatás a
+<code class="filename">Kernel/Config/Files/ZZZAuto.pm</code> fájlban van eltárolva.
+        </p><p>
+            Az egyes XML beállítófájloknak a következő elrendezésük van:
+        </p><p>
+            </p><pre class="programlisting">
+&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;otrs_config version="1.0" init="Changes"&gt;
+
+    &lt;!-- itt lesznek a beállítási elemek --&gt;
+
+&lt;/otrs_config&gt;
+            </pre><p>
+        </p><p>
+            Az <code class="literal">init</code> attribútum azt írja le, hogy honnan kell a
+beállítási lehetőségeket betölteni. Különböző szintek érhetők el, és a
+következő sorrendben lesznek betöltve/felülírva:
+<code class="literal">Framework</code> (a keretrendszer beállításaihoz, például
+munkamenet beállítás), <code class="literal">Application</code> (az alkalmazás
+beállításaihoz, például jegybeállítások), <code class="literal">Config</code>
+(kiterjesztésekhez a meglévő alkalmazásoknál, például ITSM beállítások) és
+<code class="literal">Changes</code> (egyéni fejlesztésekhez, például keretrendszer
+vagy jegybeállítások felülírásához).
+        </p><p>
+            Ha beállítási lehetőségeket szeretne hozzáadni, akkor itt egy példa:
+        </p><p>
+            </p><pre class="programlisting">
+&lt;ConfigItem Name="Ticket::Hook" Required="1" Valid="1" ConfigLevel="300"&gt;
+    &lt;Description Lang="en"&gt;The identifier for a ticket. The default is Ticket#.&lt;/Description&gt;
+    &lt;Description Lang="de"&gt;Ticket-Identifikator. Als Standard wird Ticket# verwendet.&lt;/Description&gt;
+    &lt;Group&gt;Ticket&lt;/Group&gt;
+    &lt;SubGroup&gt;Core::Ticket&lt;/SubGroup&gt;
+    &lt;Setting&gt;
+        &lt;String Regex=""&gt;Ticket#&lt;/String&gt;
+    &lt;/Setting&gt;
+&lt;/ConfigItem&gt;
+            </pre><p>
+        </p><p>
+            Ha a <code class="literal">required</code> jellemző <code class="literal">1</code> értékre van
+állítva, akkor a beállítási változót tartalmazza, és nem lehet letiltani.
+        </p><p>
+            Ha a <code class="literal">valid</code> jellemző <code class="literal">1</code> értékre van
+állítva, akkor a beállítási változó aktív. Ha <code class="literal">0</code> értékre
+van állítva, akkor a beállítási változó inaktív.
+        </p><p>
+            Ha az opcionális <code class="literal">ConfigLevel</code> attribútum be van állítva,
+akkor a beállítási változót esetleg nem szerkesztheti az adminisztrátor a
+saját beállítási szintjétől függően. A <code class="literal">ConfigLevel</code>
+beállítási változó állítja be az adminisztrátor szakmai tapasztalatának
+szintjét. Lehet 100 (Szakértő), 200 (Speciális) vagy 300
+(Kezdő). Iránymutatásként, hogy mely beállítási szintet kell egy
+lehetőséghez megadni, az az ajánlott, hogy az összes olyan lehetőségnek,
+amelyet külső interakció beállításával kell megtenni (mint például Sendmail,
+LDAP, SOAP és egyebek), legalább 200 (Speciális) beállítási szintet kell
+kapnia.
+        </p><p>
+            A beállítási változó a <code class="literal">Setting</code> elemben van meghatározva.
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="xml-config-variable"></a>Az XML beállítási változók típusai</h4></div></div></div><p>
+                Az XML konfigurációs beállítások különféle típusú változókat támogatnak.
+            </p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-string"></a>Szöveg</h5></div></div></div><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;String Regex="" Check="File"&gt;&lt;/String&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p><p>
+                    Egy beállítási elem számokhoz és egysoros szövegekhez. Az érvényesség
+ellenőrzése egy reguláris kifejezéssel lehetséges (opcionális). Az
+opcionális <code class="literal">Check</code> attribútum ellenőrzi az elemeket a
+fájlrendszeren.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;String Translatable="1"&gt;Saját beállítás&lt;/String&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p><p>
+                    Az opcionális <code class="literal">Translatable</code> attribútum jelöli meg ezt a
+beállítást fordíthatóként, amely azt fogja eredményezni, hogy fel lesz véve
+az OTRS fordítási fájljaiba. Ezt az attribútumot bármely címkére el lehet
+helyezni (lásd lent is).
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-textarea"></a>Szövegdoboz</h5></div></div></div><p>
+                    Egy beállítási elem többsoros szöveghez.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;TextArea&gt;&lt;/TextArea&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-option"></a>Lehetőségek</h5></div></div></div><p>
+                    Ez a beállítási elem előre beállított értékeket nyújt egy legördülő
+menüként.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;Option SelectedID="0"&gt;
+        &lt;Item Key="0" Translatable="1"&gt;Nem&lt;/Item&gt;
+        &lt;Item Key="1" Translatable="1"&gt;Igen&lt;/Item&gt;
+    &lt;/Option&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p><p>
+                    Kiválaszthatja az alapértelmezett értéket is az „érték” szerint:
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;Option SelectedValue="Nem"&gt;
+        &lt;Item Key="0" Translatable="1"&gt;Nem&lt;/Item&gt;
+        &lt;Item Key="1" Translatable="1"&gt;Igen&lt;/Item&gt;
+    &lt;/Option&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-array"></a>Tömb</h5></div></div></div><p>
+                    Ezzel a beállítási elemmel tömbök jeleníthetők meg.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;Array&gt;
+        &lt;Item&gt;Első elem&lt;/Item&gt;
+        &lt;Item&gt;Második elem&lt;/Item&gt;
+    &lt;/Array&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-hash"></a>Kivonat</h5></div></div></div><p>
+                    Ezzel a beállítási elemmel kivonatok jeleníthetők meg.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;Hash&gt;
+        &lt;Item Key="1" Translatable="1"&gt;1. érték&lt;/Item&gt;
+        &lt;Item Key="2" Translatable="1"&gt;2. érték&lt;/Item&gt;
+    &lt;/Hash&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p><p>
+                    Egy kivonat tartalmazhat beágyazott tömböket vagy kivonatokat is.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;Hash&gt;
+        &lt;Item Key=""&gt;&lt;/Item&gt;
+        &lt;Item Key=""&gt;
+            &lt;Hash&gt;
+                &lt;Item Key=""&gt;&lt;/Item&gt;
+                &lt;Item Key=""&gt;&lt;/Item&gt;
+            &lt;/Hash&gt;
+        &lt;/Item&gt;
+        &lt;Item Key=""&gt;
+            &lt;Array&gt;
+                &lt;Item&gt;&lt;/Item&gt;
+                &lt;Item&gt;&lt;/Item&gt;
+            &lt;/Array&gt;
+        &lt;/Item&gt;
+        &lt;Item Key=""&gt;&lt;/Item&gt;
+    &lt;/Hash&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-navbar"></a>FrontendModuleReg (NavBar)</h5></div></div></div><p>
+                    Modul regisztráció az ügyintézői felülethez:
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;FrontendModuleReg&gt;
+        &lt;Description&gt;Ügyintéző vezérlőpult&lt;/Description&gt;
+        &lt;Title&gt;&lt;/Title&gt;
+        &lt;NavBarName&gt;Vezérlőpult&lt;/NavBarName&gt;
+        &lt;NavBar&gt;
+            &lt;Description Translatable="1"&gt;&lt;/Description&gt;
+            &lt;Name Translatable="1"&gt;Vezérlőpult&lt;/Name&gt;
+            &lt;Link&gt;Action=AgentDashboard&lt;/Link&gt;
+            &lt;LinkOption&gt;&lt;/LinkOption&gt;
+            &lt;NavBar&gt;Dashboard&lt;/NavBar&gt;
+            &lt;Type&gt;Menu&lt;/Type&gt;
+            &lt;Block&gt;ItemArea&lt;/Block&gt;
+            &lt;AccessKey&gt;d&lt;/AccessKey&gt;
+            &lt;Prio&gt;50&lt;/Prio&gt;
+        &lt;/NavBar&gt;
+        &lt;Loader&gt;
+            &lt;CSS&gt;Core.Agent.Dashboard.css&lt;/CSS&gt;
+            &lt;CSS&gt;Core.AllocationList.css&lt;/CSS&gt;
+            &lt;CSS&gt;thirdparty/fullcalendar-1.6.1/fullcalendar.css&lt;/CSS&gt;
+            &lt;CSS&gt;thirdparty/d3js/nv.d3.css&lt;/CSS&gt;
+            &lt;JavaScript&gt;thirdparty/flot-0.8.3/excanvas.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;thirdparty/flot-0.8.3/jquery.flot.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;thirdparty/fullcalendar-1.6.1/fullcalendar.min.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;thirdparty/d3js/d3.v3.min.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;thirdparty/d3js/nv.d3.min.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;thirdparty/d3js/models/OTRSmultiBarChart.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;thirdparty/d3js/models/OTRSstackedAreaChart.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;Core.UI.Chart.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;Core.UI.AdvancedChart.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;Core.UI.AllocationList.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;Core.Agent.TableFilters.js&lt;/JavaScript&gt;
+            &lt;JavaScript&gt;Core.Agent.Dashboard.js&lt;/JavaScript&gt;
+        &lt;/Loader&gt;
+    &lt;/FrontendModuleReg&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-navbarmodule"></a>FrontendModuleReg (NavBarModule)</h5></div></div></div><p>
+                    Modul regisztráció az adminisztrátori felülethez:
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting&gt;
+    &lt;FrontendModuleReg&gt;
+        &lt;Group&gt;admin&lt;/Group&gt;
+        &lt;Description&gt;Admin&lt;/Description&gt;
+        &lt;Title Translatable="1"&gt;Ügyfelek &amp;lt;-&amp;gt; Csoportok&lt;/Title&gt;
+        &lt;NavBarName&gt;Admin&lt;/NavBarName&gt;
+        &lt;NavBarModule&gt;
+            &lt;Module&gt;Kernel::Output::HTML::NavBarModuleAdmin&lt;/Module&gt;
+            &lt;Name Translatable="1"&gt;Ügyfél-felhasználó &amp;lt;-&amp;gt; Csoportok&lt;/Name&gt;
+            &lt;Description Translatable="1"&gt;Ügyfél-felhasználó hozzákapcsolása csoportokhoz.&lt;/Description&gt;
+            &lt;Block&gt;Customer&lt;/Block&gt;
+            &lt;Prio&gt;400&lt;/Prio&gt;
+        &lt;/NavBarModule&gt;
+    &lt;/FrontendModuleReg&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="accessing-config-options"></a>Hozzáférés a beállítási lehetőségekhez futási időben</h3></div></div></div><p>
+            Olvashatja és írhatja (egy kérésnél) a beállítási lehetőségeket a
+<code class="literal">Kernel::Config</code> alapmodulon keresztül.
+        </p><p>
+            Ha egy beállítási lehetőséget szeretne olvasni:
+        </p><p>
+            </p><pre class="programlisting">
+my $ConfigOption = $Kernel::OM-&gt;Get('Kernel::Config')-&gt;Get('Prefix::Option');
+            </pre><p>
+        </p><p>
+            Ha meg szeretne változtatni egy beállítási lehetőséget futási időben, és
+csak ennél az egy kérésnél/folyamatnál:
+        </p><p>
+            </p><pre class="programlisting">
+$Kernel::OM-&gt;Get('Kernel::Config')-&gt;Set(
+    Key =&gt; 'Prefix::Option'
+    Value =&gt; 'Valami új érték',
+);
+            </pre><p>
+        </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="architecture-overview.html">Vissza</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch02s02.html">Előre</a></td></tr><tr><td width="40%" align="left" valign="top">Szerkezeti áttekintés </td><td width="20%" align="center"><a accesskey="h" href="index.html">Főoldal</a></td><td width="40%" align="right" valign="top"> Adatbázis mechanizmus</td></tr></table></div></body></html>

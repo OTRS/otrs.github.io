@@ -1,0 +1,237 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>3. fejezet - Hogyan bővíthető az OTRS</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 5 - Fejlesztői kézikönyv"><link rel="up" href="index.html" title="OTRS 5 - Fejlesztői kézikönyv"><link rel="prev" href="localization-translation-mechanism.html" title="Honosítási és fordítási mechanizmus"><link rel="next" href="otrs-module-layers.html" title="Az OTRS modulrétegek erejének használata"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3. fejezet - Hogyan bővíthető az OTRS</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="localization-translation-mechanism.html">Vissza</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="otrs-module-layers.html">Előre</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="how-to-extend-otrs"></a>3. fejezet - Hogyan bővíthető az OTRS</h1></div></div></div><div class="toc"><p><b>Tartalom</b></p><dl class="toc"><dt><span class="section"><a href="how-to-extend-otrs.html#writing-new-otrs-frontend-module">Egy új OTRS előtétprogram modul írása</a></span></dt><dd><dl><dt><span class="section"><a href="how-to-extend-otrs.html#what-we-want-to-write">Mit szeretnénk írni</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#default-config-file">Alapértelmezett beállítófájl</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#writing-frontend-module">Előtétprogram modul</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#writing-core-module">Alapmodul</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#template-file">Sablonfájl</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#language-file">Nyelvi fájl</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#summary">Összefoglaló</a></span></dt></dl></dd><dt><span class="section"><a href="otrs-module-layers.html">Az OTRS modulrétegek erejének használata</a></span></dt><dd><dl><dt><span class="section"><a href="otrs-module-layers.html#authentication-user-management-modules">Hitelesítés és felhasználókezelés</a></span></dt><dd><dl><dt><span class="section"><a href="otrs-module-layers.html#agent-auth-module">Ügyintézői hitelesítő modul</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#auth-sync-module">Hitelesítés szinkronizációs modul</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#customer-auth-module">Ügyfél hitelesítő modul</a></span></dt></dl></dd><dt><span class="section"><a href="otrs-module-layers.html#preferences-modules">Beállítások</a></span></dt><dd><dl><dt><span class="section"><a href="otrs-module-layers.html#customer-user-preferences-module">Ügyfél-felhasználó beállítások modul</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#queue-preferences-module">Várólista beállítások modul</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#service-preferences-module">Szolgáltatás beállítások modul</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#sla-preferences-module">SLA beállítások modul</a></span></dt></dl></dd><dt><span class="section"><a href="otrs-module-layers.html#core-modules">Egyéb alapfüggvények</a></span></dt><dd><dl><dt><span class="section"><a href="otrs-module-layers.html#log-module">Naplózás modul</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#outputfilter">Kimenetszűrő</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#module-stats">Statisztikák modul</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#ticketnumber-generator">Jegyszám előállító modulok</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#ticketevent">Jegyesemény modul</a></span></dt></dl></dd><dt><span class="section"><a href="otrs-module-layers.html#frontend-modules">Előtétprogram modulok</a></span></dt><dd><dl><dt><span class="section"><a href="otrs-module-layers.html#module-dashboard">Vezérlőpult modul</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#notify-module">Értesítési modul</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#ticket-menu-module">Jegymenü modul</a></span></dt></dl></dd><dt><span class="section"><a href="otrs-module-layers.html#genericinterface-modules">Általános felület modulok</a></span></dt><dd><dl><dt><span class="section"><a href="otrs-module-layers.html#transport">Hálózati átvitel</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#mapping">Leképezés</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#invoker">Meghívó</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#operation">Művelet</a></span></dt></dl></dd><dt><span class="section"><a href="otrs-module-layers.html#daemon-scheduler-modules">Démon és ütemező</a></span></dt><dd><dl><dt><span class="section"><a href="otrs-module-layers.html#daemon-overview">OTRS démon</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#scheduler-overview">OTRS ütemező</a></span></dt></dl></dd><dt><span class="section"><a href="otrs-module-layers.html#dynamicfields-modules">Dinamikus mezők</a></span></dt><dd><dl><dt><span class="section"><a href="otrs-module-layers.html#dynamic-fields-overview">Áttekintés</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#dynamic-fields-framework">Dinamikus mezők keretrendszer</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#dynamic-fields-interaction">Dinamikus mező kölcsönhatása az előtétprogram modulokkal</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#dynamic-fields-extend-options">Hogyan lehet kiterjeszteni a dinamikus mezőket</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#dynamic-fields-new-field">Egy új dinamikus mező létrehozása</a></span></dt><dt><span class="section"><a href="otrs-module-layers.html#dynamic-fields-extend">Egy dinamikus mező funkcionalitás kiterjesztés létrehozása</a></span></dt></dl></dd><dt><span class="section"><a href="otrs-module-layers.html#email-handling-modules">E-mail kezelés</a></span></dt><dd><dl><dt><span class="section"><a href="otrs-module-layers.html#ticket-postmaster-module">Jegy levelezési modul</a></span></dt></dl></dd></dl></dd></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="writing-new-otrs-frontend-module"></a>Egy új OTRS előtétprogram modul írása</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="how-to-extend-otrs.html#what-we-want-to-write">Mit szeretnénk írni</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#default-config-file">Alapértelmezett beállítófájl</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#writing-frontend-module">Előtétprogram modul</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#writing-core-module">Alapmodul</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#template-file">Sablonfájl</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#language-file">Nyelvi fájl</a></span></dt><dt><span class="section"><a href="how-to-extend-otrs.html#summary">Összefoglaló</a></span></dt></dl></div><p>
+        Ebben a fejezetben egy új OTRS modul írása van szemléltetve egy egyszerű kis
+program alapján. A szükséges előkövetelmény egy olyan OTRS fejlesztői
+környezet, amely a hasonló nevű fejezetben van megadva.
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="what-we-want-to-write"></a>Mit szeretnénk írni</h3></div></div></div><p>
+            Szeretnénk írni egy olyan kis OTRS modult, amely a „Hello World” szöveget
+jeleníti meg, amikor előhívják. Mindenek előtt fel kell építenünk a
+<code class="filename">/Hello World</code> könyvtárat a modulhoz a fejlesztői
+könyvtárban. Ebben a könyvtárban létrehozható az OTRS-ben meglévő összes
+könyvtár. Minden modulnak legalább a következő könyvtárakat kell
+tartalmaznia:
+        </p><p>
+            </p><pre class="screen">
+Kernel
+Kernel/System
+Kernel/Modules
+Kernel/Output/HTML/Templates/Standard
+Kernel/Config
+Kernel/Config/Files
+Kernel/Language
+            </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="default-config-file"></a>Alapértelmezett beállítófájl</h3></div></div></div><p>
+            Egy modulregisztráció létrehozása megkönnyíti az új modul megjelenítését az
+OTRS-ben. Ezért létrehozunk egy
+<code class="filename">/Kernel/Config/Files/HelloWorld.xml</code> fájlt. Ebben a
+fájlban létrehozunk egy új beállítási elemet. A különféle beállítások hatása
+a „Beállítási mechanizmus” fejezetben van leírva.
+        </p><p>
+            </p><pre class="programlisting">
+&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;otrs_config version="1.0" init="Application"&gt;
+        &lt;ConfigItem Name="Frontend::Module###AgentHelloWorld" Required="1" Valid="1"&gt;
+        &lt;Description Translatable="1"&gt;FrontendModuleRegistration for HelloWorld module.&lt;/Description&gt;
+        &lt;Group&gt;HelloWorld&lt;/Group&gt;
+        &lt;SubGroup&gt;Frontend::Agent::ModuleRegistration&lt;/SubGroup&gt;
+        &lt;Setting&gt;
+            &lt;FrontendModuleReg&gt;
+                &lt;Title&gt;HelloWorld&lt;/Title&gt;
+                &lt;Group&gt;users&lt;/Group&gt;
+                &lt;Description&gt;HelloWorld&lt;/Description&gt;
+                &lt;NavBarName&gt;HelloWorld&lt;/NavBarName&gt;
+                &lt;NavBar&gt;
+                    &lt;Description&gt;HelloWorld&lt;/Description&gt;
+                    &lt;Name&gt;HelloWorld&lt;/Name&gt;
+                    &lt;Link&gt;Action=AgentHelloWorld&lt;/Link&gt;
+                    &lt;NavBar&gt;HelloWorld&lt;/NavBar&gt;
+                    &lt;Type&gt;Menu&lt;/Type&gt;
+                    &lt;Prio&gt;8400&lt;/Prio&gt;
+                    &lt;Block&gt;ItemArea&lt;/Block&gt;
+                &lt;/NavBar&gt;
+            &lt;/FrontendModuleReg&gt;
+        &lt;/Setting&gt;
+    &lt;/ConfigItem&gt;
+&lt;/otrs_config&gt;
+            </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="writing-frontend-module"></a>Előtétprogram modul</h3></div></div></div><p>
+            A hivatkozások létrehozása és a rendszerbeállítások végrehajtása után
+megjelenik egy új modul „HelloWorld” néven. Előhívásakor egy hibaüzenet
+jelenik meg, mivel az OTRS még nem találja a hozzá tartozó előtétprogram
+modult. Ez a következő dolog, amit létre kell hozni. Ehhez hozzuk létre az
+alábbi fájlt:
+        </p><p>
+            </p><pre class="programlisting">
+# --
+# Kernel/Modules/AgentHelloWorld.pm - frontend module
+# Copyright (C) (year) (name of author) (email of author)
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
+# --
+
+package Kernel::Modules::AgentHelloWorld;
+
+use strict;
+use warnings;
+
+# Frontend modules are not handled by the ObjectManager.
+our $ObjectManagerDisabled = 1;
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {%Param};
+    bless ($Self, $Type);
+
+    return $Self;
+}
+
+sub Run {
+    my ( $Self, %Param ) = @_;
+    my %Data = ();
+
+    my $HelloWorldObject = $Kernel::OM-&gt;Get('Kernel::System::HelloWorld');
+    my $LayoutObject     = $Kernel::OM-&gt;Get('Kernel::Output::HTML::Layout');
+
+    $Data{HelloWorldText} = $HelloWorldObject-&gt;GetHelloWorldText();
+
+    # build output
+    my $Output = $LayoutObject-&gt;Header(Title =&gt; "HelloWorld");
+    $Output   .= $LayoutObject-&gt;NavigationBar();
+    $Output   .= $LayoutObject-&gt;Output(
+        Data         =&gt; \%Data,
+        TemplateFile =&gt; 'AgentHelloWorld',
+    );
+    $Output   .= $LayoutObject-&gt;Footer();
+
+    return $Output;
+}
+
+1;
+            </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="writing-core-module"></a>Alapmodul</h3></div></div></div><p>
+            Ezután hozzunk létre egy fájlt a
+<code class="filename">/HelloWorld/Kernel/System/HelloWorld.pm</code> alapmodulhoz az
+alábbi tartalommal:
+        </p><p>
+            </p><pre class="programlisting">
+# --
+# Kernel/System/HelloWorld.pm - core module
+# Copyright (C) (year) (name of author) (email of author)
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
+# --
+
+package Kernel::System::HelloWorld;
+
+use strict;
+use warnings;
+
+# list your object dependencies (e.g. Kernel::System::DB) here
+our @ObjectDependencies = (
+    # 'Kernel::System::DB',
+);
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless ($Self, $Type);
+
+    return $Self;
+}
+
+sub GetHelloWorldText {
+    my ( $Self, %Param ) = @_;
+
+    # Get the DBObject from the central object manager
+    # my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
+
+    return 'Hello World!';
+}
+
+1;
+            </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="template-file"></a>Sablonfájl</h3></div></div></div><p>
+            Az utolsó hiányzó dolog, mielőtt az új modul futtatható lenne, a hozzá
+tartozó HTML sablon. Ezért hozzuk létre az alábbi fájlt:
+        </p><p>
+            </p><pre class="programlisting">
+# --
+# Kernel/Output/HTML/Templates/Standard/AgentHelloWorld.tt - overview
+# Copyright (C) (year) (name of author) (email of author)
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
+# --
+&lt;h1&gt;[% Translate("Overview") | html %]: [% Translate("HelloWorld") %]&lt;/h1&gt;
+&lt;p&gt;
+    [% Data.HelloWorldText | Translate() | html %]
+&lt;/p&gt;
+            </pre><p>
+        </p><p>
+A modul most már működik, és a meghívásakor megjeleníti a „Hello World”
+szöveget.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="language-file"></a>Nyelvi fájl</h3></div></div></div><p>
+            Ha a „Hello World!” szöveget le kell fordítani például magyarra, akkor
+létrehozhat egy fordítási fájlt ehhez a nyelvhez a
+<code class="filename">HelloWorld/Kernel/Language/hu_AgentHelloWorld.pm</code>
+helyre. Példa:
+        </p><p>
+            </p><pre class="programlisting">
+package Kernel::Language::hu_AgentHelloWorld;
+
+use strict;
+use warnings;
+
+sub Data {
+    my $Self = shift;
+
+    $Self-&gt;{Translation}-&gt;{'Hello World!'} = 'Helló, Világ!';
+
+    return 1;
+}
+1;
+            </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="summary"></a>Összefoglaló</h3></div></div></div><p>
+            A fent megadott példa azt mutatja be, hogy nem túl bonyolult egy új modult
+írni az OTRS-hez. Fontos azonban meggyőződni arról, hogy a modul és a
+fájlnév egyedi legyen, és ennélfogva ne ütközzenek a keretrendszerrel vagy
+egyéb kiterjesztő modulokkal. Amikor egy modul elkészült, akkor egy OPM
+csomagot kell előállítani belőle (lásd a <a class="link" href="package-building.html" title="Csomagkészítés">csomagkészítés</a> fejezetet).
+        </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="localization-translation-mechanism.html">Vissza</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="otrs-module-layers.html">Előre</a></td></tr><tr><td width="40%" align="left" valign="top">Honosítási és fordítási mechanizmus </td><td width="20%" align="center"><a accesskey="h" href="index.html">Főoldal</a></td><td width="40%" align="right" valign="top"> Az OTRS modulrétegek erejének használata</td></tr></table></div></body></html>

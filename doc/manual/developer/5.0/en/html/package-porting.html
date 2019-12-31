@@ -1,0 +1,553 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Package Porting</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 5 - Developer Manual"><link rel="up" href="how-to-publish-extensions.html" title="Chapter 4. How to Publish Your OTRS Extensions"><link rel="prev" href="package-building.html" title="Package Building"><link rel="next" href="contributing.html" title="Chapter 5. Contributing to OTRS"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Package Porting</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="package-building.html">Prev</a> </td><th width="60%" align="center">Chapter 4. How to Publish Your OTRS Extensions</th><td width="20%" align="right"> <a accesskey="n" href="contributing.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="package-porting"></a>Package Porting</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="package-porting.html#package-porting-4-to-5">From OTRS 4 to 5</a></span></dt><dd><dl><dt><span class="section"><a href="package-porting.html#id-1.5.4.3.3"><code class="filename">Kernel/Output/HTML</code> restructured</a></span></dt><dt><span class="section"><a href="package-porting.html#id-1.5.4.3.4">Pre-Output-Filters</a></span></dt><dt><span class="section"><a href="package-porting.html#id-1.5.4.3.5">IE 8 and IE 9</a></span></dt><dt><span class="section"><a href="package-porting.html#id-1.5.4.3.6">GenericInterface API change in "Ticket" connector</a></span></dt><dt><span class="section"><a href="package-porting.html#id-1.5.4.3.7">Preview functions in dynamic statistics</a></span></dt><dt><span class="section"><a href="package-porting.html#id-1.5.4.3.8">HTML print discarded</a></span></dt><dt><span class="section"><a href="package-porting.html#id-1.5.4.3.9">Translation string extraction improved</a></span></dt></dl></dd><dt><span class="section"><a href="package-porting.html#package-porting-33-to-4">From OTRS 3.3 to 4</a></span></dt><dd><dl><dt><span class="section"><a href="package-porting.html#package-porting-33-to-4-objectmanager">New Object Handling</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-33-to-4-cache"><code class="literal">CacheInternalObject</code> removed</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-33-to-4-scheduler-location">Scheduler backend files moved</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-33-to-4-sopm-code-tags">Update code sections in SOPM files</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-33-to-4-template-engine">New Template Engine</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-33-to-4-fontawesome">New FontAwesome version</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-33-to-4-unit-tests">Unit Tests</a></span></dt><dt><span class="section"><a href="package-porting.html#package-porting-33-to-4-custom-ticket-history-types">Custom Ticket History types</a></span></dt></dl></dd></dl></div><p>
+With every new minor or major version of OTRS, you need to port your package(s) and make sure they
+still work with the OTRS API.
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="package-porting-4-to-5"></a>From OTRS 4 to 5</h3></div></div></div><p>
+            This section lists changes that you need to examine when porting your package from
+            OTRS 4 to 5.
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.3"></a><code class="filename">Kernel/Output/HTML</code> restructured</h4></div></div></div><p>
+                In OTRS 5, <code class="filename">Kernel/Output/HTML</code> was restructured. All Perl modules (except <code class="filename">Layout.pm</code>) were moved to subdirectories (one for every module layer). Template (theme) files were also moved from <code class="filename">Kernel/Output/HTML/Standard</code> to <code class="filename">Kernel/Output/HTML/Templates/Standard</code>. Please perform this migration also in your code.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.4"></a>Pre-Output-Filters</h4></div></div></div><p>
+                With OTRS 5 there is no support for <code class="literal">pre</code> output filters any more. These filters changed the template content before it was parsed, and that could potentially lead to bad performance issues because the templates could not be cached any more and had to be parsed and compiled every time.
+            </p><p>
+                Just switch from <code class="literal">pre</code> to <code class="literal">post</code> output filters. To translate content, you can run <code class="code">$LayoutObject-&gt;Translate()</code> directly. If you need other template features, just define a small template file for your output filter and use it to render your content before injecting it into the main data. It can also be helpful to use jQuery DOM operations to reorder/replace content on the screen in some cases instead of using regular expressions. In this case you would inject the new code somewhere in the page as invisible content (e. g. with the class <code class="literal">Hidden</code>), and then move it with jQuery to the correct location in the DOM and show it.
+            </p><p>
+                To make using post output filters easier, there is also a new mechanism to request HTML comment hooks for certain templates/blocks. You can add in your module config XML like:
+            </p><p>
+                </p><pre class="programlisting">
+&lt;ConfigItem
+Name="Frontend::Template::GenerateBlockHooks###100-OTRSBusiness-ContactWithData"
+Required="1" Valid="1"&gt;
+    &lt;Description Translatable="1"&gt;Generate HTML comment hooks for
+the specified blocks so that filters can use them.&lt;/Description&gt;
+    &lt;Group&gt;OTRSBusiness&lt;/Group&gt;
+    &lt;SubGroup&gt;Core&lt;/SubGroup&gt;
+    &lt;Setting&gt;
+        &lt;Hash&gt;
+            &lt;Item Key="AgentTicketZoom"&gt;
+                &lt;Array&gt;
+                    &lt;Item&gt;CustomerTable&lt;/Item&gt;
+                &lt;/Array&gt;
+            &lt;/Item&gt;
+        &lt;/Hash&gt;
+    &lt;/Setting&gt;
+&lt;/ConfigItem&gt;
+                </pre><p>
+            </p><p>
+                This will cause the block <code class="literal">CustomerTable</code> in <code class="filename">AgentTicketZoom.tt</code> to be
+                wrapped in HTML comments each time it is rendered:
+            </p><p>
+                </p><pre class="programlisting">
+&lt;!--HookStartCustomerTable--&gt;
+... block output ...
+&lt;!--HookEndCustomerTable--&gt;
+                </pre><p>
+            </p><p>
+                With this mechanism every package can request just the block hooks it
+                needs, and they are consistently rendered. These HTML comments can then be used in your
+                output filter for easy regular expression matching.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.5"></a>IE 8 and IE 9</h4></div></div></div><p>
+                Support for IE 8 and 9 <a class="ulink" href="https://github.com/OTRS/otrs/commit/3b1aff21984d7b32f626df95e072337245615b36" target="_top">was dropped</a>. You can remove any workarounds in your code for these platforms, as well as any old <code class="literal">&lt;CSS_IE7&gt;</code> or <code class="literal">&lt;CSS_IE8&gt;</code> loader tags that might still lurk in your XML config files.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.6"></a>GenericInterface API change in "Ticket" connector</h4></div></div></div><p>
+                The operation <code class="code">TicketGet()</code> returns dynamic field data from ticket and
+                articles differently than in OTRS 4. Now they are cleanly  separated from the rest
+                of the static ticket and article fields - they are now grouped in a list called
+                <code class="literal">DynamicField</code>. Please adapt any applications using this operation
+                accordingly.
+            </p><p>
+                </p><pre class="programlisting">
+# changed from:
+
+Ticket =&gt; [
+    {
+        TicketNumber       =&gt; '20101027000001',
+        Title              =&gt; 'some title',
+        ...
+        DynamicField_X     =&gt; 'value_x',
+    },
+]
+
+# to:
+
+Ticket =&gt; [
+    {
+        TicketNumber       =&gt; '20101027000001',
+        Title              =&gt; 'some title',
+        ...
+        DynamicField =&gt; [
+            {
+                Name  =&gt; 'some name',
+                Value =&gt; 'some value',
+            },
+        ],
+    },
+]
+                </pre><p>
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.7"></a>Preview functions in dynamic statistics</h4></div></div></div><p>
+                The new statistics GUI provides a preview for the current configuration. This must be implemented
+                in the statistic modules and usually returns fake / random data for speed reasons. So for any
+                dynamic (matrix) statistic that provides the method <code class="code">GetStatElement()</code> you should also add a method
+                <code class="code">GetStatElementPreview()</code>, and for every dynamic (table) statistic that provides
+                <code class="code">GetStatTable()</code> you should accordingly add <code class="code">GetStatTablePreview()</code>. Otherwise
+                the preview in the new statistics GUI will not work for your statistics. You can find example
+                implementations in the default OTRS statistics.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.8"></a>HTML print discarded</h4></div></div></div><p>
+                Until OTRS 5, the Perl module <code class="literal">PDF::API2</code> was not present on all systems. Therefore
+                a fallback HTML print mode existed. With OTRS 5, the module is now bundled and HTML print was dropped.
+                <code class="code">$LayoutObject-&gt;PrintHeader()</code> and <code class="code">PrintFooter()</code> are not available any more.
+                Please remove the HTML print fallback from your code and change it to generate PDF if necessary.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.5.4.3.9"></a>Translation string extraction improved</h4></div></div></div><p>
+                Until OTRS 5, translatable strings could not be extracted from Perl code and Database XML definitions.
+                This is now possible and makes dummy templates like <code class="filename">AAA*.tt</code> obsolete.
+                Please see <a class="link" href="localization-translation-mechanism.html" title="Localization / Translation Mechanism">this section</a> for details.
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="package-porting-33-to-4"></a>From OTRS 3.3 to 4</h3></div></div></div><p>
+            This section lists changes that you need to examine when porting your package from
+            OTRS 3.3 to 4.
+        </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-objectmanager"></a>New Object Handling</h4></div></div></div><p>
+                Up to OTRS 4, objects used to be created both centrally and also locally and
+                then handed down to all objects by passing them to the constructors.
+                With OTRS 4 and later versions, there is now an <code class="literal">ObjectManager</code>
+                that centralizes singleton object creation and access.
+            </p><p>
+                This will require you first of all to change all top level Perl scripts (.pl files only!)
+                to load and provide the <code class="literal">ObjectManager</code> to all OTRS objects.
+                Let's look at <code class="filename">otrs.CheckDB.pl</code> from OTRS 3.3 as an example:
+            </p><p>
+                </p><pre class="programlisting">
+use strict;
+use warnings;
+
+use File::Basename;
+use FindBin qw($RealBin);
+use lib dirname($RealBin);
+use lib dirname($RealBin) . '/Kernel/cpan-lib';
+use lib dirname($RealBin) . '/Custom';
+
+use Kernel::Config;
+use Kernel::System::Encode;
+use Kernel::System::Log;
+use Kernel::System::Main;
+use Kernel::System::DB;
+
+# create common objects
+my %CommonObject = ();
+$CommonObject{ConfigObject} = Kernel::Config-&gt;new();
+$CommonObject{EncodeObject} = Kernel::System::Encode-&gt;new(%CommonObject);
+$CommonObject{LogObject}    = Kernel::System::Log-&gt;new(
+    LogPrefix    =&gt; 'OTRS-otrs.CheckDB.pl',
+    ConfigObject =&gt; $CommonObject{ConfigObject},
+);
+$CommonObject{MainObject} = Kernel::System::Main-&gt;new(%CommonObject);
+$CommonObject{DBObject}   = Kernel::System::DB-&gt;new(%CommonObject);
+                </pre><p>
+            </p><p>
+                We can see that a lot of code is used to load the packages and create the common
+                objects that must be passed to OTRS objects to be used in the script. With OTRS 4,
+                this looks quite different:
+            </p><p>
+                </p><pre class="programlisting">
+use strict;
+use warnings;
+
+use File::Basename;
+use FindBin qw($RealBin);
+use lib dirname($RealBin);
+use lib dirname($RealBin) . '/Kernel/cpan-lib';
+use lib dirname($RealBin) . '/Custom';
+
+use Kernel::System::ObjectManager;
+
+# create common objects
+local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+    'Kernel::System::Log' =&gt; {
+        LogPrefix =&gt; 'OTRS-otrs.CheckDB.pl',
+    },
+);
+
+# get database object
+my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
+                </pre><p>
+            </p><p>
+                The new code is a bit shorter than the old. It is no longer necessary to load all the
+                packages, just the <code class="literal">ObjectManager</code>. Subsequently <code class="literal">$Kernel::OM-&gt;Get('My::Perl::Package')</code>
+                can be used to get instances of objects which only have to be created once. The <code class="literal">LogPrefix</code> setting
+                controls the log messages that <code class="literal">Kernel::System::Log</code> writes, it could also be omitted.
+            </p><p>
+                From this example you can also deduce the general porting guide when it comes to accessing
+                objects: don't store them in <code class="literal">$Self</code> any more (unless needed for specific reasons). Just fetch and use
+                the objects on demand like <code class="code">$Kernel::OM-&gt;Get('Kernel::System::Log')-&gt;Log(...)</code>. This also has
+                the benefit that the <code class="literal">Log</code> object will only be created if something must be logged.
+                Sometimes it could also be useful to create local variables if an object is used many times in a function,
+                like <code class="literal">$DBObject</code> in the example above.
+            </p><p>
+                There's not much more to know when porting packages that should be loadable by the <code class="literal">ObjectManager</code>.
+                They should declare the modules they use (via <code class="code">$Kernel::OM-&gt;Get()</code>) like this:
+            </p><p>
+                </p><pre class="programlisting">
+our @ObjectDependencies = (
+    'Kernel::Config',
+    'Kernel::System::Log',
+    'Kernel::System::Main',
+);
+                </pre><p>
+            </p><p>
+                The <code class="literal">@ObjectDependencies</code> declaration is needed for the
+                <code class="literal">ObjectManager</code> to keep the correct order when destroying the objects.
+            </p><p>
+                Let's look at <code class="filename">Valid.pm</code> from OTRS 3.3 and 4 to see the difference. Old:
+            </p><p>
+                </p><pre class="programlisting">
+package Kernel::System::Valid;
+
+use strict;
+use warnings;
+
+use Kernel::System::CacheInternal;
+
+...
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    # check needed objects
+    for my $Object (qw(DBObject ConfigObject LogObject EncodeObject MainObject)) {
+        $Self-&gt;{$Object} = $Param{$Object} || die "Got no $Object!";
+    }
+
+    $Self-&gt;{CacheInternalObject} = Kernel::System::CacheInternal-&gt;new(
+        %{$Self},
+        Type =&gt; 'Valid',
+        TTL  =&gt; 60 * 60 * 24 * 20,
+    );
+
+    return $Self;
+}
+
+...
+
+sub ValidList {
+    my ( $Self, %Param ) = @_;
+
+    # read cache
+    my $CacheKey = 'ValidList';
+    my $Cache = $Self-&gt;{CacheInternalObject}-&gt;Get( Key =&gt; $CacheKey );
+    return %{$Cache} if $Cache;
+
+    # get list from database
+    return if !$Self-&gt;{DBObject}-&gt;Prepare( SQL =&gt; 'SELECT id, name FROM valid' );
+
+    # fetch the result
+    my %Data;
+    while ( my @Row = $Self-&gt;{DBObject}-&gt;FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[1];
+    }
+
+    # set cache
+    $Self-&gt;{CacheInternalObject}-&gt;Set( Key =&gt; $CacheKey, Value =&gt; \%Data );
+
+    return %Data;
+}
+                </pre><p>
+            </p><p>
+                New:
+            </p><p>
+                </p><pre class="programlisting">
+package Kernel::System::Valid;
+
+use strict;
+use warnings;
+
+our @ObjectDependencies = (
+    'Kernel::System::Cache',
+    'Kernel::System::DB',
+    'Kernel::System::Log',
+);
+
+...
+
+sub new {
+    my ( $Type, %Param ) = @_;
+
+    # allocate new hash for object
+    my $Self = {};
+    bless( $Self, $Type );
+
+    $Self-&gt;{CacheType} = 'Valid';
+    $Self-&gt;{CacheTTL}  = 60 * 60 * 24 * 20;
+
+    return $Self;
+}
+
+...
+
+sub ValidList {
+    my ( $Self, %Param ) = @_;
+
+    # read cache
+    my $CacheKey = 'ValidList';
+    my $Cache    = $Kernel::OM-&gt;Get('Kernel::System::Cache')-&gt;Get(
+        Type =&gt; $Self-&gt;{CacheType},
+        Key  =&gt; $CacheKey,
+    );
+    return %{$Cache} if $Cache;
+
+    # get database object
+    my $DBObject = $Kernel::OM-&gt;Get('Kernel::System::DB');
+
+    # get list from database
+    return if !$DBObject-&gt;Prepare( SQL =&gt; 'SELECT id, name FROM valid' );
+
+    # fetch the result
+    my %Data;
+    while ( my @Row = $DBObject-&gt;FetchrowArray() ) {
+        $Data{ $Row[0] } = $Row[1];
+    }
+
+    # set cache
+    $Kernel::OM-&gt;Get('Kernel::System::Cache')-&gt;Set(
+        Type  =&gt; $Self-&gt;{CacheType},
+        TTL   =&gt; $Self-&gt;{CacheTTL},
+        Key   =&gt; $CacheKey,
+        Value =&gt; \%Data
+    );
+
+    return %Data;
+}
+                </pre><p>
+            </p><p>
+                You can see that the dependencies are declared and the objects are only fetched on demand.
+                We'll talk about the <code class="literal">CacheInternalObject</code> in the next section.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-cache"></a><code class="literal">CacheInternalObject</code> removed</h4></div></div></div><p>
+                Since <code class="literal">Kernel::System::Cache</code> is now also able to cache in-memory,
+                <code class="literal">Kernel::System::CacheInternal</code> was dropped. Please see the previous example
+                for how to migrate your code: you need to use the global <code class="literal">Cache</code> object and pass the <code class="literal">Type</code>
+                settings with every call to <code class="code">Get()</code>, <code class="code">Set()</code>, <code class="code">Delete()</code> and <code class="code">CleanUp()</code>. The <code class="literal">TTL</code> parameter is now optional and defaults to 20 days, so you only have to specify it in <code class="code">Get()</code> if you require a different <code class="literal">TTL</code> value.
+            </p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Warning</h3><p>
+                    It is especially important to add the <code class="literal">Type</code> to <code class="code">CleanUp()</code> as otherwise not just the current cache type but the entire cache would be deleted.
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-scheduler-location"></a>Scheduler backend files moved</h4></div></div></div><p>
+                The backend files of the scheduler moved from <code class="filename">Kernel/Scheduler</code> to
+                <code class="filename">Kernel/System/Scheduler</code>. If you have any custom Task Handler modules,
+                you need to move them also.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-sopm-code-tags"></a>Update <a class="link" href="package-building.html#package-code-install" title="&lt;CodeInstall&gt;">code sections</a> in SOPM files</h4></div></div></div><p>
+                Code tags in SOPM files have to be updated. Please do not use <code class="literal">$Self</code> any more.
+                In the past this was used to get access to OTRS objects like the <code class="literal">MainObject</code>.
+                Please use the <code class="literal">ObjectManager</code> now. Here is an example for the old style:
+            </p><p>
+                </p><pre class="programlisting">
+&lt;CodeInstall Type="post"&gt;
+
+# define function name
+my $FunctionName = 'CodeInstall';
+
+# create the package name
+my $CodeModule = 'var::packagesetup::' . $Param{Structure}-&gt;{Name}-&gt;{Content};
+
+# load the module
+if ( $Self-&gt;{MainObject}-&gt;Require($CodeModule) ) {
+
+    # create new instance
+    my $CodeObject = $CodeModule-&gt;new( %{$Self} );
+
+    if ($CodeObject) {
+
+        # start method
+        if ( !$CodeObject-&gt;$FunctionName(%{$Self}) ) {
+            $Self-&gt;{LogObject}-&gt;Log(
+                Priority =&gt; 'error',
+                Message  =&gt; "Could not call method $FunctionName() on $CodeModule.pm."
+            );
+        }
+    }
+
+    # error handling
+    else {
+        $Self-&gt;{LogObject}-&gt;Log(
+            Priority =&gt; 'error',
+            Message  =&gt; "Could not call method new() on $CodeModule.pm."
+        );
+    }
+}
+
+&lt;/CodeInstall&gt;
+                </pre><p>
+            </p><p>
+                Now this should be replaced by:
+            </p><p>
+                </p><pre class="programlisting">
+&lt;CodeInstall Type="post"&gt;&lt;![CDATA[
+$Kernel::OM-&gt;Get('var::packagesetup::MyPackage')-&gt;CodeInstall();
+]]&gt;&lt;/CodeInstall&gt;
+                </pre><p>
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-template-engine"></a>New Template Engine</h4></div></div></div><p>
+                With OTRS 4, the DTL template engine was replaced by Template::Toolkit.
+                Please refer to the <a class="link" href="TemplatingMechanism.html" title="Templating Mechanism">Templating section</a>
+                for details on how the new template syntax looks like.
+            </p><p>
+                These are the changes that you need to apply when converting existing DTL templates
+                to the new Template::Toolkit syntax:
+            </p><div class="table"><a name="id-1.5.4.4.7.4"></a><p class="title"><b>Table 4.1. Template Changes from OTRS 3.3 to 4</b></p><div class="table-contents"><table><thead><tr>
+                         <td>DTL Tag</td>
+                         <td>Template::Toolkit tag</td>
+                     </tr></thead><tbody><tr>
+                        <td><code class="literal">$Data{"Name"}</code></td>
+                        <td><code class="literal">[% Data.Name %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Data{"Complex-Name"}</code></td>
+                        <td><code class="literal">[% Data.item("Complex-Name") %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$QData{"Name"}</code></td>
+                        <td><code class="literal">[% Data.Name | html %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$QData{"Name", "$Length"}</code></td>
+                        <td><code class="literal">[% Data.Name | truncate($Length) | html %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$LQData{"Name"}</code></td>
+                        <td><code class="literal">[% Data.Name | uri %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Quote{"Text", "$Length"}</code></td>
+                        <td>cannot be replaced directly, see examples below</td></tr><tr>
+                        <td><code class="literal">$Quote{"$Config{"Name"}"}</code></td>
+                        <td><code class="literal">[% Config("Name") | html %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Quote{"$Data{"Name"}", "$Length"}</code></td>
+                        <td><code class="literal">[% Data.Name | truncate($Length) | html  %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Quote{"$Data{"Content"}","$QData{"MaxLength"}"}</code></td>
+                        <td><code class="literal">[% Data.Name | truncate(Data.MaxLength) | html  %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Quote{"$Text{"$Data{"Content"}"}","$QData{"MaxLength"}"}</code></td>
+                        <td><code class="literal">[% Data.Content  | Translate | truncate(Data.MaxLength) | html  %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Config{"Name"}</code></td>
+                        <td><code class="literal">[% Config("Name") %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Env{"Name"}</code></td>
+                        <td><code class="literal">[% Env("Name") %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$QEnv{"Name"}</code></td>
+                        <td><code class="literal">[% Env("Name") | html %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Text{"Text with %s placeholders", "String"}</code></td>
+                        <td><code class="literal">[% Translate("Text with %s placeholders", "String") | html %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Text{"Text with dynamic %s placeholders", "$QData{Name}"}</code></td>
+                        <td><code class="literal">[% Translate("Text with dynamic %s placeholders", Data.Name) | html %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">'$JSText{"Text with dynamic %s placeholders", "$QData{Name}"}'</code></td>
+                        <td><code class="literal">[% Translate("Text with dynamic %s placeholders", Data.Name) | JSON %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">"$JSText{"Text with dynamic %s placeholders", "$QData{Name}"}"</code></td>
+                        <td><code class="literal">[% Translate("Text with dynamic %s placeholders", Data.Name) | JSON %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$TimeLong{"$Data{"CreateTime"}"}</code></td>
+                        <td><code class="literal">[% Data.CreateTime | Localize("TimeLong") %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$TimeShort{"$Data{"CreateTime"}"}</code></td>
+                        <td><code class="literal">[% Data.CreateTime | Localize("TimeShort") %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Date{"$Data{"CreateTime"}"}</code></td>
+                        <td><code class="literal">[% Data.CreateTime | Localize("Date") %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">&lt;-- dtl:block:Name --&gt;...&lt;-- dtl:block:Name --&gt;</code></td>
+                        <td><code class="literal">[% RenderBlockStart("Name") %]...[% RenderBlockEnd("Name") %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">&lt;-- dtl:js_on_document_complete --&gt;...&lt;-- dtl:js_on_document_complete --&gt;</code></td>
+                        <td><code class="literal">[% WRAPPER JSOnDocumentComplete %]...[% END %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">&lt;-- dtl:js_on_document_complete_placeholder --&gt;</code></td>
+                        <td><code class="literal">[% PROCESS JSOnDocumentCompleteInsert %]</code></td>
+                    </tr><tr>
+                        <td><code class="literal">$Include{"Copyright"}</code></td>
+                        <td><code class="literal">[% InsertTemplate("Copyright") %]</code></td>
+                    </tr></tbody></table></div></div><br class="table-break"><p>
+                There is also a helper script <code class="filename">bin/otrs.MigrateDTLtoTT.pl</code> that will
+                automatically port the DTL files to Template::Toolkit syntax for you. It might fail if you have
+                errors in your DTL, please correct these first and re-run the script afterwards.
+            </p><p>
+                There are a few more things to note when porting your code to the new template engine:
+            </p><p>
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                            All language files must now have the <code class="literal">use utf8;</code> pragma.
+                        </p></li><li class="listitem"><p>
+                            <code class="code">Layout::Get()</code> is now deprecated. Please use <code class="code">Layout::Translate()</code> instead.
+                        </p></li><li class="listitem"><p>
+                            All occurrences of <code class="literal">$Text{""}</code> in Perl code must now be replaced by calls to <code class="code">Layout::Translate()</code>.
+                        </p><p>This is because in DTL there was no separation between template and data. If DTL-Tags were inserted as part of some data, the engine would still parse them. This is no longer the case in Template::Toolkit, there is a strict separation of template and data.
+                        </p><p>
+                            Hint: should you ever need to interpolate tags in data, you can use the <code class="literal">Interpolate</code> filter for this (<code class="literal">[% Data.Name | Interpolate %]</code>). This is not recommended for security and performance reasons!
+                        </p></li><li class="listitem"><p>
+                            For the same reason, dynamically injected JavaScript that was enclosed by <code class="literal">dtl:js_on_document_complete</code> will not work any more. Please use <code class="code">Layout::AddJSOnDocumentComplete()</code> instead of injecting this as template data.
+                        </p><p>
+                            You can find an example for this in <code class="filename">Kernel/System/DynamicField/Driver/BaseSelect.pm</code>.
+                        </p></li><li class="listitem"><p>
+                            Please be careful with <code class="literal">pre</code> output filters (the ones configured in
+                            <code class="literal">Frontend::Output::FilterElementPre</code>). They still work, but they will prevent the template
+                            from being cached. This could lead to serious performance issues. You should definitely not have any <code class="literal">pre</code> output filters that operate on all templates, but limit them to certain templates via configuration setting.
+                        </p><p>
+                            The <code class="literal">post</code> output filters (<code class="literal">Frontend::Output::FilterElementPost</code>) don't have such strong negative performance effects.
+                            However, they should also be used carefully, and not for all templates.
+                        </p></li></ul></div><p>
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-fontawesome"></a>New FontAwesome version</h4></div></div></div><p>
+                With OTRS 4, we've also updated FontAwesome to a new version. As a consequence, the icons CSS classes have changed. While previously icons were defined by using a schema like <code class="literal">icon-{iconname}</code>, it is now <code class="literal">fa fa-{iconname}</code>.
+            </p><p>
+                Due to this change, you need to make sure to update all custom frontend module registrations which make use of icons (e.g. for the top navigation bar) to use the new schema. This is also true for templates where you're using icon elements like <code class="literal">&lt;i class="icon-{iconname}"&gt;&lt;/i&gt;</code>.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-unit-tests"></a>Unit Tests</h4></div></div></div><p>
+                With OTRS 4, in Unit Tests <code class="literal">$Self</code> no longer provides common objects like the <code class="literal">MainObject</code>, for example. Please always use <code class="code">$Kernel::OM-&gt;Get('...')</code> to fetch these objects.
+            </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="package-porting-33-to-4-custom-ticket-history-types"></a>Custom Ticket History types</h4></div></div></div><p>
+                If you use any custom ticket history types, you have to take two steps for them to be displayed correctly
+                in <code class="literal">AgentTicketHistory</code> of OTRS 4+.
+            </p><p>
+                Firstly, you have to register your custom ticket history types via SysConfig. This could look like:
+            </p><p>
+                </p><pre class="programlisting">
+&lt;ConfigItem Name="Ticket::Frontend::HistoryTypes###100-MyCustomModule" Required="1" Valid="1"&gt;
+    &lt;Description Translatable="1"&gt;Controls how to display the ticket history entries as readable values.&lt;/Description&gt;
+    &lt;Group&gt;Ticket&lt;/Group&gt;
+    &lt;SubGroup&gt;Frontend::Agent::Ticket::ViewHistory&lt;/SubGroup&gt;
+    &lt;Setting&gt;
+        &lt;Hash&gt;
+            &lt;Item Key="MyCustomType" Translatable="1"&gt;Added information (%s)&lt;/Item&gt;
+        &lt;/Hash&gt;
+    &lt;/Setting&gt;
+&lt;/ConfigItem&gt;
+                </pre><p>
+            </p><p>
+                The second step is to translate the English text that you provided for the custom ticket history type
+                in your translation files, if needed. That's it!
+            </p><p>
+                If you are interested in the details, please refer to
+                <a class="ulink" href="https://github.com/OTRS/otrs/commit/454dfac6d4eb85652a267e5e65514e386d3cf275" target="_top">this commit</a>
+                for additional information about the changes that happened in OTRS.
+            </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="package-building.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="how-to-publish-extensions.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="contributing.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Package Building </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 5. Contributing to OTRS</td></tr></table></div></body></html>
