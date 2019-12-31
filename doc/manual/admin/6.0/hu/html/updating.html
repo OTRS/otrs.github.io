@@ -1,0 +1,178 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Az OTRS frissítése</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Adminisztrátori kézikönyv"><link rel="up" href="installation.html" title="2. fejezet - Telepítés"><link rel="prev" href="installation-on-windows.html" title="Az OTRS Windowson"><link rel="next" href="application.html" title="További alkalmazások"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Az OTRS frissítése</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="installation-on-windows.html">Vissza</a> </td><th width="60%" align="center">2. fejezet - Telepítés</th><td width="20%" align="right"> <a accesskey="n" href="application.html">Előre</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="updating"></a>Az OTRS frissítése</h2></div></div></div><div class="toc"><dl class="toc"></dl></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+            Nagyon ajánlott először egy próbafrissítést végrehajtani egy elkülönített
+tesztelési gépen.
+        </p><p>
+            Az OTRS 5-ről 6-ra történő adatbázis-költöztetés jelentős változtatásokat
+hajt végre az adatbázis tábláin és adatain. Győződjön meg arról, hogy van-e
+elegendő tárolóhely ezekhez a műveletekhez (érdemes fontolóra venni az
+archiválási/bináris naplók átmeneti kikapcsolását a költöztetéshez).
+        </p></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">Frissítés az OTRS 6 egy korábbi verziójáról</span></dt><dd><p>
+                    Frissíthet közvetlenül bármely előző verzióról az elérhető legfrissebb
+hibajavító szintű kiadásra.
+                </p></dd><dt><span class="term">Frissítés az OTRS 5-ről</span></dt><dd><p>
+                    Frissíthet bármely OTRS 5 hibajavító szintű kiadásról az elérhető
+legfrissebb OTRS 6 hibajavító szintű kiadásra.
+                </p></dd><dt><span class="term">Frissítés az OTRS 4-ről vagy egy korábbi kiadásról</span></dt><dd><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Figyelem</h3><p>
+                        Nem frissíthet az OTRS 4-ről vagy egy korábbi kiadásról közvetlenül OTRS
+6-ra. Ehelyett teljes frissítést kell elvégezni egymás után az összes
+elérhető kisebb verzióra. Például ha az OTRS 3.0-ról indul, akkor először
+teljes frissítést kell végrehajtani az OTRS 3.1-re, aztán 3.2-re, 3.3-ra,
+4-re, 5-re és végül az OTRS 6-ra.
+                    </p></div></dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.4"></a>1. lépés: az összes kapcsolódó szolgáltatás és az OTRS démon leállítása</h3></div></div></div><p>
+        Győződjön meg arról, hogy nincs-e több olyan futó szolgáltatás vagy
+cron-feladat, amely megpróbál hozzáférni az OTRS-hez. Ez a szolgáltatás
+beállításától fog függeni. Itt egy példa:
+        </p><p>
+            </p><pre class="screen">
+root&gt; /etc/init.d/cron stop
+root&gt; /etc/init.d/postfix stop
+root&gt; /etc/init.d/apache stop
+            </pre><p>
+        </p><p>
+        Állítsa le az OTRS cron-feladatait és a démont (ebben a sorrendben):
+        </p><p>
+            </p><pre class="screen">
+otrs&gt; cd /opt/otrs/
+otrs&gt; bin/Cron.sh stop
+otrs&gt; bin/otrs.Daemon.pl stop
+            </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.5"></a>2. lépés: a fájlok és az adatbázis biztonsági mentése</h3></div></div></div><p>
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code>, ha az OTRS 5-ről
+frissít</p></li><li class="listitem"><p><code class="filename">var/*</code></p></li><li class="listitem"><p>valamint az adatbázis</p></li></ul></div><p>
+        </p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Figyelem</h3><p>Ne folytassa a rendszer teljes biztonsági mentse nélkül!</p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.6"></a>3. lépés: az új kiadás telepítés (tar vagy RPM)</h3></div></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.7.6.2"></a>3.1. lépés: tarball segítségével:</h4></div></div></div><pre class="screen">
+root&gt; cd /opt
+root&gt; mv otrs otrs-old
+root&gt; tar -xzf otrs-x.x.x.tar.gz
+root&gt; mv otrs-x.x.x otrs
+            </pre><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.6.2.3"></a>Régi beállítófájlok visszaállítása</h5></div></div></div><p>
+                    </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p><code class="filename">Kernel/Config.pm</code></p></li><li class="listitem"><p><code class="filename">Kernel/Config/Files/ZZZAuto.pm</code>, ha az OTRS 5-ről
+frissít</p></li></ul></div><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.6.2.4"></a>Bejegyzésadatok visszaállítása</h5></div></div></div><p>
+                    Ha úgy állította be az OTRS-t, hogy a bejegyzésadatokat a fájlrendszeren
+tárolja, akkor vissza kell állítania az <code class="filename">article</code> mappát
+az <code class="filename">/opt/otrs/var/</code> mappába, vagy a
+rendszerbeállításokban megadott mappába.
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.6.2.5"></a>A már telepített alapértelmezett statisztikák visszaállítása</h5></div></div></div><p>
+                    Ha alapértelmezett statisztikákkal rendelkező további csomagjai vannak,
+akkor vissza kell állítania a statisztikák XML-fájljait az
+<code class="filename">*.installed</code> utótaggal az
+<code class="filename">/opt/otrs/var/stats</code> mappába.
+                </p><pre class="screen">
+root&gt; cd OTRS-BACKUP/var/stats
+root&gt; cp *.installed /opt/otrs/var/stats
+                </pre></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="id-1.4.7.6.2.6"></a>Fájljogosultságok beállítása</h5></div></div></div><p>
+                    Hajtsa végre a következő parancsot root felhasználóként az OTRS fájl- és
+könyvtárjogosultságainak beállításához. Megpróbálja felismerni a
+beállításhoz szükséges helyes felhasználó- és csoportbeállításokat.
+                </p><p>
+                </p><pre class="screen">
+root&gt; cd /opt/otrs/
+root&gt; bin/otrs.SetPermissions.pl
+                </pre><p>
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="id-1.4.7.6.3"></a>3.2. lépés: RPM segítségével:</h4></div></div></div><p>
+            </p><pre class="screen">
+root&gt; rpm -Uvh otrs-x.x.x.-01.rpm
+            </pre><p>
+            </p><p>
+                Ebben az esetben az RPM frissítés automatikusan visszaállítja a régi
+beállítófájlokat és beállítja a fájljogosultságokat.
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.7"></a>4. lépés: a költöztető parancsfájl futtatása</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                Ha bármilyen egyéni Perl vagy XML beállítófájlja van a
+<code class="filename">Kernel/Config/Files</code> mappában, akkor azokat <a class="ulink" href="http://doc.otrs.com/doc/manual/developer/6.0/en/html/package-porting.html#packge-porting-5-to-6-configuration-files" target="_top">át
+kell alakítani az OTRS 6 által támogatott új formátumra</a> a költöztető
+parancsfájl futtatása előtt.
+            </p></div><p>
+            A frissítő parancsfájl számos ellenőrzést fog végrehajtani a rendszerén, és
+tanácsot ad azzal kapcsolatban, hogy hogyan telepítse a hiányzó
+Perl-modulokat, stb., ha az szükséges. Ha sz összes ellenőrzés sikeres,
+akkor a szükséges költöztető lépések végre lesznek hajtva. Futtassa ezt a
+parancsfájlt hibajavító szintű frissítések esetén is.
+        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                A költöztető parancsfájl meg fogja kérni, hogy állítson be egy időzónát az
+OTRS-hez, ha szükséges. Nagyon fontos az, hogy a helyes időzónát állítsa be
+(<code class="literal">OTRSTimeZone</code>) az adattároláshoz, és tartsa is meg azt,
+különben a frissítés után hozzáadott adatok (jegyek, bejegyzések, stb.)
+dátuma és ideje különböző időzónával lesznek eltárolva a már meglévő
+adatoktól, amely következetlen kimenethez vezet.
+            </p><p>
+                Új rendszereknél az <code class="literal">UTC</code> használata ajánlott, mivel a
+felhasználóknak eltérő személyes időzónáik lehetnek az OTRS alkalmazással
+végzett munkához. Meglévő, költöztetett rendszereknél különböző
+<code class="literal">OTRSTimeZone</code> értéket kell használni, ha az alatta lévő
+operációs rendszer nem <code class="literal">UTC</code> szerint van beállítva, vagy ha
+az OTRS korábban időeltolást használt.
+            </p></div><p>
+            Futtassa le a költöztető parancsfájlt (<code class="literal">otrs</code>
+felhasználóként, NE <code class="literal">root</code> felhasználóként):
+        </p><p>
+        </p><pre class="screen">
+otrs&gt; cd /opt/otrs/
+otrs&gt; scripts/DBUpdate-to-6.pl
+        </pre><p>
+        </p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Figyelem</h3><p>
+                Ne folytassa a frissítési folyamatot, ha ez a parancsfájl nem működött
+megfelelően önnél. Egyébként meghibásodás vagy adatvesztés fordulhat elő.
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.8"></a>5. lépés: telepített csomagok frissítése</h3></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                Az OTRS 5 csomagjai nem kompatibilisek az OTRS 6-os verzióval, és frissíteni
+kell azokat.
+            </p></div><p>
+            Használhatja a lenti parancsot az összes telepített csomag frissítéséhez. Ez
+működik az összes olyan csomagnál, amely elérhető az internetes
+tárolókból. Az egyéb csomagokat frissítheti később is a csomagkezelőn
+keresztül (ez futó OTRS démont igényel).
+        </p><pre class="screen">
+otrs&gt; cd /opt/otrs/
+otrs&gt; bin/otrs.Console.pl Admin::Package::UpgradeAll
+        </pre></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.9"></a>6. lépés: szolgáltatások újraindítása</h3></div></div></div><p>
+            Ez a szolgáltatás beállításától fog függeni. Itt egy példa:
+        </p><p>
+        </p><pre class="screen">
+root&gt; /etc/init.d/apache start
+root&gt; /etc/init.d/postfix start
+root&gt; /etc/init.d/cron start
+        </pre><p>
+        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                Az OTRS démon szükséges az OTRS helyes működéséhez, mint például e-mailek
+küldéséhez. Kapcsolja be a következő lépésben leírtak szerint.
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.4.7.10"></a>7. lépés: az OTRS démon és a cron-feladat elindítása</h3></div></div></div><p>
+            Az OTRS démon felelős bármely aszinkron és ismétlődő feladat kezelésénél az
+OTRS-ben. A démont és az életben tartó cron-feladatát az
+<code class="literal">otrs</code> felhasználóként kell elindítani.
+        </p><p>
+            </p><pre class="screen">
+otrs&gt; cd /opt/otrs/
+otrs&gt; bin/otrs.Daemon.pl start
+otrs&gt; bin/Cron.sh start
+            </pre><p>
+        </p><p>
+            Most már bejelentkezhet a rendszerre.
+        </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="installation-on-windows.html">Vissza</a> </td><td width="20%" align="center"><a accesskey="u" href="installation.html">Fel</a></td><td width="40%" align="right"> <a accesskey="n" href="application.html">Előre</a></td></tr><tr><td width="40%" align="left" valign="top">Az OTRS Windowson </td><td width="20%" align="center"><a accesskey="h" href="index.html">Főoldal</a></td><td width="40%" align="right" valign="top"> További alkalmazások</td></tr></table></div></body></html>

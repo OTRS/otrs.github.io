@@ -1,0 +1,63 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Webkiszolgáló</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Adminisztrátori kézikönyv"><link rel="up" href="performance-tuning.html" title="7. fejezet - Teljesítmény hangolás"><link rel="prev" href="performance-tuning-database.html" title="Adatbázis"><link rel="next" href="additional-resources.html" title="A. függelék - További erőforrások"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Webkiszolgáló</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="performance-tuning-database.html">Vissza</a> </td><th width="60%" align="center">7. fejezet - Teljesítmény hangolás</th><td width="20%" align="right"> <a accesskey="n" href="additional-resources.html">Előre</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-webserver"></a>Webkiszolgáló</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">Előre kiépített adatbázis-kapcsolatok</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">Előre betöltött modulok - startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">Perl-modulok újratöltése, amikor frissülnek a lemezen</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">A megfelelő stratégia választása</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></div><p>
+            Természetesen a mod_perl 2.0 (<a class="ulink" href="http://perl.apache.org/" target="_top"><em class="citetitle">http://perl.apache.org/</em></a>)
+modult kell használnia. Sokkal gyorsabb (~ * 100) mint a puszta CGI, de több
+RAM-ot igényel.
+        </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-db"></a>Előre kiépített adatbázis-kapcsolatok</h3></div></div></div><p>
+                Az adatbázis-kapcsolatok előre kiépíthetők a webkiszolgáló indításakor. Ez
+időt spórol (lásd: <code class="filename">README.webserver</code>).
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-startup"></a>Előre betöltött modulok - startup.pl</h3></div></div></div><p>
+                Használja a <code class="filename">scripts/apache2-perl-startup.pl</code> indítási
+parancsfájlt az előre betöltött vagy előre lefordított Perl-modulokhoz a
+mod_perl webkiszolgálón, hogy gyorsabb legyen és kisebb memórialábnyommal
+rendelkezzen (lásd: <code class="filename">README.webserver</code>).
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-reload"></a>Perl-modulok újratöltése, amikor frissülnek a lemezen</h3></div></div></div><p>
+                Alapértelmezetten az Apache::Reload van használatban a
+<code class="filename">scripts/apache2-httpd.include.conf</code> fájlban. Tiltsa ezt
+le, és 8%-kal nagyobb sebessége lesz. De ne felejtse el újraindítani a
+webkiszolgálót, ha valamilyen modult telepít az OTRS csomagkezelőjén
+keresztül, vagy valamilyen értéket megváltoztat a rendszerbeállításokban
+vagy a <code class="filename">Kernel/Config.pm</code> fájlban.
+            </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Fontos</h3><p>
+                    Ez azt is jelenti, hogy nem tudja az OTRS csomagkezelőt a webes felületen
+keresztül használni, hanem a parancssori változatot kell használnia:
+<code class="filename">bin/otrs.Console.pl Admin::Package::*</code>.
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-strategy"></a>A megfelelő stratégia választása</h3></div></div></div><p>
+                Ha nagyobb telepítéssel rendelkezik (például 1000-nél több új jegy naponta
+és több mint 40 ügyintéző), akkor jó ötlet a mod_perl felhasználói
+útmutatójában a teljesítményről szóló fejezet elolvasása (<a class="ulink" href="http://perl.apache.org/docs/2.0/user/index.html" target="_top"><em class="citetitle">http://perl.apache.org/docs/2.0/user/index.html</em></a>).
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-gzip"></a>mod_gzip/mod_deflate</h3></div></div></div><p>
+                Ha kicsi a sávszélessége, akkor használja a <code class="literal">mod_deflate</code>
+modult az Apache2 webkiszolgálóhoz. Ha van egy 45 kB méretű HTML-oldala,
+akkor a <code class="literal">mod_gzip</code>/<code class="literal">mod_deflate</code> nagyjából
+7 kB méretűre tömöríti össze. Ennek az a hátránya, hogy megnöveli a
+kiszolgáló oldali terhelést.
+            </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tuning-database.html">Vissza</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tuning.html">Fel</a></td><td width="40%" align="right"> <a accesskey="n" href="additional-resources.html">Előre</a></td></tr><tr><td width="40%" align="left" valign="top">Adatbázis </td><td width="20%" align="center"><a accesskey="h" href="index.html">Főoldal</a></td><td width="40%" align="right" valign="top"> A. függelék - További erőforrások</td></tr></table></div></body></html>

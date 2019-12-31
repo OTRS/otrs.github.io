@@ -1,0 +1,81 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>日期和时间相关功能</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - 系统管理手册"><link rel="up" href="administration.html" title="第 4 章 管理"><link rel="prev" href="ticket-settings.html" title="工单设置"><link rel="next" href="pdf-output.html" title="定制PDF输出"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">日期和时间相关功能</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ticket-settings.html">上一页</a> </td><th width="60%" align="center">第 4 章 管理</th><td width="20%" align="right"> <a accesskey="n" href="pdf-output.html">下一页</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="da-tetime"></a>日期和时间相关功能</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="da-tetime.html#date-time-settings">设置上班时间、假期和时区</a></span></dt><dd><dl><dt><span class="section"><a href="da-tetime.html#TimeZones">时区</a></span></dt><dt><span class="section"><a href="da-tetime.html#TimeWorkingHours">上班时间</a></span></dt><dt><span class="section"><a href="da-tetime.html#TimeVacationDays">固定日期的假日</a></span></dt><dt><span class="section"><a href="da-tetime.html#TimeVacationDaysOneTime">浮动假日</a></span></dt></dl></dd><dt><span class="section"><a href="da-tetime.html#unlock-tickets">自动解锁</a></span></dt></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="date-time-settings"></a>设置上班时间、假期和时区</h3></div></div></div><p>
+OTRS中的一些功能如升级和<a class="link" href="da-tetime.html#unlock-tickets" title="自动解锁">工单自动解锁</a>，取决于适当的上班时间、时区和假期配置。你可以通过<a class="link" href="configuration.html#sysconfig" title="通过WEB界面配置系统">系统配置界面</a>中的<a class="link" href="ConfigReference_Section_Core_Time.html" title="Core → Time">Core::Time</a>定义这些设置。还可以将不同的上班时间、假日和时区集合指定为单独的“日历”
+：从<a class="link" href="ConfigReference_Section_Core_Time_Calendar1.html" title="Core → Time → Calendar1">Core::Time::Calendar1</a>到<a class="link" href="ConfigReference_Section_Core_Time_Calendar9.html" title="Core → Time → Calendar9">Core::Time::Calendar9</a>。日历可以由<a class="link" href="administration.html#adminarea-queue" title="队列">队列设置</a>或SLA级别定义。例如，你可以为“标准”SLA指定一个具有5 x
+8个上班时间的日历，但为“金牌”SLA创建一个具有7 x 24支持的单独日历；也可以为'Support-USA' 队列设置一个与
+'Support-Japan'队列不同的时间屏幕的日历。 OTRS可以处理多达99个不同的日历。
+</p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="TimeZones"></a>时区</h4></div></div></div><p>
+OTRS需要知道应该使用哪个时区在数据库中存储日期和时间相关的数据。 你可以在<a class="link" href="ConfigReference_Section_Core_Time.html#ConfigReference_Setting_OTRSTimeZone">Core::Time:OTRSTimeZone</a>中进行设置。
+默认值为UTC，如果你是新安装的OTRS，强烈建议你将其保留。 如果从OTRS
+6之前的版本升级，则必须确保将<code class="literal">OTRSTimeZone</code>设置为与之前的设置相匹配的时区。
+否则，新数据将以与现有数据不同的时区存储。 一旦决定了使用某个时区且已经存储了数据（工单等），就不应该改变时区，否则你存储的数据就在不同的时区。
+</p><p>
+你可以通过<a class="link" href="ConfigReference_Section_Core_Time.html#ConfigReference_Setting_UserDefaultTimeZone">Core::Time:UserDefaultTimeZone</a>为新服务人员和客户用户设置默认时区。
+该时区将用于所有未在其首选项中选择时区的用户。
+</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="TimeWorkingHours"></a>上班时间</h4></div></div></div><p>
+在系统配置 <a class="link" href="ConfigReference_Section_Core_Time.html#ConfigReference_Setting_TimeWorkingHours">Core::Time:TimeWorkingHours</a>中设置系统的上班时间，或者在日历配置中为你的特定日历设置上班时间。
+OTRS可以处理一小时的粒度。选择框中的标记8、9、10 ... 17对应于上午8:00至下午5:00的上班时间。
+</p><p>
+只有在上班时间内才会升级工单、发送升级和挂起工单的通知和解锁工单。
+</p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="TimeVacationDays"></a>固定日期的假日</h4></div></div></div><p>
+可以在<a class="link" href="ConfigReference_Section_Core_Time.html#ConfigReference_Setting_TimeVacationDays">TimeVacationDays</a>中或在日历1-9的相应部分中指定每年固定日期的假日（如元旦或国庆）。
+</p><p>
+在TimeVacationDays中定义的日期内不会升级或解锁工单。
+</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
+OTRS默认安装使用的是<span class="emphasis"><em>德国</em></span>假日。
+</p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="TimeVacationDaysOneTime"></a>浮动假日</h4></div></div></div><p>
+可以在<a class="link" href="ConfigReference_Section_Core_Time.html#ConfigReference_Setting_TimeVacationDaysOneTime">TimeVacationDaysOneTime</a>中指定诸如中秋节、春节等不具有年度固定日期而是每年变化的假日。
+</p><p>
+在TimeVacationDaysOneTime中定义的日期内不会升级或解锁工单。
+</p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>
+OTRS没有预置一次性假日，这意味着你需要添加这些节日如春节、重阳节等到OTRS系统配置中。
+</p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="unlock-tickets"></a>自动解锁</h3></div></div></div><p>
+锁定的工单可以由系统自动解锁。这个功能可能很有用，举例来说，如果一个服务人员锁定了一些需要处理的工单，但由于某些原因而不能处理它们，比如因紧急情况不在办公室。自动解锁功能会在一个给定的时间内解锁工单，确保没有锁定的工单被遗忘，从而允许其它服务人员可以处理它们。
+</p><p>
+在<a class="link" href="administration.html#adminarea-queue" title="队列">队列设置</a>中指定一个工单被解锁前的时间值。命令<code class="filename">bin/otrs.Console.pl
+Maint::Ticket::Unlock</code>作为一个cron任务定期执行，完成工单的自动解锁。
+</p><p>
+解锁工单的通知只发送给“我的队列”中包含了解锁工单所属队列且在个人<a class="link" href="user-preferences.html" title="用户偏好设置">偏好设置</a>中激活了解锁工单通知的服务人员。
+</p><p>
+如果满足了下列所有条件，就会解锁工单：
+</p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+在工单所在队列定义有一个<span class="emphasis"><em>解锁超时</em></span>。
+</p></li><li class="listitem"><p>
+工单被设置为<span class="emphasis"><em>锁定</em></span>。
+</p></li><li class="listitem"><p>
+工单状态是<span class="emphasis"><em>处理中</em></span>。
+</p></li></ul></div><p>
+如果一个服务人员添加了一封新的外部信件到工单，解锁计时器会被重置。可以是下列任意类型的信件：<span class="emphasis"><em>邮件-外部</em></span>、<span class="emphasis"><em>电话</em></span>、<span class="emphasis"><em>传真</em></span>、<span class="emphasis"><em>短信</em></span>或<span class="emphasis"><em>备注-外部</em></span>。
+</p><p>
+此外，如果工单中最近的信件由一个服务人员创建，并且一个客户添加了另外一封信件（不管是通过WEB还是邮件响应），解锁计时器都将被重置。
+</p><p>
+最后一个会重置解锁计时器的事件是当工单被分配给另外的服务人员时。
+</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ticket-settings.html">上一页</a> </td><td width="20%" align="center"><a accesskey="u" href="administration.html">上一级</a></td><td width="40%" align="right"> <a accesskey="n" href="pdf-output.html">下一页</a></td></tr><tr><td width="40%" align="left" valign="top">工单设置 </td><td width="20%" align="center"><a accesskey="h" href="index.html">起始页</a></td><td width="40%" align="right" valign="top"> 定制PDF输出</td></tr></table></div></body></html>

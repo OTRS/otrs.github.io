@@ -1,0 +1,63 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Веб-сервер</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Руководство Администратора"><link rel="up" href="performance-tuning.html" title="Chapter 7. Настройка Производительности"><link rel="prev" href="performance-tuning-database.html" title="База данных"><link rel="next" href="additional-resources.html" title="Appendix A. Дополнительные ресурсы"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Веб-сервер</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="performance-tuning-database.html">Prev</a> </td><th width="60%" align="center">Chapter 7. Настройка Производительности</th><td width="20%" align="right"> <a accesskey="n" href="additional-resources.html">Next</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-webserver"></a>Веб-сервер</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">Предустановленное соединение с базой данных</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">Предварительно загруженные модули  - startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">Перезагрузка Perl-модулей во время обновления с диска</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">Выбор Правильной Стратегии</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></div><p>
+            Of course you should use mod_perl 2.0 ( <a class="ulink" href="http://perl.apache.org/" target="_top">
+<em class="citetitle">http://perl.apache.org/</em> </a> ). It's much faster
+(~ *100) than pure CGI, but it needs more RAM.
+        </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-db"></a>Предустановленное соединение с базой данных</h3></div></div></div><p>
+                You can have the database connections pre-established on startup of the web
+server. This saves time (see <code class="filename">README.webserver</code>).
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-startup"></a>Предварительно загруженные модули  - startup.pl</h3></div></div></div><p>
+                Use the startup script <code class="filename">scripts/apache2-perl-startup.pl</code>
+for preloaded/precompiled Perl modules on your mod_perl webserver to be
+faster, with a smaller memory footprint (see
+<code class="filename">README.webserver</code>).
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-reload"></a>Перезагрузка Perl-модулей во время обновления с диска</h3></div></div></div><p>
+                By default Apache::Reload is used in
+<code class="filename">scripts/apache2-httpd.include.conf</code>. Disable it and you
+will get 8% more speed. But remember to restart the web server if you
+install any modules via the OTRS Package Manager, or any values in your
+SysConfig or in <code class="filename">Kernel/Config.pm</code>.
+            </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Important</h3><p>
+                    This would also mean you can't use the OTRS Package Manager via the web
+interface, you will need to use the console commands:
+<code class="filename">bin/otrs.Console.pl Admin::Package::*</code>.
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-strategy"></a>Выбор Правильной Стратегии</h3></div></div></div><p>
+                If you have a larger installation, e.g. over 1,000 new tickets per day and
+over 40 agents, it is a good idea to read the chapters on Performance of the
+mod_perl User's Guide ( <a class="ulink" href="http://perl.apache.org/docs/2.0/user/index.html" target="_top">
+<em class="citetitle">http://perl.apache.org/docs/2.0/user/index.html</em>
+</a> ).
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-webserver-gzip"></a>mod_gzip/mod_deflate</h3></div></div></div><p>
+                If your bandwidth is small, use <code class="literal">mod_deflate</code> for
+Apache2. If you have an html page with 45k,
+<code class="literal">mod_gzip</code>/<code class="literal">mod_deflate</code> compresses it to
+about 7k. The drawback is that this increases the load on the server side.
+            </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tuning-database.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tuning.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="additional-resources.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">База данных </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Appendix A. Дополнительные ресурсы</td></tr></table></div></body></html>

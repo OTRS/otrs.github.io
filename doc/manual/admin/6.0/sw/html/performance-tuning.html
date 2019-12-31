@@ -1,0 +1,210 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 7. Kuboresha Utendaji</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Admin Manual"><link rel="up" href="index.html" title="OTRS 6 - Admin Manual"><link rel="prev" href="appointment-calendar-usage.html" title="Usage"><link rel="next" href="performance-tuning-database.html" title="Hifadhidata"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 7. Kuboresha Utendaji</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="appointment-calendar-usage.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="performance-tuning"></a>Chapter 7. Kuboresha Utendaji</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs">OTRS</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">ModuliKielelezoTiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-search">Ticket Search Index</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">Article Storage (Email, Phone and Internal Articles)</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.9.3.6">Kuhifadhi Tiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-cache">Hifadhi muda</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-database.html">Hifadhidata</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-mysql">MySQL</a></span></dt><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-postgresql">PostgreSQL</a></span></dt></dl></dd><dt><span class="section"><a href="performance-tuning-webserver.html">Seva ya tovuti</a></span></dt><dd><dl><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-db">Miunganiko ya hifadhidata iliyotengenezwa.</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-startup">Moduli zilizopakiwa tayari -startup.pl</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-reload">Pakia tena moduli za perl zinapo sasishwa kwnye diski</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-strategy">Kuchagua mkakati sahihi</a></span></dt><dt><span class="section"><a href="performance-tuning-webserver.html#performance-tuning-webserver-gzip">mod_gzip/mod_deflate</a></span></dt></dl></dd></dl></div><div class="abstract"><p class="title"><b>Abstract</b></p><p>
+            Inayoonyeshwa chini ni orodha ya mbinu za kuboresha utendaji wa usakinishaji
+wako wa OTRS, ikijumuisha usanidi, uandikaji kanuni, matumizi ya kumbukumbu,
+na mengine.
+        </p></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-otrs"></a>OTRS</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-index">ModuliKielelezoTiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-search">Ticket Search Index</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-storage">Article Storage (Email, Phone and Internal Articles)</a></span></dt><dt><span class="section"><a href="performance-tuning.html#id-1.9.3.6">Kuhifadhi Tiketi</a></span></dt><dt><span class="section"><a href="performance-tuning.html#performance-tuning-otrs-cache">Hifadhi muda</a></span></dt></dl></div><p>
+            Kuna njia tofauti za kuboresha utendaji wa OTRS.
+        </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-index"></a>ModuliKielelezoTiketi</h3></div></div></div><p>
+                There are two backend modules for the index for the ticket queue view:
+            </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">Kernel::System::Ticket::IndexAccelerator::RuntimeDB</code></span></dt><dd><p>
+                            This is the default option, and will generate each queue view on the fly
+from the ticket table. You will not have performance trouble until you have
+about 60,000 open tickets in your system.
+                        </p></dd><dt><span class="term"><code class="literal">Kernel::System::Ticket::IndexAccelerator::StaticDB</code></span></dt><dd><p>
+                            The most powerful module, should be used when you have above 80,000 open
+tickets. It uses an extra <code class="literal">ticket_index</code> table, which will
+be populated with keywords based on ticket data. Use
+<code class="filename">bin/otrs.Console.pl Maint::Ticket::QueueIndexRebuild</code>
+for generating an initial index after switching backends.
+                        </p></dd></dl></div><p>
+                You can change the used IndexAccelerator module via SysConfig.
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-search"></a>Ticket Search Index</h3></div></div></div><p>
+                OTRS uses a special search index to perform full-text searches across fields
+in articles from different communication channels.
+            </p><p>
+                To create an initial index, use <code class="filename">bin/otrs.Console.pl
+Maint::Ticket::FulltextIndex --rebuild</code>.
+            </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+                    Actual article indexing happens via an OTRS daemon job in the
+background. While articles which were just added in the system are marked
+for indexing immediately, it could happen their index is available within a
+few minutes.
+                </p></div><p>
+                There are some options available for fine tuning the search index:
+            </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">Ticket::SearchIndex::IndexArchivedTickets</code></span></dt><dd><p>
+                            Defines if archived tickets will be included in the search index (off by
+default). This is advisable to keep the index small on large systems with
+archived tickets. If this is turned off, archived tickets will not be found
+by full-text searches.
+                        </p></dd><dt><span class="term"><code class="literal">Ticket::SearchIndex::Attribute</code></span></dt><dd><p>
+                            The attribute <code class="literal">WordCountMax</code> defines the maximum number of
+words which will be processed to build up the index. For example only the
+first 1000 words of an article body are stored in the article search
+index. The attributes <code class="literal">WordLengthMin</code> and
+<code class="literal">WordLengthMax</code> are used as word length boundaries. Only
+words with a length between these two values are stored in the article
+search index.
+                        </p></dd><dt><span class="term"><code class="literal">Ticket::SearchIndex::Filters</code></span></dt><dd><p>
+                            There are three default filters defined:
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="opencircle"><li class="listitem"><p>
+                                    The first filter strips out special chars like: <code class="literal">, &amp; &lt; &gt; ?
+" ! * | ; [ ] ( ) + $ ^=</code>
+                                </p></li><li class="listitem"><p>
+                                    The second filter strips out words which begin or ends with one of following
+chars: <code class="literal">' : .</code>
+                                </p></li><li class="listitem"><p>
+                                    The third filter strips out words which do not contain a word-character:
+<code class="literal">a-z, A-Z, 0-9, _</code>
+                                </p></li></ul></div></dd><dt><span class="term"><code class="literal">Ticket::SearchIndex::StopWords</code></span></dt><dd><p>
+                            There are so-called stop-words defined for some languages. These stop-words
+will be skipped while creating the search index.
+                        </p></dd></dl></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-storage"></a>Article Storage (Email, Phone and Internal Articles)</h3></div></div></div><p>
+                There are two different backend modules for the article storage of phone,
+email and internal articles (configured via
+<code class="literal">Ticket::Article::Backend::MIMEBase::ArticleStorage</code>):
+            </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">Kernel::System::Ticket::Article::Backend::MIMEBase::ArticleStorageDB</code></span></dt><dd><p>
+                            This default module will store attachments in the database.
+                        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+                                Don't use it with large setups.
+                            </p></div><p>
+                            Pro: works with multiple front end servers.
+                        </p><p>
+                            Con: requires much storage space in the database.
+                        </p></dd><dt><span class="term"><code class="literal">Kernel::System::Ticket::Article::Backend::MIMEBase::ArticleStorageFS</code></span></dt><dd><p>
+                            Use this module to store attachments on the local file system.
+                        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+                                Recommended for large setups.
+                            </p></div><p>
+                            Faida: Ni ya kasi!
+                        </p><p>
+                            Con: If you have multiple front end servers, you must make sure the file
+system is shared between the servers. Place it on an NFS share or preferably
+a SAN or similar solution.
+                        </p></dd></dl></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+                    You can switch from one back-end to the other on the fly. You can switch the
+backend in the SysConfig, and then run the command line utility
+<code class="filename">bin/otrs.Console.pl Admin::Article::StorageSwitch</code> to
+put the articles from the database onto the filesystem or the other way
+around. You can use the <span class="emphasis"><em>--target</em></span> option to specify the
+target backend. Please note that the entire process can take considerable
+time to run, depending on the number of articles you have and the available
+CPU power and/or network capacity.
+                </p></div><p>
+                </p><pre class="screen">
+shell&gt; bin/otrs.Console.pl Admin::Article::StorageSwitch --target ArticleStorageFS
+                </pre><p>
+            </p><p>
+                <span class="emphasis"><em>Hati: Kubadilisha mazingira ya nyuma ya hifadhi kutoka hifadhidata
+kuwa mfumo wa mafaili</em></span>
+            </p><p>
+                If you want to keep old attachments in the database, you can activate the
+SysConfig option
+<code class="literal">Ticket::Article::Backend::MIMEBase::CheckAllStorageBackends</code>
+to make sure OTRS will still find them.
+            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.9.3.6"></a>Kuhifadhi Tiketi</h3></div></div></div><p>
+                Kwa kuwa OTRS inaweza kutumika kama mfumo wa kuzuia ukaguzi, kufuta tiketi
+zilizofungwa inaweza kuwa sio wazo zuri. Kwa hiyo tumetengeneza kipengele
+kinachokuruhusu kuhifadhi tiketi kwenye nyaraka.
+            </p><p>
+                Tickets that match certain criteria can be marked as "archived". These
+tickets are not accessed if you do a regular ticket search or run a Generic
+Agent job. The system itself does not have to deal with a huge amount of
+tickets any longer as only the "latest" tickets are taken into consideration
+when using OTRS. This can result in a huge performance gain on large
+systems.
+            </p><p>
+                Kutumia kipengele cha nyaraka fuata hatua zifuatazo kirahisi:
+            </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+                        Amilisha mfumo wa nyaraka katika SysConfig
+                    </p><p>
+                        Katika kurasa ya msimamizi, nenda kwenye AysConfig na chagua
+<code class="literal">Tiketi</code> ya kundi hilo. Katika
+<code class="literal">Kiini::Tiketi</code> unakuta chaguo
+<code class="literal">Tiketi::MfumoNyaraka</code> ambao umesetiwa kuwa "hapana" kwa
+chaguo-msingi. Badilisha mpangilio huu kuwa "ndiyo" na hifadhi mabadiliko.
+                    </p></li><li class="listitem"><p>
+                        Fafanua kazi ya WakalaWaJumla
+                    </p><p>
+                        On the Admin page, select GenericAgent and add a new job there.
+                    </p><p>
+                        </p><div class="orderedlist"><ol class="orderedlist" type="a"><li class="listitem"><p>
+                                    Mpangilio wa kazi
+                                </p><p>
+                                    Toa jina kwa
+                                </p></li><li class="listitem"><p>
+                                    Chujio la Tiketi
+                                </p><p>
+                                    Vichujio vya tiketi vinatafuta tiketi ambazo zinafanana na kigezo
+kilichochaguliwa. Inaweza kuwa wazo zuri kuweka kwenye nyaraka zile tiketi
+zilizo kwenye hali iliyofungwa na zimefungwa miezi michache nyuma.
+                                </p></li><li class="listitem"><p>
+                                    Kitendo cha Tiketi
+                                </p><p>
+                                    Katika kifungu hiki, seti sehemu yenye lebo"Hifadhi kwenye Nyaraka tiketi
+zilizochaguliwa" kuwa "hifadhi tiketi kwenye nyaraka".
+                                </p></li><li class="listitem"><p>
+                                    Hifadhi kazi
+                                </p><p>
+                                    Mwisho wa kurasa utapata chaguo la kuhifadhi kazi.
+                                </p></li><li class="listitem"><p>
+                                    Tiketi zilizoathirika.
+                                </p><p>
+                                    Mfumo utaonyesha tiketi zote zitakazohifadhiwa kwenye nyaraka wakati wa
+kutekeleza kazi ya Wakala wa Ujumla.
+                                </p></li></ol></div><p>
+                    </p></li><li class="listitem"><p>
+                        Tafuta Tiketi
+                    </p><p>
+                        Ukitafuta tiketi, mfumo kwa kawaida unatafuta tiketi zisizo kwenye
+nyaraka. Kama ukitaka kutafuta tiketi za kwenye nyaraka pia, ongeza kirahisi
+"tafuta nyaraka" wakati wa kufafanua vigezo vya kutafuta.
+                    </p></li></ol></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-otrs-cache"></a>Hifadhi muda</h3></div></div></div><p>
+                OTRS caches a lot of temporary data in
+<code class="filename">/opt/otrs/var/tmp</code>. Please make sure that this uses a
+high performance file system/storage. If you have enough RAM, you can also
+try to put this directory on a ramdisk like this:
+            </p><p>
+                </p><pre class="screen">
+shell&gt; /opt/otrs/bin/otrs.Console.pl Maint::Session::DeleteAll
+shell&gt; /opt/otrs/bin/otrs.Console.pl Maint::Cache::Delete
+shell&gt; sudo mount -o size=16G -t tmpfs none /opt/otrs/var/tmp
+
+# add persistent mount point in /etc/fstab
+                </pre><p>
+            </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3><p>
+                    Please note that this will be a non-permanent storage that will be lost on
+server reboot. All your sessions (if you store them in the filesystem) and
+your cache data will be lost.
+                </p></div><p>
+                There is also a centralized memcached based cache backend available for
+purchase from OTRS Group.
+            </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="appointment-calendar-usage.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="performance-tuning-database.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Usage </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Hifadhidata</td></tr></table></div></body></html>

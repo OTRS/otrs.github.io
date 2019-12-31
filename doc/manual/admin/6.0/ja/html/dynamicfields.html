@@ -1,0 +1,642 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>動的フィールド</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - 管理マニュアル"><link rel="up" href="administration.html" title="第4章 管理"><link rel="prev" href="statistics-module.html" title="統計"><link rel="next" href="genericinterface.html" title="一般インターフェイス"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">動的フィールド</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="statistics-module.html">戻る</a> </td><th width="60%" align="center">第4章 管理</th><td width="20%" align="right"> <a accesskey="n" href="genericinterface.html">次へ</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="dynamicfields"></a>動的フィールド</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="dynamicfields.html#dynamicfields-introduction">導入</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration">構成</a></span></dt><dd><dl><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-add">動的フィールドの追加</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-text">テキスト動的フィールドの構成</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-textarea">テキスト領域動的フィールド構成</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-checkbox">チェックボックス動的フィールド構成</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-dropdown">ドロップダウン動的フィールドの構成</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-multiselect">多重選択動的フィールドの構成</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-date">日付動的フィールド設定</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-datetime">日付/時刻　動的フィールドの編集</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-edit">動的フィールドの編集</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-show">画面上での動的フィールドの表示</a></span></dt><dd><dl><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-show-examples">サンプルの表示</a></span></dt></dl></dd><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-event-defaut">チケット・イベント・モジュールによってデフォルト値を設定</a></span></dt><dt><span class="section"><a href="dynamicfields.html#dynamicfields-configuration-preferences-defaut">ユーザー選択によってデフォルト値をセット</a></span></dt></dl></dd></dl></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="dynamicfields-introduction"></a>導入</h3></div></div></div><p>
+            動的フィールドは、チケットか記事上に格納された情報を拡張するために作られて、OTRSの中の特別の種類のフィールドです。これらのフィールドはシステムに固定されません。
+そして、それらは特定の画面にのみ現われる場合があります。それらが必須であれ、そうでなかれ、それらの画面上の表現はそれらの作成時間に定義されたフィールドタイプに依存します。その作成時間はフィールドによって保持されるデータよります。例えば、テキスト、日付、アイテムの選択を保持するフィールドがあります。
+        </p><p>
+            Dynamic fields are the evolution of TicketFreeText, TicketFreeKey,
+TicketFreeTime, ArticleFreeText and ArticleFreeKey fields that where
+commonly used in OTRS 3.0 and before. The limitation of these "Free Fields"
+was that they can be defined up to 16 (text or dropdown) fields and 6 time
+fields for a ticket and 3 (text or dropdown)  fields for each article only,
+not more.
+        </p><p>
+            今、動的フィールドで、チケットまたは記事についてフィールドの数の中の制限は撤去される、チケットか記事のいずれかのために希望する数だけ動的フィールドとして作成することができます。また、それを越えて、動的フィールドの背後のフレームワークは、単なるチケットや記事だけはなく、他のオブジェクト用カスタム・フィールドを扱う準備ができています。
+        </p><p>
+            動的フィールドを扱うこの新規フレームワークは、モジュール的アプローチを使用して、構成されている。ここでの各種類の動的フィールドは、フレームワーク用のプラグインモジュールと見なすことができます。このことは、公開されているOTRSモジュール、OTRSアドオン、OTRSカスタム開発および他のカスタム開発によって容易に動的フィールドの種類を拡張することができることを意味します。
+        </p><p>
+            次の動的フィールド・タイプがこのリリースで含まれている:
+            </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                        テキスト(テキストの1行のライン)
+                    </p></li><li class="listitem"><p>
+                        テキスト領域(テキストの多数の行)
+                    </p></li><li class="listitem"><p>
+                        チェックボックス
+                    </p></li><li class="listitem"><p>
+                        ドロップダウン(単一の選択、複数の値)
+                    </p></li><li class="listitem"><p>
+                        マルチ選択(多項式選択の多数の値)
+                    </p></li><li class="listitem"><p>
+                        日付
+                    </p></li><li class="listitem"><p>
+                        Date / Time
+                    </p></li></ul></div><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="dynamicfields-configuration"></a>構成</h3></div></div></div><p>
+        By default, a clean installation of OTRS comes with two pre-installed
+internal dynamic fields, which cannot be removed. If you plan to use such
+fields in tickets, articles, customer users or customer companies you need
+to create new, custom dynamic fields.
+    </p><p>
+        Please note that dynamic fields for customer users and companies need to be
+configured accordingly in the CustomerUser and CustomerCompany mapping,
+usually to find in <code class="filename">Kernel/Config.pm</code> of your OTRS
+installation.  Examples for configuring them can be found in
+<code class="filename">Kernel/Config/Defaults.pm</code>.
+    </p><p>
+        動的フィールドの構成はふたつの部分に分かれています。ひとつは新しい動的フィールドを追加するため。もうひとつは、既存の動的フィールドを管理するためです。（既存のものは「動的フィールド」リンクにある「管理者」パネルへとあなたが案内する必要があります。）画面の中で、必須として表示するため、あるいは動的フィールドを非表示にするため、あなたは「SysConfig」画面の中でOTRS設定を変更する必要があります。
+    </p><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-add"></a>動的フィールドの追加</h4></div></div></div><p>
+            Click on the "Admin" button located in the navigation bar, then click on the
+"Dynamic Fields" link inside "Ticket Settings" box located in the lower
+center of the screen.  The dynamic fields overview will display as follows:
+        </p><p>
+            </p><div class="figure"><a name="id-1.6.11.3.5.3.1"></a><p class="title"><b>図4.96 Dynamic fields overview screen.</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-overview-empty.png" alt="Dynamic fields overview screen."></div></div></div></div><p><br class="figure-break">
+        </p><p>
+            作られてた全ての動的フィールドをリストへ、あなたがさらに動的フィールドを追加すると、この画面が変化することにご留意下さい。インストレーションがOTRSのより古いバージョンから更新された場合、この画面には既にいくつかのフィールドがあるかもしれません。
+        </p><p>
+            The Actions in the side bar at the left of the screen describes four
+possibilities: Article, Ticket, CustomerUser and CustomerCompany, each one
+has its own dropdown selection of dynamic fields.
+        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                OTRSパッケージのインストレーションはより多くのオブジェクトをアクション・サイド・バーに追加しました。
+            </p></div><div class="itemizedlist"><p>
+                動的フィールドを作る基本手順は次のとおりです:
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    アクション・サイド・バーで、希望する動的フィールドオブジェクトのドロップダウンをクリックしてください。
+                </p></li><li class="listitem"><p>
+                    リストから追加したい動的フィールドタイプをクリックしてください。
+                </p></li><li class="listitem"><p>
+                    構成を記入してください。
+                </p></li><li class="listitem"><p>
+                    保存してください。
+                </p></li></ul></div><p>
+            動的フィールドのための構成ダイアログはふたつの部分に分かれます。上部のセクションはすべてのフィールド中に一般的です。また、下方部分は別のタイプへの1つのタイプの動的フィールドとは異なるかもしれません。
+        </p><div class="itemizedlist"><p>
+                一般的な動的フィールドセッティング:
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    名前:必須で、ユニークで、文字および数字だけが許可されます。
+                </p><p>
+                    これは、1つの画面の中で例えばフィールドを表示または非表示するために使用するような、フィールドの内部名前である。フィールド名のどんな修正する(推奨しませんが)場合でも、フィールドがreferenciated（参照）される「SysConfig」設定の手動のアップデートが必要です。
+                </p></li><li class="listitem"><p>
+                    ラベル：必須
+                </p><p>
+                    これは画面に表示されるフィールド名である。それは翻訳を支援します。
+                </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                        ラベルの翻訳を言語変換ファイルに手動で加えなければならない。
+                    </p></div></li><li class="listitem"><p>
+                    フィールド順：必須
+                </p><p>
+                    相対的な順序を定義します。画面で表示されるフィールドの相対的な順序を定義します。デフォルトでは各々の新規フィールドは最後尾に位置します。この設定の変更は他に作られた動的フィールドの順序に影響します。このセッティングの変化は、他の作られた動的フィールドの順序に影響するでしょう。
+                </p></li><li class="listitem"><p>
+                    有効性:必須
+                </p><p>
+                    如何に表示するように構成しても、無効の動的フィールドはどの画面にも表示されません。
+                </p></li><li class="listitem"><p>
+                    フィールド・タイプ:必須。読み込み専用。
+                </p><p>
+                    現在の選択されたフィールド・タイプを示します。
+                </p></li><li class="listitem"><p>
+                    オブジェクト・タイプ:必須。読み込み専用
+                </p><p>
+                    フィールドの範囲を示します。
+                </p></li></ul></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                例では、特定のフィールド・タイプの設定を各々説明するために、少数のフィールドが追加されます。これらの新規フィールドは後のセクションの中でreferenciated（参照）されるでしょう。
+            </p><p>
+                For the following examples all the dynamic fields will be created for the
+Ticket object.  If you need to create a dynamic field for Article object,
+just choose the field from the Article dropdown list.
+            </p></div><div class="table"><a name="id-1.6.11.3.5.11"></a><p class="title"><b>表4.6 次のフィールドがシステムへ追加されます。:</b></p><div class="table-contents"><table><thead><tr>
+                     <td>Name</td>
+                     <td>ラベル</td>
+                     <td>タイプ</td>
+                 </tr></thead><tbody><tr>
+                     <td>Field1</td>
+                     <td>My Field 1</td>
+                     <td>テキスト</td>
+                 </tr><tr>
+                     <td>Field2</td>
+                     <td>My Field 2</td>
+                     <td>Textarea</td>
+                 </tr><tr>
+                     <td>Field3</td>
+                     <td>My Field 3</td>
+                     <td>チェックボックス</td>
+                 </tr><tr>
+                     <td>Field4</td>
+                     <td>My Field 4</td>
+                     <td>ドロップダウン</td>
+                 </tr><tr>
+                     <td>Field5</td>
+                     <td>My Field 5</td>
+                     <td>Multiselect</td>
+                 </tr><tr>
+                     <td>Field6</td>
+                     <td>My Field 6</td>
+                     <td>日付</td>
+                 </tr><tr>
+                     <td>Field7</td>
+                     <td>My Field 7</td>
+                     <td>Date / Time</td>
+                 </tr></tbody></table></div></div><br class="table-break"></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-text"></a>テキスト動的フィールドの構成</h4></div></div></div><p>
+            テキスト動的フィールドは単一行の文字列を格納するために使用されます。
+        </p><div class="itemizedlist"><p>
+                テキスト動的フィールド設定:
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    デフォルト値:オプション。
+                </p><p>
+                    これは、デフォルトでは編集画面上に表示される値です。(新規電話チケットまたはチケットが作成されるような画面）
+                </p></li><li class="listitem"><p>
+                    リンクの表示：オプション。
+                </p><p>
+                    セットされたら、フィールド値は、表示画面用に（チケット・ズームや概要のように）クリック可能なリンクに変換されます。
+                </p><p>
+                    例えば、「リンクを表示」を「http://www.otrs.com」にセットするなら、値を入力してクリックすれば、ブラウザでOTRSウェブページが開きます。
+                </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                        The use of [% Data.NameX | uri %] in the Set link value, where NameX is the
+name of the field, will add the field value as part of the link reference.
+                    </p></div></li></ul></div><p>
+            </p><div class="figure"><a name="id-1.6.11.3.6.4.1"></a><p class="title"><b>図4.97 動的フィールド・テキストの構成ダイアログ。</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-configuration-text.png" alt="動的フィールド・テキストの構成ダイアログ。"></div></div></div></div><p><br class="figure-break">
+        </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-textarea"></a>テキスト領域動的フィールド構成</h4></div></div></div><p>
+            テキスト領域の動的フィールドは複数行の文字列を格納するために使用されます。
+        </p><div class="itemizedlist"><p>
+                テキストエリア動的フィールドの設定:
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    列の数:オプション、整数。
+                </p><p>
+                    編集画面(新規電話チケットあるいはチケット作成のように)にフィールドの高さを定義するために使用されます。
+                </p></li><li class="listitem"><p>
+                    列の数：オプション、整数。
+                </p><p>
+                    この値は、編集画面でフィールドの幅を定義するために使用されます。
+                </p></li><li class="listitem"><p>
+                    デフォルト値:オプション。
+                </p><p>
+                    これは、編集画面中のデフォルトによって示される値です。(複数行テキストも可)
+                </p></li></ul></div><p>
+            </p><div class="figure"><a name="id-1.6.11.3.7.4.1"></a><p class="title"><b>図4.98 動的フィールドテキストエリアの構成ダイアログ。</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-configuration-textarea.png" alt="動的フィールドテキストエリアの構成ダイアログ。"></div></div></div></div><p><br class="figure-break">
+        </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-checkbox"></a>チェックボックス動的フィールド構成</h4></div></div></div><p>
+            チェックボックス動的フィールドは、真偽値を格納するために使用されます。チックボックス内のチェックの有無で表現されます。
+        </p><div class="itemizedlist"><p>
+                チェックボックス動的フィールドの設定:
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    デフォルト値:必須。
+                </p><p>
+                    これは、編集画面上デフォルトによって示される値です。(新規電話チケットあるいはチケット作成のように)このフィールド用のデフォルト値は、チェックの有無をすることができる閉じた選択です。
+                </p></li></ul></div><p>
+            </p><div class="figure"><a name="id-1.6.11.3.8.4.1"></a><p class="title"><b>図4.99 動的フィールド・チェックボックスの構成ダイアログ</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-configuration-checkbox.png" alt="動的フィールド・チェックボックスの構成ダイアログ"></div></div></div></div><p><br class="figure-break">
+        </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-dropdown"></a>ドロップダウン動的フィールドの構成</h4></div></div></div><p>
+            ドロップダウン動的フィールドは単一の値を格納するために閉じたリストから使用されます。
+        </p><div class="itemizedlist"><p>
+                ドロップダウン動的フィールドの設定:
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    可能な値：必須。
+                </p><p>
+                    例えば、「リンクを表示」が「http://www.otrs.com」にセットするなら、値を入力してクリックすれば、ブラウザでOTRSウェブページが開きます。
+                </p></li><li class="listitem"><p>
+                    デフォルト値:オプション。
+                </p><p>
+                    これは、編集画面上にデフォルトで示される値です(新規電話チケットあるいはチケット作成のように)。このフィールドのデフォルト値は、可能な値によって定義されるような閉じた選択です。
+                </p></li><li class="listitem"><p>
+                    空の値の追加：必須、(はい/いいえ）
+                </p><p>
+                    このオプションが活性化される場合、特別な値が、可能な値のリスト中で「-」を表示されて定義されます。この特別な値は内部的には空です。
+                </p></li><li class="listitem"><p>
+                    翻訳可能な値:必須、(はい/いいえ）
+                </p><p>
+                    この設定は、このフィールドが翻訳可能な値であることの指標として使われます。単に翻訳される表示上の値であり、内部的な値に影響を与えるものではありません。翻訳値は手動で言語ファイルに追加する必要があります。
+                </p></li><li class="listitem"><p>
+                    リンクの表示：オプション。
+                </p><p>
+                    セットされたら、フィールド値は、表示画面用に（チケット・ズームや概要のように）クリック可能なリンクに変換されます。
+                </p><p>
+                    例えば、「リンクを表示」を「http://www.otrs.com」にセットするなら、値を入力してクリックすれば、ブラウザでOTRSウェブページが開きます。
+                </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                        The use of [% Data.NameX | uri %] in the Set link value, where NameX is the
+name of the field, will add the field value as part of the link reference.
+                    </p></div></li></ul></div><p>
+            </p><div class="figure"><a name="id-1.6.11.3.9.4.1"></a><p class="title"><b>図4.100 動的フィールド・ドロップダウンの構成ダイアログ</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-configuration-dropdown.png" alt="動的フィールド・ドロップダウンの構成ダイアログ"></div></div></div></div><p><br class="figure-break">
+        </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-multiselect"></a>多重選択動的フィールドの構成</h4></div></div></div><p>
+            多重選択動的フィールドは多数の値を格納するために閉じたリストから使用されます。
+        </p><div class="itemizedlist"><p>
+                多重選択動的フィールドの設定:
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    可能な値：必須。
+                </p><p>
+                    フォームを選択するための値のリスト。　追加のリスト項目を追加するなら、キー（内部値）と値（表示値）を指定する必要があります。
+                </p></li><li class="listitem"><p>
+                    デフォルト値:オプション。
+                </p><p>
+                    これは、編集画面上にデフォルトで示される値です(新規電話チケットあるいはチケット作成のように)。このフィールドのデフォルト値は、可能な値によって定義されるような閉じた選択です。
+                </p></li><li class="listitem"><p>
+                    空の値の追加：必須、(はい/いいえ）
+                </p><p>
+                    このオプションが活性化される場合、特別な値が、可能な値のリスト中で「-」を表示されて定義されます。この特別な値は内部的には空です。
+                </p></li><li class="listitem"><p>
+                    翻訳可能な値:必須、(はい/いいえ）
+                </p><p>
+                    この設定は、このフィールドが翻訳可能な値であることの指標として使われます。単に翻訳される表示上の値であり、内部的な値に影響を与えるものではありません。翻訳値は手動で言語ファイルに追加する必要があります。
+                </p></li></ul></div><p>
+            </p><div class="figure"><a name="id-1.6.11.3.10.4.1"></a><p class="title"><b>図4.101 動的フィールド 複数選択の構成ダイアログ</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-configuration-multiselect.png" alt="動的フィールド 複数選択の構成ダイアログ"></div></div></div></div><p><br class="figure-break">
+        </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-date"></a>日付動的フィールド設定</h4></div></div></div><p>
+            日付動的フィールドは日付値(日、月および年)を格納するために使用されます。
+        </p><div class="itemizedlist"><p>
+                日付動的フィールド設定:
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    デフォルトの時差：オプション、整数
+                </p><p>
+                    編集画面でデフォルトで表示される（新規電話チケットまたはチケット作成のように）現在の日付と選択した日付間の秒数（正負可）
+                </p></li><li class="listitem"><p>
+                    Define years period: Mandatory, (Yes / No).
+                </p><p>
+                    Used to set a defined number of years in the past and the future based on
+the current date of the year select for this field. If set to Yes the
+following options are available:
+                </p><p>
+                    </p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem"><p>
+                                過去の年：オプション、正の整数
+                            </p><p>
+                                編集画面の年選択で表示する現在の日付から過去の年数を定義します。
+                            </p></li><li class="listitem"><p>
+                                将来の年：オプション、正の整数
+                            </p><p>
+                                編集画面にある年選択で表示するために現在の日付から将来の年数を定義します。
+                            </p></li></ul></div><p>
+                </p></li><li class="listitem"><p>
+                    リンクの表示：オプション。
+                </p><p>
+                    セットされたら、フィールド値は、表示画面用に（チケット・ズームや概要のように）クリック可能なリンクに変換されます。
+                </p><p>
+                    For example, if "Show link" is set to "http://www.otrs.com", clicking on the
+filed value will make your browser to open the OTRS web page.
+                </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                        The use of [% Data.NameX | uri %] in the Set link value, where NameX is the
+name of the field will add the field value as part of the link reference.
+                    </p></div></li></ul></div><p>
+            </p><div class="figure"><a name="id-1.6.11.3.11.4.1"></a><p class="title"><b>図4.102 動的フィールド 日付/時刻の構成ダイアログ</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-configuration-date.png" alt="動的フィールド 日付/時刻の構成ダイアログ"></div></div></div></div><p><br class="figure-break">
+        </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-datetime"></a>日付/時刻　動的フィールドの編集</h4></div></div></div><p>
+            日付/時刻　動的フィールドは日付/時刻の値（分、時、日、月と年）を格納するために使用されます。
+        </p><div class="itemizedlist"><p>
+                日付/時刻　動的フィールドの設定：
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    デフォルトの時差：オプション、整数
+                </p><p>
+                    編集画面でデフォルトで表示される（新規電話チケットまたはチケット作成のように）現在の日付と選択した日付間の秒数（正負可）
+                </p></li><li class="listitem"><p>
+                    Define years period: Mandatory, (Yes / No).
+                </p><p>
+                    Used to set a defined number of years in the past and the future based on
+the current date of the year select for this field. If set to Yes the
+following options are available:
+                </p><p>
+                    </p><div class="itemizedlist"><ul class="itemizedlist" type="circle"><li class="listitem"><p>
+                                過去の年：オプション、正の整数
+                            </p><p>
+                                編集画面の年選択で表示する現在の日付から過去の年数を定義します。
+                            </p></li><li class="listitem"><p>
+                                将来の年：オプション、正の整数
+                            </p><p>
+                                編集画面にある年選択で表示するために現在の日付から将来の年数を定義します。
+                            </p></li></ul></div><p>
+                </p></li><li class="listitem"><p>
+                    リンクの表示：オプション。
+                </p><p>
+                    セットされたら、フィールド値は、表示画面用に（チケット・ズームや概要のように）クリック可能なリンクに変換されます。
+                </p><p>
+                    For example, if "Show link" is set to "http://www.otrs.com", clicking on the
+filed value will make your browser to open the OTRS web page.
+                </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                        The use of [% Data.NameX | uri %] in the Set link value, where NameX is the
+name of the field will add the field value as part of the link reference.
+                    </p></div></li></ul></div><p>
+            </p><div class="figure"><a name="id-1.6.11.3.12.4.1"></a><p class="title"><b>図4.103 動的フィールド 日付 の構成ダイアログ</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-configuration-datetime.png" alt="動的フィールド 日付 の構成ダイアログ"></div></div></div></div><p><br class="figure-break">
+        </p></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-edit"></a>動的フィールドの編集</h4></div></div></div><p>
+            入力された動的フィールドの概要画面は（前回のサンプルと）同様に見えるはずです。
+        </p><p>
+            </p><div class="figure"><a name="id-1.6.11.3.13.3.1"></a><p class="title"><b>図4.104 サンプルデータで埋められた動的フィールドの概要画面</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-overview-filled.png" alt="サンプルデータで埋められた動的フィールドの概要画面"></div></div></div></div><p><br class="figure-break">
+        </p><p>
+            動的フィールドを変更・編集するために、少なくともひとつのフィールドを定義し、動的フィールドの概要画面から既に追加済フィールドを選択し、その設定を更新しなければいけません。
+        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                すべての動的フィールド設定が変更できるわけではありません。フィールド・タイプとオブジェクト・タイプはフィールドの選択から固定し、それらを変更することができません。
+            </p><p>
+                ラベルはいつでも変更することができますが、フィールド内部名の変更は推奨されません。もし内部名が変更されるならば、全ての特別なフィールドを参照するSysConfig設定は、ユーザ選択（定義されていれば）同様に更新されるべきです。
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-show"></a>画面上での動的フィールドの表示</h4></div></div></div><p>
+            特別の画面に動的フィールドを表示するために、2つの必須条件があります:
+        </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
+                    動的フィールドは有効でなければいけません。
+                </p></li><li class="listitem"><p>
+                    動的フィールドは画面の構成の中で1または2にセットされなければいけません。
+                </p></li></ol></div><div class="itemizedlist"><p>
+                画面の中で動的フィールドを表示する次のステップに進みます。
+            </p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    必ず動的フィールドを有効にセットして下さい。フィールドフォームの有効性を動的フィールド概要画面から確認できます。必要ならフィールドを編集して有効にして下さい。
+                </p></li><li class="listitem"><p>
+                    「Sysconfig」を開き、画面左側のアクション・サイドバーにあるドロップダウンリストから「チケット」を選択して下さい。
+                </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                        さらに、既にそれを知っていれば、上記の検索ボックスあるいは「sysconfig」キー中の「動的フィールド」を直接検索することができます。
+                    </p></div></li><li class="listitem"><p>
+                    探している画面用サブグループ設定へ行ってそれをクリックします。例えば「Frontend::Agent::Ticket::ViewPhoneNew」。
+                </p></li><li class="listitem"><p>
+                    "###DynamicField"で終わるセッティングを検索してください。例えば"Ticket::Frontend::AgentTicketPhone###DynamicField"。
+                </p></li><li class="listitem"><p>
+                    セッティングが空か必須の動的フィールド名がない場合は、新規エントリーを加えるためには「+」ボタンをクリックしてください。例えばキー:Field1、Content:1．
+                </p><p>
+                    設定にすでに動的フィールド名がリストされてることが確かならば、フィールドに表示するためには「1」をセットし、必須として表示するためには「2」をセットします。
+                </p></li><li class="listitem"><p>
+                    Save the configuration by clicking on the "Update" button at the bottom of
+the screen and navigate to the screen where you want the field to be
+displayed.
+                </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="dynamicfields-configuration-show-examples"></a>サンプルの表示</h5></div></div></div><p>
+                下記は、異なる画面上の動的フィールドを表示するか非表示にするかの「sysconfig」構成例です。
+            </p><p>
+                </p><div class="example"><a name="Field1-PhoneTicket-Normal"></a><p class="title"><b>例4.22 新規電話チケット画面にあるフィールド１を活性化します。</b></p><div class="example-contents"><p>
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                    <span class="emphasis"><em>グループ:</em></span> チケット
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>サブグループ:</em></span> Frontend::Agent::Ticket::ViewPhoneNew
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>設定:</em></span> Ticket::Frontend::AgentTicketPhone###DynamicField
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>値:</em></span>
+                                </p><p>
+                                    </p><div class="informaltable"><table><thead><tr>
+                                                <td>キー</td>
+                                                <td>内容</td>
+                                            </tr></thead><tbody><tr>
+                                                <td>Field1</td>
+                                                <td>1</td>
+                                            </tr></tbody></table></div><p>
+                                </p></li></ul></div><p>
+                    </p><p>
+                        </p><div class="figure"><a name="id-1.6.11.3.14.5.3.1.3.1"></a><p class="title"><b>図4.105 Field1 in New Phone Ticket Screen</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-agentticketphone-field1.png" alt="Field1 in New Phone Ticket Screen"></div></div></div></div><p><br class="figure-break">
+                    </p></div></div><p><br class="example-break">
+            </p><p>
+                </p><div class="example"><a name="Field1-PhoneTicket-Mandatory"></a><p class="title"><b>例4.23 新規電話チケット画面中の必須フィールド1を活性化</b></p><div class="example-contents"><p>
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                    <span class="emphasis"><em>グループ:</em></span> チケット
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>サブグループ:</em></span> Frontend::Agent::Ticket::ViewPhoneNew
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>設定:</em></span> Ticket::Frontend::AgentTicketPhone###DynamicField
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>値:</em></span>
+                                </p><p>
+                                    </p><div class="informaltable"><table><thead><tr>
+                                                <td>キー</td>
+                                                <td>内容</td>
+                                            </tr></thead><tbody><tr>
+                                                <td>Field1</td>
+                                                <td>2</td>
+                                            </tr></tbody></table></div><p>
+                                </p></li></ul></div><p>
+                    </p><p>
+                        </p><div class="figure"><a name="id-1.6.11.3.14.5.4.1.3.1"></a><p class="title"><b>図4.106 Field1 in New Phone Ticket Screen as mandatory</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-agentticketphone-field1-mandatory.png" alt="Field1 in New Phone Ticket Screen as mandatory"></div></div></div></div><p><br class="figure-break">
+                    </p></div></div><p><br class="example-break">
+            </p><p>
+                </p><div class="example"><a name="AllFields-PhoneTicket"></a><p class="title"><b>例4.24 必須として新規電話チケット画面中のフィールド1を活性化</b></p><div class="example-contents"><p>
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                    <span class="emphasis"><em>グループ:</em></span> チケット
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>サブグループ:</em></span> Frontend::Agent::Ticket::ViewPhoneNew
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>設定:</em></span> Ticket::Frontend::AgentTicketPhone###DynamicField
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>値:</em></span>
+                                </p><p>
+                                    </p><div class="informaltable"><table><thead><tr>
+                                                <td>キー</td>
+                                                <td>内容</td>
+                                            </tr></thead><tbody><tr>
+                                                <td>Field1</td>
+                                                <td>1</td>
+                                            </tr><tr>
+                                                <td>Field2</td>
+                                                <td>1</td>
+                                            </tr><tr>
+                                                <td>Field3</td>
+                                                <td>1</td>
+                                            </tr><tr>
+                                                <td>Field4</td>
+                                                <td>1</td>
+                                            </tr><tr>
+                                                <td>Field5</td>
+                                                <td>1</td>
+                                            </tr><tr>
+                                                <td>Field6</td>
+                                                <td>1</td>
+                                            </tr><tr>
+                                                <td>Field7</td>
+                                                <td>1</td>
+                                            </tr></tbody></table></div><p>
+                                </p></li></ul></div><p>
+                    </p><p>
+                        </p><div class="figure"><a name="id-1.6.11.3.14.5.5.1.3.1"></a><p class="title"><b>図4.107 Several fields in New Phone Ticket Screen as mandatory</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-agentticketphone-allfields.png" alt="Several fields in New Phone Ticket Screen as mandatory"></div></div></div></div><p><br class="figure-break">
+                    </p></div></div><p><br class="example-break">
+            </p><p>
+                </p><div class="example"><a name="SomeFields-PhoneTicket"></a><p class="title"><b>例4.25 新規電話チケット画面中の複数の必須フィールドを非活性化</b></p><div class="example-contents"><p>
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                    <span class="emphasis"><em>グループ:</em></span> チケット
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>サブグループ:</em></span> Frontend::Agent::Ticket::ViewPhoneNew
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>設定:</em></span> Ticket::Frontend::AgentTicketPhone###DynamicField
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>値:</em></span>
+                                </p><p>
+                                    </p><div class="informaltable"><table><thead><tr>
+                                                <td>キー</td>
+                                                <td>内容</td>
+                                            </tr></thead><tbody><tr>
+                                                <td>Field1</td>
+                                                <td>1</td>
+                                            </tr><tr>
+                                                <td>Field2</td>
+                                                <td>0</td>
+                                            </tr><tr>
+                                                <td>Field3</td>
+                                                <td>1</td>
+                                            </tr><tr>
+                                                <td>Field4</td>
+                                                <td>0</td>
+                                            </tr><tr>
+                                                <td>Field5</td>
+                                                <td>1</td>
+                                            </tr><tr>
+                                                <td>Field6</td>
+                                                <td>0</td>
+                                            </tr><tr>
+                                                <td>Field7</td>
+                                                <td>1</td>
+                                            </tr></tbody></table></div><p>
+                                </p></li></ul></div><p>
+                    </p><p>
+                        </p><div class="figure"><a name="id-1.6.11.3.14.5.6.1.3.1"></a><p class="title"><b>図4.108 Some deactivated fields in New Phone Ticket Screen as mandatory</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-agentticketphone-somefields.png" alt="Some deactivated fields in New Phone Ticket Screen as mandatory"></div></div></div></div><p><br class="figure-break">
+                    </p></div></div><p><br class="example-break">
+            </p><p>
+                </p><div class="example"><a name="Field1-TicketZoom"></a><p class="title"><b>例4.26 チケットズーム画面でフィールド１を活性化</b></p><div class="example-contents"><p>
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                    <span class="emphasis"><em>グループ:</em></span> チケット
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>サブグループ:</em></span> Frontend::Agent::Ticket::ViewZoom
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>設定:</em></span> Ticket::Frontend::AgentTicketZoom###DynamicField
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>値:</em></span>
+                                </p><p>
+                                    </p><div class="informaltable"><table><thead><tr>
+                                                <td>キー</td>
+                                                <td>内容</td>
+                                            </tr></thead><tbody><tr>
+                                                <td>Field1</td>
+                                                <td>1</td>
+                                            </tr></tbody></table></div><p>
+                                </p></li></ul></div><p>
+                    </p><p>
+                        </p><div class="figure"><a name="id-1.6.11.3.14.5.7.1.3.1"></a><p class="title"><b>図4.109 Field1 in Ticket Zoom Screen</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-agentticketzoom-field1.png" alt="Field1 in Ticket Zoom Screen"></div></div></div></div><p><br class="figure-break">
+                    </p></div></div><p><br class="example-break">
+            </p><p>
+                </p><div class="example"><a name="Field1-TicketOverviewSmall"></a><p class="title"><b>例4.27 チケット概要小画面の中のField1を活性化</b></p><div class="example-contents"><p>
+                        </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                                    <span class="emphasis"><em>グループ:</em></span> チケット
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>サブグループ:</em></span> Frontend::Agent::TicketOverview
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>設定:</em></span> Ticket::Frontend::OverviewSmall###DynamicField
+                                </p></li><li class="listitem"><p>
+                                    <span class="emphasis"><em>値:</em></span>
+                                </p><p>
+                                    </p><div class="informaltable"><table><thead><tr>
+                                                <td>キー</td>
+                                                <td>内容</td>
+                                            </tr></thead><tbody><tr>
+                                                <td>Field1</td>
+                                                <td>1</td>
+                                            </tr></tbody></table></div><p>
+                                </p></li></ul></div><p>
+                    </p><p>
+                        </p><div class="figure"><a name="id-1.6.11.3.14.5.8.1.3.1"></a><p class="title"><b>図4.110 Field1 in Ticket Overview Small Screen</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-ticketoverviewsmall-field1.png" alt="Field1 in Ticket Overview Small Screen"></div></div></div></div><p><br class="figure-break">
+                    </p><p>
+                        This setting affects: Escalation View, Locked View, Queue View, Responsible
+View, Status View, Service View and Watch View screens.
+                    </p></div></div><p><br class="example-break">
+            </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-event-defaut"></a>チケット・イベント・モジュールによってデフォルト値を設定</h4></div></div></div><p>
+            フィールドが値をまだ持っていない場合、チケット・イベント(例えば、チケット作成)は、あるフィールド用の値セットを引き起こすことができます。
+        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                この方法の使用によって、値がチケットの生成の後にセットされるので、このデフォルト値は編集画面(例えば新規電話チケット)で見られません。
+            </p></div><p>
+            この特徴を活性化するために、次のセッティングを可能にすることが必要です:"Ticket::EventModulePost###TicketDynamicFieldDefault".
+        </p><div class="example"><a name="Field1-EventDefault"></a><p class="title"><b>例4.28 チケット作成イベントのフィールド１を活性化</b></p><div class="example-contents"><p>
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                            <span class="emphasis"><em>グループ:</em></span> チケット
+                        </p></li><li class="listitem"><p>
+                            <span class="emphasis"><em>サブグループ:</em></span> Core::TicketDynamicFieldDefault
+                        </p></li><li class="listitem"><p>
+                            <span class="emphasis"><em>設定:</em></span> Ticket::TicketDynamicFieldDefault###Element1
+                        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                                この構成は、16のTicket::TicketDynamicFieldDefault###Element
+セッティングのうちのどの中でもセットすることができます。
+                            </p><p>
+                                16フィールド以上をセットアップする必要があるなら、$OTRS_HOME/Kernel/Config/files　ディレクトリにあるXMLファイルは置き換えてこの機能を拡張します。
+                            </p></div></li><li class="listitem"><p>
+                            <span class="emphasis"><em>値:</em></span>
+                        </p><p>
+                            </p><div class="informaltable"><table><thead><tr>
+                                        <td>キー</td>
+                                        <td>内容</td>
+                                    </tr></thead><tbody><tr>
+                                        <td>イベント</td>
+                                        <td>チケット作成</td>
+                                    </tr><tr>
+                                        <td>Name</td>
+                                        <td>Field1</td>
+                                    </tr><tr>
+                                        <td>値</td>
+                                        <td>新しい値</td>
+                                    </tr></tbody></table></div><p>
+                        </p></li></ul></div><p>
+            </p></div></div><br class="example-break"></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="dynamicfields-configuration-preferences-defaut"></a>ユーザー選択によってデフォルト値をセット</h4></div></div></div><p>
+            動的フィールドデフォルト値は、ユーザー選択に格納されたユーザに定義された値で上書きすることができます。
+        </p><p>
+            この方法を使用して、フィールドのデフォルト値は、フィールドが活性化されている画面に表示されます。(フィールドが異なる値をまだ持っていない場合)
+        </p><p>
+            「Sysconfig」設定は、サブグループ「Frontend::Agent::Preferences」の「PreferencesGroups###DynamicField」に存在します。この設定は、選ばれたユーザのために排他的な動的フィールドデフォルト値をセットするために、ユーザー選択画面でエントリーを作る方法の例です。この設定の制限は、単にそれが1つの動的フィールドの使用を許すということです。2つ以上のフィールドがこの特徴を使用する場合、これに似ているより多くの設定を加える、カスタムXML設定ファイルを作成することが必要です。
+        </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>
+                Remember, if more settings are added in a new XML each setting name needs to
+be unique in the system and different than
+"PreferencesGroups###DynamicField". For example:
+PreferencesGroups###101-DynamicField-Field1,
+PreferencesGroups###102-DynamicField-Field2, PreferencesGroups###My-Field1,
+PreferencesGroups###My-Field2, etc.
+            </p></div><div class="example"><a name="Field1-UserPreference"></a><p class="title"><b>例4.29 ユーザー選択でのField1を活性化</b></p><div class="example-contents"><p>
+                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                            <span class="emphasis"><em>グループ:</em></span> チケット
+                        </p></li><li class="listitem"><p>
+                            <span class="emphasis"><em>サブグループ:</em></span> Frontend::Agent::Preferences
+                        </p></li><li class="listitem"><p>
+                            <span class="emphasis"><em>設定:</em></span> PreferencesGroups###101-DynamicField-Field1
+                        </p></li><li class="listitem"><p>
+                            <span class="emphasis"><em>値:</em></span>
+                        </p><p>
+                            </p><div class="informaltable"><table><thead><tr>
+                                        <td>キー</td>
+                                        <td>内容</td>
+                                    </tr></thead><tbody><tr>
+                                        <td>イベント</td>
+                                        <td>チケット作成</td>
+                                    </tr><tr>
+                                        <td>Active</td>
+                                        <td>1</td>
+                                    </tr><tr>
+                                        <td>Block</td>
+                                        <td>入力</td>
+                                    </tr><tr>
+                                        <td>Column</td>
+                                        <td>その他の設定</td>
+                                    </tr><tr>
+                                        <td>Data:</td>
+                                        <td>[% Env("UserDynamicField_Field1") %]</td>
+                                    </tr><tr>
+                                        <td>Key:</td>
+                                        <td>My Field 1</td>
+                                    </tr><tr>
+                                        <td>Label:</td>
+                                        <td>My Field 1用のデフォルト値</td>
+                                    </tr><tr>
+                                        <td>Module:</td>
+                                        <td>Kernel::Output::HTML::PreferencesGeneric</td>
+                                    </tr><tr>
+                                        <td>PrefKey:</td>
+                                        <td>UserDynamicField_Field1</td>
+                                    </tr><tr>
+                                        <td>Prio:</td>
+                                        <td>7000</td>
+                                    </tr></tbody></table></div><p>
+                        </p></li></ul></div><p>
+            </p><p>
+                </p><div class="figure"><a name="id-1.6.11.3.16.6.3.1"></a><p class="title"><b>図4.111 Field1 in User preferences screen</b></p><div class="figure-contents"><div class="screenshot"><div><img src="screenshots/administration/dynamicfields/dynamicfields-userpreferences.png" alt="Field1 in User preferences screen"></div></div></div></div><p><br class="figure-break">
+            </p></div></div><br class="example-break"></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="statistics-module.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="administration.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="genericinterface.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">統計 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 一般インターフェイス</td></tr></table></div></body></html>
