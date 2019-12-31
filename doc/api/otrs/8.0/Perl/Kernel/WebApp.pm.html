@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::WebApp &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::WebApp
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#Security-Concept-of-the-Agent-External-Interfaces-and-the-REST-API">Security Concept of the Agent &amp; External Interfaces and the REST API</a></li>
+    </ul>
+  </li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#startup">startup()</a></li>
+      <li><a href="#LoadPlugins">LoadPlugins()</a></li>
+      <li><a href="#LoadRoutes">LoadRoutes()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::WebApp - Entry point for the built-in web server based on <a href="http://metacpan.org/module/Mojolicious">Mojolicious</a>.</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>This class represents the OTRS web application, an HTTP server based on <a href="http://metacpan.org/module/Mojolicious">Mojolicious</a>.</p>
+
+<p>It serves both the legacy front-end(s) of OTRS, such as the <code>agent interface</code>, and also the <code>webpack</code>-based new <code>External Interface</code> frontend application.</p>
+
+<h2 id="Security-Concept-of-the-Agent-External-Interfaces-and-the-REST-API">Security Concept of the Agent &amp; External Interfaces and the <code>REST</code> API</h2>
+
+<p>All modern front-ends are client-side, single-page applications generated with <code>webpack</code>, that use a <code>REST</code> API on the server. This is what most of <code>Kernel::WebApp</code> is about. The following security measures are in place:</p>
+
+<dl>
+
+<dt id="Content-Security-Policy"><code>Content Security Policy</code></dt>
+<dd>
+
+<p><code>Content Security Policy</code> headers are set for the client application, restricting access to the current server only. See <a href="WebApp/Controller/Role/SetsSecurityHeaders.pm.html">Kernel::WebApp::Controller::Role::SetsSecurityHeaders</a> for details.</p>
+
+<p>Most notably, <code>JavaScript</code> code can only be fetched from the <code>webpack</code>-generated assets folder. Any other scripts (inline, from different folders or from remote) will be ignored. Also other resource types are restricted as much as possible.</p>
+
+</dd>
+<dt id="JSON-Web-Tokens"><code>JSON Web Tokens</code></dt>
+<dd>
+
+<p>For authentication, <code>JSON Web Tokens</code> (RFC 7519) are used for cryptographically secured, client-side storage of authentication information. These tokens have to be sent using the standard <code>HTTP Authentication</code> header. They contain only minimal information (such as username) are stored in the <code>localStorage</code> on the client side. Tokens can be revoked in the session administration.</p>
+
+<p>The tokens also include information about the remote IP address, and are invalidated if this changes (can be turned off with the <code>CheckSessionRemoteIP</code> option). This also works behind reverse proxies, if proxy support is enabled in <code>WebApp.conf</code>.</p>
+
+<p>Endpoints can specify that they can only be used with a valid token, otherwise a <code>401 Unauthorized</code> response will be automatically generated (see <a href="WebApp/Controller/API/Role/RequiresCustomerAuthentication.pm.html">Kernel::WebApp::Controller::API::Role::RequiresCustomerAuthentication</a>).</p>
+
+</dd>
+<dt id="Restricted-use-of-Cookies">Restricted use of <code>Cookies</code></dt>
+<dd>
+
+<p>Endpoints can specify that they can also be called with a cookie containing the token. This is necessary, because in some contexts (like loading inline images) it is not possible to send custom <code>HTTP</code> headers.</p>
+
+<p>To guard against <code>CSRF</code> attacks, these cookies are generated by the server with the <code>httpOnly</code> option, and are only accepted by the endpoints that really need it.</p>
+
+</dd>
+<dt id="Deep-validation-of-input-data">Deep validation of input data</dt>
+<dd>
+
+<p>Endpoints specify which kind of input data they expect (see <a href="WebApp/Controller/API/Role/ValidatesInputData.pm.html">Kernel::WebApp::Controller::API::Role::ValidatesInputData</a> and <a href="System/DataValidation.pm.html">Kernel::System::DataValidation</a>). This will cause an implicit validation of this data and can include deep validations like checking for an existing <code>TicketID</code>.</p>
+
+<p>In case of errors, a <code>422 Unprocessable Entity</code> response will automatically be generated.</p>
+
+</dd>
+</dl>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="startup">startup()</h2>
+
+<p>This method will run once at server start.</p>
+
+<h2 id="LoadPlugins">LoadPlugins()</h2>
+
+<p>Locate and load all plugins from <code>Kernel/WebApp/Plugin</code>.</p>
+
+<h2 id="LoadRoutes">LoadRoutes()</h2>
+
+<p>Locate and load all routes from <code>Kernel/WebApp/Controller</code>.</p>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

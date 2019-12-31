@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::NotificationView &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::NotificationView
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#BUILD">BUILD()</a></li>
+      <li><a href="#NotificationAdd">NotificationAdd()</a></li>
+      <li><a href="#NotificationGet">NotificationGet()</a></li>
+      <li><a href="#NotificationDelete">NotificationDelete()</a></li>
+      <li><a href="#NotificationList">NotificationList()</a></li>
+      <li><a href="#NotificationListGet">NotificationListGet()</a></li>
+      <li><a href="#NotificationSeenSet">NotificationSeenSet()</a></li>
+      <li><a href="#NotificationSearch">NotificationSearch()</a></li>
+      <li><a href="#NameFilterGet">NameFilterGet()</a></li>
+      <li><a href="#ObjectReferenceFilterGet">ObjectReferenceFilterGet()</a></li>
+    </ul>
+  </li>
+  <li><a href="#PRIVATE-FUNCTIONS">PRIVATE FUNCTIONS</a>
+    <ul>
+      <li><a href="#InConditionGet">_InConditionGet()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::NotificationView - to manage the notification view entries</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>All functions to manage the notification event list entries.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="BUILD">BUILD()</h2>
+
+<p>Moose constructor method, that is executed on <code>instantiation</code> of the object.</p>
+
+<h2 id="NotificationAdd">NotificationAdd()</h2>
+
+<p>adds a new notification to the database</p>
+
+<pre><code>    my $NotificationID = $NotificationViewObject-&gt;NotificationAdd(
+        Name            =&gt; &#39;some notification name&#39;,        # (required)
+        Comment         =&gt; &#39;some notification comments&#39;,    # (optional)
+        Subject         =&gt; &#39;some subject&#39;,                  # (required)
+        Body            =&gt; &#39;some body&#39;,                     # (required)
+        ObjectType      =&gt; &#39;some object type&#39;,              # (required) e.g. Ticket
+        ObjectID        =&gt; 123,                             # (required)
+        ObjectReference =&gt; &#39;54321&#39;,                         # (optional) usefull (like the TicketNumber)
+        UserID          =&gt; 123,                             # (required)
+        UserType        =&gt; &#39;Agent&#39;,                         # (required) &#39;Agent&#39; or &#39;Customer&#39;
+    );</code></pre>
+
+<p>returns:</p>
+
+<pre><code>    $NotificationID = 123        # or false in case of a failure</code></pre>
+
+<h2 id="NotificationGet">NotificationGet()</h2>
+
+<p>returns the notification data</p>
+
+<pre><code>    my %Notification = $NotificationViewObject-&gt;NotificationGet(
+        NotificationID =&gt; 123,          # (required)
+    );</code></pre>
+
+<p>returns:</p>
+
+<pre><code>    %Notification = (
+        NotificationID  =&gt; 123,
+        Name            =&gt; &#39;some notification name&#39;,
+        Comment         =&gt; &#39;some notification comments&#39;,
+        Subject         =&gt; &#39;some notification subject&#39;,
+        Body            =&gt; &#39;some notification body&#39;,
+        ObjectType      =&gt; &#39;some object type&#39;,
+        ObjectID        =&gt; 123,
+        ObjectReference =&gt; &#39;54321&#39;,
+        Seen            =&gt; 1,                           # 1 or 0
+        CreateTime      =&gt; &#39;2015-05-07 12:27:00&#39;,
+        UserID          =&gt; 123,
+        UserType        =&gt; &#39;Agent&#39;                       # (Agent|Customer)
+    )</code></pre>
+
+<h2 id="NotificationDelete">NotificationDelete()</h2>
+
+<p>deletes notifications from the database</p>
+
+<pre><code>    my $Success = $NotificationViewObject-&gt;NotificationDelete(
+        NotificationID =&gt; 123,
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my $Success = $NotificationViewObject-&gt;NotificationDelete(
+        UserID         =&gt; 123,
+        UserType       =&gt; &#39;Agent&#39;,
+        ObjectType     =&gt; &#39;Ticket&#39;,
+        ObjectID       =&gt; 123,
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my $Success = $NotificationViewObject-&gt;NotificationDelete(
+        UserID         =&gt; 123,
+        UserType       =&gt; &#39;Agent&#39;,
+    );</code></pre>
+
+<p>returns</p>
+
+<pre><code>    $Success = 1;       # or false in case of a failure</code></pre>
+
+<h2 id="NotificationList">NotificationList()</h2>
+
+<p>returns a list of notifications (filtered by a user id if given)</p>
+
+<pre><code>    my %NotificationList = $NotificationViewObject-&gt;NotificationList(
+        UserID     =&gt; 123,      # (optional)
+        UserType   =&gt; &#39;Agent&#39;,  # (required if UserID is present)
+        ObjectType =&gt; &#39;Ticket&#39;  # (optional)
+    );</code></pre>
+
+<p>returns</p>
+
+<pre><code>    %NotificationList = (
+        123 =&gt; &#39;Notification 1&#39;,
+        456 =&gt; &#39;Notification 2&#39;.
+    );</code></pre>
+
+<h2 id="NotificationListGet">NotificationListGet()</h2>
+
+<p>returns a list of notifications and it&#39;s details for certain user (filtered by ObjectType)</p>
+
+<pre><code>    my %NotificationList = $NotificationViewObject-&gt;NotificationListGet(
+        UserID     =&gt; 123,      # (required)
+        UserType   =&gt; &#39;Agent&#39;,  # (required) &#39;Agent&#39; or &#39;Customer&#39;
+        ObjectType =&gt; &#39;Ticket&#39;, # (optional)
+        Seen       =&gt; 1,        # (optional) 0, 1 or undef
+    );</code></pre>
+
+<p>returns</p>
+
+<pre><code>    %NotificationList = (
+        123 =&gt; {
+            NotificationID =&gt; 123,
+            Name           =&gt; &#39;Notification 1,
+            Comment        =&gt; &#39;some notification comment&#39;
+            # ...
+        }
+        456 =&gt; {
+            NotificationID =&gt; 456,
+            Name           =&gt; &#39;Notification 2,
+            Comment        =&gt; &#39;some notification comment&#39;
+            # ...
+        }
+    );</code></pre>
+
+<h2 id="NotificationSeenSet">NotificationSeenSet()</h2>
+
+<p>mark a notification as seen or unseen</p>
+
+<pre><code>    my $Success = $NotificationViewObject-&gt;NotificationSeenSet(
+        NotificationID =&gt; 123,      # (required)
+        Seen           =&gt; 1,        # (optional) 1 or 0
+        UserID         =&gt; 123,      # (required)
+        UserType       =&gt; &#39;Agent&#39;,  # (required) &#39;Agent&#39; or &#39;Customer&#39;
+    );</code></pre>
+
+<p>returns</p>
+
+<pre><code>    Success = 1;        # or false in case of an error</code></pre>
+
+<h2 id="NotificationSearch">NotificationSearch()</h2>
+
+<p>To find sent event based notifications in your system.</p>
+
+<pre><code>    my @NotificationIDs = $NotificationViewObject-&gt;NotificationSearch(
+        # result (required)
+        Result =&gt; &#39;ARRAY&#39; || &#39;HASH&#39; || &#39;COUNT&#39; || &#39;CHANGE&#39;,
+
+        # result limit
+        Limit =&gt; 100,
+
+        # notification name (optional) as STRING or as ARRAYREF
+        Name =&gt; &#39;%SomeName%&#39;,
+        Name =&gt; [&#39;%SomeName%&#39;, &#39;%SomeOther%&#39;],
+
+        # notification subject (optional) as STRING or as ARRAYREF
+        Subject =&gt; &#39;%SomeText%&#39;,
+        Subject =&gt; [&#39;%SomeTest1%&#39;, &#39;%SomeTest2%&#39;],
+
+        ObjectTypes       =&gt; [&#39;Ticket&#39;, &#39;Other&#39;],
+
+        ObjectReferences  =&gt; [&#39;123&#39;, &#39;456&#39;],
+
+        ObjectIDs         =&gt; [1, 42, 512],
+
+        UserIDs           =&gt; [1, 12, 455, 32]
+
+        UserTypes         =&gt; [&#39;Agent&#39;, &#39;Customer&#39;]
+
+        Seen              =&gt; [1, 0],
+
+        # OrderBy and SortBy (optional)
+        OrderBy =&gt; &#39;Down&#39;,  # Down|Up
+        SortBy  =&gt; &#39;Age&#39;,   # Name|Age|CreateTime|ChangeTime|Subject|ObjectType|ObjectID|ID
+
+        # OrderBy and SortBy as ARRAY for sub sorting (optional)
+        OrderBy =&gt; [&#39;Down&#39;, &#39;Up&#39;],
+        SortBy  =&gt; [&#39;Priority&#39;, &#39;Age&#39;],
+
+        # CacheTTL, cache search result in seconds (optional)
+        CacheTTL =&gt; 60 * 15,
+    );</code></pre>
+
+<p>Returns:</p>
+
+<p>Result: &#39;ARRAY&#39;</p>
+
+<pre><code>    @NotificationIDs = ( 1, 2, 3 );</code></pre>
+
+<p>Result: &#39;HASH&#39;</p>
+
+<pre><code>    %NotificationIDs = (
+        1 =&gt; &#39;SomeName&#39;,
+        2 =&gt; &#39;SomeOther&#39;,
+        3 =&gt; &#39;SomeOther2&#39;,
+    );</code></pre>
+
+<p>Result: &#39;COUNT&#39;</p>
+
+<pre><code>    $Count = 123;</code></pre>
+
+<h2 id="NameFilterGet">NameFilterGet()</h2>
+
+<p>get a list of notification event names</p>
+
+<pre><code>    my @NotificationNames = $NotificationViewObject-&gt;NameFilterGet(
+        UserID =&gt; 123,
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    @NotificationNames = [
+        &#39;Notification1&#39;,
+        &#39;Notification2&#39;,
+    ];</code></pre>
+
+<h2 id="ObjectReferenceFilterGet">ObjectReferenceFilterGet()</h2>
+
+<p>get a list of notification event object references.</p>
+
+<pre><code>    my @Result = $NotificationViewObject-&gt;ObjectReferenceFilterGet();</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    @Result = (
+        &#39;1978348789&#39;,
+        &#39;8788987223&#39;,
+    );</code></pre>
+
+<h1 id="PRIVATE-FUNCTIONS">PRIVATE FUNCTIONS</h1>
+
+<h2 id="InConditionGet">_InConditionGet()</h2>
+
+<p>internal function to create an</p>
+
+<pre><code>    AND table.column IN (values)</code></pre>
+
+<p>condition string from an array.</p>
+
+<pre><code>    my $SQLPart = $NotificationViewObject-&gt;_InConditionGet(
+        TableColumn =&gt; &#39;table.column&#39;,
+        IDRef       =&gt; $ArrayRef,
+    );</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

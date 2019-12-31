@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::DataTypes &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::DataTypes
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#Boolean-and-numeric-type-constraints">Boolean and numeric type constraints</a></li>
+      <li><a href="#String-type-constraints">String type constraints</a></li>
+      <li><a href="#Hash-Array-type-constraints">Hash / Array type constraints</a></li>
+    </ul>
+  </li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#Bool">Bool</a></li>
+      <li><a href="#Int">Int</a></li>
+      <li><a href="#PositiveInt">PositiveInt</a></li>
+      <li><a href="#NegativeInt">NegativeInt</a></li>
+      <li><a href="#Num">Num</a></li>
+      <li><a href="#PositiveNum">PositiveNum</a></li>
+      <li><a href="#NegativeNum">NegativeNum</a></li>
+      <li><a href="#Str">Str</a></li>
+      <li><a href="#StrWithData">StrWithData</a></li>
+      <li><a href="#PerlPackage">PerlPackage</a></li>
+      <li><a href="#MD5">MD5</a></li>
+      <li><a href="#SHA1">SHA1</a></li>
+      <li><a href="#SHA256">SHA256</a></li>
+      <li><a href="#UUID">UUID</a></li>
+      <li><a href="#IPv4">IPv4</a></li>
+      <li><a href="#IPv6">IPv6</a></li>
+      <li><a href="#HashRef">HashRef</a></li>
+      <li><a href="#ArrayRef">ArrayRef</a></li>
+      <li><a href="#HashRefWithData">HashRefWithData</a></li>
+      <li><a href="#ArrayRefWithData">ArrayRefWithData</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::DataTypes - Provides data type constraints and subroutines.</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>This module provides type constraints that may be used for Moose attribute types or also directly in non-Moose code.</p>
+
+<p>The type constraints are defined in <code>Kernel::System::DataTypes::Definition</code> but should only be used via this module.</p>
+
+<p>A declared type constraint like:</p>
+
+<pre><code>    declare(
+        &#39;StrWithData&#39;,
+        parent =&gt; t(&#39;Str&#39;),
+        where  =&gt; sub { length $_[0] &gt; 0 },
+    );</code></pre>
+
+<p>can either be instantiated by it&#39;s name via the t() function, after the use statement of this module:</p>
+
+<pre><code>    use Kernel::System::DataTypes;
+
+    [...]
+
+    # moose attributes
+    has &#39;MyStringAttribute&#39; =&gt; (
+        is  =&gt; &#39;rw&#39;,
+        isa =&gt; t(&#39;StrWithData&#39;),
+    );</code></pre>
+
+<p>or to validate values inside non-Moose code:</p>
+
+<pre><code>    use Kernel::System::DataTypes;
+
+    my $Bool = is_StrWithData($MyStringValue);</code></pre>
+
+<p>All declared types as well as all builtin types are automatically exported and usable via t() or a related validation subroutines with &#39;is_&#39; as a prefix. For more information about available type methods, please refer to <a href="http://metacpan.org/module/Specio::Constraint::Simple">Specio::Constraint::Simple</a>.</p>
+
+<p>For more information about builtin types and declaration of custom types, please refer to <a href="http://metacpan.org/module/Specio">Specio</a>.</p>
+
+<h2 id="Boolean-and-numeric-type-constraints">Boolean and numeric type constraints</h2>
+
+<ul>
+
+<li><p><a href="#Bool">&quot;Bool&quot;</a></p>
+
+</li>
+<li><p><a href="#Int">&quot;Int&quot;</a></p>
+
+</li>
+<li><p><a href="#PositiveInt">&quot;PositiveInt&quot;</a></p>
+
+</li>
+<li><p><a href="#NegativeInt">&quot;NegativeInt&quot;</a></p>
+
+</li>
+<li><p><a href="#Num">&quot;Num&quot;</a></p>
+
+</li>
+<li><p><a href="#PositiveNum">&quot;PositiveNum&quot;</a></p>
+
+</li>
+<li><p><a href="#NegativeNum">&quot;NegativeNum&quot;</a></p>
+
+</li>
+</ul>
+
+<h2 id="String-type-constraints">String type constraints</h2>
+
+<ul>
+
+<li><p><a href="#Str">&quot;Str&quot;</a></p>
+
+</li>
+<li><p><a href="#StrWithData">&quot;StrWithData&quot;</a></p>
+
+</li>
+<li><p><a href="#PerlPackage">&quot;PerlPackage&quot;</a></p>
+
+</li>
+<li><p><a href="#MD5">&quot;MD5&quot;</a></p>
+
+</li>
+<li><p><a href="#SHA1">&quot;SHA1&quot;</a></p>
+
+</li>
+<li><p><a href="#SHA256">&quot;SHA256&quot;</a></p>
+
+</li>
+<li><p><a href="#UUID">&quot;UUID&quot;</a></p>
+
+</li>
+<li><p><a href="#IPv4">&quot;IPv4&quot;</a></p>
+
+</li>
+<li><p><a href="#IPv6">&quot;IPv6&quot;</a></p>
+
+</li>
+</ul>
+
+<h2 id="Hash-Array-type-constraints">Hash / Array type constraints</h2>
+
+<ul>
+
+<li><p><a href="#HashRef">&quot;HashRef&quot;</a></p>
+
+</li>
+<li><p><a href="#ArrayRef">&quot;ArrayRef&quot;</a></p>
+
+</li>
+<li><p><a href="#HashRefWithData">&quot;HashRefWithData&quot;</a></p>
+
+</li>
+<li><p><a href="#ArrayRefWithData">&quot;ArrayRefWithData&quot;</a></p>
+
+</li>
+</ul>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="Bool">Bool</h2>
+
+<p>Validates data to determine booleans. This type belongs to the builtin types. For more information about builtin types, please refer to <a href="http://metacpan.org/module/Specio">Specio</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;Bool&#39;),
+    );
+
+    my $Result = t(&#39;Bool&#39;)-&gt;value_is_valid(1);
+
+    my $Result = is_Bool(1);</code></pre>
+
+<h2 id="Int">Int</h2>
+
+<p>Validates data to determine integers. This type belongs to the builtin types. For more information about builtin types, please refer to <a href="http://metacpan.org/module/Specio">Specio</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;Int&#39;),
+    );
+
+    my $Result = t(&#39;Int&#39;)-&gt;value_is_valid(123);
+
+    my $Result = is_Int(123);</code></pre>
+
+<h2 id="PositiveInt">PositiveInt</h2>
+
+<p>Validates data to determine positive integers.</p>
+
+<p>Inherits from parent type: <a href="#Int">&quot;Int&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;PositiveInt&#39;),
+    );
+
+    my $Result = t(&#39;PositiveInt&#39;)-&gt;value_is_valid(123);
+
+    my $Result = is_PositiveInt(123);</code></pre>
+
+<h2 id="NegativeInt">NegativeInt</h2>
+
+<p>Validates data to determine negative integers.</p>
+
+<p>Inherits from parent type: <a href="#Int">&quot;Int&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;NegativeInt&#39;),
+    );
+
+    my $Result = t(&#39;NegativeInt&#39;)-&gt;value_is_valid(-123);
+
+    my $Result = is_NegativeInt(-123);</code></pre>
+
+<h2 id="Num">Num</h2>
+
+<p>Validates data to determine numbers. This type belongs to the builtin types. For more information about builtin types, please refer to <a href="http://metacpan.org/module/Specio">Specio</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;Num&#39;),
+    );
+
+    my $Result = t(&#39;Num&#39;)-&gt;value_is_valid(1.23);
+
+    my $Result = is_Num(1.23);</code></pre>
+
+<h2 id="PositiveNum">PositiveNum</h2>
+
+<p>Validates data to determine positive numbers.</p>
+
+<p>Inherits from parent type: <a href="#Num">&quot;Num&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;PositiveNum&#39;),
+    );
+
+    my $Result = t(&#39;PositiveNum&#39;)-&gt;value_is_valid(1.23);
+
+    my $Result = is_PositiveNum(1.23);</code></pre>
+
+<h2 id="NegativeNum">NegativeNum</h2>
+
+<p>Validates data to determine negative numbers.</p>
+
+<p>Inherits from parent type: <a href="#Num">&quot;Num&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;NegativeNum&#39;),
+    );
+
+    my $Result = t(&#39;NegativeNum&#39;)-&gt;value_is_valid(-1.23);
+
+    my $Result = is_NegativeNum(-1.23);</code></pre>
+
+<h2 id="Str">Str</h2>
+
+<p>Validates data to determine strings. This type belongs to the builtin types. For more information about builtin types, please refer to <a href="http://metacpan.org/module/Specio">Specio</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;Str&#39;),
+    );
+
+    my $Result = t(&#39;Str&#39;)-&gt;value_is_valid(&#39;My valid string&#39;);
+
+    my $Result = is_Str(&#39;&#39;); # even empty strings are valid!</code></pre>
+
+<h2 id="StrWithData">StrWithData</h2>
+
+<p>Validates data to determine strings with characters.</p>
+
+<p>Inherits from parent type: <a href="#Str">&quot;Str&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;StrWithData&#39;),
+    );
+
+    my $Result = t(&#39;StrWithData&#39;)-&gt;value_is_valid(&#39;test&#39;);
+
+    my $Result = is_StrWithData(&#39;test&#39;);</code></pre>
+
+<h2 id="PerlPackage">PerlPackage</h2>
+
+<p>Validates data to determine string values with perl package paths.</p>
+
+<p>Inherits from parent type: <a href="#Str">&quot;Str&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;PerlPackage&#39;),
+    );
+
+    my $Result = t(&#39;PerlPackage&#39;)-&gt;value_is_valid(&#39;MyPackage&#39;);
+
+    my $Result = is_PerlPackage(&#39;My::Package&#39;);</code></pre>
+
+<h2 id="MD5">MD5</h2>
+
+<p>Validates data to determine string values with MD5 hashes.</p>
+
+<p>Inherits from parent type: <a href="#Str">&quot;Str&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;MD5&#39;),
+    );
+
+    my $Result = t(&#39;MD5&#39;)-&gt;value_is_valid(&#39;d41d8cd98f00b204e9800998ecf8427e&#39;);
+
+    my $Result = is_MD5(&#39;d41d8cd98f00b204e9800998ecf8427e&#39;);</code></pre>
+
+<h2 id="SHA1">SHA1</h2>
+
+<p>Validates data to determine string values with SHA1 hashes.</p>
+
+<p>Inherits from parent type: <a href="#Str">&quot;Str&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;SHA1&#39;),
+    );
+
+    my $Result = t(&#39;SHA1&#39;)-&gt;value_is_valid(&#39;da39a3ee5e6b4b0d3255bfef95601890afd80709&#39;);
+
+    my $Result = is_SHA1(&#39;da39a3ee5e6b4b0d3255bfef95601890afd80709&#39;);</code></pre>
+
+<h2 id="SHA256">SHA256</h2>
+
+<p>Validates data to determine string values with SHA256 hashes.</p>
+
+<p>Inherits from parent type: <a href="#Str">&quot;Str&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;SHA256&#39;),
+    );
+
+    my $Result = t(&#39;SHA256&#39;)-&gt;value_is_valid(&#39;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&#39;);
+
+    my $Result = is_SHA256(&#39;e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855&#39;);</code></pre>
+
+<h2 id="UUID">UUID</h2>
+
+<p>Validates data to determine UUID values.</p>
+
+<p>Inherits from parent type: <a href="#Str">&quot;Str&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;UUID&#39;),
+    );
+
+    my $Result = t(&#39;UUID&#39;)-&gt;value_is_valid(&#39;c945728e-2324-11e8-9b56-9fdee36e124b&#39;);
+
+    my $Result = is_UUID(&#39;CA761232-ED42-11CE-BACD-00AA0057B223&#39;);</code></pre>
+
+<h2 id="IPv4">IPv4</h2>
+
+<p>Validates data to determine IPv4 addresses.</p>
+
+<p>Inherits from parent type: <a href="#Str">&quot;Str&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;IPv4&#39;),
+    );
+
+    my $Result = t(&#39;IPv4&#39;)-&gt;value_is_valid(&#39;192.168.1.1&#39;);
+
+    my $Result = is_IPv4(&#39;127.0.0.1&#39;);</code></pre>
+
+<h2 id="IPv6">IPv6</h2>
+
+<p>Validates data to determine IPv6 addresses.</p>
+
+<p>Inherits from parent type: <a href="#Str">&quot;Str&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;IPv6&#39;),
+    );
+
+    my $Result = t(&#39;IPv6&#39;)-&gt;value_is_valid(&#39;2001:db8:a0b:12f0::1&#39;);
+
+    my $Result = is_IPv6(&#39;::1&#39;);</code></pre>
+
+<h2 id="HashRef">HashRef</h2>
+
+<p>Validates data to determine hash references. This type belongs to the builtin types. For more information about builtin types, please refer to <a href="http://metacpan.org/module/Specio">Specio</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;HashRef&#39;),
+    );
+
+    my $Result = t(&#39;HashRef&#39;)-&gt;value_is_valid( { Test =&gt; &#39;My valid hash reference&#39; } );
+
+    my $Result = is_HashRef( {} ); # even empty hash references are valid!</code></pre>
+
+<h2 id="ArrayRef">ArrayRef</h2>
+
+<p>Validates data to determine array references. This type belongs to the builtin types. For more information about builtin types, please refer to <a href="http://metacpan.org/module/Specio">Specio</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;ArrayRef&#39;),
+    );
+
+    my $Result = t(&#39;ArrayRef&#39;)-&gt;value_is_valid( [ &#39;My&#39;, &#39;valid&#39;, &#39;array&#39;, &#39;reference&#39; ] );
+
+    my $Result = is_ArrayRef( [] ); # even empty array references are valid!</code></pre>
+
+<h2 id="HashRefWithData">HashRefWithData</h2>
+
+<p>Validates data to determine hash references with payload.</p>
+
+<p>Inherits from parent type: <a href="#HashRef">&quot;HashRef&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;HashRefWithData&#39;),
+    );
+
+    my $Result = t(&#39;HashRefWithData&#39;)-&gt;value_is_valid( { a =&gt; 1 } );
+
+    my $Result = is_HashRefWithData( { test =&gt; [1,2,3] } );</code></pre>
+
+<h2 id="ArrayRefWithData">ArrayRefWithData</h2>
+
+<p>Validates data to determine array references with payload.</p>
+
+<p>Inherits from parent type: <a href="#ArrayRef">&quot;ArrayRef&quot;</a>.</p>
+
+<p>returns 1 if data matches criteria or undef otherwise</p>
+
+<pre><code>    has &#39;MyAttribute&#39; =&gt; (
+        is      =&gt; &#39;rw&#39;,
+        isa     =&gt; t(&#39;ArrayRefWithData&#39;),
+    );
+
+    my $Result = t(&#39;ArrayRefWithData&#39;)-&gt;value_is_valid( [1, 2, 3] );
+
+    my $Result = is_ArrayRefWithData( [ { a =&gt; 1 }, { b =&gt; 2 } ] );</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::UnitTest::Helper &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::UnitTest::Helper
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#GetRandomID">GetRandomID()</a></li>
+      <li><a href="#GetRandomNumber">GetRandomNumber()</a></li>
+      <li><a href="#TestUserCreate">TestUserCreate()</a></li>
+      <li><a href="#TestCustomerUserCreate">TestCustomerUserCreate()</a></li>
+      <li><a href="#BeginWork">BeginWork()</a></li>
+      <li><a href="#Rollback">Rollback()</a></li>
+      <li><a href="#GetTestHTTPHostname">GetTestHTTPHostname()</a></li>
+      <li><a href="#FixedTimeSet">FixedTimeSet()</a></li>
+      <li><a href="#FixedTimeUnset">FixedTimeUnset()</a></li>
+      <li><a href="#FixedTimeAddSeconds">FixedTimeAddSeconds()</a></li>
+      <li><a href="#DESTROY">DESTROY()</a></li>
+      <li><a href="#ConfigSettingChange">ConfigSettingChange()</a></li>
+      <li><a href="#CustomCodeActivate">CustomCodeActivate()</a></li>
+      <li><a href="#CustomFileCleanup">CustomFileCleanup()</a></li>
+      <li><a href="#UseTmpArticleDir">UseTmpArticleDir()</a></li>
+      <li><a href="#DisableAsyncCalls">DisableAsyncCalls()</a></li>
+      <li><a href="#ProvideTestDatabase">ProvideTestDatabase()</a></li>
+      <li><a href="#TestDatabaseCleanup">TestDatabaseCleanup()</a></li>
+      <li><a href="#DatabaseXMLExecute">DatabaseXMLExecute()</a></li>
+      <li><a href="#IsDaemonRunning">IsDaemonRunning()</a></li>
+      <li><a href="#StartDaemon">StartDaemon()</a></li>
+      <li><a href="#StopDaemon">StopDaemon()</a></li>
+      <li><a href="#ProvideTestDocumentSearchIndices">ProvideTestDocumentSearchIndices()</a></li>
+      <li><a href="#RemoveTestDocumentSearchIndices">RemoveTestDocumentSearchIndices()</a></li>
+      <li><a href="#DocumentAdd">DocumentAdd()</a></li>
+      <li><a href="#DocumentDelete">DocumentDelete()</a></li>
+      <li><a href="#BuildWebApp">BuildWebApp()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::UnitTest::Helper - unit test helper functions</p>
+
+<h2 id="new">new()</h2>
+
+<p>construct a helper object.</p>
+
+<pre><code>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+        &#39;Kernel::System::UnitTest::Helper&#39; =&gt; {
+            RestoreDatabase =&gt; 1,        # Runs the test in a transaction, and roll it back in the destructor.
+                                         #
+                                         # NOTE: Rollback does not work for changes in the database layout. If you
+                                         # want to do this in your tests, you cannot use this option and must handle the rollback
+                                         # yourself.
+            UseTmpArticleDir =&gt; 1,       # (default 0), create &amp; use a temporary article directory and clean it up afterwards.
+            SkipSSLVerify    =&gt; 1,       # (default 0), skip SSL verification in the following test code.
+            ProvideTestDocumentSearchIndices =&gt; 1,  # (default 0) - create and use temporary document search indices and clean them up afterwards.
+            StartDaemon      =&gt; 0,       # (default 0) - 0 causes the daemon to be stopped to not interfere with tests (default behaviour).
+                                         #  1 will cause the daemon to be started with an empty set of tasks.
+        },
+    );
+    my $Helper = $Kernel::OM-&gt;Get(&#39;Kernel::System::UnitTest::Helper&#39;);</code></pre>
+
+<h2 id="GetRandomID">GetRandomID()</h2>
+
+<p>creates a random ID that can be used in tests as a unique identifier.</p>
+
+<p>It is guaranteed that within a test this function will never return a duplicate.</p>
+
+<p>Please note that these numbers are not really random and should only be used to create test data.</p>
+
+<h2 id="GetRandomNumber">GetRandomNumber()</h2>
+
+<p>creates a random Number that can be used in tests as a unique identifier.</p>
+
+<p>It is guaranteed that within a test this function will never return a duplicate.</p>
+
+<p>Please note that these numbers are not really random and should only be used to create test data.</p>
+
+<h2 id="TestUserCreate">TestUserCreate()</h2>
+
+<p>creates a test user that can be used in tests. It will be set to invalid automatically during <a href="#DESTROY">&quot;DESTROY()&quot;</a>. Returns the login name of the new user, the password is the same.</p>
+
+<pre><code>    my $TestUserLogin = $Helper-&gt;TestUserCreate(
+        Groups               =&gt; [&#39;admin&#39;, &#39;users&#39;], # optional, list of groups to add this user to (rw rights)
+        Language             =&gt; &#39;de&#39;                # optional, defaults to &#39;en&#39; if not set
+        SetUserLastLogin     =&gt; 1,                  # optional, defaults to 1 if not set
+        ExceptTwoFactorSetup =&gt; 1,                  # optional, defaults to 1 if not set
+    );
+
+    or
+
+    my ( $TestUserLogin, $TestUserID ) = $Helper-&gt;TestUserCreate(
+        Groups =&gt; [&#39;admin&#39;, &#39;users&#39;],           # optional, list of groups to add this user to (rw rights)
+        Language =&gt; &#39;de&#39;                        # optional, defaults to &#39;en&#39; if not set
+    );</code></pre>
+
+<h2 id="TestCustomerUserCreate">TestCustomerUserCreate()</h2>
+
+<p>creates a test customer user that can be used in tests. It will be set to invalid automatically during <a href="#DESTROY">&quot;DESTROY()&quot;</a>. Returns the login name of the new customer user, the password is the same.</p>
+
+<pre><code>    my $TestUserLogin = $Helper-&gt;TestCustomerUserCreate(
+        Language             =&gt; &#39;de&#39;,   # optional, defaults to &#39;en&#39; if not set
+        SetUserLastLogin     =&gt; 1,      # optional, defaults to 1 if not set
+        ExceptTwoFactorSetup =&gt; 1,      # optional, defaults to 1 if not set
+    );</code></pre>
+
+<h2 id="BeginWork">BeginWork()</h2>
+
+<pre><code>    $Helper-&gt;BeginWork()</code></pre>
+
+<p>Starts a database transaction (in order to isolate the test from the static database).</p>
+
+<h2 id="Rollback">Rollback()</h2>
+
+<pre><code>    $Helper-&gt;Rollback()</code></pre>
+
+<p>Rolls back the current database transaction.</p>
+
+<h2 id="GetTestHTTPHostname">GetTestHTTPHostname()</h2>
+
+<p>returns a host name for HTTP based tests, possibly including the port.</p>
+
+<h2 id="FixedTimeSet">FixedTimeSet()</h2>
+
+<p>makes it possible to override the system time as long as this object lives. You can pass an optional time parameter that should be used, if not, the current system time will be used.</p>
+
+<p>All calls to methods of Kernel::System::Time and Kernel::System::DateTime will use the given time afterwards.</p>
+
+<pre><code>    $HelperObject-&gt;FixedTimeSet(366475757);         # with Timestamp
+    $HelperObject-&gt;FixedTimeSet($DateTimeObject);   # with previously created DateTime object
+    $HelperObject-&gt;FixedTimeSet();                  # set to current date and time</code></pre>
+
+<p>Returns: Timestamp</p>
+
+<h2 id="FixedTimeUnset">FixedTimeUnset()</h2>
+
+<p>restores the regular system time behavior.</p>
+
+<h2 id="FixedTimeAddSeconds">FixedTimeAddSeconds()</h2>
+
+<p>adds a number of seconds to the fixed system time which was previously set by FixedTimeSet(). You can pass a negative value to go back in time.</p>
+
+<h2 id="DESTROY">DESTROY()</h2>
+
+<p>performs various clean-ups.</p>
+
+<h2 id="ConfigSettingChange">ConfigSettingChange()</h2>
+
+<p>temporarily change a configuration setting system wide to another value, both in the current ConfigObject and also in the system configuration on disk.</p>
+
+<p>This will be reset when the Helper object is destroyed.</p>
+
+<p>Please note that this will not work correctly in clustered environments.</p>
+
+<pre><code>    $Helper-&gt;ConfigSettingChange(
+        Valid =&gt; 1,            # (optional) enable or disable setting
+        Key   =&gt; &#39;MySetting&#39;,  # setting name
+        Value =&gt; { ... } ,     # setting value
+    );</code></pre>
+
+<h2 id="CustomCodeActivate">CustomCodeActivate()</h2>
+
+<p>Temporarily include custom code in the system. For example, you may use this to redefine a subroutine from another class. This change will persist for remainder of the test.</p>
+
+<p>All code will be removed when the Helper object is destroyed.</p>
+
+<p>Please note that this will not work correctly in clustered environments.</p>
+
+<pre><code>    $Helper-&gt;CustomCodeActivate(
+        Code =&gt; q^
+sub Kernel::Config::Files::ZZZZUnitTestIdentifier::Load {} # no-op, avoid warning logs
+use Kernel::System::WebUserAgent;
+package Kernel::System::WebUserAgent;
+use strict;
+use warnings;
+{
+    no warnings &#39;redefine&#39;;
+    sub Request {
+        my $JSONString = &#39;{&quot;Results&quot;:{},&quot;ErrorMessage&quot;:&quot;&quot;,&quot;Success&quot;:1}&#39;;
+        return (
+            Content =&gt; \$JSONString,
+            Status  =&gt; &#39;200 OK&#39;,
+        );
+    }
+}
+1;^,
+        Identifier =&gt; &#39;News&#39;,   # (optional) Code identifier to include in file name
+    );</code></pre>
+
+<h2 id="CustomFileCleanup">CustomFileCleanup()</h2>
+
+<p>Remove all custom files from <code>ConfigSettingChange()</code> and <code>CustomCodeActivate()</code>.</p>
+
+<h2 id="UseTmpArticleDir">UseTmpArticleDir()</h2>
+
+<p>switch the article storage directory to a temporary one to prevent collisions;</p>
+
+<h2 id="DisableAsyncCalls">DisableAsyncCalls()</h2>
+
+<p>Disable scheduling of asynchronous tasks using <code>AsynchronousExecutor</code> component of OTRS daemon.</p>
+
+<h2 id="ProvideTestDatabase">ProvideTestDatabase()</h2>
+
+<p>Provide temporary database for the test. Please first define test database settings in <code>Config.pm</code>, i.e:</p>
+
+<pre><code>    $Self-&gt;{TestDatabase} = {
+        DatabaseDSN  =&gt; &#39;DBI:mysql:database=otrs_test;host=127.0.0.1;&#39;,
+        DatabaseUser =&gt; &#39;otrs_test&#39;,
+        DatabasePw   =&gt; &#39;otrs_test&#39;,
+    };</code></pre>
+
+<p>The method call will override global database configuration for duration of the test, i.e. temporary database will receive all calls sent over system <code>DBObject</code>.</p>
+
+<p>All database contents will be automatically dropped when the Helper object is destroyed.</p>
+
+<pre><code>    $Helper-&gt;ProvideTestDatabase(
+        DatabaseXMLString =&gt; $XML,      # (optional) OTRS database XML schema to execute
+                                        # or
+        DatabaseXMLFiles =&gt; [           # (optional) List of XML files to load and execute
+            &#39;/opt/otrs/scripts/database/otrs-schema.xml&#39;,
+            &#39;/opt/otrs/scripts/database/otrs-initial_insert.xml&#39;,
+        ],
+    );</code></pre>
+
+<p>This method returns &#39;undef&#39; in case the test database is not configured. If it is configured, but the supplied XML cannot be read or executed, this method will <code>die()</code> to interrupt the test with an error.</p>
+
+<h2 id="TestDatabaseCleanup">TestDatabaseCleanup()</h2>
+
+<p>Clears temporary database used in the test. Always call <code>ProvideTestDatabase()</code> called first, in order to set it up.</p>
+
+<p>Please note that all database contents will be dropped, USE WITH CARE!</p>
+
+<pre><code>    $Helper-&gt;TestDatabaseCleanup();</code></pre>
+
+<h2 id="DatabaseXMLExecute">DatabaseXMLExecute()</h2>
+
+<p>Execute supplied XML against current database. Content of supplied XML or XMLFilename parameter must be valid OTRS database XML schema.</p>
+
+<pre><code>    $Helper-&gt;DatabaseXMLExecute(
+        XML =&gt; $XML,     # OTRS database XML schema to execute
+    );</code></pre>
+
+<p>Alternatively, it can also load an XML file to execute:</p>
+
+<pre><code>    $Helper-&gt;DatabaseXMLExecute(
+        XMLFile =&gt; &#39;/path/to/file&#39;,  # OTRS database XML file to execute
+    );</code></pre>
+
+<h2 id="IsDaemonRunning">IsDaemonRunning()</h2>
+
+<p>Checks if the OTRS daemon is currently running</p>
+
+<pre><code>    $Helper-&gt;IsDaemonRunning();</code></pre>
+
+<p>Returns 1 if the daemon is running, 0 if not.</p>
+
+<h2 id="StartDaemon">StartDaemon()</h2>
+
+<p>Tries to start the OTRS daemon.</p>
+
+<pre><code>    $Helper-&gt;StartDaemon();</code></pre>
+
+<p>Returns 1, if the daemon was started successfully, 0 if not.</p>
+
+<h2 id="StopDaemon">StopDaemon()</h2>
+
+<p>Tries to stop the OTRS daemon.</p>
+
+<pre><code>    $Helper-&gt;StopDaemon();</code></pre>
+
+<p>Returns 1, if the daemon was stopped successfully, 0 if not.</p>
+
+<h2 id="ProvideTestDocumentSearchIndices">ProvideTestDocumentSearchIndices()</h2>
+
+<p>Updates the configuration with a random prefix for all elastic search indexes and creates a new set of all of them.</p>
+
+<p>This is normally only executed in the constructor of the helper object by adding ProvideTestDocumentSearchIndices parameter.</p>
+
+<pre><code>    $Helper-&gt;ProvideTestDocumentSearchIndices();</code></pre>
+
+<h2 id="RemoveTestDocumentSearchIndices">RemoveTestDocumentSearchIndices()</h2>
+
+<p>Removes custom created indices by gathering the prefix in the configuration.</p>
+
+<p>This is normally only executed in the constructor of the helper object by adding ProvideTestDocumentSearchIndices parameter.</p>
+
+<pre><code>    $Helper-&gt;RemoveTestDocumentSearchIndices();</code></pre>
+
+<h2 id="DocumentAdd">DocumentAdd()</h2>
+
+<p>Add documents to their corresponding elastic search index and refresh index so the documents will be immediately available for search.</p>
+
+<pre><code>    $Helper-&gt;DocumentAdd(
+        Documents =&gt; {
+            Ticket =&gt; [ 1, 2, 3, ],         # each document type needs its own key and the value is an
+                                            #   array reference of the IDs of the documents to be indexed.
+            ArticleMime =&gt; [ 4, 5, 6,],
+        },
+    );</code></pre>
+
+<h2 id="DocumentDelete">DocumentDelete()</h2>
+
+<p>Removes documents from corresponding elastic search index.</p>
+
+<pre><code>    $Helper-&gt;DocumentDelete(
+        Documents =&gt; {
+            Ticket =&gt; [ 1, 2, 3, ],         # each document type needs its own key and the value is an
+                                            #   array reference of the IDs of the documents to be indexed.
+            ArticleMime =&gt; [ 4, 5, 6,],
+        },
+    );</code></pre>
+
+<h2 id="BuildWebApp">BuildWebApp()</h2>
+
+<p>Builds web apps using the <code>webpack</code> toolchain.</p>
+
+<pre><code>    $SeleniumObject-&gt;BuildWebApp(
+        Apps =&gt; [           # (optional) Specific web apps to build. If unspecified, builds all default apps.
+            &#39;External&#39;,
+            &#39;Chat&#39;,
+            ...
+        ],
+    );</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

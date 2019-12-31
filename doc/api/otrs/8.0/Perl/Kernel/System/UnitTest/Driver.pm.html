@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::UnitTest::Driver &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::UnitTest::Driver
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Run">Run()</a></li>
+      <li><a href="#True">True()</a></li>
+      <li><a href="#False">False()</a></li>
+      <li><a href="#Is">Is()</a></li>
+      <li><a href="#IsNot">IsNot()</a></li>
+      <li><a href="#IsDeeply">IsDeeply()</a></li>
+      <li><a href="#IsNotDeeply">IsNotDeeply()</a></li>
+      <li><a href="#AttachSeleniumScreenshot">AttachSeleniumScreenshot()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::UnitTest::Driver - unit test file execution wrapper</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>create unit test driver object. Do not use it directly, instead use:</p>
+
+<pre><code>    my $Driver = $Kernel::OM-&gt;Create(
+        &#39;Kernel::System::UnitTest::Driver&#39;,
+        ObjectParams =&gt; {
+            Verbose =&gt; $Self-&gt;{Verbose},
+            ANSI    =&gt; $Self-&gt;{ANSI},
+        },
+    );</code></pre>
+
+<h2 id="Run">Run()</h2>
+
+<p>executes a single unit test file and provides it with an empty environment (fresh <code>ObjectManager</code> instance).</p>
+
+<p>This method assumes that it runs in a dedicated child process just for this one unit test. This process forking is done in <a href="../UnitTest.pm.html">Kernel::System::UnitTest</a>, which creates one child process per test file.</p>
+
+<p>All results will be collected and written to a <code>var/tmp/UnitTest.dump</code> file that the main process will load to collect all results.</p>
+
+<h2 id="True">True()</h2>
+
+<p>test for a scalar value that evaluates to true.</p>
+
+<p>Send a scalar value to this function along with the test&#39;s name:</p>
+
+<pre><code>    $UnitTestObject-&gt;True(1, &#39;Test Name&#39;);
+
+    $UnitTestObject-&gt;True($ParamA, &#39;Test Name&#39;);</code></pre>
+
+<p>Internally, the function receives this value and evaluates it to see if it&#39;s true, returning 1 in this case or undef, otherwise.</p>
+
+<pre><code>    my $TrueResult = $UnitTestObject-&gt;True(
+        $TestValue,
+        &#39;Test Name&#39;,
+    );</code></pre>
+
+<h2 id="False">False()</h2>
+
+<p>test for a scalar value that evaluates to false.</p>
+
+<p>It has the same interface as <a href="#True">&quot;True()&quot;</a>, but tests for a false value instead.</p>
+
+<h2 id="Is">Is()</h2>
+
+<p>compares two scalar values for equality.</p>
+
+<p>To this function you must send a pair of scalar values to compare them, and the name that the test will take, this is done as shown in the examples below.</p>
+
+<pre><code>    $UnitTestObject-&gt;Is($A, $B, &#39;Test Name&#39;);</code></pre>
+
+<p>Returns 1 if the values were equal, or undef otherwise.</p>
+
+<pre><code>    my $IsResult = $UnitTestObject-&gt;Is(
+        $ValueFromFunction,      # test data
+        1,                       # expected value
+        &#39;Test Name&#39;,
+    );</code></pre>
+
+<h2 id="IsNot">IsNot()</h2>
+
+<p>compares two scalar values for inequality.</p>
+
+<p>It has the same interface as <a href="#Is">&quot;Is()&quot;</a>, but tests for inequality instead.</p>
+
+<h2 id="IsDeeply">IsDeeply()</h2>
+
+<p>compares complex data structures for equality.</p>
+
+<p>To this function you must send the references to two data structures to be compared, and the name that the test will take, this is done as shown in the examples below.</p>
+
+<pre><code>    $UnitTestObject-&gt; IsDeeply($ParamA, $ParamB, &#39;Test Name&#39;);</code></pre>
+
+<p>Where $ParamA and $ParamB must be references to a structure (scalar, list or hash).</p>
+
+<p>Returns 1 if the data structures are the same, or undef otherwise.</p>
+
+<pre><code>    my $IsDeeplyResult = $UnitTestObject-&gt;IsDeeply(
+        \%ResultHash,           # test data
+        \%ExpectedHash,         # expected value
+        &#39;Dummy Test Name&#39;,
+    );</code></pre>
+
+<h2 id="IsNotDeeply">IsNotDeeply()</h2>
+
+<p>compares two data structures for inequality.</p>
+
+<p>It has the same interface as <a href="#IsDeeply">&quot;IsDeeply()&quot;</a>, but tests for inequality instead.</p>
+
+<h2 id="AttachSeleniumScreenshot">AttachSeleniumScreenshot()</h2>
+
+<p>attach a screenshot taken during Selenium error handling. These will be sent to the server together with the test results.</p>
+
+<pre><code>    $Driver-&gt;AttachSeleniumScreenshot(
+        Filename =&gt; $Filename,
+        Content  =&gt; $Data               # raw image data
+    );</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

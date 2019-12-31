@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::HTMLUtils &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::HTMLUtils
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#ToAscii">ToAscii()</a></li>
+      <li><a href="#ToHTML">ToHTML()</a></li>
+      <li><a href="#DocumentComplete">DocumentComplete()</a></li>
+      <li><a href="#DocumentStrip">DocumentStrip()</a></li>
+      <li><a href="#DocumentCleanup">DocumentCleanup()</a></li>
+      <li><a href="#LinkQuote">LinkQuote()</a></li>
+      <li><a href="#Safety">Safety()</a></li>
+      <li><a href="#EmbeddedImagesExtract">EmbeddedImagesExtract()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::HTMLUtils - creating and modifying html strings</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>A module for creating and modifying html strings.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+
+<pre><code>    my $HTMLUtilsObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::HTMLUtils&#39;);</code></pre>
+
+<h2 id="ToAscii">ToAscii()</h2>
+
+<p>convert an HTML string to an ASCII string</p>
+
+<pre><code>    my $Ascii = $HTMLUtilsObject-&gt;ToAscii( String =&gt; $String );</code></pre>
+
+<h2 id="ToHTML">ToHTML()</h2>
+
+<p>converts an ASCII string to an HTML string.</p>
+
+<pre><code>    my $HTMLString = $HTMLUtilsObject-&gt;ToHTML(
+        String                      =&gt; $String,
+        MaxLines                    =&gt; $String,
+        WrapLineAfterCharacters     =&gt; 0,          # optional, gracefully wrap line after a certain amount of characters if needed (defaults to not active)
+        StripEmptyLines             =&gt; 0,           # optional, strip empty lines (defaults to not active)
+        KeepSimpleSpaces            =&gt; 0,           # optional, don&#39;t mask subsequent spaces with &amp;nbsp; (defaults to not active)
+        DetectLinks                 =&gt; 0,           # optional, call LinkQuote to detect and mark up links
+    );</code></pre>
+
+<h2 id="DocumentComplete">DocumentComplete()</h2>
+
+<p>check and e. g. add &lt;html&gt; and &lt;body&gt; tags to given html string</p>
+
+<pre><code>    my $HTMLDocument = $HTMLUtilsObject-&gt;DocumentComplete(
+        String  =&gt; $String,
+        Charset =&gt; $Charset,
+    );</code></pre>
+
+<h2 id="DocumentStrip">DocumentStrip()</h2>
+
+<p>remove html document tags from string</p>
+
+<pre><code>    my $HTMLString = $HTMLUtilsObject-&gt;DocumentStrip(
+        String  =&gt; $String,
+    );</code></pre>
+
+<h2 id="DocumentCleanup">DocumentCleanup()</h2>
+
+<p>perform some sanity checks on HTML content.</p>
+
+<pre><code> -  Replace &lt;blockquote&gt; by using
+    &quot;&lt;div style=&quot;border:none;border-left:solid blue 1.5pt;padding:0cm 0cm 0cm 4.0pt&quot; type=&quot;cite&quot;&gt;&quot;
+    because of cross mail client and browser compatibility.
+
+ -  If there is no HTML doctype present, inject the HTML5 doctype, because it is compatible with HTML4
+    and causes the browsers to render the content in standards mode, which is safer.
+
+    $HTMLBody = $HTMLUtilsObject-&gt;DocumentCleanup(
+        String =&gt; $HTMLBody,
+        SkipBlockquote =&gt; 1,    # (optional) Do not replace &lt;blockquote&gt; tags. Default undef.
+    );</code></pre>
+
+<h2 id="LinkQuote">LinkQuote()</h2>
+
+<p>detect links in HTML code, add <code>a href</code> if missing</p>
+
+<pre><code>    my $HTMLWithLinks = $HTMLUtilsObject-&gt;LinkQuote(
+        String    =&gt; $HTMLString,
+        Target    =&gt; &#39;TargetName&#39;, # content of target=&quot;?&quot;, e. g. _blank
+        TargetAdd =&gt; 1,            # add target=&quot;_blank&quot; to all existing &quot;&lt;a href&quot;
+    );</code></pre>
+
+<p>also string ref is possible</p>
+
+<pre><code>    my $HTMLWithLinksRef = $HTMLUtilsObject-&gt;LinkQuote(
+        String =&gt; \$HTMLStringRef,
+    );</code></pre>
+
+<h2 id="Safety">Safety()</h2>
+
+<p>To remove/strip active html tags/addons (javascript, <code>applet</code>s, <code>embed</code>s and <code>object</code>s) from html strings.</p>
+
+<pre><code>    my %Safe = $HTMLUtilsObject-&gt;Safety(
+        String         =&gt; $HTMLString,
+        NoApplet       =&gt; 1,
+        NoObject       =&gt; 1,
+        NoEmbed        =&gt; 1,
+        NoSVG          =&gt; 1,
+        NoImg          =&gt; 1,
+        NoIntSrcLoad   =&gt; 0,
+        NoExtSrcLoad   =&gt; 1,
+        NoJavaScript   =&gt; 1,
+        ReplacementStr =&gt; &#39;string&#39;,          # optional, string to show instead of applet, object, embed, svg and img tags
+    );</code></pre>
+
+<p>also string ref is possible</p>
+
+<pre><code>    my %Safe = $HTMLUtilsObject-&gt;Safety(
+        String       =&gt; \$HTMLStringRef,
+        NoApplet     =&gt; 1,
+        NoObject     =&gt; 1,
+        NoEmbed      =&gt; 1,
+        NoSVG        =&gt; 1,
+        NoImg        =&gt; 1,
+        NoIntSrcLoad =&gt; 0,
+        NoExtSrcLoad =&gt; 1,
+        NoJavaScript =&gt; 1,
+    );</code></pre>
+
+<p>returns</p>
+
+<pre><code>    my %Safe = (
+        String  =&gt; $HTMLString, # modified html string (scalar or ref)
+        Replace =&gt; 1,           # info if something got replaced
+    );</code></pre>
+
+<h2 id="EmbeddedImagesExtract">EmbeddedImagesExtract()</h2>
+
+<p>extracts embedded images with data-URLs from an HTML document.</p>
+
+<pre><code>    $HTMLUtilsObject-&gt;EmbeddedImagesExtract(
+        DocumentRef    =&gt; \$Body,
+        AttachmentsRef =&gt; \@Attachments,
+    );</code></pre>
+
+<p>Returns nothing. If embedded images were found, these will be appended to the attachments list, and the image data URL will be replaced with a <code>cid:</code> URL in the document.</p>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

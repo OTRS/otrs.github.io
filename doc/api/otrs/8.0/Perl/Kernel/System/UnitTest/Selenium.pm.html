@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::UnitTest::Selenium &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::UnitTest::Selenium
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#RunTest">RunTest()</a></li>
+      <li><a href="#FixedTimeSet">FixedTimeSet()</a></li>
+      <li><a href="#FixedTimeUnset">FixedTimeUnset()</a></li>
+      <li><a href="#get">get()</a></li>
+      <li><a href="#get_alert_text">get_alert_text()</a></li>
+      <li><a href="#VerifiedGet">VerifiedGet()</a></li>
+      <li><a href="#VerifiedRefresh">VerifiedRefresh()</a></li>
+      <li><a href="#Login">Login()</a></li>
+      <li><a href="#WaitFor">WaitFor()</a></li>
+      <li><a href="#ClearTestFlag">ClearTestFlag()</a></li>
+      <li><a href="#SwitchToFrame">SwitchToFrame()</a></li>
+      <li><a href="#DragAndDrop">DragAndDrop()</a></li>
+      <li><a href="#HandleError">HandleError()</a></li>
+      <li><a href="#DEMOLISH">DEMOLISH()</a></li>
+    </ul>
+  </li>
+  <li><a href="#DEPRECATED-FUNCTIONS">DEPRECATED FUNCTIONS</a>
+    <ul>
+      <li><a href="#WaitForjQueryEventBound">WaitForjQueryEventBound()</a></li>
+      <li><a href="#InputFieldValueSet">InputFieldValueSet()</a></li>
+      <li><a href="#FormSelectValueSet">FormSelectValueSet()</a></li>
+      <li><a href="#FormSelectValueCheck">FormSelectValueCheck()</a></li>
+      <li><a href="#FormSelectExpandDropdown">_FormSelectExpandDropdown()</a></li>
+      <li><a href="#SeleniumSettingsSet">SeleniumSettingsSet()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::UnitTest::Selenium - run front end tests</p>
+
+<p>This class inherits from Selenium::Remote::Driver. You can use its full API (see <a href="http://search.cpan.org/~aivaturi/Selenium-Remote-Driver-0.15/lib/Selenium/Remote/Driver.pm">http://search.cpan.org/~aivaturi/Selenium-Remote-Driver-0.15/lib/Selenium/Remote/Driver.pm</a>).</p>
+
+<p>Every successful Selenium command will be logged as a successful unit test. In case of an error, an exception will be thrown that you can catch in your unit test file and handle with <code>HandleError()</code> in this class. It will output a failing test result and generate a screen shot for analysis.</p>
+
+<h2 id="new">new()</h2>
+
+<p>create a selenium object to run front end tests.</p>
+
+<p>To do this, you need a running <code>selenium</code> or <code>phantomjs</code> server.</p>
+
+<p>Specify the connection details in <code>Config.pm</code>, like this:</p>
+
+<pre><code>    # For testing with Firefox until v. 47 (testing with recent FF and marionette is currently not supported):
+    $Self-&gt;{&#39;SeleniumTestsConfig&#39;} = {
+        remote_server_addr  =&gt; &#39;localhost&#39;,
+        port                =&gt; &#39;4444&#39;,
+        platform            =&gt; &#39;ANY&#39;,
+        browser_name        =&gt; &#39;firefox&#39;,
+        extra_capabilities =&gt; {
+            marionette     =&gt; \0,   # Required to run FF 47 or older on Selenium 3+.
+        },
+    };
+
+    # For testing with Chrome/Chromium (requires installed geckodriver):
+    $Self-&gt;{&#39;SeleniumTestsConfig&#39;} = {
+        remote_server_addr  =&gt; &#39;localhost&#39;,
+        port                =&gt; &#39;4444&#39;,
+        platform            =&gt; &#39;ANY&#39;,
+        browser_name        =&gt; &#39;chrome&#39;,
+        extra_capabilities =&gt; {
+            chromeOptions =&gt; {
+                # disable-infobars makes sure window size calculations are ok
+                args =&gt; [ &quot;disable-infobars&quot; ],
+            },
+        },
+    };</code></pre>
+
+<p>Then you can use the full API of <a href="http://metacpan.org/module/Selenium::Remote::Driver">Selenium::Remote::Driver</a> on this object.</p>
+
+<h2 id="RunTest">RunTest()</h2>
+
+<p>runs a selenium test if Selenium testing is configured.</p>
+
+<pre><code>    $SeleniumObject-&gt;RunTest( sub { ... } );</code></pre>
+
+<h2 id="FixedTimeSet">FixedTimeSet()</h2>
+
+<p>provide a fixed time in the context of the current test as well as on the server and the client for the following Selenium requests that load an application.</p>
+
+<pre><code>    $SeleniumObject-&gt;FixedTimeSet( $TimeToSave );</code></pre>
+
+<p>Please note that this does NOT work in <code>webpack development server</code> environments, only with the Perl production or development web servers.</p>
+
+<h2 id="FixedTimeUnset">FixedTimeUnset()</h2>
+
+<p>remove a previously set fixed time in the context of the current test as well as on the server and the client for the following Selenium requests that load an application.</p>
+
+<pre><code>    $SeleniumObject-&gt;FixedTimeUnset();</code></pre>
+
+<h2 id="get">get()</h2>
+
+<p>Override get method of base class to prepend the correct base URL.</p>
+
+<pre><code>    $SeleniumObject-&gt;get(
+        $URL,
+    );</code></pre>
+
+<h2 id="get_alert_text">get_alert_text()</h2>
+
+<p>Override get_alert_text() method of base class to return alert text as string.</p>
+
+<pre><code>    my $AlertText = $SeleniumObject-&gt;get_alert_text();</code></pre>
+
+<p>returns</p>
+
+<pre><code>    my $AlertText = &#39;Some alert text!&#39;</code></pre>
+
+<h2 id="VerifiedGet">VerifiedGet()</h2>
+
+<p>perform a get() call, but wait for the page to be fully loaded (works only within OTRS). Will die() if the verification fails.</p>
+
+<pre><code>    $SeleniumObject-&gt;VerifiedGet(
+        $URL,
+    );</code></pre>
+
+<h2 id="VerifiedRefresh">VerifiedRefresh()</h2>
+
+<p>perform a refresh() call, but wait for the page to be fully loaded (works only within OTRS). Will die() if the verification fails.</p>
+
+<pre><code>    $SeleniumObject-&gt;VerifiedRefresh();</code></pre>
+
+<h2 id="Login">Login()</h2>
+
+<p>Login to agent, customer or external interface.</p>
+
+<pre><code>    $SeleniumObject-&gt;Login(
+        Type     =&gt; &#39;Agent&#39;,            # Agent|Customer|AgentFrontend|External
+        User     =&gt; &#39;someuser&#39;,
+        Password =&gt; &#39;somepassword&#39;,
+        Mobile   =&gt; 0,                  # Login using Mobile layout (default 0)
+    );</code></pre>
+
+<h2 id="WaitFor">WaitFor()</h2>
+
+<p>wait with increasing sleep intervals until the given condition is true or the wait time is over. Exactly one condition (JavaScript or WindowCount) must be specified.</p>
+
+<pre><code>    my $Success = $SeleniumObject-&gt;WaitFor(
+        AlertPresent     =&gt; 1,                                 # Wait until an alert, confirm or prompt dialog is present
+        Callback         =&gt; sub { ... }                        # Wait until function returns true
+        ElementExists    =&gt; &#39;xpath-selector&#39;                   # Wait until an element is present
+        ElementExists    =&gt; [&#39;css-selector&#39;, &#39;css&#39;],
+        ElementMissing   =&gt; &#39;xpath-selector&#39;,                  # Wait until an element is not present
+        ElementMissing   =&gt; [&#39;css-selector&#39;, &#39;css&#39;],
+        ComponentLoaded  =&gt; &#39;xpath-selector&#39;,                  # Wait until Vue.js component has been loaded
+        ComponentLoaded  =&gt; [&#39;css-selector&#39;, &#39;css&#39;],           #   Please target the component root element only
+        TestFlag         =&gt; &#39;Flag::Name&#39;,                      # Wait until a test flag is set to a true value
+        JavaScript       =&gt; &#39;return $(&quot;.someclass&quot;).length&#39;,   # Javascript code that checks condition
+        WindowCount      =&gt; 2,                                 # Wait until this many windows are open
+
+        PreserveTestFlag =&gt; 1,                                 # optional, whether to preserve test flag value (default 0)
+        Time             =&gt; 20,                                # optional, wait time in seconds (default 20)
+        ErrorMessage     =&gt; &#39;Title not found.&#39;,                # optional, human readable error message (if condition is not met)
+    );</code></pre>
+
+<h2 id="ClearTestFlag">ClearTestFlag()</h2>
+
+<p>Clear the test flag value.</p>
+
+<pre><code>    my $Success = $SeleniumObject-&gt;ClearTestFlag(
+        TestFlag =&gt; &#39;Flag::Name&#39;,     # Name of the test flag to clear
+    );</code></pre>
+
+<h2 id="SwitchToFrame">SwitchToFrame()</h2>
+
+<p>Change focus to another frame on the page. If <code>WaitForLoad</code> is passed, it will wait until the frame has loaded the page completely.</p>
+
+<pre><code>    my $Success = $SeleniumObject-&gt;SwitchToFrame(
+        FrameSelector =&gt; &#39;.Iframe&#39;,     # (required) CSS selector of the frame element
+        WaitForLoad   =&gt; 1,             # (optional) Wait until the frame has loaded, if necessary
+        Time          =&gt; 20,            # (optional) Wait time in seconds (default 20)
+    );</code></pre>
+
+<h2 id="DragAndDrop">DragAndDrop()</h2>
+
+<p>Drag and drop an element.</p>
+
+<pre><code>    $SeleniumObject-&gt;DragAndDrop(
+        Element         =&gt; &#39;.Element&#39;, # (required) css selector of element which should be dragged
+        Target          =&gt; &#39;.Target&#39;,  # (required) css selector of element on which the dragged element should be dropped
+        TargetOffset    =&gt; {           # (optional) Offset for target. If not specified, the mouse will move to the middle of the element.
+            X   =&gt; 150,
+            Y   =&gt; 100,
+        }
+    );</code></pre>
+
+<h2 id="HandleError">HandleError()</h2>
+
+<p>use this method to handle any Selenium exceptions.</p>
+
+<pre><code>    $SeleniumObject-&gt;HandleError($@);</code></pre>
+
+<p>It will create a failing test result and store a screen shot of the page for analysis (in folder /var/otrs-unittest if it exists, in $Home/var/httpd/htdocs otherwise).</p>
+
+<h2 id="DEMOLISH">DEMOLISH()</h2>
+
+<p>override DEMOLISH from <a href="http://metacpan.org/module/Selenium::Remote::Driver">Selenium::Remote::Driver</a> (required because this class is managed by <a href="http://metacpan.org/module/Moo">Moo</a>). Performs proper error handling (calls <code>HandleError()</code> if needed). Adds a unit test result to indicate the shutdown, and performs some clean-ups.</p>
+
+<h1 id="DEPRECATED-FUNCTIONS">DEPRECATED FUNCTIONS</h1>
+
+<h2 id="WaitForjQueryEventBound">WaitForjQueryEventBound()</h2>
+
+<p>waits until event handler is bound to the selected <code>jQuery</code> element. Deprecated - it will be removed in the future releases.</p>
+
+<pre><code>    $SeleniumObject-&gt;WaitForjQueryEventBound(
+        CSSSelector =&gt; &#39;li &gt; a#Test&#39;,       # (required) css selector
+        Event       =&gt; &#39;click&#39;,             # (optional) Specify event name. Default &#39;click&#39;.
+    );</code></pre>
+
+<h2 id="InputFieldValueSet">InputFieldValueSet()</h2>
+
+<p>sets modernized input field value.</p>
+
+<pre><code>    $SeleniumObject-&gt;InputFieldValueSet(
+        Element =&gt; &#39;css-selector&#39;,              # (required) css selector
+        Value   =&gt; 3,                           # (optional) Value
+    );</code></pre>
+
+<h2 id="FormSelectValueSet">FormSelectValueSet()</h2>
+
+<p>Sets value of the form select field.</p>
+
+<pre><code>    $SeleniumObject-&gt;FormSelectValueSet(
+        FieldLabel =&gt; &#39;State&#39;,              # (required) Label of the select field
+
+        OptionLabel =&gt; &#39;closed successful&#39;, # (required) Label of the dropdown option
+        # or
+        OptionLabel =&gt; [
+            &#39;closed unsuccessful&#39;,
+            &#39;closed successful&#39;,
+        ],
+
+        ParentElement =&gt; &#39;xpath-selector&#39;,  # (optional) Parent element selector
+        Multiselect   =&gt; 1,                 # (optional) Skip autodetection mechanism and handle the field as a
+                                                         multiselect dropdown, which will not close on selection.
+    );</code></pre>
+
+<h2 id="FormSelectValueCheck">FormSelectValueCheck()</h2>
+
+<p>Checks for existence or non-existence of an option value in the form select field.</p>
+
+<pre><code>    $SeleniumObject-&gt;FormSelectValueCheck(
+        FieldLabel =&gt; &#39;State&#39;,              # (required) Label of the select field
+
+        OptionLabel =&gt; &#39;closed successful&#39;, # (required) Label of the dropdown option
+        # or
+        OptionLabel =&gt; [
+            &#39;closed unsuccessful&#39;,
+            &#39;closed successful&#39;,
+        ],
+
+        ParentElement =&gt; &#39;xpath-selector&#39;,  # (optional) Parent element selector
+        CheckMissing  =&gt; 1,                 # (optional) Whether to check for element existence (0) or non-existence (1)
+    );</code></pre>
+
+<h2 id="FormSelectExpandDropdown">_FormSelectExpandDropdown()</h2>
+
+<p>Expands the FormSelect drop down and returns the selector and option label as an array.</p>
+
+<h2 id="SeleniumSettingsSet">SeleniumSettingsSet()</h2>
+
+<p>Sets needed settings when selenium tests are executed.</p>
+
+<pre><code>    $SeleniumObject-&gt;SeleniumSettingsSet();</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

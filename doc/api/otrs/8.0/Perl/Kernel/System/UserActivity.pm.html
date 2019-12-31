@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::UserActivity &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::UserActivity
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#MethodParamValidationSchema">MethodParamValidationSchema()</a></li>
+      <li><a href="#Register">Register()</a></li>
+      <li><a href="#List">List()</a></li>
+      <li><a href="#Deregister">Deregister()</a></li>
+      <li><a href="#CleanupExpired">CleanupExpired()</a></li>
+    </ul>
+  </li>
+  <li><a href="#PRIVATE-INTERFACE">PRIVATE INTERFACE</a>
+    <ul>
+      <li><a href="#Add">_Add()</a></li>
+      <li><a href="#Update">_Update()</a></li>
+      <li><a href="#GetExpiryTime">_GetExpiryTime()</a></li>
+      <li><a href="#BuildFilterConditions">_BuildFilterConditions()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::UserActivity - Management object for user activity records.</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>This class takes care about handling user activity records, that are used to track user actions on the business objects in the frontend. It is possible to add, list and delete those records.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="MethodParamValidationSchema">MethodParamValidationSchema()</h2>
+
+<p>Add the param validation schema for the push event modules.</p>
+
+<h2 id="Register">Register()</h2>
+
+<p>Creates a new user activity record in the database.</p>
+
+<pre><code>    my $Success = $UserActivityObject-&gt;Register(
+        BusinessObjectType =&gt; &#39;Ticket&#39;,                               # required
+        BusinessObjectID   =&gt; 123,                                    # required
+        UserType           =&gt; &#39;agent&#39;,                                # required
+        UserID             =&gt; 123,                                    # required
+        FrontendClientID   =&gt; &#39;846ba13b-367a-11e9-ab58-eec271d3f95e&#39;, # required
+    );</code></pre>
+
+<p>Returns 1, if the insertion was successful or undef in case of errors.</p>
+
+<h2 id="List">List()</h2>
+
+<p>Lists all currently registered user activity records, based on filter criteria.</p>
+
+<pre><code>    my $UserActivity = $UserActivityObject-&gt;List(
+        BusinessObjectType  =&gt; &#39;Ticket&#39;,                               # optional, filter for business object type.
+        BusinessObjectID    =&gt; 123,                                    # optional, filter for business object id.
+        BusinessObjectIDs   =&gt; [ 123 ],                                # optional, filter for business object ids.
+        UserType            =&gt; &#39;agent&#39;,                                # optional, filter for user type (&#39;agent&#39; or &#39;customer&#39;).
+        UserID              =&gt; 123,                                    # optional, filter for user id.
+        FrontendClientID    =&gt; &#39;846ba13b-367a-11e9-ab58-eec271d3f95e&#39;, # optional, filter for front end client ID.
+        ExpireTimeLowerThan =&gt; &#39;2019-04-04&#39;,                           # optional, filter for expire time lower than.
+    );</code></pre>
+
+<p>If no filter parameter was passed, the method will return an empty list.</p>
+
+<p>Returns:</p>
+
+<pre><code>    [
+        {
+            ID                 =&gt; 123,
+            BusinessObjectType =&gt; &#39;Ticket&#39;,
+            BusinessObjectID   =&gt; 123,
+            UserType           =&gt; &#39;agent&#39;,
+            UserID             =&gt; 123,
+            FrontendClientID   =&gt; &#39;846ba13b-367a-11e9-ab58-eec271d3f95e&#39;,
+            ExpireTime         =&gt; &#39;2019-04-08 12:00:00&#39;,
+        },
+        ...
+    ];</code></pre>
+
+<h2 id="Deregister">Deregister()</h2>
+
+<p>Removes an existing user activity record from the database.</p>
+
+<pre><code>    my $Success = $UserActivityObject-&gt;Deregister(
+        BusinessObjectType =&gt; &#39;Ticket&#39;,                               # optional
+        BusinessObjectID   =&gt; 123,                                    # optional
+        UserType           =&gt; &#39;agent&#39;,                                # optional
+        UserID             =&gt; 123,                                    # optional
+        FrontendClientID   =&gt; &#39;846ba13b-367a-11e9-ab58-eec271d3f95e&#39;, # optional
+    );</code></pre>
+
+<p>If no filter parameter was passed, the method won&#39;t remove any entries.</p>
+
+<p>Returns 1, if the deletion was successful or undef in case of errors.</p>
+
+<h2 id="CleanupExpired">CleanupExpired()</h2>
+
+<p>Cleans up all expired user activity records.</p>
+
+<pre><code>    my $Success = $UserActivityObject-&gt;CleanupExpired();</code></pre>
+
+<p>Returns 1 if expired user activity records were cleaned up successfully.</p>
+
+<h1 id="PRIVATE-INTERFACE">PRIVATE INTERFACE</h1>
+
+<h2 id="Add">_Add()</h2>
+
+<p>Adds a new user activity record.</p>
+
+<pre><code>    my $Success = $UserActivityObject-&gt;_Add(
+        BusinessObjectType =&gt; &#39;Ticket&#39;,                               # mandatory
+        BusinessObjectID   =&gt; 123,                                    # mandatory
+        UserType           =&gt; &#39;agent&#39;,                                # mandatory
+        UserID             =&gt; 123,                                    # mandatory
+        FrontendClientID   =&gt; &#39;846ba13b-367a-11e9-ab58-eec271d3f95e&#39;, # mandatory
+    );</code></pre>
+
+<p>Returns 1 in case of success, undef in case of errors.</p>
+
+<h2 id="Update">_Update()</h2>
+
+<p>Update a user activity record, based on filter criteria.</p>
+
+<pre><code>    my $Success = $UserActivityObject-&gt;_Update(
+        BusinessObjectType =&gt; &#39;Ticket&#39;,                               # mandatory
+        BusinessObjectID   =&gt; 123,                                    # mandatory
+        UserType           =&gt; &#39;agent&#39;,                                # mandatory
+        UserID             =&gt; 123,                                    # mandatory
+        FrontendClientID   =&gt; &#39;846ba13b-367a-11e9-ab58-eec271d3f95e&#39;, # mandatory
+    );</code></pre>
+
+<p>Returns 1 in case of success, undef in case of errors.</p>
+
+<h2 id="GetExpiryTime">_GetExpiryTime()</h2>
+
+<p>Generated the expiry time for the user activity records.</p>
+
+<pre><code>    my $ExpiryTimeString = $UserActivityObject-&gt;_GetExpiryTime();</code></pre>
+
+<p>Returns</p>
+
+<pre><code>    $ExpiryTimeString = &#39;2019-04-13 12:05:00&#39;;</code></pre>
+
+<h2 id="BuildFilterConditions">_BuildFilterConditions()</h2>
+
+<p>Generated filter conditions for user activity records matching.</p>
+
+<pre><code>    my $FilterConditions = $UserActivityObject-&gt;_BuildFilterConditions(
+        BusinessObjectType =&gt; &#39;Ticket&#39;,                               # optional
+        BusinessObjectID   =&gt; &#39;123&#39;,                                  # optional
+        UserType           =&gt; &#39;customer&#39;,                             # optional
+        UserID             =&gt; 123,                                    # optional
+        FrontendClientID   =&gt; &#39;fc8251ce-5aac-11e9-9417-a1a8cb694e84&#39;, # optional
+    );</code></pre>
+
+<p>Returns</p>
+
+<pre><code>    {
+        SQL =&gt; &#39;bo_type = ? AND bo_id = ? AND user_type = ? AND user_id = ? AND frontend_client_id = ?&#39;
+        Bind =&gt; [
+            \&#39;Ticket&#39;,
+            \123,
+            \&#39;customer&#39;,
+            \&#39;123&#39;,
+            \&#39;fc8251ce-5aac-11e9-9417-a1a8cb694e84&#39;
+        ],
+    }</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

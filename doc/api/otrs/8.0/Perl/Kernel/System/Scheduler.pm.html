@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::Scheduler &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::Scheduler
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#TaskAdd">TaskAdd()</a></li>
+      <li><a href="#FutureTaskList">FutureTaskList()</a></li>
+      <li><a href="#TaskList">TaskList()</a></li>
+      <li><a href="#FutureTaskDelete">FutureTaskDelete()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::Scheduler - Scheduler lib</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Includes the functions to add a new task to the scheduler daemon.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>create a scheduler object. Do not use it directly, instead use:</p>
+
+<pre><code>    my $SchedulerObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Scheduler&#39;);</code></pre>
+
+<h2 id="TaskAdd">TaskAdd()</h2>
+
+<p>add a task to scheduler</p>
+
+<pre><code>    my $Success = $SchedulerObject-&gt;TaskAdd(
+        ExecutionTime            =&gt; &#39;2015-01-01 00:00:00&#39;,  # task will be executed immediately if no execution
+                                                            #   time is given
+        Type                     =&gt; &#39;GenericInterface&#39;,     # e. g. GenericInterface, Test
+        Name                     =&gt; &#39;any name&#39;,             # optional
+        Attempts                 =&gt; 5,                      # optional (default 1)
+        MaximumParallelInstances =&gt; 2,                      # optional, number of tasks with the same type
+                                                            #   (and name if provided) that can exists at
+                                                            #   the same time, value of 0 means unlimited
+        Data =&gt; {                                           # data payload
+            ...
+        },
+    );</code></pre>
+
+<h2 id="FutureTaskList">FutureTaskList()</h2>
+
+<p>get the list of scheduler future tasks</p>
+
+<pre><code>    my @List = $SchedulerObject-&gt;FutureTaskList(
+        Type =&gt; &#39;some type&#39;,  # optional
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    @List = (
+        {
+            TaskID        =&gt; 123,
+            ExecutionTime =&gt; &#39;2015-01-01 00:00:00&#39;,
+            Name          =&gt; &#39;any name&#39;,
+            Type          =&gt; &#39;GenericInterface&#39;,
+        },
+        {
+            TaskID        =&gt; 456,
+            ExecutionTime =&gt; &#39;2015-01-01 00:00:00&#39;,
+            Name          =&gt; &#39;any other name&#39;,
+            Type          =&gt; &#39;GenericInterface&#39;,
+        },
+        # ...
+    );</code></pre>
+
+<h2 id="TaskList">TaskList()</h2>
+
+<p>get the list of scheduler tasks</p>
+
+<pre><code>    my @List = $SchedulerObject-&gt;TaskList(
+        Type =&gt; &#39;some type&#39;,  # optional
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    @List = (
+        {
+            TaskID =&gt; 123,
+            Name   =&gt; &#39;any name&#39;,
+            Type   =&gt; &#39;GenericInterface&#39;,
+        },
+        {
+            TaskID =&gt; 456,
+            Name   =&gt; &#39;any other name&#39;,
+            Type   =&gt; &#39;GenericInterface&#39;,
+        },
+        # ...
+    );</code></pre>
+
+<h2 id="FutureTaskDelete">FutureTaskDelete()</h2>
+
+<p>delete a task from scheduler future task list</p>
+
+<pre><code>    my $Success = $Schedulerbject-&gt;FutureTaskDelete(
+        TaskID =&gt; 123,
+    );</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

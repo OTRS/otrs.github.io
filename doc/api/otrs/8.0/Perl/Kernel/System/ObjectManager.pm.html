@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::ObjectManager &mdash; OTRS 8.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 8.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 8.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::ObjectManager
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a>
+    <ul>
+      <li><a href="#How-does-singleton-management-work">How does singleton management work?</a></li>
+      <li><a href="#How-to-use-it">How to use it?</a></li>
+      <li><a href="#Which-objects-can-be-loaded">Which objects can be loaded?</a></li>
+    </ul>
+  </li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Get">Get()</a></li>
+      <li><a href="#Create">Create()</a></li>
+      <li><a href="#ObjectInstanceRegister">ObjectInstanceRegister()</a></li>
+      <li><a href="#ObjectParamAdd">ObjectParamAdd()</a></li>
+      <li><a href="#ObjectsDiscard">ObjectsDiscard()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::ObjectManager - Central singleton manager and object instance generator</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code>    # In top level scripts only!
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+
+    # Everywhere: get a singleton instance (and create it, if needed).
+    my $ConfigObject = $Kernel::OM-&gt;Get(&#39;Kernel::Config&#39;);
+
+    # Remove singleton objects and all their dependencies.
+    $Kernel::OM-&gt;ObjectsDiscard(
+        Objects            =&gt; [&#39;Kernel::System::Ticket&#39;, &#39;Kernel::System::Queue&#39;],
+    );</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>The ObjectManager is the central place to create and access singleton OTRS objects (via <code><a href="#Get">&quot;Get()&quot;</a></code>) as well as create regular (unmanaged) object instances (via <code><a href="#Create">&quot;Create()&quot;</a></code>).</p>
+
+<h2 id="How-does-singleton-management-work">How does singleton management work?</h2>
+
+<p>It creates objects as late as possible and keeps references to them. Upon destruction the objects are destroyed in the correct order, based on their dependencies (see below).</p>
+
+<h2 id="How-to-use-it">How to use it?</h2>
+
+<p>The ObjectManager must always be provided to OTRS by the top level script like this:</p>
+
+<pre><code>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+        # possible options for module constructors here
+        LogObject {
+            LogPrefix =&gt; &#39;OTRS-MyTestScript&#39;,
+        },
+    );</code></pre>
+
+<p>Then in the code any singleton object can be retrieved that the ObjectManager can handle, like Kernel::System::DB:</p>
+
+<pre><code>    return if !$Kernel::OM-&gt;Get(&#39;Kernel::System::DB&#39;)-&gt;Prepare(&#39;SELECT 1&#39;);</code></pre>
+
+<h2 id="Which-objects-can-be-loaded">Which objects can be loaded?</h2>
+
+<p>The ObjectManager can load every object that declares its dependencies like this in the Perl package:</p>
+
+<pre><code>    package Kernel::System::Valid;
+
+    use strict;
+    use warnings;
+
+    our @ObjectDependencies = (
+        &#39;Kernel::System::Cache&#39;,
+        &#39;Kernel::System::DB&#39;,
+        &#39;Kernel::System::Log&#39;,
+    );</code></pre>
+
+<p>The <code>@ObjectDependencies</code> is the list of objects that the current object will depend on. They will be destroyed only after this object is destroyed (only for singletons).</p>
+
+<p>If you want to signal that a package can NOT be loaded by the ObjectManager, you can use the <code>$ObjectManagerDisabled</code> flag:</p>
+
+<pre><code>    package Kernel::System::MyBaseClass;
+
+    use strict;
+    use warnings;
+
+    our $ObjectManagerDisabled = 1;</code></pre>
+
+<p>There are a few flags available to convey meta data about the packages to the object manager.</p>
+
+<p>To indicate that a certain package can <b>only</b> be loaded as a singleton, you can use the <code>IsSingleton</code> flag. Similarly, you can indicate that a certain package can <b>only</b> be created as unmanaged instance, and <b>not</b> as a singleton via the <code>NonSingleton</code> flag. By default, the ObjectManager will die if a constructor does not return an object. To suppress this in the <code><a href="#Create">&quot;Create()&quot;</a></code> method, you can use the <code>AllowConstructorFailure</code> flag (this will not work with <code><a href="#Get">&quot;Get()&quot;</a></code>).</p>
+
+<pre><code>    package Kernel::System::MyPackage;
+
+    use strict;
+    use warnings;
+
+    our %ObjectManagerFlags = (
+        IsSingleton             =&gt; 1,  # default 0
+        NonSingleton            =&gt; 0,  # default 0
+        AllowConstructorFailure =&gt; 0,  # default 0
+    );</code></pre>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>Creates a new instance of Kernel::System::ObjectManager.</p>
+
+<p>This is typically <b>only</b> needed in top level (<code>bin/</code>) scripts! All parts of the OTRS API assume the ObjectManager to be present in <code>$Kernel::OM</code> and use it.</p>
+
+<p>Sometimes objects need parameters to be sent to their constructors, these can also be passed to the ObjectManager&#39;s constructor like in the following example. The hash reference will be flattened and passed to the constructor of the object(s).</p>
+
+<pre><code>    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+        Kernel::System::Log =&gt; {
+            LogPrefix =&gt; &#39;OTRS-MyTestScript&#39;,
+        },
+    );</code></pre>
+
+<p>Alternatively, <code><a href="#ObjectParamAdd">&quot;ObjectParamAdd()&quot;</a></code> can be used to set these parameters at runtime (but this must happen before the object was created).</p>
+
+<p>If the <code>Debug =&gt; 1</code> option is present, destruction of objects is checked, and a warning is emitted if objects persist after the attempt to destroy them.</p>
+
+<h2 id="Get">Get()</h2>
+
+<p>Retrieves a singleton object, and if it not yet exists, implicitly creates one for you.</p>
+
+<pre><code>    my $ConfigObject = $Kernel::OM-&gt;Get(&#39;Kernel::Config&#39;);
+
+    # On the second call, this returns the same ConfigObject as above.
+    my $ConfigObject2 = $Kernel::OM-&gt;Get(&#39;Kernel::Config&#39;);</code></pre>
+
+<h2 id="Create">Create()</h2>
+
+<p>Creates a new object instance. This instance will not be managed by the object manager later on.</p>
+
+<pre><code>    my $DateTimeObject = $Kernel::OM-&gt;Create(&#39;Kernel::System::DateTime&#39;);
+
+    # On the second call, this creates a new independent instance.
+    my $DateTimeObject2 = $Kernel::OM-&gt;Create(&#39;Kernel::System::DateTime&#39;);</code></pre>
+
+<p>It is also possible to pass in constructor parameters:</p>
+
+<pre><code>    my $DateTimeObject = $Kernel::OM-&gt;Create(
+        &#39;Kernel::System::DateTime&#39;,
+        ObjectParams =&gt; {
+            Param1 =&gt; &#39;Value1&#39;,
+        },
+    );</code></pre>
+
+<p>By default, this method will <code>die</code>, if the package cannot be instantiated or the constructor returns undef. You can suppress this with <code>Silent =&gt; 1</code>, for example to not cause exceptions when trying to load modules based on user configuration.</p>
+
+<pre><code>    my $CustomObject = $Kernel::OM-&gt;Create(
+        &#39;Kernel::System::CustomObject&#39;,
+        Silent =&gt; 1,
+    );</code></pre>
+
+<h2 id="ObjectInstanceRegister">ObjectInstanceRegister()</h2>
+
+<p>Adds an existing object instance to the ObjectManager so that it can be accessed by other objects.</p>
+
+<p>This should <b>only</b> be used on special circumstances, e. g. in the unit tests to pass <code>$Self</code> to the ObjectManager so that it is also available from there as &#39;Kernel::System::UnitTest&#39;.</p>
+
+<pre><code>    $Kernel::OM-&gt;ObjectInstanceRegister(
+        Package      =&gt; &#39;Kernel::System::UnitTest&#39;,
+        Object       =&gt; $UnitTestObject,
+        Dependencies =&gt; [],         # optional, specify OM-managed packages that the object might depend on
+    );</code></pre>
+
+<h2 id="ObjectParamAdd">ObjectParamAdd()</h2>
+
+<p>Adds arguments that will be passed to constructors of classes when they are created, in the same format as the <code><a href="http://metacpan.org/module/new()">new()</a></code> method receives them.</p>
+
+<pre><code>    $Kernel::OM-&gt;ObjectParamAdd(
+        &#39;Kernel::System::Ticket&#39; =&gt; {
+            Key =&gt; &#39;Value&#39;,
+        },
+    );</code></pre>
+
+<p>To remove a key again, send undef as a value:</p>
+
+<pre><code>    $Kernel::OM-&gt;ObjectParamAdd(
+        &#39;Kernel::System::Ticket&#39; =&gt; {
+            Key =&gt; undef,               # this will remove the key from the hash
+        },
+    );</code></pre>
+
+<h2 id="ObjectsDiscard">ObjectsDiscard()</h2>
+
+<p>Discards internally stored objects, so that the next access to objects creates them newly. If a list of object names is passed, only the supplied objects and their recursive dependencies are destroyed. If no list of object names is passed, all stored objects are destroyed.</p>
+
+<pre><code>    $Kernel::OM-&gt;ObjectsDiscard();
+
+    $Kernel::OM-&gt;ObjectsDiscard(
+        Objects            =&gt; [&#39;Kernel::System::Ticket&#39;, &#39;Kernel::System::Queue&#39;],
+
+        # optional
+        # forces the packages to be reloaded from the file system
+        # sometimes necessary with mod_perl when running CodeUpgrade during a package upgrade
+        # if no list of object names is passed, all stored objects are destroyed
+        # and forced to be reloaded
+        ForcePackageReload =&gt; 1,
+    );</code></pre>
+
+<p>Mostly used for tests that rely on fresh objects, or to avoid large memory consumption in long-running processes.</p>
+
+<p>Note that if you pass a list of objects to be destroyed, they are destroyed in in the order they were passed; otherwise they are destroyed in reverse dependency order.</p>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+
