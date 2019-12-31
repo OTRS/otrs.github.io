@@ -1,0 +1,439 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Egységtesztek</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Fejlesztői kézikönyv"><link rel="up" href="contributing.html" title="5. fejezet - Közreműködés az OTRS-ben"><link rel="prev" href="accessibility.html" title="Akadálymentesítési útmutató"><link rel="next" href="additional-ressources.html" title="A. függelék - További erőforrások"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Egységtesztek</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="accessibility.html">Vissza</a> </td><th width="60%" align="center">5. fejezet - Közreműködés az OTRS-ben</th><td width="20%" align="right"> <a accesskey="n" href="additional-ressources.html">Előre</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="unit-tests"></a>Egységtesztek</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="unit-tests.html#testing">Egy tesztfájl létrehozása</a></span></dt><dt><span class="section"><a href="unit-tests.html#id-1.6.9.4">Előfeltételek a teszteléshez</a></span></dt><dt><span class="section"><a href="unit-tests.html#id-1.6.9.5">Tesztelés</a></span></dt><dt><span class="section"><a href="unit-tests.html#id-1.6.9.6">Egységteszt API</a></span></dt></dl></div><p>
+        Az OTRS biztosít egy tesztelési alkalmazáscsomagot, amely egységtesztek
+fejlesztéséhez és futtatásához használható az összes rendszerrel kapcsolatos
+kódnál.
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="testing"></a>Egy tesztfájl létrehozása</h3></div></div></div><p>
+            A tesztfájlok .t fájlokban vannak tárolva a
+<code class="filename">/scripts/test/*.t</code> helyen. Például vessünk egy
+pillantást a <code class="filename">scripts/test/Calendar.t</code> fájlra a naptár
+osztálynál.
+        </p><p>
+            Minden tesztfájlnak ideális esetben példányosítania kell az egységteszt
+segítő objektumot az elején, így részesülhet néhány beépített metódusból,
+amelyet az biztosít:
+        </p><p>
+            </p><pre class="programlisting">
+# --
+# Copyright (C) 2001-2019 OTRS AG, https://otrs.com/
+# --
+# This software comes with ABSOLUTELY NO WARRANTY. For details, see
+# the enclosed file COPYING for license information (GPL). If you
+# did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.
+# --
+
+use strict;
+use warnings;
+use utf8;
+
+use vars (qw($Self));
+
+$Kernel::OM-&gt;ObjectParamAdd(
+    'Kernel::System::UnitTest::Helper' =&gt; {
+        RestoreDatabase =&gt; 1,
+    },
+);
+my $Helper = $Kernel::OM-&gt;Get('Kernel::System::UnitTest::Helper');
+            </pre><p>
+        </p><p>
+            A <code class="literal">RestoreDatabase</code> paraméternek a segítő konstruktor
+számára történő átadásával az egységteszt közben végrehajtott bármely
+adatbázis-utasítás vissza lesz állítva a végén, ezáltal azt biztosítva, hogy
+ne történjen végleges változtatás.
+        </p><p>
+            Mint bármely egyéb tesztelési alkalmazáscsomag, az OTRS is biztosít állítás
+metódusokat, amelyek a feltételek teszteléséhez használhatók. Például it az
+látható, hogy hogyan hozunk létre egy teszt felhasználót, és hogyan
+teszteljük le, hogy valóban létrejött:
+        </p><p>
+            </p><pre class="programlisting">
+my $UserLogin = $Helper-&gt;TestUserCreate();
+my $UserID = $UserObject-&gt;UserLookup( UserLogin =&gt; $UserLogin );
+
+$Self-&gt;True(
+    $UserID,
+    "Test user $UserID created"
+);
+            </pre><p>
+        </p><p>
+            Nézze meg a lenti API szakaszt az állítás metódusok teljes listájáért.
+        </p><p>
+            Mindig jó gyakorlat véletlenszerű adatokat létrehozni az egységtesztekben,
+ami segíthet megkülönböztetni az előzőleg hozzáadott adatoktól. Használja a
+véletlen metódusokat az API-ból, hogy megkapja a karakterláncokat, és
+beágyazza azokat a paraméterekbe:
+        </p><p>
+            </p><pre class="programlisting">
+my $RandomID = $Helper-&gt;GetRandomID();
+
+# teszt csoport létrehozása
+my $GroupName = 'test-calendar-group-' . $RandomID;
+my $GroupID   = $GroupObject-&gt;GroupAdd(
+    Name    =&gt; $GroupName,
+    ValidID =&gt; 1,
+    UserID  =&gt; 1,
+);
+
+$Self-&gt;True(
+    $GroupID,
+    "Test group $GroupID created"
+);
+            </pre><p>
+        </p><p>
+            A jó fejlesztők az egységtesztjeiket könnyen karbantarthatóvá
+teszik. Fontolja meg az összes teszteset egy tömbbe történő elhelyezését,
+majd lépkedjen végig azokon valamilyen kóddal. Ez egyszerű módot fog
+biztosítani a teszt későbbi bővítéséhez:
+        </p><p>
+            </p><pre class="programlisting">
+#
+# A CalendarCreate() tesztelése
+#
+my @Tests = (
+    {
+        Name    =&gt; 'CalendarCreate - No params',
+        Config  =&gt; {},
+        Success =&gt; 0,
+    },
+    {
+        Name   =&gt; 'CalendarCreate - All required parameters',
+        Config =&gt; {
+            CalendarName =&gt; "Calendar-$RandomID",
+            Color        =&gt; '#3A87AD',
+            GroupID      =&gt; $GroupID,
+            UserID       =&gt; $UserID,
+        },
+        Success =&gt; 1,
+    },
+    {
+        Name   =&gt; 'CalendarCreate - Same name',
+        Config =&gt; {
+            CalendarName =&gt; "Calendar-$RandomID",
+            Color        =&gt; '#3A87AD',
+            GroupID      =&gt; $GroupID,
+            UserID       =&gt; $UserID,
+        },
+        Success =&gt; 0,
+    },
+);
+
+for my $Test (@Tests) {
+
+    # a hívás elvégzése
+    my %Calendar = $CalendarObject-&gt;CalendarCreate(
+        %{ $Test-&gt;{Config} },
+    );
+
+    # adatok ellenőrzése
+    if ( $Test-&gt;{Success} ) {
+        for my $Key (qw(CalendarID GroupID CalendarName Color CreateTime CreateBy ChangeTime ChangeBy ValidID)) {
+            $Self-&gt;True(
+                $Calendar{$Key},
+                "$Test-&gt;{Name} - $Key exists",
+            );
+        }
+
+        KEY:
+        for my $Key ( sort keys %{ $Test-&gt;{Config} } ) {
+            next KEY if $Key eq 'UserID';
+
+            $Self-&gt;IsDeeply(
+                $Test-&gt;{Config}-&gt;{$Key},
+                $Calendar{$Key},
+                "$Test-&gt;{Name} - Data for $Key",
+            );
+        }
+    }
+    else {
+        $Self-&gt;False(
+            $Calendar{CalendarID},
+            "$Test-&gt;{Name} - No success",
+        );
+    }
+}
+            </pre><p>
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.6.9.4"></a>Előfeltételek a teszteléshez</h3></div></div></div><p>
+            Hogy képes legyen lefuttatni az egységteszteket, arra van szüksége, hogy az
+összes választható Perl-modul telepítve legyen, kivéve azokat, amelyek az Ön
+által használt adatbázis háttérprogramoktól eltérőkhöz valók. Futtassa a
+<code class="filename">bin/otrs.CheckModules.pl</code> parancsfájlt a modultelepítés
+ellenőrzéséhez.
+        </p><p>
+            Szüksége van egy teljes képzésű tartományneven (FQDN) futó OTRS webes
+előtétprogram egy példányára, amely az OTRS helyi
+<code class="filename">Config.pm</code> fájljában be van állítva. Ennek az OTRS
+példánynak ugyanazt az adatbázist kell használnia, amelyek az
+egységtesztekhez vannak beállítva.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.6.9.5"></a>Tesztelés</h3></div></div></div><p>
+            A tesztek futtatásához egyszerűen használja a <code class="filename">bin/otrs.Console.pl
+Dev::UnitTest::Run --test Calendar</code> parancsot a
+<code class="filename">scripts/test/Calendar.t</code> fájl használatához.
+        </p><p>
+            </p><pre class="programlisting">
+shell:/opt/otrs&gt; bin/otrs.Console.pl Dev::UnitTest::Run --test Calendar
++-------------------------------------------------------------------+
+/opt/otrs/scripts/test/Calendar.t:
++-------------------------------------------------------------------+
+.................................................................................................
+=====================================================================
+yourhost ran tests in 2s for OTRS 6.0.x git
+All 97 tests passed.
+shell:/opt/otrs&gt;
+            </pre><p>
+        </p><p>
+            Akár több tesztet is lefuttathat egyszerre, csak adjon meg további
+<code class="literal">--test</code> argumentumokat a parancsnak:
+        </p><p>
+            </p><pre class="programlisting">
+shell:/opt/otrs&gt; bin/otrs.Console.pl Dev::UnitTest::Run --test Calendar --test Appointment
++-------------------------------------------------------------------+
+/opt/otrs/scripts/test/Calendar.t:
++-------------------------------------------------------------------+
+.................................................................................................
++-------------------------------------------------------------------+
+/opt/otrs/scripts/test/Calendar/Appointment.t:
++-------------------------------------------------------------------+
+..................................................................................................................
+=====================================================================
+yourhost ran tests in 5s for OTRS 6.0.x git
+All 212 tests passed.
+shell:/opt/otrs&gt;
+            </pre><p>
+        </p><p>
+            Ha argumentumok nélkül hajtja végre a <code class="filename">bin/otrs.Console.pl
+Dev::UnitTest::Run</code> parancsot, akkor le fogja futtatni a
+rendszeren található összes tesztet. Ne feledje, hogy ez eltarthat egy
+ideig, amíg befejeződik.
+        </p><p>
+            Adja meg a <code class="literal">--verbose</code> argumentumot annak érdekében, hogy
+láthassa a sikeres tesztekkel kapcsolatos üzeneteket is. A teszt során
+előforduló bármilyen hiba megjelenítésre kerül függetlenül ettől a
+kapcsolótól, és biztosítva lesz, hogy azok ténylegesen felvételre kerülnek a
+tesztbe.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="id-1.6.9.6"></a>Egységteszt API</h3></div></div></div><p>
+            Az OTRS API-t biztosít az egységteszteléshez, amely az előző példában volt
+használva. Itt fel fogjuk sorolni a legfontosabb függvényeket, de nézze meg
+a <a class="ulink" href="https://otrs.github.io/doc/api/otrs/6.0/Perl/Kernel/System/UnitTest.pm.html" target="_top"><code class="literal">Kernel::System::UnitTest</code></a>
+internetes API hivatkozását is.
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">True()</code></span></dt><dd><p>
+                        Ez a függvény azt teszteli, hogy a megadott skalár érték igaz érték-e a
+Perlben.
+                    </p><p>
+                        </p><pre class="programlisting">
+$Self-&gt;True(
+    1,
+    'Az 1 skalár mindig igazként lesz kiértékelve'
+);
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">False()</code></span></dt><dd><p>
+                        Ez a függvény azt teszteli, hogy a megadott skalár érték hamis érték-e a
+Perlben.
+                    </p><p>
+                        </p><pre class="programlisting">
+$Self-&gt;False(
+    0,
+    'A 0 skalár mindig hamisként lesz kiértékelve'
+);
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">Is()</code></span></dt><dd><p>
+                        Ez a függvény azt teszteli, hogy a megadott skalár változók egyenlők-e.
+                    </p><p>
+                        </p><pre class="programlisting">
+$Self-&gt;Is(
+    $A,
+    $B,
+    'Tesztnév',
+);
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">IsNot()</code></span></dt><dd><p>
+                        Ez a függvény azt teszteli, hogy a megadott skalár változók nem egyenlők-e.
+                    </p><p>
+                        </p><pre class="programlisting">
+$Self-&gt;IsNot(
+    $A,
+    $B,
+    'Tesztnév'
+);
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">IsDeeply()</code></span></dt><dd><p>
+                        Ez a függvény összetett adatszerkezeteket hasonlít össze az
+egyenlőséghez. <code class="literal">$A</code> és <code class="literal">$B</code> hivatkozás
+kell legyen.
+                    </p><p>
+                        </p><pre class="programlisting">
+$Self-&gt;IsDeeply(
+    $A,
+    $B,
+    'Tesztnév'
+);
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">IsNotDeeply()</code></span></dt><dd><p>
+                        Ez a függvény összetett adatszerkezeteket hasonlít össze a nem
+egyenlőséghez. <code class="literal">$A</code> és <code class="literal">$B</code> hivatkozás
+kell legyen.
+                    </p><p>
+                        </p><pre class="programlisting">
+$Self-&gt;IsNotDeeply(
+    $A,
+    $B,
+    'Tesztnév'
+);
+                        </pre><p>
+                    </p></dd></dl></div><p>
+            Emellett az egységteszt segítő objektum biztosít néhány hasznos metódust is
+a gyakori tesztelési feltételekhez. A teljes hivatkozásért nézze meg a
+<a class="ulink" href="https://otrs.github.io/doc/api/otrs/6.0/Perl/Kernel/System/UnitTest/Helper.pm.html" target="_top"><code class="literal">Kernel::System::UnitTest::Helper</code></a>
+internetes API hivatkozását.
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">GetRandomID()</code></span></dt><dd><p>
+                        Ez a függvény előállít egy véletlenszerű azonosítót, amely egyedi
+azonosítóként használható a tesztekben. Garantált, hogy egy teszten belül ez
+a függvény soha nem ad vissza kettőzött értéket.
+                    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                            Ne feledje, hogy ezek a számok nem valódi véletlen számok, és csak
+tesztadatok előállításához szabad használni.
+                        </p></div><p>
+                        </p><pre class="programlisting">
+my $RandomID = $Helper-&gt;GetRandomID();
+# $RandomID = 'test6326004144100003';
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">TestUserCreate()</code></span></dt><dd><p>
+                        Ez a függvény létrehoz egy teszt felhasználót, amely használható a
+tesztekben. Automatikusan érvénytelenre lesz állítva a destruktor
+közben. Visszaadja az új felhasználó bejelentkezési nevét, a jelszó pedig
+ugyanaz lesz.
+                    </p><p>
+                        </p><pre class="programlisting">
+my $TestUserLogin = $Helper-&gt;TestUserCreate(
+    Groups   =&gt; ['admin', 'users'],          # elhagyható, csoportok listája, amelyhez a felhasználót hozzá kell adni (írás, olvasás jogokkal)
+    Language =&gt; 'hu',                        # elhagyható, alapértelmezetten 'en', ha nincs megadva
+);
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">FixedTimeSet()</code></span></dt><dd><p>
+                        Ez a függvény lehetővé teszi a rendszeridő felülbírálását egészen addig,
+amíg az objektum él. Átadhat egy elhagyható időparamétert, amelyet használni
+kell. Ha nincs átadva, akkor az aktuális rendszeridő lesz használva.
+                    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                            A <code class="literal">Kernel::System::Time</code> és a
+<code class="literal">Kernel::System::DateTime</code> metódusainak összes meghívása a
+megadott időt fogja használni ezután.
+                        </p></div><p>
+                        </p><pre class="programlisting">
+$HelperObject-&gt;FixedTimeSet(366475757);         # időbélyeggel
+$HelperObject-&gt;FixedTimeSet($DateTimeObject);   # az előzőleg létrehozott DateTime objektummal
+$HelperObject-&gt;FixedTimeSet();                  # beállítás a jelenlegi dátumra és időre
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">FixedTimeUnset()</code></span></dt><dd><p>
+                        Ez a függvény visszaállítja a rendes rendszeridő viselkedést.
+                    </p></dd><dt><span class="term"><code class="literal">FixedTimeAddSeconds()</code></span></dt><dd><p>
+                        Ez a függvény valamennyi másodpercet ad ahhoz a rögzített rendszeridőhöz,
+amelyet a <code class="literal">FixedTimeSet()</code> korábban beállított. Átadhat
+negatív értéket, hogy visszamenjen az időben.
+                    </p></dd><dt><span class="term"><code class="literal">ConfigSettingChange()</code></span></dt><dd><p>
+                        Ez a függvény átmenetileg rendszerszinten megváltoztat egy
+rendszerbeállítást egy másik értékre mind a <code class="literal">ConfigObject</code>
+aktuális példányában, mind a rendszerbeállításokban is a lemezen. Akkor lesz
+visszaállítva, amikor a <code class="literal">Helper</code> objektum megsemmisül.
+                    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                            Ne feledje, hogy ez jelenleg nem működik fürtözött környezetekben.
+                        </p></div><p>
+                        </p><pre class="programlisting">
+$Helper-&gt;ConfigSettingChange(
+    Valid =&gt; 1,            # (elhagyható) beállítás engedélyezése vagy letiltása
+    Key   =&gt; 'MySetting',  # beállítás neve
+    Value =&gt; { ... } ,     # beállítás értéke
+);
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">CustomCodeActivate()</code></span></dt><dd><p>
+                        Ez a függvény átmenetileg egyéni kódot fog felvenni a rendszerbe. Például
+ezt használhatja egy másik osztályból származó szubrutin
+felüldefiniálásához. Ez a változtatás megmarad a teszt emlékeztetőjénél
+is. Az összes kód eltávolításra kerül, amikor a <code class="literal">Helper</code>
+objektum megsemmisül.
+                    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Megjegyzés</h3><p>
+                            Ne feledje, hogy ez jelenleg nem működik fürtözött környezetekben.
+                        </p></div><p>
+                        </p><pre class="programlisting">
+$Helper-&gt;CustomCodeActivate(
+    Code =&gt; q^
+use Kernel::System::WebUserAgent;
+package Kernel::System::WebUserAgent;
+use strict;
+use warnings;
+{
+    no warnings 'redefine';
+    sub Request {
+        my $JSONString = '{"Results":{},"ErrorMessage":"","Success":1}';
+        return (
+            Content =&gt; \$JSONString,
+            Status  =&gt; '200 OK',
+        );
+    }
+}
+1;^,
+    Identifier =&gt; 'News',   # (elhagyható) kódazonosító a fájlnévbe való felvételhez
+);
+                        </pre><p>
+                    </p></dd><dt><span class="term"><code class="literal">ProvideTestDatabase()</code></span></dt><dd><p>
+                        Ez a függvény egy átmeneti adatbázist fog biztosítani a teszthez. Először
+határozza meg a teszt adatbázis beállításait a
+<code class="filename">Kernel/Config.pm</code> fájlban, azaz:
+                    </p><p>
+                        </p><pre class="programlisting">
+$Self-&gt;{TestDatabase} = {
+    DatabaseDSN  =&gt; 'DBI:mysql:database=otrs_test;host=127.0.0.1;',
+    DatabaseUser =&gt; 'otrs_test',
+    DatabasePw   =&gt; 'otrs_test',
+};
+                        </pre><p>
+                    </p><p>
+                        A metódushívás felül fogja bírálni a globális adatbázis-beállítást a teszt
+időtartama alatt, azaz az átmeneti adatbázis fogja fogadni az összes olyan
+hívást, amelyet a <code class="literal">DBObject</code> rendszer küldött át.
+                    </p><p>
+                        Az összes adatbázis-tartalom automatikusan eldobásra kerül, amikor a
+<code class="literal">Helper</code> objektum megsemmisül.
+                    </p><p>
+                        Ez a metódus <code class="literal">undef</code> értéket ad vissza abban az esetben, ha
+a teszt adatbázis nincs beállítva. Ha be van állítva, de a mellékelt XML nem
+olvasható vagy nem hajtható végre, akkor a metódus <code class="literal">die()</code>
+függvénye lesz meghívva a teszt hibával történő megszakításához.
+                    </p><p>
+                        </p><pre class="programlisting">
+$Helper-&gt;ProvideTestDatabase(
+    DatabaseXMLString =&gt; $XML,      # (elhagyható) OTRS adatbázis XML-séma a végrehajtáshoz
+                                    # vagy
+    DatabaseXMLFiles =&gt; [           # (elhagyható) betöltendő és végrehajtandó XML-fájlok listája
+        '/opt/otrs/scripts/database/otrs-schema.xml',
+        '/opt/otrs/scripts/database/otrs-initial_insert.xml',
+    ],
+);
+                        </pre><p>
+                    </p></dd></dl></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="accessibility.html">Vissza</a> </td><td width="20%" align="center"><a accesskey="u" href="contributing.html">Fel</a></td><td width="40%" align="right"> <a accesskey="n" href="additional-ressources.html">Előre</a></td></tr><tr><td width="40%" align="left" valign="top">Akadálymentesítési útmutató </td><td width="20%" align="center"><a accesskey="h" href="index.html">Főoldal</a></td><td width="40%" align="right" valign="top"> A. függelék - További erőforrások</td></tr></table></div></body></html>

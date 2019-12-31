@@ -1,0 +1,500 @@
+<html><head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 2. OTRS Internals - How it Works</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Developer Manual"><link rel="up" href="index.html" title="OTRS 6 - Developer Manual"><link rel="prev" href="architecture-overview.html" title="Architecture Overview"><link rel="next" href="ch02s02.html" title="Database Mechanism"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 2. OTRS Internals - How it Works</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="architecture-overview.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch02s02.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="how-it-works"></a>Chapter 2. OTRS Internals - How it Works</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="how-it-works.html#config-mechanism">Config Mechanism</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#default-config"><code class="filename">Defaults.pm</code>: OTRS Default Configuration</a></span></dt><dt><span class="section"><a href="how-it-works.html#auto-generated-config-files">Automatically Generated Configuration Files</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config">XML Configuration Files</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#xml-config-structure">Structure of <code class="literal">Value</code> elements</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-value-types">Value Types</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-default-item">DefaultItem in Array and Hash</a></span></dt></dl></dd><dt><span class="section"><a href="how-it-works.html#accessing-config-options">Accessing Config Options at Runtime</a></span></dt></dl></dd><dt><span class="section"><a href="ch02s02.html">Database Mechanism</a></span></dt><dd><dl><dt><span class="section"><a href="ch02s02.html#database-how-it-works">How it works</a></span></dt><dd><dl><dt><span class="section"><a href="ch02s02.html#database-sql">SQL</a></span></dt><dt><span class="section"><a href="ch02s02.html#database-xml">XML</a></span></dt></dl></dd><dt><span class="section"><a href="ch02s02.html#database-driver">Database Drivers</a></span></dt><dt><span class="section"><a href="ch02s02.html#database-supported">Supported Databases</a></span></dt></dl></dd><dt><span class="section"><a href="ch02s03.html">Log Mechanism</a></span></dt><dd><dl><dt><span class="section"><a href="ch02s03.html#id-1.3.4.2">System Log</a></span></dt><dt><span class="section"><a href="ch02s03.html#log-mechanism-communication-log">Communication Log</a></span></dt></dl></dd><dt><span class="section"><a href="ch02s04.html">Date and Time</a></span></dt><dd><dl><dt><span class="section"><a href="ch02s04.html#date-time-intro">Introduction</a></span></dt><dt><span class="section"><a href="ch02s04.html#date-time-creation">Creation of a DateTime object</a></span></dt><dt><span class="section"><a href="ch02s04.html#date-time-time-zones">Time zones</a></span></dt><dt><span class="section"><a href="ch02s04.html#date-time-method-summary">Method summary</a></span></dt><dd><dl><dt><span class="section"><a href="ch02s04.html#date-time-methods-creation">Object creation methods</a></span></dt><dt><span class="section"><a href="ch02s04.html#date-time-methods-get">Get method</a></span></dt><dt><span class="section"><a href="ch02s04.html#date-time-methods-set">Set method</a></span></dt><dt><span class="section"><a href="ch02s04.html#date-time-methods-time-zone">Time zone methods</a></span></dt><dt><span class="section"><a href="ch02s04.html#date-time-methods-comparison">Comparison operators and methods</a></span></dt></dl></dd><dt><span class="section"><a href="ch02s04.html#date-time-deprecated-time-package">Deprecated package Kernel::System::Time</a></span></dt></dl></dd><dt><span class="section"><a href="skins.html">Skins</a></span></dt><dd><dl><dt><span class="section"><a href="skins.html#id-1.3.6.4">Skin Basics</a></span></dt><dt><span class="section"><a href="skins.html#id-1.3.6.5">How skins are loaded</a></span></dt><dt><span class="section"><a href="skins.html#id-1.3.6.6">Creating a New Skin</a></span></dt></dl></dd><dt><span class="section"><a href="loader.html">The CSS and JavaScript "Loader"</a></span></dt><dd><dl><dt><span class="section"><a href="loader.html#id-1.3.7.3">How it works</a></span></dt><dt><span class="section"><a href="loader.html#id-1.3.7.4">Basic Operation</a></span></dt><dt><span class="section"><a href="loader.html#loader-javascript">Configuring the Loader: JavaScript</a></span></dt><dd><dl><dt><span class="section"><a href="loader.html#loader-common-javascript">Common JavaScript</a></span></dt><dt><span class="section"><a href="loader.html#loader-module-javascript">Module-Specific JavaScript</a></span></dt></dl></dd><dt><span class="section"><a href="loader.html#id-1.3.7.6">Configuring the Loader: CSS</a></span></dt><dd><dl><dt><span class="section"><a href="loader.html#id-1.3.7.6.3">Common CSS</a></span></dt></dl></dd></dl></dd><dt><span class="section"><a href="TemplatingMechanism.html">Templating Mechanism</a></span></dt><dd><dl><dt><span class="section"><a href="TemplatingMechanism.html#TemplateCommands">Template Commands</a></span></dt><dd><dl><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.8.5.2">Inserting dynamic data</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.8.5.3">Localization Commands</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.8.5.4">Template Processing Commands</a></span></dt><dt><span class="section"><a href="TemplatingMechanism.html#id-1.3.8.5.5"><code class="literal">[% WRAPPER JSOnDocumentComplete %]...[% END %]</code></a></span></dt></dl></dd><dt><span class="section"><a href="TemplatingMechanism.html#using-templates">Using a template file</a></span></dt></dl></dd><dt><span class="section"><a href="themes.html">Creating Your Own Themes</a></span></dt><dt><span class="section"><a href="localization-translation-mechanism.html">Localization / Translation Mechanism</a></span></dt><dd><dl><dt><span class="section"><a href="localization-translation-mechanism.html#id-1.3.10.3">Marking translatable strings in the source files</a></span></dt><dt><span class="section"><a href="localization-translation-mechanism.html#id-1.3.10.4">Collecting translatable strings into the translation database</a></span></dt><dd><dl><dt><span class="section"><a href="localization-translation-mechanism.html#default-framework-translation-file2">Default Framework Translation File</a></span></dt><dt><span class="section"><a href="localization-translation-mechanism.html#custom-translation-file">Custom Translation File</a></span></dt></dl></dd><dt><span class="section"><a href="localization-translation-mechanism.html#id-1.3.10.5">The translation process itself</a></span></dt><dt><span class="section"><a href="localization-translation-mechanism.html#id-1.3.10.6">Using the translated data from the code</a></span></dt></dl></dd></dl></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="config-mechanism"></a>Config Mechanism</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="how-it-works.html#default-config"><code class="filename">Defaults.pm</code>: OTRS Default Configuration</a></span></dt><dt><span class="section"><a href="how-it-works.html#auto-generated-config-files">Automatically Generated Configuration Files</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config">XML Configuration Files</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#xml-config-structure">Structure of <code class="literal">Value</code> elements</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#xml-config-item"><code class="literal">Item</code></a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-array"><code class="literal">Array</code></a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-hash"><code class="literal">Hash</code></a></span></dt></dl></dd><dt><span class="section"><a href="how-it-works.html#xml-config-value-types">Value Types</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#xml-config-string">String</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-password">Password</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-perlmodule">PerlModule</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-textarea">Textarea</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-select">Select</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-checkbox">Checkbox</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-date">Date</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-datetime">DateTime</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-directory">Directory</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-file">File</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-entity">Entity</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-timezone">TimeZone</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-vacationdays">VacationDays</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-vacationdaysonetime">VacationDaysOneTime</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-workinghours">WorkingHours</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-config-frontendregistration">Frontend Registration</a></span></dt></dl></dd><dt><span class="section"><a href="how-it-works.html#xml-default-item">DefaultItem in Array and Hash</a></span></dt><dd><dl><dt><span class="section"><a href="how-it-works.html#xml-aoa-select">Array of Array with Select items</a></span></dt><dt><span class="section"><a href="how-it-works.html#xml-hoh-date">Hash of Hash with Date items</a></span></dt></dl></dd></dl></dd><dt><span class="section"><a href="how-it-works.html#accessing-config-options">Accessing Config Options at Runtime</a></span></dt></dl></div><p>
+        OTRS comes with a dedicated mechanism to manage configuration options via a graphical interface (System Configuration).
+        This section describes how it works internally and how you can provide new configuration options or change
+        existing default values.
+    </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="default-config"></a><code class="filename">Defaults.pm</code>: OTRS Default Configuration</h3></div></div></div><p>
+            The default configuration file of OTRS is <code class="filename">Kernel/Config/Defaults.pm</code>.
+            This file is needed for operation of freshly installed systems without a deployed XML configuration and
+            should be left untouched as it is automatically updated on framework updates.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="auto-generated-config-files"></a>Automatically Generated Configuration Files</h3></div></div></div><p>
+            In <code class="filename">Kernel/Config/Files</code> you can find some automatically generated configuration files:
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">ZZZAAuto.pm</code></span></dt><dd><p>
+                        Perl cache of the XML configuration's current values (default or modified by user)
+                    </p></dd><dt><span class="term"><code class="literal">ZZZACL.pm</code></span></dt><dd><p>
+                        Perl cache of ACL configuration from database
+                    </p></dd><dt><span class="term"><code class="literal">ZZZACL.pm</code></span></dt><dd><p>
+                        Perl cache of ProcessManagement configuration from database
+                    </p></dd></dl></div><p>
+            These files are a Perl representation of the current system configuration.
+            They should never be manually changed as they are overwritten by OTRS.
+        </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="xml-config"></a>XML Configuration Files</h3></div></div></div><p>
+            In OTRS, configuration options that the administrator can configure via SysConfig are provided via
+            XML files with a special format. To convert old XML's you can use 'otrs.Console.pl Dev::Tools::Migrate::ConfigXMLStructure' command.
+            The file <code class="filename">Kernel/Config/Files/ZZZAAuto.pm</code> is a cached Perl version of the XML that contains
+            all settings with their current value. It can be (re-)generated with <code class="filename">bin/otrs.Console.pl Maint::Config::Rebuild</code>.
+        </p><p>
+            <code class="literal">Note:</code> <code class="filename">$OTRS_HOME/Kernel/Config/Files/ZZZAuto.pm</code> does not exist any more, it has been
+            merged into <code class="filename">$OTRS_HOME/Kernel/Config/Files/ZZZAAuto.pm</code>.
+        </p><p>
+            Each XML config file has the following layout:
+        </p><p>
+            </p><pre class="programlisting">
+&lt;?xml version="1.0" encoding="utf-8" ?&gt;
+&lt;otrs_config version="2.0" init="Changes"&gt;
+
+    &lt;!--  settings will be here --&gt;
+
+&lt;/otrs_config&gt;
+            </pre><p>
+        </p><div class="variablelist"><p class="title"><b>Attributes of the <code class="literal">otrs_config</code> element</b></p><dl class="variablelist"><dt><span class="term"><code class="literal">init</code></span></dt><dd><p>
+                        The global <code class="literal">init</code> attribute describes where the config options should be loaded. There are different levels available and will be loaded/overloaded in the following order: <code class="literal">Framework</code> (for framework settings e. g. session option), <code class="literal">Application</code> (for application settings e. g. ticket options), <code class="literal">Config</code> (for extensions to existing applications e. g. ITSM options) and <code class="literal">Changes</code> (for custom development e. g. to overwrite framework or ticket options).
+                    </p></dd></dl></div><p>
+            The configuration items are written as <code class="literal">Setting</code> elements with a <code class="literal">Description</code>,
+            a <code class="literal">Navigation</code> group (for the tree-based navigation in the GUI) and the <code class="literal">Value</code>
+            that it represents. Here's an example:
+        </p><p>
+            </p><pre class="programlisting">
+&lt;Setting Name="Ticket::Hook" Required="1" Valid="1"&gt;
+    &lt;Description Translatable="1"&gt;The identifier for a ticket, e.g. Ticket#, Call#, MyTicket#. The default is Ticket#.&lt;/Description&gt;
+    &lt;Navigation&gt;Core::Ticket&lt;/Navigation&gt;
+    &lt;Value&gt;
+        &lt;Item ValueType="String" ValueRegex=""&gt;Ticket#&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+            </pre><p>
+        </p><div class="variablelist"><p class="title"><b>Attributes of the <code class="literal">Setting</code> element</b></p><dl class="variablelist"><dt><span class="term"><code class="literal">Required</code></span></dt><dd><p>
+                        If this is set to 1, the config setting cannot be disabled.
+                    </p></dd><dt><span class="term"><code class="literal">Valid</code></span></dt><dd><p>
+                        Determines if the config setting is active (1) or inactive (0) by default.
+                    </p></dd><dt><span class="term"><code class="literal">ConfigLevel</code></span></dt><dd><p>
+                        If the optional attribute <code class="literal">ConfigLevel</code> is set, the config variable might not be edited by the administrator,
+                        depending on his own config level. The config variable <code class="literal">ConfigLevel</code> sets the level of technical experience
+                        of the administrator. It can be 100 (Expert), 200 (Advanced) or 300 (Beginner).
+                        As a guideline which config level should be given to an option, it is recommended that all options
+                        having to do with the configuration of external interaction, like Sendmail, LDAP, SOAP,
+                        and others should get a config level of at least 200 (Advanced).
+                    </p></dd><dt><span class="term"><code class="literal">Invisible</code></span></dt><dd><p>
+                        If set to 1, the config setting is not shown in the GUI.
+                    </p></dd><dt><span class="term"><code class="literal">Readonly</code></span></dt><dd><p>
+                        If set to 1, the config setting cannot be changed in the GUI.
+                    </p></dd><dt><span class="term"><code class="literal">UserModificationPossible</code></span></dt><dd><p>
+                        If <code class="literal">UserModificationPossible</code> is set to <code class="literal">1</code>, administrators can enable user modifications of this setting
+                        (in user preferences). Please note that this feature requires the <span class="bold"><strong>OTRS Business Solution™</strong></span>.
+                    </p></dd><dt><span class="term"><code class="literal">UserModificationActive</code></span></dt><dd><p>
+                        If <code class="literal">UserModificationActive</code> is set to <code class="literal">1</code>, user modifications of this setting is enabled (in user preferences).
+                        You should use this attribute together with <code class="literal">UserModificationPossible</code>.
+                    </p></dd><dt><span class="term"><code class="literal">UserPreferencesGroup</code></span></dt><dd><p>
+                        Use <code class="literal">UserPreferencesGroup</code> attribute to define under which group config variable belongs (in the UserPreferences screen).
+                        You should use this attribute together with <code class="literal">UserModificationPossible</code>.
+                    </p></dd></dl></div><div class="itemizedlist"><p class="title"><b>Guidelines for placing settings in the right <code class="literal">Navigation</code> nodes</b></p><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+                    Only create new nodes if neccessary. Avoid nodes with only very few settings if possible.
+                </p></li><li class="listitem"><p>
+                    On the first tree level, no new nodes should be added.
+                </p></li><li class="listitem"><p>
+                    Don't place new settings in <code class="literal">Core</code> directly. This is reserved for a few important global settings.
+                </p></li><li class="listitem"><p>
+                    <code class="literal">Core::*</code> can take new groups that contain settings that cover the same topic
+                    (like <code class="literal">Core::Email</code>) or relate to the same entity (like <code class="literal">Core::Queue</code>).
+                </p></li><li class="listitem"><p>
+                    All event handler registrations go to <code class="literal">Core::Event</code>.
+                </p></li><li class="listitem"><p>
+                    Don't add new direct child nodes within <code class="literal">Frontend</code>. Global front end settings go to
+                    <code class="literal">Frontend::Base</code>, settings only affecting a part of the system go to the respective
+                    <code class="literal">Admin, Agent, Customer</code> or <code class="literal">Public</code> sub nodes.
+                </p></li><li class="listitem"><p>
+                    Front end settings that only affect one screen should go to the relevant screen (<code class="literal">View</code>)
+                    node (create one if needed), for example <code class="literal">AgentTicketZoom</code> related settings
+                    go to <code class="literal">Frontend::Agent::View::TicketZoom</code>. If there are module layers within one screen with
+                    groups of related settings, they would also go to a sub group here (e. g.
+                    <code class="literal">Frontend::Agent::View::TicketZoom::MenuModule</code> for all ticket zoom menu module registrations).
+                </p></li><li class="listitem"><p>
+                    All global Loader settings go to <code class="literal">Frontend::Base::Loader</code>, screen specific Loader settings to
+                    <code class="literal">Frontend::*::ModuleRegistration::Loader</code>.
+                </p></li></ul></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="xml-config-structure"></a>Structure of <code class="literal">Value</code> elements</h4></div></div></div><p>
+                <code class="literal">Value</code> elements hold the actual configuration data payload. They can contain single values,
+                hashes or arrays.
+            </p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-item"></a><code class="literal">Item</code></h5></div></div></div><p>
+                    An <code class="literal">Item</code> element holds one piece of data.
+                    The optional <code class="literal">ValueType</code> attribute determines which kind of data and how it needs
+                    to be presented to the user in the GUI. If no <code class="literal">ValueType</code> is specified, it defaults
+                    to <code class="literal">String</code>.
+                </p><p>
+                    Please <a class="link" href="how-it-works.html#xml-config-value-types" title="Value Types">see below</a> for a definition of
+                    the different value types.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="Ticket::Hook" Required="1" Valid="1"&gt;
+    &lt;Description Translatable="1"&gt;The identifier for a ticket, e.g. Ticket#, Call#, MyTicket#. The default is Ticket#.&lt;/Description&gt;
+    &lt;Navigation&gt;Core::Ticket&lt;/Navigation&gt;
+    &lt;Value&gt;
+        &lt;Item ValueType="String" ValueRegex=""&gt;Ticket#&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-array"></a><code class="literal">Array</code></h5></div></div></div><p>
+                    With this config element arrays can be displayed.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Array&gt;
+            &lt;Item Translatable="1"&gt;Value 1&lt;/Item&gt;
+            &lt;Item Translatable="1"&gt;Value 2&lt;/Item&gt;
+            ...
+        &lt;/Array&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-hash"></a><code class="literal">Hash</code></h5></div></div></div><p>
+                    With this config element hashes can be displayed.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Hash&gt;
+            &lt;Item Key="One" Translatable="1"&gt;First&lt;/Item&gt;
+            &lt;Item Key="Two" Translatable="1"&gt;Second&lt;/Item&gt;
+            ...
+        &lt;/Hash&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p><p>
+                    It's possible to have nested array/hash elements (like hash of arrays, array of hashes, array of hashes of arrays, ...).
+                    Below is an example array of hashes.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="ExampleAoH"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Array&gt;
+            &lt;DefaultItem&gt;
+                &lt;Hash&gt;
+                    &lt;Item&gt;&lt;/Item&gt;
+                &lt;/Hash&gt;
+            &lt;/DefaultItem&gt;
+            &lt;Item&gt;
+                &lt;Hash&gt;
+                    &lt;Item Key="One"&gt;1&lt;/Item&gt;
+                    &lt;Item Key="Two"&gt;2&lt;/Item&gt;
+                &lt;/Hash&gt;
+            &lt;/Item&gt;
+            &lt;Item&gt;
+                &lt;Hash&gt;
+                    &lt;Item Key="Three"&gt;3&lt;/Item&gt;
+                    &lt;Item Key="Four"&gt;4&lt;/Item&gt;
+                &lt;/Hash&gt;
+            &lt;/Item&gt;
+        &lt;/Array&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="xml-config-value-types"></a>Value Types</h4></div></div></div><p>
+                The XML config settings support various types of configuration variables.
+            </p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-string"></a>String</h5></div></div></div><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="String" ValueRegex=""&gt;&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p><p>
+                    A config element for numbers and single-line strings.
+                    Checking the validity with a regular expression is possible (optional).
+                    This is the default <code class="literal">ValueType</code>.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="String" ValueRegex="" Translatable="1"&gt;Value&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p><p>
+                    The optional <code class="literal">Translatable</code> attribute marks this setting as translatable, which
+                    will cause it to be included in the OTRS translation files.
+                    This attribute can be placed on any tag (see also below).
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-password"></a>Password</h5></div></div></div><p>
+                    A config element for passwords. It's still stored as plain text in the XML, but
+                    it's masked in the GUI.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="Password"&gt;Secret&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-perlmodule"></a>PerlModule</h5></div></div></div><p>
+                    A config element for Perl module. It has a <code class="literal">ValueFilter</code> attribute, which filters
+                    possible values for selection. In the example below, user can select Perl module
+                    <code class="literal">Kernel::System::Log::SysLog</code> or <code class="literal">Kernel::System::Log::File</code>.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="PerlModule" ValueFilter="Kernel/System/Log/*.pm"&gt;Kernel::System::Log::SysLog&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-textarea"></a>Textarea</h5></div></div></div><p>
+                    A config element for multiline text.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="Textarea"&gt;&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-select"></a>Select</h5></div></div></div><p>
+                    This config element offers preset values as a pull-down menu. The <code class="literal">SelectedID</code>
+                    or <code class="literal">SelectedValue</code> attributes can pre-select a default value.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="Select" SelectedID="Queue"&gt;
+            &lt;Item ValueType="Option" Value="Queue" Translatable="1"&gt;Queue&lt;/Item&gt;
+            &lt;Item ValueType="Option" Value="SystemAddress" Translatable="1"&gt;System address&lt;/Item&gt;
+        &lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-checkbox"></a>Checkbox</h5></div></div></div><p>
+                    This config element checkbox has two states: 0 or 1.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="Checkbox"&gt;0&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-date"></a>Date</h5></div></div></div><p>
+                    This config element contains a date value.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="Date"&gt;2016-02-02&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-datetime"></a>DateTime</h5></div></div></div><p>
+                    This config element contains a date and time value.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="DateTime"&gt;2016-12-08 01:02:03&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-directory"></a>Directory</h5></div></div></div><p>
+                    This config element contains a directory.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="Directory"&gt;/etc&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-file"></a>File</h5></div></div></div><p>
+                    This config element contains a file path.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="File"&gt;/etc/hosts&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-entity"></a>Entity</h5></div></div></div><p>
+                    This config element contains a value of a particular entity. <code class="literal">ValueEntityType</code>
+                    attribute defines the entity type. Supported entities: <code class="literal">DynamicField</code>,
+                    <code class="literal">Queue</code>, <code class="literal">Priority</code>, <code class="literal">State</code> and
+                    <code class="literal">Type</code>. Consistency checks will ensure that only valid entities can be
+                    configured and that entities used in the configuration cannot be set to invalid. Also,
+                    when an entity is renamed, all referencing config settings will be updated.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="Entity" ValueEntityType="Queue"&gt;Junk&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-timezone"></a>TimeZone</h5></div></div></div><p>
+                    This config element contains a time zone value.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="TimeZone"&gt;UTC&lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-vacationdays"></a>VacationDays</h5></div></div></div><p>
+                    This config element contains definitions for vacation days which are repeating each year.
+                    Following attributes are mandatory: <code class="literal">ValueMonth</code>, <code class="literal">ValueDay</code>.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="VacationDays"&gt;
+            &lt;DefaultItem ValueType="VacationDays"&gt;&lt;/DefaultItem&gt;
+            &lt;Item ValueMonth="1" ValueDay="1" Translatable="1"&gt;New Year's Day&lt;/Item&gt;
+            &lt;Item ValueMonth="5" ValueDay="1" Translatable="1"&gt;International Workers' Day&lt;/Item&gt;
+            &lt;Item ValueMonth="12" ValueDay="24" Translatable="1"&gt;Christmas Eve&lt;/Item&gt;
+        &lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-vacationdaysonetime"></a>VacationDaysOneTime</h5></div></div></div><p>
+                    This config element contains definitions for vacation days which occur only once.
+                    Following attributes are mandatory: <code class="literal">ValueMonth</code>, <code class="literal">ValueDay</code>
+                    and <code class="literal">ValueYear</code>.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="VacationDaysOneTime"&gt;
+            &lt;Item ValueYear="2004" ValueMonth="1" ValueDay="1"&gt;test&lt;/Item&gt;
+        &lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-workinghours"></a>WorkingHours</h5></div></div></div><p>
+                    This config element contains definitions for working hours.
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettingName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="WorkingHours"&gt;
+            &lt;Item ValueType="Day" ValueName="Mon"&gt;
+                &lt;Item ValueType="Hour"&gt;8&lt;/Item&gt;
+                &lt;Item ValueType="Hour"&gt;9&lt;/Item&gt;
+            &lt;/Item&gt;
+            &lt;Item ValueType="Day" ValueName="Tue"&gt;
+                &lt;Item ValueType="Hour"&gt;8&lt;/Item&gt;
+                &lt;Item ValueType="Hour"&gt;9&lt;/Item&gt;
+            &lt;/Item&gt;
+        &lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-config-frontendregistration"></a>Frontend Registration</h5></div></div></div><p>
+                    Module registration for Agent Interface:
+                </p><p>
+                    </p><pre class="programlisting">
+&lt;Setting Name="SettiFrontend::Module###AgentModuleName"&gt;
+    ...
+    &lt;Value&gt;
+        &lt;Item ValueType="FrontendRegistration"&gt;
+            &lt;Hash&gt;
+                &lt;Item Key="Group"&gt;
+                    &lt;Array&gt;
+                    &lt;/Array&gt;
+                &lt;/Item&gt;
+                &lt;Item Key="GroupRo"&gt;
+                    &lt;Array&gt;
+                    &lt;/Array&gt;
+                &lt;/Item&gt;
+                &lt;Item Key="Description" Translatable="1"&gt;Phone Call.&lt;/Item&gt;
+                &lt;Item Key="Title" Translatable="1"&gt;Phone-Ticket&lt;/Item&gt;
+                &lt;Item Key="NavBarName"&gt;Ticket&lt;/Item&gt;
+            &lt;/Hash&gt;
+        &lt;/Item&gt;
+    &lt;/Value&gt;
+&lt;/Setting&gt;
+                    </pre><p>
+                </p></div></div><div class="section"><div class="titlepage"><div><div><h4 class="title"><a name="xml-default-item"></a>DefaultItem in Array and Hash</h4></div></div></div><p>
+                The new XML structure allows us to create complex structures. Therefore we need <code class="literal">DefaultItem</code> entries to describe
+                the structure of the Array/Hash. If it's not provided, system considers that you want simple Array/Hash with scalar values.
+                <code class="literal">DefaultItem</code> is used as a template when adding new elements, so it can contain additional attributes,
+                like <code class="literal">ValueType</code>, and it can define default values.
+            </p><p>
+                Here are few examples:
+            </p><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-aoa-select"></a>Array of Array with Select items</h5></div></div></div><p>
+                    </p><pre class="programlisting">
+&lt;Array&gt;
+    &lt;DefaultItem&gt;
+        &lt;Array&gt;
+            &lt;DefaultItem ValueType="Select" SelectedID='option-2'&gt;
+                &lt;Item ValueType="Option" Value="option-1"&gt;Option 1&lt;/Item&gt;
+                &lt;Item ValueType="Option" Value="option-2"&gt;Option 2&lt;/Item&gt;
+            &lt;/DefaultItem&gt;
+        &lt;/Array&gt;
+    &lt;/DefaultItem&gt;
+    ...
+&lt;/Array&gt;
+                    </pre><p>
+                </p></div><div class="section"><div class="titlepage"><div><div><h5 class="title"><a name="xml-hoh-date"></a>Hash of Hash with Date items</h5></div></div></div><p>
+                    </p><pre class="programlisting">
+&lt;Hash&gt;
+    &lt;DefaultItem&gt;
+        &lt;Hash&gt;
+            &lt;DefaultItem ValueType="Date"&gt;2017-01-01&lt;/DefaultItem&gt;
+        &lt;/Hash&gt;
+    &lt;/DefaultItem&gt;
+    ...
+&lt;/Hash&gt;
+                    </pre><p>
+                </p></div></div></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="accessing-config-options"></a>Accessing Config Options at Runtime</h3></div></div></div><p>
+            You can read and write (for one request) the config options via the core module <code class="literal">Kernel::Config</code>.
+        </p><p>
+            If you want to read a config option:
+        </p><p>
+            </p><pre class="programlisting">
+my $ConfigOption = $Kernel::OM-&gt;Get('Kernel::Config')-&gt;Get('Prefix::Option');
+            </pre><p>
+        </p><p>
+            If you want to change a config option at runtime and just for this one request/process:
+        </p><p>
+            </p><pre class="programlisting">
+$Kernel::OM-&gt;Get('Kernel::Config')-&gt;Set(
+    Key =&gt; 'Prefix::Option'
+    Value =&gt; 'SomeNewValue',
+);
+            </pre><p>
+        </p></div></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="architecture-overview.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch02s02.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Architecture Overview </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Database Mechanism</td></tr></table></div></body></html>
