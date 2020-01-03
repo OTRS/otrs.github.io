@@ -1,0 +1,721 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="zh-CN" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="zh-CN" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>配置机制 &mdash; OTRS Developer Manual 7.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/otrs.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="索引" href="../../genindex.html" />
+    <link rel="search" title="搜索" href="../../search.html" />
+    <link rel="next" title="数据库机制" href="database-mechanism.html" />
+    <link rel="prev" title="OTRS内部 - 如何工作" href="../how-it-works.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+    
+    <a href="https://doc.otrs.com/doc" class="icon fa-rocket DocumentationOverview"> OTRS Documentation</a>
+
+    
+
+          
+            <a href="../index.html" class="icon icon-home"> OTRS Developer Manual
+          
+
+          
+            
+            <img src="../../_static/otrs-logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                7.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">目录</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../get-started.html">入门</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../how-it-works.html">OTRS内部 - 如何工作</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">配置机制</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#defaults-pm-otrs-default-configuration"><code class="docutils literal notranslate"><span class="pre">Defaults.pm</span></code>: OTRS 默认配置</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#automatically-generated-configuration-files">自动生成的配置文件</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#xml-configuration-files">XML配置文件</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#structure-of-value-elements"><code class="docutils literal notranslate"><span class="pre">Value</span></code> 元素的结构</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#value-types">值类型</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#default-item-in-array-and-hash">数组和哈希中的默认项</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#accessing-config-options-at-runtime">在运行时访问配置选项</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="database-mechanism.html">数据库机制</a></li>
+<li class="toctree-l2"><a class="reference internal" href="log-mechanism.html">日志机制</a></li>
+<li class="toctree-l2"><a class="reference internal" href="date-time.html">日期和时间</a></li>
+<li class="toctree-l2"><a class="reference internal" href="skins.html">皮肤</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loader.html">CSS和JavaScript加载器</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">模板机制</a></li>
+<li class="toctree-l2"><a class="reference internal" href="themes.html">创建你自己的主题</a></li>
+<li class="toctree-l2"><a class="reference internal" href="translations.html">本地化/翻译机制</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../how-to-extend-otrs.html">如何扩展OTRS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../how-to-publish-otrs-extensions.html">如何发布你的OTRS扩展</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">文档</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">为OTRS做出贡献</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../additional-resources.html">其它资源</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">OTRS Developer Manual</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../how-it-works.html">OTRS内部 - 如何工作</a> &raquo;</li>
+        
+      <li>配置机制</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/OTRS/doc-developer/blob/rel-7_0/content/how-it-works/config-mechanism.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="config-mechanism">
+<h1>配置机制<a class="headerlink" href="#config-mechanism" title="永久链接至标题">¶</a></h1>
+<p>OTRS带有专用机制，可通过图形界面（系统配置）管理配置选项。 本节介绍内部如何工作以及如何提供新配置选项或更改现有默认值。</p>
+<div class="section" id="defaults-pm-otrs-default-configuration">
+<h2><code class="docutils literal notranslate"><span class="pre">Defaults.pm</span></code>: OTRS 默认配置<a class="headerlink" href="#defaults-pm-otrs-default-configuration" title="永久链接至标题">¶</a></h2>
+<p>OTRS的默认配置文件是 <code class="docutils literal notranslate"><span class="pre">Kernel/Config/Defaults.pm</span></code>。 在没有部署的XML配置的情况下运行新安装的系统需要此文件，并且应该保持不变，因为它在框架更新时自动更新。</p>
+</div>
+<div class="section" id="automatically-generated-configuration-files">
+<h2>自动生成的配置文件<a class="headerlink" href="#automatically-generated-configuration-files" title="永久链接至标题">¶</a></h2>
+<p>在 <code class="docutils literal notranslate"><span class="pre">Kernel/Config/Files</span></code> 中，您可以找到一些自动生成的配置文件：</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">ZZZAAuto.pm</span></code></dt>
+<dd>XML配置的当前值的Perl缓存（默认或由用户修改）。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ZZZACL.pm</span></code></dt>
+<dd>来自数据库的ACL配置的Perl缓存。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ZZZProcessManagement.pm</span></code></dt>
+<dd>来自数据库的流程管理配置的Perl缓存。</dd>
+</dl>
+<p>这些文件是当前系统配置的Perl表示法。 永远不要手动更改它们，因为它们由OTRS覆盖。</p>
+</div>
+<div class="section" id="xml-configuration-files">
+<h2>XML配置文件<a class="headerlink" href="#xml-configuration-files" title="永久链接至标题">¶</a></h2>
+<p>在OTRS中，管理员可以通过系统配置配置的配置选项通过具有特殊格式的XML文件提供。 要转换旧XML，您可以使用以下命令：</p>
+<div class="highlight-Bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Dev::Tools::Migrate::ConfigXMLStructure
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Kernel/Config/Files/ZZZAAuto.pm</span></code> 文件是XML的缓存Perl版本，包含所有具有当前值的设置。 它可以这样（重新）生成：</p>
+<div class="highlight-Bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Config::Rebuild
+</pre></div>
+</div>
+<p>每个XML配置文件都具有以下布局：</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
+<span class="nt">&lt;otrs_config</span> <span class="na">version=</span><span class="s">&quot;2.0&quot;</span> <span class="na">init=</span><span class="s">&quot;Changes&quot;</span><span class="nt">&gt;</span>
+
+    <span class="c">&lt;!--  settings will be here --&gt;</span>
+
+<span class="nt">&lt;/otrs_config&gt;</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">init</span></code></dt>
+<dd><p class="first">全局``init``属性描述了应该加载配置选项的位置。 有不同级别可用，将按以下顺序加载/重载：</p>
+<ul class="last simple">
+<li><code class="docutils literal notranslate"><span class="pre">Framework</span></code> (用于框架设置，例如会话选项)</li>
+<li><code class="docutils literal notranslate"><span class="pre">Application</span></code> （用于应用程序设置，例如工单选项）</li>
+<li><code class="docutils literal notranslate"><span class="pre">Config</span></code> （用于扩展现有应用程序，例如ITSM选项）</li>
+<li><code class="docutils literal notranslate"><span class="pre">Changes</span></code> （用于自定义开发，例如覆盖框架或工单选项）。</li>
+</ul>
+</dd>
+</dl>
+<p>配置项被写为 <code class="docutils literal notranslate"><span class="pre">Setting</span></code> 元素，有一个 <code class="docutils literal notranslate"><span class="pre">Description</span></code> 、一个 <code class="docutils literal notranslate"><span class="pre">Navigation</span></code> 组（用于GUI中的基于树的导航）和它所代表的 <code class="docutils literal notranslate"><span class="pre">Value</span></code> 。 这是一个例子：</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;Ticket::Hook&quot;</span> <span class="na">Required=</span><span class="s">&quot;1&quot;</span> <span class="na">Valid=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Description</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>The identifier for a ticket, e.g. Ticket#, Call#, MyTicket#. The default is Ticket#.<span class="nt">&lt;/Description&gt;</span>
+    <span class="nt">&lt;Navigation&gt;</span>Core::Ticket<span class="nt">&lt;/Navigation&gt;</span>
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;String&quot;</span> <span class="na">ValueRegex=</span><span class="s">&quot;&quot;</span><span class="nt">&gt;</span>Ticket#<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">Required</span></code></dt>
+<dd>如果设置为1，则无法禁用配置设置。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Valid</span></code></dt>
+<dd>确定默认情况下配置设置是激活（1）还是非激活（0）。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">ConfigLevel</span></code></dt>
+<dd>如果设置了可选属性 <code class="docutils literal notranslate"><span class="pre">ConfigLevel</span></code>，则管理员可能无法编辑配置变量，具体取决于他自己的配置级别。 配置变量 <code class="docutils literal notranslate"><span class="pre">ConfigLevel</span></code> 设置管理员的技术经验水平。 它可以是 <em>100（专家）</em>， <em>200（高级）</em> 或 <em>300（初学者）</em>。 作为应该为选项提供配置级别的指导原则，建议所有与外部交互配置相关的选项（如Sendmail、LDAP、SOAP等）的配置级别至少应为 <em>200（高级）</em>。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Invisible</span></code></dt>
+<dd>如果设置为1，则GUI中不显示配置设置。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Readonly</span></code></dt>
+<dd>如果设置为1，则无法在GUI中更改配置设置。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UserModificationPossible</span></code></dt>
+<dd>如果 <code class="docutils literal notranslate"><span class="pre">UserModificationPossible</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">1</span></code> ，管理员可以启用用户修改此设置（在用户首选项中）。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UserModificationActive</span></code></dt>
+<dd>如果 <code class="docutils literal notranslate"><span class="pre">UserModificationActive</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">1</span></code>，则启用用户对此设置的修改（在用户首选项中）。 您应该将此属性与 <code class="docutils literal notranslate"><span class="pre">UserModificationPossible</span></code> 一起使用。</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">UserPreferencesGroup</span></code></dt>
+<dd>使用 <code class="docutils literal notranslate"><span class="pre">UserPreferencesGroup</span></code> 属性来定义哪个组配置变量属于哪个（在 <code class="docutils literal notranslate"><span class="pre">UserPreferences用户首选项</span></code> 屏幕中）。 您应该将此属性与 <code class="docutils literal notranslate"><span class="pre">UserModificationPossible</span></code> 一起使用。</dd>
+</dl>
+<p>在右侧导航节点中放置设置的准则：</p>
+<ul class="simple">
+<li>只在必要时才创建新节点。 如果可能，请避免仅使用极少数设置的节点。</li>
+<li>在第一个树级别，不应添加新节点。</li>
+<li>不要直接在 <code class="docutils literal notranslate"><span class="pre">Core</span></code> 中放置新设置。 它保留用于一些重要的全局设置。</li>
+<li><code class="docutils literal notranslate"><span class="pre">Core::*</span></code> 可以采用包含相同主题设置的新组（如 <code class="docutils literal notranslate"><span class="pre">Core::Email</span></code>）或与同一实体相关（如 <code class="docutils literal notranslate"><span class="pre">Core::Queue</span></code>）。</li>
+<li>所有事件处理程序注册都转到 <code class="docutils literal notranslate"><span class="pre">Core::Event</span></code>。</li>
+<li>不要在 <code class="docutils literal notranslate"><span class="pre">Frontend</span></code> 中添加新的直接子节点。 全局前端设置转到 <code class="docutils literal notranslate"><span class="pre">Frontend::Base</span></code>，只影响系统一部分的设置转到相应的 <code class="docutils literal notranslate"><span class="pre">Admin</span></code>、 <code class="docutils literal notranslate"><span class="pre">Agent</span></code>、 <code class="docutils literal notranslate"><span class="pre">Customer</span></code> 或 <code class="docutils literal notranslate"><span class="pre">Public</span></code> 子节点。</li>
+<li>只影响一个屏幕的前端设置应该转到相关的屏幕（<code class="docutils literal notranslate"><span class="pre">View</span></code>）节点（如果需要，创建一个），例如 <code class="docutils literal notranslate"><span class="pre">AgentTicketZoom</span></code> 相关的设置转到 <code class="docutils literal notranslate"><span class="pre">Frontend::Agent::View::TicketZoom</span></code>。 如果一个屏幕中有模块层与相关设置组，他们也会到这里的子组（例如 <code class="docutils literal notranslate"><span class="pre">Frontend::Agent::View::TicketZoom::MenuModule</span></code> 用于所有工单详情菜单模块注册）。</li>
+<li>所有全局加载器设置都转到 <code class="docutils literal notranslate"><span class="pre">Frontend::Base::Loader</span></code>，屏幕特定的加载器设置为 <code class="docutils literal notranslate"><span class="pre">Frontend::*::ModuleRegistration::Loader</span></code>。</li>
+</ul>
+<div class="section" id="structure-of-value-elements">
+<h3><code class="docutils literal notranslate"><span class="pre">Value</span></code> 元素的结构<a class="headerlink" href="#structure-of-value-elements" title="永久链接至标题">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">Value</span></code> 元素保存实际的配置数据有效负载。 它们可以包含单个值、哈希或数组。</p>
+<div class="section" id="item">
+<h4><code class="docutils literal notranslate"><span class="pre">Item</span></code><a class="headerlink" href="#item" title="永久链接至标题">¶</a></h4>
+<p>一个 <code class="docutils literal notranslate"><span class="pre">Item</span></code> 元素包含一个数据。 可选的 <code class="docutils literal notranslate"><span class="pre">ValueType</span></code> 属性确定哪种数据以及如何在GUI中向用户呈现它。 如果没有指定 <code class="docutils literal notranslate"><span class="pre">ValueType</span></code>，则默认为 <code class="docutils literal notranslate"><span class="pre">String</span></code>。</p>
+<p>请参阅 <a class="reference internal" href="#value-types"><span class="std std-ref">值类型</span></a> ，了解不同值类型的定义。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;Ticket::Hook&quot;</span> <span class="na">Required=</span><span class="s">&quot;1&quot;</span> <span class="na">Valid=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Description</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>The identifier for a ticket, e.g. Ticket#, Call#, MyTicket#. The default is Ticket#.<span class="nt">&lt;/Description&gt;</span>
+    <span class="nt">&lt;Navigation&gt;</span>Core::Ticket<span class="nt">&lt;/Navigation&gt;</span>
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;String&quot;</span> <span class="na">ValueRegex=</span><span class="s">&quot;&quot;</span><span class="nt">&gt;</span>Ticket#<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="array">
+<h4><code class="docutils literal notranslate"><span class="pre">Array</span></code><a class="headerlink" href="#array" title="永久链接至标题">¶</a></h4>
+<p>使用此配置元素可以显示数组。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Array&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Value 1<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Value 2<span class="nt">&lt;/Item&gt;</span>
+            ...
+        <span class="nt">&lt;/Array&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="hash">
+<h4><code class="docutils literal notranslate"><span class="pre">Hash</span></code><a class="headerlink" href="#hash" title="永久链接至标题">¶</a></h4>
+<p>使用此配置元素可以显示哈希值。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Hash&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;One&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>First<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;Two&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Second<span class="nt">&lt;/Item&gt;</span>
+            ...
+        <span class="nt">&lt;/Hash&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+<p>可以使用嵌套的数组/哈希元素（如数组哈希、哈希数组、数组哈希数组等）。 下面是哈希数组的示例。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;ExampleAoH&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Array&gt;</span>
+            <span class="nt">&lt;DefaultItem&gt;</span>
+                <span class="nt">&lt;Hash&gt;</span>
+                    <span class="nt">&lt;Item&gt;&lt;/Item&gt;</span>
+                <span class="nt">&lt;/Hash&gt;</span>
+            <span class="nt">&lt;/DefaultItem&gt;</span>
+            <span class="nt">&lt;Item&gt;</span>
+                <span class="nt">&lt;Hash&gt;</span>
+                    <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;One&quot;</span><span class="nt">&gt;</span>1<span class="nt">&lt;/Item&gt;</span>
+                    <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;Two&quot;</span><span class="nt">&gt;</span>2<span class="nt">&lt;/Item&gt;</span>
+                <span class="nt">&lt;/Hash&gt;</span>
+            <span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;Item&gt;</span>
+                <span class="nt">&lt;Hash&gt;</span>
+                    <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;Three&quot;</span><span class="nt">&gt;</span>3<span class="nt">&lt;/Item&gt;</span>
+                    <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;Four&quot;</span><span class="nt">&gt;</span>4<span class="nt">&lt;/Item&gt;</span>
+                <span class="nt">&lt;/Hash&gt;</span>
+            <span class="nt">&lt;/Item&gt;</span>
+        <span class="nt">&lt;/Array&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="value-types">
+<h3>值类型<a class="headerlink" href="#value-types" title="永久链接至标题">¶</a></h3>
+<p>XML配置设置支持各种类型的配置变量。</p>
+<div class="section" id="string">
+<h4><code class="docutils literal notranslate"><span class="pre">String</span></code><a class="headerlink" href="#string" title="永久链接至标题">¶</a></h4>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;String&quot;</span> <span class="na">ValueRegex=</span><span class="s">&quot;&quot;</span><span class="nt">&gt;&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+<p>用于数字和单行字符串的配置元素。 可以使用正则表达式检查有效性（可选）。 这是默认的 <code class="docutils literal notranslate"><span class="pre">ValueType</span></code>。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;String&quot;</span> <span class="na">ValueRegex=</span><span class="s">&quot;&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Value<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+<p>可选的 <code class="docutils literal notranslate"><span class="pre">Translatable</span></code> 属性将此设置标记为可翻译，这将使其包含在OTRS翻译文件中。 此属性可以放在任何标记上（另请参见下文）。</p>
+</div>
+<div class="section" id="password">
+<h4><code class="docutils literal notranslate"><span class="pre">Password</span></code><a class="headerlink" href="#password" title="永久链接至标题">¶</a></h4>
+<p>用于密码的配置元素。 它仍然以纯文本形式存储在XML中，但它在GUI中被屏蔽。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Password&quot;</span><span class="nt">&gt;</span>Secret<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="perlmodule">
+<h4><code class="docutils literal notranslate"><span class="pre">PerlModule</span></code><a class="headerlink" href="#perlmodule" title="永久链接至标题">¶</a></h4>
+<p>用于Perl模块的配置元素。 它有一个 <code class="docutils literal notranslate"><span class="pre">ValueFilter</span></code> 属性，用于过滤可能的选择值。 在下面的示例中，用户可以选择Perl模块 <code class="docutils literal notranslate"><span class="pre">Kernel::System::Log::SysLog</span></code> 或 <code class="docutils literal notranslate"><span class="pre">Kernel::System::Log::File</span></code>。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;PerlModule&quot;</span> <span class="na">ValueFilter=</span><span class="s">&quot;Kernel/System/Log/*.pm&quot;</span><span class="nt">&gt;</span>Kernel::System::Log::SysLog<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="textarea">
+<h4><code class="docutils literal notranslate"><span class="pre">Textarea</span></code><a class="headerlink" href="#textarea" title="永久链接至标题">¶</a></h4>
+<p>用于多行文本的配置元素。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Textarea&quot;</span><span class="nt">&gt;&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="select">
+<h4><code class="docutils literal notranslate"><span class="pre">Select</span></code><a class="headerlink" href="#select" title="永久链接至标题">¶</a></h4>
+<p>此配置元素提供预设值作为下拉菜单。 <code class="docutils literal notranslate"><span class="pre">SelectedID</span></code> 或 <code class="docutils literal notranslate"><span class="pre">SelectedValue</span></code> 属性可以预先选择一个默认值。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Select&quot;</span> <span class="na">SelectedID=</span><span class="s">&quot;Queue&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Option&quot;</span> <span class="na">Value=</span><span class="s">&quot;Queue&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Queue<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Option&quot;</span> <span class="na">Value=</span><span class="s">&quot;SystemAddress&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>System address<span class="nt">&lt;/Item&gt;</span>
+        <span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="checkbox">
+<h4><code class="docutils literal notranslate"><span class="pre">Checkbox</span></code><a class="headerlink" href="#checkbox" title="永久链接至标题">¶</a></h4>
+<p>此配置元素复选框有两种状态：0或1。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Checkbox&quot;</span><span class="nt">&gt;</span>0<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="date">
+<h4><code class="docutils literal notranslate"><span class="pre">Date</span></code><a class="headerlink" href="#date" title="永久链接至标题">¶</a></h4>
+<p>此配置元素包含日期值。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Date&quot;</span><span class="nt">&gt;</span>2016-02-02<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="datetime">
+<h4><code class="docutils literal notranslate"><span class="pre">DateTime</span></code><a class="headerlink" href="#datetime" title="永久链接至标题">¶</a></h4>
+<p>此配置元素包含日期时间值。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;DateTime&quot;</span><span class="nt">&gt;</span>2016-12-08 01:02:03<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="directory">
+<h4><code class="docutils literal notranslate"><span class="pre">Directory</span></code><a class="headerlink" href="#directory" title="永久链接至标题">¶</a></h4>
+<p>此配置元素包含一个目录。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Directory&quot;</span><span class="nt">&gt;</span>/etc<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="file">
+<h4><code class="docutils literal notranslate"><span class="pre">File</span></code><a class="headerlink" href="#file" title="永久链接至标题">¶</a></h4>
+<p>此配置元素包含一个文件路径。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;File&quot;</span><span class="nt">&gt;</span>/etc/hosts<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="entity">
+<h4><code class="docutils literal notranslate"><span class="pre">Entity</span></code><a class="headerlink" href="#entity" title="永久链接至标题">¶</a></h4>
+<p>此配置元素包含特定实体的值。 <code class="docutils literal notranslate"><span class="pre">ValueEntityType</span></code> 属性定义实体类型。 支持的实体： <code class="docutils literal notranslate"><span class="pre">DynamicField</span></code>、 <code class="docutils literal notranslate"><span class="pre">Queue</span></code>、 <code class="docutils literal notranslate"><span class="pre">Priority</span></code>、 <code class="docutils literal notranslate"><span class="pre">State</span></code> 和 <code class="docutils literal notranslate"><span class="pre">Type</span></code>。 一致性检查将确保只能配置有效实体，并且配置中使用的实体不能设置为无效。 此外，重命名实体时，将更新所有引用配置设置。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Entity&quot;</span> <span class="na">ValueEntityType=</span><span class="s">&quot;Queue&quot;</span><span class="nt">&gt;</span>Junk<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="timezone">
+<h4><code class="docutils literal notranslate"><span class="pre">TimeZone</span></code><a class="headerlink" href="#timezone" title="永久链接至标题">¶</a></h4>
+<p>此配置元素包含时区值。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;TimeZone&quot;</span><span class="nt">&gt;</span>UTC<span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="vacationdays">
+<h4><code class="docutils literal notranslate"><span class="pre">VacationDays</span></code><a class="headerlink" href="#vacationdays" title="永久链接至标题">¶</a></h4>
+<p>此配置元素包含每年重复的休假日的定义。 以下属性是必填的：<code class="docutils literal notranslate"><span class="pre">ValueMonth</span></code>、<code class="docutils literal notranslate"><span class="pre">ValueDay</span></code>。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;VacationDays&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;DefaultItem</span> <span class="na">ValueType=</span><span class="s">&quot;VacationDays&quot;</span><span class="nt">&gt;&lt;/DefaultItem&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">ValueMonth=</span><span class="s">&quot;1&quot;</span> <span class="na">ValueDay=</span><span class="s">&quot;1&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>New Year&#39;s Day<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">ValueMonth=</span><span class="s">&quot;5&quot;</span> <span class="na">ValueDay=</span><span class="s">&quot;1&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>International Workers&#39; Day<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">ValueMonth=</span><span class="s">&quot;12&quot;</span> <span class="na">ValueDay=</span><span class="s">&quot;24&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Christmas Eve<span class="nt">&lt;/Item&gt;</span>
+        <span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="vacationdaysonetime">
+<h4><code class="docutils literal notranslate"><span class="pre">VacationDaysOneTime</span></code><a class="headerlink" href="#vacationdaysonetime" title="永久链接至标题">¶</a></h4>
+<p>此配置元素包含仅发生一次的休假日的定义。 以下属性是必填的：<code class="docutils literal notranslate"><span class="pre">ValueMonth</span></code>、<code class="docutils literal notranslate"><span class="pre">ValueDay</span></code> 和 <code class="docutils literal notranslate"><span class="pre">ValueYear</span></code>。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;VacationDaysOneTime&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">ValueYear=</span><span class="s">&quot;2004&quot;</span> <span class="na">ValueMonth=</span><span class="s">&quot;1&quot;</span> <span class="na">ValueDay=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>test<span class="nt">&lt;/Item&gt;</span>
+        <span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="workinghours">
+<h4><code class="docutils literal notranslate"><span class="pre">WorkingHours</span></code><a class="headerlink" href="#workinghours" title="永久链接至标题">¶</a></h4>
+<p>此配置元素包含工作时间的定义。</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettingName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;WorkingHours&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Day&quot;</span> <span class="na">ValueName=</span><span class="s">&quot;Mon&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Hour&quot;</span><span class="nt">&gt;</span>8<span class="nt">&lt;/Item&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Hour&quot;</span><span class="nt">&gt;</span>9<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Day&quot;</span> <span class="na">ValueName=</span><span class="s">&quot;Tue&quot;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Hour&quot;</span><span class="nt">&gt;</span>8<span class="nt">&lt;/Item&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Hour&quot;</span><span class="nt">&gt;</span>9<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;/Item&gt;</span>
+        <span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="front-end-registration">
+<h4>前端注册<a class="headerlink" href="#front-end-registration" title="永久链接至标题">¶</a></h4>
+<p>服务人员界面的模块注册：</p>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;SettiFrontend::Module###AgentModuleName&quot;</span><span class="nt">&gt;</span>
+    ...
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;FrontendRegistration&quot;</span><span class="nt">&gt;</span>
+            <span class="nt">&lt;Hash&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;Group&quot;</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;Array&gt;</span>
+                    <span class="nt">&lt;/Array&gt;</span>
+                <span class="nt">&lt;/Item&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;GroupRo&quot;</span><span class="nt">&gt;</span>
+                    <span class="nt">&lt;Array&gt;</span>
+                    <span class="nt">&lt;/Array&gt;</span>
+                <span class="nt">&lt;/Item&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;Description&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Phone Call.<span class="nt">&lt;/Item&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;Title&quot;</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>Phone-Ticket<span class="nt">&lt;/Item&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;NavBarName&quot;</span><span class="nt">&gt;</span>Ticket<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;/Hash&gt;</span>
+        <span class="nt">&lt;/Item&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="default-item-in-array-and-hash">
+<h3>数组和哈希中的默认项<a class="headerlink" href="#default-item-in-array-and-hash" title="永久链接至标题">¶</a></h3>
+<p>新的XML结构允许我们创建复杂的结构。 因此，我们需要 <code class="docutils literal notranslate"><span class="pre">DefaultItem</span></code> 条目来描述数组/哈希的结构。 如果未提供，系统会认为您需要具有标量值的简单数组/散列。 <code class="docutils literal notranslate"><span class="pre">DefaultItem</span></code> 在添加新元素时用作模板，因此它可以包含其它属性如 <code class="docutils literal notranslate"><span class="pre">ValueType</span></code>，并且可以定义默认值。</p>
+<p>这里有些例子：</p>
+<div class="section" id="array-of-array-with-select-items">
+<h4>带有 <code class="docutils literal notranslate"><span class="pre">Select</span></code> 项的嵌套数组<a class="headerlink" href="#array-of-array-with-select-items" title="永久链接至标题">¶</a></h4>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Array&gt;</span>
+    <span class="nt">&lt;DefaultItem&gt;</span>
+        <span class="nt">&lt;Array&gt;</span>
+            <span class="nt">&lt;DefaultItem</span> <span class="na">ValueType=</span><span class="s">&quot;Select&quot;</span> <span class="na">SelectedID=</span><span class="s">&#39;option-2&#39;</span><span class="nt">&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Option&quot;</span> <span class="na">Value=</span><span class="s">&quot;option-1&quot;</span><span class="nt">&gt;</span>Option 1<span class="nt">&lt;/Item&gt;</span>
+                <span class="nt">&lt;Item</span> <span class="na">ValueType=</span><span class="s">&quot;Option&quot;</span> <span class="na">Value=</span><span class="s">&quot;option-2&quot;</span><span class="nt">&gt;</span>Option 2<span class="nt">&lt;/Item&gt;</span>
+            <span class="nt">&lt;/DefaultItem&gt;</span>
+        <span class="nt">&lt;/Array&gt;</span>
+    <span class="nt">&lt;/DefaultItem&gt;</span>
+    ...
+<span class="nt">&lt;/Array&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="hash-of-hash-with-date-items">
+<h4>包含``Date`` 项的嵌套哈希<a class="headerlink" href="#hash-of-hash-with-date-items" title="永久链接至标题">¶</a></h4>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Hash&gt;</span>
+    <span class="nt">&lt;DefaultItem&gt;</span>
+        <span class="nt">&lt;Hash&gt;</span>
+            <span class="nt">&lt;DefaultItem</span> <span class="na">ValueType=</span><span class="s">&quot;Date&quot;</span><span class="nt">&gt;</span>2017-01-01<span class="nt">&lt;/DefaultItem&gt;</span>
+        <span class="nt">&lt;/Hash&gt;</span>
+    <span class="nt">&lt;/DefaultItem&gt;</span>
+    ...
+<span class="nt">&lt;/Hash&gt;</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="accessing-config-options-at-runtime">
+<h2>在运行时访问配置选项<a class="headerlink" href="#accessing-config-options-at-runtime" title="永久链接至标题">¶</a></h2>
+<p>您可以通过核心模块 <code class="docutils literal notranslate"><span class="pre">Kernel::Config</span></code> 读取和写入（一次请求）配置选项。</p>
+<p>如果要读取配置选项：</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="nv">$ConfigOption</span> <span class="o">=</span> <span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Kernel::Config&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Prefix::Option&#39;</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>如果要在运行时更改配置选项，只需一个请求/进程：</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Kernel::Config&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Set</span><span class="p">(</span>
+    <span class="n">Key</span> <span class="o">=&gt;</span> <span class="s">&#39;Prefix::Option&#39;</span>
+    <span class="n">Value</span> <span class="o">=&gt;</span> <span class="s">&#39;SomeNewValue&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          
+
+<script>
+// Start Google Analytics Tracking
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-28118796-2', 'auto');
+ga('send', 'pageview');
+// End Google Analytics Tracking
+</script>
+
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="database-mechanism.html" class="btn btn-neutral float-right" title="数据库机制" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../how-it-works.html" class="btn btn-neutral" title="OTRS内部 - 如何工作" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2001-2019 OTRS AG, https://otrs.com/
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/translations.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

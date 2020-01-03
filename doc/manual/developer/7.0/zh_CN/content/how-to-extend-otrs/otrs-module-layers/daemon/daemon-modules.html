@@ -1,0 +1,459 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="zh-CN" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="zh-CN" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>OTRS守护进程 &mdash; OTRS Developer Manual 7.0 文档</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../../_static/css/otrs.css" type="text/css" />
+  <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="索引" href="../../../../genindex.html" />
+    <link rel="search" title="搜索" href="../../../../search.html" />
+    <link rel="next" title="OTRS调度程序" href="scheduler-task-worker-modules.html" />
+    <link rel="prev" title="操作" href="../gi-operation.html" /> 
+
+  
+  <script src="../../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+    
+    <a href="https://doc.otrs.com/doc" class="icon fa-rocket DocumentationOverview"> OTRS Documentation</a>
+
+    
+
+          
+            <a href="../../../index.html" class="icon icon-home"> OTRS Developer Manual
+          
+
+          
+            
+            <img src="../../../../_static/otrs-logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                7.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">目录</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../get-started.html">入门</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../how-it-works.html">OTRS内部 - 如何工作</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../how-to-extend-otrs.html">如何扩展OTRS</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../writing-otrs-application.html">编写新的OTRS前端模块</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../writing-new-otrs-frontend-component.html">编写新的OTRS前端组件</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../otrs-module-layers.html">使用OTRS模块层的功能</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../agent-auth.html">服务人员身份验证模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../auth-sync.html">身份验证同步模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../customer-auth.html">客户身份验证模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../customer-user-preferences.html">客户用户首选项模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../queue-preferences.html">队列首选项模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../service-preferences.html">服务首选项模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sla-preferences.html">SLA首选项模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../log.html">日志模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../outputfilter.html">输出过滤器</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../stats.html">统计模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ticketnumber-generator.html">工单编号生成器模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ticketevent.html">工单事件模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dashboard.html">仪表板模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../notify.html">通知模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ticket-menu.html">工单菜单模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gi-transport.html">网络传输</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gi-mapping.html">映射</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gi-invoker.html">调用程序</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gi-operation.html">操作</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">OTRS守护进程</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#otrs-daemon-modules">OTRS守护进程模块</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="scheduler-task-worker-modules.html">OTRS调度程序</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamic-fields/dynamic-fields-overview.html">概览</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamic-fields/dynamic-fields-framework.html">动态字段框架</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamic-fields/dynamic-fields-interaction.html">动态字段与前端模块交互</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamic-fields/dynamic-fields-extend-options.html">如何扩展动态字段</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamic-fields/dynamic-fields-new-field.html">创建一个新动态字段</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dynamic-fields/dynamic-fields-extend.html">创建一个动态字段功能扩展</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ticket-postmaster-modules.html">工单邮箱管理员模块</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../process-management-modules.html">流程管理</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../how-to-publish-otrs-extensions.html">如何发布你的OTRS扩展</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../documentation.html">文档</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">为OTRS做出贡献</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../additional-resources.html">其它资源</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">OTRS Developer Manual</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../../how-to-extend-otrs.html">如何扩展OTRS</a> &raquo;</li>
+        
+          <li><a href="../../otrs-module-layers.html">使用OTRS模块层的功能</a> &raquo;</li>
+        
+      <li>OTRS守护进程</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/OTRS/doc-developer/blob/rel-7_0/content/how-to-extend-otrs/otrs-module-layers/daemon/daemon-modules.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="otrs-daemon">
+<h1>OTRS守护进程<a class="headerlink" href="#otrs-daemon" title="永久链接至标题">¶</a></h1>
+<p>OTRS守护进程是一个独立的进程，可帮助OTRS异步执行某些操作并独立于Web服务器进程，但共享同一个数据库。</p>
+<div class="section" id="otrs-daemon-modules">
+<h2>OTRS守护进程模块<a class="headerlink" href="#otrs-daemon-modules" title="永久链接至标题">¶</a></h2>
+<p>OTRS守护进程 <code class="docutils literal notranslate"><span class="pre">bin/otrs.Daemon.pl</span></code> 的主要目的是在系统配置中调用（守护进程）所有已注册的守护进程模块。</p>
+<p>每个守护程序模块必须实现一个通用API才能被OTRS守护程序正确调用，并且是系统中的半持久进程。 持久化进程的大小和内存使用量会随着时间的推移而增长，通常它们不会响应配置中的更改。 这就是为什么守护程序模块应该实现丢弃机制以便不时地中止并重新生成，从而释放系统资源并重新读取配置。</p>
+<p>守护进程模块可以是执行特定作业的一体化解决方案，但由于其复杂性，可能存在解决方案需要不同守护进程模块的情况。 这正是OTRS调度程序守护进程的情况，它被分成几个守护程序模块，包括用于任务管理和任务执行的一些守护进程模块。</p>
+<p>并不总是需要创建一个新的守护进程模块来执行某些任务，通常OTRS调度程序守护进程可以处理它们中的大多数，如果它是需要定期执行的OTRS函数（类似CRON）或者 如果它是由OTRS事件触发的，那么OTRS调度程序应该能够开箱即用或者通过添加新的调度程序任务工作模块来处理它。</p>
+<div class="section" id="creating-a-new-daemon-module">
+<h3>创建一个新的守护进程模块<a class="headerlink" href="#creating-a-new-daemon-module" title="永久链接至标题">¶</a></h3>
+<p>所有守护进程模块都需要在系统配置中注册，以便由主OTRS守护进程调用。</p>
+<div class="section" id="daemon-module-registration-code-example">
+<h4>守护进程模块注册代码示例<a class="headerlink" href="#daemon-module-registration-code-example" title="永久链接至标题">¶</a></h4>
+<div class="highlight-XML notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;Setting</span> <span class="na">Name=</span><span class="s">&quot;DaemonModules###TestDaemon&quot;</span> <span class="na">Required=</span><span class="s">&quot;1&quot;</span> <span class="na">Valid=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;Description</span> <span class="na">Translatable=</span><span class="s">&quot;1&quot;</span><span class="nt">&gt;</span>The daemon registration for the scheduler generic agent task manager.<span class="nt">&lt;/Description&gt;</span>
+    <span class="nt">&lt;Navigation&gt;</span>Daemon::ModuleRegistration<span class="nt">&lt;/Navigation&gt;</span>
+    <span class="nt">&lt;Value&gt;</span>
+        <span class="nt">&lt;Hash&gt;</span>
+            <span class="nt">&lt;Item</span> <span class="na">Key=</span><span class="s">&quot;Module&quot;</span><span class="nt">&gt;</span>Kernel::System::Daemon::DaemonModules::TestDaemon<span class="nt">&lt;/Item&gt;</span>
+        <span class="nt">&lt;/Hash&gt;</span>
+    <span class="nt">&lt;/Value&gt;</span>
+<span class="nt">&lt;/Setting&gt;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="daemon-module-code-example">
+<h4>守护进程模块代码示例<a class="headerlink" href="#daemon-module-code-example" title="永久链接至标题">¶</a></h4>
+<p>以下代码实现了一个守护进程模块，该模块每2秒显示一次系统时间。</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="c1"># --</span>
+<span class="c1"># Copyright (C) 2001-2019 OTRS AG, https://otrs.com/</span>
+<span class="c1"># --</span>
+<span class="c1"># This software comes with ABSOLUTELY NO WARRANTY. For details, see</span>
+<span class="c1"># the enclosed file COPYING for license information (GPL). If you</span>
+<span class="c1"># did not receive this file, see https://www.gnu.org/licenses/gpl-3.0.txt.</span>
+<span class="c1"># --</span>
+
+<span class="k">package</span> <span class="nn">Kernel::System::Daemon::DaemonModules::TestDaemon</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nn">strict</span><span class="p">;</span>
+<span class="k">use</span> <span class="nn">warnings</span><span class="p">;</span>
+<span class="k">use</span> <span class="nn">utf8</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nn">Kernel::System::VariableCheck</span> <span class="sx">qw(:all)</span><span class="p">;</span>
+
+<span class="k">use</span> <span class="nn">parent</span> <span class="sx">qw(Kernel::System::Daemon::BaseDaemon)</span><span class="p">;</span>
+
+<span class="k">our</span> <span class="nv">@ObjectDependencies</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;Kernel::Config&#39;</span><span class="p">,</span>
+    <span class="s">&#39;Kernel::System::Cache&#39;</span><span class="p">,</span>
+    <span class="s">&#39;Kernel::System::DB&#39;</span><span class="p">,</span>
+<span class="p">);</span>
+</pre></div>
+</div>
+<p>这是可在常见OTRS模块中找到的通用标头。 类/包名称通过 <code class="docutils literal notranslate"><span class="pre">package</span></code> 关键字声明。</p>
+<p>在这个例子中，我们继承自 <code class="docutils literal notranslate"><span class="pre">BaseDaemon</span></code> 类，并设置了对象管理器依赖项。</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">new</span> <span class="p">{</span>
+    <span class="k">my</span> <span class="p">(</span> <span class="nv">$Type</span><span class="p">,</span> <span class="nv">%Param</span> <span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
+
+    <span class="c1"># Allocate new hash for object.</span>
+    <span class="k">my</span> <span class="nv">$Self</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="nb">bless</span> <span class="nv">$Self</span><span class="p">,</span> <span class="nv">$Type</span><span class="p">;</span>
+
+    <span class="c1"># Get objects in constructor to save performance.</span>
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">ConfigObject</span><span class="p">}</span> <span class="o">=</span> <span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Kernel::Config&#39;</span><span class="p">);</span>
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">CacheObject</span><span class="p">}</span>  <span class="o">=</span> <span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Kernel::System::Cache&#39;</span><span class="p">);</span>
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DBObject</span><span class="p">}</span>     <span class="o">=</span> <span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Kernel::System::DB&#39;</span><span class="p">);</span>
+
+    <span class="c1"># Disable in memory cache to be clusterable.</span>
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">CacheObject</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">Configure</span><span class="p">(</span>
+        <span class="n">CacheInMemory</span>  <span class="o">=&gt;</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">CacheInBackend</span> <span class="o">=&gt;</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="p">);</span>
+
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">SleepPost</span><span class="p">}</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>          <span class="c1"># sleep 2 seconds after each loop</span>
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">Discard</span><span class="p">}</span>   <span class="o">=</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span><span class="p">;</span>    <span class="c1"># discard every hour</span>
+
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DiscardCount</span><span class="p">}</span> <span class="o">=</span> <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">Discard</span><span class="p">}</span> <span class="o">/</span> <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">SleepPost</span><span class="p">};</span>
+
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">Debug</span><span class="p">}</span>      <span class="o">=</span> <span class="nv">$Param</span><span class="p">{</span><span class="n">Debug</span><span class="p">};</span>
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DaemonName</span><span class="p">}</span> <span class="o">=</span> <span class="s">&#39;Daemon: TestDaemon&#39;</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="nv">$Self</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>构造函数 <code class="docutils literal notranslate"><span class="pre">new</span></code> 创建了一个新的类实例。 这里也创建了一些使用过的对象。 强烈建议在守护进程模块中禁用内存高速缓存，尤其是在OTRS在集群环境中运行时。</p>
+<p>为了使该守护进程模块每两秒执行一次，必须相应地定义休眠时间，否则将会尽快执行。</p>
+<p>必须不时刷新守护进程模块，以便定义何时应该丢弃它。</p>
+<p>对于以下函数（<code class="docutils literal notranslate"><span class="pre">PreRun</span></code>、<code class="docutils literal notranslate"><span class="pre">Run</span></code> 和 <code class="docutils literal notranslate"><span class="pre">PostRun</span></code>）如果它们返回false，主OTRS守护进程将丢弃该对象并尽快创建一个新对象。</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">PreRun</span> <span class="p">{</span>
+    <span class="k">my</span> <span class="p">(</span> <span class="nv">$Self</span><span class="p">,</span> <span class="nv">%Param</span> <span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
+
+    <span class="c1"># Check if database is on-line.</span>
+    <span class="k">return</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DBObject</span><span class="p">}</span><span class="o">-&gt;</span><span class="n">Ping</span><span class="p">();</span>
+
+    <span class="nb">sleep</span> <span class="mi">10</span><span class="p">;</span>
+
+    <span class="k">return</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">PreRun</span></code> 方法在主守护进程模块方法之前执行，其目的是在实际操作之前执行一些测试。 在这个例子中，对数据库进行检查（始终建议），否则它将休眠10秒。 这是为了等待重新建立DB连接所必需的。</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">Run</span> <span class="p">{</span>
+    <span class="k">my</span> <span class="p">(</span> <span class="nv">$Self</span><span class="p">,</span> <span class="nv">%Param</span> <span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
+
+    <span class="k">print</span> <span class="s">&quot;Current time &quot;</span> <span class="o">.</span> <span class="nb">localtime</span> <span class="o">.</span> <span class="s">&quot;\n&quot;</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Run</span></code> 方法是主守护进程模块代码所在的位置，在这个例子中它只打印当前时间。</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">PostRun</span> <span class="p">{</span>
+    <span class="k">my</span> <span class="p">(</span> <span class="nv">$Self</span><span class="p">,</span> <span class="nv">%Param</span> <span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
+    <span class="nb">sleep</span> <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">SleepPost</span><span class="p">};</span>
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DiscardCount</span><span class="p">}</span><span class="o">--</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">Debug</span><span class="p">}</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="k">print</span> <span class="s">&quot;  $Self-&gt;{DaemonName} Discard Count: $Self-&gt;{DiscardCount}\n&quot;</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="k">if</span> <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DiscardCount</span><span class="p">}</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">PostRun</span></code> 方法用于执行休眠（防止守护进程模块执行得太频繁），并且还用于管理对象的安全丢弃。 其它操作如验证或清理可以在这里完成。</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">sub</span> <span class="nf">Summary</span> <span class="p">{</span>
+    <span class="k">my</span> <span class="p">(</span> <span class="nv">$Self</span><span class="p">,</span> <span class="nv">%Param</span> <span class="p">)</span> <span class="o">=</span> <span class="nv">@_</span><span class="p">;</span>
+
+    <span class="k">my</span> <span class="nv">%Summary</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">Header</span> <span class="o">=&gt;</span> <span class="s">&#39;Test Daemon Summary:&#39;</span><span class="p">,</span>
+        <span class="n">Column</span> <span class="o">=&gt;</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="n">Name</span>        <span class="o">=&gt;</span> <span class="s">&#39;SomeColumn&#39;</span><span class="p">,</span>
+                <span class="n">DisplayName</span> <span class="o">=&gt;</span> <span class="s">&#39;Some Column&#39;</span><span class="p">,</span>
+                <span class="n">Size</span>        <span class="o">=&gt;</span> <span class="mi">15</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="n">Name</span>        <span class="o">=&gt;</span> <span class="s">&#39;AnotherColumn&#39;</span><span class="p">,</span>
+                <span class="n">DisplayName</span> <span class="o">=&gt;</span> <span class="s">&#39;Another Column&#39;</span><span class="p">,</span>
+                <span class="n">Size</span>        <span class="o">=&gt;</span> <span class="mi">15</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="c1"># ...</span>
+        <span class="p">],</span>
+        <span class="n">Data</span> <span class="o">=&gt;</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="n">SomeColumn</span>    <span class="o">=&gt;</span> <span class="s">&#39;Some Data 1&#39;</span><span class="p">,</span>
+                <span class="n">AnotherColumn</span> <span class="o">=&gt;</span> <span class="s">&#39;Another Data 1&#39;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="n">SomeColumn</span>    <span class="o">=&gt;</span> <span class="s">&#39;Some Data 2&#39;</span><span class="p">,</span>
+                <span class="n">AnotherColumn</span> <span class="o">=&gt;</span> <span class="s">&#39;Another Data 2&#39;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="c1"># ...</span>
+        <span class="p">],</span>
+        <span class="n">NoDataMesssage</span> <span class="o">=&gt;</span> <span class="s">&#39;&#39;</span><span class="p">,</span>
+    <span class="p">);</span>
+
+    <span class="k">return</span> <span class="o">\</span><span class="nv">%Summary</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Summary</span></code> 方法由控制台命令 <code class="docutils literal notranslate"><span class="pre">Maint::Daemon::Summary</span></code> 调用，它需要返回 <code class="docutils literal notranslate"><span class="pre">Header</span></code>、<code class="docutils literal notranslate"><span class="pre">Column</span></code>、<code class="docutils literal notranslate"><span class="pre">Data</span></code> 和 <code class="docutils literal notranslate"><span class="pre">NoDataMessages</span></code> 键。 <code class="docutils literal notranslate"><span class="pre">Column</span></code> 和 <code class="docutils literal notranslate"><span class="pre">Data</span></code> 需要是一个哈希数组。 它用于显示守护进程模块当前正在执行的操作的有用信息，或者到目前为止已完成的操作。 此方法是可选的。</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="mi">1</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>文件结束。</p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          
+
+<script>
+// Start Google Analytics Tracking
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-28118796-2', 'auto');
+ga('send', 'pageview');
+// End Google Analytics Tracking
+</script>
+
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="scheduler-task-worker-modules.html" class="btn btn-neutral float-right" title="OTRS调度程序" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="../gi-operation.html" class="btn btn-neutral" title="操作" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2001-2019 OTRS AG, https://otrs.com/
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../../" src="../../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../../../_static/translations.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
