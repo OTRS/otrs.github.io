@@ -114,6 +114,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "locale/businessobjecttypetexts/knowledgebasearticleattachment~knowledgebasearticleattachment",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticleAttachment.js~KnowledgeBaseArticleAttachment.html",
+    "<span>KnowledgeBaseArticleAttachment</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/KnowledgeBaseArticleAttachment</span>",
+    "class"
+  ],
+  [
     "locale~locale",
     "class/Frontend/Locale/index.js~Locale.html",
     "<span>Locale</span> <span class=\"search-result-import-path\">Locale</span>",
@@ -489,6 +495,12 @@ window.esdocSearchIndex = [
     "locale/businessobjecttypetexts/knowledgebasearticle~knowledgebasearticle",
     "variable/index.html#static-variable-knowledgeBaseArticle",
     "<span>knowledgeBaseArticle</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/knowledgebasearticleattachment~knowledgebasearticleattachment",
+    "variable/index.html#static-variable-knowledgeBaseArticleAttachment",
+    "<span>knowledgeBaseArticleAttachment</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/KnowledgeBaseArticleAttachment</span>",
     "variable"
   ],
   [
@@ -1524,6 +1536,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/locale/businessobjecttypetexts/knowledgebasearticleattachment.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticleAttachment.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticleAttachment.js",
+    "file"
+  ],
+  [
     "frontend/locale/businessobjecttypetexts/statistic.js",
     "file/Frontend/Locale/BusinessObjectTypeTexts/Statistic.js.html",
     "Frontend/Locale/BusinessObjectTypeTexts/Statistic.js",
@@ -1872,15 +1890,81 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/apps/agent/components/ticket/property/propertyaccountedtime.js",
-    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAccountedTime.js.html",
-    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAccountedTime.js",
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertyapproval.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyApproval.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyApproval.js",
     "file"
   ],
   [
-    "frontend/tests/apps/agent/components/ticket/property/propertyage.js",
-    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAge.js.html",
-    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAge.js",
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertycategory.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyCategory.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyCategory.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertychangeby.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyChangeBy.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyChangeBy.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertychanged.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyChanged.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyChanged.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertycreateby.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyCreateBy.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyCreateBy.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertycreated.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyCreated.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyCreated.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertydynamicfield.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyDynamicField.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyDynamicField.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertykeywords.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyKeywords.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyKeywords.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertylanguage.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyLanguage.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyLanguage.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertyrating.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyRating.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyRating.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertystate.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyState.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyState.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/knowledgebasearticle/property/propertyvalidity.js",
+    "file/Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyValidity.js.html",
+    "Frontend/Tests/Apps/Agent/Components/KnowledgeBaseArticle/Property/PropertyValidity.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertyaccountedtime.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAccountedTime.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyAccountedTime.js",
     "file"
   ],
   [
@@ -1890,15 +1974,15 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/apps/agent/components/ticket/property/propertycreated.js",
-    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreated.js.html",
-    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreated.js",
+    "frontend/tests/apps/agent/components/ticket/property/propertycreateby.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreateBy.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreateBy.js",
     "file"
   ],
   [
-    "frontend/tests/apps/agent/components/ticket/property/propertycreator.js",
-    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreator.js.html",
-    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreator.js",
+    "frontend/tests/apps/agent/components/ticket/property/propertycreated.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreated.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCreated.js",
     "file"
   ],
   [
@@ -2613,6 +2697,12 @@ window.esdocSearchIndex = [
     "frontend/tests/locale/businessobjecttypetexts/knowledgebasearticle.js",
     "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js.html",
     "Frontend/Tests/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/knowledgebasearticleattachment.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticleAttachment.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/KnowledgeBaseArticleAttachment.js",
     "file"
   ],
   [
