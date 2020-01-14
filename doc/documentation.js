@@ -97,7 +97,7 @@ $(document).ready(function() {
             ]
         },
         {
-            Name: 'OTRS Installation Guide',
+            Name: 'OTRS Update Guide',
             Type: 'manual',
             Path: 'installation',
             Versions: [
