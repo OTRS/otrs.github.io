@@ -1050,6 +1050,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/businessobjectaction.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessObjectAction.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessObjectAction.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/businessobjectbulkaction.js",
     "file/Frontend/Apps/Agent/Mixins/BusinessObjectBulkAction.js.html",
     "Frontend/Apps/Agent/Mixins/BusinessObjectBulkAction.js",
