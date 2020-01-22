@@ -1128,6 +1128,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/handleactionitemprint.js",
+    "file/Frontend/Apps/Agent/Mixins/HandleActionItemPrint.js.html",
+    "Frontend/Apps/Agent/Mixins/HandleActionItemPrint.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/handlebusinessobjectlistconfig.js",
     "file/Frontend/Apps/Agent/Mixins/HandleBusinessObjectListConfig.js.html",
     "Frontend/Apps/Agent/Mixins/HandleBusinessObjectListConfig.js",
@@ -2208,6 +2214,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/businessobject/businessobjecthistory.js",
+    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectHistory.js.html",
+    "Frontend/Tests/Components/BusinessObject/BusinessObjectHistory.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/businessobject/businessobjectlisttable.js",
     "file/Frontend/Tests/Components/BusinessObject/BusinessObjectListTable.js.html",
     "Frontend/Tests/Components/BusinessObject/BusinessObjectListTable.js",
@@ -2529,6 +2541,12 @@ window.esdocSearchIndex = [
     "frontend/tests/components/form/field/formlanguage.js",
     "file/Frontend/Tests/Components/Form/Field/FormLanguage.js.html",
     "Frontend/Tests/Components/Form/Field/FormLanguage.js",
+    "file"
+  ],
+  [
+    "frontend/tests/components/form/field/formmessages.js",
+    "file/Frontend/Tests/Components/Form/Field/FormMessages.js.html",
+    "Frontend/Tests/Components/Form/Field/FormMessages.js",
     "file"
   ],
   [
