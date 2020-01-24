@@ -48,6 +48,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "locale/businessobjecttypetexts/customercompany~customercompany",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/CustomerCompany.js~CustomerCompany.html",
+    "<span>CustomerCompany</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/CustomerCompany</span>",
+    "class"
+  ],
+  [
     "locale/businessobjecttypetexts/customeruser~customeruser",
     "class/Frontend/Locale/BusinessObjectTypeTexts/CustomerUser.js~CustomerUser.html",
     "<span>CustomerUser</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/CustomerUser</span>",
@@ -339,6 +345,12 @@ window.esdocSearchIndex = [
     "helpers/componentregistration~componentindex",
     "variable/index.html#static-variable-componentIndex",
     "<span>componentIndex</span> <span class=\"search-result-import-path\">Helpers/ComponentRegistration</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/customercompany~customercompany",
+    "variable/index.html#static-variable-customerCompany",
+    "<span>customerCompany</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/CustomerCompany</span>",
     "variable"
   ],
   [
@@ -1584,6 +1596,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/locale/businessobjecttypetexts/customercompany.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/CustomerCompany.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/CustomerCompany.js",
+    "file"
+  ],
+  [
     "frontend/locale/businessobjecttypetexts/customeruser.js",
     "file/Frontend/Locale/BusinessObjectTypeTexts/CustomerUser.js.html",
     "Frontend/Locale/BusinessObjectTypeTexts/CustomerUser.js",
@@ -1908,9 +1926,15 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/apps/agent/businessobjectwidget/businessobjectwidgetstripepeople.js",
-    "file/Frontend/Tests/Apps/Agent/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js.html",
-    "Frontend/Tests/Apps/Agent/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js",
+    "frontend/tests/apps/agent/components/businessobject/businessobjecthistory.js",
+    "file/Frontend/Tests/Apps/Agent/Components/BusinessObject/BusinessObjectHistory.js.html",
+    "Frontend/Tests/Apps/Agent/Components/BusinessObject/BusinessObjectHistory.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/businessobject/businessobjectwidget/businessobjectwidgetstripepeople.js",
+    "file/Frontend/Tests/Apps/Agent/Components/BusinessObject/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js.html",
+    "Frontend/Tests/Apps/Agent/Components/BusinessObject/BusinessObjectWidget/BusinessObjectWidgetStripePeople.js",
     "file"
   ],
   [
@@ -2211,12 +2235,6 @@ window.esdocSearchIndex = [
     "frontend/tests/components/businessobject/businessobjectexpandablelisttable.js",
     "file/Frontend/Tests/Components/BusinessObject/BusinessObjectExpandableListTable.js.html",
     "Frontend/Tests/Components/BusinessObject/BusinessObjectExpandableListTable.js",
-    "file"
-  ],
-  [
-    "frontend/tests/components/businessobject/businessobjecthistory.js",
-    "file/Frontend/Tests/Components/BusinessObject/BusinessObjectHistory.js.html",
-    "Frontend/Tests/Components/BusinessObject/BusinessObjectHistory.js",
     "file"
   ],
   [
@@ -2793,6 +2811,24 @@ window.esdocSearchIndex = [
     "frontend/tests/locale.js",
     "file/Frontend/Tests/Locale.js.html",
     "Frontend/Tests/Locale.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/customercompany.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/CustomerCompany.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/CustomerCompany.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/customeruser.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/CustomerUser.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/CustomerUser.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/formdraft.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/FormDraft.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/FormDraft.js",
     "file"
   ],
   [
