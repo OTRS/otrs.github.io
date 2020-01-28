@@ -366,6 +366,24 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
+    "tests/utils/htmlelements~elementexists",
+    "function/index.html#static-function-elementExists",
+    "<span>elementExists</span> <span class=\"search-result-import-path\">Tests/Utils/HTMLElements</span>",
+    "function"
+  ],
+  [
+    "tests/utils/htmlelements~elementtext",
+    "function/index.html#static-function-elementText",
+    "<span>elementText</span> <span class=\"search-result-import-path\">Tests/Utils/HTMLElements</span>",
+    "function"
+  ],
+  [
+    "tests/utils/events~eventemmited",
+    "function/index.html#static-function-eventEmmited",
+    "<span>eventEmmited</span> <span class=\"search-result-import-path\">Tests/Utils/Events</span>",
+    "function"
+  ],
+  [
     "apps/external/helpers/externalcomponentregistration~externalcomponentindex",
     "variable/index.html#static-variable-externalComponentIndex",
     "<span>externalComponentIndex</span> <span class=\"search-result-import-path\">Apps/External/Helpers/ExternalComponentRegistration</span>",
@@ -552,9 +570,9 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
-    "tests/components/vueinstance~localvue",
+    "tests/utils/vueinstance~localvue",
     "variable/index.html#static-variable-localVue",
-    "<span>localVue</span> <span class=\"search-result-import-path\">Tests/Components/VueInstance</span>",
+    "<span>localVue</span> <span class=\"search-result-import-path\">Tests/Utils/VueInstance</span>",
     "variable"
   ],
   [
@@ -594,9 +612,9 @@ window.esdocSearchIndex = [
     "variable"
   ],
   [
-    "tests/components/vueinstance~store",
+    "tests/utils/vueinstance~store",
     "variable/index.html#static-variable-store",
-    "<span>store</span> <span class=\"search-result-import-path\">Tests/Components/VueInstance</span>",
+    "<span>store</span> <span class=\"search-result-import-path\">Tests/Utils/VueInstance</span>",
     "variable"
   ],
   [
@@ -2700,12 +2718,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/components/vueinstance.js",
-    "file/Frontend/Tests/Components/VueInstance.js.html",
-    "Frontend/Tests/Components/VueInstance.js",
-    "file"
-  ],
-  [
     "frontend/tests/form/validator/availablecolumns.js",
     "file/Frontend/Tests/Form/Validator/AvailableColumns.js.html",
     "Frontend/Tests/Form/Validator/AvailableColumns.js",
@@ -2919,6 +2931,24 @@ window.esdocSearchIndex = [
     "frontend/tests/server/perlprofiler.js",
     "file/Frontend/Tests/Server/PerlProfiler.js.html",
     "Frontend/Tests/Server/PerlProfiler.js",
+    "file"
+  ],
+  [
+    "frontend/tests/utils/events.js",
+    "file/Frontend/Tests/Utils/Events.js.html",
+    "Frontend/Tests/Utils/Events.js",
+    "file"
+  ],
+  [
+    "frontend/tests/utils/htmlelements.js",
+    "file/Frontend/Tests/Utils/HTMLElements.js.html",
+    "Frontend/Tests/Utils/HTMLElements.js",
+    "file"
+  ],
+  [
+    "frontend/tests/utils/vueinstance.js",
+    "file/Frontend/Tests/Utils/VueInstance.js.html",
+    "Frontend/Tests/Utils/VueInstance.js",
     "file"
   ]
 ]
