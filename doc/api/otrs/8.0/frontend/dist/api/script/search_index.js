@@ -540,6 +540,12 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "helpers/routerdetection~isroutelink",
+    "function/index.html#static-function-isRouteLink",
+    "<span>isRouteLink</span> <span class=\"search-result-import-path\">Helpers/RouterDetection</span>",
+    "function"
+  ],
+  [
     "locale/businessobjecttypetexts/knowledgebasearticle~knowledgebasearticle",
     "variable/index.html#static-variable-knowledgeBaseArticle",
     "<span>knowledgeBaseArticle</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/KnowledgeBaseArticle</span>",
@@ -1584,6 +1590,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/helpers/routerdetection.js",
+    "file/Frontend/Helpers/RouterDetection.js.html",
+    "Frontend/Helpers/RouterDetection.js",
+    "file"
+  ],
+  [
     "frontend/helpers/stylefunctions.js",
     "file/Frontend/Helpers/StyleFunctions.js.html",
     "Frontend/Helpers/StyleFunctions.js",
@@ -1995,6 +2007,12 @@ window.esdocSearchIndex = [
     "frontend/tests/apps/agent/components/common/commonflyout.js",
     "file/Frontend/Tests/Apps/Agent/Components/Common/CommonFlyout.js.html",
     "Frontend/Tests/Apps/Agent/Components/Common/CommonFlyout.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/common/commonnotifymodule.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Common/CommonNotifyModule.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Common/CommonNotifyModule.js",
     "file"
   ],
   [
