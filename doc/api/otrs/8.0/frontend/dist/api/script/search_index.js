@@ -1212,6 +1212,18 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/handleshowaddressbook.js",
+    "file/Frontend/Apps/Agent/Mixins/HandleShowAddressBook.js.html",
+    "Frontend/Apps/Agent/Mixins/HandleShowAddressBook.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/mixins/handleshowcustomercompanyaddressbook.js",
+    "file/Frontend/Apps/Agent/Mixins/HandleShowCustomerCompanyAddressBook.js.html",
+    "Frontend/Apps/Agent/Mixins/HandleShowCustomerCompanyAddressBook.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/handleshowcustomeruseraddressbook.js",
     "file/Frontend/Apps/Agent/Mixins/HandleShowCustomerUserAddressBook.js.html",
     "Frontend/Apps/Agent/Mixins/HandleShowCustomerUserAddressBook.js",
@@ -1758,9 +1770,21 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/mixins/formfieldaddressbook.js",
+    "file/Frontend/Mixins/FormFieldAddressBook.js.html",
+    "Frontend/Mixins/FormFieldAddressBook.js",
+    "file"
+  ],
+  [
     "frontend/mixins/formfieldconnectedrecipientfields.js",
     "file/Frontend/Mixins/FormFieldConnectedRecipientFields.js.html",
     "Frontend/Mixins/FormFieldConnectedRecipientFields.js",
+    "file"
+  ],
+  [
+    "frontend/mixins/formfieldcustomercompanyaddressbook.js",
+    "file/Frontend/Mixins/FormFieldCustomerCompanyAddressBook.js.html",
+    "Frontend/Mixins/FormFieldCustomerCompanyAddressBook.js",
     "file"
   ],
   [
