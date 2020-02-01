@@ -1218,18 +1218,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/apps/agent/mixins/handleshowcustomercompanyaddressbook.js",
-    "file/Frontend/Apps/Agent/Mixins/HandleShowCustomerCompanyAddressBook.js.html",
-    "Frontend/Apps/Agent/Mixins/HandleShowCustomerCompanyAddressBook.js",
-    "file"
-  ],
-  [
-    "frontend/apps/agent/mixins/handleshowcustomeruseraddressbook.js",
-    "file/Frontend/Apps/Agent/Mixins/HandleShowCustomerUserAddressBook.js.html",
-    "Frontend/Apps/Agent/Mixins/HandleShowCustomerUserAddressBook.js",
-    "file"
-  ],
-  [
     "frontend/apps/agent/mixins/handlestatisticgraphdownload.js",
     "file/Frontend/Apps/Agent/Mixins/HandleStatisticGraphDownload.js.html",
     "Frontend/Apps/Agent/Mixins/HandleStatisticGraphDownload.js",
