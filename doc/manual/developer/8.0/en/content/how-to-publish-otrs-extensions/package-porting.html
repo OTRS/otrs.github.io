@@ -113,6 +113,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#encode-api-changed">Encode API Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#linkobject-api-changed">LinkObject API Changed</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#event-handling-changes">Event Handling Changes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mojouseragent-added-webuseragent-deprecated"><code class="docutils literal notranslate"><span class="pre">MojoUserAgent</span></code> Added, <code class="docutils literal notranslate"><span class="pre">WebUserAgent</span></code> Deprecated</a></li>
 </ul>
 </li>
 </ul>
@@ -666,6 +667,56 @@
 </div>
 <p>Replace this by:</p>
 <div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="nv">%RegisteredEvents</span> <span class="o">=</span> <span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Kernel::System::Event::Handler&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">EventListGet</span><span class="p">(</span> <span class="o">...</span> <span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="mojouseragent-added-webuseragent-deprecated">
+<h2><code class="docutils literal notranslate"><span class="pre">MojoUserAgent</span></code> Added, <code class="docutils literal notranslate"><span class="pre">WebUserAgent</span></code> Deprecated<a class="headerlink" href="#mojouseragent-added-webuseragent-deprecated" title="Permalink to this headline">¶</a></h2>
+<p>The legacy <code class="docutils literal notranslate"><span class="pre">Kernel::System::WebUserAgent</span></code> was deprecated and <code class="docutils literal notranslate"><span class="pre">Kernel::System::MojoUserAgent</span></code> provided as a modern alternative.</p>
+<p>Now it is possible to use the full <a class="reference external" href="https://metacpan.org/pod/Mojo::UserAgent">Mojo::UserAgent</a> API on instances of the new HTTP user agent.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The legacy <code class="docutils literal notranslate"><span class="pre">WebUserAgent</span></code> will be removed in a future version of OTRS. Please update all code that used it to the new object.</p>
+</div>
+<p>You can replace old code like:</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">ObjectParamAdd</span><span class="p">(</span>
+    <span class="s">&#39;Kernel::System::WebUserAgent&#39;</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="n">Timeout</span> <span class="o">=&gt;</span> <span class="nv">$RequestTimeout</span><span class="p">,</span>
+        <span class="n">Proxy</span>   <span class="o">=&gt;</span> <span class="nv">$RequestProxy</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">);</span>
+
+<span class="k">my</span> <span class="nv">%Response</span> <span class="o">=</span> <span class="nv">$</span><span class="nn">Kernel::</span><span class="nv">OM</span><span class="o">-&gt;</span><span class="n">Get</span><span class="p">(</span><span class="s">&#39;Kernel::System::WebUserAgent&#39;</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">Request</span><span class="p">(</span>
+    <span class="n">Type</span> <span class="o">=&gt;</span> <span class="s">&#39;POST&#39;</span><span class="p">,</span>
+    <span class="n">URL</span>  <span class="o">=&gt;</span> <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">CloudServiceURL</span><span class="p">},</span>
+    <span class="n">Data</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="n">Action</span>       <span class="o">=&gt;</span> <span class="s">&#39;PublicCloudService&#39;</span><span class="p">,</span>
+        <span class="n">RequestData</span>  <span class="o">=&gt;</span> <span class="nv">$RequestData</span><span class="p">,</span>
+        <span class="n">UniqueIDAuth</span> <span class="o">=&gt;</span> <span class="nv">$UniqueIDAuth</span><span class="p">,</span>
+        <span class="n">OTRSIDAuth</span>   <span class="o">=&gt;</span> <span class="nv">$OTRSIDAuth</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">);</span>
+
+<span class="k">if</span> <span class="p">(</span> <span class="nv">$Response</span><span class="p">{</span><span class="n">Status</span><span class="p">}</span> <span class="ow">eq</span> <span class="s">&#39;200 OK&#39;</span> <span class="o">&amp;&amp;</span> <span class="nv">$Response</span><span class="p">{</span><span class="n">Content</span><span class="p">}</span> <span class="p">)</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>Replace this by:</p>
+<div class="highlight-Perl notranslate"><div class="highlight"><pre><span></span><span class="k">my</span> <span class="nv">$MojoUserAgent</span> <span class="o">=</span> <span class="nn">Kernel::System::MojoUserAgent</span><span class="o">-&gt;</span><span class="k">new</span><span class="p">(</span>
+    <span class="n">Timeout</span> <span class="o">=&gt;</span> <span class="nv">$RequestTimeout</span><span class="p">,</span>
+    <span class="n">Proxy</span>   <span class="o">=&gt;</span> <span class="nv">$RequestProxy</span><span class="p">,</span>
+<span class="p">);</span>
+
+<span class="k">my</span> <span class="nv">$Response</span> <span class="o">=</span> <span class="nv">$MojoUserAgent</span><span class="o">-&gt;</span><span class="n">post</span><span class="p">(</span>
+    <span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">CloudServiceURL</span><span class="p">},</span>
+    <span class="n">form</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="n">Action</span>       <span class="o">=&gt;</span> <span class="s">&#39;PublicCloudService&#39;</span><span class="p">,</span>
+        <span class="n">RequestData</span>  <span class="o">=&gt;</span> <span class="nv">$RequestData</span><span class="p">,</span>
+        <span class="n">UniqueIDAuth</span> <span class="o">=&gt;</span> <span class="nv">$UniqueIDAuth</span><span class="p">,</span>
+        <span class="n">OTRSIDAuth</span>   <span class="o">=&gt;</span> <span class="nv">$OTRSIDAuth</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">)</span><span class="o">-&gt;</span><span class="n">res</span><span class="p">();</span>
+
+<span class="k">if</span> <span class="p">(</span> <span class="nv">$Response</span><span class="o">-&gt;</span><span class="n">code</span><span class="p">()</span> <span class="o">==</span> <span class="mi">200</span> <span class="o">&amp;&amp;</span> <span class="nv">$Response</span><span class="o">-&gt;</span><span class="n">body</span><span class="p">()</span> <span class="p">)</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span>
 </pre></div>
 </div>
 </div>
