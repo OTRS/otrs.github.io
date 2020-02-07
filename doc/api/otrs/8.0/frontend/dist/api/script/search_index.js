@@ -36,6 +36,12 @@ window.esdocSearchIndex = [
     "function"
   ],
   [
+    "locale/businessobjecttypetexts/chatrequest~chatrequest",
+    "class/Frontend/Locale/BusinessObjectTypeTexts/ChatRequest.js~ChatRequest.html",
+    "<span>ChatRequest</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/ChatRequest</span>",
+    "class"
+  ],
+  [
     "form/validator/compareoperatorfilter~compareoperatorfilter",
     "class/Frontend/Form/Validator/CompareOperatorFilter.js~CompareOperatorFilter.html",
     "<span>CompareOperatorFilter</span> <span class=\"search-result-import-path\">Form/Validator/CompareOperatorFilter</span>",
@@ -333,6 +339,12 @@ window.esdocSearchIndex = [
     "apps/agent/helpers/agentcomponentregistration~agentcomponentindex",
     "variable/index.html#static-variable-agentComponentIndex",
     "<span>agentComponentIndex</span> <span class=\"search-result-import-path\">Apps/Agent/Helpers/AgentComponentRegistration</span>",
+    "variable"
+  ],
+  [
+    "locale/businessobjecttypetexts/chatrequest~chatrequest",
+    "variable/index.html#static-variable-chatRequest",
+    "<span>chatRequest</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/ChatRequest</span>",
     "variable"
   ],
   [
@@ -1134,6 +1146,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/chatavailability.js",
+    "file/Frontend/Apps/Agent/Mixins/ChatAvailability.js.html",
+    "Frontend/Apps/Agent/Mixins/ChatAvailability.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/communicationchannelsbase.js",
     "file/Frontend/Apps/Agent/Mixins/CommunicationChannelsBase.js.html",
     "Frontend/Apps/Agent/Mixins/CommunicationChannelsBase.js",
@@ -1179,6 +1197,12 @@ window.esdocSearchIndex = [
     "frontend/apps/agent/mixins/handlelinkobjecttypelist.js",
     "file/Frontend/Apps/Agent/Mixins/HandleLinkObjectTypeList.js.html",
     "Frontend/Apps/Agent/Mixins/HandleLinkObjectTypeList.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/mixins/handlenoflyoutaction.js",
+    "file/Frontend/Apps/Agent/Mixins/HandleNoFlyoutAction.js.html",
+    "Frontend/Apps/Agent/Mixins/HandleNoFlyoutAction.js",
     "file"
   ],
   [
@@ -1623,6 +1647,12 @@ window.esdocSearchIndex = [
     "frontend/locale/businessobjecttypetexts/base.js",
     "file/Frontend/Locale/BusinessObjectTypeTexts/Base.js.html",
     "Frontend/Locale/BusinessObjectTypeTexts/Base.js",
+    "file"
+  ],
+  [
+    "frontend/locale/businessobjecttypetexts/chatrequest.js",
+    "file/Frontend/Locale/BusinessObjectTypeTexts/ChatRequest.js.html",
+    "Frontend/Locale/BusinessObjectTypeTexts/ChatRequest.js",
     "file"
   ],
   [
@@ -2211,6 +2241,12 @@ window.esdocSearchIndex = [
     "frontend/tests/apps/agent/components/ticket/property/propertytype.js",
     "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyType.js.html",
     "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyType.js",
+    "file"
+  ],
+  [
+    "frontend/tests/apps/agent/components/ticket/property/propertywatch.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyWatch.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyWatch.js",
     "file"
   ],
   [
@@ -2853,6 +2889,12 @@ window.esdocSearchIndex = [
     "frontend/tests/locale.js",
     "file/Frontend/Tests/Locale.js.html",
     "Frontend/Tests/Locale.js",
+    "file"
+  ],
+  [
+    "frontend/tests/locale/businessobjecttypetexts/chatrequest.js",
+    "file/Frontend/Tests/Locale/BusinessObjectTypeTexts/ChatRequest.js.html",
+    "Frontend/Tests/Locale/BusinessObjectTypeTexts/ChatRequest.js",
     "file"
   ],
   [
