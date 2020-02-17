@@ -1,1 +1,0 @@
-(window.webpackJsonp=window.webpackJsonp||[]).push([[444],{oxjK:function(o,n,e){o.exports=e.p+"fonts/streamline-regular.f2ea71f.woff"}}]);
