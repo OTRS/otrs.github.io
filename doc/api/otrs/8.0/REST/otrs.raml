@@ -1379,7 +1379,7 @@ securitySchemes:
                             example: 1.0.0
                             required: true
             securedBy: [AgentAccessToken]
-    /customer/company/#CustomerID: 
+    /customer/company/*CustomerID: 
         get: 
             body: 
                 application/json: 
@@ -1673,7 +1673,7 @@ securitySchemes:
                             example: 1.0.0
                             required: true
             securedBy: [AgentAccessToken]
-    /customer/user/#CustomerUserID: 
+    /customer/user/*CustomerUserID: 
         get: 
             body: 
                 application/json: 
@@ -1985,6 +1985,138 @@ securitySchemes:
                         application/json: 
                             example: [{"ErrorIdentifier":"CouldNotSaveUserPreference","ErrorMessage":"The user preference setting could not be saved."},{"ErrorIdentifier":"CouldNotSetDynamicField","ErrorMessage":"A dynamic field value could not be set."},{"ErrorIdentifier":"CouldNotUpdateCustomerUser","ErrorMessage":"The customer user could not be updated. Please contact the administrator."},{"ErrorIdentifier":"DuplicateCustomerUserEmail","ErrorMessage":"A customer user with this email address already exists. Please contact the administrator."},{"ErrorIdentifier":"DuplicateCustomerUserLogin","ErrorMessage":"A customer user with this login already exists. Please contact the administrator."},{"ErrorIdentifier":"InvalidCustomerCompany","ErrorMessage":"This customer ID is invalid. Please contact the administrator."},{"ErrorIdentifier":"InvalidEmailAddress","ErrorMessage":"This email address is invalid. Please contact the administrator."},{"ErrorIdentifier":"PasswordPolicyCheckPasswordHistory","ErrorMessage":"The password cannot be updated. It must not be equal to the last %s passwords. Please try again.","ErrorMessageParams":["..."]},{"ErrorIdentifier":"PasswordPolicyRules","ErrorMessage":"This password is forbidden by the current system configuration or it must not be equal to the last passwords. Please contact the administrator."}]
                     description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
+    /documentsearch: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        ActiveFilters: 
+                            required: false
+                        AdditionalItemDataParams: 
+                            required: false
+                        DocumentSearchType: 
+                            required: false
+                        DynamicFields: 
+                            required: false
+                        FilterAggregations: 
+                            required: false
+                        GetAllItemIDs: 
+                            required: false
+                        GetUserActivity: 
+                            required: false
+                        ItemLimit: 
+                            required: false
+                        ItemsPerPage: 
+                            required: false
+                        LanguageFilter: 
+                            required: false
+                        LoadDocumentSearchTypes: 
+                            required: false
+                        MaxSearchItems: 
+                            required: false
+                        Page: 
+                            required: false
+                        PageFrom: 
+                            required: false
+                        PageUntil: 
+                            required: false
+                        PossibleFilterDynamicFields: 
+                            required: false
+                        SearchItemsPerPage: 
+                            required: false
+                        SearchQuery: 
+                            required: true
+                        SortBy: 
+                            required: false
+            description: Returns the document search result for the given search query and additional filters.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    example: "true"
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"ItemList":[{"CategoryIDs":[1],"CategoryNames":["Misc"],"ChildDocumentSearchType":null,"DocumentID":"1","DocumentSearchType":"FAQ","HighlightContents":["<em>test</em>"],"IsFromAttachment":0,"Score":"1.0303539","Title":"Test"}],"ItemsTotal":1,"PagesTotal":1}
+                    description: Get detailed document search results.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
+    /documentsearch/simple: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        LanguageFilter: 
+                            required: false
+                        SearchQuery: 
+                            required: true
+            description: Returns a simple document search result for the given search query.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    example: "true"
+                    required: false
+            responses: 
+                200: 
+                    body: 
+                        application/json: 
+                            example: {"Result":[{"SectionResult":[{"ChildDocumentSearchType":"ArticleMIME","DocumentID":123,"DocumentSearchType":"Ticket","Score":"4.123123","TicketNumber":"20180101407878","Title":"Example article title"},{"DocumentID":100,"DocumentSearchType":"Ticket","Score":"3.523123","TicketNumber":"20180101407878","Title":"Example ticket title"}],"SectionTitle":"Tickets","SectionType":"Ticket"},{"SectionResult":[{"DocumentID":120,"DocumentSearchType":"FAQ","Score":"4.123123","TicketNumber":["Software","Misc"],"Title":"Example faq title"},{"Categories":["Software","Example"],"DocumentID":111,"DocumentSearchType":"FAQ","Score":"3.523123","Title":"Example faq title"}],"SectionTitle":"Knowledge Base Articles","SectionType":"FAQ"}]}
+                    description: Simple search result for the given search query.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Message":"..."}}}
+                    description: Invalid input data.
                     headers: 
                         X-OTRS-API-Debug-SQLTrace: 
                             description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
@@ -5848,6 +5980,98 @@ securitySchemes:
             TicketNumber: 
                 example: "2018081154000045"
                 required: true
+    /ticket/process/{ProcessEntityID}: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        EndpointContext: 
+                            required: true
+                        FormID: 
+                            required: false
+            description: Saves a process management ticket.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    example: "true"
+                    required: false
+            responses: 
+                200: 
+                    description: Successfully saved.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                403: 
+                    description: Access denied.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                404: 
+                    description: No activity found to the current ticket state.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Attributes":{"Arguments":null,"Source":null,"Value":null},"Validator":"Required"},"Field2":{"Attributes":{"Arguments":null,"Source":null,"Value":null},"Validator":"Required"},"Field3":{"Validator":"IncorrectDisplayConfig"}}}
+                    description: Invalid ticket data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"CouldNotCreateTicket","ErrorMessage":"The ticket could not be created."},{"ErrorIdentifier":"CouldNotCreateTicketArticle","ErrorMessage":"The ticket article could not be created."},{"ErrorIdentifier":"CouldNotPrepareData","ErrorMessage":"The data could not be prepared for storage."},{"ErrorIdentifier":"CouldNotSetDynamicFieldValue","ErrorMessage":"The dynamic field values could not be set."},{"ErrorIdentifier":"CouldNotSetTicketProcessState","ErrorMessage":"The ticket process state could not be set."},{"ErrorIdentifier":"CouldNotUpdateTicket","ErrorMessage":"The ticket information could not be updated."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
+        uriParameters: 
+            ProcessEntityID: 
+                example: "Process-631b5a58cda6892c5ceb6b36072490be"
+                required: true
     /ticket/process/{TicketID}: 
         get: 
             description: Returns the information about a ticket process.
@@ -7428,6 +7652,101 @@ securitySchemes:
             TicketID: 
                 example: "1234"
                 required: true
+    /ticket/{TicketID}/process/{ProcessEntityID}: 
+        post: 
+            body: 
+                application/json: 
+                    properties: 
+                        EndpointContext: 
+                            required: true
+                        FormID: 
+                            required: false
+            description: Saves a process management ticket.
+            headers: 
+                X-OTRS-API-Debug: 
+                    description: Optional, enables debugging information in responses based on the settings in WebApp.conf.
+                    example: "true"
+                    required: false
+            responses: 
+                200: 
+                    description: Successfully saved.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                403: 
+                    description: Access denied.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                404: 
+                    description: No activity found to the current ticket state.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                422: 
+                    body: 
+                        application/json: 
+                            example: {"Errors":{"Field1":{"Attributes":{"Arguments":null,"Source":null,"Value":null},"Validator":"Required"},"Field2":{"Attributes":{"Arguments":null,"Source":null,"Value":null},"Validator":"Required"},"Field3":{"Validator":"IncorrectDisplayConfig"}}}
+                    description: Invalid ticket data.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+                900: 
+                    body: 
+                        application/json: 
+                            example: [{"ErrorIdentifier":"CouldNotCreateTicket","ErrorMessage":"The ticket could not be created."},{"ErrorIdentifier":"CouldNotCreateTicketArticle","ErrorMessage":"The ticket article could not be created."},{"ErrorIdentifier":"CouldNotPrepareData","ErrorMessage":"The data could not be prepared for storage."},{"ErrorIdentifier":"CouldNotSetDynamicFieldValue","ErrorMessage":"The dynamic field values could not be set."},{"ErrorIdentifier":"CouldNotSetTicketProcessState","ErrorMessage":"The ticket process state could not be set."},{"ErrorIdentifier":"CouldNotUpdateTicket","ErrorMessage":"The ticket information could not be updated."}]
+                    description: Custom error response, see example for a list of possible responses.
+                    headers: 
+                        X-OTRS-API-Debug-SQLTrace: 
+                            description: Includes SQL debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_sql_trace' is enabled.
+                            required: false
+                        X-OTRS-API-Debug-STDERRLog: 
+                            description: Includes STDERR debugging information, if 'X-OTRS-API-Debug' was sent and 'enable_debugger_stderr_log' is enabled.
+                            required: false
+                        X-OTRS-API-Version: 
+                            description: Provides endpoint version information.
+                            example: 1.0.0
+                            required: true
+            securedBy: [AgentAccessToken]
+        uriParameters: 
+            ProcessEntityID: 
+                example: "Process-631b5a58cda6892c5ceb6b36072490be"
+                required: true
+            TicketID: 
+                example: "1234"
+                required: false
     /ticket/{TicketID}/property/{PropertyName}: 
         get: 
             description: Gets the ticket property value.
