@@ -204,6 +204,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "plugins/browsernotification~plugin",
+    "class/Frontend/Plugins/BrowserNotification/index.js~Plugin.html",
+    "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/BrowserNotification</span>",
+    "class"
+  ],
+  [
     "plugins/eventbus~plugin",
     "class/Frontend/Plugins/EventBus/index.js~Plugin.html",
     "<span>Plugin</span> <span class=\"search-result-import-path\">Plugins/EventBus</span>",
@@ -1836,6 +1842,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/mixins/componentdestroyed.js",
+    "file/Frontend/Mixins/ComponentDestroyed.js.html",
+    "Frontend/Mixins/ComponentDestroyed.js",
+    "file"
+  ],
+  [
     "frontend/mixins/componentloaded.js",
     "file/Frontend/Mixins/ComponentLoaded.js.html",
     "Frontend/Mixins/ComponentLoaded.js",
@@ -1953,6 +1965,12 @@ window.esdocSearchIndex = [
     "frontend/plugins/announcer/index.js",
     "file/Frontend/Plugins/Announcer/index.js.html",
     "Frontend/Plugins/Announcer/index.js",
+    "file"
+  ],
+  [
+    "frontend/plugins/browsernotification/index.js",
+    "file/Frontend/Plugins/BrowserNotification/index.js.html",
+    "Frontend/Plugins/BrowserNotification/index.js",
     "file"
   ],
   [
