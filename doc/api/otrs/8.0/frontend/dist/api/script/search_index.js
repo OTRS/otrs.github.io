@@ -2652,6 +2652,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/tests/components/form/field/formalerts.js",
+    "file/Frontend/Tests/Components/Form/Field/FormAlerts.js.html",
+    "Frontend/Tests/Components/Form/Field/FormAlerts.js",
+    "file"
+  ],
+  [
     "frontend/tests/components/form/field/formautocomplete.js",
     "file/Frontend/Tests/Components/Form/Field/FormAutocomplete.js.html",
     "Frontend/Tests/Components/Form/Field/FormAutocomplete.js",
