@@ -72,6 +72,7 @@ $(document).ready(function() {
       <li><a href="#AppointmentFutureTasksUpdate">AppointmentFutureTasksUpdate()</a></li>
       <li><a href="#AppointmentNotificationPrepare">_AppointmentNotificationPrepare()</a></li>
       <li><a href="#AppointmentNotification">AppointmentNotification()</a></li>
+      <li><a href="#AppointmentSearch">AppointmentSearch()</a></li>
     </ul>
   </li>
 </ul>
@@ -159,6 +160,7 @@ $(document).ready(function() {
         EndTime             =&gt; &#39;2016-02-01 00:00:00&#39;,                   # (optional) Filter by end date
         TeamID              =&gt; 1,                                       # (optional) Filter by team
         ResourceID          =&gt; 2,                                       # (optional) Filter by resource
+        DynamicFields       =&gt; 0|1,                                     # (optional, default 0) include dynamic field data as well
         Result              =&gt; &#39;HASH&#39;,                                  # (optional), HASH|ARRAY
     );</code></pre>
 
@@ -248,6 +250,7 @@ $(document).ready(function() {
                                                              # or
         UniqueID      =&gt; &#39;20160101T160000-71E386@localhost&#39;, # (required) will return only parent for recurring appointments
         CalendarID    =&gt; 1,                                  # (required)
+        DynamicFields =&gt; 0|1,                                # (optional, default 0) include dynamic field data as well
     );</code></pre>
 
 <p>Returns a hash:</p>
@@ -302,7 +305,7 @@ $(document).ready(function() {
         StartTime             =&gt; &#39;2016-01-01 16:00:00&#39;,                   # (required)
         EndTime               =&gt; &#39;2016-01-01 17:00:00&#39;,                   # (required)
         AllDay                =&gt; 0,                                       # (optional) Default 0
-        Team                  =&gt; 1,                                       # (optional)
+        TeamID                =&gt; 1,                                       # (optional)
         ResourceID            =&gt; [ 1, 3 ],                                # (optional) must be an array reference if supplied
         Recurring             =&gt; 1,                                       # (optional) flag the appointment as recurring (parent only!)
 
@@ -419,6 +422,122 @@ $(document).ready(function() {
 <p>returns:</p>
 
 <pre><code>    True if notify action was successful, otherwise false.</code></pre>
+
+<h2 id="AppointmentSearch">AppointmentSearch()</h2>
+
+<p>Search for appointments in the system.</p>
+
+<pre><code>    my @AppointmentIDs = $AppointmentObject-&gt;AppointmentSearch(
+        # Result (required)
+        Result =&gt; &#39;ARRAY&#39; || &#39;COUNT&#39;,
+
+        # Result limit
+        Limit =&gt; 10000,
+
+        # Use AppointmentSearch as a appointment filter on a single appointment
+        # or a predefined appointment list
+        AppointmentID =&gt; 1234,
+        AppointmentID =&gt; [1234, 1235],
+
+        # Appointment title (optional) as STRING or as ARRAYREF
+        Title =&gt; &#39;%SomeText%&#39;,
+        Title =&gt; [&#39;%SomeTest1%&#39;, &#39;%SomeTest2%&#39;],
+
+        # Appointment location (optional) as STRING or as ARRAYREF
+        Location =&gt; &#39;%SomeText%&#39;,
+        Location =&gt; [&#39;%SomeTest1%&#39;, &#39;%SomeTest2%&#39;],
+
+        # Appointment description (optional) as STRING or as ARRAYREF
+        Description =&gt; &#39;%SomeText%&#39;,
+        Description =&gt; [&#39;%SomeTest1%&#39;, &#39;%SomeTest2%&#39;],
+
+        # Appointment calendars
+        CalendarIDs =&gt; [1, 2, 3],
+        Calendars   =&gt; [&#39;CalendarA&#39;, &#39;CalendarB&#39;],
+
+        # Appointment teams
+        TeamIDs =&gt; [1, 2, 3],
+        Teams   =&gt; [&#39;TeamA&#39;, &#39;TeamB&#39;],
+
+        # Appointment resources
+        ResourceIDs =&gt; [1, 2, 3],
+
+        # AllDay appointments
+        AllDay =&gt; 1,
+
+        # Appointments created more than 60 minutes ago (appointment older than 60 minutes)  (optional)
+        AppointmentCreateTimeOlderMinutes =&gt; 60,
+
+        # Appointments created less than 120 minutes ago (appointment newer than 120 minutes) (optional)
+        AppointmentCreateTimeNewerMinutes =&gt; 120,
+
+        # Appointments with create time after ... (appointment newer than this date) (optional)
+        AppointmentCreateTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
+
+        # Appointments with created time before ... (appointment older than this date) (optional)
+        AppointmentCreateTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
+
+        # Appointments started more than 60 minutes ago (appointment start time older than 60 minutes)  (optional)
+        AppointmentStartTimeOlderMinutes =&gt; 60,
+
+        # Appointments started less than 120 minutes ago (appointment start time newer than 120 minutes) (optional)
+        AppointmentStartTimeNewerMinutes =&gt; 120,
+
+        # Appointments with start time after ... (appointment start time newer than this date) (optional)
+        AppointmentStartTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
+
+        # Appointments with start time before ... (appointment start time older than this date) (optional)
+        AppointmentStartTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
+
+        # Appointments ended more than 60 minutes ago (appointment end time older than 60 minutes)  (optional)
+        AppointmentEndTimeOlderMinutes =&gt; 60,
+
+        # Appointments ended less than 120 minutes ago (appointment end time newer than 120 minutes) (optional)
+        AppointmentEndTimeNewerMinutes =&gt; 120,
+
+        # Appointments with end time after ... (appointment end time newer than this date) (optional)
+        AppointmentEndTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
+
+        # Appointments with end time before ... (appointment end time older than this date) (optional)
+        AppointmentEndTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
+
+        # Appointments which are inside the given period. Both values must be given for this filter. (optional)
+        AppointmentPeriodTimeNewerDate =&gt; &#39;2006-01-09 00:00:01&#39;,
+        AppointmentPeriodTimeOlderDate =&gt; &#39;2006-01-19 23:59:59&#39;,
+
+        # DynamicFields
+        #   At least one operator must be specified. Operators will be connected with AND,
+        #       values in an operator with OR.
+        #   You can also pass more than one argument to an operator: [&#39;value1&#39;, &#39;value2&#39;]
+        DynamicField_FieldNameX =&gt; {
+            Empty             =&gt; 1,                       # will return dynamic fields without a value
+                                                          # set to 0 to search fields with a value present
+            Equals            =&gt; 123,
+            Like              =&gt; &#39;value*&#39;,                # &quot;equals&quot; operator with wildcard support
+            GreaterThan       =&gt; &#39;2001-01-01 01:01:01&#39;,
+            GreaterThanEquals =&gt; &#39;2001-01-01 01:01:01&#39;,
+            SmallerThan       =&gt; &#39;2002-02-02 02:02:02&#39;,
+            SmallerThanEquals =&gt; &#39;2002-02-02 02:02:02&#39;,
+        }
+
+        # OrderBy and SortBy (optional)
+        OrderBy =&gt; &#39;Down&#39;,  # Down|Up
+        SortBy  =&gt; &#39;Age&#39;,   # AppointmentID, Title, Calendar, Location, StartTime, EndTime, AllDay, Age, Created, Changed
+
+        # OrderBy and SortBy as ARRAY for sub sorting (optional)
+        OrderBy =&gt; [&#39;Down&#39;, &#39;Up&#39;],
+        SortBy  =&gt; [&#39;Priority&#39;, &#39;Age&#39;],
+    );</code></pre>
+
+<p>Returns:</p>
+
+<p>Result: &#39;ARRAY&#39;</p>
+
+<pre><code>    @AppointmentIDs = ( 1, 2, 3 );</code></pre>
+
+<p>Result: &#39;COUNT&#39;</p>
+
+<pre><code>    $AppointmentIDs = 123;</code></pre>
 
 </div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
 
