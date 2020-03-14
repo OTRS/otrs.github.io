@@ -1746,12 +1746,6 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/helpers/webrtc.js",
-    "file/Frontend/Helpers/WebRtc.js.html",
-    "Frontend/Helpers/WebRtc.js",
-    "file"
-  ],
-  [
     "frontend/locale/businessobjecttypetexts/base.js",
     "file/Frontend/Locale/BusinessObjectTypeTexts/Base.js.html",
     "Frontend/Locale/BusinessObjectTypeTexts/Base.js",
