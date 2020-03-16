@@ -1212,9 +1212,21 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/businessobjectactiondirectexecution.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessObjectActionDirectExecution.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessObjectActionDirectExecution.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/businessobjectbulkaction.js",
     "file/Frontend/Apps/Agent/Mixins/BusinessObjectBulkAction.js.html",
     "Frontend/Apps/Agent/Mixins/BusinessObjectBulkAction.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/mixins/businessobjectdirectscreendataupdate.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessObjectDirectScreenDataUpdate.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessObjectDirectScreenDataUpdate.js",
     "file"
   ],
   [
@@ -1305,12 +1317,6 @@ window.esdocSearchIndex = [
     "frontend/apps/agent/mixins/handlelinkobjecttypelist.js",
     "file/Frontend/Apps/Agent/Mixins/HandleLinkObjectTypeList.js.html",
     "Frontend/Apps/Agent/Mixins/HandleLinkObjectTypeList.js",
-    "file"
-  ],
-  [
-    "frontend/apps/agent/mixins/handlenoflyoutaction.js",
-    "file/Frontend/Apps/Agent/Mixins/HandleNoFlyoutAction.js.html",
-    "Frontend/Apps/Agent/Mixins/HandleNoFlyoutAction.js",
     "file"
   ],
   [
