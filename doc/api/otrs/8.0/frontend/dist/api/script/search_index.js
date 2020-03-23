@@ -1206,6 +1206,12 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/businesscardcustomerlayout.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessCardCustomerLayout.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessCardCustomerLayout.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/businessobjectaction.js",
     "file/Frontend/Apps/Agent/Mixins/BusinessObjectAction.js.html",
     "Frontend/Apps/Agent/Mixins/BusinessObjectAction.js",
@@ -1263,6 +1269,12 @@ window.esdocSearchIndex = [
     "frontend/apps/agent/mixins/businessobjectwidgetproperty.js",
     "file/Frontend/Apps/Agent/Mixins/BusinessObjectWidgetProperty.js.html",
     "Frontend/Apps/Agent/Mixins/BusinessObjectWidgetProperty.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/mixins/businessobjectwidgetpropertylayout.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessObjectWidgetPropertyLayout.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessObjectWidgetPropertyLayout.js",
     "file"
   ],
   [
@@ -2310,9 +2322,9 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/apps/agent/components/ticket/property/propertycustomer.js",
-    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomer.js.html",
-    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomer.js",
+    "frontend/tests/apps/agent/components/ticket/property/propertycustomerid.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerID.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerID.js",
     "file"
   ],
   [
@@ -2322,9 +2334,9 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/apps/agent/components/ticket/property/propertycustomeruser.js",
-    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerUser.js.html",
-    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerUser.js",
+    "frontend/tests/apps/agent/components/ticket/property/propertycustomeruserid.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerUserID.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyCustomerUserID.js",
     "file"
   ],
   [
@@ -2334,9 +2346,9 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
-    "frontend/tests/apps/agent/components/ticket/property/propertyescalations.js",
-    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyEscalations.js.html",
-    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyEscalations.js",
+    "frontend/tests/apps/agent/components/ticket/property/propertyescalationtime.js",
+    "file/Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyEscalationTime.js.html",
+    "Frontend/Tests/Apps/Agent/Components/Ticket/Property/PropertyEscalationTime.js",
     "file"
   ],
   [
