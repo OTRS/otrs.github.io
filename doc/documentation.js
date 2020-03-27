@@ -25,8 +25,10 @@ $(document).ready(function() {
     Languages = {
         en: 'English (en)',
         de: 'Deutsch (de)',
+        es_MX: 'Español (México, es_MX)',
         hu: 'Magyar (hu)',
         ja: '日本語 (ja)',
+        nl: 'Nederlands (nl)',
         pt_BR: 'português brasileiro (pt_BR)',
         ru: 'Русский (ru)',
         sr: 'Српски (sr)',
@@ -144,7 +146,7 @@ $(document).ready(function() {
                     Version:  '8.0',
                     HTMLPath: '8.0',
                     Name:     'OTRS 8',
-                    Languages: ['en', 'de', 'hu'],
+                    Languages: ['en', 'de', 'es_MX', 'nl', 'hu'],
                     AssetPath:     'doc-config-reference',
                     AssetFilename: 'otrs_config_reference'
                 },
@@ -258,7 +260,7 @@ $(document).ready(function() {
             Versions: [
                 {
                     Version:  '8.0',
-                    HTMLPath: '8.0',
+                    HTMLPath: 'stable',
                     Types:    [
                         {
                             Name: 'Perl',
