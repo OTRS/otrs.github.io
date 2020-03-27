@@ -1254,27 +1254,33 @@ window.esdocSearchIndex = [
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/businessobjectlistpopover.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessObjectListPopover.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessObjectListPopover.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/businessobjectlisttemplate.js",
     "file/Frontend/Apps/Agent/Mixins/BusinessObjectListTemplate.js.html",
     "Frontend/Apps/Agent/Mixins/BusinessObjectListTemplate.js",
     "file"
   ],
   [
+    "frontend/apps/agent/mixins/businessobjectproperty.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessObjectProperty.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessObjectProperty.js",
+    "file"
+  ],
+  [
+    "frontend/apps/agent/mixins/businessobjectpropertylayout.js",
+    "file/Frontend/Apps/Agent/Mixins/BusinessObjectPropertyLayout.js.html",
+    "Frontend/Apps/Agent/Mixins/BusinessObjectPropertyLayout.js",
+    "file"
+  ],
+  [
     "frontend/apps/agent/mixins/businessobjectwidget.js",
     "file/Frontend/Apps/Agent/Mixins/BusinessObjectWidget.js.html",
     "Frontend/Apps/Agent/Mixins/BusinessObjectWidget.js",
-    "file"
-  ],
-  [
-    "frontend/apps/agent/mixins/businessobjectwidgetproperty.js",
-    "file/Frontend/Apps/Agent/Mixins/BusinessObjectWidgetProperty.js.html",
-    "Frontend/Apps/Agent/Mixins/BusinessObjectWidgetProperty.js",
-    "file"
-  ],
-  [
-    "frontend/apps/agent/mixins/businessobjectwidgetpropertylayout.js",
-    "file/Frontend/Apps/Agent/Mixins/BusinessObjectWidgetPropertyLayout.js.html",
-    "Frontend/Apps/Agent/Mixins/BusinessObjectWidgetPropertyLayout.js",
     "file"
   ],
   [
