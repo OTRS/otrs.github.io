@@ -41,8 +41,16 @@ $(document).ready(function() {
             Path: 'user',
             Versions: [
                 {
+                    Version:  '8.0',
+                    HTMLPath: '8.0',
+                    Name:     'OTRS 8',
+                    Languages: ['en'],
+                    AssetPath:     'doc-user',
+                    AssetFilename: 'otrs_user_manual'
+                },
+                {
                     Version:  '7.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '7.0',
                     Name:     'OTRS 7',
                     Languages: ['en', 'de', 'hu', 'zh_CN'],
                     AssetPath:     'doc-user',
@@ -56,8 +64,16 @@ $(document).ready(function() {
             Path: 'admin',
             Versions: [
                 {
+                    Version:  '8.0',
+                    HTMLPath: '8.0',
+                    Name:     'OTRS 8',
+                    Languages: ['en', 'de', 'hu', 'zh_CN'],
+                    AssetPath:     'doc-admin',
+                    AssetFilename: 'otrs_admin_manual'
+                },
+                {
                     Version:  '7.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '7.0',
                     Name:     'OTRS 7',
                     Languages: ['en', 'de', 'hu', 'zh_CN'],
                     AssetPath:     'doc-admin',
@@ -93,7 +109,7 @@ $(document).ready(function() {
                     Languages: ['en', 'de', 'hu', 'zh_CN'],
                     AssetPath:     'doc-fao',
                     AssetFilename: 'otrs_fao_manual'
-                }
+                },
             ]
         },
         {
@@ -102,13 +118,21 @@ $(document).ready(function() {
             Path: 'installation',
             Versions: [
                 {
+                    Version:  '8.0',
+                    HTMLPath: '8.0',
+                    Name:     'OTRS 8',
+                    Languages: ['en'],
+                    AssetPath:     'doc-installation',
+                    AssetFilename: 'otrs_installation_guide'
+                },
+                {
                     Version:  '7.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '7.0',
                     Name:     'OTRS 7',
                     Languages: ['en', 'de', 'hu', 'zh_CN'],
                     AssetPath:     'doc-installation',
                     AssetFilename: 'otrs_installation_guide'
-                }
+                },
             ]
         },
         {
@@ -117,13 +141,21 @@ $(document).ready(function() {
             Path: 'config-reference',
             Versions: [
                 {
+                    Version:  '8.0',
+                    HTMLPath: '8.0',
+                    Name:     'OTRS 8',
+                    Languages: ['en', 'de', 'hu'],
+                    AssetPath:     'doc-config-reference',
+                    AssetFilename: 'otrs_config_reference'
+                },
+                {
                     Version:  '7.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '7.0',
                     Name:     'OTRS 7',
                     Languages: ['en', 'de', 'hu', 'pt_BR', 'sr', 'zh_CN'],
                     AssetPath:     'doc-config-reference',
                     AssetFilename: 'otrs_config_reference'
-                }
+                },
             ]
         },
         {
@@ -186,8 +218,16 @@ $(document).ready(function() {
             Path: 'developer',
             Versions: [
                 {
+                    Version:  '8.0',
+                    HTMLPath: '8.0',
+                    Name:     'OTRS 8',
+                    Languages: ['en'],
+                    AssetPath:     'doc-developer',
+                    AssetFilename: 'otrs_developer_manual'
+                },
+                {
                     Version:  '7.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '7.0',
                     Name:     'OTRS 7',
                     Languages: ['en', 'hu', 'zh_CN'],
                     AssetPath:     'doc-developer',
@@ -244,11 +284,11 @@ $(document).ready(function() {
                             NewTab: true,
                         }
                     ],
-                    Name:     'OTRS git (development)'
+                    Name:     'OTRS 8'
                 },
                 {
                     Version:  '7.0',
-                    HTMLPath: 'stable',
+                    HTMLPath: '7.0',
                     Types:    [
                         {
                             Name: 'Perl',
