@@ -89,14 +89,6 @@ $(document).ready(function() {
                     AssetPath:     'doc-admin',
                     AssetFilename: 'otrs_admin_book'
                 },
-                {
-                    Version:  '5.0',
-                    HTMLPath: '5.0',
-                    Name:     'OTRS 5',
-                    Languages: ['en', 'hu', 'zh_CN'],
-                    AssetPath:     'doc-admin',
-                    AssetFilename: 'otrs_admin_book'
-                },
             ]
         },
         {
@@ -173,14 +165,6 @@ $(document).ready(function() {
                     AssetPath:     'doc-otrsbusiness',
                     AssetFilename: 'otrs_business_solution_book'
                 },
-                {
-                    Version:     '5.0',
-                    HTMLPath:    '5.0',
-                    Name:        'OTRS 5',
-                    Languages:   ['en', 'pt_BR', 'hu'],
-                    AssetPath:     'doc-otrsbusiness',
-                    AssetFilename: 'otrs_business_solution_book'
-                },
             ]
         },
         {
@@ -200,14 +184,6 @@ $(document).ready(function() {
                     Version:  '6.0',
                     HTMLPath: '6.0',
                     Name:     'OTRS::ITSM 6',
-                    Languages: ['en', 'hu', 'ru', 'zh_CN'],
-                    AssetPath:     'doc-itsm',
-                    AssetFilename: 'otrs_itsm_book'
-                },
-                {
-                    Version:  '5.0',
-                    HTMLPath: '5.0',
-                    Name:     'OTRS::ITSM 5',
                     Languages: ['en', 'hu', 'ru', 'zh_CN'],
                     AssetPath:     'doc-itsm',
                     AssetFilename: 'otrs_itsm_book'
@@ -239,14 +215,6 @@ $(document).ready(function() {
                     Version:  '6.0',
                     HTMLPath: '6.0',
                     Name:     'OTRS 6',
-                    Languages: ['en', 'hu'],
-                    AssetPath:     'doc-developer',
-                    AssetFilename: 'otrs_developer_book'
-                },
-                {
-                    Version:  '5.0',
-                    HTMLPath: '5.0',
-                    Name:     'OTRS 5',
                     Languages: ['en', 'hu'],
                     AssetPath:     'doc-developer',
                     AssetFilename: 'otrs_developer_book'
@@ -332,21 +300,6 @@ $(document).ready(function() {
                         },
                     ],
                     Name:     'OTRS 6'
-                },
-                {
-                    Version:  '5.0',
-                    HTMLPath: '5.0',
-                    Types:    [
-                        {
-                            Name: 'Perl',
-                            Path: 'Perl',
-                        },
-                        {
-                            Name: 'JavaScript',
-                            Path: 'JavaScript',
-                        },
-                    ],
-                    Name:     'OTRS 5'
                 },
             ]
         }
