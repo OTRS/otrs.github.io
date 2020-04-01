@@ -1,1 +1,0 @@
-(window.webpackJsonp=window.webpackJsonp||[]).push([[460],{bGLB:function(n,o,e){n.exports=e.p+"fonts/streamline-regular.d7d0e4b.woff2"}}]);
