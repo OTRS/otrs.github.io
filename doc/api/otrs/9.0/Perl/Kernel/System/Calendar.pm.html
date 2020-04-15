@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::Calendar &mdash; OTRS 9.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 9.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 9.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::Calendar
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#CalendarCreate">CalendarCreate()</a></li>
+      <li><a href="#CalendarGet">CalendarGet()</a></li>
+      <li><a href="#CalendarList">CalendarList()</a></li>
+      <li><a href="#CalendarUpdate">CalendarUpdate()</a></li>
+      <li><a href="#CalendarImport">CalendarImport()</a></li>
+      <li><a href="#CalendarExport">CalendarExport()</a></li>
+      <li><a href="#CalendarPermissionGet">CalendarPermissionGet()</a></li>
+      <li><a href="#TicketAppointmentProcessTicket">TicketAppointmentProcessTicket()</a></li>
+      <li><a href="#TicketAppointmentProcessCalendar">TicketAppointmentProcessCalendar()</a></li>
+      <li><a href="#TicketAppointmentProcessRule">TicketAppointmentProcessRule()</a></li>
+      <li><a href="#TicketAppointmentUpdateTicket">TicketAppointmentUpdateTicket()</a></li>
+      <li><a href="#TicketAppointmentTicketID">TicketAppointmentTicketID()</a></li>
+      <li><a href="#TicketAppointmentRuleIDsGet">TicketAppointmentRuleIDsGet()</a></li>
+      <li><a href="#TicketAppointmentRuleGet">TicketAppointmentRuleGet()</a></li>
+      <li><a href="#TicketAppointmentTypesGet">TicketAppointmentTypesGet()</a></li>
+      <li><a href="#TicketAppointmentDelete">TicketAppointmentDelete()</a></li>
+      <li><a href="#GetAccessToken">GetAccessToken()</a></li>
+      <li><a href="#GetTextColor">GetTextColor()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::Calendar - calendar lib</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>All calendar functions.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>create an object. Do not use it directly, instead use:</p>
+
+<pre><code>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new();
+    my $CalendarObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Calendar&#39;);</code></pre>
+
+<h2 id="CalendarCreate">CalendarCreate()</h2>
+
+<p>creates a new calendar for given user.</p>
+
+<pre><code>    my %Calendar = $CalendarObject-&gt;CalendarCreate(
+        CalendarName    =&gt; &#39;Meetings&#39;,          # (required) Personal calendar name
+        GroupID         =&gt; 3,                   # (required) GroupID
+        Color           =&gt; &#39;#FF7700&#39;,           # (required) Color in hexadecimal RGB notation
+        UserID          =&gt; 4,                   # (required) UserID
+
+        TicketAppointments =&gt; [                 # (optional) Ticket appointments, array ref of hashes
+            {
+                StartDate =&gt; &#39;FirstResponse&#39;,
+                EndDate   =&gt; &#39;Plus_5&#39;,
+                QueueID   =&gt; [ 2 ],
+                SearchParams =&gt; {
+                    Title =&gt; &#39;This is a title&#39;,
+                    Types =&gt; &#39;This is a type&#39;,
+                },
+            },
+        ],
+
+        Config =&gt; {                             # (optional) Calendar config, e.g. dynamic fields
+            DynamicFields =&gt; {
+                Name1 =&gt; 1|2,                     # (1 - shown, 2 - shown + required)
+                Name2 =&gt; 1|2,                     # (1 - shown, 2 - shown + required)
+                Name3 =&gt; 1|2,                     # (1 - shown, 2 - shown + required)
+            },
+            AdditionalDescription =&gt; &#39;abc&#39;,
+            DefaultValues =&gt; {
+                Title       =&gt; &#39;a&#39;,
+                Description =&gt; &#39;a&#39;,
+                Location    =&gt; &#39;b&#39;,
+            },
+        },
+
+        ValidID =&gt; 1,                   # (optional) Default is 1.
+    );</code></pre>
+
+<p>returns Calendar hash if successful: %Calendar = ( CalendarID =&gt; 2, GroupID =&gt; 3, CalendarName =&gt; &#39;Meetings&#39;, CreateTime =&gt; &#39;2016-01-01 08:00:00&#39;, CreateBy =&gt; 4, ChangeTime =&gt; &#39;2016-01-01 08:00:00&#39;, ChangeBy =&gt; 4, ValidID =&gt; 1, );</p>
+
+<p>Events: CalendarCreate</p>
+
+<h2 id="CalendarGet">CalendarGet()</h2>
+
+<p>Get calendar by name or id.</p>
+
+<pre><code>    my %Calendar = $CalendarObject-&gt;CalendarGet(
+        CalendarName =&gt; &#39;Meetings&#39;,          # (required) Calendar name
+                                             # or
+        CalendarID   =&gt; 4,                   # (required) CalendarID
+
+        UserID       =&gt; 2,                   # (optional) UserID - System will check if user has access to calendar if provided
+    );</code></pre>
+
+<p>Returns Calendar data:</p>
+
+<pre><code>    %Calendar = (
+        CalendarID         =&gt; 2,
+        GroupID            =&gt; 3,
+        CalendarName       =&gt; &#39;Meetings&#39;,
+        Color              =&gt; &#39;#FF7700&#39;,
+        TicketAppointments =&gt; [
+            {
+                StartDate =&gt; &#39;FirstResponse&#39;,
+                EndDate   =&gt; &#39;Plus_5&#39;,
+                QueueID   =&gt; [ 2 ],
+                SearchParams =&gt; {
+                    Title =&gt; &#39;This is a title&#39;,
+                    Types =&gt; &#39;This is a type&#39;,
+                },
+            },
+        ],
+        Config =&gt; {
+            DynamicFields =&gt; {
+                Name1 =&gt; 1,
+                Name2 =&gt; 1,
+                Name3 =&gt; 1,
+            },
+            AdditionalDescription =&gt; &#39;abc&#39;,
+            DefaultValues =&gt; {
+                Title       =&gt; &#39;a&#39;,
+                Description =&gt; &#39;a&#39;,
+                Location    =&gt; &#39;b&#39;,
+            },
+        },
+        CreateTime =&gt; &#39;2016-01-01 08:00:00&#39;,
+        CreateBy   =&gt; 1,
+        ChangeTime =&gt; &#39;2016-01-01 08:00:00&#39;,
+        ChangeBy   =&gt; 1,
+        ValidID    =&gt; 1,
+    );</code></pre>
+
+<h2 id="CalendarList">CalendarList()</h2>
+
+<p>Get calendar list.</p>
+
+<pre><code>    my @Result = $CalendarObject-&gt;CalendarList(
+        UserID     =&gt; 4,            # (optional) For permission check
+        Permission =&gt; &#39;rw&#39;,         # (optional) Required permission (default ro)
+        ValidID    =&gt; 1,            # (optional) Default 0.
+                                    # 0 - All states
+                                    # 1 - All valid
+                                    # 2 - All invalid
+                                    # 3 - All temporary invalid
+        Valid      =&gt; 1,            # (optional) Get all valid calendars
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    @Result = [
+        {
+            CalendarID   =&gt; 2,
+            GroupID      =&gt; 3,
+            CalendarName =&gt; &#39;Meetings&#39;,
+            Color        =&gt; &#39;#FF7700&#39;,
+            CreateTime   =&gt; &#39;2016-01-01 08:00:00&#39;,
+            CreateBy     =&gt; 3,
+            ChangeTime   =&gt; &#39;2016-01-01 08:00:00&#39;,
+            ChangeBy     =&gt; 3,
+            ValidID      =&gt; 1,
+            Config       =&gt; {
+                DynamicFields =&gt; {
+                    Name1 =&gt; 1,
+                    Name2 =&gt; 1,
+                    Name3 =&gt; 1,
+                },
+                AdditionalDescription =&gt; &#39;abc&#39;,
+                DefaultValues =&gt; {
+                    Title       =&gt; &#39;a&#39;,
+                    Description =&gt; &#39;a&#39;,
+                    Location    =&gt; &#39;b&#39;,
+                },
+            },
+        },
+        {
+            CalendarID   =&gt; 3,
+            GroupID      =&gt; 3,
+            CalendarName =&gt; &#39;Customer presentations&#39;,
+            Color        =&gt; &#39;#BB00BB&#39;,
+            CreateTime   =&gt; &#39;2016-01-01 08:00:00&#39;,
+            CreateBy     =&gt; 3,
+            ChangeTime   =&gt; &#39;2016-01-01 08:00:00&#39;,
+            ChangeBy     =&gt; 3,
+            ValidID      =&gt; 0,
+            Config       =&gt; {
+                DynamicFields =&gt; {
+                    Name1 =&gt; 1,
+                    Name2 =&gt; 1,
+                    Name3 =&gt; 1,
+                },
+                AdditionalDescription =&gt; &#39;abc&#39;,
+                DefaultValues =&gt; {
+                    Title       =&gt; &#39;a&#39;,
+                    Description =&gt; &#39;a&#39;,
+                    Location    =&gt; &#39;b&#39;,
+                },
+            },
+        },
+        ...
+    ];</code></pre>
+
+<h2 id="CalendarUpdate">CalendarUpdate()</h2>
+
+<p>updates an existing calendar.</p>
+
+<pre><code>    my $Success = $CalendarObject-&gt;CalendarUpdate(
+        CalendarID       =&gt; 1,                   # (required) CalendarID
+        GroupID          =&gt; 2,                   # (required) Calendar group
+        CalendarName     =&gt; &#39;Meetings&#39;,          # (required) Personal calendar name
+        Color            =&gt; &#39;#FF9900&#39;,           # (required) Color in hexadecimal RGB notation
+        UserID           =&gt; 4,                   # (required) UserID (who made update)
+        ValidID          =&gt; 1,                   # (required) ValidID
+
+        TicketAppointments =&gt; [                 # (optional) Ticket appointments, array ref of hashes
+            {
+                StartDate =&gt; &#39;FirstResponse&#39;,
+                EndDate   =&gt; &#39;Plus_5&#39;,
+                QueueID   =&gt; [ 2 ],
+                SearchParams =&gt; {
+                    Title =&gt; &#39;This is a title&#39;,
+                    Types =&gt; &#39;This is a type&#39;,
+                },
+            },
+        ],
+
+        Config =&gt; {                             # (optional) Calendar config, e.g. dynamic fields
+            DynamicFields =&gt; {
+                Name1 =&gt; 1|2,                     # (1 - shown, 2 - shown + required)
+                Name2 =&gt; 1|2,                     # (1 - shown, 2 - shown + required)
+                Name3 =&gt; 1|2,                     # (1 - shown, 2 - shown + required)
+            },
+            AdditionalDescription =&gt; &#39;abc&#39;,
+            DefaultValues =&gt; {
+                Title       =&gt; &#39;a&#39;,
+                Description =&gt; &#39;a&#39;,
+                Location    =&gt; &#39;b&#39;,
+            },
+        },
+    );</code></pre>
+
+<p>Returns 1 if successful.</p>
+
+<p>Events: CalendarUpdate</p>
+
+<h2 id="CalendarImport">CalendarImport()</h2>
+
+<p>import a calendar</p>
+
+<pre><code>    my $Success = $CalendarObject-&gt;CalendarImport(
+        Data =&gt; {
+            CalendarData =&gt; {
+                CalendarID   =&gt; 2,
+                GroupID      =&gt; 3,
+                CalendarName =&gt; &#39;Meetings&#39;,
+                Color        =&gt; &#39;#FF7700&#39;,
+                ValidID      =&gt; 1,
+            },
+            AppointmentData =&gt; {
+                {
+                    AppointmentID       =&gt; 2,
+                    ParentID            =&gt; 1,
+                    CalendarID          =&gt; 1,
+                    UniqueID            =&gt; &#39;20160101T160000-71E386@localhost&#39;,
+                    ...
+                },
+                ...
+            },
+        },
+        OverwriteExistingEntities =&gt; 0,     # (optional) Overwrite existing calendar and appointments, default: 0
+                                            # Calendar with same name will be overwritten
+                                            # Appointments with same UniqueID in existing calendar will be overwritten
+        UserID =&gt; 1,
+    );</code></pre>
+
+<p>returns 1 if successful</p>
+
+<h2 id="CalendarExport">CalendarExport()</h2>
+
+<p>export a calendar</p>
+
+<pre><code>    my %Data = $CalendarObject-&gt;CalendarExport(
+        CalendarID =&gt; 2,
+        UserID     =&gt; 1,
+    }</code></pre>
+
+<p>returns calendar hash with data:</p>
+
+<pre><code>    %Data = (
+        CalendarData =&gt; {
+            CalendarID   =&gt; 2,
+            GroupID      =&gt; 3,
+            CalendarName =&gt; &#39;Meetings&#39;,
+            Color        =&gt; &#39;#FF7700&#39;,
+            ValidID      =&gt; 1,
+        },
+        AppointmentData =&gt; (
+            {
+                AppointmentID       =&gt; 2,
+                ParentID            =&gt; 1,
+                CalendarID          =&gt; 1,
+                UniqueID            =&gt; &#39;20160101T160000-71E386@localhost&#39;,
+                ...
+            },
+            ...
+        ),
+    );</code></pre>
+
+<h2 id="CalendarPermissionGet">CalendarPermissionGet()</h2>
+
+<p>Get permission level for given CalendarID and UserID.</p>
+
+<pre><code>    my $Permission = $CalendarObject-&gt;CalendarPermissionGet(
+        CalendarID  =&gt; 1,                   # (required) CalendarID
+        UserID      =&gt; 4,                   # (required) UserID
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $Permission = &#39;rw&#39;;    # &#39;ro&#39;, &#39;rw&#39;, ...</code></pre>
+
+<h2 id="TicketAppointmentProcessTicket">TicketAppointmentProcessTicket()</h2>
+
+<p>Handle the automatic ticket appointments for the ticket.</p>
+
+<pre><code>    $CalendarObject-&gt;TicketAppointmentProcessTicket(
+        TicketID =&gt; 1,
+    );</code></pre>
+
+<p>This method does not have return value.</p>
+
+<h2 id="TicketAppointmentProcessCalendar">TicketAppointmentProcessCalendar()</h2>
+
+<p>Handle the automatic ticket appointments for the calendar.</p>
+
+<pre><code>    my %Result = $CalendarObject-&gt;TicketAppointmentProcessCalendar(
+        CalendarID =&gt; 1,
+    );</code></pre>
+
+<p>Returns log of processed tickets and rules:</p>
+
+<pre><code>    %Result = (
+        Process =&gt; [
+            {
+                TicketID =&gt; 1,
+                RuleID   =&gt; &#39;9bb20ea035e7a9930652a9d82d00c725&#39;,
+                Success  =&gt; 1,
+            },
+            {
+                TicketID =&gt; 2,
+                RuleID   =&gt; &#39;9bb20ea035e7a9930652a9d82d00c725&#39;,
+                Success  =&gt; 1,
+            },
+        ],
+        Cleanup =&gt; [
+            {
+                RuleID  =&gt; &#39;b272a035ed82d65a927a99300e00c9b5&#39;,
+                Success =&gt; 1,
+            },
+        ],
+    );</code></pre>
+
+<h2 id="TicketAppointmentProcessRule">TicketAppointmentProcessRule()</h2>
+
+<p>Process the ticket appointment rule and create, update or delete appointment if necessary.</p>
+
+<pre><code>    my $Success = $CalendarObject-&gt;TicketAppointmentProcessRule(
+        CalendarID =&gt; 1,
+        Config =&gt; {
+            DynamicField_TestDate =&gt; {
+                Module =&gt; &#39;Kernel::System::Calendar::Ticket::DynamicFieldLegacy&#39;,
+            },
+            ...
+        },
+        Rule =&gt; {
+            StartDate =&gt; &#39;DynamicField_TestDate&#39;,
+            EndDate   =&gt; &#39;Plus_5&#39;,
+            QueueID   =&gt; [ 2 ],
+            RuleID    =&gt; &#39;9bb20ea035e7a9930652a9d82d00c725&#39;,
+            SearchParams =&gt; {
+                Title =&gt; &#39;Welcome*&#39;,
+            },
+        },
+        TicketID =&gt; 1,
+    );</code></pre>
+
+<p>Returns 1 if successful.</p>
+
+<h2 id="TicketAppointmentUpdateTicket">TicketAppointmentUpdateTicket()</h2>
+
+<p>Updates the ticket with data from ticket appointment.</p>
+
+<pre><code>    $CalendarObject-&gt;TicketAppointmentUpdateTicket(
+        AppointmentID =&gt; 1,
+        TicketID      =&gt; 1,
+    );</code></pre>
+
+<p>This method does not have return value.</p>
+
+<h2 id="TicketAppointmentTicketID">TicketAppointmentTicketID()</h2>
+
+<p>get ticket id of a ticket appointment.</p>
+
+<pre><code>    my $TicketID = $CalendarObject-&gt;TicketAppointmentTicketID(
+        AppointmentID =&gt; 1,
+    );</code></pre>
+
+<p>returns appointment ID if successful.</p>
+
+<h2 id="TicketAppointmentRuleIDsGet">TicketAppointmentRuleIDsGet()</h2>
+
+<p>get used ticket appointment rules for specific calendar.</p>
+
+<pre><code>    my @RuleIDs = $CalendarObject-&gt;TicketAppointmentRuleIDsGet(
+        CalendarID =&gt; 1,
+        TicketID   =&gt; 1,    # (optional) Return rules used only for specific ticket
+    );</code></pre>
+
+<p>returns array of rule IDs if found.</p>
+
+<h2 id="TicketAppointmentRuleGet">TicketAppointmentRuleGet()</h2>
+
+<p>get ticket appointment rule.</p>
+
+<pre><code>    my $Rule = $CalendarObject-&gt;TicketAppointmentRuleGet(
+        CalendarID =&gt; 1,
+        RuleID     =&gt; &#39;9bb20ea035e7a9930652a9d82d00c725&#39;,
+    );</code></pre>
+
+<p>returns rule hash:</p>
+
+<h2 id="TicketAppointmentTypesGet">TicketAppointmentTypesGet()</h2>
+
+<p>get defined ticket appointment types from config.</p>
+
+<pre><code>    my %TicketAppointmentTypes = $CalendarObject-&gt;TicketAppointmentTypesGet();</code></pre>
+
+<p>returns hash of appointment types:</p>
+
+<pre><code>    %TicketAppointmentTypes = ();</code></pre>
+
+<h2 id="TicketAppointmentDelete">TicketAppointmentDelete()</h2>
+
+<p>delete ticket appointment(s).</p>
+
+<pre><code>    my $Success = $CalendarObject-&gt;TicketAppointmentDelete(
+        CalendarID    =&gt; 1,                                     # (required) CalendarID
+        RuleID        =&gt; &#39;9bb20ea035e7a9930652a9d82d00c725&#39;,    # (required) RuleID
+                                                                # or
+        TicketID      =&gt; 1,                                     # (required) Ticket ID
+
+        AppointmentID =&gt; 1,                                     # (optional) Appointment ID is known
+    );</code></pre>
+
+<p>returns 1 if successful.</p>
+
+<h2 id="GetAccessToken">GetAccessToken()</h2>
+
+<p>get access token for the calendar.</p>
+
+<pre><code>    my $Token = $CalendarObject-&gt;GetAccessToken(
+        CalendarID =&gt; 1,              # (required) CalendarID
+        UserLogin  =&gt; &#39;agent-1&#39;,      # (required) User login
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $Token = &#39;rw&#39;;</code></pre>
+
+<h2 id="GetTextColor">GetTextColor()</h2>
+
+<p>Returns best text color for supplied background, based on luminosity difference algorithm.</p>
+
+<pre><code>    my $BestTextColor = $CalendarObject-&gt;GetTextColor(
+        Background =&gt; &#39;#FFF&#39;,    # (required) must be in valid hexadecimal RGB notation
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $BestTextColor = &#39;#000&#39;;</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::DocumentSearch::IndexSearch &mdash; OTRS 9.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 9.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../index.html">OTRS 9.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::DocumentSearch::IndexSearch
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#Search">Search()</a></li>
+      <li><a href="#ValidateQuery">ValidateQuery()</a></li>
+    </ul>
+  </li>
+  <li><a href="#PRIVATE-INTERFACE">PRIVATE INTERFACE</a>
+    <ul>
+      <li><a href="#GetMatchedDocuments">_GetMatchedDocuments()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::DocumentSearch::IndexSearch - Backend to search Elasticsearch indices.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="Search">Search()</h2>
+
+<p>Method that performs a search, in Elasticsearch indexes:</p>
+
+<pre><code>    my $SearchResult = $IndexSearchObject-&gt;Search(
+
+        # Required, the document type to be used for search
+        # (all types are used without a special type).
+        DocumentType =&gt; [ &#39;Ticket&#39;, &#39;FAQ&#39;, ], # or &#39;ALL&#39;
+
+        # Optional, &#39;OR&#39; or &#39;AND&#39;, defaults to &#39;OR&#39;.
+        DefaultOperator =&gt; &#39;OR&#39;,
+
+        # Optional, sort by field (default, sort by score).
+        Sort =&gt; [
+            {
+                Field =&gt; &#39;TicketID&#39;, # a sortable field
+                Order =&gt;  &#39;Desc&#39;     # optional &#39;Desc&#39; or &#39;Asc&#39;, defaults to &#39;Desc&#39;
+            },
+            # ...
+        ],
+
+        # Optional, used to define an offset from the first result what will be fetched, together
+        # with Size can be used for pagination, defaults to 0.
+        From =&gt; 123,
+
+        # Optional, number of results to be fetched, defaults to 10.
+        Size =&gt; &#39;100&#39;,
+
+        # Optional, used for an alternative way to scroll forward pagination, must be set as
+        # it was returned from previous search.
+        SearchAfter =&gt; \@SearchAfterArrayRef,
+
+        # Optional, specifies fields that must be highlighted in the related search results.
+        # If undef, nothing will be highlighted.
+        # If &#39;ALL&#39; is send, all matching fields will be highlighted.
+        # If field names specified, just those fields are highlighted.
+        HighlightResults =&gt; [&#39;SomeField&#39;, &#39;SomeOther&#39;], # or &#39;ALL&#39;
+
+        # Optional, specifies the fields per DocumentType to be used for search execution.
+        # If not specified, the related fields capable for fulltext searches, are automatically
+        # detected and will be used during the search execution.
+        SearchFields =&gt; {
+            ArticleMIME =&gt; [ &#39;Subject&#39;, &#39;Body&#39; ],
+        },
+
+        # Optional, specifies the fields, that will be included in the search results.
+        # If not set, the related DocumentID will be used for results.
+        ResultFields =&gt; {
+            ArticleMIME =&gt; [ &#39;ArticleID&#39;, &#39;MessageID&#39; ],
+        },
+
+        # Optional, specifies extra search filters.
+        CustomFilters =&gt; {
+            must =&gt; [
+                {
+                    term =&gt; { GroupID =&gt; 1 }
+                }
+            ],
+            should =&gt; [
+                {
+                    term =&gt; { User =&gt; 2 }
+                },
+                {
+                    term =&gt; { User =&gt; 3 }
+                },
+            ],
+        },
+
+        # Optional, prevents error logging, if set to 1 (default, 0).
+        # Errors will still be returned in failing search requests.
+        Silent =&gt; 1,
+
+        # Required, search query to be executed. By default, spaces in the string will be converted to the
+        # DefaultOperator unless an operator is specified between words. For further information, see
+        # L&lt;https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html&gt;.
+        Query =&gt; &#39;Some Search String&#39;,
+
+        # Agent search (UserID is required)
+        UserID     =&gt; 123,
+        Permission =&gt; &#39;ro&#39; || &#39;rw&#39;,
+
+        # Customer search (CustomerUserID is required)
+        CustomerUserID =&gt; 123,
+        Permission     =&gt; &#39;ro&#39; || &#39;rw&#39;,
+
+        # Public search - Query indices without being an agent or customer.
+        # This will just work on indices, that grant access to be queried by the public.
+        # Those indices may add custom filters if public users executes queries.
+        PublicUser =&gt; 1,
+
+        # Optional, add filters aggregation of possible pre-defined filters and return
+        # the document count of every pre-defined filter as well as the filter structure,
+        # including the identifiers per filter, that can be used in frontends.
+        # Default: 0
+        FilterAggregations =&gt; 1,
+
+        # Optional, includes the related pre-defined filters to the search query.
+        # The structure must contain the filter identifiers to be used per document type.
+        PredefinedFilters =&gt; {
+            Ticket =&gt; [
+                &#39;StateTypeAgent&#39;,
+                &#39;PriorityMedium&#39;,
+            ],
+        },
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $SearchResult = {
+        Ticket =&gt; {
+            Label       =&gt; &#39;Tickets&#39; # human readable document type label
+            Hits        =&gt; 2,        # number of elements returned (limited by Size parameter)
+            TotalHits   =&gt; 123,      # number of elements found
+            SearchAfter =&gt; [         # to be use for scroll forward pagination
+                &#39;1.4239533&#39;,
+                undef,
+            ],
+            Documents =&gt; [
+                {
+                    DocumentID =&gt; 23,                           # DocumentID of the related DocumentType (default)
+                    Score      =&gt; &#39;1.6594417&#39;,                  # Score (relevance) of the result hit.
+                    Highlight  =&gt; &#39;Some &lt;em&gt;text&lt;/em&gt; part&#39;,    # Hit highlighting (if requested).
+                },
+                {
+                    DocumentID =&gt; 2,
+                    Score      =&gt; &#39;1.4239533&#39;,
+                    Highlight  =&gt; &#39;Another &lt;em&gt;text&lt;/em&gt; part&#39;,
+                }
+            ],
+        },
+        FAQ =&gt; {
+            # ...
+        },
+        # ...
+    }</code></pre>
+
+<h2 id="ValidateQuery">ValidateQuery()</h2>
+
+<p>Method that performs a query validation in Elasticsearch:</p>
+
+<pre><code>    my $Success = $IndexSearchObject-&gt;ValidateQuery(
+
+        # Optional, &#39;OR&#39; or &#39;AND&#39;, defaults to &#39;OR&#39;.
+        DefaultOperator =&gt; &#39;OR&#39;,
+
+        # Required, search query to be analyzed. By default, spaces in the string will be converted to the
+        # DefaultOperator unless an operator is specified between words. For further information, see
+        # L&lt;https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html&gt;.
+        Query =&gt; &#39;Some Search String&#39;,
+    );</code></pre>
+
+<h1 id="PRIVATE-INTERFACE">PRIVATE INTERFACE</h1>
+
+<h2 id="GetMatchedDocuments">_GetMatchedDocuments()</h2>
+
+<p>Get all document IDs that match a given criteria:</p>
+
+<pre><code>    my $SearchResult = $IndexSearchObject-&gt;_GetMatchedDocuments(
+
+        # Filter is a mandatory parameter it contains the given criteria.
+        # Each filter element must provide at least a &#39;term&#39; or &#39;terms&#39; key,
+        #   &#39;term&#39; provides a single match  value,
+        #   &#39;terms&#39; provides multiple match values using an &#39;OR&#39; condition among them.
+        # Each filter element uses an &#39;AND&#39; condition among other filter elements.
+        Filter =&gt; [
+            {
+                term =&gt; {
+                    &#39;Some.Property&#39; =&gt; &#39;some value&#39;,
+                }
+            }
+            {
+                terms =&gt; {
+                    &#39;Some.Property&#39; =&gt; [&#39;some value&#39;, &#39;some other&#39;,],
+                }
+            }
+            # ...
+        ],
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $SearchResult = {
+        Ticket =&gt; [ 1, 2, 3 ],
+        FAQ =&gt; [ 4, 5, 6],
+    }</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

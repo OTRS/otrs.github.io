@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::Language &mdash; OTRS 9.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 9.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../index.html">OTRS 9.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::Language
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#Translatable">Translatable()</a></li>
+      <li><a href="#Translate">Translate()</a></li>
+      <li><a href="#FormatTimeString">FormatTimeString()</a></li>
+      <li><a href="#Time">Time()</a></li>
+      <li><a href="#LanguageChecksum">LanguageChecksum()</a></li>
+      <li><a href="#LanguageStats">LanguageStats()</a></li>
+      <li><a href="#HumanReadableDataSize">HumanReadableDataSize()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::Language - global language interface</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>All language functions.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>create a language object. Do not use it directly, instead use:</p>
+
+<pre><code>    use Kernel::System::ObjectManager;
+    local $Kernel::OM = Kernel::System::ObjectManager-&gt;new(
+        &#39;Kernel::Language&#39; =&gt; {
+            UserLanguage =&gt; &#39;de&#39;,
+        },
+    );
+    my $LanguageObject = $Kernel::OM-&gt;Get(&#39;Kernel::Language&#39;);</code></pre>
+
+<h2 id="Translatable">Translatable()</h2>
+
+<p>this is a no-op to mark a text as translatable in the Perl code.</p>
+
+<h2 id="Translate">Translate()</h2>
+
+<p>translate a text with placeholders.</p>
+
+<pre><code>        my $Text = $LanguageObject-&gt;Translate(&#39;Hello %s!&#39;, &#39;world&#39;);</code></pre>
+
+<h2 id="FormatTimeString">FormatTimeString()</h2>
+
+<p>formats a timestamp according to the specified date format for the current language (locale).</p>
+
+<pre><code>    my $Date = $LanguageObject-&gt;FormatTimeString(
+        &#39;2009-12-12 12:12:12&#39;,  # timestamp
+        &#39;DateFormat&#39;,           # which date format to use, e. g. DateFormatLong
+        0,                      # optional, hides the seconds from the time output
+    );</code></pre>
+
+<p>Please note that the TimeZone will not be applied in the case of DateFormatShort (date only) to avoid switching to another date.</p>
+
+<p>If you only pass an ISO date (&#39;2009-12-12&#39;), it will be returned unchanged. Invalid strings will also be returned with an error logged.</p>
+
+<h2 id="Time">Time()</h2>
+
+<p>Returns a time string in language format (based on translation file).</p>
+
+<pre><code>    $Time = $LanguageObject-&gt;Time(
+        Action =&gt; &#39;GET&#39;,
+        Format =&gt; &#39;DateFormat&#39;,
+    );
+
+    $TimeLong = $LanguageObject-&gt;Time(
+        Action =&gt; &#39;GET&#39;,
+        Format =&gt; &#39;DateFormatLong&#39;,
+    );
+
+    $TimeLong = $LanguageObject-&gt;Time(
+        Action =&gt; &#39;RETURN&#39;,
+        Format =&gt; &#39;DateFormatLong&#39;,
+        Year   =&gt; 1977,
+        Month  =&gt; 10,
+        Day    =&gt; 27,
+        Hour   =&gt; 20,
+        Minute =&gt; 10,
+        Second =&gt; 05,
+    );</code></pre>
+
+<p>These tags are supported: %A=WeekDay;%B=LongMonth;%T=Time;%D=Day;%M=Month;%Y=Year;</p>
+
+<p>Note that %A only works correctly with Action GET, it might be dropped otherwise.</p>
+
+<p>Also note that it is also possible to pass HTML strings for date input:</p>
+
+<pre><code>    $TimeLong = $LanguageObject-&gt;Time(
+        Action =&gt; &#39;RETURN&#39;,
+        Format =&gt; &#39;DateInputFormatLong&#39;,
+        Mode   =&gt; &#39;NotNumeric&#39;,
+        Year   =&gt; &#39;&lt;input value=&quot;2014&quot;/&gt;&#39;,
+        Month  =&gt; &#39;&lt;input value=&quot;1&quot;/&gt;&#39;,
+        Day    =&gt; &#39;&lt;input value=&quot;10&quot;/&gt;&#39;,
+        Hour   =&gt; &#39;&lt;input value=&quot;11&quot;/&gt;&#39;,
+        Minute =&gt; &#39;&lt;input value=&quot;12&quot;/&gt;&#39;,
+        Second =&gt; &#39;&lt;input value=&quot;13&quot;/&gt;&#39;,
+    );</code></pre>
+
+<p>Note that %B may not work in NonNumeric mode.</p>
+
+<h2 id="LanguageChecksum">LanguageChecksum()</h2>
+
+<p>This function returns an MD5 sum that is generated from all loaded language files and their modification timestamps. Whenever a file is changed, added or removed, this checksum will change.</p>
+
+<h2 id="LanguageStats">LanguageStats()</h2>
+
+<p>This method is auto-generated by Dev::Tools::TranslationsUpdate.</p>
+
+<h2 id="HumanReadableDataSize">HumanReadableDataSize()</h2>
+
+<p>Produces human readable data size.</p>
+
+<pre><code>    my $SizeStr = $LanguageObject-&gt;HumanReadableDataSize(
+        Size =&gt; 123,  # size in bytes
+    );</code></pre>
+
+<p>Returns</p>
+
+<pre><code>    $SizeStr = &#39;123 B&#39;;         # example with decimal point: 123.4 MB</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

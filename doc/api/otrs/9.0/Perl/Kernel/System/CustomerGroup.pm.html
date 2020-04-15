@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::CustomerGroup &mdash; OTRS 9.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 9.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 9.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::CustomerGroup
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#GroupMemberAdd">GroupMemberAdd()</a></li>
+      <li><a href="#GroupMemberList">GroupMemberList()</a></li>
+      <li><a href="#GroupCustomerAdd">GroupCustomerAdd()</a></li>
+      <li><a href="#GroupCustomerList">GroupCustomerList()</a></li>
+      <li><a href="#GroupContextNameGet">GroupContextNameGet()</a></li>
+      <li><a href="#GroupContextNameList">GroupContextNameList()</a></li>
+      <li><a href="#GroupContextCustomers">GroupContextCustomers()</a></li>
+      <li><a href="#GroupLookup">GroupLookup()</a></li>
+      <li><a href="#PermissionCheck">PermissionCheck()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::CustomerGroup - customer group lib</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>All customer group functions. E. g. to add groups or to get a member list of a group.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+
+<pre><code>    my $CustomerGroupObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::CustomerGroup&#39;);</code></pre>
+
+<h2 id="GroupMemberAdd">GroupMemberAdd()</h2>
+
+<p>to add a member to a group</p>
+
+<pre><code>    Permission: ro,move_into,priority,create,rw
+
+    my $Success = $CustomerGroupObject-&gt;GroupMemberAdd(
+        GID =&gt; 12,
+        UID =&gt; 6,
+        Permission =&gt; {
+            ro        =&gt; 1,
+            move_into =&gt; 1,
+            create    =&gt; 1,
+            owner     =&gt; 1,
+            priority  =&gt; 0,
+            rw        =&gt; 0,
+        },
+        UserID =&gt; 123,
+    );</code></pre>
+
+<h2 id="GroupMemberList">GroupMemberList()</h2>
+
+<p>Get users of the given group.</p>
+
+<pre><code>    my %Users = $CustomerGroupObject-&gt;GroupMemberList(
+        GroupID        =&gt; &#39;123&#39;,
+        Type           =&gt; &#39;move_into&#39;, # ro|move_into|priority|create|rw
+        Result         =&gt; &#39;HASH&#39;,      # return hash of user id =&gt; user name entries
+        RawPermissions =&gt; 0,           # 0 (return inherited permissions from CustomerCompany), default
+                                       # 1 (return only direct permissions)
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my @UserIDs = $CustomerGroupObject-&gt;GroupMemberList(
+        GroupID        =&gt; &#39;123&#39;,
+        Type           =&gt; &#39;move_into&#39;, # ro|move_into|priority|create|rw
+        Result         =&gt; &#39;ID&#39;,        # return array of user ids
+        RawPermissions =&gt; 0,           # 0 (return inherited permissions from CustomerCompany), default
+                                       # 1 (return only direct permissions)
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my @UserNames = $CustomerGroupObject-&gt;GroupMemberList(
+        GroupID        =&gt; &#39;123&#39;,
+        Type           =&gt; &#39;move_into&#39;, # ro|move_into|priority|create|rw
+        Result         =&gt; &#39;Name&#39;,        # return array of user names
+        RawPermissions =&gt; 0,           # 0 (return inherited permissions from CustomerCompany), default
+                                       # 1 (return only direct permissions)
+    );</code></pre>
+
+<p>Get groups of given user.</p>
+
+<pre><code>    my %Groups = $CustomerGroupObject-&gt;GroupMemberList(
+        UserID         =&gt; &#39;123&#39;,
+        Type           =&gt; &#39;move_into&#39;, # ro|move_into|priority|create|rw
+        Result         =&gt; &#39;HASH&#39;,      # return hash of group id =&gt; group name entries
+        RawPermissions =&gt; 0,           # 0 (return inherited permissions from CustomerCompany), default
+                                       # 1 (return only direct permissions)
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my @GroupIDs = $CustomerGroupObject-&gt;GroupMemberList(
+        UserID         =&gt; &#39;123&#39;,
+        Type           =&gt; &#39;move_into&#39;, # ro|move_into|priority|create|rw
+        Result         =&gt; &#39;ID&#39;,        # return array of group ids
+        RawPermissions =&gt; 0,           # 0 (return inherited permissions from CustomerCompany), default
+                                       # 1 (return only direct permissions)
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my @GroupNames = $CustomerGroupObject-&gt;GroupMemberList(
+        UserID         =&gt; &#39;123&#39;,
+        Type           =&gt; &#39;move_into&#39;, # ro|move_into|priority|create|rw
+        Result         =&gt; &#39;Name&#39;,        # return array of group names
+        RawPermissions =&gt; 0,           # 0 (return inherited permissions from CustomerCompany), default
+                                       # 1 (return only direct permissions)
+    );</code></pre>
+
+<h2 id="GroupCustomerAdd">GroupCustomerAdd()</h2>
+
+<p>to add a customer to a group</p>
+
+<pre><code>    Permission types: e.g. ro,move_into,priority,create,rw
+    Permission context: e.g. Ticket::CustomerID::Same, Ticket::CustomerID::Other
+
+    my $Success = $CustomerGroupObject-&gt;GroupCustomerAdd(
+        GID        =&gt; 12,
+        CustomerID =&gt; &#39;customer-company&#39;,
+        Permission =&gt; {
+            &#39;Ticket::CustomerID::Same&#39; =&gt; {
+                ro            =&gt; 1,
+                move_into     =&gt; 1,
+                create        =&gt; 1,
+                owner         =&gt; 1,
+                priority      =&gt; 0,
+                rw            =&gt; 0,
+            },
+            &#39;Ticket::CustomerID::Other&#39; =&gt; {
+                ro        =&gt; 1,
+                move_into =&gt; 1,
+                create    =&gt; 1,
+                owner     =&gt; 1,
+                priority  =&gt; 0,
+                rw        =&gt; 0,
+            },
+            ...
+        },
+        UserID =&gt; 123,
+    );</code></pre>
+
+<h2 id="GroupCustomerList">GroupCustomerList()</h2>
+
+<p>Get customers of the given group.</p>
+
+<pre><code>    my %Customers = $CustomerGroupObject-&gt;GroupCustomerList(
+        GroupID =&gt; &#39;123&#39;,
+        Type    =&gt; &#39;ro&#39;,    # ro|move_into|priority|create|owner|rw
+        Context =&gt; &#39;Ticket::CustomerID::Same&#39;,
+                            # permissions to same company tickets, default context
+        Result  =&gt; &#39;HASH&#39;,  # return hash of customer id =&gt; group name entries
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my @CustomerIDs = $CustomerGroupObject-&gt;GroupCustomerList(
+        GroupID =&gt; &#39;123&#39;,
+        Type    =&gt; &#39;ro&#39;,    # ro|move_into|priority|create|owner|rw
+        Context =&gt; &#39;Ticket::CustomerID::Same&#39;,
+                            # permissions to same company tickets, default context
+        Result  =&gt; &#39;ID&#39;,    # return array of customer ids
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my @CustomerNames = $CustomerGroupObject-&gt;GroupCustomerList(
+        GroupID =&gt; &#39;123&#39;,
+        Type    =&gt; &#39;ro&#39;,    # ro|move_into|priority|create|owner|rw
+        Context =&gt; &#39;Ticket::CustomerID::Same&#39;,
+                            # permissions to same company tickets, default context
+        Result  =&gt; &#39;Name&#39;,  # return array of customer ids
+    );</code></pre>
+
+<p>Get groups of given customer.</p>
+
+<pre><code>    my %Groups = $CustomerGroupObject-&gt;GroupCustomerList(
+        CustomerID =&gt; &#39;123&#39;,
+        Type       =&gt; &#39;ro&#39;,     # ro|move_into|priority|create|owner|rw
+        Context =&gt; &#39;Ticket::CustomerID::Same&#39;,
+                            # permissions to same company tickets, default context
+        Result     =&gt; &#39;HASH&#39;,   # return hash of group id =&gt; group name entries
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my @GroupIDs = $CustomerGroupObject-&gt;GroupCustomerList(
+        CustomerID =&gt; &#39;123&#39;,
+        Type       =&gt; &#39;ro&#39;,     # ro|move_into|priority|create|owner|rw
+        Context =&gt; &#39;Ticket::CustomerID::Same&#39;,
+                            # permissions to same company tickets, default context
+        Result     =&gt; &#39;ID&#39;,     # return array of group ids
+    );</code></pre>
+
+<p>or</p>
+
+<pre><code>    my @GroupNames = $CustomerGroupObject-&gt;GroupCustomerList(
+        CustomerID =&gt; &#39;123&#39;,
+        Type       =&gt; &#39;ro&#39;,     # ro|move_into|priority|create|owner|rw
+        Context =&gt; &#39;Ticket::CustomerID::Same&#39;,
+                            # permissions to same company tickets, default context
+        Result     =&gt; &#39;Name&#39;,   # return array of group names
+    );</code></pre>
+
+<h2 id="GroupContextNameGet">GroupContextNameGet()</h2>
+
+<p>Helper function to get currently configured name of a specific group access context</p>
+
+<pre><code>    my $ContextName = $CustomerGroupObject-&gt;GroupContextNameGet(
+        SysConfigName =&gt; &#39;100-CustomerID-other&#39;, # optional, defaults to &#39;001-CustomerID-same&#39;
+    );</code></pre>
+
+<h2 id="GroupContextNameList">GroupContextNameList()</h2>
+
+<p>Helper function to get the names of all configured group access contexts</p>
+
+<pre><code>    my @ContextNames = $CustomerGroupObject-&gt;GroupContextNameList();</code></pre>
+
+<h2 id="GroupContextCustomers">GroupContextCustomers()</h2>
+
+<p>Get all customer companies of the given customer user, including those associated via context based permissions.</p>
+
+<pre><code>    my %Customers = $CustomerGroupObject-&gt;GroupContextCustomers(
+        CustomerUserID =&gt; &#39;123&#39;,
+    );</code></pre>
+
+<p>Returns hash with Customer IDs as key and Customer Company Name as value:</p>
+
+<pre><code>    %Customers = {
+      &#39;001&#39; =&gt; &#39;Customer Company 1&#39;,
+      &#39;002&#39; =&gt; &#39;Customer Company 2&#39;,
+    };</code></pre>
+
+<h2 id="GroupLookup">GroupLookup()</h2>
+
+<p>get id or name for group</p>
+
+<pre><code>    my $Group = $CustomerGroupObject-&gt;GroupLookup(GroupID =&gt; $GroupID);
+
+    my $GroupID = $CustomerGroupObject-&gt;GroupLookup(Group =&gt; $Group);</code></pre>
+
+<h2 id="PermissionCheck">PermissionCheck()</h2>
+
+<p>Check if a customer user has a certain permission for a certain group.</p>
+
+<pre><code>    my $HasPermission = $CustomerGroupObject-&gt;PermissionCheck(
+        UserID    =&gt; $UserID,
+        GroupName =&gt; $GroupName,
+        Type      =&gt; &#39;move_into&#39;,
+    );</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

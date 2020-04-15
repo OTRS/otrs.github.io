@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::Ticket::Article::Backend::Email::Security &mdash; OTRS 9.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 9.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../../../../index.html">OTRS 9.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::Ticket::Article::Backend::Email::Security
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#EmailSecurityContentGet">EmailSecurityContentGet()</a></li>
+      <li><a href="#EmailSecurityContentUpdate">EmailSecurityContentUpdate()</a></li>
+      <li><a href="#EmailSecuritySet">EmailSecuritySet()</a></li>
+      <li><a href="#EmailSecurityGet">EmailSecurityGet()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::Ticket::Article::Backend::Email::Security - class for E-Mail security checks</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>This is a class provides methods to check email security, store results, update articles after decryption and provide email security information.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+
+<pre><code>    my $EmailSecurityObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::Article::Backend::Email::Security&#39;);</code></pre>
+
+<h2 id="EmailSecurityContentGet">EmailSecurityContentGet()</h2>
+
+<p>Evaluate E-Mail security information and return decrypted and cleaned body if we have an encrypted e-mail. If e-mail was not encrypted, it returns undef.</p>
+
+<pre><code>    my $DecryptedBody = $EmailSecurityObject-&gt;EmailSecurityContentGet(
+        Email      =&gt; &#39;...&#39;,     # plain email
+        SenderType =&gt; &#39;customer&#39;,       # or &#39;agent&#39; or &#39;system&#39;
+    );</code></pre>
+
+<h2 id="EmailSecurityContentUpdate">EmailSecurityContentUpdate()</h2>
+
+<p>Compile E-Mail security information and store them.</p>
+
+<pre><code>    my $SecurityCheckResult = $EmailSecurityObject-&gt;EmailSecurityContentUpdate(
+        ArticleID  =&gt; 1,
+        Body       =&gt; &#39;...&#39;,            # current plain body of article
+        SenderType =&gt; &#39;customer&#39;,       # or &#39;agent&#39; or &#39;system&#39;
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    $SecurityCheckResult = &#39;ok&#39;;   # or &#39;updated&#39; in case of article updates or undef in case of errors</code></pre>
+
+<h2 id="EmailSecuritySet">EmailSecuritySet()</h2>
+
+<p>Store information about E-Mail security.</p>
+
+<pre><code>    my $Success = $EmailSecurityObject-&gt;EmailSecuritySet(
+        ArticleID =&gt; 123,
+        Crypted =&gt; {                                            # only exists if mail was crypted
+            State       =&gt; &#39;ok&#39;,                                # or &#39;error&#39;
+            Type        =&gt; &#39;SMIME&#39;,                             # or &#39;PGP&#39;
+            MessageFlag =&gt; &#39;ok&#39;,                                # optional, issue indicator for translatable message prefix
+            MessageRaw  =&gt; &#39;Decryption successful...&#39;,          # optional, detailed backend information
+        },
+        Signed =&gt; {                                             # only exists if mail was signed
+            State       =&gt; &#39;ok&#39;,                                # or &#39;error&#39; or &#39;warning&#39;
+            Type        =&gt; &#39;SMIME&#39;,                             # or &#39;PGP&#39;
+            MessageFlag =&gt; &#39;ok&#39;,                                # optional, issue indicator for translatable message prefix
+            MessageRaw  =&gt; &#39;Verification successful...&#39;,        # optional, detailed backend information
+        },
+    );</code></pre>
+
+<h2 id="EmailSecurityGet">EmailSecurityGet()</h2>
+
+<p>Get information about E-Mail security.</p>
+
+<pre><code>    my %EmailSecurityOptions = $EmailSecurityObject-&gt;EmailSecurityGet(
+        ArticleID  =&gt; 123,
+        Body       =&gt; &#39;...&#39;,            # optional, current plain body of article
+        SenderType =&gt; &#39;customer&#39;,       # or &#39;agent&#39; or &#39;system&#39;
+        NoRecalc   =&gt; 0,                # optional, 0 or 1
+    );</code></pre>
+
+<p>Returns:</p>
+
+<pre><code>    %EmailSecurityOptions = (
+        ArticleID =&gt; 123,
+        Crypted   =&gt; {                                            # only exists if mail was crypted
+            State       =&gt; &#39;ok&#39;,                                # or &#39;error&#39;
+            Type        =&gt; &#39;SMIME&#39;,                             # or &#39;PGP&#39;
+            MessageFlag =&gt; &#39;ok&#39;,                                # optional, issue indicator for translatable message prefix
+            MessageRaw  =&gt; &#39;Decryption successful...&#39;,          # optional, detailed backend information
+        },
+        Signed =&gt; {                                             # only exists if mail was signed
+            State       =&gt; &#39;ok&#39;,                                # or &#39;error&#39; or &#39;warning&#39;
+            Type        =&gt; &#39;SMIME&#39;,                             # or &#39;PGP&#39;
+            MessageFlag =&gt; &#39;ok&#39;,                                # optional, issue indicator for translatable message prefix
+            MessageRaw  =&gt; &#39;Verification successful...&#39;,        # optional, detailed backend information
+        },
+    );</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

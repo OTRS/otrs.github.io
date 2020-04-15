@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::WebApp::Controller::API::Role::HandlesOneTimeTokens &mdash; OTRS 9.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 9.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../../../index.html">OTRS 9.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::WebApp::Controller::API::Role::HandlesOneTimeTokens
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#ProcessToken">ProcessToken()</a></li>
+      <li><a href="#IsAccessTokenValid">IsAccessTokenValid()</a></li>
+      <li><a href="#InvalidateAccessToken">InvalidateAccessToken()</a></li>
+      <li><a href="#IsRecoveryAccessToken">IsRecoveryAccessToken()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::WebApp::Controller::API::Role::HandlesOneTimeTokens - Role that overrides methods that deal with access tokens in order to make them work with one-time only tokens.</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<p>Consume this role in addition to user type handle token role, in order to change the original behavior of access token methods, so they work with one-time only tokens. Make sure to always consume a specific user type token handling role in addition to this one, otherwise it will throw an error that attributes are missing.</p>
+
+<p>For example, for customer endpoints, consume the customer user type token handling role in addition to this one:</p>
+
+<pre><code>    with qw(
+        Kernel::WebApp::Controller::API::Role::HandlesCustomerTokens
+        Kernel::WebApp::Controller::API::Role::HandlesOneTimeTokens
+    )</code></pre>
+
+<p>Or, for agent endpoints, consume the agent user type token handling role in addition to this one:</p>
+
+<p>with qw( Kernel::WebApp::Controller::API::Role::HandlesCustomerTokens Kernel::WebApp::Controller::API::Role::HandlesOneTimeTokens )</p>
+
+<p>It works by overriding default implementation from <a href="HandlesTokens.pm.html">Kernel::WebApp::Controller::API::Role::HandlesTokens</a>, but does so using <code>around</code> in order to solve the method conflicts. Note that the original methods will never be called.</p>
+
+<h2 id="ProcessToken">ProcessToken()</h2>
+
+<p>Tries to decode the passed token and validates it, stores the user login in <code>AuthenticatedUserLogin</code> and immediately invalidates the token record in the DB.</p>
+
+<h2 id="IsAccessTokenValid">IsAccessTokenValid()</h2>
+
+<p>Checks if the one-time <code>jwt</code> token is valid.</p>
+
+<pre><code>    my $AccessToken = $Self-&gt;IsAccessTokenValid(
+        Token =&gt; &#39;...&#39; # jwt-token
+    );</code></pre>
+
+<p>Returns</p>
+
+<pre><code>    K::S::AccessToken::Token - in case it exists and is valid.
+    C&lt;undef&gt;                 - in case is invalid.</code></pre>
+
+<h2 id="InvalidateAccessToken">InvalidateAccessToken()</h2>
+
+<p>Deletes the passed one-time token.</p>
+
+<pre><code>    my $Result = $Self-&gt;InvalidateAccessToken();</code></pre>
+
+<p>Returns</p>
+
+<pre><code>    1        - in case access-token was successfully deleted or there isn&#39;t any in the current request.
+    C&lt;undef&gt; - in case any error occurs.</code></pre>
+
+<h2 id="IsRecoveryAccessToken">IsRecoveryAccessToken()</h2>
+
+<p>Check if the given token is a recovery access token.</p>
+
+<pre><code>    my $Result = $Self-&gt;IsRecoveryAccessToken();</code></pre>
+
+<p>Returns</p>
+
+<pre><code>    1        - in case access-token is a recovery token.
+    C&lt;undef&gt; - in case any error occurs.</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::PushEvent::UserMessage &mdash; OTRS 9.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 9.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../index.html">OTRS 9.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::PushEvent::UserMessage
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#MethodParamValidationSchema">MethodParamValidationSchema()</a></li>
+      <li><a href="#Add">Add()</a></li>
+      <li><a href="#List">List()</a></li>
+      <li><a href="#Delete">Delete()</a></li>
+      <li><a href="#CleanupExpired">CleanupExpired()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::PushEvent::UserMessage - Manager for prepared user messages (push events).</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>This class takes care about handling the prepared push events for certain frontend clients. Since events will be stored in the push event queue as raw entries (for more information see <a href="Queue.pm.html">Kernel::System::PushEvent::Queue</a>), those raw entries will be picked up by the OTRS daemon (please see <a href="../Daemon/DaemonModules/PushEventManager.pm.html">Kernel::System::Daemon::DaemonModules::PushEventManager</a>) for more information and prepared for every single subscription. Those prepared entries will then be send to the frontend in a regular interval via the <code>websocket</code> backend (<a href="../../WebApp/Controller/Websocket.pm.html">Kernel::WebApp::Controller::Websocket</a>).</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="MethodParamValidationSchema">MethodParamValidationSchema()</h2>
+
+<p>Around&#39;s the original &#39;MethodParamValidationSchema&#39; of the driver to just add the schema of the parameter &#39;ObjectAttributes&#39;.</p>
+
+<h2 id="Add">Add()</h2>
+
+<p>Creates/adds a new user message to the database.</p>
+
+<pre><code>    # Add a new queue.
+    my $Queue = $UserMessageObject-&gt;Add(
+        Messages =&gt; [
+            Name              =&gt; &#39;...&#39;,
+            FrontendClientIDs =&gt; [ &#39;...&#39;, &#39;...&#39;, ],
+        ]
+    );</code></pre>
+
+<p>Every message will only be added once per <code>FrontendClientID</code>. This means it will be discarded if already found in the database or sent multiple times in the <code>FrontendClientIDs</code> array (which can happen because of multiple similar subscriptions in the frontend).</p>
+
+<p>Returns</p>
+
+<pre><code>    True if add was successful or undef otherwise.</code></pre>
+
+<h2 id="List">List()</h2>
+
+<p>List all User Messages from the database by name or by FrontendClientID.</p>
+
+<pre><code>    # Get a message.
+    my $Queue = $UserMessageObject-&gt;List(
+        Name             =&gt; &#39;...&#39;, # or
+        FrontendClientID =&gt; &#39;...&#39;,
+    );</code></pre>
+
+<p>Returns</p>
+
+<pre><code>    [
+        {
+            ID               =&gt; &#39;...&#39;,
+            Name             =&gt; &#39;...&#39;,
+            FrontendClientID =&gt; &#39;...&#39;,
+            ExpireTime       =&gt; &#39;...&#39;,
+        },
+        ...
+    ]</code></pre>
+
+<h2 id="Delete">Delete()</h2>
+
+<p>Delete an User Message from the database.</p>
+
+<pre><code>    # Delete a message.
+    my $Status = $UserMessageObject-&gt;Delete(
+        Name =&gt; &#39;...&#39;, # or
+        FrontendClientID =&gt; &#39;...&#39;,
+    );</code></pre>
+
+<p>Returns</p>
+
+<pre><code>    True if delete was successful or undef otherwise.</code></pre>
+
+<h2 id="CleanupExpired">CleanupExpired()</h2>
+
+<p>Cleans up all expired user messages.</p>
+
+<pre><code>    my $Success = $UserMessageObject-&gt;CleanupExpired();</code></pre>
+
+<p>Returns 1 if expired user messages were cleaned up successfully.</p>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

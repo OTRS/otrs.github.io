@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::GenericInterface::Transport::HTTP::SOAP &mdash; OTRS 9.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 9.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../../../index.html">OTRS 9.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::GenericInterface::Transport::HTTP::SOAP
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#has-Operation">has Operation</a></li>
+      <li><a href="#has-ContentType">has ContentType</a></li>
+      <li><a href="#ProviderProcessRequest">ProviderProcessRequest()</a></li>
+      <li><a href="#ProviderGenerateResponse">ProviderGenerateResponse()</a></li>
+      <li><a href="#RequesterPerformRequest">RequesterPerformRequest()</a></li>
+    </ul>
+  </li>
+  <li><a href="#PRIVATE-INTERFACE">PRIVATE INTERFACE</a>
+    <ul>
+      <li><a href="#Error">_Error()</a></li>
+      <li><a href="#Output">_Output()</a></li>
+      <li><a href="#SOAPOutputRecursion">_SOAPOutputRecursion()</a></li>
+      <li><a href="#SOAPOutputHashRecursion">_SOAPOutputHashRecursion()</a></li>
+      <li><a href="#SOAPOutputProcessString">_SOAPOutputProcessString()</a></li>
+      <li><a href="#SOAPOutputTypesGet">_SOAPOutputTypesGet()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::GenericInterface::Transport::HTTP::SOAP - GenericInterface network transport interface for HTTP::SOAP</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="has-Operation">has Operation</h2>
+
+<p>Attribute that holds the operation name.</p>
+
+<h2 id="has-ContentType">has ContentType</h2>
+
+<p>Attribute that holds the content type.</p>
+
+<h2 id="ProviderProcessRequest">ProviderProcessRequest()</h2>
+
+<p>Process an incoming web service request. This function has to read the request data from the web server process.</p>
+
+<p>Based on the request the Operation to be used is determined.</p>
+
+<p>No out-bound communication is done here, except from continue requests.</p>
+
+<p>In case of an error, the resulting http error code and message are remembered for the response.</p>
+
+<pre><code>    my $Result = $TransportObject-&gt;ProviderProcessRequest();
+
+    $Result = {
+        Success      =&gt; 1,                  # 0 or 1
+        ErrorMessage =&gt; &#39;&#39;,                 # in case of error
+        Operation    =&gt; &#39;DesiredOperation&#39;, # name of the operation to perform
+        Data         =&gt; {                   # data payload of request
+            ...
+        },
+    };</code></pre>
+
+<h2 id="ProviderGenerateResponse">ProviderGenerateResponse()</h2>
+
+<p>Generates response for an incoming web service request.</p>
+
+<p>In case of an error, error code and message are taken from environment (previously set on request processing).</p>
+
+<p>The HTTP code is set accordingly - <code>200</code> for (syntactically) correct messages - <code>4xx</code> for http errors - <code>500</code> for content syntax errors</p>
+
+<pre><code>    my $Result = $TransportObject-&gt;ProviderGenerateResponse(
+        Success =&gt; 1
+        Data    =&gt; { # data payload for response, optional
+            ...
+        },
+    );
+
+    $Result = {
+        Success      =&gt; 1,   # 0 or 1
+        ErrorMessage =&gt; &#39;&#39;,  # in case of error
+    };</code></pre>
+
+<h2 id="RequesterPerformRequest">RequesterPerformRequest()</h2>
+
+<p>Prepare data payload as XML structure, generate an outgoing web service request, receive the response and return its data.</p>
+
+<pre><code>    my $Result = $TransportObject-&gt;RequesterPerformRequest(
+        Operation =&gt; &#39;remote_op&#39;, # name of remote operation to perform
+        Data      =&gt; {            # data payload for request
+            ...
+        },
+    );
+
+    $Result = {
+        Success      =&gt; 1,        # 0 or 1
+        ErrorMessage =&gt; &#39;&#39;,       # in case of error
+        Data         =&gt; {
+            ...
+        },
+    };</code></pre>
+
+<h1 id="PRIVATE-INTERFACE">PRIVATE INTERFACE</h1>
+
+<h2 id="Error">_Error()</h2>
+
+<p>Take error parameters from request processing. Error message is written to debugger, written to environment for response. Error is generated to be passed to provider/requester.</p>
+
+<pre><code>    my $Result = $TransportObject-&gt;_Error(
+        Summary   =&gt; &#39;Message&#39;,    # error message
+        HTTPError =&gt; 500,          # http error code, optional
+    );
+
+    $Result = {
+        Success      =&gt; 0,
+        ErrorMessage =&gt; &#39;Message&#39;, # error message from given summary
+    };</code></pre>
+
+<h2 id="Output">_Output()</h2>
+
+<p>Generate http response for provider and send it back to remote system. Environment variables are checked for potential error messages. Returns structure to be passed to provider.</p>
+
+<pre><code>    my $Result = $TransportObject-&gt;_Output(
+        HTTPCode =&gt; 200,           # http code to be returned, optional
+        Content  =&gt; &#39;response&#39;,    # message content, XML response on normal execution
+    );
+
+    $Result = {
+        Success      =&gt; 0,
+        ErrorMessage =&gt; &#39;Message&#39;, # error message from given summary
+    };</code></pre>
+
+<h2 id="SOAPOutputRecursion">_SOAPOutputRecursion()</h2>
+
+<p>Convert Perl data structure into a structure usable for SOAP::Lite.</p>
+
+<p>Because some systems require data in a specific order, the sort order of hash ref entries (and only those) can be specified optionally. If entries exist that are not mentioned in sorting config, they will be added after the sorted entries in ascending alphanumerical order.</p>
+
+<p>Example: $Data = { Key1 =&gt; &#39;Value&#39;, Key2 =&gt; { Key3 =&gt; &#39;Value&#39;, Key4 =&gt; [ &#39;Value&#39;, &#39;Value&#39;, { Key5 =&gt; &#39;Value&#39;, }, ], }, }; $Sort = [ # wrapper for level 1 { # first entry for level 1 Key2 =&gt; [ # wrapper for level 2 { # first entry for level 2 Key4 =&gt; [ undef, undef, [ # wrapper for level 3 { Key5 =&gt; undef, # first entry for level 3 }, ], # wrapper for level 3 ], }, # first entry for level 2 { # second entry for level 2 Key3 =&gt; undef, }, # second entry for level 2 ], # wrapper for level 2 } # first entry for level 1 { # second entry for level 1 Key1 =&gt; undef, } # second entry for level 1 ]; # wrapper for level 1</p>
+
+<pre><code>    my $Result = $TransportObject-&gt;_SOAPOutputRecursion(
+        Data =&gt; {           # data payload
+            ...
+        },
+        Sort =&gt; {           # sorting instructions, optional
+            ...
+        },
+    );
+
+    $Result = {
+        Success      =&gt; 1,  # 0 or 1
+        ErrorMessage =&gt; &#39;&#39;, # in case of error
+        Data         =&gt; {   # data payload in SOAP::Data format
+            ...
+        },
+    };</code></pre>
+
+<h2 id="SOAPOutputHashRecursion">_SOAPOutputHashRecursion()</h2>
+
+<p>This is a part of _SOAPOutputRecursion. It contains the functions to process a hash key/value pair.</p>
+
+<pre><code>    my $Result = $TransportObject-&gt;_SOAPOutputHashRecursion(
+        Data =&gt; { # data payload
+            ...
+        },
+        Sort =&gt; { # sort data payload
+            ...
+        },
+    );
+
+    $Result = {
+        Success      =&gt; 1,  # 0 or 1
+        ErrorMessage =&gt; &#39;&#39;, # in case of error
+        Data         =&gt; (   # data payload in SOAP::Data format
+            ...
+        ),
+    };</code></pre>
+
+<h2 id="SOAPOutputProcessString">_SOAPOutputProcessString()</h2>
+
+<p>This is a part of _SOAPOutputRecursion. It contains functions to quote invalid XML characters and encode the string</p>
+
+<pre><code>    my $Result = $TransportObject-&gt;_SOAPOutputProcessString(
+        Data =&gt; &#39;a &lt;string&gt; &amp; more&#39;,
+    );
+
+    $Result = &#39;a &amp;lt;string&gt; &amp;amp; more&#39;;</code></pre>
+
+<h2 id="SOAPOutputTypesGet">_SOAPOutputTypesGet()</h2>
+
+<p>Determine and validate types of data and (optional) sort attributes.</p>
+
+<p>The structure may contain multiple levels with scalars, array references and hash references. Empty array references and array references directly within array references are not permitted as they don&#39;t have a valid XML representation. Undefined data and empty hash references are treated as empty string.</p>
+
+<p>The sorting structure has to be equal to the data structure with hash references replaced by an array reference and its elements wrapped in individual hash references. Values in the sorting structure are ignored but have to be specified (at least &#39;undef&#39;) for correct type detection.</p>
+
+<pre><code>    my $Result = $TransportObject-&gt;_SOAPOutputTypesGet(
+        Data =&gt; {           # data payload
+            ...
+        },
+        Sort =&gt; {           # sorting instructions, optional
+            ...
+        },
+    );
+
+    $Result = {
+        Success      =&gt; 1,              # 0 or 1
+        ErrorMessage =&gt; &#39;&#39;,             # in case of error
+        Data         =&gt; &#39;HASHREF&#39;,      # type of data content
+        Sort         =&gt; &#39;ARRAYREF&#39;,     # type of sort content
+    };</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+

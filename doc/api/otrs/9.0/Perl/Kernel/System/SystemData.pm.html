@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en">
+<head>
+<!-- otrs.github.io -->
+<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="../../../../../../documentation.css">
+<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script type="text/javascript" src="../../../../../../documentation.js"></script>
+<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../../images/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../../images/favicon-16x16.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
+<script>
+$(document).ready(function() {
+
+    // Hint languages to prevent false matches (php for example).
+    hljs.configure({
+        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
+    });
+
+    // programlistings in manuals
+    $('pre.programlisting').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+    // code snippets in Perl API docs
+    $('.pod pre').addClass('perl').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});</script>
+<!-- otrs.github.io -->
+
+<title>Kernel::System::SystemData &mdash; OTRS 9.0 API Reference Perl</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body><div class="box">
+  <h1 class="t1">OTRS 9.0 API Reference Perl</h1>
+  <table>
+    <tr>
+      <td class="label">Description</td>
+      <td class="cell">manuals and libraries</td>
+    </tr>
+  </table>
+</div>
+<div class="path">
+  <a href="../../index.html">OTRS 9.0 API Reference Perl</a> &gt; Perl Modules &gt;
+  Kernel::System::SystemData
+</div>
+<div>
+
+</div>
+
+<div class="pod">
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#DESCRIPTION">DESCRIPTION</a></li>
+  <li><a href="#PUBLIC-INTERFACE">PUBLIC INTERFACE</a>
+    <ul>
+      <li><a href="#new">new()</a></li>
+      <li><a href="#SystemDataAdd">SystemDataAdd()</a></li>
+      <li><a href="#SystemDataGet">SystemDataGet()</a></li>
+      <li><a href="#SystemDataGroupGet">SystemDataGroupGet()</a></li>
+      <li><a href="#SystemDataUpdate">SystemDataUpdate()</a></li>
+      <li><a href="#SystemDataDelete">SystemDataDelete()</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>Kernel::System::SystemData - key/value store for system data</p>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p>Provides key/value store for system data</p>
+
+<h1 id="PUBLIC-INTERFACE">PUBLIC INTERFACE</h1>
+
+<h2 id="new">new()</h2>
+
+<p>Don&#39;t use the constructor directly, use the ObjectManager instead:</p>
+
+<pre><code>    my $SystemDataObject = $Kernel::OM-&gt;Get(&#39;Kernel::System::SystemData&#39;);</code></pre>
+
+<h2 id="SystemDataAdd">SystemDataAdd()</h2>
+
+<p>add a new <code>SystemData</code> value.</p>
+
+<p>Result is true if adding was OK, and false if it failed, for instance because the key already existed.</p>
+
+<p>If your keys contain &#39;::&#39; this will be used as a separator. This allows you to later for instance fetch all keys that start with &#39;SystemRegistration::&#39; in one go, using SystemDataGetGroup().</p>
+
+<pre><code>    my $Result = $SystemDataObject-&gt;SystemDataAdd(
+        Key    =&gt; &#39;SomeKey&#39;,
+        Value  =&gt; &#39;Some Value&#39;,
+        UserID =&gt; 123,
+    );
+
+    my $Result = $SystemDataObject-&gt;SystemDataAdd(
+        Key    =&gt; &#39;SystemRegistration::Version&#39;,
+        Value  =&gt; &#39;Some Value&#39;,
+        UserID =&gt; 123,
+    );</code></pre>
+
+<h2 id="SystemDataGet">SystemDataGet()</h2>
+
+<p>get system data for key</p>
+
+<pre><code>    my $SystemData = $SystemDataObject-&gt;SystemDataGet(
+        Key =&gt; &#39;OTRS Version&#39;,
+    );</code></pre>
+
+<p>returns value as a simple scalar, or undef if the key does not exist. keys set to NULL return an empty string.</p>
+
+<h2 id="SystemDataGroupGet">SystemDataGroupGet()</h2>
+
+<p>returns a hash of all keys starting with the Group. For instance the code below would return values for &#39;SystemRegistration::UniqueID&#39;, &#39;SystemRegistration::UpdateID&#39;, and so on.</p>
+
+<pre><code>    my %SystemData = $SystemDataObject-&gt;SystemDataGroupGet(
+        Group =&gt; &#39;SystemRegistration&#39;,
+    );</code></pre>
+
+<p>returns</p>
+
+<pre><code>    %SystemData = (
+        UniqueID =&gt; &#39;CDC782BE-E483-11E2-83DA-9FFD99890B3C&#39;,
+        UpdateID =&gt; &#39;D8F55850-E483-11E2-BD60-9FFD99890B3C&#39;
+        ...
+    );</code></pre>
+
+<h2 id="SystemDataUpdate">SystemDataUpdate()</h2>
+
+<p>update system data</p>
+
+<p>Returns true if update was successful or false if otherwise - for instance if key did not exist.</p>
+
+<pre><code>    my $Result = $SystemDataObject-&gt;SystemDataUpdate(
+        Key    =&gt; &#39;OTRS Version&#39;,
+        Value  =&gt; &#39;Some New Value&#39;,
+        UserID =&gt; 123,
+    );</code></pre>
+
+<h2 id="SystemDataDelete">SystemDataDelete()</h2>
+
+<p>update system data</p>
+
+<p>Returns true if delete was successful or false if otherwise - for instance if key did not exist.</p>
+
+<pre><code>    $SystemDataObject-&gt;SystemDataDelete(
+        Key    =&gt; &#39;OTRS Version&#39;,
+        UserID =&gt; 123,
+    );</code></pre>
+
+</div><div class="footer">generated by <a href="http://metacpan.org/module/Pod::ProjectDocs">Pod::ProjectDocs</a></div></body></html>
+
