@@ -113,6 +113,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#step-6-start-your-services">Step 6: Start your Services</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-7-start-the-otrs-daemon-and-web-server">Step 7: Start the OTRS Daemon and Web Server</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#step-8-manual-migration-tasks-and-changes">Step 8: Manual Migration Tasks and Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recommendation-convert-your-mysql-database">Recommendation: Convert Your MySQL Database</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="backup-restore.html">Backup and Restore</a></li>
@@ -386,6 +387,32 @@ root&gt; systemctl start otrs-webserver
 <li><code class="docutils literal notranslate"><span class="pre">PasswordPolicy::ExceptCustomerPasswordChangeAfterFirstLogin</span></code></li>
 </ul>
 </div></blockquote>
+</div>
+<div class="section" id="recommendation-convert-your-mysql-database">
+<h2>Recommendation: Convert Your MySQL Database<a class="headerlink" href="#recommendation-convert-your-mysql-database" title="Permalink to this headline">¶</a></h2>
+<p>OTRS 7 and previous versions only supported the <code class="docutils literal notranslate"><span class="pre">utf8</span></code> MySQL database charset, which is not able to store all unicode characters.
+OTRS 8 also supports the <code class="docutils literal notranslate"><span class="pre">utf8mb4</span></code> charset which removes this limitation, and it is recommended to convert your database at your convenience
+with the following script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Test run, see if something needs to be converted.</span>
+otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Database::MySQL::UTF8MB4Migration
+The following tasks need to be <span class="k">done</span>:
+  - <span class="m">1</span> table<span class="o">(</span>s<span class="o">)</span> need to be converted to <span class="s1">&#39;DYNAMIC&#39;</span> row format
+  - the database needs to be converted to <span class="s1">&#39;utf8mb4&#39;</span>
+  - <span class="m">411</span> column<span class="o">(</span>s<span class="o">)</span> need to be converted to <span class="s1">&#39;utf8mb4&#39;</span>
+  - <span class="m">156</span> table<span class="o">(</span>s<span class="o">)</span> need to be converted to <span class="s1">&#39;utf8mb4&#39;</span>
+
+<span class="c1"># Really perform the migration.</span>
+otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Database::MySQL::UTF8MB4Migration --force
+...
+
+<span class="c1"># After the migration is done, you need to add a new switch to ``Kernel/Config.pm`` to activate the ``utf8mb4`` support in OTRS:</span>
+<span class="nv">$Self</span>-&gt;<span class="o">{</span><span class="s1">&#39;Database::mysql::utf8mb4&#39;</span><span class="o">}</span> <span class="o">=</span> <span class="m">1</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">OTRS 8 can be operated in the <code class="docutils literal notranslate"><span class="pre">utf8</span></code> charset, without this migration. But: OTRS 9 will only support the <code class="docutils literal notranslate"><span class="pre">utf8mb4</span></code> charset. Therefore this migration needs to be done during the life cycle of OTRS 8 at some point.</p>
+</div>
 </div>
 </div>
 
