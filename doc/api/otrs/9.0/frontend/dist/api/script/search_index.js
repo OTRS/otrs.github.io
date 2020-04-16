@@ -354,6 +354,12 @@ window.esdocSearchIndex = [
     "class"
   ],
   [
+    "form/validator/url~url",
+    "class/Frontend/Form/Validator/URL.js~URL.html",
+    "<span>URL</span> <span class=\"search-result-import-path\">Form/Validator/URL</span>",
+    "class"
+  ],
+  [
     "locale/businessobjecttypetexts/webnotification~webnotification",
     "class/Frontend/Locale/BusinessObjectTypeTexts/WebNotification.js~WebNotification.html",
     "<span>WebNotification</span> <span class=\"search-result-import-path\">Locale/BusinessObjectTypeTexts/WebNotification</span>",
@@ -849,6 +855,12 @@ window.esdocSearchIndex = [
     "form/validator/required~validator",
     "variable/index.html#static-variable-validator",
     "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/Required</span>",
+    "variable"
+  ],
+  [
+    "form/validator/url~validator",
+    "variable/index.html#static-variable-validator",
+    "<span>validator</span> <span class=\"search-result-import-path\">Form/Validator/URL</span>",
     "variable"
   ],
   [
@@ -1701,6 +1713,12 @@ window.esdocSearchIndex = [
     "frontend/form/validator/required.js",
     "file/Frontend/Form/Validator/Required.js.html",
     "Frontend/Form/Validator/Required.js",
+    "file"
+  ],
+  [
+    "frontend/form/validator/url.js",
+    "file/Frontend/Form/Validator/URL.js.html",
+    "Frontend/Form/Validator/URL.js",
     "file"
   ],
   [
@@ -3087,6 +3105,12 @@ window.esdocSearchIndex = [
     "frontend/tests/form/validator/required.js",
     "file/Frontend/Tests/Form/Validator/Required.js.html",
     "Frontend/Tests/Form/Validator/Required.js",
+    "file"
+  ],
+  [
+    "frontend/tests/form/validator/url.js",
+    "file/Frontend/Tests/Form/Validator/URL.js.html",
+    "Frontend/Tests/Form/Validator/URL.js",
     "file"
   ],
   [
