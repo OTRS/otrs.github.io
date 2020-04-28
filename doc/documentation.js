@@ -115,7 +115,7 @@ $(document).ready(function() {
                     Version:  '8.0',
                     HTMLPath: '8.0',
                     Name:     'OTRS 8',
-                    Languages: ['en'],
+                    Languages: ['en', 'hu'],
                     AssetPath:     'doc-installation',
                     AssetFilename: 'otrs_installation_guide'
                 },
@@ -138,7 +138,7 @@ $(document).ready(function() {
                     Version:  '8.0',
                     HTMLPath: '8.0',
                     Name:     'OTRS 8',
-                    Languages: ['en', 'de', 'es_MX', 'nl', 'hu'],
+                    Languages: ['en', 'de', 'es_MX', 'hu', 'nl', 'sr', 'zh_CN'],
                     AssetPath:     'doc-config-reference',
                     AssetFilename: 'otrs_config_reference'
                 },
@@ -146,7 +146,7 @@ $(document).ready(function() {
                     Version:  '7.0',
                     HTMLPath: '7.0',
                     Name:     'OTRS 7',
-                    Languages: ['en', 'de', 'hu', 'pt_BR', 'sr', 'zh_CN'],
+                    Languages: ['en', 'de', 'hu', 'sr', 'zh_CN'],
                     AssetPath:     'doc-config-reference',
                     AssetFilename: 'otrs_config_reference'
                 },
@@ -199,7 +199,7 @@ $(document).ready(function() {
                     Version:  '8.0',
                     HTMLPath: '8.0',
                     Name:     'OTRS 8',
-                    Languages: ['en'],
+                    Languages: ['en', 'hu'],
                     AssetPath:     'doc-developer',
                     AssetFilename: 'otrs_developer_manual'
                 },
