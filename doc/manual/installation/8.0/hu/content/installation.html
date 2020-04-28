@@ -1,0 +1,573 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="hu" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="hu" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Telepítés &mdash; OTRS Update and Installation Guide 8.0 dokumentáció</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/otrs.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Tárgymutató" href="../genindex.html" />
+    <link rel="search" title="Keresés" href="../search.html" />
+    <link rel="next" title="Frissítés" href="updating.html" />
+    <link rel="prev" title="Hardver- és szoftverkövetelmények" href="requirements.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+    
+    <a href="https://doc.otrs.com/doc" class="icon fa-rocket DocumentationOverview"> OTRS Documentation</a>
+
+    
+
+          
+            <a href="index.html" class="icon icon-home"> OTRS Update and Installation Guide
+          
+
+          
+            
+            <img src="../_static/otrs-logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                8.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Tartalom</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Bevezetés</a></li>
+<li class="toctree-l1"><a class="reference internal" href="requirements.html">Hardver- és szoftverkövetelmények</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Telepítés</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preparation-disable-selinux">Előkészítés: SELinux letiltása</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-1-unpack-and-install-the-application">1. lépés: az alkalmazás kibontása és telepítése</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-2-install-additional-programs-and-perl-modules">2. lépés: további programok és Perl-modulok telepítése</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-3-create-the-otrs-user">3. lépés: az OTRS Felhasználó létrehozása</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-4-activate-the-default-configuration-file">4. lépés: az alapértelmezett beállítófájl aktiválása</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-5-configure-the-apache-web-server">5. lépés: az Apache webkiszolgáló beállítása</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-6-set-file-permissions">6. lépés: fájljogosultságok beállítása</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-7-setup-the-database">7. lépés: az adatbázis beállítása</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mysql-or-mariadb">MySQL vagy MariaDB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#postgresql">PostgreSQL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#finishing-the-database-setup">Az adatbázis-beállítás befejezése</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#step-8-setup-elasticsearch-cluster">8. lépés: az Elasticsearch-fürt beállítása</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-9-start-the-otrs-daemon-and-web-server">9. lépés: az OTRS démon és webkiszolgáló elindítása</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-10-first-login">10. lépés: első bejelentkezés</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-11-setup-systemd-files">11. lépés: systemd fájlok beállítása</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-12-setup-bash-auto-completion-optional">12. lépés: bash automatikus kiegészítés beállítása (kihagyható)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#step-13-further-information">13. lépés: további információk</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="updating.html">Frissítés</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backup-restore.html">Biztonsági mentés és visszaállítás</a></li>
+<li class="toctree-l1"><a class="reference internal" href="performance-tuning.html">Teljesítmény hangolás</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OTRS Update and Installation Guide</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Telepítés</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/OTRS/doc-installation/blob/rel-8_0/content/installation.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="installation">
+<h1>Telepítés<a class="headerlink" href="#installation" title="Hivatkozás erre a fejezetcímre">¶</a></h1>
+<p>Ez a fejezet a központi OTRS keretrendszer telepítését és alapvető beállítását mutatja be.</p>
+<p>Kövesse az ebben a fejezetben lévő részletes lépéseket az OTRS telepítéséhez a kiszolgálóra. Ezután használhatja a webes felületét a bejelentkezéshez és a rendszer adminisztrálásához.</p>
+<div class="section" id="preparation-disable-selinux">
+<h2>Előkészítés: SELinux letiltása<a class="headerlink" href="#preparation-disable-selinux" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<div class="admonition note">
+<p class="first admonition-title">Megjegyzés</p>
+<p class="last">Ha a rendszere SELinuxot használ, akkor le kell tiltania azt, különben az OTRS nem fog megfelelően működni.</p>
+</div>
+<p>Itt láthatja, hogyan kell letiltani a SELinuxot RHEL/CentOS/Fedora rendszereken.</p>
+<ol class="arabic">
+<li><p class="first">Állítsa be a <code class="docutils literal notranslate"><span class="pre">SELINUX=disabled</span></code> értéket az <code class="docutils literal notranslate"><span class="pre">/etc/selinux/config</span></code> fájlban:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span># This file controls the state of SELinux on the system.
+# SELINUX= can take one of these three values:
+#       enforcing - SELinux security policy is enforced.
+#       permissive - SELinux prints warnings instead of enforcing.
+#       disabled - No SELinux policy is loaded.
+SELINUX=disabled
+# SELINUXTYPE= can take one of these two values:
+#       targeted - Targeted processes are protected,
+#       mls - Multi Level Security protection.
+SELINUXTYPE=targeted
+</pre></div>
+</div>
+</li>
+<li><p class="first">Indítsa újra a rendszert. Újraindítás után ellenőrizze, hogy a <code class="docutils literal notranslate"><span class="pre">getenforce</span></code> parancs <em>Disabled</em> értéket ad-e vissza:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; getenforce
+Disabled
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="step-1-unpack-and-install-the-application">
+<h2>1. lépés: az alkalmazás kibontása és telepítése<a class="headerlink" href="#step-1-unpack-and-install-the-application" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Beszerezheti akár az <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.gz</span></code> vagy az <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.bz2</span></code> fájlt is. Bontsa ki a forrásarchívumot (például a <code class="docutils literal notranslate"><span class="pre">tar</span></code> használatával) az <code class="docutils literal notranslate"><span class="pre">/opt</span></code> könyvtárba, és hozzon létre egy <code class="docutils literal notranslate"><span class="pre">/opt/otrs</span></code> szimbolikus hivatkozást, amely az <code class="docutils literal notranslate"><span class="pre">/opt/otrs-x.y.z</span></code> helyre mutat. <strong>Ne felejtse el</strong> kicserélni a verziószámokat!</p>
+<div class="admonition note">
+<p class="first admonition-title">Megjegyzés</p>
+<p class="last">A <code class="docutils literal notranslate"><span class="pre">bzip2</span></code> csomag néhány rendszeren nincs alapértelmezetten telepítve. Győződjön meg arról, hogy a <code class="docutils literal notranslate"><span class="pre">bzip2</span></code> telepítve van-e, mielőtt az <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.bz2</span></code> fájlt kibontaná.</p>
+</div>
+<p>Kibontási parancs az <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.gz</span></code> fájlhoz:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; tar -xzf otrs-x.y.z.tar.gz -C /opt
+</pre></div>
+</div>
+<p>Kibontási parancs az <code class="docutils literal notranslate"><span class="pre">otrs-x.y.z.tar.bz2</span></code> fájlhoz:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; tar -xjf otrs-x.y.z.tar.bz2 -C /opt
+</pre></div>
+</div>
+<p>Ajánlott egy <code class="docutils literal notranslate"><span class="pre">/opt/otrs</span></code> nevű szimbolikus hivatkozást létrehozni, amely mindig a legújabb OTRS verzióra mutat. A szimbolikus hivatkozás használata egyszerűvé teszi az OTRS frissítések kezelését, mert így érintetlenül hagyhatja az előző verzió könyvtárát, mindössze a szimbolikus hivatkozást kell megváltoztatni. Ha vissza kell vonnia a frissítést, akkor visszaváltoztathatja a szimbolikus hivatkozás célját a korábbi könyvtárra.</p>
+<p>Futtassa ez a parancsot egy szimbolikus hivatkozás létrehozásához:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; ln -fns /opt/otrs-x.y.z /opt/otrs
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-2-install-additional-programs-and-perl-modules">
+<h2>2. lépés: további programok és Perl-modulok telepítése<a class="headerlink" href="#step-2-install-additional-programs-and-perl-modules" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Használja a következő parancsfájlt, hogy áttekintést kapjon az összes telepített és szükséges CPAN-modulról és egyéb külső függőségekről.</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>root&gt; perl /opt/otrs/bin/otrs.CheckEnvironment.pl
+Checking for Perl Modules:
+  o Archive::Tar.....................ok (v1.90)
+  o Archive::Zip.....................ok (v1.37)
+  o Crypt::Eksblowfish::Bcrypt.......ok (v0.009)
+...
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Megjegyzés</p>
+<p class="last">Ne feledje, hogy az OTRS-hez működő Perl-telepítés szükséges az összes <em>alapvető</em> modullal, mint például a <code class="docutils literal notranslate"><span class="pre">version</span></code> modul. Ezeket a modulokat közvetlenül nem ellenőrzi a parancsfájl. Esetleg telepítenie kell egy <code class="docutils literal notranslate"><span class="pre">perl-core</span></code> csomagot néhány olyan rendszeren, mint például a RHEL, amely nem telepíti az alapvető Perl-csomagokat alapértelmezetten.</p>
+</div>
+<p>A szükséges és választható csomagok telepítéséhez használhatja a CPAN-t vagy a Linux disztribúciója csomagkezelőjét is.</p>
+<p>Futtassa ezt a parancsot, hogy megkapjon egy telepítési parancsot a hiányzó függőségek telepítéséhez:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; /opt/otrs/bin/otrs.CheckEnvironment.pl --list
+</pre></div>
+</div>
+<p>Az OTRS-hez szükséges, hogy a Node.js egy támogatott stabil verziója telepítve legyen. Nézze meg a <a class="reference external" href="https://nodejs.org/en/download/package-manager/">Node.js telepítési utasításait</a>.</p>
+</div>
+<div class="section" id="step-3-create-the-otrs-user">
+<h2>3. lépés: az OTRS Felhasználó létrehozása<a class="headerlink" href="#step-3-create-the-otrs-user" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Hozzon létre egy dedikált felhasználót az OTRS-hez a saját csoportján belül:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; useradd -r -U -d /opt/otrs -c <span class="s1">&#39;OTRS user&#39;</span> otrs -s /bin/bash
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-4-activate-the-default-configuration-file">
+<h2>4. lépés: az alapértelmezett beállítófájl aktiválása<a class="headerlink" href="#step-4-activate-the-default-configuration-file" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Van egy OTRS beállítófájl az <code class="docutils literal notranslate"><span class="pre">$OTRS_HOME/Kernel/Config.pm.dist</span></code> fájlba csomagolva. Aktiválnia kell a <code class="docutils literal notranslate"><span class="pre">.dist</span></code> fájlnévkiterjesztés nélkül történő lemásolással.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; cp /opt/otrs/Kernel/Config.pm.dist /opt/otrs/Kernel/Config.pm
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-5-configure-the-apache-web-server">
+<h2>5. lépés: az Apache webkiszolgáló beállítása<a class="headerlink" href="#step-5-configure-the-apache-web-server" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Az OTRS saját beépített webkiszolgálóval érkezik, amely az Apache fordított proxyként (vagy bármely más fordított proxy kiszolgálóként) történő használata mögött található. Néhány Apache-modul szükséges a helyes működéshez:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">mod_headers</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">mod_proxy</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">mod_proxy_http</span></code></li>
+<li><code class="docutils literal notranslate"><span class="pre">mod_proxy_wstunnel</span></code></li>
+</ul>
+<p>Néhány rendszeren, mint például Debian és SuSE használatakor, ezeket a modulokat kifejezetten engedélyezni kell:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; a2enmod headers
+root&gt; a2enmod proxy
+root&gt; a2enmod proxy_http
+root&gt; a2enmod proxy_wstunnel
+</pre></div>
+</div>
+<p>A legtöbb Apache telepítés rendelkezik egy <code class="docutils literal notranslate"><span class="pre">conf.d</span></code> könyvtárral. A Linux rendszereken általában az <code class="docutils literal notranslate"><span class="pre">/etc/apache</span></code> vagy <code class="docutils literal notranslate"><span class="pre">/etc/apache2</span></code> könyvtárakban találja meg ezt a könyvtárat. Jelentkezzen be rendszergazdaként, lépje be a <code class="docutils literal notranslate"><span class="pre">conf.d</span></code> könyvtárba, és linkelje a megfelelő sablonokat az <code class="docutils literal notranslate"><span class="pre">/opt/otrs/scripts/apache2-httpd.include.conf</span></code> fájlban a <code class="docutils literal notranslate"><span class="pre">zzz_otrs.conf</span></code> nevű fájlra az Apache beállítási könyvtárában (hogy biztos legyen abban, hogy betöltődnek az egyéb beállítások után).</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Debian/Ubuntu:</span>
+root&gt; ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-enabled/zzz_otrs.conf
+</pre></div>
+</div>
+<p>Most már újraindíthatja a webkiszolgálót az új konfigurációs beállítások betöltéséhez. A legtöbb rendszeren ezt ezzel a paranccsal teheti meg:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; systemctl restart apache2.service
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-6-set-file-permissions">
+<h2>6. lépés: fájljogosultságok beállítása<a class="headerlink" href="#step-6-set-file-permissions" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Futtassa a következő parancsot a fájl- és könyvtárjogosultságok beállításához az OTRS számára. Megpróbálja felismerni a beállításhoz szükséges helyes felhasználó- és csoportbeállításokat.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; /opt/otrs/bin/otrs.SetPermissions.pl
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-7-setup-the-database">
+<h2>7. lépés: az adatbázis beállítása<a class="headerlink" href="#step-7-setup-the-database" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>A következő lépéseket szükséges elvégezni az adatbázis megfelelő beállításához az OTRS számára:</p>
+<ul class="simple">
+<li>Hozzon létre egy dedikált adatbázis-felhasználót és adatbázist.</li>
+<li>Hozza létre az adatbázis szerkezetét.</li>
+<li>Szúrja be a kezdeti adatokat.</li>
+<li>Állítsa be az adatbázis-kapcsolatot a <code class="docutils literal notranslate"><span class="pre">Kernel/Config.pm</span></code> fájlban.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Megjegyzés</p>
+<p class="last">Ne feledje, hogy az OTRS-nek <code class="docutils literal notranslate"><span class="pre">utf8mb4</span></code> adatbázistároló-kódolásra van szüksége.</p>
+</div>
+<div class="section" id="mysql-or-mariadb">
+<h3>MySQL vagy MariaDB<a class="headerlink" href="#mysql-or-mariadb" title="Hivatkozás erre a fejezetcímre">¶</a></h3>
+<p>Lépjen be a MySQL konzolba adatbázis-adminisztrátor felhasználóként:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; mysql -uroot -p
+</pre></div>
+</div>
+<p>Hozzon létre egy adatbázist:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mysql&gt; CREATE DATABASE otrs CHARACTER SET utf8mb4<span class="p">;</span>
+</pre></div>
+</div>
+<p>Különleges adatbázisfelhasználó-kezelés szükséges a MySQL 8-nál, mivel az alapértelmezett <code class="docutils literal notranslate"><span class="pre">caching_sha2_password</span></code> csak biztonságos kapcsolatokon keresztül használható. Hozzon létre egy adatbázis-felhasználót a MySQL 8-ban:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mysql&gt; CREATE USER <span class="s1">&#39;otrs&#39;</span>@<span class="s1">&#39;localhost&#39;</span> IDENTIFIED WITH mysql_native_password BY <span class="s1">&#39;choose-your-password&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Hozzon létre egy adatbázis-felhasználót a régebbi MySQL verziókban:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mysql&gt; CREATE USER <span class="s1">&#39;otrs&#39;</span>@<span class="s1">&#39;localhost&#39;</span> IDENTIFIED BY <span class="s1">&#39;choose-your-password&#39;</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Rendeljen felhasználói jogosultságokat az új adatbázishoz:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mysql&gt; GRANT ALL PRIVILEGES ON otrs.* TO <span class="s1">&#39;otrs&#39;</span>@<span class="s1">&#39;localhost&#39;</span><span class="p">;</span>
+mysql&gt; FLUSH PRIVILEGES<span class="p">;</span>
+mysql&gt; quit
+</pre></div>
+</div>
+<p>Futtassa a következő parancsokat a parancsértelmezőben a séma létrehozásához és az adatok beszúrásához:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; mysql -uroot -p otrs &lt; /opt/otrs/scripts/database/otrs-schema.mysql.sql
+root&gt; mysql -uroot -p otrs &lt; /opt/otrs/scripts/database/otrs-initial_insert.mysql.sql
+root&gt; mysql -uroot -p otrs &lt; /opt/otrs/scripts/database/otrs-schema-post.mysql.sql
+</pre></div>
+</div>
+<p>Állítsa be az adatbázis beállításait a <code class="docutils literal notranslate"><span class="pre">Kernel/Config.pm</span></code> fájlban:</p>
+<div class="highlight-perl notranslate"><div class="highlight"><pre><span></span><span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DatabaseHost</span><span class="p">}</span> <span class="o">=</span> <span class="s">&#39;127.0.0.1&#39;</span><span class="p">;</span>
+<span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">Database</span><span class="p">}</span>     <span class="o">=</span> <span class="s">&#39;otrs&#39;</span><span class="p">;</span>
+<span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DatabaseUser</span><span class="p">}</span> <span class="o">=</span> <span class="s">&#39;otrs&#39;</span><span class="p">;</span>
+<span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DatabasePw</span><span class="p">}</span>   <span class="o">=</span> <span class="s">&#39;choose-your-password&#39;</span><span class="p">;</span>
+<span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DatabaseDSN</span><span class="p">}</span>  <span class="o">=</span> <span class="s">&quot;DBI:mysql:database=$Self-&gt;{Database};host=$Self-&gt;{DatabaseHost};&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Megjegyzés</p>
+<p>A következő konfigurációs beállítások ajánlottak a MySQL telepítéseknél. Adja hozzá a következő sorokat az <code class="docutils literal notranslate"><span class="pre">/etc/my.cnf</span></code> fájlhoz a <code class="docutils literal notranslate"><span class="pre">[mysqld]</span></code> szakasz alá:</p>
+<div class="last highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">max_allowed_packet</span>   <span class="o">=</span> <span class="s">64M</span>
+<span class="na">query_cache_size</span>     <span class="o">=</span> <span class="s">32M</span>
+<span class="na">innodb_log_file_size</span> <span class="o">=</span> <span class="s">256M</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="postgresql">
+<h3>PostgreSQL<a class="headerlink" href="#postgresql" title="Hivatkozás erre a fejezetcímre">¶</a></h3>
+<div class="admonition note">
+<p class="first admonition-title">Megjegyzés</p>
+<p class="last">Feltételezzük, hogy az OTRS és a PostgreSQL kiszolgáló ugyanazon a gépen fut, és a PostgreSQL <em>Peer</em> hitelesítési módszert használ. További információkért nézze meg a <a class="reference external" href="https://www.postgresql.org/docs/current/client-authentication.html">Client Authentication</a> szakaszt a PostgreSQL kézikönyvében.</p>
+</div>
+<p>Lépjen át a <code class="docutils literal notranslate"><span class="pre">postgres</span></code> felhasználóra:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; su - postgres
+</pre></div>
+</div>
+<p>Hozzon létre egy adatbázis-felhasználót:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>postgres&gt; createuser otrs
+</pre></div>
+</div>
+<p>Hozzon létre egy adatbázist:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>postgres&gt; createdb --encoding<span class="o">=</span>UTF8 --owner<span class="o">=</span>otrs otrs
+</pre></div>
+</div>
+<p>Futtassa a következő parancsokat a parancsértelmezőben a séma létrehozásához és az adatok beszúrásához:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; psql &lt; /opt/otrs/scripts/database/otrs-schema.postgresql.sql
+otrs&gt; psql &lt; /opt/otrs/scripts/database/otrs-initial_insert.postgresql.sql
+otrs&gt; psql &lt; /opt/otrs/scripts/database/otrs-schema-post.postgresql.sql
+</pre></div>
+</div>
+<p>Állítsa be az adatbázis beállításait a <code class="docutils literal notranslate"><span class="pre">Kernel/Config.pm</span></code> fájlban:</p>
+<div class="highlight-perl notranslate"><div class="highlight"><pre><span></span><span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DatabaseHost</span><span class="p">}</span> <span class="o">=</span> <span class="s">&#39;127.0.0.1&#39;</span><span class="p">;</span>
+<span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">Database</span><span class="p">}</span>     <span class="o">=</span> <span class="s">&#39;otrs&#39;</span><span class="p">;</span>
+<span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DatabaseUser</span><span class="p">}</span> <span class="o">=</span> <span class="s">&#39;otrs&#39;</span><span class="p">;</span>
+<span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DatabasePw</span><span class="p">}</span>   <span class="o">=</span> <span class="s">&#39;choose-your-password&#39;</span><span class="p">;</span>
+<span class="nv">$Self</span><span class="o">-&gt;</span><span class="p">{</span><span class="n">DatabaseDSN</span><span class="p">}</span>  <span class="o">=</span> <span class="s">&quot;DBI:Pg:dbname=$Self-&gt;{Database};host=$Self-&gt;{DatabaseHost};&quot;</span><span class="p">;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="finishing-the-database-setup">
+<h3>Az adatbázis-beállítás befejezése<a class="headerlink" href="#finishing-the-database-setup" title="Hivatkozás erre a fejezetcímre">¶</a></h3>
+<p>Az adatbázis-beállítás ellenőrzéséhez futtassa a következő parancsot:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Database::Check
+Trying to connect to database &#39;DBI:Pg:dbname=otrs;host=localhost&#39; with user &#39;otrs&#39;...
+Connection successful.
+</pre></div>
+</div>
+<p>Amikor az adatbázis megfelelően be lett állítva, készítse elő a rendszerbeállításokat a következő paranccsal:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Config::Rebuild
+Rebuilding the system configuration...
+Done.
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Megjegyzés</p>
+<p>Biztonsági okokból változtassa meg a <code class="docutils literal notranslate"><span class="pre">root&#64;localhost</span></code> adminisztrátor felhasználó jelszavát egy véletlen jelszó előállításával:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Admin::User::SetPassword root@localhost
+Generated password &#39;rtB98S55kuc9&#39;.
+Successfully set password for user &#39;root@localhost&#39;.
+</pre></div>
+</div>
+<p>Választhatja azt is, hogy saját jelszót állít be:</p>
+<div class="last highlight-none notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Admin::User::SetPassword root@localhost your-own-password
+Successfully set password for user &#39;root@localhost&#39;
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="step-8-setup-elasticsearch-cluster">
+<h2>8. lépés: az Elasticsearch-fürt beállítása<a class="headerlink" href="#step-8-setup-elasticsearch-cluster" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Az OTRS-hez egy Elasticsearch aktív fürt szükséges (csak a 6.5.x és a 6.8.y közötti verziók támogatottak, az újabb verziók nem támogatottak). A legegyszerűbb mód az <a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/setup.html">Elasticsearch beállítása</a> ugyanarra a gépre, amelyen az OTRS van, és hozzákapcsolni azt az alapértelmezett porthoz. Ezzel az OTRS-ben nincs szükség további beállításokra.</p>
+<p>Továbbá az OTRS-nek szüksége van bővítmények telepítésére az Elasticsearch-fürtbe:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; /usr/share/elasticsearch/bin/elasticsearch-plugin install --batch ingest-attachment
+root&gt; /usr/share/elasticsearch/bin/elasticsearch-plugin install --batch analysis-icu
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Megjegyzés</p>
+<p class="last">Ezután indítsa újra az Elasticsearch programot, különben az indexek nem lesznek felépítve.</p>
+</div>
+<p>Az Elasticsearch telepítés ellenőrzéséhez használhatja a következő parancsot:</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::DocumentSearch::Check
+Trying to connect to cluster...
+  Connection successful.
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-9-start-the-otrs-daemon-and-web-server">
+<h2>9. lépés: az OTRS démon és webkiszolgáló elindítása<a class="headerlink" href="#step-9-start-the-otrs-daemon-and-web-server" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Az új OTRS démon felelős minden aszinkron és ismétlődő feladat kezeléséért az OTRS-ben. A beépített OTRS webkiszolgáló-folyamat kezeli az Apache által átadott webkéréseket. Mindkét folyamatot az <code class="docutils literal notranslate"><span class="pre">otrs</span></code> felhasználónak kell elindítania.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Daemon.pl start
+otrs&gt; /opt/otrs/bin/otrs.WebServer.pl
+</pre></div>
+</div>
+</div>
+<div class="section" id="step-10-first-login">
+<h2>10. lépés: első bejelentkezés<a class="headerlink" href="#step-10-first-login" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Most már készen áll, hogy bejelentkezzen a rendszerbe a <a class="reference external" href="http://localhost/otrs/index.pl">http://localhost/otrs/index.pl</a> címen a <code class="docutils literal notranslate"><span class="pre">root&#64;localhost</span></code> felhasználóval és előállított jelszóval (lásd fentebb).</p>
+<p>Használja a <a class="reference external" href="http://localhost">http://localhost</a> címet a külső felület eléréséhez.</p>
+</div>
+<div class="section" id="step-11-setup-systemd-files">
+<h2>11. lépés: systemd fájlok beállítása<a class="headerlink" href="#step-11-setup-systemd-files" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Az OTRS példa systemd beállítófájlokkal érkezik, amelyek ahhoz használhatók, hogy biztosítva legyen az OTRS démon és webkiszolgáló automatikus elindítása, miután a rendszer elindul.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>root&gt; <span class="nb">cd</span> /opt/otrs/scripts/systemd
+root&gt; <span class="k">for</span> UNIT in *.service<span class="p">;</span> <span class="k">do</span> cp -vf <span class="nv">$UNIT</span> /usr/lib/systemd/system/<span class="p">;</span> systemctl <span class="nb">enable</span> <span class="nv">$UNIT</span><span class="p">;</span> <span class="k">done</span>
+</pre></div>
+</div>
+<p>Ezzel a lépéssel az alapvető rendszerbeállítás befejeződött.</p>
+</div>
+<div class="section" id="step-12-setup-bash-auto-completion-optional">
+<h2>12. lépés: bash automatikus kiegészítés beállítása (kihagyható)<a class="headerlink" href="#step-12-setup-bash-auto-completion-optional" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Az összes szokásos OTRS parancssori művelet az OTRS konzolfelületén keresztül történik. Ez automatikus kiegészítést biztosít a bash parancsértelmezőhöz, amely sokkal egyszerűbbé teszi a megfelelő parancs és kapcsolók megtalálását.</p>
+<p>Aktiválhatja a bash automatikus kiegészítését a <code class="docutils literal notranslate"><span class="pre">bash-completion</span></code> csomag telepítésével. Ez automatikusan felismeri és betölti az <code class="docutils literal notranslate"><span class="pre">/opt/otrs/.bash_completion</span></code> fájlt az <code class="docutils literal notranslate"><span class="pre">otrs</span></code> felhasználó számára.</p>
+<p>A parancsértelmező újraindítása után egyszerűen gépelje be ezt a parancsot, és utána nyomja le a TAB billentyűt, hogy felsorolja az összes elérhető parancsot:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl
+</pre></div>
+</div>
+<p>Ha a parancs nevének csak néhány karakterét gépeli be, a TAB billentyű meg fogja jeleníteni az összes egyező parancsot. Egy teljes parancs begépelése után az összes lehetséges kapcsoló és argumentum meg fog jelenni a TAB billentyű lenyomásakor.</p>
+<div class="admonition note">
+<p class="first admonition-title">Megjegyzés</p>
+<p>Ha problémája van, akkor hozzáadhatja a következő sort a <code class="docutils literal notranslate"><span class="pre">~/.bashrc</span></code> fájlhoz, hogy a fájlból hajtsa végre a parancsokat.</p>
+<div class="last highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span> /opt/otrs/.bash_completion
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="step-13-further-information">
+<h2>13. lépés: további információk<a class="headerlink" href="#step-13-further-information" title="Hivatkozás erre a fejezetcímre">¶</a></h2>
+<p>Javasoljuk az OTRS <a class="reference internal" href="performance-tuning.html"><span class="doc">Teljesítmény hangolás</span></a> fejezetének elolvasását is.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          
+
+<script>
+// Start Google Analytics Tracking
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-28118796-2', 'auto');
+ga('send', 'pageview');
+// End Google Analytics Tracking
+</script>
+
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="updating.html" class="btn btn-neutral float-right" title="Frissítés" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="requirements.html" class="btn btn-neutral" title="Hardver- és szoftverkövetelmények" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2001-2020 OTRS AG, https://otrs.com/
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
