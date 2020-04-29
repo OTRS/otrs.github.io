@@ -115,7 +115,7 @@ $(document).ready(function() {
                     Version:  '8.0',
                     HTMLPath: '8.0',
                     Name:     'OTRS 8',
-                    Languages: ['en', 'hu'],
+                    Languages: ['en', 'de', 'hu', 'zh_CN'],
                     AssetPath:     'doc-installation',
                     AssetFilename: 'otrs_installation_guide'
                 },
