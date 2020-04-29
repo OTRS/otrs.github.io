@@ -1,0 +1,450 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="de" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="de" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Leistungsverbesserung &mdash; OTRS Update and Installation Guide 8.0 Dokumentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../_static/css/otrs.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Stichwortverzeichnis" href="../genindex.html" />
+    <link rel="search" title="Suche" href="../search.html" />
+    <link rel="prev" title="Sichern und Wiederherstellen" href="backup-restore.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+    
+    
+    <a href="https://doc.otrs.com/doc" class="icon fa-rocket DocumentationOverview"> OTRS Documentation</a>
+
+    
+
+          
+            <a href="index.html" class="icon icon-home"> OTRS Update and Installation Guide
+          
+
+          
+            
+            <img src="../_static/otrs-logo.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                8.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+
+
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Inhalt</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Einführung</a></li>
+<li class="toctree-l1"><a class="reference internal" href="requirements.html">Hardware- und Software-Anforderungen</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updating.html">Aktualisieren</a></li>
+<li class="toctree-l1"><a class="reference internal" href="backup-restore.html">Sichern und Wiederherstellen</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Leistungsverbesserung</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ticket-search-index">Ticket-Suchindex</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#document-search">Dokumentensuche</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#heap-size">Heap-Größe</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#disk-allocation">Festplattenzuordnung</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#article-storage">Artikelspeicherung</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#archiving-tickets">Tickets archivieren</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tuning-the-web-server">Webserver optimieren</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#caching">Caching</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#clustering">Clustering</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OTRS Update and Installation Guide</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Leistungsverbesserung</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <a href="https://github.com/OTRS/doc-installation/blob/rel-8_0/content/performance-tuning.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="performance-tuning">
+<h1>Leistungsverbesserung<a class="headerlink" href="#performance-tuning" title="Link zu dieser Überschrift">¶</a></h1>
+<p>Es gibt eine Liste mit leistungsverbessernden Techniken für Ihre OTRS-Installation, einschließlich Konfiguration, Codierung, Speichernutzung und mehr.</p>
+<div class="section" id="ticket-search-index">
+<h2>Ticket-Suchindex<a class="headerlink" href="#ticket-search-index" title="Link zu dieser Überschrift">¶</a></h2>
+<p>OTRS verwendet einen speziellen Suchindex, um Volltextsuchen über Felder in Artikeln aus verschiedenen Kommunikationskanälen durchzuführen.</p>
+<p>Verwenden Sie diesen Befehl, um einen Anfangsindex zu erstellen:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Ticket::FulltextIndex --rebuild
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Bemerkung</p>
+<p class="last">Die eigentliche Artikelindizierung erfolgt über einen OTRS-Daemon-Job im Hintergrund. Weil die Artikel, die gerade dem System hinzugefügt wurden, sofort für die Indizierung markiert werden, kann es sein, dass ihr Index erst innerhalb einiger Minuten verfügbar ist.</p>
+</div>
+<p>Es gibt einige Optionen zur Feinabstimmung des Suchindex:</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::IndexArchivedTickets</span></code></dt>
+<dd>Legt fest, ob archivierte Tickets in den Suchindex aufgenommen werden (standardmäßig nicht aktiviert). Dies ist ratsam, um den Index bei großen Systemen mit archivierten Tickets klein zu halten. Wenn diese Option aktiviert ist, werden archivierte Tickets durch Volltextsuche gefunden.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::Attribute</span></code></dt>
+<dd><p class="first">Grundlegende Einstellungen für den Volltextindex.</p>
+<div class="figure" id="id1">
+<img alt="``Ticket::SearchIndex::Attribute`` Setting" src="../_images/sysconfig-ticket-searchindex-attribute.png" />
+<p class="caption"><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::Attribute</span></code> Einstellung</span></p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Bemerkung</p>
+<p>Führen Sie das folgende Kommando aus, um einen neuen Index zu generieren:</p>
+<div class="last highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Ticket::FulltextIndexRebuild
+</pre></div>
+</div>
+</div>
+<dl class="last docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">WordCountMax</span></code></dt>
+<dd>Definiert die maximale Anzahl von Wörtern, die zum Aufbau des Index verarbeitet werden. Zum Beispiel, dass nur die ersten 1000 Wörter des Artikelkörpers im Artikelsuchindex gespeichert werden.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">WordLengthMin</span></code> und <code class="docutils literal notranslate"><span class="pre">WordLengthMax</span></code></dt>
+<dd>Wird als Wortlängenbegrenzung verwendet. Nur Wörter mit einer Länge zwischen diesen beiden Werten werden im Artikelsuchindex gespeichert.</dd>
+</dl>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::Filters</span></code></dt>
+<dd><p class="first">Reguläre Ausdrücke für den Volltextindex-Filter, um Teile des Textes zu entfernen.</p>
+<div class="figure" id="id2">
+<img alt="``Ticket::SearchIndex::Filters`` Setting" src="../_images/sysconfig-ticket-searchIndex-filters.png" />
+<p class="caption"><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::Filters</span></code> Einstellung</span></p>
+</div>
+<p>Es sind drei Standardfilter definiert:</p>
+<ul class="last simple">
+<li>Der erste Filter entfernt Sonderzeichen wie: , &amp; &lt; &gt; ? “ ! * | ; [ ] ( ) + $ ^ =</li>
+<li>Der zweite Filter entfernt Wörter die mit einem der folgenden Zeichen beginnen oder enden: ‚ : .</li>
+<li>Der dritte Filter entfernt Wörter, die kein Wortzeichen enthalten: a-z, A-Z, 0-9, _</li>
+</ul>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::StopWords</span></code></dt>
+<dd><p class="first">Englische Stoppwörter für den Volltextindex. Diese Wörter werden aus dem Suchindex entfernt.</p>
+<div class="figure" id="id3">
+<img alt="``Ticket::SearchIndex::StopWords###en`` Setting" src="../_images/sysconfig-ticket-searchindex-stopwords.png" />
+<p class="caption"><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::StopWords###en</span></code> Einstellung</span></p>
+</div>
+<p>Für einige Sprachen sind sogenannte Stoppwörter definiert. Diese Stoppwörter werden beim Erstellen des Suchindex übersprungen.</p>
+<div class="last admonition seealso">
+<p class="first admonition-title">Siehe auch</p>
+<p>Wenn Ihre Sprache nicht in den Systemkonfigurationseinstellungen enthalten ist oder Sie weitere Wörter hinzufügen möchten, können Sie diese mit dieser Einstellung hinzufügen:</p>
+<ul class="last simple">
+<li><code class="docutils literal notranslate"><span class="pre">Ticket::SearchIndex::StopWords###Custom</span></code></li>
+</ul>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="document-search">
+<h2>Dokumentensuche<a class="headerlink" href="#document-search" title="Link zu dieser Überschrift">¶</a></h2>
+<p>OTRS verwendet Elasticsearch für seine Dokumentensuche. Für eine gute Einführung in die Konzepte, die Installation und den Gebrauch von Elasticsearch folgen Sie bitte dem <a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/getting-started.html">Getting Started Guide</a>.</p>
+<div class="section" id="heap-size">
+<h3>Heap-Größe<a class="headerlink" href="#heap-size" title="Link zu dieser Überschrift">¶</a></h3>
+<p>Elasticsearch ist in Java geschrieben und läuft daher in einer Java Virtual Machine (JVM) auf jedem Clusterknoten. Eine solche JVM verwendet einen Teil des Speichers, genannt <em>heap</em>, dessen Größe in der Konfigurationsdatei <code class="docutils literal notranslate"><span class="pre">jvm.options</span></code> konfiguriert werden kann.</p>
+<p>Die Heap-Minimum- und Maximum-Konfigurationen sind standardmäßig auf einen Wert von 1 GB eingestellt und können mit den folgenden Optionen geändert werden:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">Xms1g</span></code>: Minimale Heap-Größe.</li>
+<li><code class="docutils literal notranslate"><span class="pre">Xmx1g</span></code>: Maximale Heap-Größe.</li>
+</ul>
+<p>Wenn der <code class="docutils literal notranslate"><span class="pre">Xms</span></code> einen niedrigeren Wert als <code class="docutils literal notranslate"><span class="pre">Xmx</span></code> hat, wird die JVM den verwendeten Heap bei jeder Überschreitung des aktuellen Limits skalieren, bis der Wert von <code class="docutils literal notranslate"><span class="pre">Xmx</span></code> erreicht ist. Eine solche Größenänderung bewirkt, dass der Dienst bis zum Ende pausiert, was die Geschwindigkeit und Reaktivität der Such- oder Indexierungsaktionen verringern kann. Daher wird dringend empfohlen, diese Konfigurationen auf einen gleichen Wert einzustellen.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warnung</p>
+<p class="last">Wenn die maximale Heap-Größe überschritten wird, stoppt der zugehörige Clusterknoten seine Arbeit und kann den Dienst sogar herunterfahren.</p>
+</div>
+<p>Je höher der Heap-Maximalwert eingestellt ist, desto mehr Speicherplatz kann von Elasticsearch genutzt werden, was auch die möglichen Pausen für die Garbage Collection der JVM erhöht. Daher wird empfohlen, einen Wert für <code class="docutils literal notranslate"><span class="pre">Xmx</span></code> einzustellen, der nicht höher als 50% des physikalischen Speichers ist.</p>
+<p>Für weitere Informationen und gute Faustregeln zur Größe des Heaps beachten Sie bitte die offizielle Dokumentation &lt;<a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html">https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html</a>&gt;`__.</p>
+</div>
+<div class="section" id="disk-allocation">
+<h3>Festplattenzuordnung<a class="headerlink" href="#disk-allocation" title="Link zu dieser Überschrift">¶</a></h3>
+<p>Während der Laufzeit des Dienstes überprüft Elasticsearch den verfügbaren Festplattenspeicher und entscheidet somit, ob dem zugehörigen Clusterknoten neue Shards zugewiesen oder sogar Shards von diesem speziellen Knoten entfernt werden. Dieses Verhalten wird durch die aktuelle Festplattenkapazität gesteuert und kann in der Konfigurationsdatei <code class="docutils literal notranslate"><span class="pre">elasticsearch.yml</span></code> konfiguriert werden. Anbei einige wichtige Konfigurationen, die mit guten Standardwerten ausgestattet sind, aber wichtig sein können:</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">cluster.routing.allocation.disk.watermark.low</span></code></dt>
+<dd>Standardwert von 85%. Wenn diese Grenze überschritten wird, weist Elasticsearch dem zugehörigen Clusterknoten nicht mehr Shards zu. Der Betrieb dieses Knotens wird nicht beeinflusst und die Daten können weiterhin indiziert und durchsucht werden.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cluster.routing.allocation.disk.watermark.high</span></code></dt>
+<dd>Standardwert von 90%. Wird diese Grenze überschritten, versucht Elasticsearch, bestehende Shards auf andere Knoten zu verschieben (wenn möglich), die genügend Platz haben.</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">cluster.routing.allocation.disk.watermark.flood_stage</span></code></dt>
+<dd>Standardwert von 95%. Wird diese Grenze überschritten, aktualisiert Elasticsearch die Konfiguration aller Indizes auf schreibgeschützte Indexblöcke <code class="docutils literal notranslate"><span class="pre">index.blocks.read_only_allow_delete</span></code>, die mindestens einen Shard dem zugehörigen Clusterknoten zugeordnet haben. Seitdem ist es nicht mehr möglich, neue Daten auf solche Indizes zu indizieren und sich auf Such- und Löschaktionen zu beschränken.</dd>
+</dl>
+<div class="admonition note">
+<p class="first admonition-title">Bemerkung</p>
+<p class="last">Wenn der Speicherplatz überschritten wurde und bestimmte Indizes für den Nur-Lese-Modus konfiguriert sind, wird diese Konfiguration <em>nicht</em> automatisch von Elasticsearch geändert. Wenn die zugehörigen Laufwerke wieder genügend freien Speicherplatz enthalten, ist es aufgrund manueller Aktionen erforderlich, die Konfiguration manuell wieder in den Normalmodus zurückzusetzen.</p>
+</div>
+<p>Weitere Informationen zu den <em>Watermarks</em> der Festplatte und der plattenbasierten Shardzuweisung finden Sie in der offiziellen Dokumentation <a class="reference external" href="https://www.elastic.co/guide/en/elasticsearch/reference/current/disk-allocator.html">https://www.elastic.co/guide/en/elasticsearch/reference/current/disk-allocator.html</a>.</p>
+</div>
+</div>
+<div class="section" id="article-storage">
+<h2>Artikelspeicherung<a class="headerlink" href="#article-storage" title="Link zu dieser Überschrift">¶</a></h2>
+<p>Es gibt zwei verschiedene Backend-Module für die Artikelspeicherung von Telefon-, E-Mail- und internen Artikeln. Der verwendete Artikelspeicher kann in der Einstellung <code class="docutils literal notranslate"><span class="pre">Ticket::Article::Backend::MIMEBase::ArticleStorage</span></code> konfiguriert werden.</p>
+<dl class="docutils">
+<dt><code class="docutils literal notranslate"><span class="pre">Kernel::System::Ticket::Article::Backend::MIMEBase::ArticleStorageDB</span></code></dt>
+<dd><p class="first">Dieses Standardmodul speichert Anlagen in der Datenbank. Es funktioniert auch mit mehreren Frontend-Servern, erfordert jedoch viel Speicherplatz in der Datenbank.</p>
+<div class="last admonition note">
+<p class="first admonition-title">Bemerkung</p>
+<p class="last">Verwenden Sie dies nicht bei großen Setups.</p>
+</div>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">Kernel::System::Ticket::Article::Backend::MIMEBase::ArticleStorageFS</span></code></dt>
+<dd><p class="first">Verwenden Sie dieses Modul, um Anlagen im lokalen Dateisystem zu speichern. Dies ist zwar schnell, aber wenn Sie über mehrere Frontend-Server verfügen, müssen Sie sicherstellen, dass das Dateisystem von den Servern gemeinsam genutzt wird. Legen Sie es auf eine NFS-Freigabe oder vorzugsweise auf ein SAN oder eine ähnliche Lösung.</p>
+<div class="last admonition note">
+<p class="first admonition-title">Bemerkung</p>
+<p class="last">Empfohlen für große Setups.</p>
+</div>
+</dd>
+</dl>
+<p>Sie können zügig von einem Backend zum anderen wechseln. Sie können das Backend in der Systemkonfiguration wechseln und dann dieses Befehlszeilendienstprogramm ausführen, um die Artikel aus der Datenbank in das Dateisystem zu laden oder umgekehrt:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Admin::Article::StorageSwitch --target ArticleStorageFS
+</pre></div>
+</div>
+<p>Sie können die Option <code class="docutils literal notranslate"><span class="pre">--target</span></code> verwenden, um das Ziel-Backend festzulegen.</p>
+<div class="admonition note">
+<p class="first admonition-title">Bemerkung</p>
+<p class="last">Der gesamte Prozess kann einige Zeit in Anspruch nehmen, abhängig von der Anzahl der Artikel, der verfügbaren CPU-Leistung und / oder der Netzwerkkapazität.</p>
+</div>
+<p>Wenn Sie alte Anhänge in der Datenbank behalten möchten, können Sie die Systemkonfigurationsoption <code class="docutils literal notranslate"><span class="pre">Ticket::Article::Backend::MIMEBase::CheckAllStorageBackends</span></code> aktivieren, um sicherzustellen, dass OTRS diese weiterhin findet.</p>
+</div>
+<div class="section" id="archiving-tickets">
+<h2>Tickets archivieren<a class="headerlink" href="#archiving-tickets" title="Link zu dieser Überschrift">¶</a></h2>
+<p>Da OTRS als revisionssicheres System betrieben werden kann, ist das Löschen von geschlossenen Tickets möglicherweise nicht empfehlenswert. Daher haben wir eine Funktion implementiert, mit der Sie Tickets archivieren können.</p>
+<p>Tickets, die bestimmten Kriterien entsprechen, können als archiviert markiert werden. Auf diese Tickets wird nicht zugegriffen, wenn Sie eine reguläre Ticketsuche durchführen oder einen generischen Agentenjob ausführen. Das System selbst muss nicht mehr mit einer großen Anzahl von Tickets umgehen, da bei der Verwendung von OTRS nur die neuesten Tickets berücksichtigt werden. Dies kann bei großen Systemen zu einem enormen Leistungszuwachs führen.</p>
+<p>So verwenden Sie die Archivfunktion:</p>
+<ol class="arabic">
+<li><p class="first">Aktivieren Sie die Einstellung <code class="docutils literal notranslate"><span class="pre">Ticket::ArchiveSystem</span></code> in der Systemkonfiguration.</p>
+</li>
+<li><p class="first">Definieren Sie einen GenericAgent-Job:</p>
+<ul class="simple">
+<li>Klicken Sie im Bildschirm <em>GenericAgent</em> auf die Schaltfläche <em>Job hinzufügen</em>.</li>
+<li><em>Job-Einstellungen</em>: Geben Sie einen Namen für den Archivierungsjob an.</li>
+<li><em>Automatische Ausführung</em>: Wählen Sie die richtigen Optionen aus, um diesen Job zu planen.</li>
+<li><em>Tickets selektieren</em>: Es kann eine gute Idee sein, nur die Tickets in einem geschlossenen Zustand zu archivieren, die einige Monate zuvor geschlossen wurden.</li>
+<li><em>Ticketattribute aktualisieren / hinzufügen</em>: Setzen Sie das Feld <em>Ausgewählte Tickets archivieren</em> auf <em>Tickets archivieren</em>.</li>
+<li>Speichern Sie den Job am Ende der Seite.</li>
+<li>Klicken Sie in der Übersichtstabelle auf den Link <em>Diese Aufgabe ausführen</em> , um die betroffenen Tickets anzuzeigen.</li>
+<li>Klicken Sie auf die Schaltfläche <em>Diesen Job ausführen</em>.</li>
+</ul>
+<div class="admonition note">
+<p class="first admonition-title">Bemerkung</p>
+<p class="last">Bis zu 5000 Tickets können durch manuelle Ausführung dieses Jobs geändert werden.</p>
+</div>
+</li>
+</ol>
+<p>Bei der Suche nach Tickets werden standardmäßig nicht archivierte Tickets durchsucht.</p>
+<p>So suchen Sie nach archivierten Tickets:</p>
+<ol class="arabic simple">
+<li>Öffnen Sie die Ticketsuche.</li>
+<li>Setzen Sie <em>Archivsuche</em> auf <em>Nicht archivierte Tickets</em> oder <em>Alle Tickets</em>.</li>
+<li>Führen Sie die Suche durch.</li>
+</ol>
+</div>
+<div class="section" id="tuning-the-web-server">
+<h2>Webserver optimieren<a class="headerlink" href="#tuning-the-web-server" title="Link zu dieser Überschrift">¶</a></h2>
+<p>Der integrierte Webserver von OTRS kann kleine und mittlere Setups sofort ausführen. Wenn OTRS von vielen Benutzer gleichzeitig genutzt wird, kann es erforderlich sein, die Webserverkonfiguration zu optimieren, um beispielsweise die Anzahl der Arbeitsprozesse zu erhöhen.</p>
+<p>Die Konfigurationsdatei des Webservers befindet sich in <code class="docutils literal notranslate"><span class="pre">Kernel/WebApp.conf</span></code>, und alle Einstellungen sind dokumentiert. Die Einstellung für <code class="docutils literal notranslate"><span class="pre">Worker</span></code> kann erhöht werden, um mehr Prozesse für die Bereitstellung von HTTP-Anforderungen auf fähigen Servern bereitzustellen.</p>
+</div>
+<div class="section" id="caching">
+<h2>Caching<a class="headerlink" href="#caching" title="Link zu dieser Überschrift">¶</a></h2>
+<p>OTRS speichert viele temporäre Daten in <code class="docutils literal notranslate"><span class="pre">/opt/otrs/var/tmp</span></code>. Stellen Sie sicher, dass dieses Verzeichnis ein Hochleistungs-Dateisystem und -speicher verwendet. Wenn Sie über genügend RAM verfügen, können Sie auch versuchen, dieses Verzeichnis auf einer RAM-Disk wie folgt abzulegen:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Session::DeleteAll
+otrs&gt; /opt/otrs/bin/otrs.Console.pl Maint::Cache::Delete
+root&gt; mount -o <span class="nv">size</span><span class="o">=</span>16G -t tmpfs none /opt/otrs/var/tmp
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Bemerkung</p>
+<p class="last">Fügen Sie einen dauerhaften Einhängepunkt in <code class="docutils literal notranslate"><span class="pre">/etc/fstab</span></code> hinzu.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warnung</p>
+<p class="last">Dies ist ein nicht permanenter Speicher, der bei einem Neustart des Servers verloren geht. Alle Ihre Sitzungen (wenn Sie sie im Dateisystem speichern) und Ihre Cache-Daten gehen verloren.</p>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">Siehe auch</p>
+<p class="last">Es gibt auch ein zentrales, auf <a class="reference external" href="https://otrs.com/de/otrs-feature/feature-add-on-cache-memcached-fast/">Memcached-basierendes Cache-Backend</a>, das von der OTRS Group erworben werden kann.</p>
+</div>
+</div>
+<div class="section" id="clustering">
+<h2>Clustering<a class="headerlink" href="#clustering" title="Link zu dieser Überschrift">¶</a></h2>
+<p>Bei sehr hohen Lasten kann es erforderlich sein, OTRS in einem Cluster mehrerer Frontend-Server zu betreiben. Dies ist eine komplexe Aufgabe mit vielen Fallstricken. Daher bietet die OTRS Group ausschließlich Unterstützung für Cluster in ihrer <a class="reference external" href="https://otrs.com/how-to-buy/">managed OTRS</a>-Umgebung.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          
+
+<script>
+// Start Google Analytics Tracking
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-28118796-2', 'auto');
+ga('send', 'pageview');
+// End Google Analytics Tracking
+</script>
+
+<footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="backup-restore.html" class="btn btn-neutral" title="Sichern und Wiederherstellen" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2001-2020 OTRS AG, https://otrs.com/
+
+    </p>
+  </div> 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/translations.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
