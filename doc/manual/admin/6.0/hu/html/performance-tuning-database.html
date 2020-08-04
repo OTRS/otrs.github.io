@@ -1,78 +1,8 @@
-<html><head>
-<!-- otrs.github.io -->
-<link href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css">
-<link rel="stylesheet" href="../../../../../documentation.css">
-<script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
-<script type="text/javascript" src="../../../../../documentation.js"></script>
-<link rel="icon" type="image/png" sizes="32x32" href="../../../../../../images/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="../../../../../../images/favicon-16x16.png">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/styles/default.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.9.0/highlight.min.js"></script>
-<script>
-$(document).ready(function() {
-
-    // Hint languages to prevent false matches (php for example).
-    hljs.configure({
-        languages: ['perl', 'javascript', 'xml', 'html', 'css', 'json', 'yaml']
-    });
-
-    // programlistings in manuals
-    $('pre.programlisting').each(function(i, block) {
-        hljs.highlightBlock(block);
-    });
-    // code snippets in Perl API docs
-    $('.pod pre').addClass('perl').each(function(i, block) {
-        hljs.highlightBlock(block);
-    });
-});</script>
-<!-- otrs.github.io -->
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Adatbázis</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="OTRS 6 - Adminisztrátori kézikönyv"><link rel="up" href="performance-tuning.html" title="7. fejezet - Teljesítmény hangolás"><link rel="prev" href="performance-tuning.html" title="7. fejezet - Teljesítmény hangolás"><link rel="next" href="performance-tuning-webserver.html" title="Webkiszolgáló"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Adatbázis</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="performance-tuning.html">Vissza</a> </td><th width="60%" align="center">7. fejezet - Teljesítmény hangolás</th><td width="20%" align="right"> <a accesskey="n" href="performance-tuning-webserver.html">Előre</a></td></tr></table><hr></div><div class="section"><div class="titlepage"><div><div><h2 class="title"><a name="performance-tuning-database"></a>Adatbázis</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-mysql">MySQL</a></span></dt><dt><span class="section"><a href="performance-tuning-database.html#performance-tuning-database-postgresql">PostgreSQL</a></span></dt></dl></div><p>
-            Az adatbázis-problémák a használt adatbázis szerint változnak. Tanulmányozza
-az adatbázisa dokumentációját, vagy nézzék meg az adatbázis
-adminisztrátorral.
-        </p><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-database-mysql"></a>MySQL</h3></div></div></div><p>
-                Ha MyISAM típusú MySQL táblát használ (amely az alapértelmezett), és egy
-tábla nagy részét törölte, vagy ha sok változtatást végzett egy változó
-hosszúságú sorokkal rendelkező táblán (olyan táblákon, amelyeknek VARCHAR,
-BLOB vagy TEXT oszlopaik vannak), akkor töredezettség-mentesítenie kell az
-adatfájlt (táblákat) az „optimize” paranccsal.
-            </p><p>
-                Ezt akkor kell megpróbálnia, ha a mysqld démonnak hatalmas processzoridőre
-van szüksége. Optimalizálja a következő táblákat: ticket, ticket_history és
-article (lásd a lenti parancsfájlt).
-            </p><p>
-            </p><pre class="screen">
-shell&gt; mysql -u user -p database
-mysql&gt; optimize table ticket;
-mysql&gt; optimize table ticket_history;
-mysql&gt; optimize table article;
-            </pre><p>
-            </p><p>
-                <span class="emphasis"><em>Parancsfájl: Adatbázistáblák optimalizálása.</em></span>
-            </p></div><div class="section"><div class="titlepage"><div><div><h3 class="title"><a name="performance-tuning-database-postgresql"></a>PostgreSQL</h3></div></div></div><p>
-                A PostgreSQL legjobban a PostgreSQL adatkönyvtárában lévő
-<code class="filename">postgresql.conf</code> fájl módosításával hangolható. Ha
-tanácsot szeretne, hogy hogyan kell ezt megtenni, nézze meg a következő
-cikkeket:
-            </p><p>
-                </p><div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
-                            <a class="ulink" href="http://www.revsys.com/writings/postgresql-performance.html" target="_top">
-<em class="citetitle">http://www.revsys.com/writings/postgresql-performance.html</em>
-</a>
-                        </p></li><li class="listitem"><p>
-                            <a class="ulink" href="http://varlena.com/GeneralBits/Tidbits/perf.html" target="_top">
-<em class="citetitle">http://varlena.com/GeneralBits/Tidbits/perf.html</em>
-</a>
-                        </p></li><li class="listitem"><p>
-                            <a class="ulink" href="http://varlena.com/GeneralBits/Tidbits/annotated_conf_e.html" target="_top">
-<em class="citetitle">http://varlena.com/GeneralBits/Tidbits/annotated_conf_e.html</em>
-</a>
-                        </p></li></ul></div><p>
-            </p><p>
-                Ha teljesítmény még mindig nem kielégítő, akkor azt javasoljuk, hogy
-csatlakozzon a PostgreSQL (angol nyelvű) teljesítmény levelezőlistájához
-(<a class="ulink" href="http://www.postgresql.org/community/lists/" target="_top"><em class="citetitle">http://www.postgresql.org/community/lists/</em></a>),
-és ott tegye fel a kérdéseit. A PostgreSQL listán lévő emberek nagyon
-barátságosak és valószínűleg tudnak segíteni.
-            </p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tuning.html">Vissza</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tuning.html">Fel</a></td><td width="40%" align="right"> <a accesskey="n" href="performance-tuning-webserver.html">Előre</a></td></tr><tr><td width="40%" align="left" valign="top">7. fejezet - Teljesítmény hangolás </td><td width="20%" align="center"><a accesskey="h" href="index.html">Főoldal</a></td><td width="40%" align="right" valign="top"> Webkiszolgáló</td></tr></table></div></body></html>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="refresh" content="0;URL='https:/doc.otrs.com/doc/manual/admin/6.0/hu/html/performance-tuning-database.html'" />
+</head>
+<body>
+    <p>Please wait while you are being <a href="https:/doc.otrs.com/doc/manual/admin/6.0/hu/html/performance-tuning-database.html">redirected</a>...
+<body>
