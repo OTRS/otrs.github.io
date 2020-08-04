@@ -63,7 +63,6 @@ sub FindHTMLFiles {
     return @HTMLFiles;
 }
 
-
 sub ProcessHTMLFile {
     my %Param = @_;
 
